@@ -6,6 +6,10 @@
 Streams
 =======
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
+-------------------------------------------------
+
 Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
@@ -22,13 +26,15 @@ streams::
             '127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        await writer.awrite(message.encode())
+        writer.write(message.encode())
+        await writer.drain()
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        await writer.aclose()
+        writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -42,9 +48,9 @@ The following top-level asyncio functions can be used to create
 and work with streams:
 
 
-.. coroutinefunction:: open_connection(host=None, port=None, \*, \
-                          loop=None, limit=None, ssl=None, family=0, \
-                          proto=0, flags=0, sock=None, local_addr=None, \
+.. coroutinefunction:: open_connection(host=None, port=None, *, \
+                          limit=None, ssl=None, family=0, proto=0, \
+                          flags=0, sock=None, local_addr=None, \
                           server_hostname=None, ssl_handshake_timeout=None)
 
    Establish a network connection and return a pair of
@@ -52,9 +58,6 @@ and work with streams:
 
    The returned *reader* and *writer* objects are instances of
    :class:`StreamReader` and :class:`StreamWriter` classes.
-
-   The *loop* argument is optional and can always be determined
-   automatically when this function is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
    returned :class:`StreamReader` instance.  By default the *limit*
@@ -67,8 +70,16 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
+
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
-                          port=None, \*, loop=None, limit=None, \
+                          port=None, *, limit=None, \
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
@@ -86,9 +97,6 @@ and work with streams:
    :ref:`coroutine function <coroutine>`; if it is a coroutine function,
    it will be automatically scheduled as a :class:`Task`.
 
-   The *loop* argument is optional and can always be determined
-   automatically when this method is awaited from a coroutine.
-
    *limit* determines the buffer size limit used by the
    returned :class:`StreamReader` instance.  By default the *limit*
    is set to 64 KiB.
@@ -100,12 +108,19 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. rubric:: Unix Sockets
 
-.. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, \
-                        limit=None, ssl=None, sock=None, \
-                        server_hostname=None, ssl_handshake_timeout=None)
+.. coroutinefunction:: open_unix_connection(path=None, *, limit=None, \
+                        ssl=None, sock=None, server_hostname=None, \
+                        ssl_handshake_timeout=None)
 
    Establish a Unix socket connection and return a pair of
    ``(reader, writer)``.
@@ -114,7 +129,7 @@ and work with streams:
 
    See also the documentation of :meth:`loop.create_unix_connection`.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -124,11 +139,17 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
-                          \*, loop=None, limit=None, sock=None, \
-                          backlog=100, ssl=None, ssl_handshake_timeout=None, \
-                          start_serving=True)
+                          *, limit=None, sock=None, backlog=100, ssl=None, \
+                          ssl_handshake_timeout=None, start_serving=True)
 
    Start a Unix socket server.
 
@@ -136,7 +157,7 @@ and work with streams:
 
    See also the documentation of :meth:`loop.create_unix_server`.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -146,8 +167,12 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`.
 
+   .. deprecated-removed:: 3.8 3.10
 
----------
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 
 StreamReader
@@ -226,28 +251,42 @@ StreamWriter
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
-   .. coroutinemethod:: awrite(data)
+   .. method:: write(data)
 
-      Write *data* to the stream.
+      The method attempts to write the *data* to the underlying socket immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
 
-      The method respects flow control, execution is paused if the write
-      buffer reaches the high watermark.
+      The method should be used along with the ``drain()`` method::
 
-      .. versionadded:: 3.8
+         stream.write(data)
+         await stream.drain()
 
-   .. coroutinemethod:: aclose()
+   .. method:: writelines(data)
 
-      Close the stream.
+      The method writes a list (or any iterable) of bytes to the underlying socket
+      immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
 
-      Wait until all closing actions are complete, e.g. SSL shutdown for
-      secure sockets.
+      The method should be used along with the ``drain()`` method::
 
-      .. versionadded:: 3.8
+         stream.writelines(lines)
+         await stream.drain()
+
+   .. method:: close()
+
+      The method closes the stream and the underlying socket.
+
+      The method should be used along with the ``wait_closed()`` method::
+
+         stream.close()
+         await stream.wait_closed()
 
    .. method:: can_write_eof()
 
-      Return *True* if the underlying transport supports
-      the :meth:`write_eof` method, *False* otherwise.
+      Return ``True`` if the underlying transport supports
+      the :meth:`write_eof` method, ``False`` otherwise.
 
    .. method:: write_eof()
 
@@ -263,21 +302,6 @@ StreamWriter
       Access optional transport information; see
       :meth:`BaseTransport.get_extra_info` for details.
 
-   .. method:: write(data)
-
-      Write *data* to the stream.
-
-      This method is not subject to flow control.  Calls to ``write()`` should
-      be followed by :meth:`drain`.  The :meth:`awrite` method is a
-      recommended alternative the applies flow control automatically.
-
-   .. method:: writelines(data)
-
-      Write a list (or any iterable) of bytes to the stream.
-
-      This method is not subject to flow control. Calls to ``writelines()``
-      should be followed by :meth:`drain`.
-
    .. coroutinemethod:: drain()
 
       Wait until it is appropriate to resume writing to the stream.
@@ -292,10 +316,6 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
-
-   .. method:: close()
-
-      Close the stream.
 
    .. method:: is_closing()
 

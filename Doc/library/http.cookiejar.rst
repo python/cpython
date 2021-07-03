@@ -71,6 +71,10 @@ The following classes are provided:
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :term:`path-like object`.
+
 
 .. class:: CookiePolicy()
 
@@ -78,14 +82,16 @@ The following classes are provided:
    from / returned to the server.
 
 
-.. class:: DefaultCookiePolicy( blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False )
+.. class:: DefaultCookiePolicy( blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False, secure_protocols=("https", "wss") )
 
    Constructor arguments should be passed as keyword arguments only.
    *blocked_domains* is a sequence of domain names that we never accept cookies
    from, nor return cookies to. *allowed_domains* if not :const:`None`, this is a
-   sequence of the only domains for which we accept and return cookies.  For all
-   other arguments, see the documentation for :class:`CookiePolicy` and
-   :class:`DefaultCookiePolicy` objects.
+   sequence of the only domains for which we accept and return cookies.
+   *secure_protocols* is a sequence of protocols for which secure cookies can be
+   added to. By default *https* and *wss* (secure websocket) are considered
+   secure protocols. For all other arguments, see the documentation for
+   :class:`CookiePolicy` and :class:`DefaultCookiePolicy` objects.
 
    :class:`DefaultCookiePolicy` implements the standard accept / reject rules for
    Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (ie. cookies
@@ -153,7 +159,7 @@ contained :class:`Cookie` objects.
    the :class:`CookieJar`'s :class:`CookiePolicy` instance are true and false
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
-   The *request* object (usually a :class:`urllib.request..Request` instance)
+   The *request* object (usually a :class:`urllib.request.Request` instance)
    must support the methods :meth:`get_full_url`, :meth:`get_host`,
    :meth:`get_type`, :meth:`unverifiable`, :meth:`has_header`,
    :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
@@ -339,6 +345,9 @@ writing.
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is
    convenient if you want to store cookies in a human-readable file.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :term:`path-like object`.
 
 .. _cookie-policy-objects:
 
@@ -369,7 +378,7 @@ methods:
 
 .. method:: CookiePolicy.domain_return_ok(domain, request)
 
-   Return false if cookies should not be returned, given cookie domain.
+   Return ``False`` if cookies should not be returned, given cookie domain.
 
    This method is an optimization.  It removes the need for checking every cookie
    with a particular domain (which might involve reading many files).  Returning
@@ -393,7 +402,7 @@ methods:
 
 .. method:: CookiePolicy.path_return_ok(path, request)
 
-   Return false if cookies should not be returned, given cookie path.
+   Return ``False`` if cookies should not be returned, given cookie path.
 
    See the documentation for :meth:`domain_return_ok`.
 
@@ -453,16 +462,16 @@ receiving cookies.  There are also some strictness switches that allow you to
 tighten up the rather loose Netscape protocol rules a little bit (at the cost of
 blocking some benign cookies).
 
-A domain blacklist and whitelist is provided (both off by default). Only domains
-not in the blacklist and present in the whitelist (if the whitelist is active)
+A domain blocklist and allowlist is provided (both off by default). Only domains
+not in the blocklist and present in the allowlist (if the allowlist is active)
 participate in cookie setting and returning.  Use the *blocked_domains*
 constructor argument, and :meth:`blocked_domains` and
 :meth:`set_blocked_domains` methods (and the corresponding argument and methods
-for *allowed_domains*).  If you set a whitelist, you can turn it off again by
+for *allowed_domains*).  If you set an allowlist, you can turn it off again by
 setting it to :const:`None`.
 
 Domains in block or allow lists that do not start with a dot must equal the
-cookie domain to be matched.  For example, ``"example.com"`` matches a blacklist
+cookie domain to be matched.  For example, ``"example.com"`` matches a blocklist
 entry of ``"example.com"``, but ``"www.example.com"`` does not.  Domains that do
 start with a dot are matched by more specific domains too. For example, both
 ``"www.example.com"`` and ``"www.coyote.example.com"`` match ``".example.com"``
@@ -485,7 +494,7 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_blocked(domain)
 
-   Return whether *domain* is on the blacklist for setting or receiving cookies.
+   Return whether *domain* is on the blocklist for setting or receiving cookies.
 
 
 .. method:: DefaultCookiePolicy.allowed_domains()
@@ -500,7 +509,7 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_not_allowed(domain)
 
-   Return whether *domain* is not on the whitelist for setting or receiving
+   Return whether *domain* is not on the allowlist for setting or receiving
    cookies.
 
 :class:`DefaultCookiePolicy` instances have the following attributes, which are
@@ -702,7 +711,7 @@ accessed using the following methods:
 
 .. method:: Cookie.has_nonstandard_attr(name)
 
-   Return true if cookie has the named cookie-attribute.
+   Return ``True`` if cookie has the named cookie-attribute.
 
 
 .. method:: Cookie.get_nonstandard_attr(name, default=None)

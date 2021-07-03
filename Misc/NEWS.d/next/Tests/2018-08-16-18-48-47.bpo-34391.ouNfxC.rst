@@ -1,1 +1,0 @@
-Fix ftplib test for TLS 1.3 by reading from data socket.

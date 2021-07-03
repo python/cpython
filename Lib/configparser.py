@@ -56,7 +56,7 @@ ConfigParser -- responsible for parsing a list of
 
         When `interpolation` is given, it should be an Interpolation subclass
         instance. It will be used as the handler for option value
-        pre-processing when using getters. RawConfigParser object s don't do
+        pre-processing when using getters. RawConfigParser objects don't do
         any sort of interpolation, whereas ConfigParser uses an instance of
         BasicInterpolation. The library also provides a ``zc.buildbot``
         inspired ExtendedInterpolation implementation.
@@ -80,7 +80,7 @@ ConfigParser -- responsible for parsing a list of
         Return list of configuration options for the named section.
 
     read(filenames, encoding=None)
-        Read and parse the list of named configuration files, given by
+        Read and parse the iterable of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
         are ignored.  Return list of successfully read files.
 
@@ -677,19 +677,20 @@ class RawConfigParser(MutableMapping):
         return list(opts.keys())
 
     def read(self, filenames, encoding=None):
-        """Read and parse a filename or a list of filenames.
+        """Read and parse a filename or an iterable of filenames.
 
         Files that cannot be opened are silently ignored; this is
-        designed so that you can specify a list of potential
+        designed so that you can specify an iterable of potential
         configuration file locations (e.g. current directory, user's
         home directory, systemwide directory), and all existing
-        configuration files in the list will be read.  A single
+        configuration files in the iterable will be read.  A single
         filename may also be given.
 
         Return list of successfully read files.
         """
         if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
+        encoding = io.text_encoding(encoding)
         read_ok = []
         for filename in filenames:
             try:
@@ -907,6 +908,9 @@ class RawConfigParser(MutableMapping):
 
         If `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        Please note that comments in the original configuration file are not
+        preserved when writing the configuration back.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
@@ -1005,7 +1009,7 @@ class RawConfigParser(MutableMapping):
         Configuration files may include comments, prefixed by specific
         characters (`#' and `;' by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
-        section names.
+        section names. Please note that comments get stripped off when reading configuration files.
         """
         elements_added = set()
         cursect = None                        # None, or a dictionary

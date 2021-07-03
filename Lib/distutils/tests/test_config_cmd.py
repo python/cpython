@@ -2,6 +2,7 @@
 import unittest
 import os
 import sys
+import sysconfig
 from test.support import run_unittest, missing_compiler_executable
 
 from distutils.command.config import dump_file, config
@@ -21,9 +22,12 @@ class ConfigTestCase(support.LoggingSilencer,
         self._logs = []
         self.old_log = log.info
         log.info = self._info
+        self.old_config_vars = dict(sysconfig._CONFIG_VARS)
 
     def tearDown(self):
         log.info = self.old_log
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(self.old_config_vars)
         super(ConfigTestCase, self).tearDown()
 
     def test_dump_file(self):
@@ -44,6 +48,10 @@ class ConfigTestCase(support.LoggingSilencer,
             self.skipTest('The %r command is not found' % cmd)
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
+        cmd._check_compiler()
+        compiler = cmd.compiler
+        if sys.platform[:3] == "aix" and "xlc" in compiler.preprocessor[0].lower():
+            self.skipTest('xlc: The -E option overrides the -P, -o, and -qsyntaxonly options')
 
         # simple pattern searches
         match = cmd.search_cpp(pattern='xxx', body='/* xxx */')

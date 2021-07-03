@@ -13,8 +13,7 @@ def lll(dirname):
             full = os.path.join(dirname, name)
             if os.path.islink(full):
                 print(name, '->', os.readlink(full))
-def main():
-    args = sys.argv[1:]
+def main(args):
     if not args: args = [os.curdir]
     first = 1
     for arg in args:
@@ -22,7 +21,7 @@ def main():
             if not first: print()
             first = 0
             print(arg + ':')
-    lll(arg)
+        lll(arg)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

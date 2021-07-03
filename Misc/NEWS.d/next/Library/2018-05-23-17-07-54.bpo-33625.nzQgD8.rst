@@ -1,3 +1,0 @@
-Release GIL on `grp.getgrnam`, `grp.getgrgid`, `pwd.getpwnam` and
-`pwd.getpwuid` if reentrant variants of these functions are available.
-Patch by William Grzybowski.

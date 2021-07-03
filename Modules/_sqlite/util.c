@@ -24,19 +24,14 @@
 #include "module.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
+int
+pysqlite_step(sqlite3_stmt *statement)
 {
     int rc;
 
-    if (statement == NULL) {
-        /* this is a workaround for SQLite 3.5 and later. it now apparently
-         * returns NULL for "no-operation" statements */
-        rc = SQLITE_OK;
-    } else {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_step(statement);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_step(statement);
+    Py_END_ALLOW_THREADS
 
     return rc;
 }
@@ -45,8 +40,10 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
+int
+_pysqlite_seterror(sqlite3 *db)
 {
+    pysqlite_state *state = pysqlite_get_state(NULL);
     int errorcode = sqlite3_errcode(db);
 
     switch (errorcode)
@@ -56,7 +53,7 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
             break;
         case SQLITE_INTERNAL:
         case SQLITE_NOTFOUND:
-            PyErr_SetString(pysqlite_InternalError, sqlite3_errmsg(db));
+            PyErr_SetString(state->InternalError, sqlite3_errmsg(db));
             break;
         case SQLITE_NOMEM:
             (void)PyErr_NoMemory();
@@ -77,7 +74,7 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
             PyErr_SetString(pysqlite_OperationalError, sqlite3_errmsg(db));
             break;
         case SQLITE_CORRUPT:
-            PyErr_SetString(pysqlite_DatabaseError, sqlite3_errmsg(db));
+            PyErr_SetString(state->DatabaseError, sqlite3_errmsg(db));
             break;
         case SQLITE_TOOBIG:
             PyErr_SetString(pysqlite_DataError, sqlite3_errmsg(db));
@@ -90,7 +87,7 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
             PyErr_SetString(pysqlite_ProgrammingError, sqlite3_errmsg(db));
             break;
         default:
-            PyErr_SetString(pysqlite_DatabaseError, sqlite3_errmsg(db));
+            PyErr_SetString(state->DatabaseError, sqlite3_errmsg(db));
             break;
     }
 
@@ -102,22 +99,6 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 #else
 # define IS_LITTLE_ENDIAN 1
 #endif
-
-PyObject *
-_pysqlite_long_from_int64(sqlite_int64 value)
-{
-# if SIZEOF_LONG_LONG < 8
-    if (value > PY_LLONG_MAX || value < PY_LLONG_MIN) {
-        return _PyLong_FromByteArray(&value, sizeof(value),
-                                     IS_LITTLE_ENDIAN, 1 /* signed */);
-    }
-# endif
-# if SIZEOF_LONG < SIZEOF_LONG_LONG
-    if (value > LONG_MAX || value < LONG_MIN)
-        return PyLong_FromLongLong(value);
-# endif
-    return PyLong_FromLong(Py_SAFE_DOWNCAST(value, sqlite_int64, long));
-}
 
 sqlite_int64
 _pysqlite_long_as_int64(PyObject * py_val)

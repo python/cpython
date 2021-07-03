@@ -24,12 +24,17 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import run_unittest, TESTFN, DirsOnSysPath, cpython_only
-from test.support import MISSING_C_DOCSTRINGS, cpython_only
+from test.support import run_unittest, cpython_only
+from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support.import_helper import DirsOnSysPath
+from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
 from test import support
+from test import inspect_stock_annotations
+from test import inspect_stringized_annotations
+from test import inspect_stringized_annotations_2
 
 from test.test_import import _ready_to_import
 
@@ -118,10 +123,6 @@ def gen_coroutine_function_example(self):
     yield
     return 'spam'
 
-class EqualsToAll:
-    def __eq__(self, other):
-        return True
-
 class TestPredicates(IsTestBase):
 
     def test_excluding_predicates(self):
@@ -146,6 +147,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.isfunction, 'mod.spam')
         self.istest(inspect.isfunction, 'mod.StupidGit.abuse')
         self.istest(inspect.ismethod, 'git.argue')
+        self.istest(inspect.ismethod, 'mod.custom_method')
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
@@ -166,26 +168,51 @@ class TestPredicates(IsTestBase):
             self.assertFalse(inspect.ismemberdescriptor(datetime.timedelta.days))
 
     def test_iscoroutine(self):
+        async_gen_coro = async_generator_function_example(1)
         gen_coro = gen_coroutine_function_example(1)
         coro = coroutine_function_example(1)
 
         self.assertFalse(
             inspect.iscoroutinefunction(gen_coroutine_function_example))
+        self.assertFalse(
+            inspect.iscoroutinefunction(
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
             inspect.isgeneratorfunction(gen_coroutine_function_example))
+        self.assertTrue(
+            inspect.isgeneratorfunction(
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
+        self.assertTrue(
+            inspect.iscoroutinefunction(
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
+        self.assertFalse(
+            inspect.isgeneratorfunction(
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
-        coro.close(); gen_coro.close() # silence warnings
+        self.assertTrue(
+            inspect.isasyncgenfunction(async_generator_function_example))
+        self.assertTrue(
+            inspect.isasyncgenfunction(
+                functools.partial(functools.partial(
+                    async_generator_function_example))))
+        self.assertTrue(inspect.isasyncgen(async_gen_coro))
+
+        coro.close(); gen_coro.close(); # silence warnings
 
     def test_isawaitable(self):
         def gen(): yield
@@ -339,7 +366,7 @@ class GetSourceBase(unittest.TestCase):
     fodderModule = None
 
     def setUp(self):
-        with open(inspect.getsourcefile(self.fodderModule)) as fp:
+        with open(inspect.getsourcefile(self.fodderModule), encoding="utf-8") as fp:
             self.source = fp.read()
 
     def sourcerange(self, top, bottom):
@@ -349,6 +376,11 @@ class GetSourceBase(unittest.TestCase):
     def assertSourceEqual(self, obj, top, bottom):
         self.assertEqual(inspect.getsource(obj),
                          self.sourcerange(top, bottom))
+
+class SlotUser:
+    'Docstrings for __slots__'
+    __slots__ = {'power': 'measured in kilowatts',
+                 'distance': 'measured in kilometers'}
 
 class TestRetrievingSourceCode(GetSourceBase):
     fodderModule = mod
@@ -361,6 +393,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
                           ('Tit', mod.MalodorousPervert),
+                          ('WhichComments', mod.WhichComments),
                          ])
         tree = inspect.getclasstree([cls[1] for cls in classes])
         self.assertEqual(tree,
@@ -374,7 +407,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
@@ -386,7 +420,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
 
@@ -404,6 +439,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'A longer,\n\nindented\n\ndocstring.')
         self.assertEqual(inspect.getdoc(git.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(SlotUser.power),
+                         'measured in kilowatts')
+        self.assertEqual(inspect.getdoc(SlotUser.distance),
+                         'measured in kilometers')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -433,6 +472,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
+        self.assertEqual(inspect.getcomments(mod2.cls160), '# line 159\n')
         # If the object source file is not available, return None.
         co = compile('x=1', '_non_existing_filename.py', 'exec')
         self.assertIsNone(inspect.getcomments(co))
@@ -477,6 +517,24 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
+
+    def test_getfile_builtin_module(self):
+        with self.assertRaises(TypeError) as e:
+            inspect.getfile(sys)
+        self.assertTrue(str(e.exception).startswith('<module'))
+
+    def test_getfile_builtin_class(self):
+        with self.assertRaises(TypeError) as e:
+            inspect.getfile(int)
+        self.assertTrue(str(e.exception).startswith('<class'))
+
+    def test_getfile_builtin_function_or_method(self):
+        with self.assertRaises(TypeError) as e_abs:
+            inspect.getfile(abs)
+        self.assertIn('expected, got', str(e_abs.exception))
+        with self.assertRaises(TypeError) as e_append:
+            inspect.getfile(list.append)
+        self.assertIn('expected, got', str(e_append.exception))
 
     def test_getfile_class_without_module(self):
         class CM(type):
@@ -594,6 +652,18 @@ class TestOneliners(GetSourceBase):
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
 
+class TestBlockComments(GetSourceBase):
+    fodderModule = mod
+
+    def test_toplevel_class(self):
+        self.assertSourceEqual(mod.WhichComments, 96, 114)
+
+    def test_class_method(self):
+        self.assertSourceEqual(mod.WhichComments.f, 99, 104)
+
+    def test_class_async_method(self):
+        self.assertSourceEqual(mod.WhichComments.asyncf, 109, 112)
+
 class TestBuggyCases(GetSourceBase):
     fodderModule = mod2
 
@@ -645,19 +715,69 @@ class TestBuggyCases(GetSourceBase):
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
 
+    def test_findsource_with_out_of_bounds_lineno(self):
+        mod_len = len(inspect.getsource(mod))
+        src = '\n' * 2* mod_len + "def f(): pass"
+        co = compile(src, mod.__file__, "exec")
+        g, l = {}, {}
+        eval(co, g, l)
+        func = l['f']
+        self.assertEqual(func.__code__.co_firstlineno, 1+2*mod_len)
+        with self.assertRaisesRegex(IOError, "lineno is out of bounds"):
+            inspect.findsource(func)
+
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
 
+    def test_class_definition_in_multiline_string_definition(self):
+        self.assertSourceEqual(mod2.cls149, 149, 152)
+
+    def test_class_definition_in_multiline_comment(self):
+        self.assertSourceEqual(mod2.cls160, 160, 163)
+
+    def test_nested_class_definition_indented_string(self):
+        self.assertSourceEqual(mod2.cls173.cls175, 175, 176)
+
+    def test_nested_class_definition(self):
+        self.assertSourceEqual(mod2.cls183, 183, 188)
+        self.assertSourceEqual(mod2.cls183.cls185, 185, 188)
+
+    def test_class_decorator(self):
+        self.assertSourceEqual(mod2.cls196, 194, 201)
+        self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
+
+    def test_class_inside_conditional(self):
+        self.assertSourceEqual(mod2.cls238, 238, 240)
+        self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
+
+    def test_multiple_children_classes(self):
+        self.assertSourceEqual(mod2.cls203, 203, 209)
+        self.assertSourceEqual(mod2.cls203.cls204, 204, 206)
+        self.assertSourceEqual(mod2.cls203.cls204.cls205, 205, 206)
+        self.assertSourceEqual(mod2.cls203.cls207, 207, 209)
+        self.assertSourceEqual(mod2.cls203.cls207.cls205, 208, 209)
+
+    def test_nested_class_definition_inside_function(self):
+        self.assertSourceEqual(mod2.func212(), 213, 214)
+        self.assertSourceEqual(mod2.cls213, 218, 222)
+        self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
+
+    def test_nested_class_definition_inside_async_function(self):
+        import asyncio
+        self.addCleanup(asyncio.set_event_loop_policy, None)
+        self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
+        self.assertSourceEqual(mod2.cls226, 231, 235)
+        self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
         self.tempdir = TESTFN + '_dir'
         os.mkdir(self.tempdir)
-        with open(os.path.join(self.tempdir,
-                               'inspect_fodder3%spy' % os.extsep), 'w') as f:
+        with open(os.path.join(self.tempdir, 'inspect_fodder3%spy' % os.extsep),
+                  'w', encoding='utf-8') as f:
             f.write("class X:\n    pass # No EOL")
         with DirsOnSysPath(self.tempdir):
             import inspect_fodder3 as mod3
@@ -728,7 +848,8 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
-                                    kwonlyargs_e=[], kwonlydefaults_e=None,
+                                    posonlyargs_e=[], kwonlyargs_e=[],
+                                    kwonlydefaults_e=None,
                                     ann_e={}, formatted=None):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
             inspect.getfullargspec(routine)
@@ -743,7 +864,7 @@ class TestClassesAndFunctions(unittest.TestCase):
             with self.assertWarns(DeprecationWarning):
                 self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
                                                        kwonlyargs, kwonlydefaults, ann),
-                             formatted)
+                                 formatted)
 
     def test_getargspec(self):
         self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
@@ -774,6 +895,23 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers, ['a', 'b', 'c', 'd'],
+                                     kwonlyargs_e=['e', 'f'],
+                                     formatted='(a, b, c, d, *, e, f)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers_with_args_and_kwargs,
+                                     ['a', 'b', 'c', 'd'],
+                                     varargs_e='args',
+                                     varkw_e='kwargs',
+                                     kwonlyargs_e=['e', 'f'],
+                                     formatted='(a, b, c, d, *args, e, f, **kwargs)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers_with_defaults, ['a', 'b', 'c', 'd'],
+                                     defaults_e=(1,2,3),
+                                     kwonlyargs_e=['e', 'f'],
+                                     kwonlydefaults_e={'e': 4, 'f': 5},
+                                     formatted='(a, b=1, c=2, d=3, *, e=4, f=5)')
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -821,7 +959,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
         test.__signature__ = inspect.Signature(parameters=(spam_param,))
 
-        self.assertFullArgSpecEquals(test, args_e=['spam'], formatted='(spam)')
+        self.assertFullArgSpecEquals(test, ['spam'], formatted='(spam)')
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
@@ -835,11 +973,11 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_methods(self):
-        self.assertFullArgSpecEquals(_pickle.Pickler.dump,
-                                     args_e=['self', 'obj'], formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler.dump, ['self', 'obj'],
+                                     formatted='(self, obj)')
 
-        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump,
-                                     args_e=['self', 'obj'], formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump, ['self', 'obj'],
+                                     formatted='(self, obj)')
 
         self.assertFullArgSpecEquals(
              os.stat,
@@ -851,7 +989,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func(self):
+    def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
         spec = inspect.getfullargspec(builtin)
@@ -860,7 +998,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func_no_signature(self):
+    def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
@@ -1145,6 +1283,106 @@ class TestClassesAndFunctions(unittest.TestCase):
             pass
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
+
+    def test_get_annotations_with_stock_annotations(self):
+        def foo(a:int, b:str): pass
+        self.assertEqual(inspect.get_annotations(foo), {'a': int, 'b': str})
+
+        foo.__annotations__ = {'a': 'foo', 'b':'str'}
+        self.assertEqual(inspect.get_annotations(foo), {'a': 'foo', 'b': 'str'})
+
+        self.assertEqual(inspect.get_annotations(foo, eval_str=True, locals=locals()), {'a': foo, 'b': str})
+        self.assertEqual(inspect.get_annotations(foo, eval_str=True, globals=locals()), {'a': foo, 'b': str})
+
+        isa = inspect_stock_annotations
+        self.assertEqual(inspect.get_annotations(isa), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.function), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function2), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function3), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(inspect), {}) # inspect module has no annotations
+        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass), {})
+        self.assertEqual(inspect.get_annotations(isa.unannotated_function), {})
+
+        self.assertEqual(inspect.get_annotations(isa, eval_str=True), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=True), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.function, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=True), {'a': int, 'b': str, 'c': isa.MyClass, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=True), {'a': int, 'b': str, 'c': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(inspect, eval_str=True), {})
+        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=True), {})
+        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=True), {})
+
+        self.assertEqual(inspect.get_annotations(isa, eval_str=False), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=False), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.function, eval_str=False), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=False), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=False), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(inspect, eval_str=False), {})
+        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=False), {})
+        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=False), {})
+
+        def times_three(fn):
+            @functools.wraps(fn)
+            def wrapper(a, b):
+                return fn(a*3, b*3)
+            return wrapper
+
+        wrapped = times_three(isa.function)
+        self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
+        self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
+        self.assertEqual(inspect.get_annotations(wrapped), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(wrapped, eval_str=False), {'a': int, 'b': str, 'return': isa.MyClass})
+
+    def test_get_annotations_with_stringized_annotations(self):
+        isa = inspect_stringized_annotations
+        self.assertEqual(inspect.get_annotations(isa), {'a': 'int', 'b': 'str'})
+        self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': 'int', 'b': 'str'})
+        self.assertEqual(inspect.get_annotations(isa.function), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.function2), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.function3), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
+        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass), {})
+        self.assertEqual(inspect.get_annotations(isa.unannotated_function), {})
+
+        self.assertEqual(inspect.get_annotations(isa, eval_str=True), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=True), {'a': int, 'b': str})
+        self.assertEqual(inspect.get_annotations(isa.function, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=True), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=True), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=True), {})
+        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=True), {})
+
+        self.assertEqual(inspect.get_annotations(isa, eval_str=False), {'a': 'int', 'b': 'str'})
+        self.assertEqual(inspect.get_annotations(isa.MyClass, eval_str=False), {'a': 'int', 'b': 'str'})
+        self.assertEqual(inspect.get_annotations(isa.function, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.function2, eval_str=False), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.function3, eval_str=False), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
+        self.assertEqual(inspect.get_annotations(isa.UnannotatedClass, eval_str=False), {})
+        self.assertEqual(inspect.get_annotations(isa.unannotated_function, eval_str=False), {})
+
+        isa2 = inspect_stringized_annotations_2
+        self.assertEqual(inspect.get_annotations(isa2), {})
+        self.assertEqual(inspect.get_annotations(isa2, eval_str=True), {})
+        self.assertEqual(inspect.get_annotations(isa2, eval_str=False), {})
+
+        def times_three(fn):
+            @functools.wraps(fn)
+            def wrapper(a, b):
+                return fn(a*3, b*3)
+            return wrapper
+
+        wrapped = times_three(isa.function)
+        self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
+        self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
+        self.assertEqual(inspect.get_annotations(wrapped), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(wrapped, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+
+        # test that local namespace lookups work
+        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
+        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
+
 
 class TestIsDataDescriptor(unittest.TestCase):
 
@@ -1670,7 +1908,7 @@ class TestGetattrStatic(unittest.TestCase):
 
     def test_no_dict_no_slots_instance_member(self):
         # returns descriptor
-        with open(__file__) as handle:
+        with open(__file__, encoding='utf-8') as handle:
             self.assertEqual(inspect.getattr_static(handle, 'name'), type(handle).name)
 
     def test_inherited_slots(self):
@@ -2010,6 +2248,7 @@ class TestSignatureObject(unittest.TestCase):
         P = inspect.Parameter
 
         self.assertEqual(str(S()), '()')
+        self.assertEqual(repr(S().parameters), 'mappingproxy(OrderedDict())')
 
         def test(po, pk, pod=42, pkd=100, *args, ko, **kwargs):
             pass
@@ -2202,8 +2441,8 @@ class TestSignatureObject(unittest.TestCase):
         test_callable(d.dump)
 
         # static method
-        test_callable(str.maketrans)
-        test_callable('abc'.maketrans)
+        test_callable(bytes.maketrans)
+        test_callable(b'abc'.maketrans)
 
         # class method
         test_callable(dict.fromkeys)
@@ -2650,13 +2889,13 @@ class TestSignatureObject(unittest.TestCase):
                 pass
             ham = partialmethod(test, c=1)
 
-        self.assertEqual(self.signature(Spam.ham),
+        self.assertEqual(self.signature(Spam.ham, eval_str=False),
                          ((('it', ..., ..., 'positional_or_keyword'),
                            ('a', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
-        self.assertEqual(self.signature(Spam().ham),
+        self.assertEqual(self.signature(Spam().ham, eval_str=False),
                          ((('a', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
@@ -2667,7 +2906,7 @@ class TestSignatureObject(unittest.TestCase):
 
             g = partialmethod(test, 1)
 
-        self.assertEqual(self.signature(Spam.g),
+        self.assertEqual(self.signature(Spam.g, eval_str=False),
                          ((('self', ..., 'anno', 'positional_or_keyword'),),
                           ...))
 
@@ -2844,16 +3083,15 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtin_class(self):
-        self.assertEqual(str(inspect.signature(_pickle.Pickler)),
-                         '(file, protocol=None, fix_imports=True)')
+        expected = ('(file, protocol=None, fix_imports=True, '
+                    'buffer_callback=None)')
+        self.assertEqual(str(inspect.signature(_pickle.Pickler)), expected)
 
         class P(_pickle.Pickler): pass
         class EmptyTrait: pass
         class P2(EmptyTrait, P): pass
-        self.assertEqual(str(inspect.signature(P)),
-                         '(file, protocol=None, fix_imports=True)')
-        self.assertEqual(str(inspect.signature(P2)),
-                         '(file, protocol=None, fix_imports=True)')
+        self.assertEqual(str(inspect.signature(P)), expected)
+        self.assertEqual(str(inspect.signature(P2)), expected)
 
         class P3(P2):
             def __init__(self, spam):
@@ -2908,8 +3146,8 @@ class TestSignatureObject(unittest.TestCase):
         def foo(a, *, b:int) -> float: pass
         self.assertFalse(inspect.signature(foo) == 42)
         self.assertTrue(inspect.signature(foo) != 42)
-        self.assertTrue(inspect.signature(foo) == EqualsToAll())
-        self.assertFalse(inspect.signature(foo) != EqualsToAll())
+        self.assertTrue(inspect.signature(foo) == ALWAYS_EQ)
+        self.assertFalse(inspect.signature(foo) != ALWAYS_EQ)
 
         def bar(a, *, b:int) -> float: pass
         self.assertTrue(inspect.signature(foo) == inspect.signature(bar))
@@ -3087,14 +3325,21 @@ class TestSignatureObject(unittest.TestCase):
         class MySignature(inspect.Signature): pass
         def foo(a, *, b:1): pass
         foo_sig = MySignature.from_callable(foo)
-        self.assertTrue(isinstance(foo_sig, MySignature))
+        self.assertIsInstance(foo_sig, MySignature)
+
+    def test_signature_from_callable_class(self):
+        # A regression test for a class inheriting its signature from `object`.
+        class MySignature(inspect.Signature): pass
+        class foo: pass
+        foo_sig = MySignature.from_callable(foo)
+        self.assertIsInstance(foo_sig, MySignature)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_from_callable_builtin_obj(self):
         class MySignature(inspect.Signature): pass
         sig = MySignature.from_callable(_pickle.Pickler)
-        self.assertTrue(isinstance(sig, MySignature))
+        self.assertIsInstance(sig, MySignature)
 
     def test_signature_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
@@ -3106,6 +3351,161 @@ class TestSignatureObject(unittest.TestCase):
         signature = inspect.signature(unsorted_keyword_only_parameters_fn)
         l = list(signature.parameters)
         self.assertEqual(l, unsorted_keyword_only_parameters)
+
+    def test_signater_parameters_is_ordered(self):
+        p1 = inspect.signature(lambda x, y: None).parameters
+        p2 = inspect.signature(lambda y, x: None).parameters
+        self.assertNotEqual(p1, p2)
+
+    def test_signature_annotations_with_local_namespaces(self):
+        class Foo: ...
+        def func(foo: Foo) -> int: pass
+        def func2(foo: Foo, bar: 'Bar') -> int: pass
+
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                sig1 = signature_func(func)
+                self.assertEqual(sig1.return_annotation, int)
+                self.assertEqual(sig1.parameters['foo'].annotation, Foo)
+
+                sig2 = signature_func(func, locals=locals())
+                self.assertEqual(sig2.return_annotation, int)
+                self.assertEqual(sig2.parameters['foo'].annotation, Foo)
+
+                sig3 = signature_func(func2, globals={'Bar': int}, locals=locals())
+                self.assertEqual(sig3.return_annotation, int)
+                self.assertEqual(sig3.parameters['foo'].annotation, Foo)
+                self.assertEqual(sig3.parameters['bar'].annotation, 'Bar')
+
+    def test_signature_eval_str(self):
+        isa = inspect_stringized_annotations
+        sig = inspect.Signature
+        par = inspect.Parameter
+        PORK = inspect.Parameter.POSITIONAL_OR_KEYWORD
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                self.assertEqual(
+                    signature_func(isa.MyClass),
+                    sig(
+                        parameters=(
+                            par('a', PORK),
+                            par('b', PORK),
+                        )))
+                self.assertEqual(
+                    signature_func(isa.function),
+                    sig(
+                        return_annotation='MyClass',
+                        parameters=(
+                            par('a', PORK, annotation='int'),
+                            par('b', PORK, annotation='str'),
+                        )))
+                self.assertEqual(
+                    signature_func(isa.function2),
+                    sig(
+                        return_annotation='MyClass',
+                        parameters=(
+                            par('a', PORK, annotation='int'),
+                            par('b', PORK, annotation="'str'"),
+                            par('c', PORK, annotation="MyClass"),
+                        )))
+                self.assertEqual(
+                    signature_func(isa.function3),
+                    sig(
+                        parameters=(
+                            par('a', PORK, annotation="'int'"),
+                            par('b', PORK, annotation="'str'"),
+                            par('c', PORK, annotation="'MyClass'"),
+                        )))
+
+                self.assertEqual(signature_func(isa.UnannotatedClass), sig())
+                self.assertEqual(signature_func(isa.unannotated_function),
+                    sig(
+                        parameters=(
+                            par('a', PORK),
+                            par('b', PORK),
+                            par('c', PORK),
+                        )))
+
+                self.assertEqual(
+                    signature_func(isa.MyClass, eval_str=True),
+                    sig(
+                        parameters=(
+                            par('a', PORK),
+                            par('b', PORK),
+                        )))
+                self.assertEqual(
+                    signature_func(isa.function, eval_str=True),
+                    sig(
+                        return_annotation=isa.MyClass,
+                        parameters=(
+                            par('a', PORK, annotation=int),
+                            par('b', PORK, annotation=str),
+                        )))
+                self.assertEqual(
+                    signature_func(isa.function2, eval_str=True),
+                    sig(
+                        return_annotation=isa.MyClass,
+                        parameters=(
+                            par('a', PORK, annotation=int),
+                            par('b', PORK, annotation='str'),
+                            par('c', PORK, annotation=isa.MyClass),
+                        )))
+                self.assertEqual(
+                    signature_func(isa.function3, eval_str=True),
+                    sig(
+                        parameters=(
+                            par('a', PORK, annotation='int'),
+                            par('b', PORK, annotation='str'),
+                            par('c', PORK, annotation='MyClass'),
+                        )))
+
+                globalns = {'int': float, 'str': complex}
+                localns = {'str': tuple, 'MyClass': dict}
+                with self.assertRaises(NameError):
+                    signature_func(isa.function, eval_str=True, globals=globalns)
+
+                self.assertEqual(
+                    signature_func(isa.function, eval_str=True, locals=localns),
+                    sig(
+                        return_annotation=dict,
+                        parameters=(
+                            par('a', PORK, annotation=int),
+                            par('b', PORK, annotation=tuple),
+                        )))
+
+                self.assertEqual(
+                    signature_func(isa.function, eval_str=True, globals=globalns, locals=localns),
+                    sig(
+                        return_annotation=dict,
+                        parameters=(
+                            par('a', PORK, annotation=float),
+                            par('b', PORK, annotation=tuple),
+                        )))
+
+    def test_signature_none_annotation(self):
+        class funclike:
+            # Has to be callable, and have correct
+            # __code__, __annotations__, __defaults__, __name__,
+            # and __kwdefaults__ attributes
+
+            def __init__(self, func):
+                self.__name__ = func.__name__
+                self.__code__ = func.__code__
+                self.__annotations__ = func.__annotations__
+                self.__defaults__ = func.__defaults__
+                self.__kwdefaults__ = func.__kwdefaults__
+                self.func = func
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+        def foo(): pass
+        foo = funclike(foo)
+        foo.__annotations__ = None
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                self.assertEqual(signature_func(foo), inspect.Signature())
+        self.assertEqual(inspect.get_annotations(foo), {})
 
 
 class TestParameterObject(unittest.TestCase):
@@ -3176,8 +3576,8 @@ class TestParameterObject(unittest.TestCase):
         self.assertFalse(p != p)
         self.assertFalse(p == 42)
         self.assertTrue(p != 42)
-        self.assertTrue(p == EqualsToAll())
-        self.assertFalse(p != EqualsToAll())
+        self.assertTrue(p == ALWAYS_EQ)
+        self.assertFalse(p != ALWAYS_EQ)
 
         self.assertTrue(p == P('foo', default=42,
                                kind=inspect.Parameter.KEYWORD_ONLY))
@@ -3500,6 +3900,16 @@ class TestSignatureBind(unittest.TestCase):
         iterator = iter(range(5))
         self.assertEqual(self.call(setcomp_func, iterator), {0, 1, 4, 9, 16})
 
+    def test_signature_bind_posonly_kwargs(self):
+        def foo(bar, /, **kwargs):
+            return bar, kwargs.get(bar)
+
+        sig = inspect.signature(foo)
+        result = sig.bind("pos-only", bar="keyword")
+
+        self.assertEqual(result.kwargs, {"bar": "keyword"})
+        self.assertIn(("bar", "pos-only"), result.arguments.items())
+
 
 class TestBoundArguments(unittest.TestCase):
     def test_signature_bound_arguments_unhashable(self):
@@ -3514,8 +3924,8 @@ class TestBoundArguments(unittest.TestCase):
         ba = inspect.signature(foo).bind(1)
         self.assertTrue(ba == ba)
         self.assertFalse(ba != ba)
-        self.assertTrue(ba == EqualsToAll())
-        self.assertFalse(ba != EqualsToAll())
+        self.assertTrue(ba == ALWAYS_EQ)
+        self.assertFalse(ba != ALWAYS_EQ)
 
         ba2 = inspect.signature(foo).bind(1)
         self.assertTrue(ba == ba2)
@@ -3598,15 +4008,12 @@ class TestBoundArguments(unittest.TestCase):
         ba.apply_defaults()
         self.assertEqual(list(ba.arguments.items()), [('a', 'spam')])
 
+    def test_signature_bound_arguments_arguments_type(self):
+        def foo(a): pass
+        ba = inspect.signature(foo).bind(1)
+        self.assertIs(type(ba.arguments), dict)
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
-    def test_signature_get_bound_param(self):
-        getter = inspect._signature_get_bound_param
-
-        self.assertEqual(getter('($self)'), 'self')
-        self.assertEqual(getter('($self, obj)'), 'self')
-        self.assertEqual(getter('($cls, /, obj)'), 'cls')
-
     def _strip_non_python_syntax(self, input,
         clean_signature, self_parameter, last_positional_only):
         computed_clean_signature, \
@@ -3683,6 +4090,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
         no_signature |= needs_groups
+        # These have unrepresentable parameter default values of NULL
+        needs_null = {"anext"}
+        no_signature |= needs_null
         # These need PEP 457 groups or a signature change to accept None
         needs_semantic_update = {"round"}
         no_signature |= needs_semantic_update
@@ -3717,6 +4127,17 @@ class TestSignatureDefinitions(unittest.TestCase):
         for name in no_signature:
             with self.subTest(builtin=name):
                 self.assertIsNone(obj.__text_signature__)
+
+    def test_python_function_override_signature(self):
+        def func(*args, **kwargs):
+            pass
+        func.__text_signature__ = '($self, a, b=1, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
+        func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
 
 
 class NTimesUnwrappable:
@@ -3854,7 +4275,7 @@ def foo():
 
     def assertInspectEqual(self, path, source):
         inspected_src = inspect.getsource(source)
-        with open(path) as src:
+        with open(path, encoding='utf-8') as src:
             self.assertEqual(
                 src.read().splitlines(True),
                 inspected_src.splitlines(True)
@@ -3865,15 +4286,15 @@ def foo():
         with _ready_to_import('reload_bug', self.src_before) as (name, path):
             module = importlib.import_module(name)
             self.assertInspectEqual(path, module)
-            with open(path, 'w') as src:
+            with open(path, 'w', encoding='utf-8') as src:
                 src.write(self.src_after)
             self.assertInspectEqual(path, module)
 
 
 def test_main():
     run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
-        TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
+        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
+        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,

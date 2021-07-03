@@ -23,11 +23,11 @@
 
 #ifndef PYSQLITE_CONNECTION_H
 #define PYSQLITE_CONNECTION_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "structmember.h"
 
-#include "cache.h"
 #include "module.h"
 
 #include "sqlite3.h"
@@ -40,13 +40,6 @@ typedef struct
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
     int detect_types;
-
-    /* the timeout value in seconds for database locks */
-    double timeout;
-
-    /* for internal use in the timeout handler: when did the timeout handler
-     * first get called with count=0? */
-    double timeout_started;
 
     /* None for autocommit, otherwise a PyUnicode with the isolation level */
     PyObject* isolation_level;
@@ -63,7 +56,7 @@ typedef struct
     /* thread identification of the thread the connection was created in */
     unsigned long thread_ident;
 
-    pysqlite_Cache* statement_cache;
+    PyObject *statement_cache;
 
     /* Lists of weak references to statements and cursors used within this connection */
     PyObject* statements;
@@ -84,16 +77,15 @@ typedef struct
      */
     PyObject* text_factory;
 
-    /* remember references to functions/classes used in
-     * create_function/create/aggregate, use these as dictionary keys, so we
-     * can keep the total system refcount constant by clearing that dictionary
-     * in connection_dealloc */
-    PyObject* function_pinboard;
+    /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
+    PyObject* function_pinboard_trace_callback;
+    PyObject* function_pinboard_progress_handler;
+    PyObject* function_pinboard_authorizer_cb;
 
     /* a dictionary of registered collation name => collation callable mappings */
     PyObject* collations;
 
-    /* Exception objects */
+    /* Exception objects: borrowed refs. */
     PyObject* Warning;
     PyObject* Error;
     PyObject* InterfaceError;
@@ -106,22 +98,10 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-extern PyTypeObject pysqlite_ConnectionType;
-
-PyObject* pysqlite_connection_alloc(PyTypeObject* type, int aware);
-void pysqlite_connection_dealloc(pysqlite_Connection* self);
-PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, PyObject* kwargs);
-PyObject* pysqlite_connection_close(pysqlite_Connection* self, PyObject* args);
-PyObject* _pysqlite_connection_begin(pysqlite_Connection* self);
-PyObject* pysqlite_connection_commit(pysqlite_Connection* self, PyObject* args);
-PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args);
-PyObject* pysqlite_connection_new(PyTypeObject* type, PyObject* args, PyObject* kw);
-int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs);
-
 int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 
-int pysqlite_connection_setup_types(void);
+int pysqlite_connection_setup_types(PyObject *module);
 
 #endif

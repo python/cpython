@@ -1,7 +1,8 @@
 # dialog.py -- Tkinter interface to the tk_dialog script.
 
-from tkinter import *
-from tkinter import _cnfmerge
+from tkinter import _cnfmerge, Widget, TclError, Button, Pack
+
+__all__ = ["Dialog"]
 
 DIALOG_ICON = 'questhead'
 
@@ -19,7 +20,9 @@ class Dialog(Widget):
                       *cnf['strings']))
         try: Widget.destroy(self)
         except TclError: pass
+
     def destroy(self): pass
+
 
 def _test():
     d = Dialog(None, {'title': 'File Modified',

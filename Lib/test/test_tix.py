@@ -1,14 +1,17 @@
+import sys
 import unittest
 from test import support
-import sys
+from test.support import import_helper
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = support.import_module('_tkinter')
+_tkinter = import_helper.import_module('_tkinter')
 
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
-from tkinter import tix, TclError
+# Suppress the deprecation warning
+tix = import_helper.import_module('tkinter.tix', deprecated=True)
+from tkinter import TclError
 
 
 class TestTix(unittest.TestCase):

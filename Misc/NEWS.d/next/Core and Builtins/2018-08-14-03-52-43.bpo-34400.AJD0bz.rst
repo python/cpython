@@ -1,1 +1,0 @@
-Fix undefined behavior in parsetok.c.  Patch by Zackery Spytz.

@@ -104,7 +104,7 @@ is destroyed.
 """
 
 from collections import namedtuple
-import warnings
+
 
 _sunau_params = namedtuple('_sunau_params',
                            'nchannels sampwidth framerate nframes comptype compname')
@@ -524,8 +524,3 @@ def open(f, mode=None):
         return Au_write(f)
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
-
-def openfp(f, mode=None):
-    warnings.warn("sunau.openfp is deprecated since Python 3.7. "
-                  "Use sunau.open instead.", DeprecationWarning, stacklevel=2)
-    return open(f, mode=mode)

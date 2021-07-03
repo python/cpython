@@ -50,7 +50,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
         return NULL;
     }
 
-    capsule = PyObject_NEW(PyCapsule, &PyCapsule_Type);
+    capsule = PyObject_New(PyCapsule, &PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
     }
@@ -198,10 +198,10 @@ PyCapsule_Import(const char *name, int no_block)
     void *return_value = NULL;
     char *trace;
     size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_MALLOC(name_length);
+    char *name_dup = (char *)PyMem_Malloc(name_length);
 
     if (!name_dup) {
-        return NULL;
+        return PyErr_NoMemory();
     }
 
     memcpy(name_dup, name, name_length);
@@ -247,7 +247,7 @@ PyCapsule_Import(const char *name, int no_block)
 EXIT:
     Py_XDECREF(object);
     if (name_dup) {
-        PyMem_FREE(name_dup);
+        PyMem_Free(name_dup);
     }
     return return_value;
 }
@@ -260,7 +260,7 @@ capsule_dealloc(PyObject *o)
     if (capsule->destructor) {
         capsule->destructor(o);
     }
-    PyObject_DEL(o);
+    PyObject_Free(o);
 }
 
 
@@ -303,10 +303,10 @@ PyTypeObject PyCapsule_Type = {
     0,                          /*tp_itemsize*/
     /* methods */
     capsule_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /*tp_reserved*/
+    0,                          /*tp_as_async*/
     capsule_repr, /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/

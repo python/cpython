@@ -448,7 +448,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         class Exc(Exception): pass
 
         class baddict1(self.type2test):
-            def __init__(self):
+            def __init__(self, *args, **kwargs):
                 raise Exc()
 
         self.assertRaises(Exc, baddict1.fromkeys, [1])
@@ -595,12 +595,14 @@ class TestHashMappingProtocol(TestMappingProtocol):
         d = self._empty_mapping()
         d[1] = 1
         try:
+            count = 0
             for i in d:
                 d[i+1] = 1
+                if count >= 1:
+                    self.fail("changing dict size during iteration doesn't raise Error")
+                count += 1
         except RuntimeError:
             pass
-        else:
-            self.fail("changing dict size during iteration doesn't raise Error")
 
     def test_repr(self):
         d = self._empty_mapping()

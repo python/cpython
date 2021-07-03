@@ -63,7 +63,7 @@ How can I execute arbitrary Python statements from C?
 The highest-level function to do this is :c:func:`PyRun_SimpleString` which takes
 a single string argument to be executed in the context of the module
 ``__main__`` and returns ``0`` for success and ``-1`` when an exception occurred
-(including ``SyntaxError``).  If you want more control, use
+(including :exc:`SyntaxError`).  If you want more control, use
 :c:func:`PyRun_String`; see the source for :c:func:`PyRun_SimpleString` in
 ``Python/pythonrun.c``.
 
@@ -89,7 +89,7 @@ For bytes, :c:func:`PyBytes_Size` returns its length and
 length.  Note that Python bytes objects may contain null bytes so C's
 :c:func:`strlen` should not be used.
 
-To test the type of an object, first make sure it isn't *NULL*, and then use
+To test the type of an object, first make sure it isn't ``NULL``, and then use
 :c:func:`PyBytes_Check`, :c:func:`PyTuple_Check`, :c:func:`PyList_Check`, etc.
 
 There is also a high-level API to Python objects which is provided by the
@@ -275,38 +275,8 @@ for more hints.
 
 However sometimes you have to run the embedded Python interpreter in the same
 thread as your rest application and you can't allow the
-:c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.  The one
-solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
-equal to ``E_EOF``, which means the input is incomplete).  Here's a sample code
-fragment, untested, inspired by code from Alex Farber::
-
-   #include <Python.h>
-   #include <node.h>
-   #include <errcode.h>
-   #include <grammar.h>
-   #include <parsetok.h>
-   #include <compile.h>
-
-   int testcomplete(char *code)
-     /* code should end in \n */
-     /* return -1 for error, 0 for incomplete, 1 for complete */
-   {
-     node *n;
-     perrdetail e;
-
-     n = PyParser_ParseString(code, &_PyParser_Grammar,
-                              Py_file_input, &e);
-     if (n == NULL) {
-       if (e.error == E_EOF)
-         return 0;
-       return -1;
-     }
-
-     PyNode_Free(n);
-     return 1;
-   }
-
-Another solution is trying to compile the received string with
+:c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.
+A solution is trying to compile the received string with
 :c:func:`Py_CompileString`. If it compiles without errors, try to execute the
 returned code object by calling :c:func:`PyEval_EvalCode`. Otherwise save the
 input for later. If the compilation fails, find out if it's an error or just
@@ -318,6 +288,7 @@ complete example using the GNU readline library (you may want to ignore
    #include <stdio.h>
    #include <readline.h>
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
    #include <object.h>
    #include <compile.h>

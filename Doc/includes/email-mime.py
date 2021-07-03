@@ -14,7 +14,7 @@ msg['Subject'] = 'Our family reunion'
 # family = the list of all recipients' email addresses
 msg['From'] = me
 msg['To'] = ', '.join(family)
-msg.preamble = 'Our family reunion'
+msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
 
 # Open the files in binary mode.  Use imghdr to figure out the
 # MIME subtype for each specific image.

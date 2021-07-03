@@ -1,2 +1,0 @@
-Fixed info in the stdtypes docs concerning the types that support membership
-tests.

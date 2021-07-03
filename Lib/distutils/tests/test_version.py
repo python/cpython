@@ -45,6 +45,14 @@ class VersionTestCase(unittest.TestCase):
             self.assertEqual(res, wanted,
                              'cmp(%s, %s) should be %s, got %s' %
                              (v1, v2, wanted, res))
+            res = StrictVersion(v1)._cmp(v2)
+            self.assertEqual(res, wanted,
+                             'cmp(%s, %s) should be %s, got %s' %
+                             (v1, v2, wanted, res))
+            res = StrictVersion(v1)._cmp(object())
+            self.assertIs(res, NotImplemented,
+                          'cmp(%s, %s) should be NotImplemented, got %s' %
+                          (v1, v2, res))
 
 
     def test_cmp(self):
@@ -63,6 +71,14 @@ class VersionTestCase(unittest.TestCase):
             self.assertEqual(res, wanted,
                              'cmp(%s, %s) should be %s, got %s' %
                              (v1, v2, wanted, res))
+            res = LooseVersion(v1)._cmp(v2)
+            self.assertEqual(res, wanted,
+                             'cmp(%s, %s) should be %s, got %s' %
+                             (v1, v2, wanted, res))
+            res = LooseVersion(v1)._cmp(object())
+            self.assertIs(res, NotImplemented,
+                          'cmp(%s, %s) should be NotImplemented, got %s' %
+                          (v1, v2, res))
 
 def test_suite():
     return unittest.makeSuite(VersionTestCase)

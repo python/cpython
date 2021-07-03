@@ -1,2 +1,0 @@
-Remove references to 'getsockaddrarg' from various socket error messages.
-Patch by Oren Milman.

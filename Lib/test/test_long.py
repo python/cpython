@@ -3,7 +3,6 @@ from test import support
 
 import sys
 
-import enum
 import random
 import math
 import array
@@ -700,6 +699,9 @@ class LongTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
 
+        self.assertRaisesRegex(ValueError, "Cannot specify ',' with 's'", format, 3, ',s')
+        self.assertRaisesRegex(ValueError, "Cannot specify '_' with 's'", format, 3, '_s')
+
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
                             [chr(x) for x in range(ord('A'), ord('Z')+1)]):
@@ -954,6 +956,14 @@ class LongTest(unittest.TestCase):
         self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
         self.assertEqual(huge >> (sys.maxsize + 1000), 0)
 
+    @support.cpython_only
+    def test_small_ints_in_huge_calculation(self):
+        a = 2 ** 100
+        b = -a + 1
+        c = a + 1
+        self.assertIs(a + b, 1)
+        self.assertIs(c - a, 1)
+
     def test_small_ints(self):
         for i in range(-5, 257):
             self.assertIs(i, i + 0)
@@ -1005,6 +1015,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual((-a).bit_length(), i+1)
             self.assertEqual((a+1).bit_length(), i+1)
             self.assertEqual((-a-1).bit_length(), i+1)
+
+    def test_bit_count(self):
+        for a in range(-1000, 1000):
+            self.assertEqual(a.bit_count(), bin(a).count("1"))
+
+        for exp in [10, 17, 63, 64, 65, 1009, 70234, 1234567]:
+            a = 2**exp
+            self.assertEqual(a.bit_count(), 1)
+            self.assertEqual((a - 1).bit_count(), exp)
+            self.assertEqual((a ^ 63).bit_count(), 7)
+            self.assertEqual(((a - 1) ^ 510).bit_count(), exp - 8)
 
     def test_round(self):
         # check round-half-even algorithm. For round to nearest ten;
@@ -1351,35 +1372,14 @@ class LongTest(unittest.TestCase):
                 self.assertEqual(type(value >> shift), int)
 
     def test_as_integer_ratio(self):
-        tests = [10, 0, -10, 1]
+        class myint(int):
+            pass
+        tests = [10, 0, -10, 1, sys.maxsize + 1, True, False, myint(42)]
         for value in tests:
             numerator, denominator = value.as_integer_ratio()
-            self.assertEqual((numerator, denominator), (value, 1))
-            self.assertIsInstance(numerator, int)
-            self.assertIsInstance(denominator, int)
-
-    def test_as_integer_ratio_maxint(self):
-        x = sys.maxsize + 1
-        self.assertEqual(x.as_integer_ratio()[0], x)
-
-    def test_as_integer_ratio_bool(self):
-        self.assertEqual(True.as_integer_ratio(), (1, 1))
-        self.assertEqual(False.as_integer_ratio(), (0, 1))
-        self.assertEqual(type(True.as_integer_ratio()[0]), int)
-        self.assertEqual(type(False.as_integer_ratio()[0]), int)
-
-    def test_as_integer_ratio_int_enum(self):
-        class Foo(enum.IntEnum):
-            X = 42
-        self.assertEqual(Foo.X.as_integer_ratio(), (42, 1))
-        self.assertEqual(type(Foo.X.as_integer_ratio()[0]), int)
-
-    def test_as_integer_ratio_int_flag(self):
-        class Foo(enum.IntFlag):
-            R = 1 << 2
-        self.assertEqual(Foo.R.as_integer_ratio(), (4, 1))
-        self.assertEqual(type(Foo.R.as_integer_ratio()[0]), int)
-
+            self.assertEqual((numerator, denominator), (int(value), 1))
+            self.assertEqual(type(numerator), int)
+            self.assertEqual(type(denominator), int)
 
 
 if __name__ == "__main__":

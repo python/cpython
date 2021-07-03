@@ -51,6 +51,9 @@ class Future:
     _exception = None
     _loop = None
     _source_traceback = None
+    _cancel_message = None
+    # A saved CancelledError for later chaining as an exception context.
+    _cancelled_exc = None
 
     # This field is used for a dual purpose:
     # - Its presence is a marker to declare that a class implements
@@ -73,7 +76,7 @@ class Future:
         the default event loop.
         """
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._callbacks = []
@@ -103,21 +106,42 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
+    def __class_getitem__(cls, type):
+        return cls
+
     @property
     def _log_traceback(self):
         return self.__log_traceback
 
     @_log_traceback.setter
     def _log_traceback(self, val):
-        if bool(val):
+        if val:
             raise ValueError('_log_traceback can only be set to False')
         self.__log_traceback = False
 
     def get_loop(self):
         """Return the event loop the Future is bound to."""
-        return self._loop
+        loop = self._loop
+        if loop is None:
+            raise RuntimeError("Future object is not initialized.")
+        return loop
 
-    def cancel(self):
+    def _make_cancelled_error(self):
+        """Create the CancelledError to raise if the Future is cancelled.
+
+        This should only be called once when handling a cancellation since
+        it erases the saved context exception value.
+        """
+        if self._cancel_message is None:
+            exc = exceptions.CancelledError()
+        else:
+            exc = exceptions.CancelledError(self._cancel_message)
+        exc.__context__ = self._cancelled_exc
+        # Remove the reference since we don't need this anymore.
+        self._cancelled_exc = None
+        return exc
+
+    def cancel(self, msg=None):
         """Cancel the future and schedule callbacks.
 
         If the future is already done or cancelled, return False.  Otherwise,
@@ -128,6 +152,7 @@ class Future:
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
+        self._cancel_message = msg
         self.__schedule_callbacks()
         return True
 
@@ -167,7 +192,8 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError
+            exc = self._make_cancelled_error()
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
@@ -184,7 +210,8 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError
+            exc = self._make_cancelled_error()
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False
@@ -381,7 +408,7 @@ def wrap_future(future, *, loop=None):
     assert isinstance(future, concurrent.futures.Future), \
         f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)
     return new_future
