@@ -4068,7 +4068,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
         case TARGET(CALL_FUNCTION_ADAPTIVE): {
             SpecializedCacheEntry *cache = GET_CACHE();
-            if (cframe.use_tracing == 0 && cache->adaptive.counter == 0) {
+            if (cache->adaptive.counter == 0) {
                 next_instr--;
                 if (_Py_Specialize_CallFunction(BUILTINS(), stack_pointer,
                     cache->adaptive.original_oparg, next_instr, cache) < 0) {
@@ -4084,7 +4084,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
         }
         case TARGET(CALL_CFUNCTION_FAST): {
-            assert(cframe.use_tracing == 0);
+            DEOPT_IF(cframe.use_tracing, CALL_FUNCTION);
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
@@ -4122,7 +4122,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
         case TARGET(CALL_CFUNCTION_O): {
-            assert(cframe.use_tracing == 0);
+            DEOPT_IF(cframe.use_tracing, CALL_FUNCTION);
             /* Builtin METH_O functions */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
