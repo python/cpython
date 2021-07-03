@@ -522,6 +522,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_localspluskinds, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
+        w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
         w_object(co->co_exceptiontable, p);
@@ -1309,6 +1310,7 @@ r_object(RFILE *p)
             PyObject *localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
+            PyObject *qualname = NULL;
             int firstlineno;
             PyObject *linetable = NULL;
             PyObject *exceptiontable = NULL;
@@ -1357,6 +1359,9 @@ r_object(RFILE *p)
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
+            qualname = r_object(p);
+            if (qualname == NULL)
+                goto code_error;
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
@@ -1368,17 +1373,17 @@ r_object(RFILE *p)
                 goto code_error;
 
             Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(localsplusnames);
-            if (PySys_Audit("code.__new__", "OOOiiiiii",
-                            code, filename, name, argcount, posonlyargcount,
-                            kwonlyargcount, nlocalsplus, stacksize,
-                            flags) < 0) {
+            if (PySys_Audit("code.__new__", "OOOOiiiiii",
+                            code, filename, name, qualname, argcount,
+                            posonlyargcount, kwonlyargcount, nlocalsplus,
+                            stacksize, flags) < 0) {
                 goto code_error;
             }
 
             struct _PyCodeConstructor con = {
                 .filename = filename,
                 .name = name,
-                .qualname = NULL,
+                .qualname = qualname,
                 .flags = flags,
 
                 .code = code,
@@ -1419,6 +1424,7 @@ r_object(RFILE *p)
             Py_XDECREF(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
+            Py_XDECREF(qualname);
             Py_XDECREF(linetable);
             Py_XDECREF(exceptiontable);
         }

@@ -7243,7 +7243,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
     PyObject *localspluskinds = NULL;
-    PyObject *name = NULL;
 
     names = dict_keys_inorder(c->u->u_names, 0);
     if (!names) {
@@ -7287,7 +7286,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
         .name = c->u->u_name,
-        .qualname = c->u->u_qualname,
+        .qualname = c->u->u_qualname ? c->u->u_qualname : c->u->u_name,
         .flags = flags,
 
         .code = a->a_bytecode,
@@ -7328,7 +7327,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     Py_XDECREF(consts);
     Py_XDECREF(localsplusnames);
     Py_XDECREF(localspluskinds);
-    Py_XDECREF(name);
     return co;
 }
 

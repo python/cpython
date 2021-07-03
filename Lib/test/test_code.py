@@ -221,11 +221,18 @@ class CodeTest(unittest.TestCase):
                         co.co_varnames,
                         co.co_filename,
                         co.co_name,
+                        co.co_qualname,
                         co.co_firstlineno,
                         co.co_lnotab,
                         co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
+
+    def test_qualname(self):
+        self.assertEqual(
+            CodeTest.test_qualname.__code__.co_qualname,
+            CodeTest.test_qualname.__qualname__
+        )
 
     def test_replace(self):
         def func():
@@ -291,6 +298,7 @@ class CodeTest(unittest.TestCase):
                          co.co_varnames,
                          co.co_filename,
                          co.co_name,
+                         co.co_qualname,
                          co.co_firstlineno,
                          co.co_lnotab,
                          co.co_exceptiontable,

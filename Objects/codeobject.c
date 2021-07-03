@@ -242,6 +242,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         PyTuple_GET_SIZE(con->localsplusnames)
             != PyBytes_GET_SIZE(con->localspluskinds) ||
         con->name == NULL || !PyUnicode_Check(con->name) ||
+        con->qualname == NULL || !PyUnicode_Check(con->qualname) ||
         con->filename == NULL || !PyUnicode_Check(con->filename) ||
         con->linetable == NULL || !PyBytes_Check(con->linetable) ||
         con->exceptiontable == NULL || !PyBytes_Check(con->exceptiontable)
@@ -296,8 +297,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_filename = con->filename;
     Py_INCREF(con->name);
     co->co_name = con->name;
-    if (con->qualname != NULL)
-        Py_INCREF(con->qualname);
+    Py_INCREF(con->qualname);
     co->co_qualname = con->qualname;
     co->co_flags = con->flags;
 
@@ -391,7 +391,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           int nlocals, int stacksize, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
-                          PyObject *filename, PyObject *name, int firstlineno,
+                          PyObject *filename, PyObject *name,
+                          PyObject *qualname, int firstlineno, 
                           PyObject *linetable, PyObject *exceptiontable)
 {
     PyCodeObject *co = NULL;
@@ -462,7 +463,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     struct _PyCodeConstructor con = {
         .filename = filename,
         .name = name,
-        .qualname = NULL,
+        .qualname = qualname,
         .flags = flags,
 
         .code = code,
@@ -518,13 +519,14 @@ PyCode_New(int argcount, int kwonlyargcount,
            int nlocals, int stacksize, int flags,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
-           PyObject *filename, PyObject *name, int firstlineno,
-           PyObject *linetable, PyObject *exceptiontable)
+           PyObject *filename, PyObject *name, PyObject *qualname,
+           int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 {
     return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
                                      stacksize, flags, code, consts, names,
                                      varnames, freevars, cellvars, filename,
-                                     name, firstlineno, linetable, exceptiontable);
+                                     name, qualname, firstlineno, linetable,
+                                     exceptiontable);
 }
 
 PyCodeObject *
@@ -556,7 +558,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
         .name = funcname_ob,
-        .qualname = NULL,
+        .qualname = funcname_ob,
         .code = emptystring,
         .firstlineno = firstlineno,
         .linetable = emptystring,
@@ -1032,6 +1034,7 @@ code.__new__ as code_new
     varnames: object(subclass_of="&PyTuple_Type")
     filename: unicode
     name: unicode
+    qualname: unicode
     firstlineno: int
     linetable: object(subclass_of="&PyBytes_Type")
     exceptiontable: object(subclass_of="&PyBytes_Type")
@@ -1047,9 +1050,10 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               int kwonlyargcount, int nlocals, int stacksize, int flags,
               PyObject *code, PyObject *consts, PyObject *names,
               PyObject *varnames, PyObject *filename, PyObject *name,
-              int firstlineno, PyObject *linetable, PyObject *exceptiontable,
-              PyObject *freevars, PyObject *cellvars)
-/*[clinic end generated code: output=a3899259c3b4cace input=f823c686da4b3a03]*/
+              PyObject *qualname, int firstlineno, PyObject *linetable,
+              PyObject *exceptiontable, PyObject *freevars,
+              PyObject *cellvars)
+/*[clinic end generated code: output=069fa20d299f9dda input=e31da3c41ad8064a]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -1057,8 +1061,8 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     PyObject *ourfreevars = NULL;
     PyObject *ourcellvars = NULL;
 
-    if (PySys_Audit("code.__new__", "OOOiiiiii",
-                    code, filename, name, argcount, posonlyargcount,
+    if (PySys_Audit("code.__new__", "OOOOiiiiii",
+                    code, filename, name, qualname, argcount, posonlyargcount,
                     kwonlyargcount, nlocals, stacksize, flags) < 0) {
         goto cleanup;
     }
@@ -1115,8 +1119,8 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
                                                code, consts, ournames,
                                                ourvarnames, ourfreevars,
                                                ourcellvars, filename,
-                                               name, firstlineno, linetable,
-                                               exceptiontable
+                                               name, qualname, firstlineno,
+                                               linetable, exceptiontable
                                               );
   cleanup:
     Py_XDECREF(ournames);
@@ -1291,6 +1295,7 @@ static PyMemberDef code_memberlist[] = {
     {"co_names",        T_OBJECT,       OFF(co_names),           READONLY},
     {"co_filename",     T_OBJECT,       OFF(co_filename),        READONLY},
     {"co_name",         T_OBJECT,       OFF(co_name),            READONLY},
+    {"co_qualname",     T_OBJECT,       OFF(co_qualname),        READONLY},
     {"co_firstlineno",  T_INT,          OFF(co_firstlineno),     READONLY},
     {"co_linetable",    T_OBJECT,       OFF(co_linetable),       READONLY},
     {"co_exceptiontable",    T_OBJECT,  OFF(co_exceptiontable),  READONLY},
@@ -1385,6 +1390,7 @@ code.replace
     co_cellvars: object(subclass_of="&PyTuple_Type", c_default="self->co_cellvars") = None
     co_filename: unicode(c_default="self->co_filename") = None
     co_name: unicode(c_default="self->co_name") = None
+    co_qualname: unicode(c_default="self->co_qualname") = None
     co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
     co_exceptiontable: PyBytesObject(c_default="(PyBytesObject *)self->co_exceptiontable") = None
 
@@ -1399,9 +1405,10 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_consts, PyObject *co_names,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyBytesObject *co_linetable,
+                  PyObject *co_name, PyObject *co_qualname,
+                  PyBytesObject *co_linetable,
                   PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=80957472b7f78ed6 input=38376b1193efbbae]*/
+/*[clinic end generated code: output=b6cd9988391d5711 input=d17011da5a5c522e]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -1420,8 +1427,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
 #undef CHECK_INT_ARG
 
-    if (PySys_Audit("code.__new__", "OOOiiiiii",
-                    co_code, co_filename, co_name, co_argcount,
+    if (PySys_Audit("code.__new__", "OOOOiiiiii",
+                    co_code, co_filename, co_name, co_qualname, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
         return NULL;
@@ -1457,7 +1464,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
-        co_firstlineno, (PyObject*)co_linetable, (PyObject*)co_exceptiontable);
+        co_qualname, co_firstlineno, (PyObject*)co_linetable,
+        (PyObject*)co_exceptiontable);
 
 error:
     Py_XDECREF(varnames);
