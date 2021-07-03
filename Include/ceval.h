@@ -36,7 +36,7 @@ PyAPI_FUNC(PyFrameObject *) PyEval_GetFrame(void);
 // TODO: Update PyEval_GetLocals() documentation as described in
 // https://discuss.python.org/t/pep-558-defined-semantics-for-locals/2936/11
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 /* Access the frame locals mapping in an implementation independent way */
 
 /* PyLocals_Get() is equivalent to the Python locals() builtin.
