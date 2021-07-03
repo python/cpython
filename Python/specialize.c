@@ -166,7 +166,7 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
-    [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyCallFunctionCache */
+    [CALL_FUNCTION] = 1, /* _PyAdaptiveEntry */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -648,16 +648,13 @@ _Py_Specialize_CallFunction(PyObject *builtins,
 {
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyCallCFunctionCache *cache1 = &cache[-1].call_function;
     PyTypeObject *type = Py_TYPE(callable);
     /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
         PyCFunctionObject *meth = (PyCFunctionObject *)callable;
-        if (meth->m_ml == NULL) {
+        if (PyCFunction_GET_FUNCTION(callable) == NULL) {
             goto fail;
         }
-        PyCFunction cfunc = PyCFunction_GET_FUNCTION(meth);
-        assert(cfunc != NULL);
         const char *name_ascii = meth->m_ml->ml_name;
         /* Don't optimize anything that isn't FASTCALL, has keywords, has varargs, or
            has no args. Microbenchmarks show they don't benefit much to be worth a 
@@ -668,12 +665,10 @@ _Py_Specialize_CallFunction(PyObject *builtins,
             case METH_FASTCALL:
                 // _PYCFUNCTION_FAST;
                 *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_FAST, _Py_OPARG(*instr));
-                cache1->cfunc = cfunc;
                 goto success;
             case METH_O:
                 // PYCFUNCTION_O;
                 *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_O, _Py_OPARG(*instr));
-                cache1->cfunc = cfunc;
                 goto success;
             case METH_VARARGS:
                 // PYCFUNCTION

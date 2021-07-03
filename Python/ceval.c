@@ -4084,69 +4084,67 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
         }
         case TARGET(CALL_CFUNCTION_FAST): {
+            assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyCallCFunctionCache *cache1 = &caches[-1].call_function;
-            PyObject **callable = &PEEK(cache0->original_oparg + 1);
-            DEOPT_IF(!PyCFunction_CheckExact(*callable), CALL_FUNCTION);
-            PyCFunction cfunc = PyCFunction_GET_FUNCTION(*callable);
-            DEOPT_IF(cfunc != cache1->cfunc, CALL_FUNCTION);
+            uint8_t nargs = cache0->original_oparg;
+            PyObject **pfunc = &PEEK(nargs + 1);
+            PyObject *callable = *pfunc;
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
+                CALL_FUNCTION);
 
-            assert(cframe.use_tracing == 0);
-            // res = func(self, args, nargs)
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            /* res = func(self, args, nargs) */
             PyObject *res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
-                PyCFunction_GET_SELF(*callable),
-                stack_pointer - cache0->original_oparg,
-                cache0->original_oparg);
+                PyCFunction_GET_SELF(callable),
+                &PEEK(nargs),
+                nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
-            while (stack_pointer > callable) {
+            while (stack_pointer > pfunc) {
                 PyObject *x = EXT_POP(stack_pointer);
                 Py_DECREF(x);
             }
             PUSH(res);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
-                /* Not deopting because this doesn't mean our optimization was wrong.
-                   `res` can be NULL for valid reasons. Eg. getattr(x, 'invalid').
-                   In those cases an exception is set, so we must handle it.
+                /* Not deopting because this doesn't mean our optimization was
+                   wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
+                   'invalid'). In those cases an exception is set, so we must
+                   handle it.
                 */
                 goto error;
             }
-            record_cache_hit(cache0);
-            STAT_INC(CALL_FUNCTION, hit);
             DISPATCH();
         }
         case TARGET(CALL_CFUNCTION_O): {
+            assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyCallCFunctionCache *cache1 = &caches[-1].call_function;
-            PyObject **callable = &PEEK(cache0->original_oparg + 1);
-            DEOPT_IF(!PyCFunction_CheckExact(*callable), CALL_FUNCTION);
-            PyCFunction cfunc = PyCFunction_GET_FUNCTION(*callable);
-            DEOPT_IF(cfunc != cache1->cfunc, CALL_FUNCTION);
+            DEOPT_IF(cache0->original_oparg != 1, CALL_FUNCTION);
 
-            assert(cframe.use_tracing == 0);
-            // res = func(self, arg)
-            PyObject *res = cfunc(
-                PyCFunction_GET_SELF(*callable),
-                *(stack_pointer - cache0->original_oparg));
+            PyObject *callable = SECOND();
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL_FUNCTION);
+
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), POP());
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
-            while (stack_pointer > callable) {
-                PyObject *x = EXT_POP(stack_pointer);
-                Py_DECREF(x);
-            }
-            PUSH(res);
+            Py_DECREF(callable);
+            SET_TOP(res);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
                 goto error;
             }
-            record_cache_hit(cache0);
-            STAT_INC(CALL_FUNCTION, hit);
-            DISPATCH();        
+            DISPATCH();
         }
         case TARGET(CALL_FUNCTION_KW): {
             PyObject **sp, *res, *names;

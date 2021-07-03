@@ -53,9 +53,6 @@ typedef struct {
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
-typedef struct {
-    PyCFunction cfunc;
-} _PyCallCFunctionCache;
 
 /* Add specialized versions of entries to this union.
  *
@@ -72,7 +69,6 @@ typedef union {
     _PyAdaptiveEntry adaptive;
     _PyLoadAttrCache load_attr;
     _PyLoadGlobalCache load_global;
-    _PyCallCFunctionCache call_function;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
