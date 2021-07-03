@@ -4068,7 +4068,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
         case TARGET(CALL_FUNCTION_ADAPTIVE): {
             SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter == 0) {
+            if (cframe.use_tracing == 0 && cache->adaptive.counter == 0) {
                 next_instr--;
                 if (_Py_Specialize_CallFunction(BUILTINS(), stack_pointer,
                     cache->adaptive.original_oparg, next_instr, cache) < 0) {
