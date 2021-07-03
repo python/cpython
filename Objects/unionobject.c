@@ -28,6 +28,7 @@ union_traverse(PyObject *self, visitproc visit, void *arg)
 {
     unionobject *alias = (unionobject *)self;
     Py_VISIT(alias->args);
+    Py_VISIT(alias->parameters);
     return 0;
 }
 
