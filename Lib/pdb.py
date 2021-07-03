@@ -1028,8 +1028,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             argv0 = sys.argv[0:1]
             try:
                 sys.argv = shlex.split(arg)
-            except ValueError:
-                self.error('Cannot run: %s' % arg)
+            except ValueError as e:
+                self.error('Cannot run %s: %s' % (arg, e))
                 return
             sys.argv[:0] = argv0
         # this is caught in the main debugger loop
