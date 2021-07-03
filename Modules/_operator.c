@@ -507,7 +507,7 @@ _operator_indexOf_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic input]
 _operator.countOf = _operator.indexOf
 
-Return the number of times b occurs in a.
+Return the number of items in a which are, or which equal, b.
 [clinic start generated code]*/
 
 static Py_ssize_t
