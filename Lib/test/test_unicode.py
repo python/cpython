@@ -1482,7 +1482,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('...%(foo)s...' % {'foo':Str.ABC},
                          '...abc...')
         self.assertEqual('...%(foo)s...' % {'foo':Int.IDES},
-                         '...IDES...')
+                         '...Int.IDES...')
         self.assertEqual('...%(foo)i...' % {'foo':Int.IDES},
                          '...15...')
         self.assertEqual('...%(foo)d...' % {'foo':Int.IDES},
