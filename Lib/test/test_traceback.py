@@ -17,8 +17,9 @@ import traceback
 
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
+test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
-test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next'])
+test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 
 
 class TracebackCases(unittest.TestCase):
@@ -154,9 +155,9 @@ class TracebackCases(unittest.TestCase):
             self.assertTrue(stdout[2].endswith(err_line),
                 "Invalid traceback line: {0!r} instead of {1!r}".format(
                     stdout[2], err_line))
-            self.assertTrue(stdout[3] == err_msg,
+            self.assertTrue(stdout[4] == err_msg,
                 "Invalid error message: {0!r} instead of {1!r}".format(
-                    stdout[3], err_msg))
+                    stdout[4], err_msg))
 
         do_test("", "foo", "ascii", 3)
         for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
@@ -272,6 +273,114 @@ class TracebackCases(unittest.TestCase):
             '(exc, /, value=<implicit>)')
 
 
+class TracebackErrorLocationCaretTests(unittest.TestCase):
+    """
+    Tests for printing code error expressions as part of PEP 657
+    """
+    def get_exception(self, callable):
+        try:
+            callable()
+            self.fail("No exception thrown.")
+        except:
+            return traceback.format_exc().splitlines()[:-1]
+
+    callable_line = get_exception.__code__.co_firstlineno + 2
+
+    def test_basic_caret(self):
+        def f():
+            raise ValueError("basic caret tests")
+
+        lineno_f = f.__code__.co_firstlineno
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f\n'
+            '    raise ValueError("basic caret tests")\n'
+            '    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+    def test_line_with_unicode(self):
+        # Make sure that even if a line contains multi-byte unicode characters
+        # the correct carets are printed.
+        def f_with_unicode():
+            raise ValueError("Ĥellö Wörld")
+
+        lineno_f = f_with_unicode.__code__.co_firstlineno
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f_with_unicode\n'
+            '    raise ValueError("Ĥellö Wörld")\n'
+            '    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_unicode)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+    def test_caret_in_type_annotation(self):
+        def f_with_type():
+            def foo(a: THIS_DOES_NOT_EXIST ) -> int:
+                return 0
+
+        lineno_f = f_with_type.__code__.co_firstlineno
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f_with_type\n'
+            '    def foo(a: THIS_DOES_NOT_EXIST ) -> int:\n'
+            '               ^^^^^^^^^^^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_type)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+    def test_caret_multiline_expression(self):
+        # Make sure no carets are printed for expressions spanning multiple
+        # lines.
+        def f_with_multiline():
+            raise ValueError(
+                "error over multiple lines"
+            )
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+1}, in f_with_multiline\n'
+            '    raise ValueError(\n'
+        )
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+
+@cpython_only
+class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
+    """
+    Same set of tests as above but with Python's internal traceback printing.
+    """
+    def get_exception(self, callable):
+        from _testcapi import traceback_print
+        try:
+            callable()
+            self.fail("No exception thrown.")
+        except:
+            type_, value, tb = sys.exc_info()
+
+            file_ = StringIO()
+            traceback_print(tb, file_)
+            return file_.getvalue().splitlines()
+
+    callable_line = get_exception.__code__.co_firstlineno + 3
+
+
 class TracebackFormatTests(unittest.TestCase):
 
     def some_exception(self):
@@ -315,9 +424,9 @@ class TracebackFormatTests(unittest.TestCase):
 
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
-        self.assertEqual(len(tb_lines), 5)
+        self.assertEqual(len(tb_lines), 7)
         banner = tb_lines[0]
-        location, source_line = tb_lines[-2:]
+        location, source_line = tb_lines[-3], tb_lines[-2]
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))
         self.assertTrue(source_line.startswith('    raise'))
@@ -381,12 +490,16 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_f+5}, in _check_recursive_traceback_display\n'
             '    f()\n'
+            '    ^^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ^^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ^^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f\n'
             '    f()\n'
+            '    ^^^\n'
             # XXX: The following line changes depending on whether the tests
             # are run through the interactive interpreter or with -m
             # It also varies depending on the platform (stack size)
@@ -427,19 +540,24 @@ class TracebackFormatTests(unittest.TestCase):
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
+            '    ^^^^^^^^^^^^^^^^\n'
             'ValueError\n'
         )
         tb_line = (
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_g+7}, in _check_recursive_traceback_display\n'
             '    g()\n'
+            '    ^^^\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
@@ -464,15 +582,20 @@ class TracebackFormatTests(unittest.TestCase):
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {lineno_h+7}, in _check_recursive_traceback_display\n'
             '    h()\n'
+            '    ^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
+            '           ^^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
+            '    ^^^\n'
         )
         expected = (result_h + result_g).splitlines()
         actual = stderr_h.getvalue().splitlines()
@@ -489,18 +612,23 @@ class TracebackFormatTests(unittest.TestCase):
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
+            '    ^^^^^^^^^^^^^^^^\n'
             'ValueError\n'
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+71}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+81}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF)\n'
+            '    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
@@ -517,19 +645,24 @@ class TracebackFormatTests(unittest.TestCase):
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
+            '           ^^^^^^^^^^\n'
             '  [Previous line repeated 1 more time]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
+            '    ^^^^^^^^^^^^^^^^\n'
             'ValueError\n'
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+99}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+114}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
+            '    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
@@ -580,10 +713,10 @@ class TracebackFormatTests(unittest.TestCase):
             exception_print(exc_val)
 
         tb = stderr_f.getvalue().strip().splitlines()
-        self.assertEqual(11, len(tb))
-        self.assertEqual(context_message.strip(), tb[5])
-        self.assertIn('UnhashableException: ex2', tb[3])
-        self.assertIn('UnhashableException: ex1', tb[10])
+        self.assertEqual(13, len(tb))
+        self.assertEqual(context_message.strip(), tb[6])
+        self.assertIn('UnhashableException: ex2', tb[4])
+        self.assertIn('UnhashableException: ex1', tb[12])
 
 
 cause_message = (
@@ -613,8 +746,8 @@ class BaseExceptionReportingTests:
 
     def check_zero_div(self, msg):
         lines = msg.splitlines()
-        self.assertTrue(lines[-3].startswith('  File'))
-        self.assertIn('1/0 # In zero_div', lines[-2])
+        self.assertTrue(lines[-4].startswith('  File'))
+        self.assertIn('1/0 # In zero_div', lines[-3])
         self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
 
     def test_simple(self):
@@ -623,11 +756,11 @@ class BaseExceptionReportingTests:
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
-        self.assertEqual(len(lines), 4)
+        self.assertEqual(len(lines), 5)
         self.assertTrue(lines[0].startswith('Traceback'))
         self.assertTrue(lines[1].startswith('  File'))
         self.assertIn('1/0 # Marker', lines[2])
-        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+        self.assertTrue(lines[4].startswith('ZeroDivisionError'))
 
     def test_cause(self):
         def inner_raise():
@@ -666,11 +799,11 @@ class BaseExceptionReportingTests:
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
-        self.assertEqual(len(lines), 4)
+        self.assertEqual(len(lines), 5)
         self.assertTrue(lines[0].startswith('Traceback'))
         self.assertTrue(lines[1].startswith('  File'))
         self.assertIn('ZeroDivisionError from None', lines[2])
-        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+        self.assertTrue(lines[4].startswith('ZeroDivisionError'))
 
     def test_cause_and_context(self):
         # When both a cause and a context are set, only the cause should be
@@ -1362,7 +1495,7 @@ class TestTracebackException(unittest.TestCase):
         e = Exception("uh oh")
         c = test_code('/foo.py', 'method')
         f = test_frame(c, None, None)
-        tb = test_tb(f, 6, None)
+        tb = test_tb(f, 6, None, 0)
         exc = traceback.TracebackException(Exception, e, tb, lookup_lines=False)
         self.assertEqual(linecache.cache, {})
         linecache.updatecache('/foo.py', globals())
@@ -1373,7 +1506,7 @@ class TestTracebackException(unittest.TestCase):
         e = Exception("uh oh")
         c = test_code('/foo.py', 'method')
         f = test_frame(c, globals(), {'something': 1, 'other': 'string'})
-        tb = test_tb(f, 6, None)
+        tb = test_tb(f, 6, None, 0)
         exc = traceback.TracebackException(
             Exception, e, tb, capture_locals=True)
         self.assertEqual(
@@ -1384,7 +1517,7 @@ class TestTracebackException(unittest.TestCase):
         e = Exception("uh oh")
         c = test_code('/foo.py', 'method')
         f = test_frame(c, globals(), {'something': 1})
-        tb = test_tb(f, 6, None)
+        tb = test_tb(f, 6, None, 0)
         exc = traceback.TracebackException(Exception, e, tb)
         self.assertEqual(exc.stack[0].locals, None)
 
@@ -1405,8 +1538,9 @@ class TestTracebackException(unittest.TestCase):
         output = StringIO()
         exc.print(file=output)
         self.assertEqual(
-            output.getvalue().split('\n')[-4:],
+            output.getvalue().split('\n')[-5:],
             ['    x/0',
+             '    ^^^',
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
