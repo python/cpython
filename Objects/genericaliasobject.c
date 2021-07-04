@@ -603,7 +603,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (!setup_ga(self, origin, arguments)) {
-        type->tp_free((PyObject *)self);
+        Py_DECREF(self);
         return NULL;
     }
     return (PyObject *)self;
@@ -650,10 +650,10 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     if (alias == NULL) {
         return NULL;
     }
+    _PyObject_GC_TRACK(alias);
     if (!setup_ga(alias, origin, args)) {
-        PyObject_GC_Del((PyObject *)alias);
+        Py_DECREF(alias);
         return NULL;
     }
-    _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
