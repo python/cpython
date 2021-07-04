@@ -1232,11 +1232,12 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required methods,
-        not their type signatures. For example, :class:`ssl.SSLObject` implements `__init__()`,
-        therefore it passes an :func:`builtins.issubclass()` check against :data:`Callable`.
-        However, the :meth:`ssl.SSLObject.__float__` method exists only to raise a TypeError
-        with a more informative message.
+        :func:`runtime_checkable` will check only the presence of the required
+        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        implements :func:`__init__`, therefore it passes an :func:`issubclass`
+        check against :data:`Callable`.  However, the
+        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        :exc:`TypeError` with a more informative message.
 
    .. versionadded:: 3.8
 
