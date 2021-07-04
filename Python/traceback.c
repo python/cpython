@@ -537,26 +537,31 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     /* ignore errors since we can't report them, can we? */
     if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT, &truncation, &source_line)) {
         int code_offset = tb->tb_lasti;
-        if (PyCode_Addr2Line(_PyFrame_GetCode(frame), code_offset) != _PyCode_Addr2EndLine(_PyFrame_GetCode(frame), code_offset)) {
+        PyCodeObject* code = _PyFrame_GetCode(frame);
+
+        int start_line;
+        int end_line;
+        int start_col_byte_offset;
+        int end_col_byte_offset;
+        if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
+                                 &end_line, &end_col_byte_offset)) {
+            goto done;
+        }
+        if (start_line != end_line) {
             goto done;
         }
 
-        Py_ssize_t start_offset = (Py_ssize_t) _PyCode_Addr2Offset(_PyFrame_GetCode(frame), code_offset);
-        Py_ssize_t end_offset = (Py_ssize_t) _PyCode_Addr2EndOffset(_PyFrame_GetCode(frame), code_offset);
-
-        if (start_offset < 0 || end_offset < 0) {
+        if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
             goto done;
         }
-        if (end_offset == -1) {
+        if (end_col_byte_offset == -1) {
             // TODO: highlight from start_offset to the end of line
             goto done;
         }
         // Convert the utf-8 byte offset to the actual character offset so we
-        // print the right number of carets. We do -1 here because the column
-        // offsets provided by _PyCode_Addr2Offset and _PyCode_Addr2EndOffset
-        // are 1-indexed, not 0-indexed.
-        start_offset = _byte_offset_to_character_offset(source_line, start_offset);
-        end_offset = _byte_offset_to_character_offset(source_line, end_offset);
+        // print the right number of carets.
+        Py_ssize_t start_offset = _byte_offset_to_character_offset(source_line, start_col_byte_offset);
+        Py_ssize_t end_offset = _byte_offset_to_character_offset(source_line, end_col_byte_offset);
 
         char offset = truncation;
         while (++offset <= start_offset) {
@@ -986,3 +991,4 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 
     return NULL;
 }
+
