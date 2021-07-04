@@ -188,6 +188,8 @@ class OperatorTestCase:
         self.assertRaises(ZeroDivisionError, operator.indexOf, BadIterable(), 1)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
+        nan = float("nan")
+        self.assertEqual(operator.indexOf([nan, nan, 21], nan), 0)
 
     def test_invert(self):
         operator = self.module
