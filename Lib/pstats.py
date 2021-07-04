@@ -26,15 +26,14 @@ import time
 import marshal
 import re
 
-from enum import StrEnum, _simple_enum
+from enum import Enum
 from functools import cmp_to_key
 from dataclasses import dataclass
 from typing import Dict
 
 __all__ = ["Stats", "SortKey", "FunctionProfile", "StatsProfile"]
 
-@_simple_enum(StrEnum)
-class SortKey:
+class SortKey(str, Enum):
     CALLS = 'calls', 'ncalls'
     CUMULATIVE = 'cumulative', 'cumtime'
     FILENAME = 'filename', 'module'

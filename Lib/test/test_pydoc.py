@@ -453,7 +453,7 @@ class PydocDocTest(unittest.TestCase):
             zero = 0
             one = 1
         doc = pydoc.render_doc(BinaryInteger)
-        self.assertIn('BinaryInteger.zero', doc)
+        self.assertIn('<BinaryInteger.zero: 0>', doc)
 
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
