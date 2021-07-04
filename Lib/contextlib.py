@@ -164,21 +164,16 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
                 if type is StopIteration and exc.__cause__ is value:
                     return False
                 raise
-            except:
+            except BaseException as exc:
                 # only re-raise if it's *not* the exception that was
                 # passed to throw(), because __exit__() must not raise
                 # an exception unless __exit__() itself failed.  But throw()
                 # has to raise the exception to signal propagation, so this
                 # fixes the impedance mismatch between the throw() protocol
                 # and the __exit__() protocol.
-                #
-                # This cannot use 'except BaseException as exc' (as in the
-                # async implementation) to maintain compatibility with
-                # Python 2, where old-style class exceptions are not caught
-                # by 'except BaseException'.
-                if sys.exc_info()[1] is value:
-                    return False
-                raise
+                if exc is not value:
+                    raise
+                return False
             raise RuntimeError("generator didn't stop after throw()")
 
 
@@ -204,7 +199,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             try:
                 await self.gen.__anext__()
             except StopAsyncIteration:
-                return
+                return False
             else:
                 raise RuntimeError("generator didn't stop")
         else:
@@ -214,7 +209,6 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             # in this implementation
             try:
                 await self.gen.athrow(typ, value, traceback)
-                raise RuntimeError("generator didn't stop after athrow()")
             except StopAsyncIteration as exc:
                 return exc is not value
             except RuntimeError as exc:
@@ -233,6 +227,8 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             except BaseException as exc:
                 if exc is not value:
                     raise
+                return False
+            raise RuntimeError("generator didn't stop after athrow()")
 
 
 def contextmanager(func):
