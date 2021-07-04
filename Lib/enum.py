@@ -97,7 +97,7 @@ class _EnumDict(dict):
         if _is_private(self._cls_name, key):
             import warnings
             warnings.warn(
-                    "private variables, such as %r, will be normal attributes in 3.10"
+                    "private variables, such as %r, will be normal attributes in 3.11"
                         % (key, ),
                     DeprecationWarning,
                     stacklevel=2,
