@@ -936,7 +936,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.9
 
 
-.. opcode:: DICT_MERGE
+.. opcode:: DICT_MERGE (i)
 
    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 

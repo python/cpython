@@ -75,6 +75,18 @@ New Features
 Other Language Changes
 ======================
 
+A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+:meth:`contextlib.ExitStack.enter_context` and
+:meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do not
+support the :term:`context manager` or :term:`asynchronous context manager`
+protocols correspondingly.
+(Contributed by Serhiy Storchaka in :issue:`44471`.)
+
+* A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+  :keyword:`with` and :keyword:`async with` statements for objects which do not
+  support the :term:`context manager` or :term:`asynchronous context manager`
+  protocols correspondingly.
+  (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
 
 New Modules
@@ -159,13 +171,30 @@ Deprecated
 Removed
 =======
 
+* The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
+  legacy generator-based coroutines to be compatible with async/await code.
+  The function has been deprecated since Python 3.8 and the removal was
+  initially scheduled for Python 3.10. Use :keyword:`async def` instead.
+  (Contributed by Illia Volochii in :issue:`43216`.)
 
+* :class:`asyncio.coroutines.CoroWrapper` used for wrapping legacy
+  generator-based coroutine objects in the debug mode.
+  (Contributed by Illia Volochii in :issue:`43216`.)
 
 Porting to Python 3.11
 ======================
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+Changes in the Python API
+-------------------------
+
+* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
+  executors to :meth:`loop.set_default_executor` following a deprecation in
+  Python 3.8.
+  (Contributed by Illia Volochii in :issue:`43234`.)
 
 
 C API Changes

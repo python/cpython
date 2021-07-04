@@ -1,5 +1,6 @@
 // types.Union -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
+#include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_unionobject.h"
 #include "structmember.h"
 
@@ -14,8 +15,18 @@ unionobject_dealloc(PyObject *self)
 {
     unionobject *alias = (unionobject *)self;
 
+    _PyObject_GC_UNTRACK(self);
+
     Py_XDECREF(alias->args);
     Py_TYPE(self)->tp_free(self);
+}
+
+static int
+union_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    unionobject *alias = (unionobject *)self;
+    Py_VISIT(alias->args);
+    return 0;
 }
 
 static Py_hash_t
@@ -437,8 +448,9 @@ PyTypeObject _Py_UnionType = {
     .tp_basicsize = sizeof(unionobject),
     .tp_dealloc = unionobject_dealloc,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_free = PyObject_Del,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_free = PyObject_GC_Del,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = union_traverse,
     .tp_hash = union_hash,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_members = union_members,
@@ -472,12 +484,13 @@ _Py_Union(PyObject *args)
         }
     }
 
-    result = PyObject_New(unionobject, &_Py_UnionType);
+    result = PyObject_GC_New(unionobject, &_Py_UnionType);
     if (result == NULL) {
         return NULL;
     }
 
     result->args = dedup_and_flatten_args(args);
+    _PyObject_GC_TRACK(result);
     if (result->args == NULL) {
         Py_DECREF(result);
         return NULL;

@@ -278,7 +278,7 @@ have been incorporated. Some of the most notable ones are as follows:
 
     .. code-block:: python
 
-        >>> try
+        >>> try:
         ...     x = 2
         ... something = 3
           File "<stdin>", line 3
@@ -1084,7 +1084,7 @@ and will be incorrect in some rare cases, including some ``_``-s in
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 4.4
+Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
