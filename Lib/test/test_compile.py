@@ -1006,8 +1006,8 @@ class TestSourcePositions(unittest.TestCase):
                     return
                 lines.add(node.lineno)
                 end_lines.add(node.end_lineno)
-                columns.add(node.col_offset + 1)
-                end_columns.add(node.end_col_offset + 1)
+                columns.add(node.col_offset)
+                end_columns.add(node.end_col_offset)
 
         SourceOffsetVisitor().visit(ast_tree)
 
@@ -1058,10 +1058,10 @@ class TestSourcePositions(unittest.TestCase):
 
         self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
             line=10_000 + 2, end_line=10_000 + 2,
-            column=3, end_column=9)
+            column=2, end_column=8)
         self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
             line=10_000 + 4, end_line=10_000 + 4,
-            column=3, end_column=10)
+            column=2, end_column=9)
 
     def test_multiline_expression(self):
         snippet = """\
@@ -1071,7 +1071,7 @@ f(
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
-            line=1, end_line=3, column=1, end_column=2)
+            line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
         # Make sure we get None for when the column offset is too large to
@@ -1088,15 +1088,15 @@ f(
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
-            line=1, end_line=1, column=14, end_column=22)
+            line=1, end_line=1, column=13, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
-            line=1, end_line=1, column=10, end_column=22)
+            line=1, end_line=1, column=9, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
-            line=1, end_line=1, column=10, end_column=27)
+            line=1, end_line=1, column=9, end_column=26)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
-            line=1, end_line=1, column=5, end_column=28)
+            line=1, end_line=1, column=4, end_column=27)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
-            line=1, end_line=1, column=1, end_column=28)
+            line=1, end_line=1, column=0, end_column=27)
 
 
 class TestExpressionStackSize(unittest.TestCase):
