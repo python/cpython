@@ -3,9 +3,11 @@
 
 #include "Python.h"
 
-#include "code.h"
+#include "code.h"                 // PyCode_Addr2Line etc
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
+#include "pycore_frame.h"         // _PyFrame_GetCode()
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -370,7 +372,7 @@ finally:
 }
 
 int
-_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
+_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, int *truncation, PyObject **line)
 {
     int err = 0;
     int fd;
@@ -461,6 +463,11 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         return err;
     }
 
+    if (line) {
+        Py_INCREF(lineobj);
+        *line = lineobj;
+    }
+
     /* remove the indentation of the line */
     kind = PyUnicode_KIND(lineobj);
     data = PyUnicode_DATA(lineobj);
@@ -478,6 +485,10 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         } else {
             PyErr_Clear();
         }
+    }
+
+    if (truncation != NULL) {
+        *truncation = i - indent;
     }
 
     /* Write some spaces before the line */
@@ -501,8 +512,11 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     return err;
 }
 
+#define _TRACEBACK_SOURCE_LINE_INDENT 4
+
 static int
-tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
+tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
+               PyFrameObject *frame, PyObject *name)
 {
     int err;
     PyObject *line;
@@ -517,9 +531,56 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
     Py_DECREF(line);
     if (err != 0)
         return err;
+    int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
+    PyObject* source_line = NULL;
     /* ignore errors since we can't report them, can we? */
-    if (_Py_DisplaySourceLine(f, filename, lineno, 4))
+    if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
+                               &truncation, &source_line)) {
+        int code_offset = tb->tb_lasti;
+        PyCodeObject* code = _PyFrame_GetCode(frame);
+
+        int start_line;
+        int end_line;
+        int start_col_byte_offset;
+        int end_col_byte_offset;
+        if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
+                                 &end_line, &end_col_byte_offset)) {
+            goto done;
+        }
+        if (start_line != end_line) {
+            goto done;
+        }
+
+        if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
+            goto done;
+        }
+        // Convert the utf-8 byte offset to the actual character offset so we
+        // print the right number of carets.
+        Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+        Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
+
+        char offset = truncation;
+        while (++offset <= start_offset) {
+            err = PyFile_WriteString(" ", f);
+            if (err < 0) {
+                goto done;
+            }
+        }
+        while (++offset <= end_offset + 1) {
+            err = PyFile_WriteString("^", f);
+            if (err < 0) {
+                goto done;
+            }
+        }
+        err = PyFile_WriteString("\n", f);
+    }
+
+    else {
         PyErr_Clear();
+    }
+    
+done:
+    Py_XDECREF(source_line);
     return err;
 }
 
@@ -576,8 +637,8 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         }
         cnt++;
         if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
-            err = tb_displayline(f, code->co_filename, tb->tb_lineno,
-                                 code->co_name);
+            err = tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
+                                 tb->tb_frame, code->co_name);
             if (err == 0) {
                 err = PyErr_CheckSignals();
             }
