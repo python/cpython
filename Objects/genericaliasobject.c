@@ -650,10 +650,10 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     if (alias == NULL) {
         return NULL;
     }
+    _PyObject_GC_TRACK(alias);
     if (!setup_ga(alias, origin, args)) {
         Py_DECREF(alias);
         return NULL;
     }
-    _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
