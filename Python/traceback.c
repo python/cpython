@@ -514,7 +514,6 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
 
 #define _TRACEBACK_SOURCE_LINE_INDENT 4
 
-// TODO: Pick up filename and other stuff from the tb argument
 static int
 tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
                PyFrameObject *frame, PyObject *name)
@@ -535,7 +534,8 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
     PyObject* source_line = NULL;
     /* ignore errors since we can't report them, can we? */
-    if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT, &truncation, &source_line)) {
+    if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
+                               &truncation, &source_line)) {
         int code_offset = tb->tb_lasti;
         PyCodeObject* code = _PyFrame_GetCode(frame);
 
