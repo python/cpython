@@ -554,10 +554,6 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
             goto done;
         }
-        if (end_col_byte_offset == -1) {
-            // TODO: highlight from start_offset to the end of line
-            goto done;
-        }
         // Convert the utf-8 byte offset to the actual character offset so we
         // print the right number of carets.
         Py_ssize_t start_offset = _byte_offset_to_character_offset(source_line, start_col_byte_offset);
