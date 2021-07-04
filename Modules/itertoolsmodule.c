@@ -874,7 +874,7 @@ tee_fromiterable(PyObject *iterable)
     }
 
     PyObject *dataobj = teedataobject_newinternal(it);
-    if (!to->dataobj) {
+    if (!dataobj) {
         to = NULL;
         goto done;
     }
