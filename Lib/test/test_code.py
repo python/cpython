@@ -344,7 +344,7 @@ class CodeTest(unittest.TestCase):
             # get assigned the first_lineno but they don't have other positions.
             # There is no easy way of inferring them at that stage, so for now
             # we don't support it.
-            self.assertTrue(all(positions) or not any(positions))
+            self.assertTrue(positions.count(None) in [0, 4])
 
             if not any(positions):
                 artificial_instructions.append(instr)
