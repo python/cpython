@@ -67,13 +67,13 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
 
-   .. versionadded:: 3.8
-
-      The *happy_eyeballs_delay* and *interleave* parameters.
-
    .. versionadded:: 3.7
 
       The *ssl_handshake_timeout* parameter.
+
+   .. versionadded:: 3.8
+
+      The *happy_eyeballs_delay* and *interleave* parameters.
 
    .. deprecated-removed:: 3.8 3.10
 
