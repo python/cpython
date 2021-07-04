@@ -428,6 +428,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.assertEqual(response.getheader("Content-Length"), "0")
         response = self.request(self.base_url + '/?hi=2')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url + '?hi=1')
@@ -541,7 +542,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         fullpath = os.path.join(self.tempdir, filename)
 
         try:
-            open(fullpath, 'w').close()
+            open(fullpath, 'wb').close()
         except OSError:
             raise unittest.SkipTest('Can not create file %s on current file '
                                     'system' % filename)
@@ -646,7 +647,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             self.skipTest("Python executable path is not encodable to utf-8")
 
         self.nocgi_path = os.path.join(self.parent_dir, 'nocgi.py')
-        with open(self.nocgi_path, 'w') as fp:
+        with open(self.nocgi_path, 'w', encoding='utf-8') as fp:
             fp.write(cgi_file1 % self.pythonexe)
         os.chmod(self.nocgi_path, 0o777)
 

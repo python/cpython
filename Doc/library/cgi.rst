@@ -277,14 +277,14 @@ These are useful if you want more control, or if you want to employ some of the
 algorithms implemented in this module in other circumstances.
 
 
-.. function:: parse(fp=None, environ=os.environ, keep_blank_values=False, strict_parsing=False)
+.. function:: parse(fp=None, environ=os.environ, keep_blank_values=False, strict_parsing=False, separator="&")
 
    Parse a query in the environment or from a file (the file defaults to
-   ``sys.stdin``).  The *keep_blank_values* and *strict_parsing* parameters are
+   ``sys.stdin``).  The *keep_blank_values*, *strict_parsing* and *separator* parameters are
    passed to :func:`urllib.parse.parse_qs` unchanged.
 
 
-.. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace")
+.. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace", separator="&")
 
    Parse input of type :mimetype:`multipart/form-data` (for  file uploads).
    Arguments are *fp* for the input file, *pdict* for a dictionary containing
@@ -303,6 +303,9 @@ algorithms implemented in this module in other circumstances.
       Added the *encoding* and *errors* parameters.  For non-file fields, the
       value is now a list of strings, not bytes.
 
+   .. versionchanged:: 3.10
+      Added the *separator* parameter.
+
 
 .. function:: parse_header(string)
 
@@ -313,7 +316,7 @@ algorithms implemented in this module in other circumstances.
 .. function:: test()
 
    Robust test CGI script, usable as main program. Writes minimal HTTP headers and
-   formats all information provided to the script in HTML form.
+   formats all information provided to the script in HTML format.
 
 
 .. function:: print_environ()
@@ -343,8 +346,8 @@ Caring about security
 
 .. index:: pair: CGI; security
 
-There's one important rule: if you invoke an external program (via the
-:func:`os.system` or :func:`os.popen` functions. or others with similar
+There's one important rule: if you invoke an external program (via
+:func:`os.system`, :func:`os.popen` or other functions with similar
 functionality), make very sure you don't pass arbitrary strings received from
 the client to the shell.  This is a well-known security hole whereby clever
 hackers anywhere on the Web can exploit a gullible CGI script to invoke
@@ -421,7 +424,7 @@ above on installing your CGI script carefully can save you a lot of time.  If
 you wonder whether you have understood the installation procedure correctly, try
 installing a copy of this module file (:file:`cgi.py`) as a CGI script.  When
 invoked as a script, the file will dump its environment and the contents of the
-form in HTML form. Give it the right mode etc, and send it a request.  If it's
+form in HTML format. Give it the right mode etc., and send it a request.  If it's
 installed in the standard :file:`cgi-bin` directory, it should be possible to
 send it a request by entering a URL into your browser of the form:
 

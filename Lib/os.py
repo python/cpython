@@ -983,16 +983,16 @@ if sys.platform != 'vxworks':
         import subprocess, io
         if mode == "r":
             proc = subprocess.Popen(cmd,
-                                    shell=True,
+                                    shell=True, text=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
+            return _wrap_close(proc.stdout, proc)
         else:
             proc = subprocess.Popen(cmd,
-                                    shell=True,
+                                    shell=True, text=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
+            return _wrap_close(proc.stdin, proc)
 
     # Helper for popen() -- a proxy for a file whose close waits for the process
     class _wrap_close:
@@ -1020,11 +1020,13 @@ if sys.platform != 'vxworks':
     __all__.append("popen")
 
 # Supply os.fdopen()
-def fdopen(fd, *args, **kwargs):
+def fdopen(fd, mode="r", buffering=-1, encoding=None, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
-    return io.open(fd, *args, **kwargs)
+    if "b" not in mode:
+        encoding = io.text_encoding(encoding)
+    return io.open(fd, mode, buffering, encoding, *args, **kwargs)
 
 
 # For testing purposes, make sure the function is available when the C

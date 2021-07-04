@@ -224,14 +224,14 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
 
-    def test_set_default_executor_deprecation_warnings(self):
+    def test_set_default_executor_error(self):
         executor = mock.Mock()
 
-        with self.assertWarns(DeprecationWarning):
+        msg = 'executor must be ThreadPoolExecutor instance'
+        with self.assertRaisesRegex(TypeError, msg):
             self.loop.set_default_executor(executor)
 
-        # Avoid cleaning up the executor mock
-        self.loop._default_executor = None
+        self.assertIsNone(self.loop._default_executor)
 
     def test_call_soon(self):
         def cb():
@@ -1884,10 +1884,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def simple_coroutine():
-                pass
+        async def simple_coroutine():
+            pass
 
         self.loop.set_debug(True)
         coro_func = simple_coroutine
@@ -2096,7 +2094,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     def test_nonbinary_file(self):
         sock = self.make_socket()
-        with open(os_helper.TESTFN, 'r') as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             with self.assertRaisesRegex(ValueError, "binary mode"):
                 self.run_loop(self.loop.sock_sendfile(sock, f))
 

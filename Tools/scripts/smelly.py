@@ -136,11 +136,14 @@ def check_extensions():
 
 
 def main():
+    nsymbol = 0
+
     # static library
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     if not LIBRARY:
         raise Exception("failed to get LIBRARY variable from sysconfig")
-    nsymbol = check_library(LIBRARY)
+    if os.path.exists(LIBRARY):
+        nsymbol += check_library(LIBRARY)
 
     # dynamic library
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')

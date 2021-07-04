@@ -3,9 +3,11 @@ import math
 import os
 import unittest
 import sys
+import ast
 import _ast
 import tempfile
 import types
+import textwrap
 from test import support
 from test.support import script_helper
 from test.support.os_helper import FakePath
@@ -162,7 +164,7 @@ if 1:
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
                     "080000000000000", "000000000000009", "000000000000008",
                     "0b42", "0BADCAFE", "0o123456789", "0b1.1", "0o4.2",
-                    "0b101j2", "0o153j2", "0b100e1", "0o777e1", "0777",
+                    "0b101j", "0o153j", "0b100e1", "0o777e1", "0777",
                     "000777", "000000000000007"]:
             self.assertRaises(SyntaxError, eval, arg)
 
@@ -427,7 +429,7 @@ if 1:
         fname = __file__
         if fname.lower().endswith('pyc'):
             fname = fname[:-1]
-        with open(fname, 'r') as f:
+        with open(fname, encoding='utf-8') as f:
             fcontents = f.read()
         sample_code = [
             ['<assign>', 'x = 5'],
@@ -543,21 +545,26 @@ if 1:
         # XXX (ncoghlan): duplicating the scaling factor here is a little
         # ugly. Perhaps it should be exposed somewhere...
         fail_depth = sys.getrecursionlimit() * 3
+        crash_depth = sys.getrecursionlimit() * 300
         success_depth = int(fail_depth * 0.75)
 
-        def check_limit(prefix, repeated):
+        def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
-            self.compile_single(expect_ok)
-            broken = prefix + repeated * fail_depth
-            details = "Compiling ({!r} + {!r} * {})".format(
-                         prefix, repeated, fail_depth)
-            with self.assertRaises(RecursionError, msg=details):
-                self.compile_single(broken)
+            compile(expect_ok, '<test>', mode)
+            for depth in (fail_depth, crash_depth):
+                broken = prefix + repeated * depth
+                details = "Compiling ({!r} + {!r} * {})".format(
+                            prefix, repeated, depth)
+                with self.assertRaises(RecursionError, msg=details):
+                    compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")
         check_limit("a", "[0]")
         check_limit("a", "*a")
+        # XXX Crashes in the parser.
+        # check_limit("a", " if a else a")
+        # check_limit("if a: pass", "\nelif a: pass", mode="exec")
 
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like
@@ -786,6 +793,49 @@ if 1:
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_imported_load_method(self):
+        sources = [
+            """\
+            import os
+            def foo():
+                return os.uname()
+            """,
+            """\
+            import os as operating_system
+            def foo():
+                return operating_system.uname()
+            """,
+            """\
+            from os import path
+            def foo(x):
+                return path.join(x)
+            """,
+            """\
+            from os import path as os_path
+            def foo(x):
+                return os_path.join(x)
+            """
+        ]
+        for source in sources:
+            namespace = {}
+            exec(textwrap.dedent(source), namespace)
+            func = namespace['foo']
+            with self.subTest(func=func.__name__):
+                opcodes = list(dis.get_instructions(func))
+                instructions = [opcode.opname for opcode in opcodes]
+                self.assertNotIn('LOAD_METHOD', instructions)
+                self.assertNotIn('CALL_METHOD', instructions)
+                self.assertIn('LOAD_ATTR', instructions)
+                self.assertIn('CALL_FUNCTION', instructions)
+
+    def test_lineno_procedure_call(self):
+        def call():
+            (
+                print()
+            )
+        line1 = call.__code__.co_firstlineno + 1
+        assert line1 not in [line for (_, _, line) in call.__code__.co_lines()]
+
     def test_lineno_after_implicit_return(self):
         TRUE = True
         # Don't use constant True or False, as compiler will remove test
@@ -837,6 +887,66 @@ if 1:
                 self.assertEqual(end, len(code.co_code))
                 self.assertEqual(line, code.co_firstlineno)
 
+    def test_lineno_attribute(self):
+        def load_attr():
+            return (
+                o.
+                a
+            )
+        load_attr_lines = [ 2, 3, 1 ]
+
+        def load_method():
+            return (
+                o.
+                m(
+                    0
+                )
+            )
+        load_method_lines = [ 2, 3, 4, 3, 1 ]
+
+        def store_attr():
+            (
+                o.
+                a
+            ) = (
+                v
+            )
+        store_attr_lines = [ 5, 2, 3 ]
+
+        def aug_store_attr():
+            (
+                o.
+                a
+            ) += (
+                v
+            )
+        aug_store_attr_lines = [ 2, 3, 5, 1, 3 ]
+
+        funcs = [ load_attr, load_method, store_attr, aug_store_attr]
+        func_lines = [ load_attr_lines, load_method_lines,
+                 store_attr_lines, aug_store_attr_lines]
+
+        for func, lines in zip(funcs, func_lines, strict=True):
+            with self.subTest(func=func):
+                code_lines = [ line-func.__code__.co_firstlineno
+                              for (_, _, line) in func.__code__.co_lines() ]
+                self.assertEqual(lines, code_lines)
+
+    def test_line_number_genexp(self):
+
+        def return_genexp():
+            return (1
+                    for
+                    x
+                    in
+                    y)
+        genexp_lines = [None, 1, 3, 1]
+
+        genexp_code = return_genexp.__code__.co_consts[1]
+        code_lines = [None if line is None else line-return_genexp.__code__.co_firstlineno
+                      for (_, _, line) in genexp_code.co_lines() ]
+        self.assertEqual(genexp_lines, code_lines)
+
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -876,6 +986,119 @@ if 1:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
 
 
+class TestSourcePositions(unittest.TestCase):
+    # Ensure that compiled code snippets have correct line and column numbers
+    # in `co_positions()`.
+
+    def check_positions_against_ast(self, snippet):
+        # Basic check that makes sure each line and column is at least present
+        # in one of the AST nodes of the source code.
+        code = compile(snippet, 'test_compile.py', 'exec')
+        ast_tree = compile(snippet, 'test_compile.py', 'exec', _ast.PyCF_ONLY_AST)
+        self.assertTrue(type(ast_tree) == _ast.Module)
+
+        # Use an AST visitor that notes all the offsets.
+        lines, end_lines, columns, end_columns = set(), set(), set(), set()
+        class SourceOffsetVisitor(ast.NodeVisitor):
+            def generic_visit(self, node):
+                super().generic_visit(node)
+                if not isinstance(node, ast.expr) and not isinstance(node, ast.stmt):
+                    return
+                lines.add(node.lineno)
+                end_lines.add(node.end_lineno)
+                columns.add(node.col_offset + 1)
+                end_columns.add(node.end_col_offset + 1)
+
+        SourceOffsetVisitor().visit(ast_tree)
+
+        # Check against the positions in the code object.
+        for (line, end_line, col, end_col) in code.co_positions():
+            # If the offset is not None (indicating missing data), ensure that
+            # it was part of one of the AST nodes.
+            if line is not None:
+                self.assertIn(line, lines)
+            if end_line is not None:
+                self.assertIn(end_line, end_lines)
+            if col is not None:
+                self.assertIn(col, columns)
+            if end_col is not None:
+                self.assertIn(end_col, end_columns)
+
+        return code, ast_tree
+
+    def assertOpcodeSourcePositionIs(self, code, opcode,
+            line, end_line, column, end_column):
+
+        for instr, position in zip(dis.Bytecode(code), code.co_positions()):
+            if instr.opname == opcode:
+                self.assertEqual(position[0], line)
+                self.assertEqual(position[1], end_line)
+                self.assertEqual(position[2], column)
+                self.assertEqual(position[3], end_column)
+                return
+
+        self.fail(f"Opcode {opcode} not found in code")
+
+    def test_simple_assignment(self):
+        snippet = "x = 1"
+        self.check_positions_against_ast(snippet)
+
+    def test_compiles_to_extended_op_arg(self):
+        # Make sure we still have valid positions when the code compiles to an
+        # EXTENDED_ARG by performing a loop which needs a JUMP_ABSOLUTE after
+        # a bunch of opcodes.
+        snippet = "x = x\n" * 10_000
+        snippet += ("while x != 0:\n"
+                    "  x -= 1\n"
+                    "while x != 0:\n"
+                    "  x +=  1\n"
+                   )
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+
+        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
+            line=10_000 + 2, end_line=10_000 + 2,
+            column=3, end_column=9)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
+            line=10_000 + 4, end_line=10_000 + 4,
+            column=3, end_column=10)
+
+    def test_multiline_expression(self):
+        snippet = """\
+f(
+    1, 2, 3, 4
+)
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+            line=1, end_line=3, column=1, end_column=2)
+
+    def test_very_long_line_end_offset(self):
+        # Make sure we get None for when the column offset is too large to
+        # store in a byte.
+        long_string = "a" * 1000
+        snippet = f"g('{long_string}')"
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+            line=1, end_line=1, column=None, end_column=None)
+
+    def test_complex_single_line_expression(self):
+        snippet = "a - b @ (c * x['key'] + 23)"
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
+            line=1, end_line=1, column=14, end_column=22)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
+            line=1, end_line=1, column=10, end_column=22)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
+            line=1, end_line=1, column=10, end_column=27)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
+            line=1, end_line=1, column=5, end_column=28)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
+            line=1, end_line=1, column=1, end_column=28)
+
+
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
     # stays within reasonable bounds (see issue #21523 for an example
@@ -907,6 +1130,32 @@ class TestExpressionStackSize(unittest.TestCase):
 
     def test_binop(self):
         self.check_stack_size("x + " * self.N + "x")
+
+    def test_list(self):
+        self.check_stack_size("[" + "x, " * self.N + "x]")
+
+    def test_tuple(self):
+        self.check_stack_size("(" + "x, " * self.N + "x)")
+
+    def test_set(self):
+        self.check_stack_size("{" + "x, " * self.N + "x}")
+
+    def test_dict(self):
+        self.check_stack_size("{" + "x:x, " * self.N + "x:x}")
+
+    def test_func_args(self):
+        self.check_stack_size("f(" + "x, " * self.N + ")")
+
+    def test_func_kwargs(self):
+        kwargs = (f'a{i}=x' for i in range(self.N))
+        self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
+
+    def test_func_args(self):
+        self.check_stack_size("o.m(" + "x, " * self.N + ")")
+
+    def test_meth_kwargs(self):
+        kwargs = (f'a{i}=x' for i in range(self.N))
+        self.check_stack_size("o.m(" +  ", ".join(kwargs) + ")")
 
     def test_func_and(self):
         code = "def f(x):\n"

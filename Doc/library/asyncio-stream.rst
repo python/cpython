@@ -75,6 +75,14 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
+
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, *, limit=None, \
                           family=socket.AF_UNSPEC, \
@@ -105,6 +113,13 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. rubric:: Unix Sockets
 
@@ -129,6 +144,13 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           *, limit=None, sock=None, backlog=100, ssl=None, \
@@ -149,6 +171,13 @@ and work with streams:
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :term:`path-like object`.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 
 StreamReader
