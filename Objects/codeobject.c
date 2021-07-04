@@ -610,9 +610,6 @@ PyCode_Addr2Location(PyCodeObject *co, int addrq,
                      int *end_line, int *end_column)
 {
     *start_line = PyCode_Addr2Line(co, addrq);
-    if (*start_line == -1) {
-        *start_line = 0;
-    }
     *start_column = _PyCode_Addr2Offset(co, addrq);
     *end_line = _PyCode_Addr2EndLine(co, addrq);
     *end_column = _PyCode_Addr2EndOffset(co, addrq);
@@ -626,7 +623,7 @@ _PyCode_Addr2EndLine(PyCodeObject* co, int addrq)
         return co->co_firstlineno;
     }
     else if (co->co_endlinetable == Py_None) {
-        return 0;
+        return -1;
     }
 
     assert(addrq >= 0 && addrq < PyBytes_GET_SIZE(co->co_code));
@@ -639,34 +636,34 @@ int
 _PyCode_Addr2Offset(PyCodeObject* co, int addrq)
 {
     if (co->co_columntable == Py_None || addrq < 0) {
-        return 0;
+        return -1;
     }
     if (addrq % 2 == 1) {
         --addrq;
     }
     if (addrq >= PyBytes_GET_SIZE(co->co_columntable)) {
-        return 0;
+        return -1;
     }
 
     unsigned char* bytes = (unsigned char*)PyBytes_AS_STRING(co->co_columntable);
-    return bytes[addrq];
+    return bytes[addrq] - 1;
 }
 
 int
 _PyCode_Addr2EndOffset(PyCodeObject* co, int addrq)
 {
     if (co->co_columntable == Py_None || addrq < 0) {
-        return 0;
+        return -1;
     }
     if (addrq % 2 == 0) {
         ++addrq;
     }
     if (addrq >= PyBytes_GET_SIZE(co->co_columntable)) {
-        return 0;
+        return -1;
     }
 
     unsigned char* bytes = (unsigned char*)PyBytes_AS_STRING(co->co_columntable);
-    return bytes[addrq];
+    return bytes[addrq] - 1;
 }
 
 void
@@ -980,7 +977,7 @@ positionsiter_dealloc(positionsiterator* pi)
 
 static PyObject*
 _source_offset_converter(int* value) {
-    if (*value <= 0) {
+    if (*value == -1) {
         Py_RETURN_NONE;
     }
     return PyLong_FromLong(*value);
