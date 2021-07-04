@@ -3,7 +3,7 @@
 from idlelib import run
 import io
 import sys
-from test.support import captured_output, captured_stderr
+from test.support import captured_output, captured_stderr, has_no_debug_ranges
 import unittest
 from unittest import mock
 import idlelib
@@ -33,9 +33,14 @@ class ExceptionTest(unittest.TestCase):
                         run.print_exception()
 
         tb = output.getvalue().strip().splitlines()
-        self.assertEqual(13, len(tb))
-        self.assertIn('UnhashableException: ex2', tb[4])
-        self.assertIn('UnhashableException: ex1', tb[12])
+        if has_no_debug_ranges():
+            self.assertEqual(11, len(tb))
+            self.assertIn('UnhashableException: ex2', tb[3])
+            self.assertIn('UnhashableException: ex1', tb[10])
+        else:
+            self.assertEqual(13, len(tb))
+            self.assertIn('UnhashableException: ex2', tb[4])
+            self.assertIn('UnhashableException: ex1', tb[12])
 
     data = (('1/0', ZeroDivisionError, "division by zero\n"),
             ('abc', NameError, "name 'abc' is not defined. "

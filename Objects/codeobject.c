@@ -379,6 +379,13 @@ _PyCode_New(struct _PyCodeConstructor *con)
         return NULL;
     }
 
+    // Discard the endlinetable and columntable if we are opted out of debug
+    // ranges.
+    if (_Py_GetConfig()->no_debug_ranges) {
+        con->endlinetable = Py_None;
+        con->columntable = Py_None;
+    }
+
     PyCodeObject *co = PyObject_New(PyCodeObject, &PyCode_Type);
     if (co == NULL) {
         PyErr_NoMemory();
@@ -1222,8 +1229,8 @@ code.__new__ as code_new
     qualname: unicode
     firstlineno: int
     linetable: object(subclass_of="&PyBytes_Type")
-    endlinetable: object(subclass_of="&PyBytes_Type")
-    columntable: object(subclass_of="&PyBytes_Type")
+    endlinetable: object
+    columntable: object
     exceptiontable: object(subclass_of="&PyBytes_Type")
     freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
     cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
@@ -1241,7 +1248,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               PyObject *endlinetable, PyObject *columntable,
               PyObject *exceptiontable, PyObject *freevars,
               PyObject *cellvars)
-/*[clinic end generated code: output=e1d2086aa8da7c08 input=ba12d68bd8fa0620]*/
+/*[clinic end generated code: output=e1d2086aa8da7c08 input=a06cd92369134063]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -1279,6 +1286,17 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
         PyErr_SetString(
             PyExc_ValueError,
             "code: nlocals must not be negative");
+        goto cleanup;
+    }
+
+    if (!Py_IsNone(endlinetable) && !PyBytes_Check(endlinetable)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "code: endlinetable must be None or bytes");
+        goto cleanup;
+    }
+    if (!Py_IsNone(columntable) && !PyBytes_Check(columntable)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "code: columntable must be None or bytes");
         goto cleanup;
     }
 
@@ -1585,8 +1603,8 @@ code.replace
     co_name: unicode(c_default="self->co_name") = None
     co_qualname: unicode(c_default="self->co_qualname") = None
     co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
-    co_endlinetable: PyBytesObject(c_default="(PyBytesObject *)self->co_endlinetable") = None
-    co_columntable: PyBytesObject(c_default="(PyBytesObject *)self->co_columntable") = None
+    co_endlinetable: object(c_default="self->co_endlinetable") = None
+    co_columntable: object(c_default="self->co_columntable") = None
     co_exceptiontable: PyBytesObject(c_default="(PyBytesObject *)self->co_exceptiontable") = None
 
 Return a copy of the code object with new values for the specified fields.
@@ -1601,11 +1619,9 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_endlinetable,
-                  PyBytesObject *co_columntable,
-                  PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=da699b6261fddc13 input=a8e93823df0aec35]*/
+                  PyBytesObject *co_linetable, PyObject *co_endlinetable,
+                  PyObject *co_columntable, PyBytesObject *co_exceptiontable)
+/*[clinic end generated code: output=f046bf0be3bab91f input=a63d09f248f00794]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -1655,6 +1671,17 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
             goto error;
         }
         co_freevars = freevars;
+    }
+
+    if (!Py_IsNone(co_endlinetable) && !PyBytes_Check(co_endlinetable)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "co_endlinetable must be None or bytes");
+        goto error;
+    }
+    if (!Py_IsNone(co_columntable) && !PyBytes_Check(co_columntable)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "co_columntable must be None or bytes");
+        goto error;
     }
 
     co = PyCode_NewWithPosOnlyArgs(
