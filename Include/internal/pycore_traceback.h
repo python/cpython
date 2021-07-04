@@ -87,27 +87,6 @@ PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 
-static inline Py_ssize_t
-_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
-{
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return 0;
-    }
-    Py_ssize_t len = strlen(str);
-    if (col_offset > len + 1) {
-        col_offset = len + 1;
-    }
-    assert(col_offset >= 0);
-    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
-    if (!text) {
-        return 0;
-    }
-    Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    Py_DECREF(text);
-    return size;
-}
-
 #ifdef __cplusplus
 }
 #endif

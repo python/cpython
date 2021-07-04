@@ -7,7 +7,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_frame.h"         // _PyFrame_GetCode()
-#include "pycore_traceback.h"     // _byte_offset_to_character_offset()
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -556,8 +556,8 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         }
         // Convert the utf-8 byte offset to the actual character offset so we
         // print the right number of carets.
-        Py_ssize_t start_offset = _byte_offset_to_character_offset(source_line, start_col_byte_offset);
-        Py_ssize_t end_offset = _byte_offset_to_character_offset(source_line, end_col_byte_offset);
+        Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+        Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
 
         char offset = truncation;
         while (++offset <= start_offset) {
