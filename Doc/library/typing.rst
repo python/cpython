@@ -1197,7 +1197,7 @@ These are not used in annotations. They are building blocks for creating generic
           def meth(self) -> int:
               return 0
 
-      def func(x: Proto) -> int:
+      def func(x: C) -> int:
           return x.meth()
 
       func(C())  # Passes static type check
