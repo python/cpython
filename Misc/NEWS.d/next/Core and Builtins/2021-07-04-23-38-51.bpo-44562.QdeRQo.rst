@@ -1,0 +1,2 @@
+Remove uses of :c:func:`PyObject_GC_Del` in error path when initializing
+:class:`types.GenericAlias`.
