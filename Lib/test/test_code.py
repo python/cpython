@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>', "'f.<locals>.g'")
+consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
 name: g

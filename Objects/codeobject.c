@@ -354,7 +354,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
     if (PyUnicode_READY(con->name) < 0) {
         return NULL;
     }
-    if (con->qualname != NULL && PyUnicode_READY(con->qualname) < 0) {
+    if (PyUnicode_READY(con->qualname) < 0) {
         return NULL;
     }
     if (PyUnicode_READY(con->filename) < 0) {
