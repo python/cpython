@@ -33,9 +33,9 @@ class ExceptionTest(unittest.TestCase):
                         run.print_exception()
 
         tb = output.getvalue().strip().splitlines()
-        self.assertEqual(11, len(tb))
-        self.assertIn('UnhashableException: ex2', tb[3])
-        self.assertIn('UnhashableException: ex1', tb[10])
+        self.assertEqual(13, len(tb))
+        self.assertIn('UnhashableException: ex2', tb[4])
+        self.assertIn('UnhashableException: ex1', tb[12])
 
     data = (('1/0', ZeroDivisionError, "division by zero\n"),
             ('abc', NameError, "name 'abc' is not defined. "

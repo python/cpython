@@ -1,5 +1,6 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
+#include "pycore_traceback.h"     // _byte_offset_to_character_offset(),
 #include <errcode.h>
 #include "tokenizer.h"
 
@@ -137,27 +138,6 @@ static PyObject *
 _create_dummy_identifier(Parser *p)
 {
     return _PyPegen_new_identifier(p, "");
-}
-
-static inline Py_ssize_t
-byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
-{
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return 0;
-    }
-    Py_ssize_t len = strlen(str);
-    if (col_offset > len + 1) {
-        col_offset = len + 1;
-    }
-    assert(col_offset >= 0);
-    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
-    if (!text) {
-        return 0;
-    }
-    Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    Py_DECREF(text);
-    return size;
 }
 
 const char *
@@ -498,9 +478,9 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     Py_ssize_t end_col_number = end_col_offset;
 
     if (p->tok->encoding != NULL) {
-        col_number = byte_offset_to_character_offset(error_line, col_offset);
+        col_number = _byte_offset_to_character_offset(error_line, col_offset);
         end_col_number = end_col_number > 0 ?
-                         byte_offset_to_character_offset(error_line, end_col_offset) :
+                         _byte_offset_to_character_offset(error_line, end_col_offset) :
                          end_col_number;
     }
     tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
