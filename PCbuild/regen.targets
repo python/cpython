@@ -73,12 +73,51 @@
   </Target>
 
   <Target Name="_RegenKeywords" Inputs="@(_KeywordSources)" Outputs="@(_KeywordOutputs)">
-    <Message Text="Regenerate @(KeywordOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
+    <Message Text="Regenerate @(_KeywordOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen.keywordgen Grammar\python.gram Grammar\Tokens Lib\keyword.py"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
-  
+
   <Target Name="Regen" DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenOpcodes;_RegenTokens;_RegenKeywords">
     <Message Text="Generated sources are up to date" Importance="high" />
+  </Target>
+
+
+  <ItemGroup>
+    <_TestFrozenSources Include="$(PySourcePath)Programs\freeze_test_frozenmain.py;
+                                 $(PySourcePath)Programs\test_frozenmain.py;
+                                 @(_OpcodeOutputs)" />
+    <_TestFrozenOutputs Include="$(PySourcePath)Programs\test_frozenmain.h" />
+    <_LicenseSources Include="$(PySourcePath)LICENSE;
+                              $(PySourcePath)PC\crtlicense.txt;
+                              $(bz2Dir)LICENSE;
+                              $(opensslOutDir)LICENSE;
+                              $(libffiDir)LICENSE;" />
+    <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
+                              $(tcltkDir)tklicense.terms;
+                              $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
+    <_LicenseOutputs Include="$(OutDir)LICENSE.txt" />
+  </ItemGroup>
+
+  <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)"
+          Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">
+    <Message Text="Regenerate @(_TestFrozenOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
+    <Exec Command="$(PythonExe) Programs\freeze_test_frozenmain.py Programs/test_frozenmain.h"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenLicense" Inputs="@(_LicenseSources)" Outputs="@(_LicenseOutputs)">
+    <Message Text="Regenerate @(_LicenseOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
+    <ItemGroup>
+      <_Text Include="@(_LicenseFiles)">
+        <Content Condition="Exists(%(FullPath))">$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+      </_Text>
+    </ItemGroup>
+
+    <WriteLinesToFile File="@(_LicenseOutputs)" Overwrite="true" Lines="@(_Text->'%(Content)')" />
+  </Target>
+
+  <Target Name="PostBuildRegen" DependsOnTargets="_RegenTestFrozenmain;_RegenLicense">
+    <Message Text="Other generated files are up to date" Importance="high" />
   </Target>
 </Project>
