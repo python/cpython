@@ -113,17 +113,17 @@ class _GeneratorContextManagerBase:
         # for the class instead.
         # See http://bugs.python.org/issue19404 for more details.
 
+    def _recreate_cm(self):
+        # _GCMB instances are one-shot context managers, so the
+        # CM must be recreated each time a decorated function is
+        # called
+        return self.__class__(self.func, self.args, self.kwds)
+
 
 class _GeneratorContextManager(_GeneratorContextManagerBase,
                                AbstractContextManager,
                                ContextDecorator):
     """Helper for @contextmanager decorator."""
-
-    def _recreate_cm(self):
-        # _GCM instances are one-shot context managers, so the
-        # CM must be recreated each time a decorated function is
-        # called
-        return self.__class__(self.func, self.args, self.kwds)
 
     def __enter__(self):
         # do not keep args and kwds alive unnecessarily
@@ -184,12 +184,6 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
                                     AbstractAsyncContextManager,
                                     AsyncContextDecorator):
     """Helper for @asynccontextmanager."""
-
-    def _recreate_cm(self):
-        # _AGCM instances are one-shot context managers, so the
-        # ACM must be recreated each time a decorated function is
-        # called
-        return self.__class__(self.func, self.args, self.kwds)
 
     async def __aenter__(self):
         try:
