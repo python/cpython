@@ -41,7 +41,13 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
+/* PyCFunction_New is declared as a function for stable ABI (declaration is
+ * needed for e.g. GCC with -fvisibility=hidden), but redefined as a macro
+ * that calls PyCFunction_NewEx. */
+PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
+
+/* PyCFunction_NewEx is similar: on 3.9+, this calls PyCMethod_New. */
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 
@@ -73,15 +79,15 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
-#ifndef Py_LIMITED_API
-#define METH_FASTCALL  0x0080
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
+#  define METH_FASTCALL  0x0080
 #endif
 
 /* This bit is preserved for Stackless Python */
 #ifdef STACKLESS
-#define METH_STACKLESS 0x0100
+#  define METH_STACKLESS 0x0100
 #else
-#define METH_STACKLESS 0x0000
+#  define METH_STACKLESS 0x0000
 #endif
 
 /* METH_METHOD means the function stores an

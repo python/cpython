@@ -16,6 +16,12 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* The normal alignment of `long', in bytes. */
+#undef ALIGNOF_LONG
+
+/* The normal alignment of `size_t', in bytes. */
+#undef ALIGNOF_SIZE_T
+
 /* Alternative SOABI used in debug build to load C extensions built in release
    mode */
 #undef ALT_SOABI
@@ -115,7 +121,7 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
-/* Has builtin atomics */
+/* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
 /* Define to 1 if you have the 'chflags' function. */
@@ -138,6 +144,9 @@
 
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
+
+/* Define to 1 if you have the `close_range' function. */
+#undef HAVE_CLOSE_RANGE
 
 /* Define if the C compiler supports computed gotos. */
 #undef HAVE_COMPUTED_GOTOS
@@ -284,6 +293,9 @@
 /* Define to 1 if you have the `dup3' function. */
 #undef HAVE_DUP3
 
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
@@ -304,6 +316,9 @@
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
+
+/* Define if you have the 'eventfd' function. */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
@@ -601,7 +616,7 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define if you have the readline library (-lreadline). */
+/* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
 
 /* Define to 1 if you have the `resolv' library (-lresolv). */
@@ -732,6 +747,10 @@
 
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
+
+/* Define if the internal form of wchar_t in non-Unicode locales is not
+   Unicode. */
+#undef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
@@ -1009,6 +1028,9 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -1112,6 +1134,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H
@@ -1298,6 +1323,9 @@
 /* Define to 1 if you have the <uuid/uuid.h> header file. */
 #undef HAVE_UUID_UUID_H
 
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
+
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
 
@@ -1331,9 +1359,6 @@
 
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
-
-/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
-#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
@@ -1535,6 +1560,9 @@
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
    Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
+
+/* Define to build the readline module against Editline. */
+#undef WITH_EDITLINE
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL

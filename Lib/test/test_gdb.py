@@ -51,11 +51,6 @@ if gdb_major_version < 7:
                             "embedding. Saw %s.%s:\n%s"
                             % (gdb_major_version, gdb_minor_version,
                                gdb_version))
-if (gdb_major_version, gdb_minor_version) >= (9, 2):
-    # gdb 9.2 on Fedora Rawhide is not reliable, see:
-    # * https://bugs.python.org/issue41473
-    # * https://bugzilla.redhat.com/show_bug.cgi?id=1866884
-    raise unittest.SkipTest("https://bugzilla.redhat.com/show_bug.cgi?id=1866884")
 
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
@@ -671,15 +666,16 @@ id(a)''')
 
     def test_frames(self):
         gdb_output = self.get_stack_trace('''
+import sys
 def foo(a, b, c):
-    pass
+    return sys._getframe(0)
 
-foo(3, 4, 5)
-id(foo.__code__)''',
+f = foo(3, 4, 5)
+id(f)''',
                                           breakpoint='builtin_id',
-                                          cmds_after_breakpoint=['print (PyFrameObject*)(((PyCodeObject*)v)->co_zombieframe)']
+                                          cmds_after_breakpoint=['print (PyFrameObject*)v']
                                           )
-        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x-?[0-9a-f]+, for file <string>, line 3, in foo \(\)\s+.*',
+        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x-?[0-9a-f]+, for file <string>, line 4, in foo \(a=3.*',
                                  gdb_output,
                                  re.DOTALL),
                         'Unexpected gdb representation: %r\n%s' % (gdb_output, gdb_output))

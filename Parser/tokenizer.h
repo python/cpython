@@ -15,8 +15,16 @@ extern "C" {
 
 enum decoding_state {
     STATE_INIT,
-    STATE_RAW,
-    STATE_NORMAL        /* have a codec associated with input */
+    STATE_SEEK_CODING,
+    STATE_NORMAL
+};
+
+enum interactive_underflow_t {
+    /* Normal mode of operation: return a new token when asked in interactie mode */
+    IUNDERFLOW_NORMAL,
+    /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
+     * can be used to prevent the tokenizer to promt the user for new tokens */
+    IUNDERFLOW_STOP,
 };
 
 /* Tokenizer state */
@@ -26,6 +34,9 @@ struct tok_state {
     char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
+    int fp_interactive; /* If the file descriptor is interactive */
+    char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
+    char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
     const char *end;    /* End of input buffer if buf != NULL */
     const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
@@ -44,13 +55,13 @@ struct tok_state {
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
     int parenlinenostack[MAXLEVEL];
+    int parencolstack[MAXLEVEL];
     PyObject *filename;
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     enum decoding_state decoding_state;
     int decoding_erred;         /* whether erred in decoding  */
-    int read_coding_spec;       /* whether 'coding:...' has been read  */
     char *encoding;         /* Source encoding. */
     int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */
@@ -71,6 +82,8 @@ struct tok_state {
     int async_def_indent; /* Indentation level of the outermost 'async def'. */
     int async_def_nl;     /* =1 if the outermost 'async def' had at least one
                              NEWLINE token after it. */
+    /* How to proceed when asked for a new token in interactive mode */
+    enum interactive_underflow_t interactive_underflow; 
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);

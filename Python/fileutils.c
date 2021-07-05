@@ -1,5 +1,6 @@
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // fileutils definitions
+#include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
 
@@ -17,6 +18,10 @@ extern int winerror_to_errno(int);
 #include <sys/ioctl.h>
 #endif
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#include <iconv.h>
+#endif
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
@@ -32,6 +37,13 @@ extern int winerror_to_errno(int);
    and os.open(). */
 int _Py_open_cloexec_works = -1;
 #endif
+
+// The value must be the same in unicodeobject.c.
+#define MAX_UNICODE 0x10ffff
+
+// mbstowcs() and mbrtowc() errors
+static const size_t DECODE_ERROR = ((size_t)-1);
+static const size_t INCOMPLETE_CHARACTER = (size_t)-2;
 
 
 static int
@@ -54,9 +66,6 @@ get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
 PyObject *
 _Py_device_encoding(int fd)
 {
-#if defined(MS_WINDOWS)
-    UINT cp;
-#endif
     int valid;
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
@@ -65,6 +74,7 @@ _Py_device_encoding(int fd)
         Py_RETURN_NONE;
 
 #if defined(MS_WINDOWS)
+    UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
     else if (fd == 1 || fd == 2)
@@ -73,17 +83,72 @@ _Py_device_encoding(int fd)
         cp = 0;
     /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
        has no console */
-    if (cp != 0)
-        return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#elif defined(CODESET)
-    {
-        char *codeset = nl_langinfo(CODESET);
-        if (codeset != NULL && codeset[0] != 0)
-            return PyUnicode_FromString(codeset);
+    if (cp == 0) {
+        Py_RETURN_NONE;
     }
+
+    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
+    return _Py_GetLocaleEncodingObject();
 #endif
-    Py_RETURN_NONE;
 }
+
+
+static size_t
+is_valid_wide_char(wchar_t ch)
+{
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris doesn't use Unicode code points as wchar_t encoding
+       for non-Unicode locales, which makes values higher than MAX_UNICODE
+       possibly valid. */
+    return 1;
+#endif
+    if (Py_UNICODE_IS_SURROGATE(ch)) {
+        // Reject lone surrogate characters
+        return 0;
+    }
+    if (ch > MAX_UNICODE) {
+        // bpo-35883: Reject characters outside [U+0000; U+10ffff] range.
+        // The glibc mbstowcs() UTF-8 decoder does not respect the RFC 3629,
+        // it creates characters outside the [U+0000; U+10ffff] range:
+        // https://sourceware.org/bugzilla/show_bug.cgi?id=2373
+        return 0;
+    }
+    return 1;
+}
+
+
+static size_t
+_Py_mbstowcs(wchar_t *dest, const char *src, size_t n)
+{
+    size_t count = mbstowcs(dest, src, n);
+    if (dest != NULL && count != DECODE_ERROR) {
+        for (size_t i=0; i < count; i++) {
+            wchar_t ch = dest[i];
+            if (!is_valid_wide_char(ch)) {
+                return DECODE_ERROR;
+            }
+        }
+    }
+    return count;
+}
+
+
+#ifdef HAVE_MBRTOWC
+static size_t
+_Py_mbrtowc(wchar_t *pwc, const char *str, size_t len, mbstate_t *pmbs)
+{
+    assert(pwc != NULL);
+    size_t count = mbrtowc(pwc, str, len, pmbs);
+    if (count != 0 && count != DECODE_ERROR && count != INCOMPLETE_CHARACTER) {
+        if (!is_valid_wide_char(*pwc)) {
+            return DECODE_ERROR;
+        }
+    }
+    return count;
+}
+#endif
+
 
 #if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
 
@@ -151,8 +216,8 @@ check_force_ascii(void)
         size_t res;
 
         ch = (unsigned char)0xA7;
-        res = mbstowcs(&wch, (char*)&ch, 1);
-        if (res != (size_t)-1 && wch == L'\xA7') {
+        res = _Py_mbstowcs(&wch, (char*)&ch, 1);
+        if (res != DECODE_ERROR && wch == L'\xA7') {
             /* On HP-UX withe C locale or the POSIX locale,
                nl_langinfo(CODESET) announces "roman8", whereas mbstowcs() uses
                Latin1 encoding in practice. Force ASCII in this case.
@@ -199,8 +264,8 @@ check_force_ascii(void)
 
         unsigned uch = (unsigned char)i;
         ch[0] = (char)uch;
-        res = mbstowcs(wch, ch, 1);
-        if (res != (size_t)-1) {
+        res = _Py_mbstowcs(wch, ch, 1);
+        if (res != DECODE_ERROR) {
             /* decoding a non-ASCII character from the locale encoding succeed:
                the locale encoding is not ASCII, force ASCII */
             return 1;
@@ -390,9 +455,9 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
      */
     argsize = strlen(arg);
 #else
-    argsize = mbstowcs(NULL, arg, 0);
+    argsize = _Py_mbstowcs(NULL, arg, 0);
 #endif
-    if (argsize != (size_t)-1) {
+    if (argsize != DECODE_ERROR) {
         if (argsize > PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
             return -1;
         }
@@ -401,21 +466,13 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
             return -1;
         }
 
-        count = mbstowcs(res, arg, argsize + 1);
-        if (count != (size_t)-1) {
-            wchar_t *tmp;
-            /* Only use the result if it contains no
-               surrogate characters. */
-            for (tmp = res; *tmp != 0 &&
-                         !Py_UNICODE_IS_SURROGATE(*tmp); tmp++)
-                ;
-            if (*tmp == 0) {
-                if (wlen != NULL) {
-                    *wlen = count;
-                }
-                *wstr = res;
-                return 0;
+        count = _Py_mbstowcs(res, arg, argsize + 1);
+        if (count != DECODE_ERROR) {
+            *wstr = res;
+            if (wlen != NULL) {
+                *wlen = count;
             }
+            return 0;
         }
         PyMem_RawFree(res);
     }
@@ -439,13 +496,13 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
     out = res;
     memset(&mbs, 0, sizeof mbs);
     while (argsize) {
-        size_t converted = mbrtowc(out, (char*)in, argsize, &mbs);
+        size_t converted = _Py_mbrtowc(out, (char*)in, argsize, &mbs);
         if (converted == 0) {
             /* Reached end of string; null char stored. */
             break;
         }
 
-        if (converted == (size_t)-2) {
+        if (converted == INCOMPLETE_CHARACTER) {
             /* Incomplete character. This should never happen,
                since we provide everything that we have -
                unless there is a bug in the C library, or I
@@ -453,32 +510,22 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
             goto decode_error;
         }
 
-        if (converted == (size_t)-1) {
+        if (converted == DECODE_ERROR) {
             if (!surrogateescape) {
                 goto decode_error;
             }
 
-            /* Conversion error. Escape as UTF-8b, and start over
-               in the initial shift state. */
+            /* Decoding error. Escape as UTF-8b, and start over in the initial
+               shift state. */
             *out++ = 0xdc00 + *in++;
             argsize--;
             memset(&mbs, 0, sizeof mbs);
             continue;
         }
 
-        if (Py_UNICODE_IS_SURROGATE(*out)) {
-            if (!surrogateescape) {
-                goto decode_error;
-            }
+        // _Py_mbrtowc() reject lone surrogate characters
+        assert(!Py_UNICODE_IS_SURROGATE(*out));
 
-            /* Surrogate character.  Escape the original
-               byte sequence with surrogateescape. */
-            argsize -= converted;
-            while (converted--) {
-                *out++ = 0xdc00 + *in++;
-            }
-            continue;
-        }
         /* successfully converted some bytes */
         in += converted;
         argsize -= converted;
@@ -655,7 +702,7 @@ encode_current_locale(const wchar_t *text, char **str,
                 else {
                     converted = wcstombs(NULL, buf, 0);
                 }
-                if (converted == (size_t)-1) {
+                if (converted == DECODE_ERROR) {
                     goto encode_error;
                 }
                 if (bytes != NULL) {
@@ -820,6 +867,168 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 }
 
 
+// Get the current locale encoding name:
+//
+// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - On Windows, return the ANSI code page (ex: "cp1250")
+// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// - Otherwise, return nl_langinfo(CODESET).
+//
+// Return NULL on memory allocation failure.
+//
+// See also config_get_locale_encoding()
+wchar_t*
+_Py_GetLocaleEncoding(void)
+{
+#ifdef _Py_FORCE_UTF8_LOCALE
+    // On Android langinfo.h and CODESET are missing,
+    // and UTF-8 is always used in mbstowcs() and wcstombs().
+    return _PyMem_RawWcsdup(L"UTF-8");
+#else
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->utf8_mode) {
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+#ifdef MS_WINDOWS
+    wchar_t encoding[23];
+    unsigned int ansi_codepage = GetACP();
+    swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u", ansi_codepage);
+    encoding[Py_ARRAY_LENGTH(encoding) - 1] = 0;
+    return _PyMem_RawWcsdup(encoding);
+#else
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+        // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
+        // macOS if the LC_CTYPE locale is not supported.
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+    wchar_t *wstr;
+    int res = decode_current_locale(encoding, &wstr, NULL,
+                                    NULL, _Py_ERROR_SURROGATEESCAPE);
+    if (res < 0) {
+        return NULL;
+    }
+    return wstr;
+#endif  // !MS_WINDOWS
+
+#endif  // !_Py_FORCE_UTF8_LOCALE
+}
+
+
+PyObject *
+_Py_GetLocaleEncodingObject(void)
+{
+    wchar_t *encoding = _Py_GetLocaleEncoding();
+    if (encoding == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(encoding, -1);
+    PyMem_RawFree(encoding);
+    return str;
+}
+
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+
+/* Check whether current locale uses Unicode as internal wchar_t form. */
+int
+_Py_LocaleUsesNonUnicodeWchar(void)
+{
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion to UTF first. */
+    char* codeset = nl_langinfo(CODESET);
+    if (!codeset) {
+        return 0;
+    }
+    /* 646 refers to ISO/IEC 646 standard that corresponds to ASCII encoding */
+    return (strcmp(codeset, "UTF-8") != 0 && strcmp(codeset, "646") != 0);
+}
+
+static wchar_t *
+_Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
+                     const char *tocode, const char *fromcode)
+{
+    Py_BUILD_ASSERT(sizeof(wchar_t) == 4);
+
+    /* Ensure we won't overflow the size. */
+    if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    /* the string doesn't have to be NULL terminated */
+    wchar_t* target = PyMem_Malloc(size * sizeof(wchar_t));
+    if (target == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    iconv_t cd = iconv_open(tocode, fromcode);
+    if (cd == (iconv_t)-1) {
+        PyErr_Format(PyExc_ValueError, "iconv_open() failed");
+        PyMem_Free(target);
+        return NULL;
+    }
+
+    char *inbuf = (char *) source;
+    char *outbuf = (char *) target;
+    size_t inbytesleft = sizeof(wchar_t) * size;
+    size_t outbytesleft = inbytesleft;
+
+    size_t ret = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+    if (ret == DECODE_ERROR) {
+        PyErr_Format(PyExc_ValueError, "iconv() failed");
+        PyMem_Free(target);
+        iconv_close(cd);
+        return NULL;
+    }
+
+    iconv_close(cd);
+    return target;
+}
+
+/* Convert a wide character string to the UCS-4 encoded string. This
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
+
+   Return a pointer to a newly allocated string, use PyMem_Free() to free
+   the memory. Return NULL and raise exception on conversion or memory
+   allocation error. */
+wchar_t *
+_Py_DecodeNonUnicodeWchar(const wchar_t *native, Py_ssize_t size)
+{
+    return _Py_ConvertWCharForm(native, size, "UCS-4-INTERNAL", "wchar_t");
+}
+
+/* Convert a UCS-4 encoded string to native wide character string. This
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
+
+   The conversion is done in place. This can be done because both wchar_t
+   and UCS-4 use 4-byte encoding, and one wchar_t symbol always correspond
+   to a single UCS-4 symbol and vice versa. (This is true for Oracle Solaris,
+   which is currently the only system using these functions; it doesn't have
+   to be for other systems).
+
+   Return 0 on success. Return -1 and raise exception on conversion
+   or memory allocation error. */
+int
+_Py_EncodeNonUnicodeWchar_InPlace(wchar_t *unicode, Py_ssize_t size)
+{
+    wchar_t* result = _Py_ConvertWCharForm(unicode, size, "wchar_t", "UCS-4-INTERNAL");
+    if (!result) {
+        return -1;
+    }
+    memcpy(unicode, result, size * sizeof(wchar_t));
+    PyMem_Free(result);
+    return 0;
+}
+#endif /* HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION */
+
 #ifdef MS_WINDOWS
 static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
 
@@ -913,9 +1122,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     HANDLE h;
     int type;
 
-    _Py_BEGIN_SUPPRESS_IPH
-    h = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
+    h = _Py_get_osfhandle_noraise(fd);
 
     if (h == INVALID_HANDLE_VALUE) {
         /* errno is already set by _get_osfhandle, but we also set
@@ -1054,9 +1261,7 @@ get_inheritable(int fd, int raise)
     HANDLE handle;
     DWORD flags;
 
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
+    handle = _Py_get_osfhandle_noraise(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -1127,9 +1332,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
 
 #ifdef MS_WINDOWS
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
+    handle = _Py_get_osfhandle_noraise(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -1171,6 +1374,13 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             return 0;
         }
 
+#ifdef __linux__
+        if (errno == EBADF) {
+            // On Linux, ioctl(FIOCLEX) will fail with EBADF for O_PATH file descriptors
+            // Fall through to the fcntl() path
+        }
+        else
+#endif
         if (errno != ENOTTY && errno != EACCES) {
             if (raise)
                 PyErr_SetFromErrno(PyExc_OSError);
@@ -1370,7 +1580,7 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     char cmode[10];
     size_t r;
     r = wcstombs(cmode, mode, 10);
-    if (r == (size_t)-1 || r >= 10) {
+    if (r == DECODE_ERROR || r >= 10) {
         errno = EINVAL;
         return NULL;
     }
@@ -1392,33 +1602,6 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen().
-
-   The file descriptor is created non-inheritable.
-
-   If interrupted by a signal, fail with EINTR. */
-FILE*
-_Py_fopen(const char *pathname, const char *mode)
-{
-    PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
-    if (pathname_obj == NULL) {
-        return NULL;
-    }
-    if (PySys_Audit("open", "Osi", pathname_obj, mode, 0) < 0) {
-        Py_DECREF(pathname_obj);
-        return NULL;
-    }
-    Py_DECREF(pathname_obj);
-
-    FILE *f = fopen(pathname, mode);
-    if (f == NULL)
-        return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
-        fclose(f);
-        return NULL;
-    }
-    return f;
-}
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
    encoding and call fopen() otherwise.
@@ -1923,13 +2106,9 @@ _Py_dup(int fd)
     assert(PyGILState_Check());
 
 #ifdef MS_WINDOWS
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    if (handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetFromErrno(PyExc_OSError);
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE)
         return -1;
-    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -2007,7 +2186,9 @@ _Py_get_blocking(int fd)
 int
 _Py_set_blocking(int fd, int blocking)
 {
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)
+/* bpo-41462: On VxWorks, ioctl(FIONBIO) only works on sockets.
+   Use fcntl() instead. */
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO) && !defined(__VXWORKS__)
     int arg = !blocking;
     if (ioctl(fd, FIONBIO, &arg) < 0)
         goto error;
@@ -2037,8 +2218,47 @@ error:
     PyErr_SetFromErrno(PyExc_OSError);
     return -1;
 }
-#endif
+#else   /* MS_WINDOWS */
+void*
+_Py_get_osfhandle_noraise(int fd)
+{
+    void *handle;
+    _Py_BEGIN_SUPPRESS_IPH
+    handle = (void*)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    return handle;
+}
 
+void*
+_Py_get_osfhandle(int fd)
+{
+    void *handle = _Py_get_osfhandle_noraise(fd);
+    if (handle == INVALID_HANDLE_VALUE)
+        PyErr_SetFromErrno(PyExc_OSError);
+
+    return handle;
+}
+
+int
+_Py_open_osfhandle_noraise(void *handle, int flags)
+{
+    int fd;
+    _Py_BEGIN_SUPPRESS_IPH
+    fd = _open_osfhandle((intptr_t)handle, flags);
+    _Py_END_SUPPRESS_IPH
+    return fd;
+}
+
+int
+_Py_open_osfhandle(void *handle, int flags)
+{
+    int fd = _Py_open_osfhandle_noraise(handle, flags);
+    if (fd == -1)
+        PyErr_SetFromErrno(PyExc_OSError);
+
+    return fd;
+}
+#endif  /* MS_WINDOWS */
 
 int
 _Py_GetLocaleconvNumeric(struct lconv *lc,
@@ -2047,6 +2267,7 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     assert(decimal_point != NULL);
     assert(thousands_sep != NULL);
 
+#ifndef MS_WINDOWS
     int change_locale = 0;
     if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
@@ -2085,14 +2306,20 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else /* MS_WINDOWS */
+/* Use _W_* fields of Windows strcut lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
-    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    *decimal_point = GET_LOCALE_STRING(decimal_point);
     if (*decimal_point == NULL) {
         goto done;
     }
 
-    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    *thousands_sep = GET_LOCALE_STRING(thousands_sep);
     if (*thousands_sep == NULL) {
         goto done;
     }
@@ -2100,9 +2327,89 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
+
+#undef GET_LOCALE_STRING
+}
+
+/* Our selection logic for which function to use is as follows:
+ * 1. If close_range(2) is available, always prefer that; it's better for
+ *    contiguous ranges like this than fdwalk(3) which entails iterating over
+ *    the entire fd space and simply doing nothing for those outside the range.
+ * 2. If closefrom(2) is available, we'll attempt to use that next if we're
+ *    closing up to sysconf(_SC_OPEN_MAX).
+ * 2a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
+ *    as that will be more performant if the range happens to have any chunk of
+ *    non-opened fd in the middle.
+ * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
+ */
+#ifdef __FreeBSD__
+#  define USE_CLOSEFROM
+#endif /* __FreeBSD__ */
+
+#ifdef HAVE_FDWALK
+#  define USE_FDWALK
+#endif /* HAVE_FDWALK */
+
+#ifdef USE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi) {
+        return 1;
+    }
+    else if (fd >= lo) {
+        /* Ignore errors */
+        (void)close(fd);
+    }
+    return 0;
+}
+#endif /* USE_FDWALK */
+
+/* Closes all file descriptors in [first, last], ignoring errors. */
+void
+_Py_closerange(int first, int last)
+{
+    first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_CLOSE_RANGE
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
+        /* Any errors encountered while closing file descriptors are ignored;
+         * ENOSYS means no kernel support, though,
+         * so we'll fallback to the other methods. */
+    }
+    else
+#endif /* HAVE_CLOSE_RANGE */
+#ifdef USE_CLOSEFROM
+    if (last >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(first);
+    }
+    else
+#endif /* USE_CLOSEFROM */
+#ifdef USE_FDWALK
+    {
+        int lohi[2];
+        lohi[0] = first;
+        lohi[1] = last + 1;
+        fdwalk(_fdwalk_close_func, lohi);
+    }
+#else
+    {
+        for (int i = first; i <= last; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
+#endif /* USE_FDWALK */
+    _Py_END_SUPPRESS_IPH
 }

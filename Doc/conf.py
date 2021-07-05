@@ -15,8 +15,7 @@ sys.path.append(os.path.abspath('includes'))
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations', 'escape4chm',
-              'asdl_highlight', 'peg_highlight']
-
+              'asdl_highlight', 'peg_highlight', 'glossary_search']
 
 doctest_global_setup = '''
 try:
@@ -226,8 +225,9 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
 # Options for extensions
 # ----------------------
 
-# Relative filename of the reference count data file.
+# Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
+stable_abi_file = 'data/stable_abi.dat'
 
 # Sphinx 2 and Sphinx 3 compatibility
 # -----------------------------------
@@ -238,3 +238,5 @@ c_allow_pre_v3 = True
 # bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
 # documentation is built with -W (warnings treated as errors).
 c_warn_on_allowed_pre_v3 = False
+
+strip_signature_backslash = True

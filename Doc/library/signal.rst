@@ -117,7 +117,7 @@ The variables defined in the :mod:`signal` module are:
 
    Child process stopped or terminated.
 
-   .. availability:: Windows.
+   .. availability:: Unix.
 
 .. data:: SIGCLD
 
@@ -416,7 +416,7 @@ The :mod:`signal` module defines the following functions:
 
    :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
-   .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
+   .. availability:: Unix.  See the man page :manpage:`sigprocmask(2)` and
       :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.

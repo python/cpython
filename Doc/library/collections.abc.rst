@@ -198,7 +198,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    .. note::
       In CPython, generator-based coroutines (generators decorated with
-      :func:`types.coroutine` or :func:`asyncio.coroutine`) are
+      :func:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`__await__` method.
       Using ``isinstance(gencoro, Awaitable)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -216,7 +216,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    .. note::
       In CPython, generator-based coroutines (generators decorated with
-      :func:`types.coroutine` or :func:`asyncio.coroutine`) are
+      :func:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`__await__` method.
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -291,7 +291,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
    constructor signature, you will need to override :meth:`_from_iterable`
-   with a classmethod that can construct new instances from
+   with a classmethod or regular method that can construct new instances from
    an iterable argument.
 
 (2)

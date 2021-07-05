@@ -1,2 +1,0 @@
-Add read-only ssl.SSLContext.security_level attribute to retrieve the
-context's security level.

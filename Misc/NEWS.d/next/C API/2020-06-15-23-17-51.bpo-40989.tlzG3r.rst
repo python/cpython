@@ -1,3 +1,0 @@
-The :c:func:`PyObject_INIT` and :c:func:`PyObject_INIT_VAR` macros become
-aliases to, respectively, :c:func:`PyObject_Init` and
-:c:func:`PyObject_InitVar` functions.

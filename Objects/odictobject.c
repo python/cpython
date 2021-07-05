@@ -40,9 +40,9 @@ we've considered:
 
 The approach with the least performance impact (time and space) is #2,
 mirroring the key order of dict's dk_entries with an array of node pointers.
-While lookdict() and friends (dk_lookup) don't give us the index into the
-array, we make use of pointer arithmetic to get that index.  An alternative
-would be to refactor lookdict() to provide the index, explicitly exposing
+While _Py_dict_lookup() does not give us the index into the array,
+we make use of pointer arithmetic to get that index.  An alternative would
+be to refactor _Py_dict_lookup() to provide the index, explicitly exposing
 the implementation detail.  We could even just use a custom lookup function
 for OrderedDict that facilitates our need.  However, both approaches are
 significantly more complicated than just using pointer arithmetic.
@@ -459,7 +459,7 @@ later:
 - implement a fuller MutableMapping API in C?
 - move the MutableMapping implementation to abstract.c?
 - optimize mutablemapping_update
-- use PyObject_MALLOC (small object allocator) for odict nodes?
+- use PyObject_Malloc (small object allocator) for odict nodes?
 - support subclasses better (e.g. in odict_richcompare)
 
 */
@@ -467,7 +467,7 @@ later:
 #include "Python.h"
 #include "pycore_object.h"
 #include <stddef.h>               // offsetof()
-#include "dict-common.h"
+#include "pycore_dict.h"
 #include <stddef.h>
 
 #include "clinic/odictobject.c.h"
@@ -535,7 +535,7 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
+    ix = _Py_dict_lookup((PyDictObject *)od, key, hash, &value);
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
@@ -545,6 +545,8 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     return ix;
 }
 
+#define ONE ((Py_ssize_t)1)
+
 /* Replace od->od_fast_nodes with a new table matching the size of dict's. */
 static int
 _odict_resize(PyODictObject *od)
@@ -553,7 +555,7 @@ _odict_resize(PyODictObject *od)
     _ODictNode **fast_nodes, *node;
 
     /* Initialize a new "fast nodes" table. */
-    size = ((PyDictObject *)od)->ma_keys->dk_size;
+    size = ONE << (((PyDictObject *)od)->ma_keys->dk_log2_size);
     fast_nodes = PyMem_NEW(_ODictNode *, size);
     if (fast_nodes == NULL) {
         PyErr_NoMemory();
@@ -567,14 +569,14 @@ _odict_resize(PyODictObject *od)
         i = _odict_get_index_raw(od, _odictnode_KEY(node),
                                  _odictnode_HASH(node));
         if (i < 0) {
-            PyMem_FREE(fast_nodes);
+            PyMem_Free(fast_nodes);
             return -1;
         }
         fast_nodes[i] = node;
     }
 
     /* Replace the old fast nodes table. */
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = fast_nodes;
     od->od_fast_nodes_size = size;
     od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
@@ -592,7 +594,7 @@ _odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
 
     /* Ensure od_fast_nodes and dk_entries are in sync. */
     if (od->od_resize_sentinel != keys ||
-        od->od_fast_nodes_size != keys->dk_size) {
+        od->od_fast_nodes_size != (ONE << (keys->dk_log2_size))) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;
@@ -683,7 +685,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
     }
 
     /* must not be added yet */
-    node = (_ODictNode *)PyMem_MALLOC(sizeof(_ODictNode));
+    node = (_ODictNode *)PyMem_Malloc(sizeof(_ODictNode));
     if (node == NULL) {
         Py_DECREF(key);
         PyErr_NoMemory();
@@ -701,7 +703,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 #define _odictnode_DEALLOC(node) \
     do { \
         Py_DECREF(_odictnode_KEY(node)); \
-        PyMem_FREE((void *)node); \
+        PyMem_Free((void *)node); \
     } while (0)
 
 /* Repeated calls on the same node are no-ops. */
@@ -776,7 +778,7 @@ _odict_clear_nodes(PyODictObject *od)
 {
     _ODictNode *node, *next;
 
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = NULL;
     od->od_fast_nodes_size = 0;
     od->od_resize_sentinel = NULL;
@@ -1814,6 +1816,11 @@ odictiter_iternext(odictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
         Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     }
     else {
         result = PyTuple_New(2);

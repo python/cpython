@@ -13,8 +13,6 @@ PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 PyAPI_FUNC(void) _PyImport_AcquireLock(void);
 PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
 
-PyAPI_FUNC(PyObject *) _PyImport_FindExtensionObject(PyObject *, PyObject *);
-
 PyAPI_FUNC(int) _PyImport_FixupBuiltin(
     PyObject *mod,
     const char *name,            /* UTF-8 encoded string */

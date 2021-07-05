@@ -753,6 +753,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def test_loop_self_reading_fut(self):
         fut = mock.Mock()
+        self.loop._self_reading_future = fut
         self.loop._loop_self_reading(fut)
         self.assertTrue(fut.result.called)
         self.proactor.recv.assert_called_with(self.ssock, 4096)

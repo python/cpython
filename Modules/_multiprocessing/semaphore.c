@@ -571,7 +571,7 @@ semlock_dealloc(SemLockObject* self)
     if (self->handle != SEM_FAILED)
         SEM_CLOSE(self->handle);
     PyMem_Free(self->name);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 /*[clinic input]

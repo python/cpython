@@ -3,8 +3,11 @@
 
 #include "Python.h"
 
-#include "code.h"
+#include "code.h"                 // PyCode_Addr2Line etc
+#include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
+#include "pycore_frame.h"         // _PyFrame_GetCode()
+#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -147,7 +150,7 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
+    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
     {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
     {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
     {NULL}      /* Sentinel */
@@ -233,7 +236,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -369,7 +372,7 @@ finally:
 }
 
 int
-_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
+_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, int *truncation, PyObject **line)
 {
     int err = 0;
     int fd;
@@ -419,12 +422,12 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         Py_DECREF(io);
         Py_DECREF(binary);
-        PyMem_FREE(found_encoding);
+        PyMem_Free(found_encoding);
         return 0;
     }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
-    PyMem_FREE(found_encoding);
+    PyMem_Free(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();
@@ -460,6 +463,11 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         return err;
     }
 
+    if (line) {
+        Py_INCREF(lineobj);
+        *line = lineobj;
+    }
+
     /* remove the indentation of the line */
     kind = PyUnicode_KIND(lineobj);
     data = PyUnicode_DATA(lineobj);
@@ -477,6 +485,10 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         } else {
             PyErr_Clear();
         }
+    }
+
+    if (truncation != NULL) {
+        *truncation = i - indent;
     }
 
     /* Write some spaces before the line */
@@ -500,8 +512,11 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     return err;
 }
 
+#define _TRACEBACK_SOURCE_LINE_INDENT 4
+
 static int
-tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
+tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
+               PyFrameObject *frame, PyObject *name)
 {
     int err;
     PyObject *line;
@@ -516,9 +531,56 @@ tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
     Py_DECREF(line);
     if (err != 0)
         return err;
+    int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
+    PyObject* source_line = NULL;
     /* ignore errors since we can't report them, can we? */
-    if (_Py_DisplaySourceLine(f, filename, lineno, 4))
+    if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
+                               &truncation, &source_line)) {
+        int code_offset = tb->tb_lasti;
+        PyCodeObject* code = _PyFrame_GetCode(frame);
+
+        int start_line;
+        int end_line;
+        int start_col_byte_offset;
+        int end_col_byte_offset;
+        if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
+                                 &end_line, &end_col_byte_offset)) {
+            goto done;
+        }
+        if (start_line != end_line) {
+            goto done;
+        }
+
+        if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
+            goto done;
+        }
+        // Convert the utf-8 byte offset to the actual character offset so we
+        // print the right number of carets.
+        Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+        Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
+
+        char offset = truncation;
+        while (++offset <= start_offset) {
+            err = PyFile_WriteString(" ", f);
+            if (err < 0) {
+                goto done;
+            }
+        }
+        while (++offset <= end_offset + 1) {
+            err = PyFile_WriteString("^", f);
+            if (err < 0) {
+                goto done;
+            }
+        }
+        err = PyFile_WriteString("\n", f);
+    }
+
+    else {
         PyErr_Clear();
+    }
+    
+done:
+    Py_XDECREF(source_line);
     return err;
 }
 
@@ -575,8 +637,8 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         }
         cnt++;
         if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
-            err = tb_displayline(f, code->co_filename, tb->tb_lineno,
-                                 code->co_name);
+            err = tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
+                                 tb->tb_frame, code->co_name);
             if (err == 0) {
                 err = PyErr_CheckSignals();
             }
@@ -622,17 +684,18 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
     return err;
 }
 
-/* Reverse a string. For example, "abcd" becomes "dcba".
+/* Format an integer in range [0; 0xffffffff] to decimal and write it
+   into the file fd.
 
    This function is signal safe. */
 
 void
-_Py_DumpDecimal(int fd, unsigned long value)
+_Py_DumpDecimal(int fd, size_t value)
 {
     /* maximum number of characters required for output of %lld or %p.
        We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
        plus 1 for the null byte.  53/22 is an upper bound for log10(256). */
-    char buffer[1 + (sizeof(unsigned long)*53-1) / 22 + 1];
+    char buffer[1 + (sizeof(size_t)*53-1) / 22 + 1];
     char *ptr, *end;
 
     end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
@@ -648,15 +711,12 @@ _Py_DumpDecimal(int fd, unsigned long value)
     _Py_write_noraise(fd, ptr, end - ptr);
 }
 
-/* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
-   and write it into the file fd.
-
-   This function is signal safe. */
-
+/* Format an integer as hexadecimal with width digits into fd file descriptor.
+   The function is signal safe. */
 void
-_Py_DumpHexadecimal(int fd, unsigned long value, Py_ssize_t width)
+_Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
 {
-    char buffer[sizeof(unsigned long) * 2 + 1], *ptr, *end;
+    char buffer[sizeof(uintptr_t) * 2 + 1], *ptr, *end;
     const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
@@ -765,11 +825,10 @@ dump_frame(int fd, PyFrameObject *frame)
         PUTS(fd, "???");
     }
 
-    /* PyFrame_GetLineNumber() was introduced in Python 2.7.0 and 3.2.0 */
-    int lineno = PyCode_Addr2Line(code, frame->f_lasti);
+    int lineno = PyFrame_GetLineNumber(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
-        _Py_DumpDecimal(fd, (unsigned long)lineno);
+        _Py_DumpDecimal(fd, (size_t)lineno);
     }
     else {
         PUTS(fd, "???");
@@ -917,6 +976,9 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             break;
         }
         write_thread_id(fd, tstate, tstate == current_tstate);
+        if (tstate == current_tstate && tstate->interp->gc.collecting) {
+            PUTS(fd, "  Garbage-collecting\n");
+        }
         dump_traceback(fd, tstate, 0);
         tstate = PyThreadState_Next(tstate);
         nthreads++;

@@ -36,7 +36,6 @@ def search_function(encoding):
         return (encode2, decode2, None, None)
     else:
         return None
-codecs.register(search_function)
 
 def duplicate_string(text):
     """
@@ -57,6 +56,10 @@ class UnicodeTest(string_tests.CommonTest,
         unittest.TestCase):
 
     type2test = str
+
+    def setUp(self):
+        codecs.register(search_function)
+        self.addCleanup(codecs.unregister, search_function)
 
     def checkequalnofix(self, result, object, methodname, *args):
         method = getattr(object, methodname)
@@ -1095,6 +1098,12 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{0:^8s}'.format('result'), ' result ')
         self.assertEqual('{0:^9s}'.format('result'), ' result  ')
         self.assertEqual('{0:^10s}'.format('result'), '  result  ')
+        self.assertEqual('{0:8s}'.format('result'), 'result  ')
+        self.assertEqual('{0:0s}'.format('result'), 'result')
+        self.assertEqual('{0:08s}'.format('result'), 'result00')
+        self.assertEqual('{0:<08s}'.format('result'), 'result00')
+        self.assertEqual('{0:>08s}'.format('result'), '00result')
+        self.assertEqual('{0:^08s}'.format('result'), '0result0')
         self.assertEqual('{0:10000}'.format('a'), 'a' + ' ' * 9999)
         self.assertEqual('{0:10000}'.format(''), ' ' * 10000)
         self.assertEqual('{0:10000000}'.format(''), ' ' * 10000000)
@@ -1222,8 +1231,11 @@ class UnicodeTest(string_tests.CommonTest,
                           0, 1, 2, 3, 4, 5, 6, 7)
 
         # string format spec errors
-        self.assertRaises(ValueError, "{0:-s}".format, '')
-        self.assertRaises(ValueError, format, "", "-")
+        sign_msg = "Sign not allowed in string format specifier"
+        self.assertRaisesRegex(ValueError, sign_msg, "{0:-s}".format, '')
+        self.assertRaisesRegex(ValueError, sign_msg, format, "", "-")
+        space_msg = "Space not allowed in string format specifier"
+        self.assertRaisesRegex(ValueError, space_msg, "{: }".format, '')
         self.assertRaises(ValueError, "{0:=s}".format, '')
 
         # Alternate formatting is not supported
@@ -1454,22 +1466,23 @@ class UnicodeTest(string_tests.CommonTest,
             PI = 3.1415926
         class Int(enum.IntEnum):
             IDES = 15
-        class Str(str, enum.Enum):
+        class Str(enum.StrEnum):
+            # StrEnum uses the value and not the name for %s etc.
             ABC = 'abc'
         # Testing Unicode formatting strings...
         self.assertEqual("%s, %s" % (Str.ABC, Str.ABC),
-                         'Str.ABC, Str.ABC')
+                         'abc, abc')
         self.assertEqual("%s, %s, %d, %i, %u, %f, %5.2f" %
                         (Str.ABC, Str.ABC,
                          Int.IDES, Int.IDES, Int.IDES,
                          Float.PI, Float.PI),
-                         'Str.ABC, Str.ABC, 15, 15, 15, 3.141593,  3.14')
+                         'abc, abc, 15, 15, 15, 3.141593,  3.14')
 
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':Str.ABC},
-                         '...Str.ABC...')
+                         '...abc...')
         self.assertEqual('...%(foo)s...' % {'foo':Int.IDES},
-                         '...Int.IDES...')
+                         '...IDES...')
         self.assertEqual('...%(foo)i...' % {'foo':Int.IDES},
                          '...15...')
         self.assertEqual('...%(foo)d...' % {'foo':Int.IDES},
@@ -2359,12 +2372,14 @@ class UnicodeTest(string_tests.CommonTest,
             text = 'a' * length + 'b'
 
             # fill wstr internal field
-            abc = getargs_u(text)
+            with self.assertWarns(DeprecationWarning):
+                abc = getargs_u(text)
             self.assertEqual(abc, text)
 
             # resize text: wstr field must be cleared and then recomputed
             text += 'c'
-            abcdef = getargs_u(text)
+            with self.assertWarns(DeprecationWarning):
+                abcdef = getargs_u(text)
             self.assertNotEqual(abc, abcdef)
             self.assertEqual(abcdef, text)
 
@@ -2513,11 +2528,13 @@ class CAPITest(unittest.TestCase):
     def test_from_format(self):
         import_helper.import_module('ctypes')
         from ctypes import (
+            c_char_p,
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
             c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p)
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
+        _PyUnicode_FromFormat.argtypes = (c_char_p,)
         _PyUnicode_FromFormat.restype = py_object
 
         def PyUnicode_FromFormat(format, *args):
@@ -2920,36 +2937,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 1, s, 0, 5)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, -1)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
-
-    @support.cpython_only
-    @support.requires_legacy_unicode_capi
-    def test_encode_decimal(self):
-        from _testcapi import unicode_encodedecimal
-        self.assertEqual(unicode_encodedecimal('123'),
-                         b'123')
-        self.assertEqual(unicode_encodedecimal('\u0663.\u0661\u0664'),
-                         b'3.14')
-        self.assertEqual(unicode_encodedecimal("\N{EM SPACE}3.14\N{EN SPACE}"),
-                         b' 3.14 ')
-        self.assertRaises(UnicodeEncodeError,
-                          unicode_encodedecimal, "123\u20ac", "strict")
-        self.assertRaisesRegex(
-            ValueError,
-            "^'decimal' codec can't encode character",
-            unicode_encodedecimal, "123\u20ac", "replace")
-
-    @support.cpython_only
-    @support.requires_legacy_unicode_capi
-    def test_transform_decimal(self):
-        from _testcapi import unicode_transformdecimaltoascii as transform_decimal
-        self.assertEqual(transform_decimal('123'),
-                         '123')
-        self.assertEqual(transform_decimal('\u0663.\u0661\u0664'),
-                         '3.14')
-        self.assertEqual(transform_decimal("\N{EM SPACE}3.14\N{EN SPACE}"),
-                         "\N{EM SPACE}3.14\N{EN SPACE}")
-        self.assertEqual(transform_decimal('123\u20ac'),
-                         '123\u20ac')
 
     @support.cpython_only
     def test_pep393_utf8_caching_bug(self):

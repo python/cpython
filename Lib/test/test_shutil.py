@@ -34,6 +34,8 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
+TESTFN_SRC = TESTFN + "_SRC"
+TESTFN_DST = TESTFN + "_DST"
 MACOS = sys.platform.startswith("darwin")
 AIX = sys.platform[:3] == 'aix'
 try:
@@ -72,7 +74,9 @@ def write_file(path, content, binary=False):
     """
     if isinstance(path, tuple):
         path = os.path.join(*path)
-    with open(path, 'wb' if binary else 'w') as fp:
+    mode = 'wb' if binary else 'w'
+    encoding = None if binary else "utf-8"
+    with open(path, mode, encoding=encoding) as fp:
         fp.write(content)
 
 def write_test_file(path, size):
@@ -102,7 +106,9 @@ def read_file(path, binary=False):
     """
     if isinstance(path, tuple):
         path = os.path.join(*path)
-    with open(path, 'rb' if binary else 'r') as fp:
+    mode = 'rb' if binary else 'r'
+    encoding = None if binary else "utf-8"
+    with open(path, mode, encoding=encoding) as fp:
         return fp.read()
 
 def rlistdir(path):
@@ -280,10 +286,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         filename = os.path.join(tmpdir, "tstfile")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
-        # The reason for this rather odd construct is that Windows sprinkles
-        # a \*.* at the end of file names. But only sometimes on some buildbots
-        possible_args = [filename, os.path.join(filename, '*.*')]
-        self.assertIn(cm.exception.filename, possible_args)
+        self.assertEqual(cm.exception.filename, filename)
         self.assertTrue(os.path.exists(filename))
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -296,11 +299,11 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
-        self.assertIn(errors[0][2][1].filename, possible_args)
+        self.assertEqual(errors[0][2][1].filename, filename)
         self.assertIs(errors[1][0], os.rmdir)
         self.assertEqual(errors[1][1], filename)
         self.assertIsInstance(errors[1][2][1], NotADirectoryError)
-        self.assertIn(errors[1][2][1].filename, possible_args)
+        self.assertEqual(errors[1][2][1].filename, filename)
 
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
@@ -675,7 +678,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         flag = []
         src = self.mkdtemp()
         dst = tempfile.mktemp(dir=self.mkdtemp())
-        with open(os.path.join(src, 'foo'), 'w') as f:
+        with open(os.path.join(src, 'foo'), 'w', encoding='utf-8') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
         self.assertEqual(len(flag), 1)
@@ -683,6 +686,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @os_helper.skip_unless_symlink
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copytree_named_pipe(self):
         os.mkdir(TESTFN)
         try:
@@ -745,7 +750,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
         os.mkdir(os.path.join(src_dir, 'real_dir'))
-        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'w'):
+        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'wb'):
             pass
         os.symlink(os.path.join(src_dir, 'real_dir'),
                    os.path.join(src_dir, 'link_to_dir'),
@@ -1171,14 +1176,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         src = os.path.join(TESTFN, 'cheese')
         dst = os.path.join(TESTFN, 'shop')
         try:
-            with open(src, 'w') as f:
+            with open(src, 'w', encoding='utf-8') as f:
                 f.write('cheddar')
             try:
                 os.link(src, dst)
             except PermissionError as e:
                 self.skipTest('os.link(): %s' % e)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
-            with open(src, 'r') as f:
+            with open(src, 'r', encoding='utf-8') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
         finally:
@@ -1191,14 +1196,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         src = os.path.join(TESTFN, 'cheese')
         dst = os.path.join(TESTFN, 'shop')
         try:
-            with open(src, 'w') as f:
+            with open(src, 'w', encoding='utf-8') as f:
                 f.write('cheddar')
             # Using `src` here would mean we end up with a symlink pointing
             # to TESTFN/TESTFN/cheese, while it should point at
             # TESTFN/cheese.
             os.symlink('cheese', dst)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
-            with open(src, 'r') as f:
+            with open(src, 'r', encoding='utf-8') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
         finally:
@@ -1206,6 +1211,8 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copyfile_named_pipe(self):
         try:
             os.mkfifo(TESTFN)
@@ -1849,6 +1856,23 @@ class TestWhich(BaseTest, unittest.TestCase):
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
 
+    # Issue 40592: See https://bugs.python.org/issue40592
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext_with_empty_str(self):
+        ext = ".xyz"
+        temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
+                                                   prefix="Tmp2", suffix=ext)
+        self.addCleanup(temp_filexyz.close)
+
+        # strip path and extension
+        program = os.path.basename(temp_filexyz.name)
+        program = os.path.splitext(program)[0]
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = f"{ext};"  # note the ;
+            rv = shutil.which(program, path=self.temp_dir)
+            self.assertEqual(rv, temp_filexyz.name)
+
 
 class TestWhichBytes(TestWhich):
     def setUp(self):
@@ -2065,6 +2089,41 @@ class TestMove(BaseTest, unittest.TestCase):
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
             os.rmdir(dst_dir)
+
+
+    @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0
+                         and hasattr(os, 'lchflags')
+                         and hasattr(stat, 'SF_IMMUTABLE')
+                         and hasattr(stat, 'UF_OPAQUE'),
+                         'root privileges required')
+    def test_move_dir_permission_denied(self):
+        # bpo-42782: shutil.move should not create destination directories
+        # if the source directory cannot be removed.
+        try:
+            os.mkdir(TESTFN_SRC)
+            os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
+
+            # Testing on an empty immutable directory
+            # TESTFN_DST should not exist if shutil.move failed
+            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
+            self.assertFalse(TESTFN_DST in os.listdir())
+
+            # Create a file and keep the directory immutable
+            os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
+            os_helper.create_empty_file(os.path.join(TESTFN_SRC, 'child'))
+            os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
+
+            # Testing on a non-empty immutable directory
+            # TESTFN_DST should not exist if shutil.move failed
+            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
+            self.assertFalse(TESTFN_DST in os.listdir())
+        finally:
+            if os.path.exists(TESTFN_SRC):
+                os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
+                os_helper.rmtree(TESTFN_SRC)
+            if os.path.exists(TESTFN_DST):
+                os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
+                os_helper.rmtree(TESTFN_DST)
 
 
 class TestCopyFile(unittest.TestCase):
@@ -2531,7 +2590,7 @@ class TestGetTerminalSize(unittest.TestCase):
 
             # sys.__stdout__ is not a terminal on Unix
             # or fileno() not in (0, 1, 2) on Windows
-            with open(os.devnull, 'w') as f, \
+            with open(os.devnull, 'w', encoding='utf-8') as f, \
                  support.swap_attr(sys, '__stdout__', f):
                 size = shutil.get_terminal_size(fallback=(30, 40))
             self.assertEqual(size.columns, 30)

@@ -1,1 +1,1 @@
-tzdata==2020.1rc0
+tzdata==2020.3

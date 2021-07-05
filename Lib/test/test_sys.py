@@ -22,6 +22,7 @@ import warnings
 # strings to intern in test_intern()
 INTERN_NUMRUNS = 0
 
+DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
 class DisplayHookTest(unittest.TestCase):
 
@@ -221,7 +222,7 @@ class SysModuleTest(unittest.TestCase):
         def f():
             f()
         try:
-            for depth in (10, 25, 50, 75, 100, 250, 1000):
+            for depth in (50, 75, 100, 250, 1000):
                 try:
                     sys.setrecursionlimit(depth)
                 except RecursionError:
@@ -231,17 +232,17 @@ class SysModuleTest(unittest.TestCase):
 
                 # Issue #5392: test stack overflow after hitting recursion
                 # limit twice
-                self.assertRaises(RecursionError, f)
-                self.assertRaises(RecursionError, f)
+                with self.assertRaises(RecursionError):
+                    f()
+                with self.assertRaises(RecursionError):
+                    f()
         finally:
             sys.setrecursionlimit(oldlimit)
 
     @test.support.cpython_only
     def test_setrecursionlimit_recursion_depth(self):
         # Issue #25274: Setting a low recursion limit must be blocked if the
-        # current recursion depth is already higher than the "lower-water
-        # mark". Otherwise, it may not be possible anymore to
-        # reset the overflowed flag to 0.
+        # current recursion depth is already higher than limit.
 
         from _testinternalcapi import get_recursion_depth
 
@@ -262,41 +263,9 @@ class SysModuleTest(unittest.TestCase):
             sys.setrecursionlimit(1000)
 
             for limit in (10, 25, 50, 75, 100, 150, 200):
-                # formula extracted from _Py_RecursionLimitLowerWaterMark()
-                if limit > 200:
-                    depth = limit - 50
-                else:
-                    depth = limit * 3 // 4
-                set_recursion_limit_at_depth(depth, limit)
+                set_recursion_limit_at_depth(limit, limit)
         finally:
             sys.setrecursionlimit(oldlimit)
-
-    # The error message is specific to CPython
-    @test.support.cpython_only
-    def test_recursionlimit_fatalerror(self):
-        # A fatal error occurs if a second recursion limit is hit when recovering
-        # from a first one.
-        code = textwrap.dedent("""
-            import sys
-
-            def f():
-                try:
-                    f()
-                except RecursionError:
-                    f()
-
-            sys.setrecursionlimit(%d)
-            f()""")
-        with test.support.SuppressCrashReport():
-            for i in (50, 1000):
-                sub = subprocess.Popen([sys.executable, '-c', code % i],
-                    stderr=subprocess.PIPE)
-                err = sub.communicate()[1]
-                self.assertTrue(sub.returncode, sub.returncode)
-                self.assertIn(
-                    b"Fatal Python error: _Py_CheckRecursiveCall: "
-                    b"Cannot recover from stack overflow",
-                    err)
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
@@ -432,6 +401,73 @@ class SysModuleTest(unittest.TestCase):
         leave_g.set()
         t.join()
 
+    @threading_helper.reap_threads
+    def test_current_exceptions(self):
+        import threading
+        import traceback
+
+        # Spawn a thread that blocks at a known place.  Then the main
+        # thread does sys._current_frames(), and verifies that the frames
+        # returned make sense.
+        entered_g = threading.Event()
+        leave_g = threading.Event()
+        thread_info = []  # the thread's id
+
+        def f123():
+            g456()
+
+        def g456():
+            thread_info.append(threading.get_ident())
+            entered_g.set()
+            while True:
+                try:
+                    raise ValueError("oops")
+                except ValueError:
+                    if leave_g.wait(timeout=support.LONG_TIMEOUT):
+                        break
+
+        t = threading.Thread(target=f123)
+        t.start()
+        entered_g.wait()
+
+        # At this point, t has finished its entered_g.set(), although it's
+        # impossible to guess whether it's still on that line or has moved on
+        # to its leave_g.wait().
+        self.assertEqual(len(thread_info), 1)
+        thread_id = thread_info[0]
+
+        d = sys._current_exceptions()
+        for tid in d:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
+
+        main_id = threading.get_ident()
+        self.assertIn(main_id, d)
+        self.assertIn(thread_id, d)
+        self.assertEqual((None, None, None), d.pop(main_id))
+
+        # Verify that the captured thread frame is blocked in g456, called
+        # from f123.  This is a litte tricky, since various bits of
+        # threading.py are also in the thread's call stack.
+        exc_type, exc_value, exc_tb = d.pop(thread_id)
+        stack = traceback.extract_stack(exc_tb.tb_frame)
+        for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
+            if funcname == "f123":
+                break
+        else:
+            self.fail("didn't find f123() on thread's call stack")
+
+        self.assertEqual(sourceline, "g456()")
+
+        # And the next record must be for g456().
+        filename, lineno, funcname, sourceline = stack[i+1]
+        self.assertEqual(funcname, "g456")
+        self.assertTrue(sourceline.startswith("if leave_g.wait("))
+
+        # Reap the spawned thread.
+        leave_g.set()
+        t.join()
+
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
@@ -556,7 +592,8 @@ class SysModuleTest(unittest.TestCase):
                  "inspect", "interactive", "optimize",
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
-                 "hash_randomization", "isolated", "dev_mode", "utf8_mode")
+                 "hash_randomization", "isolated", "dev_mode", "utf8_mode",
+                 "warn_default_encoding")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
             attr_type = bool if attr == "dev_mode" else int
@@ -569,11 +606,12 @@ class SysModuleTest(unittest.TestCase):
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
+        arg = sys_attr
         attr_type = type(sys_attr)
         with self.assertRaises(TypeError):
-            attr_type()
+            attr_type(arg)
         with self.assertRaises(TypeError):
-            attr_type.__new__(attr_type)
+            attr_type.__new__(attr_type, arg)
 
     def test_sys_flags_no_instantiation(self):
         self.assert_raise_on_new_sys_type(sys.flags)
@@ -951,6 +989,11 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip().splitlines(), expected,
                          proc)
 
+    def test_module_names(self):
+        self.assertIsInstance(sys.stdlib_module_names, frozenset)
+        for name in sys.stdlib_module_names:
+            self.assertIsInstance(name, str)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
@@ -1187,9 +1230,9 @@ class SizeofTest(unittest.TestCase):
         # empty dict
         check({}, size('nQ2P'))
         # dict
-        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
+        check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
         check({}.keys(), size('P'))
         # dictionary-valueview
@@ -1231,16 +1274,11 @@ class SizeofTest(unittest.TestCase):
         check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
         import inspect
-        CO_MAXBLOCKS = 20
         x = inspect.currentframe()
-        ncells = len(x.f_code.co_cellvars)
-        nfrees = len(x.f_code.co_freevars)
-        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
-                  ncells + nfrees - 1
-        check(x, vsize('4Pi2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, size('4P3i4cP'))
         # function
         def func(): pass
-        check(func, size('13P'))
+        check(func, size('14P'))
         class c():
             @staticmethod
             def foo():
@@ -1294,7 +1332,7 @@ class SizeofTest(unittest.TestCase):
             def setx(self, value): self.__x = value
             def delx(self): del self.__x
             x = property(getx, setx, delx, "")
-            check(x, size('4Pi'))
+            check(x, size('5Pi'))
         # PyCapsule
         # XXX
         # rangeiterator
@@ -1340,7 +1378,7 @@ class SizeofTest(unittest.TestCase):
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject
-                  '3P'                  # PyAsyncMethods
+                  '4P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
@@ -1348,13 +1386,13 @@ class SizeofTest(unittest.TestCase):
                   '5P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + 5*calcsize("n2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 16 + 10*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + 10*calcsize("n2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
         # unicode
@@ -1471,6 +1509,21 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.firstiter)
         self.assertIsNone(cur.finalizer)
 
+    def test_changing_sys_stderr_and_removing_reference(self):
+        # If the default displayhook doesn't take a strong reference
+        # to sys.stderr the following code can crash. See bpo-43660
+        # for more details.
+        code = textwrap.dedent('''
+            import sys
+            class MyStderr:
+                def write(self, s):
+                    sys.stderr = None
+            sys.stderr = MyStderr()
+            1/0
+        ''')
+        rc, out, err = assert_python_failure('-c', code)
+        self.assertEqual(out, b"")
+        self.assertEqual(err, b"")
 
 if __name__ == "__main__":
     unittest.main()

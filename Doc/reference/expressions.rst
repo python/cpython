@@ -13,7 +13,7 @@ This chapter explains the meaning of the elements of expressions in Python.
 be used to describe syntax, not lexical analysis.  When (one alternative of) a
 syntax rule has the form
 
-.. productionlist:: *
+.. productionlist:: python-grammar
    name: `othername`
 
 and no semantics are given, the semantics of this form of ``name`` are the same
@@ -54,7 +54,7 @@ Atoms are the most basic elements of expressions.  The simplest atoms are
 identifiers or literals.  Forms enclosed in parentheses, brackets or braces are
 also categorized syntactically as atoms.  The syntax for atoms is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    atom: `identifier` | `literal` | `enclosure`
    enclosure: `parenth_form` | `list_display` | `dict_display` | `set_display`
             : | `generator_expression` | `yield_atom`
@@ -76,6 +76,8 @@ binding.
 When the name is bound to an object, evaluation of the atom yields that object.
 When a name is not bound, an attempt to evaluate it raises a :exc:`NameError`
 exception.
+
+.. _private-name-mangling:
 
 .. index::
    pair: name; mangling
@@ -103,7 +105,7 @@ Literals
 
 Python supports string and bytes literals and various numeric literals:
 
-.. productionlist::
+.. productionlist:: python-grammar
    literal: `stringliteral` | `bytesliteral`
           : | `integer` | `floatnumber` | `imagnumber`
 
@@ -134,7 +136,7 @@ Parenthesized forms
 
 A parenthesized form is an optional expression list enclosed in parentheses:
 
-.. productionlist::
+.. productionlist:: python-grammar
    parenth_form: "(" [`starred_expression`] ")"
 
 A parenthesized expression list yields whatever that expression list yields: if
@@ -162,6 +164,8 @@ ambiguities and allow common typos to pass uncaught.
 Displays for lists, sets and dictionaries
 -----------------------------------------
 
+.. index:: single: comprehensions
+
 For constructing a list, a set or a dictionary Python provides special syntax
 called "displays", each of them in two flavors:
 
@@ -177,11 +181,11 @@ called "displays", each of them in two flavors:
 
 Common syntax elements for comprehensions are:
 
-.. productionlist::
+.. productionlist:: python-grammar
    comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
-   comp_if: "if" `expression_nocond` [`comp_iter`]
+   comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
 :keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
@@ -243,7 +247,7 @@ List displays
 A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
-.. productionlist::
+.. productionlist:: python-grammar
    list_display: "[" [`starred_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
@@ -260,6 +264,7 @@ Set displays
 
 .. index::
    pair: set; display
+   pair: set; comprehensions
    object: set
    single: {} (curly brackets); set expression
    single: , (comma); expression list
@@ -267,7 +272,7 @@ Set displays
 A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
-.. productionlist::
+.. productionlist:: python-grammar
    set_display: "{" (`starred_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
@@ -287,6 +292,7 @@ Dictionary displays
 
 .. index::
    pair: dictionary; display
+   pair: dictionary; comprehensions
    key, datum, key/datum pair
    object: dictionary
    single: {} (curly brackets); dictionary expression
@@ -296,7 +302,7 @@ Dictionary displays
 A dictionary display is a possibly empty series of key/datum pairs enclosed in
 curly braces:
 
-.. productionlist::
+.. productionlist:: python-grammar
    dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
    key_datum_list: `key_datum` ("," `key_datum`)* [","]
    key_datum: `expression` ":" `expression` | "**" `or_expr`
@@ -355,7 +361,7 @@ Generator expressions
 
 A generator expression is a compact generator notation in parentheses:
 
-.. productionlist::
+.. productionlist:: python-grammar
    generator_expression: "(" `expression` `comp_for` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
@@ -409,7 +415,7 @@ Yield expressions
    pair: yield; expression
    pair: generator; function
 
-.. productionlist::
+.. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_expression: "yield" [`expression_list` | "from" `expression`]
 
@@ -472,8 +478,8 @@ allowing any pending :keyword:`finally` clauses to execute.
 .. index::
    single: from; yield from expression
 
-When ``yield from <expr>`` is used, it treats the supplied expression as
-a subiterator. All values produced by that subiterator are passed directly
+When ``yield from <expr>`` is used, the supplied expression must be an
+iterable. The values produced by iterating that iterable are passed directly
 to the caller of the current generator's methods. Any values passed in with
 :meth:`~generator.send` and any exceptions passed in with
 :meth:`~generator.throw` are passed to the underlying iterator if it has the
@@ -639,6 +645,16 @@ after resuming depends on the method which resumed the execution.  If
 :meth:`~agen.asend` is used, then the result will be the value passed in to
 that method.
 
+If an asynchronous generator happens to exit early by :keyword:`break`, the caller
+task being cancelled, or other exceptions, the generator's async cleanup code
+will run and possibly raise exceptions or access context variables in an
+unexpected context--perhaps after the lifetime of tasks it depends, or
+during the event loop shutdown when the async-generator garbage collection hook
+is called.
+To prevent this, the caller must explicitly close the async generator by calling
+:meth:`~agen.aclose` method to finalize the generator and ultimately detach it
+from the event loop.
+
 In an asynchronous generator function, yield expressions are allowed anywhere
 in a :keyword:`try` construct. However, if an asynchronous generator is not
 resumed before it is finalized (by reaching a zero reference count or by
@@ -650,9 +666,9 @@ generator-iterator's :meth:`~agen.aclose` method and run the resulting
 coroutine object, thus allowing any pending :keyword:`!finally` clauses
 to execute.
 
-To take care of finalization, an event loop should define
-a *finalizer* function which takes an asynchronous generator-iterator
-and presumably calls :meth:`~agen.aclose` and executes the coroutine.
+To take care of finalization upon event loop termination, an event loop should
+define a *finalizer* function which takes an asynchronous generator-iterator and
+presumably calls :meth:`~agen.aclose` and executes the coroutine.
 This  *finalizer* may be registered by calling :func:`sys.set_asyncgen_hooks`.
 When first iterated over, an asynchronous generator-iterator will store the
 registered *finalizer* to be called upon finalization. For a reference example
@@ -746,7 +762,7 @@ Primaries
 Primaries represent the most tightly bound operations of the language. Their
 syntax is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    primary: `atom` | `attributeref` | `subscription` | `slicing` | `call`
 
 
@@ -761,7 +777,7 @@ Attribute references
 
 An attribute reference is a primary followed by a period and a name:
 
-.. productionlist::
+.. productionlist:: python-grammar
    attributeref: `primary` "." `identifier`
 
 .. index::
@@ -796,10 +812,10 @@ Subscriptions
    object: dictionary
    pair: sequence; item
 
-A subscription selects an item of a sequence (string, tuple or list) or mapping
-(dictionary) object:
+Subscription of a sequence (string, tuple or list) or mapping (dictionary)
+object usually selects an item from the collection:
 
-.. productionlist::
+.. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
 
 The primary must evaluate to an object that supports subscription (lists or
@@ -833,6 +849,11 @@ this method will need to explicitly add that support.
 A string's items are characters.  A character is not a separate data type but a
 string of exactly one character.
 
+Subscription of certain :term:`classes <class>` or :term:`types <type>`
+creates a :ref:`generic alias <types-genericalias>`.
+In this case, user-defined classes can support subscription by providing a
+:meth:`__class_getitem__` classmethod.
+
 
 .. _slicings:
 
@@ -855,7 +876,7 @@ A slicing selects a range of items in a sequence object (e.g., a string, tuple
 or list).  Slicings may be used as expressions or as targets in assignment or
 :keyword:`del` statements.  The syntax for a slicing:
 
-.. productionlist::
+.. productionlist:: python-grammar
    slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice`
@@ -905,7 +926,7 @@ Calls
 A call calls a callable object (e.g., a :term:`function`) with a possibly empty
 series of :term:`arguments <argument>`:
 
-.. productionlist::
+.. productionlist:: python-grammar
    call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
    argument_list: `positional_arguments` ["," `starred_and_keywords`]
                 :   ["," `keywords_arguments`]
@@ -1088,7 +1109,7 @@ Await expression
 Suspend the execution of :term:`coroutine` on an :term:`awaitable` object.
 Can only be used inside a :term:`coroutine function`.
 
-.. productionlist::
+.. productionlist:: python-grammar
    await_expr: "await" `primary`
 
 .. versionadded:: 3.5
@@ -1106,7 +1127,7 @@ The power operator
 The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    power: (`await_expr` | `primary`) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
@@ -1139,7 +1160,7 @@ Unary arithmetic and bitwise operations
 
 All unary arithmetic and bitwise operations have the same priority:
 
-.. productionlist::
+.. productionlist:: python-grammar
    u_expr: `power` | "-" `u_expr` | "+" `u_expr` | "~" `u_expr`
 
 .. index::
@@ -1183,7 +1204,7 @@ that some of these operations also apply to certain non-numeric types.  Apart
 from the power operator, there are only two levels, one for multiplicative
 operators and one for additive operators:
 
-.. productionlist::
+.. productionlist:: python-grammar
    m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
          : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
@@ -1279,7 +1300,7 @@ Shifting operations
 
 The shifting operations have lower priority than the arithmetic operations:
 
-.. productionlist::
+.. productionlist:: python-grammar
    shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
 These operators accept integers as arguments.  They shift the first argument to
@@ -1300,7 +1321,7 @@ Binary bitwise operations
 
 Each of the three bitwise operations has a different priority level:
 
-.. productionlist::
+.. productionlist:: python-grammar
    and_expr: `shift_expr` | `and_expr` "&" `shift_expr`
    xor_expr: `and_expr` | `xor_expr` "^" `and_expr`
    or_expr: `xor_expr` | `or_expr` "|" `xor_expr`
@@ -1349,7 +1370,7 @@ lower than that of any arithmetic, shifting or bitwise operation.  Also unlike
 C, expressions like ``a < b < c`` have the interpretation that is conventional
 in mathematics:
 
-.. productionlist::
+.. productionlist:: python-grammar
    comparison: `or_expr` (`comp_operator` `or_expr`)*
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
@@ -1608,7 +1629,7 @@ Boolean operations
    pair: Conditional; expression
    pair: Boolean; operation
 
-.. productionlist::
+.. productionlist:: python-grammar
    or_test: `and_test` | `or_test` "or" `and_test`
    and_test: `not_test` | `and_test` "and" `not_test`
    not_test: `comparison` | "not" `not_test`
@@ -1647,7 +1668,7 @@ returns a boolean value regardless of the type of its argument
 Assignment expressions
 ======================
 
-.. productionlist::
+.. productionlist:: python-grammar
    assignment_expression: [`identifier` ":="] `expression`
 
 An assignment expression (sometimes also called a "named expression" or
@@ -1683,10 +1704,9 @@ Conditional expressions
    single: if; conditional expression
    single: else; conditional expression
 
-.. productionlist::
+.. productionlist:: python-grammar
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
-   expression_nocond: `or_test` | `lambda_expr_nocond`
 
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
@@ -1710,9 +1730,8 @@ Lambdas
    pair: anonymous; function
    single: : (colon); lambda expression
 
-.. productionlist::
+.. productionlist:: python-grammar
    lambda_expr: "lambda" [`parameter_list`] ":" `expression`
-   lambda_expr_nocond: "lambda" [`parameter_list`] ":" `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
 functions. The expression ``lambda parameters: expression`` yields a function
@@ -1737,7 +1756,7 @@ Expression lists
    pair: expression; list
    single: , (comma); expression list
 
-.. productionlist::
+.. productionlist:: python-grammar
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
@@ -1800,8 +1819,8 @@ Operator precedence
 .. index::
    pair: operator; precedence
 
-The following table summarizes the operator precedence in Python, from lowest
-precedence (least binding) to highest precedence (most binding).  Operators in
+The following table summarizes the operator precedence in Python, from highest
+precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
 exponentiation, which groups from right to left).
@@ -1814,50 +1833,50 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
-| ``:=``                                        | Assignment expression               |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`lambda`                             | Lambda expression                   |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`or`                                 | Boolean OR                          |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`and`                                | Boolean AND                         |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`not` ``x``                          | Boolean NOT                         |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
-| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
-| ``<=``, ``>``, ``>=``, ``!=``, ``==``         |                                     |
-+-----------------------------------------------+-------------------------------------+
-| ``|``                                         | Bitwise OR                          |
-+-----------------------------------------------+-------------------------------------+
-| ``^``                                         | Bitwise XOR                         |
-+-----------------------------------------------+-------------------------------------+
-| ``&``                                         | Bitwise AND                         |
-+-----------------------------------------------+-------------------------------------+
-| ``<<``, ``>>``                                | Shifts                              |
-+-----------------------------------------------+-------------------------------------+
-| ``+``, ``-``                                  | Addition and subtraction            |
-+-----------------------------------------------+-------------------------------------+
-| ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
-|                                               | multiplication, division, floor     |
-|                                               | division, remainder [#]_            |
-+-----------------------------------------------+-------------------------------------+
-| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
-+-----------------------------------------------+-------------------------------------+
-| ``**``                                        | Exponentiation [#]_                 |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`await` ``x``                        | Await expression                    |
-+-----------------------------------------------+-------------------------------------+
-| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
-| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
-+-----------------------------------------------+-------------------------------------+
 | ``(expressions...)``,                         | Binding or parenthesized            |
 |                                               | expression,                         |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |
++-----------------------------------------------+-------------------------------------+
+| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
+| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`await` ``x``                        | Await expression                    |
++-----------------------------------------------+-------------------------------------+
+| ``**``                                        | Exponentiation [#]_                 |
++-----------------------------------------------+-------------------------------------+
+| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
++-----------------------------------------------+-------------------------------------+
+| ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
+|                                               | multiplication, division, floor     |
+|                                               | division, remainder [#]_            |
++-----------------------------------------------+-------------------------------------+
+| ``+``, ``-``                                  | Addition and subtraction            |
++-----------------------------------------------+-------------------------------------+
+| ``<<``, ``>>``                                | Shifts                              |
++-----------------------------------------------+-------------------------------------+
+| ``&``                                         | Bitwise AND                         |
++-----------------------------------------------+-------------------------------------+
+| ``^``                                         | Bitwise XOR                         |
++-----------------------------------------------+-------------------------------------+
+| ``|``                                         | Bitwise OR                          |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
+| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
+| ``<=``, ``>``, ``>=``, ``!=``, ``==``         |                                     |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`not` ``x``                          | Boolean NOT                         |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`and`                                | Boolean AND                         |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`or`                                 | Boolean OR                          |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`lambda`                             | Lambda expression                   |
++-----------------------------------------------+-------------------------------------+
+| ``:=``                                        | Assignment expression               |
 +-----------------------------------------------+-------------------------------------+
 
 
@@ -1901,8 +1920,8 @@ precedence and have a left-to-right chaining feature as described in the
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.
 
-.. [#] The ``%`` operator is also used for string formatting; the same
-   precedence applies.
-
 .. [#] The power operator ``**`` binds less tightly than an arithmetic or
    bitwise unary operator on its right, that is, ``2**-1`` is ``0.5``.
+
+.. [#] The ``%`` operator is also used for string formatting; the same
+   precedence applies.

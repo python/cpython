@@ -330,7 +330,10 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`.
+   Test discovery supports :term:`namespace packages <namespace package>`
+   for the start directory. Note that you need to specify the top level
+   directory too (e.g.
+   ``python -m unittest discover -s root/namespace -t root``).
 
 
 .. _organizing-tests:
@@ -593,8 +596,10 @@ The following decorators and exception implement test skipping and expected fail
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails it will be
-   considered a success.  If the test passes, it will be considered a failure.
+   Mark the test as an expected failure or error.  If the test fails or errors
+   in the test function itself (rather than in one of the :dfn:`test fixture`
+   methods) then it will be considered a success.  If the test passes, it will
+   be considered a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -896,8 +901,7 @@ Test cases
    .. method:: assertIs(first, second, msg=None)
                assertIsNot(first, second, msg=None)
 
-      Test that *first* and *second* evaluate (or don't evaluate) to the
-      same object.
+      Test that *first* and *second* are (or are not) the same object.
 
       .. versionadded:: 3.1
 
@@ -1091,7 +1095,8 @@ Test cases
 
       If given, *logger* should be a :class:`logging.Logger` object or a
       :class:`str` giving the name of a logger.  The default is the root
-      logger, which will catch all messages.
+      logger, which will catch all messages that were not blocked by a
+      non-propagating descendent logger.
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
@@ -1497,11 +1502,11 @@ Test cases
       after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
 
       It is responsible for calling all the cleanup functions added by
-      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      :meth:`addClassCleanup`. If you need cleanup functions to be called
       *prior* to :meth:`tearDownClass` then you can call
-      :meth:`doCleanupsClass` yourself.
+      :meth:`doClassCleanups` yourself.
 
-      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      :meth:`doClassCleanups` pops methods off the stack of cleanup
       functions one at a time, so it can be called at any time.
 
       .. versionadded:: 3.8
@@ -1869,11 +1874,15 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
-           not errors.
-         Discovery works for :term:`namespace packages <namespace package>`.
-         Paths are sorted before being imported so that execution order is
-           the same even if the underlying file system's ordering is not
-           dependent on file name.
+         not errors.
+
+      .. versionchanged:: 3.4
+         *start_dir* can be a :term:`namespace packages <namespace package>`.
+
+      .. versionchanged:: 3.4
+         Paths are sorted before being imported so that execution order is the
+         same even if the underlying file system's ordering is not dependent
+         on file name.
 
       .. versionchanged:: 3.5
          Found packages are now checked for ``load_tests`` regardless of
@@ -1966,7 +1975,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks.  Each tuple represents an expected failure
-      of the test case.
+      or error of the test case.
 
    .. attribute:: unexpectedSuccesses
 
@@ -2092,8 +2101,8 @@ Loading and running tests
 
    .. method:: addExpectedFailure(test, err)
 
-      Called when the test case *test* fails, but was marked with the
-      :func:`expectedFailure` decorator.
+      Called when the test case *test* fails or errors, but was marked with
+      the :func:`expectedFailure` decorator.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`expectedFailures` attribute, where *formatted_err*

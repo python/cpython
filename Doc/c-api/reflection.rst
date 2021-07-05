@@ -35,7 +35,7 @@ Reflection
 
    Get the *frame* next outer frame.
 
-   Return a strong reference, or ``NULL`` if *frame* has no outer frame.
+   Return a :term:`strong reference`, or ``NULL`` if *frame* has no outer frame.
 
    *frame* must not be ``NULL``.
 
@@ -46,7 +46,7 @@ Reflection
 
    Get the *frame* code.
 
-   Return a strong reference.
+   Return a :term:`strong reference`.
 
    *frame* must not be ``NULL``. The result (frame code) cannot be ``NULL``.
 

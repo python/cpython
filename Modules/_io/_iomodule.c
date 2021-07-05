@@ -10,6 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -33,6 +34,7 @@ PyObject *_PyIO_str_fileno = NULL;
 PyObject *_PyIO_str_flush = NULL;
 PyObject *_PyIO_str_getstate = NULL;
 PyObject *_PyIO_str_isatty = NULL;
+PyObject *_PyIO_str_locale = NULL;
 PyObject *_PyIO_str_newlines = NULL;
 PyObject *_PyIO_str_nl = NULL;
 PyObject *_PyIO_str_peek = NULL;
@@ -504,6 +506,45 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     return NULL;
 }
 
+
+/*[clinic input]
+_io.text_encoding
+    encoding: object
+    stacklevel: int = 2
+    /
+
+A helper function to choose the text encoding.
+
+When encoding is not None, just return it.
+Otherwise, return the default text encoding (i.e. "locale").
+
+This function emits an EncodingWarning if encoding is None and
+sys.flags.warn_default_encoding is true.
+
+This can be used in APIs with an encoding=None parameter.
+However, please consider using encoding="utf-8" for new APIs.
+[clinic start generated code]*/
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
+/*[clinic end generated code: output=91b2cfea6934cc0c input=bf70231213e2a7b4]*/
+{
+    if (encoding == NULL || encoding == Py_None) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            if (PyErr_WarnEx(PyExc_EncodingWarning,
+                             "'encoding' argument not specified", stacklevel)) {
+                return NULL;
+            }
+        }
+        Py_INCREF(_PyIO_str_locale);
+        return _PyIO_str_locale;
+    }
+    Py_INCREF(encoding);
+    return encoding;
+}
+
+
 /*[clinic input]
 _io.open_code
 
@@ -593,31 +634,6 @@ _PyIO_get_module_state(void)
     return state;
 }
 
-PyObject *
-_PyIO_get_locale_module(_PyIO_State *state)
-{
-    PyObject *mod;
-    if (state->locale_module != NULL) {
-        assert(PyWeakref_CheckRef(state->locale_module));
-        mod = PyWeakref_GET_OBJECT(state->locale_module);
-        if (mod != Py_None) {
-            Py_INCREF(mod);
-            return mod;
-        }
-        Py_CLEAR(state->locale_module);
-    }
-    mod = PyImport_ImportModule("_bootlocale");
-    if (mod == NULL)
-        return NULL;
-    state->locale_module = PyWeakref_NewRef(mod, NULL);
-    if (state->locale_module == NULL) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
-}
-
-
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = get_io_state(mod);
@@ -654,6 +670,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_TEXT_ENCODING_METHODDEF
     _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
@@ -772,6 +789,7 @@ PyInit__io(void)
     ADD_INTERNED(flush)
     ADD_INTERNED(getstate)
     ADD_INTERNED(isatty)
+    ADD_INTERNED(locale)
     ADD_INTERNED(newlines)
     ADD_INTERNED(peek)
     ADD_INTERNED(read)

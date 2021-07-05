@@ -90,7 +90,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *r = _PyLong_Zero;
+    PyObject *r = NULL;
     PyObject *i = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
@@ -113,4 +113,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=193a37aebaaa5f89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=056cac3226d94967 input=a9049054013a1b77]*/

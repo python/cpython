@@ -483,7 +483,7 @@ Path Objects
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
-Path objects are traversable using the ``/`` operator.
+Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. attribute:: Path.name
 
@@ -521,6 +521,27 @@ Path objects are traversable using the ``/`` operator.
    Return ``True`` if the current context references a file or
    directory in the zip file.
 
+.. data:: Path.suffix
+
+   The file extension of the final component.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffix` property.
+
+.. data:: Path.stem
+
+   The final path component, without its suffix.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.stem` property.
+
+.. data:: Path.suffixes
+
+   A list of the path’s file extensions.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffixes` property.
+
 .. method:: Path.read_text(*, **)
 
    Read the current file as unicode text. Positional and
@@ -531,6 +552,19 @@ Path objects are traversable using the ``/`` operator.
 .. method:: Path.read_bytes()
 
    Read the current file as bytes.
+
+.. method:: Path.joinpath(*other)
+
+   Return a new Path object with each of the *other* arguments
+   joined. The following are equivalent::
+
+   >>> Path(...).joinpath('child').joinpath('grandchild')
+   >>> Path(...).joinpath('child', 'grandchild')
+   >>> Path(...) / 'child' / 'grandchild'
+
+   .. versionchanged:: 3.10
+      Prior to 3.10, ``joinpath`` was undocumented and accepted
+      exactly one parameter.
 
 
 .. _pyzipfile-objects:

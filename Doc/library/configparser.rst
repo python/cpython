@@ -135,6 +135,30 @@ involves the ``DEFAULT`` section which provides default values for all other
 sections [1]_.  Note also that keys in sections are
 case-insensitive and stored in lowercase [1]_.
 
+It is possible to read several configurations into a single
+:class:`ConfigParser`, where the most recently added configuration has the
+highest priority. Any conflicting keys are taken from the more recent
+configuration while the previously existing keys are retained.
+
+.. doctest::
+
+   >>> another_config = configparser.ConfigParser()
+   >>> another_config.read('example.ini')
+   ['example.ini']
+   >>> another_config['topsecret.server.com']['Port']
+   '50022'
+   >>> another_config.read_string("[topsecret.server.com]\nPort=48484")
+   >>> another_config['topsecret.server.com']['Port']
+   '48484'
+   >>> another_config.read_dict({"topsecret.server.com": {"Port": 21212}})
+   >>> another_config['topsecret.server.com']['Port']
+   '21212'
+   >>> another_config['topsecret.server.com']['ForwardX11']
+   'no'
+
+This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
+files passed to the *filenames* parameter.
+
 
 Supported Datatypes
 -------------------
@@ -1128,6 +1152,13 @@ ConfigParser Objects
       representation can be parsed by a future :meth:`read` call.  If
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
+
+   .. note::
+
+      Comments in the original configuration file are not preserved when
+      writing the configuration back.
+      What is considered a comment, depends on the given values for
+      *comment_prefix* and *inline_comment_prefix*.
 
 
    .. method:: remove_option(section, option)

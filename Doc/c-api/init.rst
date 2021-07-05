@@ -151,8 +151,9 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
-   If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
-   encoding for the filesystem encoding.
+   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
+   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
+   for the :term:`filesystem encoding and error handler`.
 
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
    variable is set to a non-empty string.
@@ -322,6 +323,11 @@ Process-wide parameters
       single: main()
       triple: stdin; stdout; sdterr
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`
+   should be used instead, see :ref:`Python Initialization Configuration
+   <init-config>`.
+
    This function should be called before :c:func:`Py_Initialize`, if it is
    called at all. It specifies which encoding and error handling to use
    with standard IO, with the same meanings as in :func:`str.encode`.
@@ -344,6 +350,8 @@ Process-wide parameters
 
    .. versionadded:: 3.4
 
+   .. deprecated:: 3.11
+
 
 .. c:function:: void Py_SetProgramName(const wchar_t *name)
 
@@ -351,6 +359,10 @@ Process-wide parameters
       single: Py_Initialize()
       single: main()
       single: Py_GetPath()
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    This function should be called before :c:func:`Py_Initialize` is called for
    the first time, if it is called at all.  It tells the interpreter the value
@@ -366,6 +378,8 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   .. deprecated:: 3.11
+
 
 .. c:function:: wchar* Py_GetProgramName()
 
@@ -374,6 +388,12 @@ Process-wide parameters
    Return the program name set with :c:func:`Py_SetProgramName`, or the default.
    The returned string points into static storage; the caller should not modify its
    value.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetPrefix()
@@ -387,6 +407,12 @@ Process-wide parameters
    :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -423,6 +449,12 @@ Process-wide parameters
    while having :file:`/usr/local/plat` be a different filesystem for each
    platform.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
@@ -435,6 +467,12 @@ Process-wide parameters
    (set by :c:func:`Py_SetProgramName` above). The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.executable``.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -454,7 +492,13 @@ Process-wide parameters
    can be (and usually is) modified later to change the search path for loading
    modules.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
    .. XXX should give the exact rules
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function::  void Py_SetPath(const wchar_t *)
@@ -463,6 +507,11 @@ Process-wide parameters
       triple: module; search; path
       single: path (in module sys)
       single: Py_GetPath()
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.module_search_paths` and
+   :c:member:`PyConfig.module_search_paths_set` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
 
    Set the default module search path.  If this function is called before
    :c:func:`Py_Initialize`, then :c:func:`Py_GetPath` won't attempt to compute a
@@ -486,6 +535,8 @@ Process-wide parameters
    .. versionchanged:: 3.8
       The program full path is now used for :data:`sys.executable`, instead
       of the program name.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -586,6 +637,9 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
+   members of the :ref:`Python Initialization Configuration <init-config>`.
+
    .. note::
       It is recommended that applications embedding the Python interpreter
       for purposes other than executing a single script pass ``0`` as *updatepath*,
@@ -613,10 +667,17 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
+   members of the :ref:`Python Initialization Configuration <init-config>`.
+
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
 
 .. c:function:: void Py_SetPythonHome(const wchar_t *home)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.home` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Set the default "home" directory, that is, the location of the standard
    Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
@@ -630,12 +691,20 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   .. deprecated:: 3.11
+
 
 .. c:function:: w_char* Py_GetPythonHome()
 
    Return the default "home", that is, the value set by a previous call to
    :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
    environment variable if it is set.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. _threads:
@@ -1076,7 +1145,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current frame of the Python thread state *tstate*.
 
-   Return a strong reference. Return ``NULL`` if no frame is currently
+   Return a :term:`strong reference`. Return ``NULL`` if no frame is currently
    executing.
 
    See also :c:func:`PyEval_GetFrame`.
@@ -1155,7 +1224,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.9
 
-.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame);
+.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
 
    Set the frame evaluation function.
 

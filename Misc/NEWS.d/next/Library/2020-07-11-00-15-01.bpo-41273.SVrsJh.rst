@@ -1,3 +1,0 @@
-Speed up any transport using ``_ProactorReadPipeTransport`` by calling
-``recv_into`` instead of ``recv``, thus not creating a new buffer for each
-``recv`` call in the transport's read loop.
