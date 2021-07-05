@@ -646,11 +646,11 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
+    gaobject *alias = (gaobject*) PyType_GenericAlloc(
+            (PyTypeObject *)&Py_GenericAliasType, 0);
     if (alias == NULL) {
         return NULL;
     }
-    _PyObject_GC_TRACK(alias);
     if (!setup_ga(alias, origin, args)) {
         Py_DECREF(alias);
         return NULL;
