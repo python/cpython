@@ -1774,15 +1774,6 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
     int async_err = 0;
 
     _Py_BEGIN_SUPPRESS_IPH
-#ifdef MS_WINDOWS
-    if (count > 32767 && isatty(fd)) {
-        /* Issue #11395: the Windows console returns an error (12: not
-           enough space error) on writing into stdout if stdout mode is
-           binary and the length is greater than 66,000 bytes (or less,
-           depending on heap usage). */
-        count = 32767;
-    }
-#endif
     if (count > _PY_WRITE_MAX) {
         count = _PY_WRITE_MAX;
     }

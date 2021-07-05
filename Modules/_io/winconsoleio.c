@@ -991,7 +991,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
         /* Note that it's possible that this would fail to print big strings
          * on Windows 7 (before Windows 8 LPC-based pseudo-files were used
          * for I/O and would be limited to a 64 KiB heap).
-         * As Windows 7 is currently unsupported, that's Ok.
+         * As Windows 7 is no longer supported, that's OK.
          */
         res = WriteConsoleW(handle, wbuf, wlen, &n, NULL);
         if (res && n < wlen) {
