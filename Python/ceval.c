@@ -1913,6 +1913,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(BINARY_SUBSCR): {
+            PREDICTED(BINARY_SUBSCR);
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -1921,6 +1922,79 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             SET_TOP(res);
             if (res == NULL)
                 goto error;
+            DISPATCH();
+        }
+
+        case TARGET(BINARY_SUBSCR_ADAPTIVE): {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *sub = TOP();
+                PyObject *container = SECOND();
+                next_instr--;
+                if (_Py_Specialize_BinarySubscr(container, sub, next_instr, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_SUBSCR, deferred);
+                cache->adaptive.counter--;
+                JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
+            }
+        }
+
+        case TARGET(BINARY_SUBSCR_LIST): {
+            PyObject *sub = TOP();
+            PyObject *list = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
+            Py_ssize_t index = PyLong_AsSsize_t(sub);
+            DEOPT_IF(index < 0 || index >= PyList_Size(list), BINARY_SUBSCR);
+            POP();
+            PyObject *res = PyList_GetItem(list, index);
+            Py_XINCREF(res);
+            Py_DECREF(list);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            if (res == NULL)
+                goto error;
+            DISPATCH();
+        }
+
+        case TARGET(BINARY_SUBSCR_TUPLE): {
+            PyObject *sub = TOP();
+            PyObject *tuple = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
+            Py_ssize_t index = PyLong_AsSsize_t(sub);
+            DEOPT_IF(index < 0 || index >= PyTuple_Size(tuple), BINARY_SUBSCR);
+            POP();
+            PyObject *res = PyTuple_GetItem(tuple, index);
+            Py_XINCREF(res);
+            Py_DECREF(tuple);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            if (res == NULL)
+                goto error;
+            DISPATCH();
+        }
+
+        case TARGET(BINARY_SUBSCR_DICT): {
+            DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
+            PyObject *sub = POP();
+            PyObject *dict = TOP();
+            PyObject *res = PyDict_GetItemWithError(dict, sub);
+            Py_XINCREF(res);
+            Py_DECREF(dict);
+            SET_TOP(res);
+            if (res == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_SetKeyError(sub);
+                }
+                Py_DECREF(sub);
+                goto error;
+            }
+            Py_DECREF(sub);
             DISPATCH();
         }
 
@@ -4329,6 +4403,7 @@ opname ## _miss: \
 
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
+MISS_WITH_CACHE(BINARY_SUBSCR)
 
 error:
         /* Double-check exception status. */

@@ -162,12 +162,14 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+    [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
+    [BINARY_SUBSCR] = 1, /* _PyAdaptiveEntry */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -637,3 +639,36 @@ success:
     cache0->counter = saturating_start();
     return 0;
 }
+
+int
+_Py_Specialize_BinarySubscr(
+     PyObject *container, PyObject *sub,
+    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    if (PyList_CheckExact(container) && PyLong_CheckExact(sub)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (PyTuple_CheckExact(container) && PyLong_CheckExact(sub)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (PyDict_CheckExact(container)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, _Py_OPARG(*instr));
+        goto success;
+    }
+
+    goto fail;
+fail:
+    STAT_INC(BINARY_SUBSCR, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(BINARY_SUBSCR, specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}
+
