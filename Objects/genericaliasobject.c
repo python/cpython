@@ -647,7 +647,7 @@ PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
     gaobject *alias = (gaobject*) PyType_GenericAlloc(
-            (PyTypeObject *)(&Py_GenericAliasType), 0);
+            (PyTypeObject *)&Py_GenericAliasType, 0);
     if (alias == NULL) {
         return NULL;
     }
