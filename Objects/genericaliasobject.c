@@ -353,7 +353,7 @@ static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
     gaobject *alias = (gaobject *)self;
-    // do a lookup for __parameters__ so it gets populated (if not already)
+    // Populate __parameters__ if needed.
     if (alias->parameters == NULL) {
         alias->parameters = _Py_make_parameters(alias->args);
         if (alias->parameters == NULL) {
