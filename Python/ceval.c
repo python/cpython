@@ -4938,7 +4938,7 @@ make_coro_frame(PyThreadState *tstate,
         localsarray[i] = NULL;
     }
     _PyFrame *frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
-    _PyFrame_InitializeSpecials(frame, con, locals);
+    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     /* Create the frame */
     PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, 1);
     if (f == NULL) {
@@ -5000,7 +5000,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
         return NULL;
     }
     _PyFrame * frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
-    _PyFrame_InitializeSpecials(frame, con, locals);
+    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
         _PyFrame_ClearSpecials(frame);
         for (int i = 0; i < code->co_nlocalsplus; i++) {

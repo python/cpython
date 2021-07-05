@@ -28,6 +28,7 @@ typedef struct _py_frame {
     struct _py_frame *previous;
     int lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
+    int nlocalsplus;
     PyFrameState f_state;       /* What state the frame is in */
     PyObject *stack[1];
 } _PyFrame;
@@ -49,12 +50,13 @@ static inline int _PyFrameHasCompleted(_PyFrame *f) {
 int _PyFrame_TakeLocals(PyFrameObject *f);
 
 static inline void
-_PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *locals)
+_PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *locals, int nlocalsplus)
 {
     frame->code = (PyCodeObject *)Py_NewRef(con->fc_code);
     frame->builtins = Py_NewRef(con->fc_builtins);
     frame->globals = Py_NewRef(con->fc_globals);
     frame->locals = Py_XNewRef(locals);
+    frame->nlocalsplus = nlocalsplus;
     frame->frame_obj = NULL;
     frame->lasti = -1;
 }
@@ -72,7 +74,7 @@ _PyFrame_ClearSpecials(_PyFrame *frame)
 static inline PyObject**
 _PyFrame_GetLocalsArray(_PyFrame *frame)
 {
-    return ((PyObject **)frame) - frame->code->co_nlocalsplus;
+    return ((PyObject **)frame) - frame->nlocalsplus;
 }
 
 /* Returns a borrowed reference */
