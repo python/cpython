@@ -1573,6 +1573,28 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
 }
 
 /*[clinic input]
+_winapi.ResumeThread -> DWORD
+
+    handle: HANDLE
+    /
+[clinic start generated code]*/
+
+static DWORD
+_winapi_ResumeThread_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=c1f717bebfc83593 input=6297b36b9bdebc19]*/
+{
+    DWORD result;
+    Py_BEGIN_ALLOW_THREADS
+    result = ResumeThread(handle);
+    Py_END_ALLOW_THREADS
+
+    if (result == -1)
+        PyErr_SetFromWindowsErr(0);
+
+    return result;
+}
+
+/*[clinic input]
 _winapi.SetNamedPipeHandleState
 
     named_pipe: HANDLE
@@ -1917,6 +1939,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
     _WINAPI_READFILE_METHODDEF
+    _WINAPI_RESUMETHREAD_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
     _WINAPI_VIRTUALQUERYSIZE_METHODDEF
@@ -2042,6 +2065,7 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, REALTIME_PRIORITY_CLASS);
 
     WINAPI_CONSTANT(F_DWORD, CREATE_NO_WINDOW);
+    WINAPI_CONSTANT(F_DWORD, CREATE_SUSPENDED);
     WINAPI_CONSTANT(F_DWORD, DETACHED_PROCESS);
     WINAPI_CONSTANT(F_DWORD, CREATE_DEFAULT_ERROR_MODE);
     WINAPI_CONSTANT(F_DWORD, CREATE_BREAKAWAY_FROM_JOB);

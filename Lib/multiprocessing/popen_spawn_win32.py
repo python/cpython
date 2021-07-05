@@ -1,4 +1,5 @@
 import os
+import io
 import msvcrt
 import signal
 import sys
@@ -21,6 +22,7 @@ WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 
 def _path_eq(p1, p2):
     return p1 == p2 or os.path.normcase(p1) == os.path.normcase(p2)
+
 
 WINENV = not _path_eq(sys.executable, sys._base_executable)
 
@@ -72,8 +74,8 @@ class Popen(object):
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
                     python_exe, cmd,
-                    None, None, False, 0, env, None, None)
-                _winapi.CloseHandle(ht)
+                    None, None, False, _winapi.CREATE_SUSPENDED,
+                    env, None, None)
             except:
                 _winapi.CloseHandle(rhandle)
                 raise
@@ -87,12 +89,21 @@ class Popen(object):
                                            (self.sentinel, int(rhandle)))
 
             # send information to child
-            set_spawning_popen(self)
-            try:
-                reduction.dump(prep_data, to_child)
-                reduction.dump(process_obj, to_child)
-            finally:
-                set_spawning_popen(None)
+            # bpo-42178: write to BytesIO to check for pickler exceptions
+            with io.BytesIO() as f:
+                set_spawning_popen(self)
+                try:
+                    reduction.dump(prep_data, f)
+                    reduction.dump(process_obj, f)
+                except:
+                    _winapi.TerminateProcess(self._handle, 1)
+                    raise
+                else:
+                    _winapi.ResumeThread(ht)
+                    to_child.write(f.getvalue())
+                finally:
+                    _winapi.CloseHandle(ht)
+                    set_spawning_popen(None)
 
     def duplicate_for_child(self, handle):
         assert self is get_spawning_popen()
