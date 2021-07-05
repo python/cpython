@@ -220,7 +220,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
                 # have this behavior). But do this only if the exception wrapped
                 # by the RuntimeError is actually Stop(Async)Iteration (see
                 # issue29692).
-                if isinstance(value, (StopIteration, StopAsyncIteration)):
+                if type is StopIteration or type is StopAsyncIteration:
                     if exc.__cause__ is value:
                         return False
                 raise
