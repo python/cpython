@@ -602,7 +602,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (!setup_ga(self, origin, arguments)) {
-        type->tp_free((PyObject *)self);
+        Py_DECREF(self);
         return NULL;
     }
     return (PyObject *)self;
@@ -640,14 +640,14 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
+    gaobject *alias = (gaobject*) PyType_GenericAlloc(
+            (PyTypeObject *)&Py_GenericAliasType, 0);
     if (alias == NULL) {
         return NULL;
     }
     if (!setup_ga(alias, origin, args)) {
-        PyObject_GC_Del((PyObject *)alias);
+        Py_DECREF(alias);
         return NULL;
     }
-    _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
