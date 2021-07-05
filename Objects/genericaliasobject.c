@@ -33,7 +33,10 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
     gaobject *alias = (gaobject *)self;
     Py_VISIT(alias->origin);
     Py_VISIT(alias->args);
-    Py_VISIT(alias->parameters);
+    // alias->parameters is lazily created, so this might be NULL
+    if (alias->parameters != NULL) {
+        Py_VISIT(alias->parameters);
+    }
     return 0;
 }
 
@@ -602,7 +605,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (!setup_ga(self, origin, arguments)) {
-        type->tp_free((PyObject *)self);
+        Py_DECREF(self);
         return NULL;
     }
     return (PyObject *)self;
@@ -644,10 +647,10 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     if (alias == NULL) {
         return NULL;
     }
+    _PyObject_GC_TRACK(alias);
     if (!setup_ga(alias, origin, args)) {
-        PyObject_GC_Del((PyObject *)alias);
+        Py_DECREF(alias);
         return NULL;
     }
-    _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
