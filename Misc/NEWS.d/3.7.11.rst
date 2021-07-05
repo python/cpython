@@ -4,7 +4,7 @@
 .. release date: 2021-06-28
 .. section: Security
 
-mod:`http.client` now avoids infinitely reading potential HTTP headers after
+:mod:`http.client` now avoids infinitely reading potential HTTP headers after
 a ``100 Continue`` status response from the server.
 
 ..
