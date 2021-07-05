@@ -164,9 +164,8 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
                 # have this behavior). But do this only if the exception wrapped
                 # by the RuntimeError is actually Stop(Async)Iteration (see
                 # issue29692).
-                if isinstance(value, (StopIteration, StopAsyncIteration)):
-                    if exc.__cause__ is value:
-                        return False
+                if isinstance(value, StopIteration) and exc.__cause__ is value:
+                    return False
                 raise
             except BaseException as exc:
                 # only re-raise if it's *not* the exception that was
@@ -224,9 +223,11 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
                 # have this behavior). But do this only if the exception wrapped
                 # by the RuntimeError is actually Stop(Async)Iteration (see
                 # issue29692).
-                if isinstance(value, (StopIteration, StopAsyncIteration)):
-                    if exc.__cause__ is value:
-                        return False
+                if (
+                    isinstance(value, (StopIteration, StopAsyncIteration))
+                    and exc.__cause__ is value
+                ):
+                    return False
                 raise
             except BaseException as exc:
                 if exc is not value:
