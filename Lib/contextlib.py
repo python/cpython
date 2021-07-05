@@ -194,14 +194,14 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
 
     async def __aenter__(self):
         try:
-            return await self.gen.__anext__()
+            return await anext(self.gen)
         except StopAsyncIteration:
             raise RuntimeError("generator didn't yield") from None
 
     async def __aexit__(self, typ, value, traceback):
         if typ is None:
             try:
-                await self.gen.__anext__()
+                await anext(self.gen)
             except StopAsyncIteration:
                 return False
             else:
