@@ -158,11 +158,15 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
                     return False
-                # Likewise, avoid suppressing if a StopIteration exception
+                # Avoid suppressing if a StopIteration exception
                 # was passed to throw() and later wrapped into a RuntimeError
-                # (see PEP 479).
-                if type is StopIteration and exc.__cause__ is value:
-                    return False
+                # (see PEP 479 for sync generators; async generators also
+                # have this behavior). But do this only if the exception wrapped
+                # by the RuntimeError is actually Stop(Async)Iteration (see
+                # issue29692).
+                if isinstance(value, (StopIteration, StopAsyncIteration)):
+                    if exc.__cause__ is value:
+                        return False
                 raise
             except BaseException as exc:
                 # only re-raise if it's *not* the exception that was
@@ -220,7 +224,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
                 # have this behavior). But do this only if the exception wrapped
                 # by the RuntimeError is actually Stop(Async)Iteration (see
                 # issue29692).
-                if typ is StopIteration or typ is StopAsyncIteration:
+                if isinstance(value, (StopIteration, StopAsyncIteration)):
                     if exc.__cause__ is value:
                         return False
                 raise
