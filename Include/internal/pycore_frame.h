@@ -64,7 +64,7 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
 static inline void
 _PyFrame_ClearSpecials(_PyFrame *frame)
 {
-    assert(frame->frame_obj == NULL);
+    Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->locals);
     Py_DECREF(frame->globals);
     Py_DECREF(frame->builtins);
@@ -85,6 +85,9 @@ _PyFrame_GetFrameObject(_PyFrame *frame)
     assert(frame->frame_obj != NULL);
     return frame->frame_obj;
 }
+
+int
+_PyFrame_Clear(_PyFrame * frame);
 
 int
 _PyFrame_FastToLocalsWithError(_PyFrame *frame);

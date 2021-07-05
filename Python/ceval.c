@@ -4949,6 +4949,7 @@ make_coro_frame(PyThreadState *tstate,
         Py_DECREF(f);
         return NULL;
     }
+    _PyObject_GC_TRACK(f);
     return f;
 }
 
@@ -4982,8 +4983,6 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
         return NULL;
     }
 
-    _PyObject_GC_TRACK(f);
-
     return gen;
 }
 
@@ -5013,37 +5012,41 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
     return frame;
 }
 
-static int
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
+int
+_PyFrame_Clear(_PyFrame * frame)
 {
-    ++tstate->recursion_depth;
-    int err = 0;
-    PyCodeObject *code = frame->code;
-    PyObject **localsarray = ((PyObject **)frame)-code->co_nlocalsplus;
+    PyObject **localsarray = ((PyObject **)frame)-frame->nlocalsplus;
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
             Py_DECREF(f);
-            _PyObject_GC_TRACK(f);
             if (_PyFrame_TakeLocals(f)) {
-                err = -1;
+                return -1;
             }
-            goto exit;
+            return 0;
         }
-        assert(f->f_own_locals_memory == 0);
         Py_DECREF(f);
         assert(_PyObject_IsFreed((PyObject *)f) || Py_REFCNT(f) == 0);
     }
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
+    assert(frame->stackdepth == 0);
+    for (int i = 0; i < frame->nlocalsplus; i++) {
         Py_XDECREF(localsarray[i]);
     }
     _PyFrame_ClearSpecials(frame);
-exit:
+    return 0;
+}
+
+static int
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
+{
+    ++tstate->recursion_depth;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
+    int err = _PyFrame_Clear(frame);
     assert(frame->frame_obj == NULL);
     --tstate->recursion_depth;
     tstate->frame = frame->previous;
-    _PyThreadState_PopLocals(tstate, localsarray);
+    _PyThreadState_PopLocals(tstate, _PyFrame_GetLocalsArray(frame));
     return err;
 }
 

@@ -671,8 +671,10 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     if (f->f_own_locals_memory == 0) {
         return 0;
     }
+    assert(f->f_frame->frame_obj == NULL);
     /* locals */
     PyCodeObject *co = f->f_frame->code;
+    assert(f->f_localsptr == _PyFrame_GetLocalsArray(f->f_frame));
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         Py_VISIT(f->f_localsptr[i]);
     }
@@ -702,6 +704,7 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
     PyCodeObject *co = f->f_frame->code;
     /* locals */
+    assert(f->f_localsptr == _PyFrame_GetLocalsArray(f->f_frame));
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         Py_CLEAR(f->f_localsptr[i]);
     }
@@ -861,11 +864,16 @@ int
 _PyFrame_TakeLocals(PyFrameObject *f)
 {
     assert(f->f_own_locals_memory == 0);
-    assert(f->f_frame->stackdepth == 0);
-    assert(f->f_frame->frame_obj == NULL);
-    Py_ssize_t size = ((char*)f->f_frame->stack)-((char *)f->f_localsptr);
+    _PyFrame *frame = f->f_frame;
+    assert(frame->frame_obj == NULL);
+    Py_ssize_t size = ((char*)&frame->stack[frame->stackdepth]) - (char *)_PyFrame_GetLocalsArray(frame);
     PyObject **copy = PyMem_Malloc(size);
     if (copy == NULL) {
+        for (int i = 0; i < f->f_frame->stackdepth; i++) {
+            PyObject *o = f->f_frame->stack[i];
+            Py_XDECREF(o);
+        }
+        f->f_frame->stackdepth = 0;
         for (int i = 0; i < f->f_frame->nlocalsplus; i++) {
             PyObject *o = f->f_localsptr[i];
             Py_XDECREF(o);
@@ -887,6 +895,9 @@ _PyFrame_TakeLocals(PyFrameObject *f)
     f->f_localsptr = copy;
     f->f_frame = (_PyFrame *)(copy + f->f_frame->nlocalsplus);
     f->f_frame->previous = NULL;
+    if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
+        _PyObject_GC_TRACK((PyObject *)f);
+    }
     return 0;
 }
 
