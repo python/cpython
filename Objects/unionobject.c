@@ -443,7 +443,7 @@ static PyObject *
 union_getitem(PyObject *self, PyObject *item)
 {
     unionobject *alias = (unionobject *)self;
-    // do a lookup for __parameters__ so it gets populated (if not already)
+    // Populate __parameters__ if needed.
     if (alias->parameters == NULL) {
         alias->parameters = _Py_make_parameters(alias->args);
         if (alias->parameters == NULL) {
