@@ -15,7 +15,6 @@ struct _frame {
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_own_locals_memory;   /* This frame owns the memory for the locals */
-    PyObject **f_localsptr;     /* Pointer to locals, cells, free */
 };
 
 /* Standard object interface */

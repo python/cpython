@@ -8863,7 +8863,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    PyObject *firstarg = f->f_localsptr[0];
+    PyObject *firstarg = _PyFrame_GetLocalsArray(f->f_frame)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
@@ -8888,7 +8888,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            PyObject *cell = f->f_localsptr[i];
+            PyObject *cell = _PyFrame_GetLocalsArray(f->f_frame)[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");

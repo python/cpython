@@ -1507,7 +1507,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
 
     names = co->co_names;
     consts = co->co_consts;
-    localsplus = fo->f_localsptr;
+    localsplus = _PyFrame_GetLocalsArray(frame);
     first_instr = co->co_firstinstr;
     /*
        frame->lasti refers to the index of the last instruction,

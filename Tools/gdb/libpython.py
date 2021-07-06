@@ -879,9 +879,11 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return
 
-        f_localsplus = self.field('f_localsptr')
+        obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
+        base = self.field('f_frame').cast(obj_ptr_ptr)
+        localsplus = base - self._f_nlocalsplus()
         for i in safe_range(self.co_nlocals):
-            pyop_value = PyObjectPtr.from_pyobject_ptr(f_localsplus[i])
+            pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
             if pyop_value.is_null():
                 continue
             pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
@@ -899,6 +901,9 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def _f_code(self):
         return self._f_special("code", PyCodeObjectPtr.from_pyobject_ptr)
+
+    def _f_nlocalsplus(self):
+        return self._f_special("nlocalsplus", int_from_int)
 
     def _f_lasti(self):
         return self._f_special("lasti", int_from_int)
