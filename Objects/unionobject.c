@@ -543,10 +543,10 @@ _Py_Union(PyObject *args)
 
     result->parameters = NULL;
     result->args = dedup_and_flatten_args(args);
+    _PyObject_GC_TRACK(result);
     if (result->args == NULL) {
-        PyObject_GC_Del(result);
+        Py_DECREF(result);
         return NULL;
     }
-    _PyObject_GC_TRACK(result);
     return (PyObject*)result;
 }

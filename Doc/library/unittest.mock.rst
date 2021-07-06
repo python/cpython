@@ -262,7 +262,7 @@ the *new_callable* argument to :func:`patch`.
       this is a new Mock (created on first access). See the
       :attr:`return_value` attribute.
 
-    * *unsafe*: By default, accessing any attribute with name starting with
+    * *unsafe*: By default, accessing any attribute whose name starts with
       *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
       :exc:`AttributeError`. Passing ``unsafe=True`` will allow access to
       these attributes.
