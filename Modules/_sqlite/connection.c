@@ -207,7 +207,7 @@ pysqlite_do_all_statements(pysqlite_Connection *self)
         }
     }
 
-    // Reset all cached statements
+    // Reset all cursors
     for (int i = 0; i < PyList_Size(self->cursors); i++) {
         PyObject *weakref = PyList_GetItem(self->cursors, i);
         PyObject *object = PyWeakref_GetObject(weakref);
