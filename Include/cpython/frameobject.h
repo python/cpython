@@ -9,8 +9,6 @@ struct _frame {
     struct _frame *f_back;      /* previous frame, or NULL */
     struct _py_frame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
-    /* Borrowed reference to a generator, or NULL */
-    PyObject *f_gen;
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */

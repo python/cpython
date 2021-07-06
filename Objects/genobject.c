@@ -143,9 +143,6 @@ gen_dealloc(PyGenObject *gen)
     }
     _PyFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
-        if (frame->frame_obj != NULL) {
-            frame->frame_obj->f_gen = NULL;
-        }
         gen->gi_xframe = NULL;
         frame->previous = NULL;
         _PyFrame_Clear(frame, 1);
@@ -207,9 +204,6 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     frame->stack[frame->stackdepth] = result;
     frame->stackdepth++;
 
-    /* Generators always return to their most recent caller, not
-     * necessarily their creator. */
-    assert(frame->frame_obj->f_back == NULL);
     frame->previous = tstate->frame;
 
     gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -225,7 +219,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     gen->gi_exc_state.previous_item = NULL;
 
     assert(tstate->frame == frame->previous);
-    /* Don't keep the reference to f_back any longer than necessary.  It
+    /* Don't keep the reference to previous any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
     frame->previous = NULL;
@@ -269,9 +263,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* first clean reference cycle through stored exception traceback */
     _PyErr_ClearExcState(&gen->gi_exc_state);
 
-    if (frame->frame_obj) {
-        frame->frame_obj->f_gen = NULL;
-    }
+    frame->generator = NULL;
     gen->gi_xframe = NULL;
     _PyFrame_Clear(frame, 1);
     *presult = result;
@@ -863,6 +855,84 @@ PyTypeObject PyGen_Type = {
 };
 
 static PyObject *
+make_gen(PyTypeObject *type, PyFrameConstructor *con, _PyFrame *frame)
+{
+    PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
+    if (gen == NULL) {
+        assert(frame->frame_obj == NULL);
+        _PyFrame_Clear(frame, 1);
+        return NULL;
+    }
+    gen->gi_xframe = frame;
+    frame->generator = (PyObject *)gen;
+    gen->gi_code = frame->code;
+    Py_INCREF(gen->gi_code);
+    gen->gi_weakreflist = NULL;
+    gen->gi_exc_state.exc_type = NULL;
+    gen->gi_exc_state.exc_value = NULL;
+    gen->gi_exc_state.exc_traceback = NULL;
+    gen->gi_exc_state.previous_item = NULL;
+    if (con->fc_name != NULL)
+        gen->gi_name = con->fc_name;
+    else
+        gen->gi_name = gen->gi_code->co_name;
+    Py_INCREF(gen->gi_name);
+    if (con->fc_qualname != NULL)
+        gen->gi_qualname = con->fc_qualname;
+    else
+        gen->gi_qualname = gen->gi_name;
+    Py_INCREF(gen->gi_qualname);
+    _PyObject_GC_TRACK(gen);
+    return (PyObject *)gen;
+}
+
+static PyObject *
+compute_cr_origin(int origin_depth);
+
+PyObject *
+_Py_MakeCoro(PyFrameConstructor *con, _PyFrame *frame)
+{
+    int coro_flags = ((PyCodeObject *)con->fc_code)->co_flags &
+        (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+    assert(coro_flags);
+    if (coro_flags == CO_GENERATOR) {
+        return make_gen(&PyGen_Type, con, frame);
+    }
+    if (coro_flags == CO_ASYNC_GENERATOR) {
+        PyAsyncGenObject *o;
+        o = (PyAsyncGenObject *)make_gen(&PyAsyncGen_Type, con, frame);
+        if (o == NULL) {
+            return NULL;
+        }
+        o->ag_finalizer = NULL;
+        o->ag_closed = 0;
+        o->ag_hooks_inited = 0;
+        o->ag_running_async = 0;
+        return (PyObject*)o;
+    }
+    assert (coro_flags == CO_COROUTINE);
+    PyObject *coro = make_gen(&PyCoro_Type, con, frame);
+    if (!coro) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    int origin_depth = tstate->coroutine_origin_tracking_depth;
+
+    if (origin_depth == 0) {
+        ((PyCoroObject *)coro)->cr_origin = NULL;
+    } else {
+        PyObject *cr_origin = compute_cr_origin(origin_depth);
+        ((PyCoroObject *)coro)->cr_origin = cr_origin;
+        if (!cr_origin) {
+            Py_DECREF(coro);
+            return NULL;
+        }
+    }
+
+    return coro;
+}
+
+static PyObject *
 gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
                       PyObject *name, PyObject *qualname)
 {
@@ -878,7 +948,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     gen->gi_xframe = f->f_frame;
     gen->gi_xframe->frame_obj = f;
     f->f_own_locals_memory = 0;
-    f->f_gen = (PyObject *) gen;
+    gen->gi_xframe->generator = (PyObject *) gen;
     assert(PyObject_GC_IsTracked((PyObject *)f));
 
     gen->gi_code = PyFrame_GetCode(f);

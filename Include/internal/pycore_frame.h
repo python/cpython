@@ -25,6 +25,8 @@ typedef struct _py_frame {
     PyObject *locals;
     PyCodeObject *code;
     PyFrameObject *frame_obj;
+    /* Borrowed reference to a generator, or NULL */
+    PyObject *generator;
     struct _py_frame *previous;
     int lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
@@ -59,6 +61,7 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
     frame->nlocalsplus = nlocalsplus;
     frame->stackdepth = 0;
     frame->frame_obj = NULL;
+    frame->generator = NULL;
     frame->lasti = -1;
     frame->f_state = FRAME_CREATED;
 }
@@ -66,6 +69,7 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
 static inline void
 _PyFrame_ClearSpecials(_PyFrame *frame)
 {
+    frame->generator = NULL;
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->locals);
     Py_DECREF(frame->globals);

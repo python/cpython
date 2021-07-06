@@ -113,6 +113,8 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 struct _py_frame *_PyEval_GetFrame(void);
 
+PyObject *_Py_MakeCoro(PyFrameConstructor *, struct _py_frame *);
+
 #ifdef __cplusplus
 }
 #endif

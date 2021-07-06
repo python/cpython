@@ -4920,7 +4920,7 @@ fail: /* Jump here from prelude on failure */
 }
 
 
-PyFrameObject *
+_PyFrame *
 make_coro_frame(PyThreadState *tstate,
            PyFrameConstructor *con, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
@@ -4940,18 +4940,12 @@ make_coro_frame(PyThreadState *tstate,
     }
     _PyFrame *frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
-    /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 1);
-    if (f == NULL) {
-        return NULL;
-    }
     assert(frame->frame_obj == NULL);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
-        Py_DECREF(f);
+        _PyFrame_Clear(frame, 1);
         return NULL;
     }
-    _PyObject_GC_TRACK(f);
-    return f;
+    return frame;
 }
 
 static PyObject *
@@ -4961,25 +4955,11 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
           PyObject *kwnames)
 {
     assert (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
-    PyFrameObject *f = make_coro_frame(
-        tstate, con, locals, args, argcount, kwnames);
-    if (f == NULL) {
+    _PyFrame* frame = make_coro_frame(tstate, con, locals, args, argcount, kwnames);
+    if (frame == NULL) {
         return NULL;
     }
-    PyObject *gen;
-    int is_coro = ((PyCodeObject *)con->fc_code)->co_flags & CO_COROUTINE;
-
-    assert(f->f_back == NULL);
-
-    /* Create a new generator that owns the ready to run frame
-        * and return that as the value. */
-    if (is_coro) {
-            gen = PyCoro_New(f, con->fc_name, con->fc_qualname);
-    } else if (((PyCodeObject *)con->fc_code)->co_flags & CO_ASYNC_GENERATOR) {
-            gen = PyAsyncGen_New(f, con->fc_name, con->fc_qualname);
-    } else {
-            gen = PyGen_NewWithQualName(f, con->fc_name, con->fc_qualname);
-    }
+    PyObject *gen = _Py_MakeCoro(con, frame);
     if (gen == NULL) {
         return NULL;
     }
@@ -5069,9 +5049,12 @@ _PyFrame_Clear(_PyFrame * frame, int take)
         Py_DECREF(f);
         assert(_PyObject_IsFreed((PyObject *)f) || Py_REFCNT(f) == 0);
     }
-    assert(frame->stackdepth == 0);
     for (int i = 0; i < frame->nlocalsplus; i++) {
         Py_XDECREF(localsarray[i]);
+    }
+    assert(frame->stackdepth >= 0);
+    for (int i = 0; i < frame->stackdepth; i++) {
+        Py_DECREF(frame->stack[i]);
     }
     _PyFrame_ClearSpecials(frame);
     if (take) {
