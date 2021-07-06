@@ -428,6 +428,13 @@ error:
     return NULL;
 }
 
+static PyObject *
+union_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    unionobject *alias = (unionobject *)self;
+    return Py_BuildValue("O(O)", Py_TYPE(alias), alias->args);
+}
+
 static PyMemberDef union_members[] = {
         {"__args__", T_OBJECT, offsetof(unionobject, args), READONLY},
         {0}
@@ -436,6 +443,7 @@ static PyMemberDef union_members[] = {
 static PyMethodDef union_methods[] = {
         {"__instancecheck__", union_instancecheck, METH_O},
         {"__subclasscheck__", union_subclasscheck, METH_O},
+        {"__reduce__", union_reduce, METH_NOARGS},
         {0}};
 
 
@@ -489,6 +497,42 @@ static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+static PyObject *
+union_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    if (!_PyArg_NoKeywords("Union", kwds)) {
+        return NULL;
+    }
+    if (!_PyArg_CheckPositional("Union", PyTuple_GET_SIZE(args), 1, 1)) {
+        return NULL;
+    }
+
+    return _Py_Union(PyTuple_GET_ITEM(args, 0));
+}
+
+static const char* const cls_attrs[] = {
+        "__name__",
+        "__qualname__",
+        "__module__",
+        NULL,
+};
+
+static PyObject *
+union_getattro(PyObject *self, PyObject *name)
+{
+    unionobject *alias = (unionobject  *)self;
+
+    for (const char * const *p = cls_attrs; ; p++) {
+        if (*p == NULL) {
+            break;
+        }
+        if (_PyUnicode_EqualToASCIIString(name, *p)) {
+            return PyObject_GetAttr((PyObject *) Py_TYPE(alias), name);
+        }
+    }
+    return PyObject_GenericGetAttr(self, name);
+}
+
 PyTypeObject _Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.Union",
@@ -502,7 +546,7 @@ PyTypeObject _Py_UnionType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = union_traverse,
     .tp_hash = union_hash,
-    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_getattro = union_getattro,
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
@@ -510,6 +554,7 @@ PyTypeObject _Py_UnionType = {
     .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
     .tp_getset = union_properties,
+    .tp_new = union_new,
 };
 
 PyObject *
