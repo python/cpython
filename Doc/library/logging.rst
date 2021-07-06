@@ -256,7 +256,7 @@ is the module's name in the Python package namespace.
 
       .. versionchanged:: 3.11
 
-      The deprecated ``logging.warn`` method, a duplicate of this method,
+      The deprecated method ``logging.Logger.warn``, a duplicate of this method,
       was removed. Use this method instead.
 
 
