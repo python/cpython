@@ -47,7 +47,7 @@ static inline int _PyFrameHasCompleted(_PyFrame *f) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(_PyFrame)-1)/sizeof(PyObject *))
 
-int _PyFrame_TakeLocals(PyFrameObject *f);
+void _PyFrame_TakeLocals(PyFrameObject *f, _PyFrame *locals);
 
 static inline void
 _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *locals, int nlocalsplus)
@@ -78,16 +78,22 @@ _PyFrame_GetLocalsArray(_PyFrame *frame)
 }
 
 /* Returns a borrowed reference */
+PyFrameObject *
+_PyFrame_MakeAndSetFrameObject(_PyFrame *frame);
+
+/* Returns a borrowed reference */
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyFrame *frame)
 {
-    /* Will need to handle lazy frames */
-    assert(frame->frame_obj != NULL);
-    return frame->frame_obj;
+    PyFrameObject *res =  frame->frame_obj;
+    if (res != NULL) {
+        return res;
+    }
+    return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
 int
-_PyFrame_Clear(_PyFrame * frame);
+_PyFrame_Clear(_PyFrame * frame, int take);
 
 int
 _PyFrame_FastToLocalsWithError(_PyFrame *frame);

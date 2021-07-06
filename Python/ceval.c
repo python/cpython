@@ -4309,7 +4309,10 @@ error:
 #endif
 
         /* Log traceback info. */
-        PyTraceBack_Here(_PyFrame_GetFrameObject(frame));
+        PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+        if (f != NULL) {
+            PyTraceBack_Here(f);
+        }
 
         if (tstate->c_tracefunc != NULL) {
             /* Make sure state is set to FRAME_EXECUTING for tracing */
@@ -4938,7 +4941,7 @@ make_coro_frame(PyThreadState *tstate,
     _PyFrame *frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, 1);
+    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 1);
     if (f == NULL) {
         return NULL;
     }
@@ -5010,18 +5013,57 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
     return frame;
 }
 
+PyFrameObject *
+_PyFrame_MakeAndSetFrameObject(_PyFrame *frame)
+{
+    assert(frame->frame_obj == NULL);
+    PyObject *error_type, *error_value, *error_traceback;
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 0);
+    if (f == NULL) {
+        Py_XDECREF(error_type);
+        Py_XDECREF(error_value);
+        Py_XDECREF(error_traceback);
+    }
+    else {
+        PyErr_Restore(error_type, error_value, error_traceback);
+    }
+    frame->frame_obj = f;
+    return f;
+}
+
+static _PyFrame *
+copy_frame_to_heap(_PyFrame *frame)
+{
+
+    Py_ssize_t size = ((char*)&frame->stack[frame->stackdepth]) - (char *)_PyFrame_GetLocalsArray(frame);
+    PyObject **copy = PyMem_Malloc(size);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    memcpy(copy, locals, size);
+    _PyFrame *res = (_PyFrame *)(copy + frame->nlocalsplus);
+    return res;
+}
+
 int
-_PyFrame_Clear(_PyFrame * frame)
+_PyFrame_Clear(_PyFrame * frame, int take)
 {
     PyObject **localsarray = ((PyObject **)frame)-frame->nlocalsplus;
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
-            Py_DECREF(f);
-            if (_PyFrame_TakeLocals(f)) {
-                return -1;
+            if (!take) {
+                frame = copy_frame_to_heap(frame);
+                if (frame == NULL) {
+                    return -1;
+                }
             }
+            _PyFrame_TakeLocals(f, frame);
+            Py_DECREF(f);
             return 0;
         }
         Py_DECREF(f);
@@ -5032,6 +5074,9 @@ _PyFrame_Clear(_PyFrame * frame)
         Py_XDECREF(localsarray[i]);
     }
     _PyFrame_ClearSpecials(frame);
+    if (take) {
+        PyMem_Free(_PyFrame_GetLocalsArray(frame));
+    }
     return 0;
 }
 
@@ -5040,12 +5085,14 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
 {
     ++tstate->recursion_depth;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
-    int err = _PyFrame_Clear(frame);
+    if (_PyFrame_Clear(frame, 0)) {
+        return -1;
+    }
     assert(frame->frame_obj == NULL);
     --tstate->recursion_depth;
     tstate->frame = frame->previous;
     _PyThreadState_PopLocals(tstate, _PyFrame_GetLocalsArray(frame));
-    return err;
+    return 0;
 }
 
 PyObject *
@@ -5068,7 +5115,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     PyObject *retval;
     assert (tstate->interp->eval_frame != NULL); // {
         /* Create the frame */
-        PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, 0);
+        PyFrameObject *f = _PyFrame_New_NoTrack(frame, 0);
         if (f == NULL) {
             frame->frame_obj = NULL;
             retval = NULL;
@@ -5080,7 +5127,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
         }
     // }
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
-        Py_CLEAR(retval);
+        retval = NULL;
     }
     return retval;
 }
@@ -5692,7 +5739,11 @@ PyEval_GetFrame(void)
     if (tstate->frame == NULL) {
         return NULL;
     }
-    return _PyFrame_GetFrameObject(tstate->frame);
+    PyFrameObject *f = _PyFrame_GetFrameObject(tstate->frame);
+    if (f == NULL) {
+        PyErr_Clear();
+    }
+    return f;
 }
 
 PyObject *

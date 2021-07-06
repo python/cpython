@@ -1830,7 +1830,7 @@ sys__getframe_impl(PyObject *module, int depth)
                          "call stack is not deep enough");
         return NULL;
     }
-    return _Py_NewRef((PyObject *)_PyFrame_GetFrameObject(frame));
+    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
 }
 
 /*[clinic input]

@@ -859,49 +859,34 @@ frame_alloc(_PyFrame *frame, int owns)
     return f;
 }
 
-int
-_PyFrame_TakeLocals(PyFrameObject *f)
+void
+_PyFrame_TakeLocals(PyFrameObject *f, _PyFrame *frame)
 {
     assert(f->f_own_locals_memory == 0);
-    _PyFrame *frame = f->f_frame;
     assert(frame->frame_obj == NULL);
-    Py_ssize_t size = ((char*)&frame->stack[frame->stackdepth]) - (char *)_PyFrame_GetLocalsArray(frame);
-    PyObject **copy = PyMem_Malloc(size);
-    PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
-    if (copy == NULL) {
-        for (int i = 0; i < f->f_frame->stackdepth; i++) {
-            PyObject *o = f->f_frame->stack[i];
-            Py_XDECREF(o);
-        }
-        f->f_frame->stackdepth = 0;
-        for (int i = 0; i < f->f_frame->nlocalsplus; i++) {
-            PyObject *o = locals[i];
-            Py_XDECREF(o);
-        }
-        Py_XDECREF(f->f_frame->builtins);
-        Py_XDECREF(f->f_frame->globals);
-        Py_XDECREF(f->f_frame->locals);
-        Py_XDECREF(f->f_frame->code);
-        f->f_frame->previous = NULL;
-        PyErr_NoMemory();
-        return -1;
-    }
-    assert(f->f_back == NULL);
-    if (f->f_frame->previous != NULL) {
-        f->f_back = (PyFrameObject *)Py_NewRef(_PyFrame_GetFrameObject(f->f_frame->previous));
-    }
-    memcpy(copy, locals, size);
+
     f->f_own_locals_memory = 1;
-    f->f_frame = (_PyFrame *)(copy + f->f_frame->nlocalsplus);
-    f->f_frame->previous = NULL;
+    f->f_frame = frame;
+    assert(f->f_back == NULL);
+    if (frame->previous != NULL) {
+        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+        if (back == NULL) {
+            /* Memory error here. Nothing we can do about it */
+            PyErr_Clear();
+            _PyErr_WriteUnraisableMsg("Out of memory lazily allocating frame->f_back", NULL);
+        }
+        else {
+            f->f_back = (PyFrameObject *)Py_NewRef(back);
+        }
+    }
+    frame->previous = NULL;
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
     }
-    return 0;
 }
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, _PyFrame *frame, int owns)
+_PyFrame_New_NoTrack(_PyFrame *frame, int owns)
 {
     PyFrameObject *f = frame_alloc(frame, owns);
     if (f == NULL) {
@@ -941,7 +926,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     if (frame == NULL) {
         return NULL;
     }
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, 1);
+    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 1);
     if (f) {
         _PyObject_GC_TRACK(f);
     }

@@ -148,8 +148,7 @@ gen_dealloc(PyGenObject *gen)
         }
         gen->gi_xframe = NULL;
         frame->previous = NULL;
-        _PyFrame_Clear(frame);
-        PyMem_Free(_PyFrame_GetLocalsArray(frame));
+        _PyFrame_Clear(frame, 1);
     }
     if (((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin);
@@ -221,18 +220,15 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         _PyErr_ChainStackItem(NULL);
     }
 
-
-    PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     result = _PyEval_EvalNoFrame(tstate, frame, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
 
-    assert(tstate->frame == f->f_frame->previous);
+    assert(tstate->frame == frame->previous);
     /* Don't keep the reference to f_back any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
     frame->previous = NULL;
-    assert(f->f_back == NULL);
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
@@ -273,15 +269,11 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* first clean reference cycle through stored exception traceback */
     _PyErr_ClearExcState(&gen->gi_exc_state);
 
-    if (f) {
-        f->f_gen = NULL;
+    if (frame->frame_obj) {
+        frame->frame_obj->f_gen = NULL;
     }
     gen->gi_xframe = NULL;
-    if (_PyFrame_Clear(frame)) {
-        Py_XDECREF(result);
-        result = NULL;
-    }
-    PyMem_Free(_PyFrame_GetLocalsArray(frame));
+    _PyFrame_Clear(frame, 1);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
