@@ -305,7 +305,7 @@ typedef struct STRINGLIB(_pre) {
 } STRINGLIB(prework);
 
 
-Py_LOCAL_INLINE(void)
+static void
 STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
                        STRINGLIB(prework) *p)
 {
@@ -339,7 +339,7 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     }
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static void
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     STRINGLIB(prework) *p)
 {
@@ -465,7 +465,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     return -1;
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static Py_ssize_t
 STRINGLIB(_two_way_find)(const STRINGLIB_CHAR *haystack,
                          Py_ssize_t len_haystack,
                          const STRINGLIB_CHAR *needle,
@@ -477,7 +477,7 @@ STRINGLIB(_two_way_find)(const STRINGLIB_CHAR *haystack,
     return STRINGLIB(_two_way)(haystack, len_haystack, &p);
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static Py_ssize_t
 STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
                           Py_ssize_t len_haystack,
                           const STRINGLIB_CHAR *needle,
