@@ -101,7 +101,7 @@ ENCODING = locale.getpreferredencoding()
 
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
 UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
-EVALFRAME = '_PyEval_EvalFrameDefault'
+EVALFRAME = '_PyEval_EvalNoFrame'
 
 class NullPyObjectPtr(RuntimeError):
     pass
@@ -861,15 +861,94 @@ class PyFrameObjectPtr(PyObjectPtr):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
+            self._frame = PyFramePtr(self.field('f_frame'))
+
+    def iter_locals(self):
+        '''
+        Yield a sequence of (name,value) pairs of PyObjectPtr instances, for
+        the local variables of this frame
+        '''
+        if self.is_optimized_out():
+            return
+        return self._frame.iter_locals()
+
+    def iter_globals(self):
+        '''
+        Yield a sequence of (name,value) pairs of PyObjectPtr instances, for
+        the global variables of this frame
+        '''
+        if self.is_optimized_out():
+            return ()
+        return self._frame.iter_globals()
+
+    def iter_builtins(self):
+        '''
+        Yield a sequence of (name,value) pairs of PyObjectPtr instances, for
+        the builtin variables
+        '''
+        if self.is_optimized_out():
+            return ()
+        return self._frame.iter_builtins()
+
+    def get_var_by_name(self, name):
+
+        if self.is_optimized_out():
+            return None, None
+        return self._frame.get_var_by_name(name)
+
+    def filename(self):
+        '''Get the path of the current Python source file, as a string'''
+        if self.is_optimized_out():
+            return FRAME_INFO_OPTIMIZED_OUT
+        return self._frame.filename()
+
+    def current_line_num(self):
+        '''Get current line number as an integer (1-based)
+
+        Translated from PyFrame_GetLineNumber and PyCode_Addr2Line
+
+        See Objects/lnotab_notes.txt
+        '''
+        if self.is_optimized_out():
+            return None
+        return self._frame.current_line_num()
+
+    def current_line(self):
+        '''Get the text of the current source line as a string, with a trailing
+        newline character'''
+        if self.is_optimized_out():
+            return FRAME_INFO_OPTIMIZED_OUT
+        return self._frame.current_line()
+
+    def write_repr(self, out, visited):
+        if self.is_optimized_out():
+            out.write(FRAME_INFO_OPTIMIZED_OUT)
+            return
+        return self._frame.write_repr(out, visited)
+
+    def print_traceback(self):
+        if self.is_optimized_out():
+            sys.stdout.write('  %s\n' % FRAME_INFO_OPTIMIZED_OUT)
+            return
+        return self._frame.print_traceback()
+
+class PyFramePtr:
+
+    def __init__(self, gdbval):
+        self._gdbval = gdbval
+
+        if not self.is_optimized_out():
             self.co = self._f_code()
             self.co_name = self.co.pyop_field('co_name')
             self.co_filename = self.co.pyop_field('co_filename')
 
-            self.f_lineno = int_from_int(self.field('f_lineno'))
             self.f_lasti = self._f_lasti()
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
             pnames = self.co.field('co_localsplusnames')
             self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+
+    def is_optimized_out(self):
+        return self._gdbval.is_optimized_out
 
     def iter_locals(self):
         '''
@@ -880,7 +959,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
 
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
-        base = self.field('f_frame').cast(obj_ptr_ptr)
+        base = self._gdbval.cast(obj_ptr_ptr)
         localsplus = base - self._f_nlocalsplus()
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
@@ -890,8 +969,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             yield (pyop_name, pyop_value)
 
     def _f_special(self, name, convert=PyObjectPtr.from_pyobject_ptr):
-        f_frame = self.field('f_frame')
-        return convert(f_frame[name])
+        return convert(self._gdbval[name])
 
     def _f_globals(self):
         return self._f_special("globals")
@@ -964,11 +1042,6 @@ class PyFrameObjectPtr(PyObjectPtr):
         '''
         if self.is_optimized_out():
             return None
-        f_trace = self.field('f_trace')
-        if long(f_trace) != 0:
-            # we have a non-NULL f_trace:
-            return self.f_lineno
-
         try:
             return self.co.addr2line(self.f_lasti*2)
         except Exception:
@@ -1024,6 +1097,9 @@ class PyFrameObjectPtr(PyObjectPtr):
             pyop_value.write_repr(out, visited)
 
         out.write(')')
+
+    def as_address(self):
+        return long(self._gdbval)
 
     def print_traceback(self):
         if self.is_optimized_out():
@@ -1642,22 +1718,23 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            f = self._gdbframe.read_var('fo')
-            frame = PyFrameObjectPtr.from_pyobject_ptr(f)
+            frame = self._gdbframe.read_var('frame')
+            frame = PyFramePtr(frame)
             if not frame.is_optimized_out():
                 return frame
-            # gdb is unable to get the "f" argument of PyEval_EvalFrameEx()
-            # because it was "optimized out". Try to get "f" from the frame
+            # gdb is unable to get the "frame" argument of PyEval_EvalFrameEx()
+            # because it was "optimized out". Try to get "frame" from the frame
             # of the caller, _PyEval_Vector().
             orig_frame = frame
             caller = self._gdbframe.older()
             if caller:
-                f = caller.read_var('f')
-                frame = PyFrameObjectPtr.from_pyobject_ptr(f)
+                frame = caller.read_var('frame')
+                frame = PyFramePtr(frame)
                 if not frame.is_optimized_out():
                     return frame
             return orig_frame
-        except ValueError:
+        except ValueError as v:
+            print("ERROR:", v.args, file=sys.stderr)
             return None
 
     @classmethod
@@ -1703,7 +1780,7 @@ class Frame(object):
         if self.is_evalframe():
             pyop = self.get_pyop()
             if pyop:
-                line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
+                line = PyObjectPtr.get_truncated_repr(pyop, MAX_OUTPUT_LEN)
                 write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
                 if not pyop.is_optimized_out():
                     line = pyop.current_line()

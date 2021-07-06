@@ -46,6 +46,10 @@ _PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     return tstate->interp->eval_frame(tstate, f, throwflag);
 }
 
+PyObject*
+_PyEval_EvalNoFrame(PyThreadState *tstate,
+                    struct _py_frame *frame,  int throwflag);
+
 extern PyObject *
 _PyEval_Vector(PyThreadState *tstate,
             PyFrameConstructor *desc, PyObject *locals,

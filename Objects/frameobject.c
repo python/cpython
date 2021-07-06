@@ -702,7 +702,7 @@ frame_tp_clear(PyFrameObject *f)
     f->f_frame->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
-    PyCodeObject *co = f->f_frame->code;
+
     /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
     for (int i = 0; i < f->f_frame->nlocalsplus; i++) {
@@ -1188,7 +1188,7 @@ PyFrame_GetBack(PyFrameObject *frame)
     assert(frame != NULL);
     PyFrameObject *back = frame->f_back;
     if (back == NULL && frame->f_frame->previous != NULL) {
-        back = frame->f_frame->previous->frame_obj;
+        back = _PyFrame_GetFrameObject(frame->f_frame->previous);
     }
     Py_XINCREF(back);
     return back;

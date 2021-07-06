@@ -1404,7 +1404,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define LOCALS() frame->locals
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag)
+_PyEval_EvalNoFrame(PyThreadState *tstate, _PyFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -1421,7 +1421,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject **localsplus;
-    _PyFrame *frame;
     PyObject *retval = NULL;            /* Return value */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
     PyCodeObject *co;
@@ -1450,7 +1449,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
     tstate->cframe = &cframe;
 
     /* push frame */
-    frame = fo->f_frame;
     tstate->frame = frame;
     co = frame->code;
 
@@ -4311,7 +4309,7 @@ error:
 #endif
 
         /* Log traceback info. */
-        PyTraceBack_Here(fo);
+        PyTraceBack_Here(_PyFrame_GetFrameObject(frame));
 
         if (tstate->c_tracefunc != NULL) {
             /* Make sure state is set to FRAME_EXECUTING for tracing */
@@ -4409,11 +4407,11 @@ exit_eval_frame:
 }
 
 
-//PyObject* _Py_HOT_FUNCTION
-//_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
-//{
-//    return _PyEval_EvalNoFrame(tstate, f->f_frame, throwflag);
-//}
+PyObject*
+_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+{
+    return _PyEval_EvalNoFrame(tstate, f->f_frame, throwflag);
+}
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,
