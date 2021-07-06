@@ -1015,6 +1015,36 @@ Internal types
       If a code object represents a function, the first item in :attr:`co_consts` is
       the documentation string of the function, or ``None`` if undefined.
 
+      .. method:: codeobject.co_positions()
+
+         Returns an iterable over the source code positions of each bytecode
+         instruction in the code object.
+
+         The iterator returns tuples containing the ``(start_line, end_line,
+         start_column, end_column)``. The *i-th* tuple corresponds to the
+         position of the source code that compiled to the *i-th* instruction.
+         Column information is 0-indexed utf-8 byte offsets on the given source
+         line.
+
+         This positional information can be missing. A non-exhaustive lists of
+         cases where this may happen:
+
+         - Running the interpreter with ``-X no_debug_ranges``.
+         - Loading a pyc file compiled while using ``-X no_debug_ranges``.
+         - Position tuples corresponding to artificial instructions.
+         - Line and column numbers that can't be represented due to
+           implementation specific limitations.
+
+         When this occurs, some or all of the tuple elements can be
+         :const:`None`.
+
+         .. versionadded:: 3.11
+
+         .. note::
+            Storing positions may increase the disk usage of compiled Python
+            files and memory usage of the interpreter. This feature can be
+            disabled with the ``-X no_debug_ranges`` command line flag.
+
    .. _frame-objects:
 
    Frame objects
