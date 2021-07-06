@@ -42,10 +42,89 @@ directives = [
     'versionchanged'
 ]
 
-all_directives = '(' + '|'.join(directives) + ')'
-seems_directive_re = re.compile(r'(?<!\.)\.\. %s([^a-z:]|:(?!:))' % all_directives)
-default_role_re = re.compile(r'(^| )`\w([^`]*?\w)?`($| )')
-leaked_markup_re = re.compile(r'[a-z]::\s|`|\.\.\s*\w+:')
+roles = [
+    ":class:",
+    ":func:",
+    ":meth:",
+    ":mod:",
+    ":exc:",
+    ":issue:",
+    ":attr:",
+    ":c:func:",
+    ":ref:",
+    ":const:",
+    ":term:",
+    ":data:",
+    ":keyword:",
+    ":file:",
+    ":pep:",
+    ":c:type:",
+    ":c:member:",
+    ":option:",
+    ":rfc:",
+    ":envvar:",
+    ":c:data:",
+    ":source:",
+    ":mailheader:",
+    ":program:",
+    ":c:macro:",
+    ":dfn:",
+    ":kbd:",
+    ":command:",
+    ":mimetype:",
+    ":opcode:",
+    ":manpage:",
+    ":py:data:",
+    ":RFC:",
+    ":pdbcmd:",
+    ":abbr:",
+    ":samp:",
+    ":token:",
+    ":PEP:",
+    ":sup:",
+    ":py:class:",
+    ":menuselection:",
+    ":doc:",
+    ":sub:",
+    ":py:meth:",
+    ":newsgroup:",
+    ":code:",
+    ":py:func:",
+    ":memory:",
+    ":makevar:",
+    ":guilabel:",
+    ":title-reference:",
+    ":py:mod:",
+    ":download:",
+    ":2to3fixer:",
+]
+
+all_directives = "(" + "|".join(directives) + ")"
+all_roles = "(" + "|".join(roles) + ")"
+
+# Find comments that looks like a directive, like:
+# .. versionchanged 3.6
+# or
+# .. versionchanged: 3.6
+# as it should be:
+# .. versionchanged:: 3.6
+seems_directive_re = re.compile(r"(?<!\.)\.\. %s([^a-z:]|:(?!:))" % all_directives)
+
+# Find directive prefixed with three dots instead of two, like:
+# ... versionchanged:: 3.6
+# instead of:
+# .. versionchanged:: 3.6
+three_dot_directive_re = re.compile(r"\.\.\. %s::" % all_directives)
+
+# Find role used with double backticks instead of simple backticks like:
+# :const:``None``
+# instead of:
+# :const:`None`
+double_backtick_role = re.compile(r"(?<!``)%s``" % all_roles)
+
+
+default_role_re = re.compile(r"(^| )`\w([^`]*?\w)?`($| )")
+leaked_markup_re = re.compile(r"[a-z]::\s|`|\.\.\s*\w+:")
 
 
 checkers = {}
@@ -82,13 +161,17 @@ def check_syntax(fn, lines):
 def check_suspicious_constructs(fn, lines):
     """Check for suspicious reST constructs."""
     inprod = False
-    for lno, line in enumerate(lines):
+    for lno, line in enumerate(lines, start=1):
         if seems_directive_re.search(line):
-            yield lno+1, 'comment seems to be intended as a directive'
-        if '.. productionlist::' in line:
+            yield lno, "comment seems to be intended as a directive"
+        if three_dot_directive_re.search(line):
+            yield lno, "directive should start with two dots, not three."
+        if double_backtick_role.search(line):
+            yield lno, "role use a single backtick, double backtick found."
+        if ".. productionlist::" in line:
             inprod = True
         elif not inprod and default_role_re.search(line):
-            yield lno+1, 'default role used'
+            yield lno, "default role used"
         elif inprod and not line.strip():
             inprod = False
 

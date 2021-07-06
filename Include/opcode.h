@@ -113,10 +113,11 @@ extern "C" {
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132
 #define BUILD_SLICE             133
-#define LOAD_CLOSURE            135
-#define LOAD_DEREF              136
-#define STORE_DEREF             137
-#define DELETE_DEREF            138
+#define MAKE_CELL               135
+#define LOAD_CLOSURE            136
+#define LOAD_DEREF              137
+#define STORE_DEREF             138
+#define DELETE_DEREF            139
 #define CALL_FUNCTION_KW        141
 #define CALL_FUNCTION_EX        142
 #define EXTENDED_ARG            144
@@ -135,6 +136,15 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
+#define JUMP_ABSOLUTE_QUICK       7
+#define LOAD_ATTR_ADAPTIVE        8
+#define LOAD_ATTR_SPLIT_KEYS     13
+#define LOAD_ATTR_WITH_HINT      14
+#define LOAD_ATTR_SLOT           18
+#define LOAD_ATTR_MODULE         21
+#define LOAD_GLOBAL_ADAPTIVE     36
+#define LOAD_GLOBAL_MODULE       38
+#define LOAD_GLOBAL_BUILTIN      39
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

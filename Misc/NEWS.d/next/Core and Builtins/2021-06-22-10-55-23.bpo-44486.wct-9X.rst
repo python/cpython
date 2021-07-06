@@ -1,0 +1,2 @@
+Modules will always have a dictionary, even when created by
+``types.ModuleType.__new__()``

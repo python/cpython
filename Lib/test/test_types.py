@@ -1,8 +1,9 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale
+from test.support import run_with_locale, cpython_only
 import collections.abc
 from collections import namedtuple
+import gc
 import inspect
 import pickle
 import locale
@@ -665,6 +666,16 @@ class TypesTests(unittest.TestCase):
         assert TV | str == typing.Union[TV, str]
         assert str | TV == typing.Union[str, TV]
 
+    def test_union_parameter_chaining(self):
+        T = typing.TypeVar("T")
+        S = typing.TypeVar("S")
+
+        self.assertEqual((float | list[T])[int], float | list[int])
+        self.assertEqual(list[int | list[T]].__parameters__, (T,))
+        self.assertEqual(list[int | list[T]][str], list[int | list[str]])
+        self.assertEqual((list[T] | list[S]).__parameters__, (T, S))
+        self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
+
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
         ForwardAfter = T | 'Forward'
@@ -746,6 +757,32 @@ class TypesTests(unittest.TestCase):
                     isinstance(list, type_)
                 with self.assertRaises(TypeError):
                     issubclass(list, type_)
+
+    def test_or_type_operator_with_bad_module(self):
+        class TypeVar:
+            @property
+            def __module__(self):
+                1 / 0
+        # Crashes in Issue44483
+        with self.assertRaises(ZeroDivisionError):
+            str | TypeVar()
+
+    @cpython_only
+    def test_or_type_operator_reference_cycle(self):
+        if not hasattr(sys, 'gettotalrefcount'):
+            self.skipTest('Cannot get total reference count.')
+        gc.collect()
+        before = sys.gettotalrefcount()
+        for _ in range(30):
+            T = typing.TypeVar('T')
+            U = int | list[T]
+            T.blah = U
+            del T
+            del U
+        gc.collect()
+        leeway = 15
+        self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
+                             msg='Check for union reference leak.')
 
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
@@ -1333,6 +1370,24 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             N(5)
         self.assertEqual(str(cm.exception), expected_message)
+
+    def test_metaclass_new_error(self):
+        # bpo-44232: The C function type_new() must properly report the
+        # exception when a metaclass constructor raises an exception and the
+        # winner class is not the metaclass.
+        class ModelBase(type):
+            def __new__(cls, name, bases, attrs):
+                super_new = super().__new__
+                new_class = super_new(cls, name, bases, {})
+                if name != "Model":
+                    raise RuntimeWarning(f"{name=}")
+                return new_class
+
+        class Model(metaclass=ModelBase):
+            pass
+
+        with self.assertRaises(RuntimeWarning):
+            type("SouthPonies", (Model,), {})
 
 
 class SimpleNamespaceTests(unittest.TestCase):

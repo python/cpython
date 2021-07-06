@@ -1232,8 +1232,13 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required methods,
-        not their type signatures.
+        :func:`runtime_checkable` will check only the presence of the required
+        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        is a class, therefore it passes an :func:`issubclass`
+        check against :data:`Callable`.  However, the
+        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        :exc:`TypeError` with a more informative message, therefore making
+        it impossible to call (instantiate) :class:`ssl.SSLObject`.
 
    .. versionadded:: 3.8
 
@@ -1488,7 +1493,11 @@ Other concrete types
    Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`. These types are also in the ``typing.io`` namespace.
+   :func:`open`.
+
+   .. deprecated-removed:: 3.8 3.12
+      These types are also in the ``typing.io`` namespace, which was
+      never supported by type checkers and will be removed.
 
 .. class:: Pattern
            Match
@@ -1498,7 +1507,11 @@ Other concrete types
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``. These types are also in the ``typing.re`` namespace.
+   ``Match[bytes]``.
+
+   .. deprecated-removed:: 3.8 3.12
+      These types are also in the ``typing.re`` namespace, which was
+      never supported by type checkers and will be removed.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.

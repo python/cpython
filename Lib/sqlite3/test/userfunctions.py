@@ -21,9 +21,35 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import contextlib
+import functools
+import io
 import unittest
 import unittest.mock
+import gc
 import sqlite3 as sqlite
+
+def with_tracebacks(strings):
+    """Convenience decorator for testing callback tracebacks."""
+    strings.append('Traceback')
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # First, run the test with traceback enabled.
+            sqlite.enable_callback_tracebacks(True)
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                func(self, *args, **kwargs)
+            tb = buf.getvalue()
+            for s in strings:
+                self.assertIn(s, tb)
+
+            # Then run the test with traceback disabled.
+            sqlite.enable_callback_tracebacks(False)
+            func(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 def func_returntext():
     return "foo"
@@ -227,6 +253,7 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 1<<31)
 
+    @with_tracebacks(['func_raiseexception', '5/0', 'ZeroDivisionError'])
     def test_func_exception(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -236,9 +263,11 @@ class FunctionTests(unittest.TestCase):
 
     def test_param_string(self):
         cur = self.con.cursor()
-        cur.execute("select isstring(?)", ("foo",))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
+        for text in ["foo", str()]:
+            with self.subTest(text=text):
+                cur.execute("select isstring(?)", (text,))
+                val = cur.fetchone()[0]
+                self.assertEqual(val, 1)
 
     def test_param_int(self):
         cur = self.con.cursor()
@@ -320,6 +349,22 @@ class FunctionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.con.create_function("deterministic", 0, int, True)
 
+    def test_function_destructor_via_gc(self):
+        # See bpo-44304: The destructor of the user function can
+        # crash if is called without the GIL from the gc functions
+        dest = sqlite.connect(':memory:')
+        def md5sum(t):
+            return
+
+        dest.create_function("md5", 1, md5sum)
+        x = dest("create table lang (name, first_appeared)")
+        del md5sum, dest
+
+        y = [x]
+        y.append(y)
+
+        del x,y
+        gc.collect()
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
@@ -368,6 +413,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's 'finalize' method raised error")
 
+    @with_tracebacks(['__init__', '5/0', 'ZeroDivisionError'])
     def test_aggr_exception_in_init(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -375,6 +421,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's '__init__' method raised error")
 
+    @with_tracebacks(['step', '5/0', 'ZeroDivisionError'])
     def test_aggr_exception_in_step(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -382,6 +429,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's 'step' method raised error")
 
+    @with_tracebacks(['finalize', '5/0', 'ZeroDivisionError'])
     def test_aggr_exception_in_finalize(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -391,9 +439,9 @@ class AggregateTests(unittest.TestCase):
 
     def test_aggr_check_param_str(self):
         cur = self.con.cursor()
-        cur.execute("select checkType('str', ?)", ("foo",))
+        cur.execute("select checkTypes('str', ?, ?)", ("foo", str()))
         val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
+        self.assertEqual(val, 2)
 
     def test_aggr_check_param_int(self):
         cur = self.con.cursor()
@@ -474,6 +522,12 @@ class AuthorizerTests(unittest.TestCase):
             self.con.execute("select c2 from t1")
         self.assertIn('prohibited', str(cm.exception))
 
+    def test_clear_authorizer(self):
+        self.con.set_authorizer(None)
+        self.con.execute("select * from t2")
+        self.con.execute("select c2 from t1")
+
+
 class AuthorizerRaiseExceptionTests(AuthorizerTests):
     @staticmethod
     def authorizer_cb(action, arg1, arg2, dbname, source):
@@ -482,6 +536,14 @@ class AuthorizerRaiseExceptionTests(AuthorizerTests):
         if arg2 == 'c2' or arg1 == 't2':
             raise ValueError
         return sqlite.SQLITE_OK
+
+    @with_tracebacks(['authorizer_cb', 'ValueError'])
+    def test_table_access(self):
+        super().test_table_access()
+
+    @with_tracebacks(['authorizer_cb', 'ValueError'])
+    def test_column_access(self):
+        super().test_table_access()
 
 class AuthorizerIllegalTypeTests(AuthorizerTests):
     @staticmethod

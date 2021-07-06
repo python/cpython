@@ -110,12 +110,12 @@ The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
 
 An instrumented version of the interpreter is built, using suitable compiler
-flags for each flavour. Note that this is just an intermediary step.  The
-binary resulting from this step is not good for real life workloads as it has
+flags for each flavor. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
-workload.  This is necessary in order to profile the interpreter execution.
+workload.  This is necessary in order to profile the interpreter's execution.
 Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 

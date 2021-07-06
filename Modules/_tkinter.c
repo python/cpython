@@ -246,12 +246,15 @@ static PyThreadState *tcl_tstate = NULL;
 #endif
 
 #define ENTER_TCL \
-    { PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
+    { PyThreadState *tstate = PyThreadState_Get(); \
+      Py_BEGIN_ALLOW_THREADS \
+      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+      tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if(tcl_lock)PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
+    if(tcl_lock)PyThread_release_lock(tcl_lock); \
+    Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
@@ -261,12 +264,14 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_PYTHON \
     { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-        if(tcl_lock) \
-          PyThread_release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
+      if(tcl_lock) \
+        PyThread_release_lock(tcl_lock); \
+      PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
     { PyThreadState *tstate = PyEval_SaveThread(); \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
+      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+      tcl_tstate = tstate; }
 
 #define CHECK_TCL_APPARTMENT \
     if (((TkappObject *)self)->threaded && \
