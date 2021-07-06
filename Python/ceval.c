@@ -1950,7 +1950,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
             Py_ssize_t index = PyLong_AsSsize_t(sub);
             DEOPT_IF(index < 0 || index >= PyList_Size(list), BINARY_SUBSCR);
-            POP();
+            STACK_SHRINK(1);
             PyObject *res = PyList_GetItem(list, index);
             Py_XINCREF(res);
             Py_DECREF(list);
@@ -1968,7 +1968,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
             Py_ssize_t index = PyLong_AsSsize_t(sub);
             DEOPT_IF(index < 0 || index >= PyTuple_Size(tuple), BINARY_SUBSCR);
-            POP();
+            STACK_SHRINK(1);
             PyObject *res = PyTuple_GetItem(tuple, index);
             Py_XINCREF(res);
             Py_DECREF(tuple);
