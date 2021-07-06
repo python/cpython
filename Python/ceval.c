@@ -5113,19 +5113,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
         return NULL;
     }
     PyObject *retval;
-    assert (tstate->interp->eval_frame != NULL); // {
-        /* Create the frame */
-        PyFrameObject *f = _PyFrame_New_NoTrack(frame, 0);
-        if (f == NULL) {
-            frame->frame_obj = NULL;
-            retval = NULL;
-        }
-        else {
-            frame->frame_obj = f;
-            retval = _PyEval_EvalFrame(tstate, f, 0);
-            assert(frame->stackdepth == 0);
-        }
-    // }
+    assert (tstate->interp->eval_frame != NULL);
+    retval = _PyEval_EvalNoFrame(tstate, frame, 0);
+    assert(frame->stackdepth == 0);
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
         retval = NULL;
     }

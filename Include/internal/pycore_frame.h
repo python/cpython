@@ -57,8 +57,10 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
     frame->globals = Py_NewRef(con->fc_globals);
     frame->locals = Py_XNewRef(locals);
     frame->nlocalsplus = nlocalsplus;
+    frame->stackdepth = 0;
     frame->frame_obj = NULL;
     frame->lasti = -1;
+    frame->f_state = FRAME_CREATED;
 }
 
 static inline void

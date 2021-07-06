@@ -751,9 +751,9 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, PyFrameObject *frame)
+dump_frame(int fd, _PyFrame *frame)
 {
-    PyCodeObject *code = PyFrame_GetCode(frame);
+    PyCodeObject *code = frame->code;
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -765,7 +765,7 @@ dump_frame(int fd, PyFrameObject *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = PyFrame_GetLineNumber(frame);
+    int lineno = PyCode_Addr2Line(code, frame->lasti*2);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -784,20 +784,19 @@ dump_frame(int fd, PyFrameObject *frame)
     }
 
     PUTS(fd, "\n");
-    Py_DECREF(code);
 }
 
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    PyFrameObject *frame;
+    _PyFrame *frame;
     unsigned int depth;
 
     if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = PyThreadState_GetFrame(tstate);
+    frame = tstate->frame;
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;
@@ -806,22 +805,14 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
-            Py_DECREF(frame);
             PUTS(fd, "  ...\n");
             break;
         }
-        if (!PyFrame_Check(frame)) {
-            Py_DECREF(frame);
-            break;
-        }
         dump_frame(fd, frame);
-        PyFrameObject *back = PyFrame_GetBack(frame);
-        Py_DECREF(frame);
-
-        if (back == NULL) {
+        frame = frame->previous;
+        if (frame == NULL) {
             break;
         }
-        frame = back;
         depth++;
     }
 }

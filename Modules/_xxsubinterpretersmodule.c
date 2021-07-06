@@ -1835,13 +1835,12 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    PyFrameObject *frame = PyThreadState_GetFrame(tstate);
+    _PyFrame *frame = tstate->frame;
     if (frame == NULL) {
         return 0;
     }
 
-    int executing = _PyFrame_IsExecuting(frame->f_frame);
-    Py_DECREF(frame);
+    int executing = _PyFrame_IsExecuting(frame);
 
     return executing;
 }

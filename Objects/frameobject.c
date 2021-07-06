@@ -698,7 +698,6 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    assert(f->f_own_locals_memory);
     f->f_frame->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
@@ -894,12 +893,10 @@ _PyFrame_New_NoTrack(_PyFrame *frame, int owns)
     }
     f->f_back = NULL;
     f->f_trace = NULL;
-    f->f_frame->stackdepth = 0;
     f->f_trace_lines = 1;
     f->f_trace_opcodes = 0;
     f->f_gen = NULL;
     f->f_lineno = 0;
-    f->f_frame->f_state = FRAME_CREATED;
     return f;
 }
 
