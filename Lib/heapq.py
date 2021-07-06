@@ -127,10 +127,18 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest', 'heappushpop']
 
+
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
     heap.append(item)
     _siftdown(heap, 0, len(heap)-1)
+
+
+def _heappush_max(heap, item):
+    """Push item onto heap, maintaining the heap invariant."""
+    heap.append(item)
+    _siftdown_max(heap, 0, len(heap)-1)
+
 
 def heappop(heap):
     """Pop the smallest item off the heap, maintaining the heap invariant."""
@@ -141,6 +149,7 @@ def heappop(heap):
         _siftup(heap, 0)
         return returnitem
     return lastelt
+
 
 def heapreplace(heap, item):
     """Pop and return the current smallest value, and add the new item.
@@ -158,12 +167,14 @@ def heapreplace(heap, item):
     _siftup(heap, 0)
     return returnitem
 
+
 def heappushpop(heap, item):
     """Fast version of a heappush followed by a heappop."""
     if heap and heap[0] < item:
         item, heap[0] = heap[0], item
         _siftup(heap, 0)
     return item
+
 
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(x)) time."""
@@ -176,6 +187,7 @@ def heapify(x):
     for i in reversed(range(n//2)):
         _siftup(x, i)
 
+
 def _heappop_max(heap):
     """Maxheap version of a heappop."""
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
@@ -186,12 +198,14 @@ def _heappop_max(heap):
         return returnitem
     return lastelt
 
+
 def _heapreplace_max(heap, item):
     """Maxheap version of a heappop followed by a heappush."""
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
     heap[0] = item
     _siftup_max(heap, 0)
     return returnitem
+
 
 def _heapify_max(x):
     """Transform list into a maxheap, in-place, in O(len(x)) time."""
@@ -202,6 +216,8 @@ def _heapify_max(x):
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
 # heap invariant.
+
+
 def _siftdown(heap, startpos, pos):
     newitem = heap[pos]
     # Follow the path to the root, moving parents down until finding a place
@@ -255,6 +271,7 @@ def _siftdown(heap, startpos, pos):
 # heappop() compares):  list.sort() is (unsurprisingly!) more efficient
 # for sorting.
 
+
 def _siftup(heap, pos):
     endpos = len(heap)
     startpos = pos
@@ -275,6 +292,7 @@ def _siftup(heap, pos):
     heap[pos] = newitem
     _siftdown(heap, startpos, pos)
 
+
 def _siftdown_max(heap, startpos, pos):
     'Maxheap variant of _siftdown'
     newitem = heap[pos]
@@ -289,6 +307,7 @@ def _siftdown_max(heap, startpos, pos):
             continue
         break
     heap[pos] = newitem
+
 
 def _siftup_max(heap, pos):
     'Maxheap variant of _siftup'
@@ -310,6 +329,7 @@ def _siftup_max(heap, pos):
     # to its final resting place (by sifting its parents down).
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
+
 
 def merge(*iterables, key=None, reverse=False):
     '''Merge multiple sorted inputs into a single sorted output.
@@ -518,6 +538,7 @@ def nsmallest(n, iterable, key=None):
     result.sort()
     return [elem for (k, order, elem) in result]
 
+
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
 
@@ -576,6 +597,7 @@ def nlargest(n, iterable, key=None):
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]
 
+
 # If available, use C implementation
 try:
     from _heapq import *
@@ -593,9 +615,13 @@ try:
     from _heapq import _heappop_max
 except ImportError:
     pass
+try:
+    from _heapq import _heappush_max
+except ImportError:
+    pass
 
 
 if __name__ == "__main__":
 
-    import doctest # pragma: no cover
-    print(doctest.testmod()) # pragma: no cover
+    import doctest  # pragma: no cover
+    print(doctest.testmod())  # pragma: no cover
