@@ -316,7 +316,7 @@ class UnionTests(BaseTestCase):
         u = Union[list[int], dict[str, float]]
         self.assertEqual(repr(u), 'typing.Union[list[int], dict[str, float]]')
         u = Union[int | float]
-        self.assertEqual(repr(u), 'typing.Union[int | float]')
+        self.assertEqual(repr(u), 'typing.Union[int, float]')
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
