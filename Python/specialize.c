@@ -646,19 +646,28 @@ _Py_Specialize_BinarySubscr(
     _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    if (PyList_CheckExact(container) && PyLong_CheckExact(sub)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST, _Py_OPARG(*instr));
-        goto success;
+    if (PyList_CheckExact(container)) {
+        if (PyLong_CheckExact(sub)) {
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST, _Py_OPARG(*instr));
+            goto success;
+        } else {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, PyType(container), sub, "list; non-integer subscr");
+        }
     }
-    if (PyTuple_CheckExact(container) && PyLong_CheckExact(sub)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE, _Py_OPARG(*instr));
-        goto success;
+    if (PyTuple_CheckExact(container)) {
+        if (PyLong_CheckExact(sub)) {
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE, _Py_OPARG(*instr));
+            goto success;
+        } else {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, PyType(container), sub, "tuple; non-integer subscr");
+        }
     }
     if (PyDict_CheckExact(container)) {
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, _Py_OPARG(*instr));
         goto success;
     }
 
+    SPECIALIZATION_FAIL(BINARY_SUBSCR, PyType(container), sub, "not list|tuple|dict");
     goto fail;
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);
