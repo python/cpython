@@ -12,8 +12,8 @@ is part of two quite different constructs:
 1. The ``__name__ == '__main__'`` statement
 2. The ``__main__.py`` file in Python packages
 
-Each of these mechanisms are related to Python modules; both how
-users interact with them as well as how they interact with each other. See
+Each of these mechanisms are related to Python modules; how
+users interact with them and how they interact with each other. See
 section :ref:`tut-modules`.
 
 
@@ -134,7 +134,6 @@ interface for a package. Consider the following hypothetical package,
    bandclass
      ├── __init__.py
      ├── __main__.py
-     ├── parent.py
      └── student.py
 
 ``__main__.py`` will be executed when the package itself is invoked
@@ -145,35 +144,21 @@ directly from the command line using the :option:`-m` flag. For example::
 This command will cause ``__main__.py`` to run. For more details about the
 :option:`-m` flag, see :mod:`runpy`. How you utilize this mechanism will depend
 on the nature of the package you are writing, but in this hypothetical case, it
-might make sense to allow the teacher to search for students or parents using
+might make sense to allow the teacher to search for students using
 :mod:`argparse`::
 
     # bandclass/__main__.py
 
-    import argparse
     import sys
+    from .student import search_students
 
-    from .parent import Parents
-    from .student import Students
+    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
+    print('Found student: {search_students(student_name)}')
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--student',
-                        help="lookup a student and print their information")
-    parser.add_argument('--parent',
-                        help="lookup a parent and print their information")
-
-    args = parser.parse_args()
-
-    if args.student and student := Students.find(args.student):
-        print(student)
-        sys.exit('Student found')
-    elif args.parent and parent := Parents.find(args.parent):
-        print(parent)
-        sys.exit('Parent found')
-    else:
-        print('Result not found')
-        sys.exit(args.print_help())
-
+Note that ``from .student import search_students`` is an example of a relative
+import.  This import style must be used when referencing modules within a
+package.  For more details, see :ref:`tut-modules`; or, more specifically,
+:ref:`intra-package-references`.
 
 
 Idiomatic Usage
@@ -207,6 +192,5 @@ executed as the main program; therefore, ``__name__`` will always be
 have explicitly identified ``__main__`` as a console script entry point in
 :file:`setup.py`. See section :ref:`entry-points`.
 
-For a very popular example of a package using ``__main__.py`` in our standard
-library, see :mod:`venv`, and its invocation via ``python3 -m
-venv [directory]``.
+For an example of a package using ``__main__.py`` in our standard library, see
+:mod:`venv`, and its invocation via ``python3 -m venv [directory]``.
