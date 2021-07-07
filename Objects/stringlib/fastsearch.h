@@ -170,10 +170,16 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 /* Change to a 1 to see logging comments walk through the algorithm. */
 #if 0 && STRINGLIB_SIZEOF_CHAR == 1
 # define LOG(...) printf(__VA_ARGS__)
-# define LOG_STRING(s, n) printf("\"%.*s\"", n, s)
+# define LOG_STRING(s, n) printf("\"%.*s\"", (int)(n), s)
+# define LOG_LINEUP() do {                                         \
+    LOG("> "); LOG_STRING(haystack, len_haystack); LOG("\n> ");    \
+    LOG("%*s",(int)(window_last + 1 - len_needle - haystack), ""); \
+    LOG_STRING(needle, len_needle); LOG("\n");                     \
+} while(0)
 #else
 # define LOG(...)
 # define LOG_STRING(s, n)
+# define LOG_LINEUP()
 #endif
 
 Py_LOCAL_INLINE(Py_ssize_t)
@@ -288,8 +294,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 }
 
 #define SHIFT_TYPE uint8_t
-#define NOT_FOUND ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
-#define SHIFT_OVERFLOW (NOT_FOUND - 1U)
+#define MAX_SHIFT ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
 
 #define TABLE_SIZE_BITS 6
 #define TABLE_SIZE (1U << TABLE_SIZE_BITS)
@@ -300,10 +305,10 @@ typedef struct STRINGLIB(_pre) {
     Py_ssize_t len_needle;
     Py_ssize_t cut;
     Py_ssize_t period;
+    Py_ssize_t gap;
     int is_periodic;
     SHIFT_TYPE table[TABLE_SIZE];
 } STRINGLIB(prework);
-
 
 static void
 STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
@@ -319,145 +324,149 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     if (p->is_periodic) {
         assert(p->cut <= len_needle/2);
         assert(p->cut < p->period);
+        p->gap = 0; // unused
     }
     else {
         // A lower bound on the period
         p->period = Py_MAX(p->cut, len_needle - p->cut) + 1;
-    }
-    // Now fill up a table
-    memset(&(p->table[0]), 0xff, TABLE_SIZE*sizeof(SHIFT_TYPE));
-    assert(p->table[0] == NOT_FOUND);
-    assert(p->table[TABLE_MASK] == NOT_FOUND);
-    for (Py_ssize_t i = 0; i < len_needle; i++) {
-        Py_ssize_t shift = len_needle - i;
-        if (shift > SHIFT_OVERFLOW) {
-            shift = SHIFT_OVERFLOW;
+        // The gap between the last character and the previous
+        // occurrence of an equivalent character (modulo TABLE_SIZE)
+        p->gap = len_needle;
+        STRINGLIB_CHAR last = needle[len_needle - 1] & TABLE_MASK;
+        for (Py_ssize_t i = len_needle - 2; i >= 0; i--) {
+            if ((needle[i] & TABLE_MASK) == last) {
+                p->gap = len_needle - 1 - i;
+                break;
+            }
         }
-        p->table[needle[i] & TABLE_MASK] = Py_SAFE_DOWNCAST(shift,
-                                                            Py_ssize_t,
-                                                            SHIFT_TYPE);
+    }
+
+    // Fill up a compressed Boyer-Moore "Bad Character" table
+    Py_ssize_t not_found_shift = Py_MIN(len_needle, MAX_SHIFT);
+    for (Py_ssize_t i = 0; i < TABLE_SIZE; i++) {
+        p->table[i] = Py_SAFE_DOWNCAST(not_found_shift,
+                                       Py_ssize_t, SHIFT_TYPE);
+    }
+    for (Py_ssize_t i = len_needle - not_found_shift; i < len_needle; i++) {
+        SHIFT_TYPE shift = Py_SAFE_DOWNCAST(len_needle - 1 - i,
+                                            Py_ssize_t, SHIFT_TYPE);
+        p->table[needle[i] & TABLE_MASK] = shift;
     }
 }
 
-static void
+static Py_ssize_t
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     STRINGLIB(prework) *p)
 {
     // Crochemore and Perrin's (1991) Two-Way algorithm.
     // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
-    Py_ssize_t len_needle = p->len_needle;
-    Py_ssize_t cut = p->cut;
-    Py_ssize_t period = p->period;
-    const STRINGLIB_CHAR *needle = p->needle;
-    const STRINGLIB_CHAR *window = haystack;
-    const STRINGLIB_CHAR *last_window = haystack + len_haystack - len_needle;
+    const Py_ssize_t len_needle = p->len_needle;
+    const Py_ssize_t cut = p->cut;
+    const Py_ssize_t period = p->period;
+    const STRINGLIB_CHAR *const needle = p->needle;
+    const STRINGLIB_CHAR *window_last = haystack + len_needle - 1;
+    const STRINGLIB_CHAR *const haystack_end = haystack + len_haystack;
     SHIFT_TYPE *table = p->table;
     LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
+
+    // static int stats[3];
 
     if (p->is_periodic) {
         LOG("Needle is periodic.\n");
         Py_ssize_t memory = 0;
       periodicwindowloop:
-        while (window <= last_window) {
-            Py_ssize_t i = Py_MAX(cut, memory);
-
-            // Visualize the line-up:
-            LOG("> "); LOG_STRING(haystack, len_haystack);
-            LOG("\n> "); LOG("%*s", window - haystack, "");
-            LOG_STRING(needle, len_needle);
-            LOG("\n> "); LOG("%*s", window - haystack + i, "");
-            LOG(" ^ <-- cut\n");
-
-            if (window[i] != needle[i]) {
-                // Sunday's trick: if we're going to jump, we might
-                // as well jump to line up the character *after* the
-                // current window.
-                STRINGLIB_CHAR first_outside = window[len_needle];
-                SHIFT_TYPE shift = table[first_outside & TABLE_MASK];
-                if (shift == NOT_FOUND) {
-                    LOG("\"%c\" not found. Skipping entirely.\n",
-                        first_outside);
-                    window += len_needle + 1;
-                }
-                else {
-                    LOG("Shifting to line up \"%c\".\n", first_outside);
-                    Py_ssize_t memory_shift = i - cut + 1;
-                    window += Py_MAX(shift, memory_shift);
-                }
+        while (window_last < haystack_end) {
+            LOG_LINEUP();
+            Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
+            if (shift > 0 && memory > 0) {
+                // A mismatch has been identified to the right of
+                // where i starts, so we can jump at least as far as
+                // if the mismatch occurred on the first comparison.
+                Py_ssize_t memory_shift = Py_MAX(cut, memory) - cut + 1;
+                LOG("Skip with Memory.\n");
+                window_last += Py_MAX(shift, memory_shift);
+                LOG_LINEUP();
                 memory = 0;
-                goto periodicwindowloop;
+                shift = table[(*window_last) & TABLE_MASK];
             }
-            for (i = i + 1; i < len_needle; i++) {
+            while (shift > 0 && window_last < haystack_end) {
+                LOG("Fast Horspool skip.\n");
+                window_last += shift;
+                shift = table[(*window_last) & TABLE_MASK];
+                LOG_LINEUP();
+            }
+            if (window_last >= haystack_end) {
+                break;
+            }
+            const STRINGLIB_CHAR *const window = window_last - len_needle + 1;
+            Py_ssize_t i = Py_MAX(cut, memory);
+            for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Right half does not match. Jump ahead by %d.\n",
+                    LOG("Right half does not match. Jump ahead by %zd.\n",
                         i - cut + 1);
-                    window += i - cut + 1;
+                    window_last += i - cut + 1;
                     memory = 0;
                     goto periodicwindowloop;
                 }
             }
             for (i = memory; i < cut; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Left half does not match. Jump ahead by period %d.\n",
+                    LOG("Left half does not match. Jump ahead by period %zd.\n",
                         period);
-                    window += period;
+                    window_last += period;
                     memory = len_needle - period;
                     goto periodicwindowloop;
                 }
             }
-            LOG("Left half matches. Returning %d.\n",
+            LOG("Left half matches. Returning %zd.\n",
                 window - haystack);
             return window - haystack;
         }
     }
     else {
+        Py_ssize_t gap = p->gap;
         LOG("Needle is not periodic.\n");
         assert(cut < len_needle);
         STRINGLIB_CHAR needle_cut = needle[cut];
       windowloop:
-        while (window <= last_window) {
-
-            // Visualize the line-up:
-            LOG("> "); LOG_STRING(haystack, len_haystack);
-            LOG("\n> "); LOG("%*s", window - haystack, "");
-            LOG_STRING(needle, len_needle);
-            LOG("\n> "); LOG("%*s", window - haystack + cut, "");
-            LOG(" ^ <-- cut\n");
-
-            if (window[cut] != needle_cut) {
-                // Sunday's trick: if we're going to jump, we might
-                // as well jump to line up the character *after* the
-                // current window.
-                STRINGLIB_CHAR first_outside = window[len_needle];
-                SHIFT_TYPE shift = table[first_outside & TABLE_MASK];
-                if (shift == NOT_FOUND) {
-                    LOG("\"%c\" not found. Skipping entirely.\n",
-                        first_outside);
-                    window += len_needle + 1;
-                }
-                else {
-                    LOG("Shifting to line up \"%c\".\n", first_outside);
-                    window += shift;
-                }
-                goto windowloop;
+        while (window_last < haystack_end) {
+            LOG_LINEUP();
+            Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
+            // In most cases, this "Horspool" loop is the hot loop.
+            while (shift > 0 && window_last < haystack_end) {
+                LOG("Fast Horspool skip.\n");
+                window_last += shift;
+                LOG_LINEUP();
+                shift = table[(*window_last) & TABLE_MASK];
             }
-            for (Py_ssize_t i = cut + 1; i < len_needle; i++) {
+            if (window_last >= haystack_end) {
+                break;
+            }
+            const STRINGLIB_CHAR *window = window_last - len_needle + 1;
+            for (Py_ssize_t i = cut; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Right half does not match. Advance by %d.\n",
-                        i - cut + 1);
-                    window += i - cut + 1;
+                    Py_ssize_t two_way_shift = i - cut + 1;
+                    LOG("Right half does not match. two-way: %zd, gap: %zd "
+                        "--> Advance by %zd\n",
+                        two_way_shift, gap, Py_MAX(two_way_shift, gap));
+                    // stats[(two_way_shift <= gap) + (two_way_shift < gap)]++;
+                    // if ((stats[0] + stats[1] + stats[2]) % 1000 == 0) {
+                    //     printf("gap wins: %d, tie: %d, two-way wins: %d\n");
+                    // }
+                    window_last += Py_MAX(two_way_shift, gap);
                     goto windowloop;
                 }
             }
             for (Py_ssize_t i = 0; i < cut; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Left half does not match. Advance by period %d.\n",
-                        period);
-                    window += period;
+                    LOG("Left half does not match. period: %zd, gap: %zd)"
+                        "--> Advance by %zd\n",
+                        period, gap, Py_MAX(period, gap));
+                    window_last += Py_MAX(period, gap);
                     goto windowloop;
                 }
             }
-            LOG("Left half matches. Returning %d.\n", window - haystack);
+            LOG("Left half matches. Returning %zd.\n", window - haystack);
             return window - haystack;
         }
     }
@@ -513,6 +522,7 @@ STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
 
 #undef LOG
 #undef LOG_STRING
+#undef LOG_LINEUP
 
 Py_LOCAL_INLINE(Py_ssize_t)
 FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
@@ -553,7 +563,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (m >= 100 && w >= 2000 && w / m >= 5) {
+        if (1 || m >= 100 && w >= 2000 && w / m >= 5) {
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
                expensive O(m) startup cost of the two-way algorithm
