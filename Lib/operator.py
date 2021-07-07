@@ -155,10 +155,10 @@ def contains(a, b):
     return b in a
 
 def countOf(a, b):
-    "Return the number of times b occurs in a."
+    "Return the number of items in a which are, or which equal, b."
     count = 0
     for i in a:
-        if i == b:
+        if i is b or i == b:
             count += 1
     return count
 
