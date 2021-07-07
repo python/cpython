@@ -253,8 +253,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and _islink(src):
         os.symlink(os.readlink(src), dst)
     else:
-        with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
-            try:
+        try:
+            with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
                 # macOS
                 if _HAS_FCOPYFILE:
                     try:
@@ -277,12 +277,12 @@ def copyfile(src, dst, *, follow_symlinks=True):
 
                 copyfileobj(fsrc, fdst)
 
-            # Issue 43219, raise a less confusing exception
-            except IsADirectoryError as e:
-                if os.path.exists(dst):
-                    raise
-                else:
-                    raise FileNotFoundError(f'Directory does not exist: {dst}') from e
+        # Issue 43219, raise a less confusing exception
+        except IsADirectoryError as e:
+            if os.path.exists(dst):
+                raise
+            else:
+                raise FileNotFoundError(f'Directory does not exist: {dst}') from e
 
     return dst
 
