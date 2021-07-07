@@ -1,6 +1,6 @@
 # Minimal tests for dis module
 
-from test.support import captured_stdout
+from test.support import captured_stdout, requires_debug_ranges
 from test.support.bytecode_helper import BytecodeTestCase
 import unittest
 import sys
@@ -1192,6 +1192,7 @@ class InstructionTests(InstructionTestCase):
         actual = dis.get_instructions(jumpy, first_line=expected_jumpy_line)
         self.assertInstructionsEqual(list(actual), expected_opinfo_jumpy)
 
+    @requires_debug_ranges()
     def test_co_positions(self):
         code = compile('f(\n  x, y, z\n)', '<test>', 'exec')
         positions = [
@@ -1210,6 +1211,7 @@ class InstructionTests(InstructionTestCase):
         ]
         self.assertEqual(positions, expected)
 
+    @requires_debug_ranges()
     def test_co_positions_missing_info(self):
         code = compile('x, y, z', '<test>', 'exec')
         code_without_column_table = code.replace(co_columntable=b'')

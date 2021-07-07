@@ -596,6 +596,16 @@ PyConfig
 
       .. versionadded:: 3.10
 
+   .. c:member:: int no_debug_ranges
+
+      If equals to ``1``, disables the inclusion of the end line and column
+      mappings in code objects. Also disables traceback printing carets to
+      specific error locations.
+
+      Default: ``0``.
+
+      .. versionadded:: 3.11
+
    .. c:member:: wchar_t* check_hash_pycs_mode
 
       Control the validation behavior of hash-based ``.pyc`` files:
