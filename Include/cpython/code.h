@@ -75,6 +75,7 @@ struct PyCodeObject {
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
+    PyObject *co_qualname;      /* unicode (qualname, for reference) */
     PyObject *co_linetable;     /* bytes (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
     PyObject *co_endlinetable;  /* bytes object that holds end lineno for
@@ -154,14 +155,14 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *, PyObject *,
-        PyObject *, PyObject *);
+        PyObject *, PyObject *, PyObject *, int, PyObject *,
+        PyObject *, PyObject *, PyObject *);
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *, PyObject *,
-        PyObject *, PyObject *);
+        PyObject *, PyObject *, PyObject *, int, PyObject *,
+        PyObject *, PyObject *, PyObject *);
         /* same as struct above */
 
 /* Creates a new empty code object with the specified source location. */
