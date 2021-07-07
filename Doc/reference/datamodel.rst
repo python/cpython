@@ -969,8 +969,10 @@ Internal types
          single: co_varnames (code object attribute)
          single: co_cellvars (code object attribute)
          single: co_freevars (code object attribute)
+         single: co_qualname (code object attribute)
 
       Special read-only attributes: :attr:`co_name` gives the function name;
+      :attr:`co_qualname` gives the fully qualified function name;
       :attr:`co_argcount` is the total number of positional arguments
       (including positional-only arguments and arguments with default values);
       :attr:`co_posonlyargcount` is the number of positional-only arguments
