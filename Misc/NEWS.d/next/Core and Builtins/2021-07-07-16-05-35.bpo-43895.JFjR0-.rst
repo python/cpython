@@ -1,0 +1,4 @@
+An obsolete internal cache of shared object file handles added in 1995 that
+attempted, but did not guarantee, that a .so would not be dlopen'ed twice to
+work around flaws in mid-1990s posix-ish operating systems has been removed
+from dynload_shlib.c.
