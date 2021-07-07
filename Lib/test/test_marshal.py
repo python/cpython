@@ -148,8 +148,7 @@ class CodeTestCase(unittest.TestCase):
                 marshal.dump(co, f)
 
             assert_python_ok('-X', 'no_debug_ranges',
-                             '-c', code, os_helper.TESTFN,
-                             __cleanenv=True)
+                             '-c', code, os_helper.TESTFN)
         finally:
             os_helper.unlink(os_helper.TESTFN)
 
