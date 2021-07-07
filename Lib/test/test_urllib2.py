@@ -215,13 +215,22 @@ class RequestHdrsTests(unittest.TestCase):
 
         # is_suburi
 
-        self.assertTrue(is_suburi(reduce_uri('http://example.com'), reduce_uri('http://example.com/sub_dir')))
-        self.assertTrue(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://example.com/sub_dir/sub_dir')))
-        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir/sub_dir'), reduce_uri('http://example.com/sub_dir')))
-        self.assertFalse(is_suburi(reduce_uri('http://example.com/second_dir'), reduce_uri('http://example.com/first_dir/second_dir')))
-        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://example.com/sub')))
-        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://exmaple.com/sub_dir_diff')))
-        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir_diff'), reduce_uri('http://exmaple.com/sub_dir_second_diff')))
+        true = self.assertTrue
+        false = self.assertFalse
+        true(is_suburi(reduce_uri('http://example.com'),
+                       reduce_uri('http://example.com/sub_dir')))
+        true(is_suburi(reduce_uri('http://example.com/sub_dir'),
+                       reduce_uri('http://example.com/sub_dir/sub_dir')))
+        false(is_suburi(reduce_uri('http://example.com/sub_dir/sub_dir'),
+                        reduce_uri('http://example.com/sub_dir')))
+        false(is_suburi(reduce_uri('http://example.com/second_dir'),
+                        reduce_uri('http://example.com/first_dir/second_dir')))
+        false(is_suburi(reduce_uri('http://example.com/sub_dir'),
+                        reduce_uri('http://example.com/sub')))
+        false(is_suburi(reduce_uri('http://example.com/sub_dir'),
+                        reduce_uri('http://exmaple.com/sub_dir_diff')))
+        false(is_suburi(reduce_uri('http://example.com/sub_dir_diff'),
+                        reduce_uri('http://exmaple.com/sub_dir_second_diff')))
 
     def test_password_manager_default_port(self):
         """
