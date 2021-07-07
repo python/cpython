@@ -384,7 +384,7 @@ class CodeTest(unittest.TestCase):
             assert f.__code__.co_endlinetable is None
             assert f.__code__.co_columntable is None
             """)
-        assert_python_ok('-X', 'no_debug_ranges', '-c', code, __cleanenv=True)
+        assert_python_ok('-X', 'no_debug_ranges', '-c', code)
 
     def test_endline_and_columntable_none_when_no_debug_ranges_env(self):
         # Same as above but using the environment variable opt out.
@@ -395,7 +395,7 @@ class CodeTest(unittest.TestCase):
             assert f.__code__.co_endlinetable is None
             assert f.__code__.co_columntable is None
             """)
-        assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1', __cleanenv=True)
+        assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
 
     # co_positions behavior when info is missing.
 
