@@ -1,3 +1,2 @@
-Add ability to serialize ``types.Union``. Fix ``typing`` module issues with
-``types.Union`` parameters and arguments resolving. Patch provided by Yurii
-Karabas.
+Fix ``typing`` module issues with ``types.Union`` parameters and arguments
+resolving. Patch provided by Yurii Karabas.
