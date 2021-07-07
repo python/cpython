@@ -4161,13 +4161,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(MAKE_FUNCTION): {
-            PyObject *qualname = POP();
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
-                PyFunction_NewWithQualName(codeobj, GLOBALS(), qualname);
+                PyFunction_New(codeobj, GLOBALS());
 
             Py_DECREF(codeobj);
-            Py_DECREF(qualname);
             if (func == NULL) {
                 goto error;
             }
