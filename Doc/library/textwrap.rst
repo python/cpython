@@ -29,18 +29,11 @@ functions should be good enough; otherwise, you should use an instance of
    newlines.  *width* defaults to ``70``.
 
    See :class:`TextWrapper` for documentation on all additional optional
-   arguments:
-
-   * :attr:`.initial_indent`
-   * :attr:`.subsequent_indent`
-   * :attr:`.expand_tabs`
-   * :attr:`.replace_whitespace`
-   * :attr:`.fix_sentence_endings`
-   * :attr:`.break_long_words`
-   * :attr:`.drop_whitespace`
-   * :attr:`.break_on_hyphens`
-   * :attr:`.tabsize`
-   * :attr:`.max_lines`
+   arguments: :attr:`.initial_indent`, :attr:`.subsequent_indent`,
+   :attr:`.expand_tabs`, :attr:`.replace_whitespace`,
+   :attr:`.fix_sentence_endings`, :attr:`.break_long_words`,
+   :attr:`.drop_whitespace`, :attr:`.break_on_hyphens` :attr:`.tabsize`, and
+   :attr:`.max_lines`.
 
 
 .. function:: fill(text, width=70, initial_indent="", \
@@ -56,18 +49,8 @@ functions should be good enough; otherwise, you should use an instance of
       "\n".join(wrap(text, ...))
 
    See :class:`TextWrapper` for documentation on all additional optional
-   arguments:
-
-   * :attr:`.initial_indent`
-   * :attr:`.subsequent_indent`
-   * :attr:`.expand_tabs`
-   * :attr:`.replace_whitespace`
-   * :attr:`.fix_sentence_endings`
-   * :attr:`.break_long_words`
-   * :attr:`.drop_whitespace`
-   * :attr:`.break_on_hyphens`
-   * :attr:`.tabsize`
-   * :attr:`.max_lines`
+   arguments, which are the same as the optional arguments to :func:`wrap`
+   above.
 
 
 .. function:: shorten(text, width, initial_indent="", \
@@ -90,15 +73,9 @@ functions should be good enough; otherwise, you should use an instance of
       'Hello...'
 
    See :class:`TextWrapper` for documentation on all additional optional
-   arguments:
-
-   * :attr:`.initial_indent`
-   * :attr:`.subsequent_indent`
-   * :attr:`.fix_sentence_endings`
-   * :attr:`.break_long_words`
-   * :attr:`.break_on_hyphens`
-   * :attr:`.max_lines`
-
+   arguments: :attr:`.initial_indent`, :attr:`.subsequent_indent`,
+   :attr:`.fix_sentence_endings`, :attr:`.break_long_words`,
+   :attr:`.break_on_hyphens`, and :attr:`.max_lines`.
 
    Note that the whitespace is collapsed before the text is passed to the
    :class:`TextWrapper` :meth:`fill` function, so changing the value of
