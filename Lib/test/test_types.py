@@ -13,9 +13,6 @@ import unittest.mock
 import weakref
 import typing
 
-
-T = typing.TypeVar('T')
-
 class Example:
     pass
 
@@ -678,13 +675,6 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(list[int | list[T]][str], list[int | list[str]])
         self.assertEqual((list[T] | list[S]).__parameters__, (T, S))
         self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
-
-    def test_union_pickle(self):
-        alias = list[T] | int
-        s = pickle.dumps(alias)
-        loaded = pickle.loads(s)
-        self.assertEqual(alias.__args__, loaded.__args__)
-        self.assertEqual(alias.__parameters__, loaded.__parameters__)
 
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
