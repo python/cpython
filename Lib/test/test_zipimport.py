@@ -718,6 +718,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             print_tb(tb, 1, s)
             self.assertTrue(s.getvalue().endswith(
                 '    def do_raise(): raise TypeError\n'
+                '' if support.has_no_debug_ranges() else
                 '                    ^^^^^^^^^^^^^^^\n'
             ))
         else:

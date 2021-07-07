@@ -415,6 +415,14 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
+def has_no_debug_ranges():
+    import _testinternalcapi
+    config = _testinternalcapi.get_config()
+    return bool(config['no_debug_ranges'])
+
+def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
+    return unittest.skipIf(has_no_debug_ranges(), reason)
+
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
 
