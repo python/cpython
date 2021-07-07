@@ -652,7 +652,7 @@ _Py_Specialize_BinarySubscr(
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST, _Py_OPARG(*instr));
             goto success;
         } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, PyType(container), sub, "list; non-integer subscr");
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "list; non-integer subscr");
         }
     }
     if (PyTuple_CheckExact(container)) {
@@ -660,7 +660,7 @@ _Py_Specialize_BinarySubscr(
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE, _Py_OPARG(*instr));
             goto success;
         } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, PyType(container), sub, "tuple; non-integer subscr");
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "tuple; non-integer subscr");
         }
     }
     if (PyDict_CheckExact(container)) {
@@ -668,7 +668,7 @@ _Py_Specialize_BinarySubscr(
         goto success;
     }
 
-    SPECIALIZATION_FAIL(BINARY_SUBSCR, PyType(container), sub, "not list|tuple|dict");
+    SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "not list|tuple|dict");
     goto fail;
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);
