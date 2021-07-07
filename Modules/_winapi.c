@@ -1911,10 +1911,10 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
 /*[clinic end generated code: output=20829f00bebce55b input=cd357896d6501f68]*/
 {
 #define CCH_EXT 128
-#define CB_TYPE 512
+#define CB_TYPE 510
     struct {
         wchar_t ext[CCH_EXT];
-        wchar_t type[CB_TYPE / sizeof(wchar_t)];
+        wchar_t type[CB_TYPE / sizeof(wchar_t) + 1];
     } entries[64];
     int entry = 0;
     HKEY hkcr = NULL;
@@ -1951,7 +1951,10 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
             continue;
         } else if (err != ERROR_SUCCESS) {
             continue;
+        } else if (regType != REG_SZ || !cbType) {
+            continue;
         }
+        type[cbType / sizeof(wchar_t)] = L'\0';
 
         entry += 1;
 
