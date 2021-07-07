@@ -84,7 +84,7 @@ class TracebackCases(unittest.TestCase):
                 f.write("x = 1 / 0\n")
 
             _, _, stderr = assert_python_failure(
-                '-X', 'no_debug_ranges', TESTFN, __cleanenv=True)
+                '-X', 'no_debug_ranges', TESTFN)
 
             lines = stderr.splitlines()
             self.assertEqual(len(lines), 4)
@@ -108,7 +108,7 @@ class TracebackCases(unittest.TestCase):
                 f.write(code)
 
             _, _, stderr = assert_python_ok(
-                '-X', 'no_debug_ranges', TESTFN, __cleanenv=True)
+                '-X', 'no_debug_ranges', TESTFN)
 
             lines = stderr.splitlines()
             self.assertEqual(len(lines), 4)
