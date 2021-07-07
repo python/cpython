@@ -278,7 +278,7 @@ have been incorporated. Some of the most notable ones are as follows:
 
     .. code-block:: python
 
-        >>> try
+        >>> try:
         ...     x = 2
         ... something = 3
           File "<stdin>", line 3
@@ -883,6 +883,12 @@ The :meth:`~array.array.index` method of :class:`array.array` now has
 optional *start* and *stop* parameters.
 (Contributed by Anders Lorentsen and Zackery Spytz in :issue:`31956`.)
 
+asynchat, asyncore, smtpd
+-------------------------
+These modules have been marked as deprecated in their module documentation
+since Python 3.6.  An import-time :class:`DeprecationWarning` has now been
+added to all three of these modules.
+
 base64
 ------
 
@@ -1078,7 +1084,7 @@ and will be incorrect in some rare cases, including some ``_``-s in
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 4.4
+Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`

@@ -22,9 +22,11 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *name = code_obj->co_name;
     assert(name != NULL);
     Py_INCREF(name);
+
     if (!qualname) {
-        qualname = name;
+        qualname = code_obj->co_qualname;
     }
+    assert(qualname != NULL);
     Py_INCREF(qualname);
 
     PyObject *consts = code_obj->co_consts;

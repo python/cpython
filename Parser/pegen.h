@@ -139,6 +139,7 @@ expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
 const char *_PyPegen_get_expr_name(expr_ty);
+Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t lineno, Py_ssize_t col_offset,

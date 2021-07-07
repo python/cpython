@@ -1215,6 +1215,11 @@ class Mock(CallableMixin, NonCallableMock):
       this is a new Mock (created on first access). See the
       `return_value` attribute.
 
+    * `unsafe`: By default, accessing any attribute whose name starts with
+      *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
+       AttributeError. Passing `unsafe=True` will allow access to
+      these attributes.
+
     * `wraps`: Item for the mock object to wrap. If `wraps` is not None then
       calling the Mock will pass the call through to the wrapped object
       (returning the real result). Attribute access on the mock will return a

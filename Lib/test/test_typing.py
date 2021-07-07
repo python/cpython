@@ -2277,13 +2277,6 @@ class ClassVarTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, ClassVar)
 
-    def test_bad_module(self):
-        # bpo-41515
-        class BadModule:
-            pass
-        BadModule.__module__ = 'bad' # Something not in sys.modules
-        self.assertEqual(get_type_hints(BadModule), {})
-
 class FinalTests(BaseTestCase):
 
     def test_basics(self):
@@ -3032,6 +3025,24 @@ class GetTypeHintTests(BaseTestCase):
             x: 'y'
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
+
+    def test_get_type_hints_bad_module(self):
+        # bpo-41515
+        class BadModule:
+            pass
+        BadModule.__module__ = 'bad' # Something not in sys.modules
+        self.assertNotIn('bad', sys.modules)
+        self.assertEqual(get_type_hints(BadModule), {})
+
+    def test_get_type_hints_annotated_bad_module(self):
+        # See https://bugs.python.org/issue44468
+        class BadBase:
+            foo: tuple
+        class BadType(BadBase):
+            bar: list
+        BadType.__module__ = BadBase.__module__ = 'bad'
+        self.assertNotIn('bad', sys.modules)
+        self.assertEqual(get_type_hints(BadType), {'foo': tuple, 'bar': list})
 
 
 class GetUtilitiesTestCase(TestCase):

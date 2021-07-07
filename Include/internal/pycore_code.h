@@ -212,12 +212,15 @@ struct _PyCodeConstructor {
     /* metadata */
     PyObject *filename;
     PyObject *name;
+    PyObject *qualname;
     int flags;
 
     /* the code */
     PyObject *code;
     int firstlineno;
     PyObject *linetable;
+    PyObject *endlinetable;
+    PyObject *columntable;
 
     /* used by the code */
     PyObject *consts;
