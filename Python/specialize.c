@@ -78,6 +78,7 @@ _Py_PrintSpecializationStats(void)
     printf("Specialization stats:\n");
     print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(&_specialization_stats[BINARY_SUBSCR], "binary_subscr");
 }
 
 #if SPECIALIZATION_STATS_DETAILED
