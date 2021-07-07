@@ -957,7 +957,7 @@ PyDoc_STRVAR(_operator_countOf__doc__,
 "countOf($module, a, b, /)\n"
 "--\n"
 "\n"
-"Return the number of times b occurs in a.");
+"Return the number of items in a which are, or which equal, b.");
 
 #define _OPERATOR_COUNTOF_METHODDEF    \
     {"countOf", (PyCFunction)(void(*)(void))_operator_countOf, METH_FASTCALL, _operator_countOf__doc__},
@@ -1491,4 +1491,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e7ed71a8c475a901 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed2bc172e42320d8 input=a9049054013a1b77]*/
