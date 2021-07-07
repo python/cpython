@@ -1953,7 +1953,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(index < 0 || index >= PyList_Size(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             STACK_SHRINK(1);
-            PyObject *res = PyList_GetItem(list, index);
+            PyObject *res = PyList_GET_ITEM(list, index);
             Py_XINCREF(res);
             Py_DECREF(list);
             Py_DECREF(sub);
@@ -1972,7 +1972,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(index < 0 || index >= PyTuple_Size(tuple), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             STACK_SHRINK(1);
-            PyObject *res = PyTuple_GetItem(tuple, index);
+            PyObject *res = PyTuple_GET_ITEM(tuple, index);
             Py_XINCREF(res);
             Py_DECREF(tuple);
             Py_DECREF(sub);
