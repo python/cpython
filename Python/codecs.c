@@ -35,19 +35,16 @@ int PyCodec_Register(PyObject *search_function)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
-        goto onError;
+        return -1;
     if (search_function == NULL) {
         PyErr_BadArgument();
-        goto onError;
+        return -1;
     }
     if (!PyCallable_Check(search_function)) {
         PyErr_SetString(PyExc_TypeError, "argument must be callable");
-        goto onError;
+        return -1;
     }
     return PyList_Append(interp->codec_search_path, search_function);
-
- onError:
-    return -1;
 }
 
 int
