@@ -42,6 +42,9 @@ SpecializationStats _specialization_stats[256] = { 0 };
 
 #define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
 
+#define SUPPRESS_REPR_ERR if (PyErr_Occurred() && \
+    PyErr_ExceptionMatches(PyExc_TypeError)) { PyErr_Clear(); }
+
 static void
 print_stats(SpecializationStats *stats, const char *name)
 {
@@ -65,8 +68,10 @@ print_stats(SpecializationStats *stats, const char *name)
         PyObject *kind = PyTuple_GetItem(key, 2);
         fprintf(stderr, "        %s.", ((PyTypeObject *)type)->tp_name);
         PyObject_Print(name, stderr, Py_PRINT_RAW);
+        SUPPRESS_REPR_ERR;
         fprintf(stderr, " (");
         PyObject_Print(kind, stderr, Py_PRINT_RAW);
+        SUPPRESS_REPR_ERR;
         fprintf(stderr, "): %ld\n", PyLong_AsLong(count));
     }
 #endif
