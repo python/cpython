@@ -130,15 +130,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     linetable = PyTuple_GET_ITEM(args, 14);
-    if (!PyBytes_Check(PyTuple_GET_ITEM(args, 15))) {
-        _PyArg_BadArgument("code", "argument 16", "bytes", PyTuple_GET_ITEM(args, 15));
-        goto exit;
-    }
     endlinetable = PyTuple_GET_ITEM(args, 15);
-    if (!PyBytes_Check(PyTuple_GET_ITEM(args, 16))) {
-        _PyArg_BadArgument("code", "argument 17", "bytes", PyTuple_GET_ITEM(args, 16));
-        goto exit;
-    }
     columntable = PyTuple_GET_ITEM(args, 16);
     if (!PyBytes_Check(PyTuple_GET_ITEM(args, 17))) {
         _PyArg_BadArgument("code", "argument 18", "bytes", PyTuple_GET_ITEM(args, 17));
@@ -192,10 +184,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_endlinetable,
-                  PyBytesObject *co_columntable,
-                  PyBytesObject *co_exceptiontable);
+                  PyBytesObject *co_linetable, PyObject *co_endlinetable,
+                  PyObject *co_columntable, PyBytesObject *co_exceptiontable);
 
 static PyObject *
 code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -222,8 +212,8 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *co_name = self->co_name;
     PyObject *co_qualname = self->co_qualname;
     PyBytesObject *co_linetable = (PyBytesObject *)self->co_linetable;
-    PyBytesObject *co_endlinetable = (PyBytesObject *)self->co_endlinetable;
-    PyBytesObject *co_columntable = (PyBytesObject *)self->co_columntable;
+    PyObject *co_endlinetable = self->co_endlinetable;
+    PyObject *co_columntable = self->co_columntable;
     PyBytesObject *co_exceptiontable = (PyBytesObject *)self->co_exceptiontable;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
@@ -406,21 +396,13 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[17]) {
-        if (!PyBytes_Check(args[17])) {
-            _PyArg_BadArgument("replace", "argument 'co_endlinetable'", "bytes", args[17]);
-            goto exit;
-        }
-        co_endlinetable = (PyBytesObject *)args[17];
+        co_endlinetable = args[17];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (args[18]) {
-        if (!PyBytes_Check(args[18])) {
-            _PyArg_BadArgument("replace", "argument 'co_columntable'", "bytes", args[18]);
-            goto exit;
-        }
-        co_columntable = (PyBytesObject *)args[18];
+        co_columntable = args[18];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -473,4 +455,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=12b394f0212b1c1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18b9ddc86714e56e input=a9049054013a1b77]*/

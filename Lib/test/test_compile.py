@@ -9,7 +9,7 @@ import tempfile
 import types
 import textwrap
 from test import support
-from test.support import script_helper
+from test.support import script_helper, requires_debug_ranges
 from test.support.os_helper import FakePath
 
 
@@ -985,7 +985,7 @@ if 1:
             elif instr.opname in HANDLED_JUMPS:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
 
-
+@requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers
     # in `co_positions()`.
