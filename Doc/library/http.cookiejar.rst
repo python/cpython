@@ -510,7 +510,7 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_not_allowed(domain)
 
-   Return ``True`` whether *domain* is not on the allowlist for setting or receiving
+   Return ``True`` if *domain* is not on the allowlist for setting or receiving
    cookies.
 
 :class:`DefaultCookiePolicy` instances have the following attributes, which are
