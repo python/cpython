@@ -1412,6 +1412,7 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
             if (exc_tb == NULL) {
                 _PyErr_Clear(tstate);
             }
+            Py_DECREF(frame);
         }
     }
 
