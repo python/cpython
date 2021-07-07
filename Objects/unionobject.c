@@ -1,5 +1,6 @@
 // types.Union -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
+#include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_unionobject.h"
 #include "structmember.h"
 
@@ -7,6 +8,7 @@
 typedef struct {
     PyObject_HEAD
     PyObject *args;
+    PyObject *parameters;
 } unionobject;
 
 static void
@@ -14,8 +16,20 @@ unionobject_dealloc(PyObject *self)
 {
     unionobject *alias = (unionobject *)self;
 
+    _PyObject_GC_UNTRACK(self);
+
     Py_XDECREF(alias->args);
+    Py_XDECREF(alias->parameters);
     Py_TYPE(self)->tp_free(self);
+}
+
+static int
+union_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    unionobject *alias = (unionobject *)self;
+    Py_VISIT(alias->args);
+    Py_VISIT(alias->parameters);
+    return 0;
 }
 
 static Py_hash_t
@@ -284,6 +298,16 @@ is_new_type(PyObject *obj)
     return is_typing_module(obj);
 }
 
+// Emulates short-circuiting behavior of the ``||`` operator
+// while also checking negative values.
+#define CHECK_RES(res) { \
+    int result = res; \
+    if (result) { \
+       return result; \
+    } \
+}
+
+// Returns 1 on true, 0 on false, and -1 on error.
 static int
 is_unionable(PyObject *obj)
 {
@@ -291,10 +315,11 @@ is_unionable(PyObject *obj)
         return 1;
     }
     PyTypeObject *type = Py_TYPE(obj);
+    CHECK_RES(is_typevar(obj));
+    CHECK_RES(is_new_type(obj));
+    CHECK_RES(is_special_form(obj));
     return (
-        is_typevar(obj) ||
-        is_new_type(obj) ||
-        is_special_form(obj) ||
+        // The following checks never fail.
         PyType_Check(obj) ||
         PyObject_TypeCheck(obj, &Py_GenericAliasType) ||
         type == &_Py_UnionType);
@@ -413,6 +438,53 @@ static PyMethodDef union_methods[] = {
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {0}};
 
+
+static PyObject *
+union_getitem(PyObject *self, PyObject *item)
+{
+    unionobject *alias = (unionobject *)self;
+    // Populate __parameters__ if needed.
+    if (alias->parameters == NULL) {
+        alias->parameters = _Py_make_parameters(alias->args);
+        if (alias->parameters == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *newargs = _Py_subs_parameters(self, alias->args, alias->parameters, item);
+    if (newargs == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = _Py_Union(newargs);
+
+    Py_DECREF(newargs);
+    return res;
+}
+
+static PyMappingMethods union_as_mapping = {
+    .mp_subscript = union_getitem,
+};
+
+static PyObject *
+union_parameters(PyObject *self, void *Py_UNUSED(unused))
+{
+    unionobject *alias = (unionobject *)self;
+    if (alias->parameters == NULL) {
+        alias->parameters = _Py_make_parameters(alias->args);
+        if (alias->parameters == NULL) {
+            return NULL;
+        }
+    }
+    Py_INCREF(alias->parameters);
+    return alias->parameters;
+}
+
+static PyGetSetDef union_properties[] = {
+    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.Union.", NULL},
+    {0}
+};
+
 static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
@@ -426,15 +498,18 @@ PyTypeObject _Py_UnionType = {
     .tp_basicsize = sizeof(unionobject),
     .tp_dealloc = unionobject_dealloc,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_free = PyObject_Del,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_free = PyObject_GC_Del,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = union_traverse,
     .tp_hash = union_hash,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
+    .tp_as_mapping = &union_as_mapping,
     .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
+    .tp_getset = union_properties,
 };
 
 PyObject *
@@ -461,12 +536,14 @@ _Py_Union(PyObject *args)
         }
     }
 
-    result = PyObject_New(unionobject, &_Py_UnionType);
+    result = PyObject_GC_New(unionobject, &_Py_UnionType);
     if (result == NULL) {
         return NULL;
     }
 
+    result->parameters = NULL;
     result->args = dedup_and_flatten_args(args);
+    _PyObject_GC_TRACK(result);
     if (result->args == NULL) {
         Py_DECREF(result);
         return NULL;

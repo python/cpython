@@ -43,11 +43,6 @@ module _sqlite3
 
 /* static objects at module-level */
 
-PyObject *pysqlite_Error = NULL;
-PyObject *pysqlite_Warning = NULL;
-PyObject *pysqlite_InterfaceError = NULL;
-PyObject *pysqlite_DatabaseError = NULL;
-PyObject *pysqlite_InternalError = NULL;
 PyObject *pysqlite_OperationalError = NULL;
 PyObject *pysqlite_ProgrammingError = NULL;
 PyObject *pysqlite_IntegrityError = NULL;
@@ -409,20 +404,27 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-    ADD_EXCEPTION(module, "Error", pysqlite_Error, PyExc_Exception);
-    ADD_EXCEPTION(module, "Warning", pysqlite_Warning, PyExc_Exception);
+    ADD_EXCEPTION(module, "Error", state->Error, PyExc_Exception);
+    ADD_EXCEPTION(module, "Warning", state->Warning, PyExc_Exception);
 
     /* Error subclasses */
-    ADD_EXCEPTION(module, "InterfaceError", pysqlite_InterfaceError, pysqlite_Error);
-    ADD_EXCEPTION(module, "DatabaseError", pysqlite_DatabaseError, pysqlite_Error);
+    ADD_EXCEPTION(module, "InterfaceError", state->InterfaceError,
+                  state->Error);
+    ADD_EXCEPTION(module, "DatabaseError", state->DatabaseError, state->Error);
 
-    /* pysqlite_DatabaseError subclasses */
-    ADD_EXCEPTION(module, "InternalError", pysqlite_InternalError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
+    /* DatabaseError subclasses */
+    ADD_EXCEPTION(module, "InternalError", state->InternalError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "DataError", pysqlite_DataError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError,
+                  state->DatabaseError);
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {

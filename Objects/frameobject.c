@@ -957,7 +957,7 @@ _PyFrame_FastToLocalsWithError(_PyFrame *frame) {
     co = frame->code;
     fast = _PyFrame_GetLocalsArray(frame);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
         /* If the namespace is unoptimized, then one of the
            following cases applies:
@@ -1058,7 +1058,7 @@ _PyFrame_LocalsToFast(_PyFrame *frame, int clear)
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
         /* Same test as in PyFrame_FastToLocals() above. */
         if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {

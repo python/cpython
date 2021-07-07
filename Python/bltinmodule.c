@@ -1631,13 +1631,16 @@ anext as builtin_anext
     default: object = NULL
     /
 
-Return the next item from the async iterator.
+async anext(aiterator[, default])
+
+Return the next item from the async iterator.  If default is given and the async
+iterator is exhausted, it is returned instead of raising StopAsyncIteration.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=8f63f4f78590bb4c]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;

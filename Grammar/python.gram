@@ -380,6 +380,7 @@ class_pattern[pattern_ty]:
                 CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, keywords)))),
             CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, keywords)),
             EXTRA) }
+    | invalid_class_pattern
 positional_patterns[asdl_pattern_seq*]:
     | args[asdl_pattern_seq*]=','.pattern+ { args }
 keyword_patterns[asdl_seq*]:
@@ -978,6 +979,13 @@ invalid_case_block:
 invalid_as_pattern:
     | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
     | or_pattern 'as' !NAME a=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "invalid pattern target") }
+invalid_class_pattern:
+    | name_or_attr '(' a=invalid_class_argument_pattern  { RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+        PyPegen_first_item(a, pattern_ty),
+        PyPegen_last_item(a, pattern_ty),
+        "positional patterns follow keyword patterns") }
+invalid_class_argument_pattern[asdl_pattern_seq*]:
+    | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
 invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {
