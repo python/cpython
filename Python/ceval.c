@@ -1914,6 +1914,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(BINARY_SUBSCR): {
             PREDICTED(BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, unquickened);
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -1950,6 +1951,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
             Py_ssize_t index = PyLong_AsSsize_t(sub);
             DEOPT_IF(index < 0 || index >= PyList_Size(list), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
             STACK_SHRINK(1);
             PyObject *res = PyList_GetItem(list, index);
             Py_XINCREF(res);
@@ -1968,6 +1970,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
             Py_ssize_t index = PyLong_AsSsize_t(sub);
             DEOPT_IF(index < 0 || index >= PyTuple_Size(tuple), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
             STACK_SHRINK(1);
             PyObject *res = PyTuple_GetItem(tuple, index);
             Py_XINCREF(res);
@@ -1981,6 +1984,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(BINARY_SUBSCR_DICT): {
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
             PyObject *sub = POP();
             PyObject *dict = TOP();
             PyObject *res = PyDict_GetItemWithError(dict, sub);
