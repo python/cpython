@@ -1,5 +1,4 @@
-"""Script used to test `get_type_hints()` on a class formed by inheriting
-a `TypedDict` with postponed annotations, for bpo-41249.
+"""Used to test `get_type_hints()` on a cross-module inherited `TypedDict` class
 
 This script uses future annotations to postpone a type that won't be available
 on the module inheriting from to `Foo`. The subclass in the other module should
