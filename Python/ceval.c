@@ -4122,7 +4122,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            uint8_t nargs = cache0->original_oparg;
+            int nargs = cache0->original_oparg;
             PyObject **pfunc = &PEEK(nargs + 1);
             PyObject *callable = *pfunc;
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
@@ -4139,7 +4139,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
             /* Clear the stack of the function object. */
             while (stack_pointer > pfunc) {
-                PyObject *x = EXT_POP(stack_pointer);
+                PyObject *x = POP();
                 Py_DECREF(x);
             }
             PUSH(res);
