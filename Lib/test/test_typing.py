@@ -1801,7 +1801,7 @@ class GenericTests(BaseTestCase):
         )
         self.assertEqual(
             get_type_hints(foobar3, globals(), locals()),
-            {'x': list[CC] | int}
+            {'x': list[CC | int] | int}
         )
 
         T = TypeVar('T')
