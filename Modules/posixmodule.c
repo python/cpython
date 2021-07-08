@@ -7690,7 +7690,7 @@ os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
 {
     const char *username = PyBytes_AS_STRING(oname);
 
-    if (initgroups(username, gid) == -1)
+    if (initgroups((char*)username, gid) == -1) // cast away const for OSF1
         return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
@@ -8310,11 +8310,16 @@ os_wait4_impl(PyObject *module, pid_t pid, int options)
     struct rusage ru;
     int async_err = 0;
     WAIT_TYPE status;
+#ifdef __osf__ // OSF1 wait4 always takes union wait
+    typedef union wait WAIT4_TYPE;
+#else
+    typedef WAIT_TYPE WAIT4_TYPE;
+#endif
     WAIT_STATUS_INT(status) = 0;
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        res = wait4(pid, &status, options, &ru);
+        res = wait4(pid, (WAIT4_TYPE*)&status, options, &ru);
         Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (res < 0)

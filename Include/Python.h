@@ -4,6 +4,9 @@
 
 /* Include nearly all Python header files */
 
+#ifdef __osf__
+#include "pyportosf.h"
+#endif
 #include "patchlevel.h"
 #include "pyconfig.h"
 #include "pymacconfig.h"

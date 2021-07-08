@@ -914,8 +914,12 @@
 /* Define to 1 if you have the `sem_unlink' function. */
 #undef HAVE_SEM_UNLINK
 
+/* OSF1 documents and implements but does not declare sendfile,
+   and it does not match others. Skip it. */
+#ifndef __osf__
 /* Define to 1 if you have the `sendfile' function. */
 #undef HAVE_SENDFILE
+#endif
 
 /* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID

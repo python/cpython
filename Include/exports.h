@@ -11,12 +11,13 @@
  * as a cross-platform way to determine if visibility is supported. However,
  * we may still need to support gcc >= 4, as some Ubuntu LTS and Centos versions
  * have 4 < gcc < 5.
+ * OSF/1: warning: visibility attribute not supported in this configuration; ignored [-Wattributes]
  */
     #ifndef __has_attribute
       #define __has_attribute(x) 0  // Compatibility with non-clang compilers.
     #endif
-    #if (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
-        (defined(__clang__) && __has_attribute(visibility))
+    #if !defined(__osf__) && ((defined(__GNUC__) && (__GNUC__ >= 4)) ||\
+        (defined(__clang__) && __has_attribute(visibility)))
         #define Py_IMPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_EXPORTED_SYMBOL __attribute__ ((visibility ("default")))
         #define Py_LOCAL_SYMBOL  __attribute__ ((visibility ("hidden")))
