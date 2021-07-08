@@ -391,6 +391,8 @@ I/O Base Classes
       to control the number of lines read: no more lines will be read if the
       total size (in bytes/characters) of all lines so far exceeds *hint*.
 
+      *hint* values of 0 or less are treated as no hint.
+
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling ``file.readlines()``.
 
