@@ -1623,7 +1623,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             JUMPTO(f->f_lasti);
             stack_pointer = f->f_valuestack+f->f_stackdepth;
             f->f_stackdepth = -1;
-            NEXTOPARG();
+            TRACING_NEXTOPARG();
         }
     }
 
