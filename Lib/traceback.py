@@ -310,6 +310,8 @@ class FrameSummary:
     @property
     def line(self):
         if self._line is None:
+            if self.lineno is None:
+                return None
             self._line = linecache.getline(self.filename, self.lineno)
         return self._line.strip()
 
