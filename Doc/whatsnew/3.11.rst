@@ -151,6 +151,9 @@ Optimizations
   (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
   implemented in PyPy.)
 
+* :file:`.pdbrc` is now read with ``'utf-8'`` encoding.
+
+
 CPython bytecode changes
 ========================
 
