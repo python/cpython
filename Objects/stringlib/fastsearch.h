@@ -294,7 +294,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 }
 
 #define SHIFT_TYPE uint8_t
-#define MAX_SHIFT ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
+#define MAX_SHIFT 255
 
 #define TABLE_SIZE_BITS 6
 #define TABLE_SIZE (1U << TABLE_SIZE_BITS)
@@ -369,8 +369,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     SHIFT_TYPE *table = p->table;
     LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
 
-    // static int stats[3];
-
     if (p->is_periodic) {
         LOG("Needle is periodic.\n");
         Py_ssize_t memory = 0;
@@ -389,6 +387,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 memory = 0;
                 shift = table[(*window_last) & TABLE_MASK];
             }
+            // In most cases, this "Horspool" loop is the hot loop.
             while (shift > 0 && window_last < haystack_end) {
                 LOG("Fast Horspool skip.\n");
                 window_last += shift;
@@ -436,8 +435,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             while (shift > 0 && window_last < haystack_end) {
                 LOG("Fast Horspool skip.\n");
                 window_last += shift;
-                LOG_LINEUP();
                 shift = table[(*window_last) & TABLE_MASK];
+                LOG_LINEUP();
             }
             if (window_last >= haystack_end) {
                 break;
@@ -449,10 +448,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     LOG("Right half does not match. two-way: %zd, gap: %zd "
                         "--> Advance by %zd\n",
                         two_way_shift, gap, Py_MAX(two_way_shift, gap));
-                    // stats[(two_way_shift <= gap) + (two_way_shift < gap)]++;
-                    // if ((stats[0] + stats[1] + stats[2]) % 1000 == 0) {
-                    //     printf("gap wins: %d, tie: %d, two-way wins: %d\n");
-                    // }
                     window_last += Py_MAX(two_way_shift, gap);
                     goto windowloop;
                 }
@@ -563,7 +558,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (1 || m >= 100 && w >= 2000 && w / m >= 5) {
+        if (m > w / 2 && ((m >= 100 && w >= 1000) || (m >= 6 && w >= 30000))) {
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
                expensive O(m) startup cost of the two-way algorithm
@@ -575,6 +570,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                 return STRINGLIB(_two_way_count)(s, n, p, m, maxcount);
             }
         }
+
         const STRINGLIB_CHAR *ss = s + m - 1;
         const STRINGLIB_CHAR *pp = p + m - 1;
 
@@ -590,7 +586,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* process pattern[-1] outside the loop */
         STRINGLIB_BLOOM_ADD(mask, p[mlast]);
 
-        if (m >= 100 && w >= 8000) {
+        if (m >= 100 && w >= 1000) {
             /* To ensure that we have good worst-case behavior,
                here's an adaptive version of the algorithm, where if
                we match O(m) characters without any matches of the
@@ -625,10 +621,9 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                         i = i + skip;
                     }
                     hits += j + 1;
-                    if (hits >= m / 4 && i < w - 1000) {
-                        /* We've done O(m) fruitless comparisons
-                           anyway, so spend the O(m) cost on the
-                           setup for the two-way algorithm. */
+                    if (hits >= i / 8) {
+                        /* Too much partial matching, so spend the O(m)
+                           startup cost for the two-way algorithm. */
                         Py_ssize_t res;
                         if (mode == FAST_COUNT) {
                             res = STRINGLIB(_two_way_count)(
@@ -656,6 +651,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
             }
             return count;
         }
+
         /* The standard, non-adaptive version of the algorithm. */
         for (i = 0; i <= w; i++) {
             /* note: using mlast in the skip path slows things down on x86 */
