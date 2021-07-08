@@ -1,1 +1,1 @@
-Importing typing.io or typing.re now prints a `DeprecationWarning`.
+Importing typing.io or typing.re now prints a ``DeprecationWarning``.

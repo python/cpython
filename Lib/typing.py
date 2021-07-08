@@ -1701,10 +1701,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         for base in reversed(obj.__mro__):
             if globalns is None:
-                try:
-                    base_globals = sys.modules[base.__module__].__dict__
-                except KeyError:
-                    continue
+                base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
@@ -2515,7 +2512,7 @@ class TextIO(IO[str]):
 
 class _DeprecatedType(type):
     def __getattribute__(cls, name):
-        if name != "__dict__" and name in cls.__dict__:
+        if name not in ("__dict__", "__module__") and name in cls.__dict__:
             warnings.warn(
                 f"{cls.__name__} is deprecated, import directly "
                 f"from typing instead. {cls.__name__} will be removed "

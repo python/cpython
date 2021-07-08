@@ -772,17 +772,20 @@ iterations of the loop.
 
 .. opcode:: MATCH_MAPPING
 
-   If TOS is an instance of :class:`collections.abc.Mapping`, push ``True`` onto
-   the stack.  Otherwise, push ``False``.
+   If TOS is an instance of :class:`collections.abc.Mapping` (or, more technically: if
+   it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise, push
+   ``False``.
 
    .. versionadded:: 3.10
 
 
 .. opcode:: MATCH_SEQUENCE
 
-   If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an
-   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, push ``True``
-   onto the stack.  Otherwise, push ``False``.
+   If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an instance
+   of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
+   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
 
@@ -933,7 +936,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.9
 
 
-.. opcode:: DICT_MERGE
+.. opcode:: DICT_MERGE (i)
 
    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 

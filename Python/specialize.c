@@ -7,6 +7,10 @@
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
+/* For guidance on adding or extending families of instructions see
+ * ./adaptive.md
+ */
+
 
 /* We layout the quickened data as a bi-directional array:
  * Instructions upwards, cache entries downwards.

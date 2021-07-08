@@ -278,7 +278,7 @@ have been incorporated. Some of the most notable ones are as follows:
 
     .. code-block:: python
 
-        >>> try
+        >>> try:
         ...     x = 2
         ... something = 3
           File "<stdin>", line 3
@@ -883,6 +883,12 @@ The :meth:`~array.array.index` method of :class:`array.array` now has
 optional *start* and *stop* parameters.
 (Contributed by Anders Lorentsen and Zackery Spytz in :issue:`31956`.)
 
+asynchat, asyncore, smtpd
+-------------------------
+These modules have been marked as deprecated in their module documentation
+since Python 3.6.  An import-time :class:`DeprecationWarning` has now been
+added to all three of these modules.
+
 base64
 ------
 
@@ -1078,7 +1084,7 @@ and will be incorrect in some rare cases, including some ``_``-s in
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 4.4
+Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
@@ -1474,7 +1480,7 @@ Deprecated
   this release, a deprecation warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
-  If future releases it will be changed to syntax warning, and finally to
+  In future releases it will be changed to syntax warning, and finally to
   syntax error.
   (Contributed by Serhiy Storchaka in :issue:`43833`).
 
@@ -1683,9 +1689,9 @@ Removed
   that were only being used by the old parser, including ``node.h``, ``parser.h``,
   ``graminit.h`` and ``grammar.h``.
 
-* Removed the Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
-  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
-  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+* Removed the Public C API functions ``PyParser_SimpleParseStringFlags``,
+  ``PyParser_SimpleParseStringFlagsFilename``,
+  ``PyParser_SimpleParseFileFlags`` and ``PyNode_Compile``
   that were deprecated in 3.9 due to the switch to the new PEG parser.
 
 * Removed the ``formatter`` module, which was deprecated in Python 3.4.
@@ -1798,6 +1804,41 @@ Changes in the Python API
   in Python is not affected, globals cannot be overriden with this syntax: it
   also inherits the current builtins.
   (Contributed by Victor Stinner in :issue:`42990`.)
+
+Changes in the C API
+--------------------
+
+* The C API functions ``PyParser_SimpleParseStringFlags``,
+  ``PyParser_SimpleParseStringFlagsFilename``,
+  ``PyParser_SimpleParseFileFlags``, ``PyNode_Compile`` and the type
+  used by these functions, ``struct _node``, were removed due to the switch
+  to the new PEG parser.
+
+  Source should be now be compiled directly to a code object using, for
+  example, :c:func:`Py_CompileString`. The resulting code object can then be
+  evaluated using, for example, :c:func:`PyEval_EvalCode`.
+
+  Specifically:
+
+  * A call to ``PyParser_SimpleParseStringFlags`` followed by
+    ``PyNode_Compile`` can be replaced by calling :c:func:`Py_CompileString`.
+
+  * There is no direct replacement for ``PyParser_SimpleParseFileFlags``.
+    To compile code from a ``FILE *`` argument, you will need to read
+    the file in C and pass the resulting buffer to :c:func:`Py_CompileString`.
+
+  * To compile a file given a ``char *`` filename, explicitly open the file, read
+    it and compile the result. One way to do this is using the :py:mod:`io`
+    module with :c:func:`PyImport_ImportModule`, :c:func:`PyObject_CallMethod`,
+    :c:func:`PyBytes_AsString` and :c:func:`Py_CompileString`,
+    as sketched below. (Declarations and error handling are omitted.) ::
+
+       io_module = Import_ImportModule("io");
+       fileobject = PyObject_CallMethod(io_module, "open", "ss", filename, "rb");
+       source_bytes_object = PyObject_CallMethod(fileobject, "read", "");
+       result = PyObject_CallMethod(fileobject, "close", "");
+       source_buf = PyBytes_AsString(source_bytes_object);
+       code = Py_CompileString(source_buf, filename, Py_file_input);
 
 CPython bytecode changes
 ========================

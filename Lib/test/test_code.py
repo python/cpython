@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>', "'f.<locals>.g'")
+consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
 name: g
@@ -49,7 +49,7 @@ varnames: ('x', 'y', 'a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 5
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -67,7 +67,7 @@ varnames: ('obj',)
 cellvars: ()
 freevars: ()
 nlocals: 1
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def optimize_away():
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 67
+flags: 3
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -103,7 +103,7 @@ varnames: ('a', 'b', 'k1')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -120,7 +120,7 @@ varnames: ('a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 """
@@ -129,13 +129,16 @@ import inspect
 import sys
 import threading
 import unittest
+import textwrap
 import weakref
+
 try:
     import ctypes
 except ImportError:
     ctypes = None
 from test.support import (run_doctest, run_unittest, cpython_only,
-                          check_impl_detail)
+                          check_impl_detail, requires_debug_ranges)
+from test.support.script_helper import assert_python_ok
 
 
 def consts(t):
@@ -199,10 +202,6 @@ class CodeTest(unittest.TestCase):
         class_ref = function.__closure__[0].cell_contents
         self.assertIs(class_ref, List)
 
-        # Ensure the code correctly indicates it accesses a free variable
-        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE,
-                         hex(function.__code__.co_flags))
-
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
@@ -225,11 +224,20 @@ class CodeTest(unittest.TestCase):
                         co.co_varnames,
                         co.co_filename,
                         co.co_name,
+                        co.co_qualname,
                         co.co_firstlineno,
                         co.co_lnotab,
+                        co.co_endlinetable,
+                        co.co_columntable,
                         co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
+
+    def test_qualname(self):
+        self.assertEqual(
+            CodeTest.test_qualname.__code__.co_qualname,
+            CodeTest.test_qualname.__qualname__
+        )
 
     def test_replace(self):
         def func():
@@ -261,6 +269,8 @@ class CodeTest(unittest.TestCase):
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
             ("co_linetable", code2.co_linetable),
+            ("co_endlinetable", code2.co_endlinetable),
+            ("co_columntable", code2.co_columntable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
@@ -295,8 +305,11 @@ class CodeTest(unittest.TestCase):
                          co.co_varnames,
                          co.co_filename,
                          co.co_name,
+                         co.co_qualname,
                          co.co_firstlineno,
                          co.co_lnotab,
+                         co.co_endlinetable,
+                         co.co_columntable,
                          co.co_exceptiontable,
                          co.co_freevars,
                          co.co_cellvars,
@@ -312,6 +325,108 @@ class CodeTest(unittest.TestCase):
             pass
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
+
+    @requires_debug_ranges()
+    def test_co_positions_artificial_instructions(self):
+        import dis
+
+        namespace = {}
+        exec(textwrap.dedent("""\
+        try:
+            1/0
+        except Exception as e:
+            exc = e
+        """), namespace)
+
+        exc = namespace['exc']
+        traceback = exc.__traceback__
+        code = traceback.tb_frame.f_code
+
+        artificial_instructions = []
+        for instr, positions in zip(
+            dis.get_instructions(code),
+            code.co_positions(),
+            strict=True
+        ):
+            # If any of the positions is None, then all have to
+            # be None as well for the case above. There are still
+            # some places in the compiler, where the artificial instructions
+            # get assigned the first_lineno but they don't have other positions.
+            # There is no easy way of inferring them at that stage, so for now
+            # we don't support it.
+            self.assertTrue(positions.count(None) in [0, 4])
+
+            if not any(positions):
+                artificial_instructions.append(instr)
+
+        self.assertEqual(
+            [
+                (instruction.opname, instruction.argval)
+                for instruction in artificial_instructions
+            ],
+            [
+                ("PUSH_EXC_INFO", None),
+                ("LOAD_CONST", None), # artificial 'None'
+                ("STORE_NAME", "e"),  # XX: we know the location for this
+                ("DELETE_NAME", "e"),
+                ("RERAISE", 1),
+                ("POP_EXCEPT_AND_RERAISE", None)
+            ]
+        )
+
+    def test_endline_and_columntable_none_when_no_debug_ranges(self):
+        # Make sure that if `-X no_debug_ranges` is used, the endlinetable and
+        # columntable are None.
+        code = textwrap.dedent("""
+            def f():
+                pass
+
+            assert f.__code__.co_endlinetable is None
+            assert f.__code__.co_columntable is None
+            """)
+        assert_python_ok('-X', 'no_debug_ranges', '-c', code)
+
+    def test_endline_and_columntable_none_when_no_debug_ranges_env(self):
+        # Same as above but using the environment variable opt out.
+        code = textwrap.dedent("""
+            def f():
+                pass
+
+            assert f.__code__.co_endlinetable is None
+            assert f.__code__.co_columntable is None
+            """)
+        assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
+
+    # co_positions behavior when info is missing.
+
+    @requires_debug_ranges()
+    def test_co_positions_empty_linetable(self):
+        def func():
+            x = 1
+        new_code = func.__code__.replace(co_linetable=b'')
+        for line, end_line, column, end_column in new_code.co_positions():
+            self.assertIsNone(line)
+            self.assertEqual(end_line, new_code.co_firstlineno + 1)
+
+    @requires_debug_ranges()
+    def test_co_positions_empty_endlinetable(self):
+        def func():
+            x = 1
+        new_code = func.__code__.replace(co_endlinetable=b'')
+        for line, end_line, column, end_column in new_code.co_positions():
+            self.assertEqual(line, new_code.co_firstlineno + 1)
+            self.assertIsNone(end_line)
+
+    @requires_debug_ranges()
+    def test_co_positions_empty_columntable(self):
+        def func():
+            x = 1
+        new_code = func.__code__.replace(co_columntable=b'')
+        for line, end_line, column, end_column in new_code.co_positions():
+            self.assertEqual(line, new_code.co_firstlineno + 1)
+            self.assertEqual(end_line, new_code.co_firstlineno + 1)
+            self.assertIsNone(column)
+            self.assertIsNone(end_column)
 
 
 def isinterned(s):
