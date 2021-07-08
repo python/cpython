@@ -1156,6 +1156,16 @@ eval_frame_handle_pending(PyThreadState *tstate)
     return 0;
 }
 
+static void
+initialize_trace_info(PyTraceInfo *trace_info, PyFrameObject *frame)
+{
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    if (trace_info->code != code) {
+        trace_info->code = code;
+        _PyCode_InitAddressRange(code, &trace_info->bounds);
+    }
+}
+
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -1453,6 +1463,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     co = (PyCodeObject *)specials[FRAME_SPECIALS_CODE_OFFSET];
 
     if (cframe.use_tracing) {
+        initialize_trace_info(&tstate->trace_info, f);
         if (tstate->c_tracefunc != NULL) {
             /* tstate->c_tracefunc, if defined, is a
                function that will be called on *every* entry
@@ -5401,16 +5412,6 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
     }
 }
 
-static void
-initialize_trace_info(PyTraceInfo *trace_info, PyFrameObject *frame)
-{
-    PyCodeObject *code = _PyFrame_GetCode(frame);
-    if (trace_info->code != code) {
-        trace_info->code = code;
-        _PyCode_InitAddressRange(code, &trace_info->bounds);
-    }
-}
-
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
            PyThreadState *tstate, PyFrameObject *frame,
@@ -5468,9 +5469,9 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     int lastline = _PyCode_CheckLineNumber(instr_prev*2, &tstate->trace_info.bounds);
     int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &tstate->trace_info.bounds);
     if (line != -1 && frame->f_trace_lines) {
-        /* Trace backward edges or first instruction of a new line */
+        /* Trace backward edges or if line number has changed */
         if (frame->f_lasti < instr_prev ||
-            (line != lastline && frame->f_lasti*2 == tstate->trace_info.bounds.ar_start))
+            (line != lastline))
         {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
