@@ -5476,10 +5476,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     int lastline = _PyCode_CheckLineNumber(instr_prev*2, &tstate->trace_info.bounds);
     int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &tstate->trace_info.bounds);
     if (line != -1 && frame->f_trace_lines) {
-        /* Trace backward edges or first instruction of a new line */
-        if (frame->f_lasti < instr_prev ||
-            (line != lastline && frame->f_lasti*2 == tstate->trace_info.bounds.ar_start))
-        {
+        /* Trace backward edges or if line number has changed */
+        if (frame->f_lasti < instr_prev || line != lastline) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
