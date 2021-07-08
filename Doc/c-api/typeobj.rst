@@ -710,7 +710,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    .. warning::
 
-      It is not recommended for :ref:`heap types <heap-types>` to implement
+      It is not recommended for :ref:`mutable heap types <heap-types>` to implement
       the vectorcall protocol.
       When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
       likely making it inconsistent with the vectorcall function.
@@ -734,8 +734,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    always inherited. If it's not, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
-   This is in particular the case for :ref:`heap types <heap-types>`
-   (including subclasses defined in Python).
+   This is in particular the case for types without the
+   :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set (including subclasses defined in
+   Python).
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1125,9 +1126,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This flag is never inherited by :ref:`heap types <heap-types>`.
-      For extension types, it is inherited whenever
-      :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+      This flag is never inherited by types without the
+      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
+      inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
 
    .. XXX Document more flags here?
@@ -1172,9 +1173,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for :ref:`static subtypes <static-types>` if
+      This bit is inherited for types with the
+      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set, if
       :c:member:`~PyTypeObject.tp_call` is also inherited.
-      :ref:`Heap types <heap-types>` do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. versionadded:: 3.9
 
