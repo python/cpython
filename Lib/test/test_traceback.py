@@ -1204,6 +1204,10 @@ class TestFrame(unittest.TestCase):
             '"""Test cases for traceback module"""',
             f.line)
 
+    def test_no_line(self):
+        f = traceback.FrameSummary("f", None, "dummy")
+        self.assertEqual(f.line, None)
+
     def test_explicit_line(self):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
         self.assertEqual("line", f.line)
