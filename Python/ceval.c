@@ -1952,14 +1952,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             Py_ssize_t index = PyLong_AsSsize_t(sub);
             DEOPT_IF(index < 0 || index >= PyList_Size(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            STACK_SHRINK(1);
             PyObject *res = PyList_GET_ITEM(list, index);
-            Py_XINCREF(res);
-            Py_DECREF(list);
+            assert(res != NULL);
+            Py_INCREF(res);
+            STACK_SHRINK(1);
             Py_DECREF(sub);
             SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            Py_DECREF(list);
             DISPATCH();
         }
 
@@ -1971,26 +1970,30 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             Py_ssize_t index = PyLong_AsSsize_t(sub);
             DEOPT_IF(index < 0 || index >= PyTuple_Size(tuple), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            STACK_SHRINK(1);
             PyObject *res = PyTuple_GET_ITEM(tuple, index);
-            Py_XINCREF(res);
-            Py_DECREF(tuple);
+            assert(res != NULL);
+            Py_INCREF(res);
+            STACK_SHRINK(1);
             Py_DECREF(sub);
             SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            Py_DECREF(tuple);
             DISPATCH();
         }
 
         case TARGET(BINARY_SUBSCR_DICT): {
+            PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *sub = POP();
-            PyObject *dict = TOP();
+            PyObject *sub = TOP();
             PyObject *res = PyDict_GetItemWithError(dict, sub);
-            Py_XINCREF(res);
-            Py_DECREF(dict);
+            if (res == NULL) {
+                goto binary_subscr_error;
+            }
+            Py_INCREF(res);
+            STACK_SHRINK(1);
+            Py_DECREF(sub);
             SET_TOP(res);
+            Py_DECREF(dict);
             if (res == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_SetKeyError(sub);
@@ -1998,7 +2001,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 Py_DECREF(sub);
                 goto error;
             }
-            Py_DECREF(sub);
             DISPATCH();
         }
 
@@ -4408,6 +4410,15 @@ opname ## _miss: \
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(BINARY_SUBSCR)
+
+binary_subscr_error:
+        {
+            PyObject *sub = POP();
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_SetKeyError(sub);
+            }
+            Py_DECREF(sub);
+        }
 
 error:
         /* Double-check exception status. */
