@@ -214,7 +214,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         _PyErr_ChainStackItem(NULL);
     }
 
-    result = _PyEval_EvalNoFrame(tstate, frame, exc);
+    result = _PyEval_EvalFrame(tstate, frame, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
 

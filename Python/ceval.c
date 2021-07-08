@@ -1077,14 +1077,14 @@ PyEval_EvalFrame(PyFrameObject *f)
 {
     /* Function kept for backward compatibility */
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_EvalFrame(tstate, f, 0);
+    return _PyEval_EvalFrame(tstate, f->f_frame, 0);
 }
 
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_EvalFrame(tstate, f, throwflag);
+    return _PyEval_EvalFrame(tstate, f->f_frame, throwflag);
 }
 
 
@@ -1403,7 +1403,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define LOCALS() frame->locals
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalNoFrame(PyThreadState *tstate, _PyFrame *frame, int throwflag)
+_PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -4433,13 +4433,6 @@ exit_eval_frame:
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
-
-PyObject*
-_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
-{
-    return _PyEval_EvalNoFrame(tstate, f->f_frame, throwflag);
-}
-
 static void
 format_missing(PyThreadState *tstate, const char *kind,
                PyCodeObject *co, PyObject *names, PyObject *qualname)
@@ -5121,7 +5114,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     }
     PyObject *retval;
     assert (tstate->interp->eval_frame != NULL);
-    retval = _PyEval_EvalNoFrame(tstate, frame, 0);
+    retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(frame->stackdepth == 0);
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
         retval = NULL;
