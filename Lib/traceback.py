@@ -301,9 +301,10 @@ class FrameSummary:
     @property
     def line(self):
         if self._line is None:
-            self._line = linecache.getline(self.filename, self.lineno).strip()
-        return self._line
-
+            if self.lineno is None:
+                return None
+            self._line = linecache.getline(self.filename, self.lineno)
+        return self._line.strip()
 
 def walk_stack(f):
     """Walk a stack yielding the frame and line number for each frame.
