@@ -2863,7 +2863,7 @@ class GetTypeHintTests(BaseTestCase):
             gth(None)
 
     def test_get_type_hints_modules(self):
-        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str}
+        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str, 'core_union': int | float}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})

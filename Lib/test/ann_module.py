@@ -58,3 +58,5 @@ def dec(func):
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
     return wrapper
+
+core_union: int | float
