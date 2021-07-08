@@ -34,7 +34,7 @@ import weakref
 import types
 
 from test import mod_generics_cache
-from test import typed_dict
+from test import _typed_dict_helper
 
 
 class BaseTestCase(TestCase):
@@ -2805,7 +2805,7 @@ class Point2D(TypedDict):
     x: int
     y: int
 
-class Bar(typed_dict.Foo, total=False):
+class Bar(_typed_dict_helper.Foo, total=False):
     b: int
 
 class LabelPoint2D(Point2D, Label): ...
