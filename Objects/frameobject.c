@@ -640,10 +640,8 @@ frame_dealloc(PyFrameObject *f)
         for (int i = 0; i < frame->stackdepth; i++) {
             Py_CLEAR(frame->stack[i]);
         }
-        frame->stackdepth = 0;
         PyMem_Free(locals);
     }
-    f->f_frame->stackdepth = 0;
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
     struct _Py_frame_state *state = get_frame_state();
