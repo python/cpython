@@ -42,6 +42,13 @@ typedef struct {
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     vectorcallfunc vectorcall;
+    /* Version number for use by specializer.
+     * Can set to non-zero when we want to specialize.
+     * Will be set to zero if any of these change:
+     *     defaults
+     *     kwdefaults (only if the object changes, not the contents of the dict)
+     *     code
+     *     annotations */
     uint32_t func_version;
 
     /* Invariant:
