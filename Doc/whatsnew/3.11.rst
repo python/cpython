@@ -151,6 +151,9 @@ Optimizations
   (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
   implemented in PyPy.)
 
+* :file:`.pdbrc` is now read with ``'utf-8'`` encoding.
+
+
 CPython bytecode changes
 ========================
 
@@ -210,6 +213,11 @@ Porting to Python 3.11
   with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
   (:c:member:`PyTypeObject.tp_traverse`).
   (Contributed by Victor Stinner in :issue:`44263`.)
+
+* Heap types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
+  the :pep:`590` vectorcall protocol.  Previously, this was only possible for
+  :ref:`static types <static-types>`.
+  (Contributed by Erlend E. Aasland in :issue:`43908`)
 
 Deprecated
 ----------

@@ -763,7 +763,7 @@ Scheduling From Other Threads
 
      try:
          result = future.result(timeout)
-     except asyncio.TimeoutError:
+     except concurrent.futures.TimeoutError:
          print('The coroutine took too long, cancelling the task...')
          future.cancel()
      except Exception as exc:

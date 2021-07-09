@@ -1622,7 +1622,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
             JUMPTO(frame->lasti);
             stack_pointer = frame->stack+frame->stackdepth;
             frame->stackdepth = -1;
-            NEXTOPARG();
+            TRACING_NEXTOPARG();
         }
     }
 
@@ -2852,6 +2852,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_GLOBAL_ADAPTIVE): {
+            assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
@@ -2870,6 +2871,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_GLOBAL_MODULE): {
+            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             SpecializedCacheEntry *caches = GET_CACHE();
@@ -2887,6 +2889,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_GLOBAL_BUILTIN): {
+            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
             PyDictObject *mdict = (PyDictObject *)GLOBALS();
@@ -3285,6 +3288,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_ATTR_ADAPTIVE): {
+            assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 PyObject *owner = TOP();
@@ -3304,6 +3308,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_ATTR_SPLIT_KEYS): {
+            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3328,6 +3333,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_ATTR_MODULE): {
+            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             SpecializedCacheEntry *caches = GET_CACHE();
@@ -3351,6 +3357,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_ATTR_WITH_HINT): {
+            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3379,6 +3386,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyFrame *frame, int throwflag)
         }
 
         case TARGET(LOAD_ATTR_SLOT): {
+            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
@@ -5542,10 +5550,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
         return -1;
     }
     if (line != -1 && f->f_trace_lines) {
-        /* Trace backward edges or first instruction of a new line */
-        if (frame->lasti < instr_prev ||
-            (line != lastline && frame->lasti*2 == tstate->trace_info.bounds.ar_start))
-        {
+        /* Trace backward edges or if line number has changed */
+        if (frame->lasti < instr_prev || line != lastline) {
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }

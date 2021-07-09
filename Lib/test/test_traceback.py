@@ -8,9 +8,10 @@ import inspect
 import unittest
 import re
 from test import support
-from test.support import Error, captured_output, cpython_only, ALWAYS_EQ
+from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
+                          requires_debug_ranges, has_no_debug_ranges)
 from test.support.os_helper import TESTFN, unlink
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
 
 import traceback
@@ -74,6 +75,49 @@ class TracebackCases(unittest.TestCase):
         err = traceback.format_exception_only(SyntaxError, exc)
         self.assertEqual(len(err), 3)
         self.assertEqual(err[1].strip(), "bad syntax")
+
+    def test_no_caret_with_no_debug_ranges_flag(self):
+        # Make sure that if `-X no_debug_ranges` is used, there are no carets
+        # in the traceback.
+        try:
+            with open(TESTFN, 'w') as f:
+                f.write("x = 1 / 0\n")
+
+            _, _, stderr = assert_python_failure(
+                '-X', 'no_debug_ranges', TESTFN)
+
+            lines = stderr.splitlines()
+            self.assertEqual(len(lines), 4)
+            self.assertEqual(lines[0], b'Traceback (most recent call last):')
+            self.assertIn(b'line 1, in <module>', lines[1])
+            self.assertEqual(lines[2], b'    x = 1 / 0')
+            self.assertEqual(lines[3], b'ZeroDivisionError: division by zero')
+        finally:
+            unlink(TESTFN)
+
+    def test_no_caret_with_no_debug_ranges_flag_python_traceback(self):
+        code = textwrap.dedent("""
+            import traceback
+            try:
+                x = 1 / 0
+            except:
+                traceback.print_exc()
+            """)
+        try:
+            with open(TESTFN, 'w') as f:
+                f.write(code)
+
+            _, _, stderr = assert_python_ok(
+                '-X', 'no_debug_ranges', TESTFN)
+
+            lines = stderr.splitlines()
+            self.assertEqual(len(lines), 4)
+            self.assertEqual(lines[0], b'Traceback (most recent call last):')
+            self.assertIn(b'line 4, in <module>', lines[1])
+            self.assertEqual(lines[2], b'    x = 1 / 0')
+            self.assertEqual(lines[3], b'ZeroDivisionError: division by zero')
+        finally:
+            unlink(TESTFN)
 
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
@@ -155,9 +199,10 @@ class TracebackCases(unittest.TestCase):
             self.assertTrue(stdout[2].endswith(err_line),
                 "Invalid traceback line: {0!r} instead of {1!r}".format(
                     stdout[2], err_line))
-            self.assertTrue(stdout[4] == err_msg,
+            actual_err_msg = stdout[3 if has_no_debug_ranges() else 4]
+            self.assertTrue(actual_err_msg == err_msg,
                 "Invalid error message: {0!r} instead of {1!r}".format(
-                    stdout[4], err_msg))
+                    actual_err_msg, err_msg))
 
         do_test("", "foo", "ascii", 3)
         for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
@@ -273,6 +318,7 @@ class TracebackCases(unittest.TestCase):
             '(exc, /, value=<implicit>)')
 
 
+@requires_debug_ranges()
 class TracebackErrorLocationCaretTests(unittest.TestCase):
     """
     Tests for printing code error expressions as part of PEP 657
@@ -362,6 +408,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
 
 
 @cpython_only
+@requires_debug_ranges()
 class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
     """
     Same set of tests as above but with Python's internal traceback printing.
@@ -424,9 +471,13 @@ class TracebackFormatTests(unittest.TestCase):
 
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
-        self.assertEqual(len(tb_lines), 7)
         banner = tb_lines[0]
-        location, source_line = tb_lines[-3], tb_lines[-2]
+        if has_no_debug_ranges():
+            self.assertEqual(len(tb_lines), 5)
+            location, source_line = tb_lines[-2], tb_lines[-1]
+        else:
+            self.assertEqual(len(tb_lines), 7)
+            location, source_line = tb_lines[-3], tb_lines[-2]
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))
         self.assertTrue(source_line.startswith('    raise'))
@@ -668,10 +719,12 @@ class TracebackFormatTests(unittest.TestCase):
         actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
+    @requires_debug_ranges()
     def test_recursive_traceback_python(self):
         self._check_recursive_traceback_display(traceback.print_exc)
 
     @cpython_only
+    @requires_debug_ranges()
     def test_recursive_traceback_cpython_internal(self):
         from _testcapi import exception_print
         def render_exc():
@@ -713,11 +766,16 @@ class TracebackFormatTests(unittest.TestCase):
             exception_print(exc_val)
 
         tb = stderr_f.getvalue().strip().splitlines()
-        self.assertEqual(13, len(tb))
-        self.assertEqual(context_message.strip(), tb[6])
-        self.assertIn('UnhashableException: ex2', tb[4])
-        self.assertIn('UnhashableException: ex1', tb[12])
-
+        if has_no_debug_ranges():
+            self.assertEqual(11, len(tb))
+            self.assertEqual(context_message.strip(), tb[5])
+            self.assertIn('UnhashableException: ex2', tb[3])
+            self.assertIn('UnhashableException: ex1', tb[10])
+        else:
+            self.assertEqual(13, len(tb))
+            self.assertEqual(context_message.strip(), tb[6])
+            self.assertIn('UnhashableException: ex2', tb[4])
+            self.assertIn('UnhashableException: ex1', tb[12])
 
 cause_message = (
     "\nThe above exception was the direct cause "
@@ -746,8 +804,12 @@ class BaseExceptionReportingTests:
 
     def check_zero_div(self, msg):
         lines = msg.splitlines()
-        self.assertTrue(lines[-4].startswith('  File'))
-        self.assertIn('1/0 # In zero_div', lines[-3])
+        if has_no_debug_ranges():
+            self.assertTrue(lines[-3].startswith('  File'))
+            self.assertIn('1/0 # In zero_div', lines[-2])
+        else:
+            self.assertTrue(lines[-4].startswith('  File'))
+            self.assertIn('1/0 # In zero_div', lines[-3])
         self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
 
     def test_simple(self):
@@ -756,11 +818,15 @@ class BaseExceptionReportingTests:
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
-        self.assertEqual(len(lines), 5)
+        if has_no_debug_ranges():
+            self.assertEqual(len(lines), 4)
+            self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+        else:
+            self.assertEqual(len(lines), 5)
+            self.assertTrue(lines[4].startswith('ZeroDivisionError'))
         self.assertTrue(lines[0].startswith('Traceback'))
         self.assertTrue(lines[1].startswith('  File'))
         self.assertIn('1/0 # Marker', lines[2])
-        self.assertTrue(lines[4].startswith('ZeroDivisionError'))
 
     def test_cause(self):
         def inner_raise():
@@ -799,11 +865,15 @@ class BaseExceptionReportingTests:
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
-        self.assertEqual(len(lines), 5)
+        if has_no_debug_ranges():
+            self.assertEqual(len(lines), 4)
+            self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+        else:
+            self.assertEqual(len(lines), 5)
+            self.assertTrue(lines[4].startswith('ZeroDivisionError'))
         self.assertTrue(lines[0].startswith('Traceback'))
         self.assertTrue(lines[1].startswith('  File'))
         self.assertIn('ZeroDivisionError from None', lines[2])
-        self.assertTrue(lines[4].startswith('ZeroDivisionError'))
 
     def test_cause_and_context(self):
         # When both a cause and a context are set, only the cause should be
@@ -1133,6 +1203,10 @@ class TestFrame(unittest.TestCase):
         self.assertEqual(
             '"""Test cases for traceback module"""',
             f.line)
+
+    def test_no_line(self):
+        f = traceback.FrameSummary("f", None, "dummy")
+        self.assertEqual(f.line, None)
 
     def test_explicit_line(self):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
@@ -1527,6 +1601,7 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
+    @requires_debug_ranges()
     def test_print(self):
         def f():
             x = 12
