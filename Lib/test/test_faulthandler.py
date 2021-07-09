@@ -57,7 +57,6 @@ def temporary_filename():
 
 class FaultHandlerTests(unittest.TestCase):
 
-    maxDiff = None
     def get_output(self, code, filename=None, fd=None):
         """
         Run the specified code in Python (in a new child process) and read the
