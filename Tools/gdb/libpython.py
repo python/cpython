@@ -1733,8 +1733,7 @@ class Frame(object):
                 if not frame.is_optimized_out():
                     return frame
             return orig_frame
-        except ValueError as v:
-            print("ERROR:", v.args, file=sys.stderr)
+        except ValueError:
             return None
 
     @classmethod
