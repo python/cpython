@@ -42,6 +42,7 @@ typedef struct {
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     vectorcallfunc vectorcall;
+    uint32_t func_version;
 
     /* Invariant:
      *     func_closure contains the bindings for func_code->co_freevars, so
@@ -74,6 +75,8 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *const *stack,
     size_t nargsf,
     PyObject *kwnames);
+
+uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 #endif
 
 /* Macros for direct access to these values. Type checks are *not*
