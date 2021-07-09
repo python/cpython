@@ -972,19 +972,19 @@ class PyFramePtr:
         return convert(self._gdbval[name])
 
     def _f_globals(self):
-        return self._f_special("globals")
+        return self._f_special("f_globals")
 
     def _f_builtins(self):
-        return self._f_special("builtins")
+        return self._f_special("f_builtins")
 
     def _f_code(self):
-        return self._f_special("code", PyCodeObjectPtr.from_pyobject_ptr)
+        return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)
 
     def _f_nlocalsplus(self):
         return self._f_special("nlocalsplus", int_from_int)
 
     def _f_lasti(self):
-        return self._f_special("lasti", int_from_int)
+        return self._f_special("f_lasti", int_from_int)
 
 
     def iter_globals(self):

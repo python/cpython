@@ -302,13 +302,13 @@ static void
 tracemalloc_get_frame(_PyFrame *pyframe, frame_t *frame)
 {
     frame->filename = unknown_filename;
-    int lineno = PyCode_Addr2Line(pyframe->code, pyframe->lasti*2);
+    int lineno = PyCode_Addr2Line(pyframe->f_code, pyframe->f_lasti*2);
     if (lineno < 0) {
         lineno = 0;
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = pyframe->code->co_filename;
+    PyObject *filename = pyframe->f_code->co_filename;
 
     if (filename == NULL) {
 #ifdef TRACE_DEBUG

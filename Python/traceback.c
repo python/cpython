@@ -236,7 +236,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->lasti*2,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->f_lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -537,7 +537,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
                                &truncation, &source_line)) {
         int code_offset = tb->tb_lasti;
-        PyCodeObject* code = frame->f_frame->code;
+        PyCodeObject* code = frame->f_frame->f_code;
 
         int start_line;
         int end_line;
@@ -813,7 +813,7 @@ _Py_DumpASCII(int fd, PyObject *text)
 static void
 dump_frame(int fd, _PyFrame *frame)
 {
-    PyCodeObject *code = frame->code;
+    PyCodeObject *code = frame->f_code;
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -825,7 +825,7 @@ dump_frame(int fd, _PyFrame *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = PyCode_Addr2Line(code, frame->lasti*2);
+    int lineno = PyCode_Addr2Line(code, frame->f_lasti*2);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);

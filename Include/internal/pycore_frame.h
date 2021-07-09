@@ -20,15 +20,15 @@ enum _framestate {
 typedef signed char PyFrameState;
 
 typedef struct _py_frame {
-    PyObject *globals;
-    PyObject *builtins;
-    PyObject *locals;
-    PyCodeObject *code;
+    PyObject *f_globals;
+    PyObject *f_builtins;
+    PyObject *f_locals;
+    PyCodeObject *f_code;
     PyFrameObject *frame_obj;
     /* Borrowed reference to a generator, or NULL */
     PyObject *generator;
     struct _py_frame *previous;
-    int lasti;       /* Last instruction if called */
+    int f_lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
     int nlocalsplus;
     PyFrameState f_state;       /* What state the frame is in */
@@ -54,15 +54,15 @@ void _PyFrame_TakeLocals(PyFrameObject *f, _PyFrame *locals);
 static inline void
 _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *locals, int nlocalsplus)
 {
-    frame->code = (PyCodeObject *)Py_NewRef(con->fc_code);
-    frame->builtins = Py_NewRef(con->fc_builtins);
-    frame->globals = Py_NewRef(con->fc_globals);
-    frame->locals = Py_XNewRef(locals);
+    frame->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
+    frame->f_builtins = Py_NewRef(con->fc_builtins);
+    frame->f_globals = Py_NewRef(con->fc_globals);
+    frame->f_locals = Py_XNewRef(locals);
     frame->nlocalsplus = nlocalsplus;
     frame->stackdepth = 0;
     frame->frame_obj = NULL;
     frame->generator = NULL;
-    frame->lasti = -1;
+    frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
 }
 
@@ -71,10 +71,10 @@ _PyFrame_ClearSpecials(_PyFrame *frame)
 {
     frame->generator = NULL;
     Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->locals);
-    Py_DECREF(frame->globals);
-    Py_DECREF(frame->builtins);
-    Py_DECREF(frame->code);
+    Py_XDECREF(frame->f_locals);
+    Py_DECREF(frame->f_globals);
+    Py_DECREF(frame->f_builtins);
+    Py_DECREF(frame->f_code);
 }
 
 static inline PyObject**
