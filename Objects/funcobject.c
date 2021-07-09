@@ -171,6 +171,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
+    ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
@@ -202,6 +203,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
+    ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
@@ -234,6 +236,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
+    ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
@@ -265,6 +268,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
+    ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
