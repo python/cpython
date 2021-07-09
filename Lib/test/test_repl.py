@@ -107,6 +107,72 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(process.returncode, 0)
         self.assertIn('before close', output)
 
+    def test_interactive_source_tracking(self):
+        import ast
+
+        p = spawn_repl()
+        p.stdin.write(dedent("""\
+            import sys
+
+            sources = []
+            def source_tracker(frame, event, arg):
+                global sources
+                if source := frame.f_globals.get("__source__"):
+                    sources.append(source)
+
+            sys.settrace(source_tracker)
+
+            # basic statement
+            a = 1
+
+            # multiline statement
+            if a:
+                pass
+            else:
+                ...
+
+            # multiline expression
+            maybe = [
+                1,
+                2,
+                [
+                    3,
+                    4
+                ]
+            ][2][
+                0
+            ]
+
+            # basic expression
+            sys.settrace(None)
+
+            print("\\n" + repr(sources) + "\\n")
+        """))
+        output = kill_python(p)
+        result_line = output.splitlines()[-3]
+        tracing_records = ast.literal_eval(result_line)
+        self.assertIn("a = 1\n", tracing_records)
+        self.assertIn("sys.settrace(None)\n", tracing_records)
+        self.assertIn("if a:\n    pass\nelse:\n    ...\n\n", tracing_records)
+        self.assertIn("maybe = [\n    1,\n    2,\n    [\n        3,\n"
+                      "        4\n    ]\n][2][\n    0\n]\n", tracing_records)
+
+    def test_interactive_traceback_reporting(self):
+        user_input = "1 / 0 / 3 / 4"
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+
+        traceback_lines = output.splitlines()[-6:-1]
+        expected_lines = [
+            "Traceback (most recent call last):",
+            "  File \"<stdin>\", line 1, in <module>",
+            "    1 / 0 / 3 / 4",
+            "    ~~^~~",
+            "ZeroDivisionError: division by zero",
+        ]
+        self.assertEqual(traceback_lines, expected_lines)
 
 if __name__ == "__main__":
     unittest.main()

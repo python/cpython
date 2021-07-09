@@ -253,8 +253,9 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = _PyParser_ASTFromFile(fp, filename, enc, Py_single_input,
-                                ps1, ps2, flags, &errcode, arena);
+    PyObject *interactive_src = NULL;
+    mod = _PyParser_InteractiveASTFromFile(fp, filename, enc, Py_single_input,
+                                           ps1, ps2, flags, &errcode, &interactive_src, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
@@ -273,6 +274,12 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
     d = PyModule_GetDict(m);
+    if (interactive_src) {
+        if (PyDict_SetItemString(d, "__source__", interactive_src) < 0) {
+            _PyArena_Free(arena);
+            return -1;
+        }
+    }
     v = run_mod(mod, filename, d, d, flags, arena);
     _PyArena_Free(arena);
     if (v == NULL) {
