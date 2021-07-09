@@ -77,17 +77,23 @@ _PyFrame_ClearSpecials(_PyFrame *frame)
     Py_DECREF(frame->f_code);
 }
 
+/* Gets the pointer to the locals array
+ * that precedes this frame.
+ */
 static inline PyObject**
 _PyFrame_GetLocalsArray(_PyFrame *frame)
 {
     return ((PyObject **)frame) - frame->nlocalsplus;
 }
 
-/* Returns a borrowed reference */
+/* For use by _PyFrame_GetFrameObject
+  Do not call directly. */
 PyFrameObject *
 _PyFrame_MakeAndSetFrameObject(_PyFrame *frame);
 
-/* Returns a borrowed reference */
+/* Gets the PyFrameObject for this frame, lazily
+ * creating it if necessary.
+ * Returns a borrowed referennce */
 static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyFrame *frame)
 {
@@ -98,6 +104,15 @@ _PyFrame_GetFrameObject(_PyFrame *frame)
     return _PyFrame_MakeAndSetFrameObject(frame);
 }
 
+/* Clears all references in the frame.
+ * If take is non-zero, then the frame
+ * may be transfered to the frame object
+ * instead of being cleared. Either way
+ * the caller no longer owns the references
+ * in the frame.
+ * take should  be set to 1 for heap allocated
+ * frames.
+ */
 int
 _PyFrame_Clear(_PyFrame * frame, int take);
 
