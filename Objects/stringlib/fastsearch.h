@@ -362,7 +362,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
     const Py_ssize_t len_needle = p->len_needle;
     const Py_ssize_t cut = p->cut;
-    const Py_ssize_t period = p->period;
+    Py_ssize_t period = p->period;
     const STRINGLIB_CHAR *const needle = p->needle;
     const STRINGLIB_CHAR *window_last = haystack + len_needle - 1;
     const STRINGLIB_CHAR *const haystack_end = haystack + len_haystack;
@@ -387,9 +387,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 memory = 0;
                 shift = table[(*window_last) & TABLE_MASK];
             }
-            // In most cases, this "Horspool" loop is the hot loop.
             while (shift > 0 && window_last < haystack_end) {
-                LOG("Fast Horspool skip.\n");
+                LOG("Horspool skip.\n");
                 window_last += shift;
                 shift = table[(*window_last) & TABLE_MASK];
                 LOG_LINEUP();
@@ -401,8 +400,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             Py_ssize_t i = Py_MAX(cut, memory);
             for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Right half does not match. Jump ahead by %zd.\n",
-                        i - cut + 1);
+                    LOG("Right half does not match.\n");
                     window_last += i - cut + 1;
                     memory = 0;
                     goto periodicwindowloop;
@@ -410,20 +408,19 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             }
             for (i = memory; i < cut; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Left half does not match. Jump ahead by period %zd.\n",
-                        period);
+                    LOG("Left half does not match.\n");
                     window_last += period;
                     memory = len_needle - period;
                     goto periodicwindowloop;
                 }
             }
-            LOG("Left half matches. Returning %zd.\n",
-                window - haystack);
+            LOG("Found a match!\n");
             return window - haystack;
         }
     }
     else {
         Py_ssize_t gap = p->gap;
+        period = Py_MAX(gap, period);
         LOG("Needle is not periodic.\n");
         assert(cut < len_needle);
         STRINGLIB_CHAR needle_cut = needle[cut];
@@ -431,9 +428,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         while (window_last < haystack_end) {
             LOG_LINEUP();
             Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
-            // In most cases, this "Horspool" loop is the hot loop.
             while (shift > 0 && window_last < haystack_end) {
-                LOG("Fast Horspool skip.\n");
+                LOG("Horspool skip.\n");
                 window_last += shift;
                 shift = table[(*window_last) & TABLE_MASK];
                 LOG_LINEUP();
@@ -445,23 +441,19 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             for (Py_ssize_t i = cut; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
                     Py_ssize_t two_way_shift = i - cut + 1;
-                    LOG("Right half does not match. two-way: %zd, gap: %zd "
-                        "--> Advance by %zd\n",
-                        two_way_shift, gap, Py_MAX(two_way_shift, gap));
+                    LOG("Right half does not match.\n");
                     window_last += Py_MAX(two_way_shift, gap);
                     goto windowloop;
                 }
             }
             for (Py_ssize_t i = 0; i < cut; i++) {
                 if (needle[i] != window[i]) {
-                    LOG("Left half does not match. period: %zd, gap: %zd)"
-                        "--> Advance by %zd\n",
-                        period, gap, Py_MAX(period, gap));
-                    window_last += Py_MAX(period, gap);
+                    LOG("Left half does not match.\n");
+                    window_last += period;
                     goto windowloop;
                 }
             }
-            LOG("Left half matches. Returning %zd.\n", window - haystack);
+            LOG("Found a match!\n");
             return window - haystack;
         }
     }
