@@ -4989,20 +4989,13 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)
 {
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
-    int size = code->co_nlocalsplus + code->co_stacksize +
-        FRAME_SPECIALS_SIZE;
-    PyObject **localsarray = _PyThreadState_PushLocals(tstate, size);
-    if (localsarray == NULL) {
+    _PyFrame * frame = _PyThreadState_PushFrame(tstate, con, locals);
+    if (frame == NULL) {
         return NULL;
     }
-    _PyFrame * frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
-    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    PyObject **localsarray = _PyFrame_GetLocalsArray(frame);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
-        _PyFrame_ClearSpecials(frame);
-        for (int i = 0; i < code->co_nlocalsplus; i++) {
-            Py_XDECREF(localsarray[i]);
-        }
+        _PyFrame_Clear(frame, 0);
         return NULL;
     }
     frame->previous = tstate->frame;
@@ -5091,7 +5084,7 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
     assert(frame->frame_obj == NULL);
     --tstate->recursion_depth;
     tstate->frame = frame->previous;
-    _PyThreadState_PopLocals(tstate, _PyFrame_GetLocalsArray(frame));
+    _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }
 
@@ -5112,9 +5105,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (frame == NULL) {
         return NULL;
     }
-    PyObject *retval;
     assert (tstate->interp->eval_frame != NULL);
-    retval = _PyEval_EvalFrame(tstate, frame, 0);
+    PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(frame->stackdepth == 0);
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
         retval = NULL;

@@ -686,7 +686,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         PyMem_RawFree(tstate);
         return NULL;
     }
-    /* If top points to entry 0, then _PyThreadState_PopLocals will try to pop this chunk */
+    /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
     /* Mark trace_info as uninitialized */
@@ -2016,42 +2016,57 @@ _Py_GetConfig(void)
 
 #define MINIMUM_OVERHEAD 1000
 
-PyObject **
-_PyThreadState_PushLocals(PyThreadState *tstate, int size)
+_Py_NO_INLINE PyObject **
+_PyThreadState_PushChunk(PyThreadState *tstate, int size)
 {
-    assert(((unsigned)size) < INT_MAX/sizeof(PyObject*)/2);
-    PyObject **res = tstate->datastack_top;
-    PyObject **top = res + size;
+    assert(tstate->datastack_top + size >= tstate->datastack_limit);
+
+    int allocate_size = DATA_STACK_CHUNK_SIZE;
+    while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
+        allocate_size *= 2;
+    }
+    _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
+    if (new == NULL) {
+        return NULL;
+    }
+    tstate->datastack_chunk->top = tstate->datastack_top - &tstate->datastack_chunk->data[0];
+    tstate->datastack_chunk = new;
+    tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
+    PyObject **res = &new->data[0];
+    tstate->datastack_top = res + size;
+    return res;
+}
+
+_PyFrame *
+_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+{
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int nlocalsplus = code->co_nlocalsplus;
+    int size = nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
+    PyObject **localsarray = tstate->datastack_top;
+    PyObject **top = localsarray + size;
     if (top >= tstate->datastack_limit) {
-        int allocate_size = DATA_STACK_CHUNK_SIZE;
-        while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
-            allocate_size *= 2;
+        localsarray = _PyThreadState_PushChunk(tstate, size);
+        if (localsarray == NULL) {
+            return NULL;
         }
-        _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
-        if (new == NULL) {
-            goto error;
-        }
-        tstate->datastack_chunk->top = tstate->datastack_top - &tstate->datastack_chunk->data[0];
-        tstate->datastack_chunk = new;
-        tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
-        res = &new->data[0];
-        tstate->datastack_top = res + size;
     }
     else {
         tstate->datastack_top = top;
     }
-    for (int i=0; i < size; i++) {
-        res[i] = NULL;
+    _PyFrame * frame = (_PyFrame *)(localsarray + nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
+    for (int i=0; i < nlocalsplus; i++) {
+        localsarray[i] = NULL;
     }
-    return res;
-error:
-    _PyErr_SetString(tstate, PyExc_MemoryError, "Out of memory");
-    return NULL;
+    return frame;
 }
 
 void
-_PyThreadState_PopLocals(PyThreadState *tstate, PyObject **locals)
+_PyThreadState_PopFrame(PyThreadState *tstate, _PyFrame * frame)
 {
+    PyObject **locals = _PyFrame_GetLocalsArray(frame);
     if (locals == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
