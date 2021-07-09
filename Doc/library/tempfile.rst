@@ -162,7 +162,7 @@ The module defines the following user-callable items:
    by child processes.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
-   for deleting the temporary file when done with it.If a large number of file
+   for deleting the temporary file when done with it. If a large number of file
    descriptors are created, your program may run into a per-process limit and crash.
    You can avoid this issue by closing file descriptors with :func:`os.close`.
 
