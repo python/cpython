@@ -1,0 +1,1 @@
+Added a heap push method for the max heap invariant and added try except block at the end so the user can import that function from the library.
