@@ -4944,8 +4944,7 @@ fail: /* Jump here from prelude on failure */
 
 }
 
-
-_PyFrame *
+static _PyFrame *
 make_coro_frame(PyThreadState *tstate,
            PyFrameConstructor *con, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
