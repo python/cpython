@@ -17,26 +17,29 @@ If you're just wrapping or filling one or two text strings, the convenience
 functions should be good enough; otherwise, you should use an instance of
 :class:`TextWrapper` for efficiency.
 
-.. function:: wrap(text, width=70, initial_indent="", subsequent_indent="", \
-                   expand_tabs=True, replace_whitespace=True, \
-                   fix_sentence_endings=False, \
+.. function:: wrap(text, width=70, *, initial_indent="", \
+                   subsequent_indent="", expand_tabs=True, \
+                   replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
-                   break_on_hyphens=True, tabsize=8, \
-                   *, max_lines=None, **kwargs)
+                   break_on_hyphens=True, tabsize=8, *, max_lines=None, \
+                   **kwargs)
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
    newlines.  *width* defaults to ``70``.
 
-   See :class:`TextWrapper` for documentation on all additional optional
+   See :class:`TextWrapper` for documentation on all optional keyword
    arguments: :attr:`.initial_indent`, :attr:`.subsequent_indent`,
    :attr:`.expand_tabs`, :attr:`.replace_whitespace`,
    :attr:`.fix_sentence_endings`, :attr:`.break_long_words`,
    :attr:`.drop_whitespace`, :attr:`.break_on_hyphens` :attr:`.tabsize`, and
-   :attr:`.max_lines`.
+   :attr:`.max_lines`.  Be careful not to misspell keyword arguments.
+   Misspelled keyword arguments will silently have no effect, and an exception
+   will not be raised.
 
 
-.. function:: fill(text, width=70, initial_indent="", \
+
+.. function:: fill(text, width=70, *, initial_indent="", \
                    subsequent_indent="", expand_tabs=True, \
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
@@ -53,10 +56,9 @@ functions should be good enough; otherwise, you should use an instance of
    above.
 
 
-.. function:: shorten(text, width, initial_indent="", \
-                      subsequent_indent="", fix_sentence_endings=False, \
-                      break_long_words=True, break_on_hyphens=True, \
-                      *,  max_lines=None,  placeholder=' [...]', **kwargs)
+.. function:: shorten(text, width, *, fix_sentence_endings=False, \
+                      break_long_words=True, break_on_hyphens=True, *, \
+                      placeholder=' [...]', **kwargs)
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
@@ -72,7 +74,7 @@ functions should be good enough; otherwise, you should use an instance of
       >>> textwrap.shorten("Hello world", width=10, placeholder="...")
       'Hello...'
 
-   See :class:`TextWrapper` for documentation on all additional optional
+   See :class:`TextWrapper` for documentation on all optional keyword
    arguments: :attr:`.initial_indent`, :attr:`.subsequent_indent`,
    :attr:`.fix_sentence_endings`, :attr:`.break_long_words`,
    :attr:`.break_on_hyphens`, and :attr:`.max_lines`.
@@ -80,7 +82,9 @@ functions should be good enough; otherwise, you should use an instance of
    Note that the whitespace is collapsed before the text is passed to the
    :class:`TextWrapper` :meth:`fill` function, so changing the value of
    :attr:`.tabsize`, :attr:`.expand_tabs`, :attr:`.drop_whitespace`, and
-   :attr:`.replace_whitespace` will have no effect.
+   :attr:`.replace_whitespace` will have no effect.  Be careful not to misspell
+   keyword arguments. Misspelled keyword arguments will silently have no
+   effect, and an exception will not be raised.
 
    .. versionadded:: 3.4
 
