@@ -9,7 +9,7 @@
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_ast.h"           // asdl_seq_*
-#include "pycore_compile.h"           // asdl_seq_*
+#include "pycore_compile.h"       // _PyAST_Optimize
 #include "pycore_parser.h"        // _PyParser_ASTFromString
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
@@ -536,37 +536,26 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\f'))
 
 static int
-extract_anchors_from_expr(PyObject *segment, expr_ty expr, int *left_anchor, int *right_anchor)
+extract_anchors_from_expr(const char *segment_str, expr_ty expr, int *left_anchor, int *right_anchor)
 {
     switch (expr->kind) {
         case BinOp_kind: {
-            PyObject *operator = PyUnicode_Substring(segment, expr->v.BinOp.left->end_col_offset,
-                                                     expr->v.BinOp.right->col_offset);
-            if (!operator) {
-                return -1;
-            }
-
-            const char *operator_str = PyUnicode_AsUTF8(operator);
-            if (!operator_str) {
-                Py_DECREF(operator);
-                return -1;
-            }
-
-            Py_ssize_t i, len = PyUnicode_GET_LENGTH(operator);
-            for (i = 0; i < len; i++) {
-                if (IS_WHITESPACE(operator_str[i])) {
+            expr_ty left = expr->v.BinOp.left;
+            expr_ty right = expr->v.BinOp.right;
+            for (int i = left->end_col_offset + 1; i < right->col_offset; i++) {
+                if (IS_WHITESPACE(segment_str[i])) {
                     continue;
                 }
 
-                int index = Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
-                *left_anchor = expr->v.BinOp.left->end_col_offset + index;
-                *right_anchor = expr->v.BinOp.left->end_col_offset + index + 1;
-                if (i + 1 < len && !IS_WHITESPACE(operator_str[i + 1])) {
+                *left_anchor = i;
+                *right_anchor = i + 1;
+
+                // Check whether if this a two-character operator (e.g //)
+                if (i + 1 < right->col_offset && !IS_WHITESPACE(segment_str[i + 1])) {
                     ++*right_anchor;
                 }
                 break;
             }
-            Py_DECREF(operator);
             return 1;
         }
         case Subscript_kind: {
@@ -580,11 +569,11 @@ extract_anchors_from_expr(PyObject *segment, expr_ty expr, int *left_anchor, int
 }
 
 static int
-extract_anchors_from_stmt(PyObject *segment, stmt_ty statement, int *left_anchor, int *right_anchor)
+extract_anchors_from_stmt(const char *segment_str, stmt_ty statement, int *left_anchor, int *right_anchor)
 {
     switch (statement->kind) {
         case Expr_kind: {
-            return extract_anchors_from_expr(segment, statement->v.Expr.value, left_anchor, right_anchor);
+            return extract_anchors_from_expr(segment_str, statement->v.Expr.value, left_anchor, right_anchor);
         }
         default:
             return 0;
@@ -631,7 +620,7 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
     assert(module->kind == Module_kind);
     if (asdl_seq_LEN(module->v.Module.body) == 1) {
         stmt_ty statement = asdl_seq_GET(module->v.Module.body, 0);
-        res = extract_anchors_from_stmt(segment, statement, left_anchor, right_anchor);
+        res = extract_anchors_from_stmt(segment_str, statement, left_anchor, right_anchor);
     } else {
         res = 0;
     }
@@ -711,8 +700,8 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         const char *primary, *secondary;
         primary = secondary = "^";
 
-        int left_end_offset, right_start_offset;
-        left_end_offset = right_start_offset = Py_SAFE_DOWNCAST(end_offset, Py_ssize_t, int) - Py_SAFE_DOWNCAST(start_offset, Py_ssize_t, int);
+        int left_end_offset = Py_SAFE_DOWNCAST(end_offset, Py_ssize_t, int) - Py_SAFE_DOWNCAST(start_offset, Py_ssize_t, int);
+        int right_start_offset = left_end_offset;
 
         if (source_line) {
             int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
