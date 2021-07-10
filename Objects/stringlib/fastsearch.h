@@ -558,7 +558,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (m < w / 8 && ((m >= 100 && w >= 3000) || (m >= 6 && w >= 30000))) {
+        if (m < w / 4 && ((m >= 100 && w >= 2000) || (m >= 6 && w >= 30000))) {
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
                expensive O(m) startup cost of the two-way algorithm
@@ -586,7 +586,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* process pattern[-1] outside the loop */
         STRINGLIB_BLOOM_ADD(mask, p[mlast]);
 
-        if (m >= 100 && w >= 3000) {
+        if (m >= 100 && w >= 4000) {
             /* To ensure that we have good worst-case behavior,
                here's an adaptive version of the algorithm, where if
                we match O(m) characters without any matches of the
@@ -621,7 +621,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                         i = i + skip;
                     }
                     hits += j + 1;
-                    if (hits >= i / 8) {
+                    if (hits >= m) {
                         /* Too much partial matching, so spend the O(m)
                            startup cost for the two-way algorithm. */
                         Py_ssize_t res;
