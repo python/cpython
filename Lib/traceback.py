@@ -494,9 +494,23 @@ class StackSummary(list):
                     colno = _byte_offset_to_character_offset(frame._original_line, frame.colno)
                     end_colno = _byte_offset_to_character_offset(frame._original_line, frame.end_colno)
 
+                    try:
+                        anchors = _extract_caret_anchors_from_line_segment(
+                            frame._original_line[colno - 1:end_colno]
+                        )
+                    except Exception:
+                        anchors = None
+
                     row.append('    ')
                     row.append(' ' * (colno - stripped_characters))
-                    row.append('^' * (end_colno - colno))
+
+                    if anchors:
+                        row.append('~' * (anchors[0]))
+                        row.append('^' * (anchors[1] - anchors[0]))
+                        row.append('~' * (end_colno - colno - anchors[1]))
+                    else:
+                        row.append('^' * (end_colno - colno))
+
                     row.append('\n')
 
             if frame.locals:
@@ -518,6 +532,39 @@ def _byte_offset_to_character_offset(str, offset):
         offset = len(as_utf8)
 
     return len(as_utf8[:offset + 1].decode("utf-8"))
+
+
+def _extract_caret_anchors_from_line_segment(segment):
+    import ast
+
+    try:
+        tree = ast.parse(segment)
+    except SyntaxError:
+        return None
+
+    if len(tree.body) != 1:
+        return None
+
+    statement = tree.body[0]
+    match statement:
+        case ast.Expr(expr):
+            match expr:
+                case ast.BinOp():
+                    operator_str = segment[expr.left.end_col_offset:expr.right.col_offset]
+                    operator_offset = len(operator_str) - len(operator_str.lstrip())
+
+                    left_anchor = expr.left.end_col_offset + operator_offset
+                    right_anchor = left_anchor + 1
+                    if (
+                        operator_offset + 1 < len(operator_str)
+                        and not operator_str[operator_offset + 1].isspace()
+                    ):
+                        right_anchor += 1
+                    return left_anchor, right_anchor
+                case ast.Subscript():
+                    return expr.value.end_col_offset, expr.slice.end_col_offset + 1
+
+    return None
 
 
 class TracebackException:
