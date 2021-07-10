@@ -340,7 +340,6 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
             }
         }
     }
-
     // Fill up a compressed Boyer-Moore "Bad Character" table
     Py_ssize_t not_found_shift = Py_MIN(len_needle, MAX_SHIFT);
     for (Py_ssize_t i = 0; i < TABLE_SIZE; i++) {
@@ -424,6 +423,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         LOG("Needle is not periodic.\n");
         assert(cut < len_needle);
         STRINGLIB_CHAR needle_cut = needle[cut];
+        Py_ssize_t gap_jump_end = Py_MIN(len_needle, cut + gap);
       windowloop:
         while (window_last < haystack_end) {
             LOG_LINEUP();
@@ -438,11 +438,19 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 break;
             }
             const STRINGLIB_CHAR *window = window_last - len_needle + 1;
-            for (Py_ssize_t i = cut; i < len_needle; i++) {
+            for (Py_ssize_t i = cut; i < gap_jump_end; i++) {
                 if (needle[i] != window[i]) {
-                    Py_ssize_t two_way_shift = i - cut + 1;
-                    LOG("Right half does not match.\n");
-                    window_last += Py_MAX(two_way_shift, gap);
+                    LOG("Early right half mismatch: jump by gap.\n");
+                    assert(gap >= i - cut + 1);
+                    window_last += gap;
+                    goto windowloop;
+                }
+            }
+            for (Py_ssize_t i = gap_jump_end; i < len_needle; i++) {
+                if (needle[i] != window[i]) {
+                    LOG("Late right half mismatch.\n");
+                    assert(i - cut + 1 > gap);
+                    window_last += gap;
                     goto windowloop;
                 }
             }
@@ -550,7 +558,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (m < w / 4 && ((m >= 100 && w >= 1000) || (m >= 6 && w >= 30000))) {
+        if (m < w / 8 && ((m >= 100 && w >= 3000) || (m >= 6 && w >= 30000))) {
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
                expensive O(m) startup cost of the two-way algorithm
@@ -578,7 +586,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* process pattern[-1] outside the loop */
         STRINGLIB_BLOOM_ADD(mask, p[mlast]);
 
-        if (m >= 100 && w >= 1000) {
+        if (m >= 100 && w >= 3000) {
             /* To ensure that we have good worst-case behavior,
                here's an adaptive version of the algorithm, where if
                we match O(m) characters without any matches of the
