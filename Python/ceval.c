@@ -2923,7 +2923,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(MAKE_CELL): {
             // "initial" is probably NULL but not if it's an arg (or set
-            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            // via a frame locals proxy before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
@@ -3506,7 +3506,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(IMPORT_STAR): {
             PyObject *from = POP(), *locals;
             int err;
-            /* TODO for PEP 558
+            /* PEP 558 TODO:
              *   Report an error here for CO_OPTIMIZED frames
              *   The 3.x compiler treats wildcard imports as an error inside
              *   functions, but they can still happen with independently

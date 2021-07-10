@@ -183,8 +183,8 @@ class FrameAttrsTest(unittest.TestCase):
     def test_locals_clear_locals(self):
         # Test f_locals before and after clear() (to exercise caching)
         f, outer, inner = self.make_frames()
-        outer.f_locals
-        inner.f_locals
+        self.assertNotEqual(outer.f_locals, {})
+        self.assertNotEqual(inner.f_locals, {})
         outer.clear()
         inner.clear()
         self.assertEqual(outer.f_locals, {})
