@@ -29,6 +29,15 @@ get_frame_state(void)
     return &interp->frame;
 }
 
+static PyObject *
+_frame_get_locals_mapping(PyFrameObject *f)
+{
+    PyObject *locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
+    if (locals == NULL) {
+        locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = PyDict_New();
+    }
+    return locals;
+}
 
 static PyObject *
 _frame_get_updated_locals(PyFrameObject *f)
@@ -37,7 +46,7 @@ _frame_get_updated_locals(PyFrameObject *f)
         return NULL;
     PyObject *locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
     assert(locals != NULL);
-    Py_INCREF(locals);
+    // Internal borrowed reference, caller increfs for external sharing
     return locals;
 }
 
@@ -1001,12 +1010,9 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
+    locals = _frame_get_locals_mapping(f);
     if (locals == NULL) {
-        locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = PyDict_New();
-        if (locals == NULL) {
-            return -1;
-        }
+        return -1;
     }
     co = _PyFrame_GetCode(f);
     fast = f->f_localsptr;
@@ -1308,10 +1314,15 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return NULL;
     }
-    PyObject *fast_ref = PyObject_GetItem(flp->fast_refs, key);
+    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
     if (fast_ref == NULL) {
-        // No such local variable, let KeyError escape
-        return NULL;
+        // No such local variable, delegate the request to the f_locals mapping
+        // Used by pdb (at least) to access __return__ and __exception__ values
+        PyObject *locals = _frame_get_locals_mapping(flp->frame);
+        if (locals == NULL) {
+            return NULL;
+        }
+        return PyObject_GetItem(locals, key);
     }
     /* Key is a valid Python variable for the frame, so retrieve the value */
     PyObject *value = NULL;
@@ -1381,10 +1392,15 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return -1;
     }
-    PyObject *fast_ref = PyObject_GetItem(flp->fast_refs, key);
+    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
     if (fast_ref == NULL) {
-        // No such local variable, let KeyError escape
-        return -1;
+        // No such local variable, delegate the request to the f_locals mapping
+        // Used by pdb (at least) to store __return__ and __exception__ values
+        PyObject *locals = _frame_get_locals_mapping(flp->frame);
+        if (locals == NULL) {
+            return -1;
+        }
+        return PyObject_SetItem(locals, key, value);
     }
     /* Key is a valid Python variable for the frame, so update that reference */
     if (PyCell_Check(fast_ref)) {
@@ -1480,6 +1496,10 @@ static PyNumberMethods fastlocalsproxy_as_number = {
 static int
 fastlocalsproxy_contains(fastlocalsproxyobject *flp, PyObject *key)
 {
+    assert(flp);
+    if (fastlocalsproxy_init_fast_refs(flp) != 0) {
+        return -1;
+    }
     return PyDict_Contains(flp->fast_refs, key);
 }
 
@@ -1530,21 +1550,21 @@ fastlocalsproxy_keys(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 static PyObject *
 fastlocalsproxy_values(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *locals = _PyFrame_BorrowLocals(flp->frame);
+    PyObject *locals = _frame_get_updated_locals(flp->frame);
     return PyDict_Values(locals);
 }
 
 static PyObject *
 fastlocalsproxy_items(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *locals = _PyFrame_BorrowLocals(flp->frame);
+    PyObject *locals = _frame_get_updated_locals(flp->frame);
     return PyDict_Items(locals);
 }
 
 static PyObject *
 fastlocalsproxy_copy(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *locals = _PyFrame_BorrowLocals(flp->frame);
+    PyObject *locals = _frame_get_updated_locals(flp->frame);
     return PyDict_Copy(locals);
 }
 
@@ -1572,7 +1592,7 @@ fastlocalsproxy_getiter(fastlocalsproxyobject *flp)
 static PyObject *
 fastlocalsproxy_richcompare(fastlocalsproxyobject *flp, PyObject *w, int op)
 {
-    PyObject *locals = _PyFrame_BorrowLocals(flp->frame);
+    PyObject *locals = _frame_get_updated_locals(flp->frame);
     return PyObject_RichCompare(locals, w, op);
 }
 
@@ -1747,7 +1767,7 @@ fastlocalsproxy_repr(fastlocalsproxyobject *flp)
 static PyObject *
 fastlocalsproxy_str(fastlocalsproxyobject *flp)
 {
-    PyObject *locals = _PyFrame_BorrowLocals(flp->frame);
+    PyObject *locals = _frame_get_updated_locals(flp->frame);
     return PyObject_Str(locals);
 }
 
