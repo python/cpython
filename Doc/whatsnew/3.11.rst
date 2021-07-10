@@ -107,7 +107,7 @@ when dealing with deeply nested dictionary objects and multiple function calls:
                     ^^^^^^^^^^^^^^^^^
       File "query.py", line 32, in query_user
         return 1 + query_count(db, response['a']['b']['c']['user'], retry=True)
-                                   ^^^^^^^^^^^^^^^^^^^^^^^
+                                   ~~~~~~~~~~~~~~~~~~^^^^^
     TypeError: 'NoneType' object is not subscriptable
 
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
