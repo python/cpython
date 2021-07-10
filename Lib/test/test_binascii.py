@@ -116,38 +116,41 @@ class BinASCIITest(unittest.TestCase):
 
     def test_base64_strict_mode(self):
         # Test base64 with strict mode on
-        def assertExcessData(data):
-            with self.assertRaisesRegex(binascii.Error, r'(?i)Excess data'):
-                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+        def _assertRegexTemplate(assert_regex: str, data: bytes, non_strict_mode_expected_result: bytes):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                    binascii.a2b_base64(self.type2test(data), strict_mode=True)
+            assert binascii.a2b_base64(self.type2test(data), strict_mode=False) == non_strict_mode_expected_result
+            assert binascii.a2b_base64(self.type2test(data)) == non_strict_mode_expected_result
 
-        def assertNonBase64Data(data):
-            with self.assertRaisesRegex(binascii.Error, r'(?i)Only base64 data'):
-                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+        def assertExcessData(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Excess data', data, non_strict_mode_expected_result)
 
-        def assertMalformedPadding(data):
-            with self.assertRaisesRegex(binascii.Error, r'(?i)Malformed padding'):
-                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+        def assertNonBase64Data(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Only base64 data', data, non_strict_mode_expected_result)
+
+        def assertMalformedPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Malformed padding', data, non_strict_mode_expected_result)
 
         # Test excess data exceptions
-        assertExcessData(b'ab==a')
-        assertExcessData(b'ab===')
-        assertExcessData(b'ab==:')
-        assertExcessData(b'abc=a')
-        assertExcessData(b'abc=:')
-        assertExcessData(b'ab==\n')
+        assertExcessData(b'ab==a', b'i')
+        assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab==:', b'i')
+        assertExcessData(b'abc=a', b'i\xb7')
+        assertExcessData(b'abc=:', b'i\xb7')
+        assertExcessData(b'ab==\n', b'i')
 
         # Test non-base64 data exceptions
-        assertNonBase64Data(b'\nab==')
-        assertNonBase64Data(b'ab:(){:|:&};:==')
-        assertNonBase64Data(b'a\nb==')
-        assertNonBase64Data(b'a\x00b==')
+        assertNonBase64Data(b'\nab==', b'i')
+        assertNonBase64Data(b'ab:(){:|:&};:==', b'i')
+        assertNonBase64Data(b'a\nb==', b'i')
+        assertNonBase64Data(b'a\x00b==', b'i')
 
         # Test malformed padding
-        assertMalformedPadding(b'=')
-        assertMalformedPadding(b'==')
-        assertMalformedPadding(b'===')
-        assertMalformedPadding(b'ab=c=')
-        assertMalformedPadding(b'ab=ab==')
+        assertMalformedPadding(b'=', b'')
+        assertMalformedPadding(b'==', b'')
+        assertMalformedPadding(b'===', b'')
+        assertMalformedPadding(b'ab=c=', b'i\xb7')
+        assertMalformedPadding(b'ab=ab==', b'i\xb6\x9b')
 
 
     def test_base64errors(self):
