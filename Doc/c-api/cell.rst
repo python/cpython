@@ -39,13 +39,14 @@ Cell objects are not likely to be useful elsewhere.
 
 .. c:function:: PyObject* PyCell_Get(PyObject *cell)
 
-   Return the contents of the cell *cell*.
+   Return a new reference to the contents of the cell *cell*.
 
 
 .. c:function:: PyObject* PyCell_GET(PyObject *cell)
 
-   Return the contents of the cell *cell*, but without checking that *cell* is
-   non-``NULL`` and a cell object.
+   Borrow a reference to the contents of the cell *cell*. No reference counts are
+   adjusted, and no checks are made for safety; *cell* must be non-``NULL`` and must
+   be a cell object.
 
 
 .. c:function:: int PyCell_Set(PyObject *cell, PyObject *value)
@@ -58,6 +59,6 @@ Cell objects are not likely to be useful elsewhere.
 
 .. c:function:: void PyCell_SET(PyObject *cell, PyObject *value)
 
-   Sets the value of the cell object *cell* to *value*.  No reference counts are
+   Sets the value of the cell object *cell* to *value*. No reference counts are
    adjusted, and no checks are made for safety; *cell* must be non-``NULL`` and must
    be a cell object.

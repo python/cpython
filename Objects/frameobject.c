@@ -1308,54 +1308,56 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return NULL;
     }
-    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
+    PyObject *fast_ref = PyObject_GetItem(flp->fast_refs, key);
     if (fast_ref == NULL) {
         // No such local variable, let KeyError escape
         return NULL;
     }
     /* Key is a valid Python variable for the frame, so retrieve the value */
+    PyObject *value = NULL;
     if (PyCell_Check(fast_ref)) {
         // Closure cells can be queried even after the frame terminates
-        return PyCell_Get(fast_ref);
-    }
-    PyFrameObject *f = flp->frame;
-    if (f->f_state == FRAME_CLEARED) {
-        PyErr_Format(PyExc_RuntimeError,
-            "Fast locals proxy attempted to read from cleared frame (%R)", f);
-        return NULL;
-    }
-    /* Fast ref is a Python int mapping into the fast locals array */
-    assert(PyLong_CheckExact(fast_ref));
-    Py_ssize_t offset = PyLong_AsSsize_t(fast_ref);
-    if (offset < 0) {
-        return NULL;
-    }
-    PyCodeObject *co = _PyFrame_GetCode(f);
-    assert(co);
-    Py_ssize_t max_offset = co->co_nlocalsplus - 1;
-    if (offset > max_offset) {
-        PyErr_Format(PyExc_SystemError,
-                        "Fast locals ref (%zd) exceeds array bound (%zd)",
-                        offset, max_offset);
-        return NULL;
-    }
-    PyObject **fast_locals = f->f_localsptr;
-    PyObject *value = fast_locals[offset];
-    // Check if MAKE_CELL has been called since the proxy was created
-    _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, offset);
-    if (kind & CO_FAST_CELL) {
-        // Value hadn't been converted to a cell yet when the proxy was created
-        // Update the proxy if MAKE_CELL has run since the last access,
-        // otherwise continue treating it as a regular local variable
-        PyObject *target = value;
-        if (target != NULL && PyCell_Check(target) &&
-                _PyFrame_OpAlreadyRan(f, MAKE_CELL, offset)) {
-            // MAKE_CELL has built the cell, so use it as the proxy target
-            Py_INCREF(target);
-            if (set_fast_ref(flp->fast_refs, key, target) != 0) {
-                return NULL;
+        value = PyCell_GET(fast_ref);
+    } else {
+        PyFrameObject *f = flp->frame;
+        if (f->f_state == FRAME_CLEARED) {
+            PyErr_Format(PyExc_RuntimeError,
+                "Fast locals proxy attempted to read from cleared frame (%R)", f);
+            return NULL;
+        }
+        /* Fast ref is a Python int mapping into the fast locals array */
+        assert(PyLong_CheckExact(fast_ref));
+        Py_ssize_t offset = PyLong_AsSsize_t(fast_ref);
+        if (offset < 0) {
+            return NULL;
+        }
+        PyCodeObject *co = _PyFrame_GetCode(f);
+        assert(co);
+        Py_ssize_t max_offset = co->co_nlocalsplus - 1;
+        if (offset > max_offset) {
+            PyErr_Format(PyExc_SystemError,
+                            "Fast locals ref (%zd) exceeds array bound (%zd)",
+                            offset, max_offset);
+            return NULL;
+        }
+        PyObject **fast_locals = f->f_localsptr;
+        value = fast_locals[offset];
+        // Check if MAKE_CELL has been called since the proxy was created
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        if (kind & CO_FAST_CELL) {
+            // Value hadn't been converted to a cell yet when the proxy was created
+            // Update the proxy if MAKE_CELL has run since the last access,
+            // otherwise continue treating it as a regular local variable
+            PyObject *target = value;
+            if (target != NULL && PyCell_Check(target) &&
+                    _PyFrame_OpAlreadyRan(f, MAKE_CELL, offset)) {
+                // MAKE_CELL has built the cell, so use it as the proxy target
+                Py_INCREF(target);
+                if (set_fast_ref(flp->fast_refs, key, target) != 0) {
+                    return NULL;
+                }
+                value = PyCell_GET(target);
             }
-            return PyCell_Get(target);
         }
     }
 
@@ -1379,7 +1381,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return -1;
     }
-    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
+    PyObject *fast_ref = PyObject_GetItem(flp->fast_refs, key);
     if (fast_ref == NULL) {
         // No such local variable, let KeyError escape
         return -1;
@@ -1595,6 +1597,7 @@ fastlocalsproxy_setdefault(PyObject *flp, PyObject *args, PyObject *kwargs)
 
     PyObject *value = NULL;
 
+    // PEP 558 TODO: implement this
     PyErr_Format(PyExc_NotImplementedError,
                  "FastLocalsProxy does not yet implement setdefault()");
     return value;
@@ -1659,6 +1662,7 @@ PyDoc_STRVAR(fastlocalsproxy_popitem__doc__,
 static PyObject *
 fastlocalsproxy_popitem(PyObject *flp, PyObject *Py_UNUSED(ignored))
 {
+    // PEP 558 TODO: implement this
     PyErr_Format(PyExc_NotImplementedError,
                  "FastLocalsProxy does not yet implement popitem()");
     return NULL;
@@ -1682,6 +1686,7 @@ PyDoc_STRVAR(fastlocalsproxy_clear__doc__,
 static PyObject *
 fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
 {
+    // PEP 558 TODO: implement this
     PyErr_Format(PyExc_NotImplementedError,
                  "FastLocalsProxy does not yet implement clear()");
     return NULL;
@@ -1703,6 +1708,7 @@ static PyMethodDef fastlocalsproxy_methods[] = {
      PyDoc_STR("See PEP 585")},
     {"__reversed__", (PyCFunction)fastlocalsproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator over D's keys")},
+     // PEP 558 TODO: Convert these methods to METH_FASTCALL
     {"setdefault",      (PyCFunction)(void(*)(void))fastlocalsproxy_setdefault,
      METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_setdefault__doc__},
     {"pop",             (PyCFunction)(void(*)(void))fastlocalsproxy_pop,
@@ -1736,6 +1742,13 @@ static PyObject *
 fastlocalsproxy_repr(fastlocalsproxyobject *flp)
 {
     return PyUnicode_FromFormat("fastlocalsproxy(%R)", flp->frame);
+}
+
+static PyObject *
+fastlocalsproxy_str(fastlocalsproxyobject *flp)
+{
+    PyObject *locals = _PyFrame_BorrowLocals(flp->frame);
+    return PyObject_Str(locals);
 }
 
 static int
@@ -1821,7 +1834,7 @@ PyTypeObject _PyFastLocalsProxy_Type = {
     &fastlocalsproxy_as_mapping,                /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
-    0,                                          /* tp_str */
+    (reprfunc)fastlocalsproxy_str,              /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
