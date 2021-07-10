@@ -1797,6 +1797,7 @@ _PyFastLocalsProxy_New(PyObject *frame)
         return NULL;
     flp->frame = (PyFrameObject *) frame;
     Py_INCREF(flp->frame);
+    flp->fast_refs = NULL;
     _PyObject_GC_TRACK(flp);
     return (PyObject *)flp;
 }
