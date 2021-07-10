@@ -1,1 +1,3 @@
-Added handling for excess data in binascii.a2b_base64
+Added a new optional `strict_mode` parameter to binascii.a2b_base64.
+When `scrict_mode` is set to `True`, the a2b_base64 function will accept only valid base64 content.
+More details about what "valid base64 content" is - can be found in the function's documentation.
