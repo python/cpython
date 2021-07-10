@@ -462,6 +462,10 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         return NULL;
     unsigned char *bin_data_start = bin_data;
 
+    if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
+        goto malformed_padding;
+    }
+
     int quad_pos = 0;
     unsigned char leftchar = 0;
     int pads = 0;
@@ -506,6 +510,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 
         // Characters that are not '=', in the middle of the padding, are not allowed
         if (strict_mode && padding_started) {
+            malformed_padding:
             binascii_state *state = PyModule_GetState(module);
             if (state) {
                 PyErr_SetString(state->Error, "Malformed padding in strict mode");
