@@ -163,7 +163,7 @@ The module defines the following user-callable items:
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it. If a large number of file
-   descriptors are created, your program may run into a per-process limit and crash.
+   descriptors are created, your program may run into a per-process limit and raise an :exc:`OSError`.
    You can avoid this issue by closing file descriptors with :func:`os.close`.
 
    If *suffix* is not ``None``, the file name will end with that suffix,
