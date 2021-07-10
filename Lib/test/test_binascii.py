@@ -137,6 +137,7 @@ class BinASCIITest(unittest.TestCase):
         assertExcessData(b'ab==\n')
 
         # Test non-base64 data exceptions
+        assertNonBase64Data(b'\nab==')
         assertNonBase64Data(b'ab:(){:|:&};:==')
         assertNonBase64Data(b'a\nb==')
         assertNonBase64Data(b'a\x00b==')
