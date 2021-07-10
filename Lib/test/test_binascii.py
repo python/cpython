@@ -143,6 +143,9 @@ class BinASCIITest(unittest.TestCase):
         assertNonBase64Data(b'a\x00b==')
 
         # Test malformed padding
+        assertMalformedPadding(b'=')
+        assertMalformedPadding(b'==')
+        assertMalformedPadding(b'===')
         assertMalformedPadding(b'ab=c=')
         assertMalformedPadding(b'ab=ab==')
 
