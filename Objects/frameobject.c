@@ -1518,6 +1518,7 @@ fastlocalsproxy_contains(fastlocalsproxyobject *flp, PyObject *key)
     }
     int result = PyDict_Contains(flp->fast_refs, key);
     if (result) {
+        // PEP 558 TODO: This should return false if the name hasn't been bound yet
         return result;
     }
     // Extra keys may have been stored directly in the frame locals
