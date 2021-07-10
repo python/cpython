@@ -294,7 +294,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 }
 
 #define SHIFT_TYPE uint8_t
-#define MAX_SHIFT 255
+#define MAX_SHIFT UINT8_MAX
 
 #define TABLE_SIZE_BITS 6
 #define TABLE_SIZE (1U << TABLE_SIZE_BITS)
@@ -450,7 +450,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 if (needle[i] != window[i]) {
                     LOG("Late right half mismatch.\n");
                     assert(i - cut + 1 > gap);
-                    window_last += gap;
+                    window_last += i - cut + 1;
                     goto windowloop;
                 }
             }
@@ -586,7 +586,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         /* process pattern[-1] outside the loop */
         STRINGLIB_BLOOM_ADD(mask, p[mlast]);
 
-        if (m >= 100 && w >= 4000) {
+        if (m >= 100 && w >= 8000) {
             /* To ensure that we have good worst-case behavior,
                here's an adaptive version of the algorithm, where if
                we match O(m) characters without any matches of the
