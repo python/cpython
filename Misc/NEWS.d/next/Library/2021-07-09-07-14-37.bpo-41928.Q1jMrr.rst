@@ -1,0 +1,4 @@
+Update :func:`shutil.copyfile` to raise :exc:`FileNotFoundError` instead of
+confusing :exc:`IsADirectoryError` when a path ending with a
+:const:`os.path.sep` does not exist; :func:`shutil.copy` and
+:func:`shutil.copy2` are also affected.
