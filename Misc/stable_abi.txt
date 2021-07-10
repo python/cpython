@@ -2133,5 +2133,17 @@ function PyGC_IsEnabled
     added 3.10
 
 
-# (Detailed comments aren't really needed for further entries: from here on
-#  we can use version control logs.)
+# While detailed comments aren't technically needed for further entries
+# (we can use version control logs for this file), they're still helpful
+# when the full changelog isn't readily available
+
+# PEP 558: New locals() access functions
+
+function PyLocals_Get
+    added 3.11
+function PyLocals_GetCopy
+    added 3.11
+function PyLocals_GetReturnsCopy
+    added 3.11
+function PyLocals_GetView
+    added 3.11

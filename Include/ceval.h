@@ -54,10 +54,6 @@ PyAPI_FUNC(PyObject *) PyLocals_GetCopy(void);
 // TODO: Implement this, and add API tests
 PyAPI_FUNC(PyObject *) PyLocals_GetView(void);
 
-/* PyLocals_RefreshViews() updates previously created locals views */
-// TODO: Implement this, and add API tests
-PyAPI_FUNC(int) PyLocals_RefreshViews(void);
-
 /* Returns true if PyLocals_Get() returns a shallow copy in the active scope */
 // TODO: Implement this, and add API tests
 PyAPI_FUNC(int) PyLocals_GetReturnsCopy(void);
