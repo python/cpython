@@ -550,7 +550,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (m > w / 2 && ((m >= 100 && w >= 1000) || (m >= 6 && w >= 30000))) {
+        if (m < w / 4 && ((m >= 100 && w >= 1000) || (m >= 6 && w >= 30000))) {
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
                expensive O(m) startup cost of the two-way algorithm
