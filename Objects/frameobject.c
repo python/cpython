@@ -1310,6 +1310,29 @@ fastlocalsproxy_len(fastlocalsproxyobject *flp)
     return PyObject_Size(locals);
 }
 
+static int
+fastlocalsproxy_set_snapshot_entry(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
+{
+        PyFrameObject *f = flp->frame;
+        if (f->f_state == FRAME_CLEARED) {
+            // Don't touch the locals cache on already cleared frames
+            return 0;
+        }
+        PyObject *locals = _frame_get_locals_mapping(f);
+        if (locals == NULL) {
+            return -1;
+        }
+        if (value == NULL) {
+            // Ensure key is absent from cache (deleting if necessary)
+            if (PyDict_Contains(locals, key)) {
+                return PyObject_DelItem(locals, key);
+            }
+            return 0;
+        }
+        // Set cached value for the given key
+        return PyObject_SetItem(locals, key, value);
+}
+
 static PyObject *
 fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
 {
@@ -1376,7 +1399,14 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
         }
     }
 
-    // Local variable, or future cell variable that hasn't been converted yet
+    // Local variable, or cell variable that either hasn't been converted yet
+    // or was only just converted since the last cache sync
+    // Ensure the value cache is up to date if the frame is still live
+    if (!PyErr_Occurred()) {
+        if (fastlocalsproxy_set_snapshot_entry(flp, key, value) != 0) {
+            return NULL;
+        }
+    }
     if (value == NULL && !PyErr_Occurred()) {
         // Report KeyError if the variable hasn't been bound to a value yet
         // (akin to getting an UnboundLocalError in running code)
@@ -1400,16 +1430,17 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     if (fast_ref == NULL) {
         // No such local variable, delegate the request to the f_locals mapping
         // Used by pdb (at least) to store __return__ and __exception__ values
-        PyObject *locals = _frame_get_locals_mapping(flp->frame);
-        if (locals == NULL) {
-            return -1;
-        }
-        return PyObject_SetItem(locals, key, value);
+        return fastlocalsproxy_set_snapshot_entry(flp, key, value);
     }
     /* Key is a valid Python variable for the frame, so update that reference */
     if (PyCell_Check(fast_ref)) {
         // Closure cells can be updated even after the frame terminates
-        return PyCell_Set(fast_ref, value);
+        int result = PyCell_Set(fast_ref, value);
+        if (result == 0) {
+            // Ensure the value cache is up to date if the frame is still live
+            result = fastlocalsproxy_set_snapshot_entry(flp, key, value);
+        }
+        return result;
     }
     PyFrameObject *f = flp->frame;
     if (f->f_state == FRAME_CLEARED) {
@@ -1447,14 +1478,20 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
             if (set_fast_ref(flp->fast_refs, key, target) != 0) {
                 return -1;
             }
-            return PyCell_Set(target, value);
+            int result = PyCell_Set(target, value);
+            if (result == 0) {
+                // Ensure the value cache is up to date if the frame is still live
+                result = fastlocalsproxy_set_snapshot_entry(flp, key, value);
+            }
+            return result;
         }
     }
 
     // Local variable, or future cell variable that hasn't been converted yet
     Py_XINCREF(value);
     Py_XSETREF(fast_locals[offset], value);
-    return 0;
+    // Ensure the value cache is up to date if the frame is still live
+    return fastlocalsproxy_set_snapshot_entry(flp, key, value);
 }
 
 static int
@@ -1738,11 +1775,11 @@ fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
 }
 
 
-PyDoc_STRVAR(fastlocalsproxy_sync__doc__,
-             "flp.sync() -> None. Ensure f_locals state is in sync with underlying frame.");
+PyDoc_STRVAR(fastlocalsproxy_sync_frame_cache__doc__,
+             "flp.sync_frame_cache() -> None. Ensure f_locals snapshot is in sync with underlying frame.");
 
 static PyObject *
-fastlocalsproxy_sync(register PyObject *self, PyObject *Py_UNUSED(ignored))
+fastlocalsproxy_sync_frame_cache(register PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     fastlocalsproxyobject *flp = (fastlocalsproxyobject *)self;
     if (PyFrame_FastToLocalsWithError(flp->frame) < 0) {
@@ -1750,7 +1787,6 @@ fastlocalsproxy_sync(register PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     Py_RETURN_NONE;
 }
-
 
 
 static PyMethodDef fastlocalsproxy_methods[] = {
@@ -1769,7 +1805,7 @@ static PyMethodDef fastlocalsproxy_methods[] = {
      PyDoc_STR("See PEP 585")},
     {"__reversed__", (PyCFunction)fastlocalsproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator over D's keys")},
-     // PEP 558 TODO: Convert these methods to METH_FASTCALL
+     // PEP 558 TODO: Convert METH_VARARGS/METH_KEYWORDS methods to METH_FASTCALL
     {"setdefault",      (PyCFunction)(void(*)(void))fastlocalsproxy_setdefault,
      METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_setdefault__doc__},
     {"pop",             (PyCFunction)(void(*)(void))fastlocalsproxy_pop,
@@ -1780,8 +1816,8 @@ static PyMethodDef fastlocalsproxy_methods[] = {
      METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_update__doc__},
     {"clear",           (PyCFunction)fastlocalsproxy_clear,
      METH_NOARGS, fastlocalsproxy_clear__doc__},
-    {"sync",           (PyCFunction)fastlocalsproxy_clear,
-     METH_NOARGS, fastlocalsproxy_clear__doc__},
+    {"sync_frame_cache", (PyCFunction)fastlocalsproxy_sync_frame_cache,
+     METH_NOARGS, fastlocalsproxy_sync_frame_cache__doc__},
     {NULL, NULL}   /* sentinel */
 };
 
