@@ -176,7 +176,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 # define LOG_STRING(s, n)
 #endif
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static inline Py_ssize_t
 STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
                        Py_ssize_t *return_period, int invert_alphabet)
 {
@@ -228,7 +228,7 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     return max_suffix;
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static Py_ssize_t
 STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
                       Py_ssize_t len_needle,
                       Py_ssize_t *return_period)
@@ -305,7 +305,7 @@ typedef struct STRINGLIB(_pre) {
 } STRINGLIB(prework);
 
 
-Py_LOCAL_INLINE(void)
+static void
 STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
                        STRINGLIB(prework) *p)
 {
@@ -339,7 +339,7 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     }
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static Py_ssize_t
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     STRINGLIB(prework) *p)
 {
@@ -465,7 +465,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     return -1;
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+
+static Py_ssize_t
 STRINGLIB(_two_way_find)(const STRINGLIB_CHAR *haystack,
                          Py_ssize_t len_haystack,
                          const STRINGLIB_CHAR *needle,
@@ -477,7 +478,8 @@ STRINGLIB(_two_way_find)(const STRINGLIB_CHAR *haystack,
     return STRINGLIB(_two_way)(haystack, len_haystack, &p);
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
+
+static Py_ssize_t
 STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
                           Py_ssize_t len_haystack,
                           const STRINGLIB_CHAR *needle,
@@ -514,46 +516,235 @@ STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
 #undef LOG
 #undef LOG_STRING
 
-Py_LOCAL_INLINE(Py_ssize_t)
+static inline Py_ssize_t
+STRINGLIB(default_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
+                        const STRINGLIB_CHAR* p, Py_ssize_t m,
+                        Py_ssize_t maxcount, int mode)
+{
+    const Py_ssize_t w = n - m;
+    Py_ssize_t mlast = m - 1, count = 0;
+    Py_ssize_t gap = mlast;
+    const STRINGLIB_CHAR last = p[mlast];
+    const STRINGLIB_CHAR *const ss = &s[mlast];
+
+    unsigned long mask = 0;
+    for (Py_ssize_t i = 0; i < mlast; i++) {
+        STRINGLIB_BLOOM_ADD(mask, p[i]);
+        if (p[i] == last) {
+            gap = mlast - i;
+        }
+    }
+    STRINGLIB_BLOOM_ADD(mask, last);
+
+    for (Py_ssize_t i = 0; i <= w; i++) {
+        if (ss[i] == last) {
+            /* candidate match */
+            Py_ssize_t j;
+            for (j = 0; j < mlast; j++) {
+                if (s[i+j] != p[j]) {
+                    break;
+                }
+            }
+            if (j == mlast) {
+                /* got a match! */
+                if (mode != FAST_COUNT) {
+                    return i;
+                }
+                count++;
+                if (count == maxcount) {
+                    return maxcount;
+                }
+                i = i + mlast;
+                continue;
+            }
+            /* miss: check if next character is part of pattern */
+            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+                i = i + m;
+            }
+            else {
+                i = i + gap;
+            }
+        }
+        else {
+            /* skip: check if next character is part of pattern */
+            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+                i = i + m;
+            }
+        }
+    }
+    return mode == FAST_COUNT ? count : -1;
+}
+
+
+static Py_ssize_t
+STRINGLIB(adaptive_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
+                         const STRINGLIB_CHAR* p, Py_ssize_t m,
+                         Py_ssize_t maxcount, int mode)
+{
+    const Py_ssize_t w = n - m;
+    Py_ssize_t mlast = m - 1, count = 0;
+    Py_ssize_t gap = mlast;
+    Py_ssize_t hits = 0, res;
+    const STRINGLIB_CHAR last = p[mlast];
+    const STRINGLIB_CHAR *const ss = &s[mlast];
+
+    unsigned long mask = 0;
+    for (Py_ssize_t i = 0; i < mlast; i++) {
+        STRINGLIB_BLOOM_ADD(mask, p[i]);
+        if (p[i] == last) {
+            gap = mlast - i;
+        }
+    }
+    STRINGLIB_BLOOM_ADD(mask, last);
+
+    for (Py_ssize_t i = 0; i <= w; i++) {
+        if (ss[i] == last) {
+            /* candidate match */
+            Py_ssize_t j;
+            for (j = 0; j < mlast; j++) {
+                if (s[i+j] != p[j]) {
+                    break;
+                }
+            }
+            if (j == mlast) {
+                /* got a match! */
+                if (mode != FAST_COUNT) {
+                    return i;
+                }
+                count++;
+                if (count == maxcount) {
+                    return maxcount;
+                }
+                i = i + mlast;
+                continue;
+            }
+            hits += j + 1;
+            if (hits > m / 4 && w - i > 2000) {
+                if (mode == FAST_SEARCH) {
+                    res = STRINGLIB(_two_way_find)(s + i, n - i, p, m);
+                    return res == -1 ? -1 : res + i;
+                }
+                else {
+                    res = STRINGLIB(_two_way_count)(s + i, n - i, p, m,
+                                                    maxcount - count);
+                    return res + count;
+                }
+            }
+            /* miss: check if next character is part of pattern */
+            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+                i = i + m;
+            }
+            else {
+                i = i + gap;
+            }
+        }
+        else {
+            /* skip: check if next character is part of pattern */
+            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+                i = i + m;
+            }
+        }
+    }
+    return mode == FAST_COUNT ? count : -1;
+}
+
+
+static Py_ssize_t
+STRINGLIB(default_rfind)(const STRINGLIB_CHAR* s, Py_ssize_t n,
+                         const STRINGLIB_CHAR* p, Py_ssize_t m,
+                         Py_ssize_t maxcount, int mode)
+{
+    /* create compressed boyer-moore delta 1 table */
+    unsigned long mask = 0;
+    Py_ssize_t i, j, mlast = m - 1, skip = m - 1, w = n - m;
+
+    /* process pattern[0] outside the loop */
+    STRINGLIB_BLOOM_ADD(mask, p[0]);
+    /* process pattern[:0:-1] */
+    for (i = mlast; i > 0; i--) {
+        STRINGLIB_BLOOM_ADD(mask, p[i]);
+        if (p[i] == p[0]) {
+            skip = i - 1;
+        }
+    }
+
+    for (i = w; i >= 0; i--) {
+        if (s[i] == p[0]) {
+            /* candidate match */
+            for (j = mlast; j > 0; j--) {
+                if (s[i+j] != p[j]) {
+                    break;
+                }
+            }
+            if (j == 0) {
+                /* got a match! */
+                return i;
+            }
+            /* miss: check if previous character is part of pattern */
+            if (i > 0 && !STRINGLIB_BLOOM(mask, s[i-1])) {
+                i = i - m;
+            }
+            else {
+                i = i - skip;
+            }
+        }
+        else {
+            /* skip: check if previous character is part of pattern */
+            if (i > 0 && !STRINGLIB_BLOOM(mask, s[i-1])) {
+                i = i - m;
+            }
+        }
+    }
+    return -1;
+}
+
+
+static inline Py_ssize_t
+STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
+                      const STRINGLIB_CHAR p0, Py_ssize_t maxcount)
+{
+    Py_ssize_t i, count = 0;
+    for (i = 0; i < n; i++) {
+        if (s[i] == p0) {
+            count++;
+            if (count == maxcount) {
+                return maxcount;
+            }
+        }
+    }
+    return count;
+}
+
+
+static inline Py_ssize_t
 FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
            Py_ssize_t maxcount, int mode)
 {
-    unsigned long mask;
-    Py_ssize_t skip, count = 0;
-    Py_ssize_t i, j, mlast, w;
-
-    w = n - m;
-
-    if (w < 0 || (mode == FAST_COUNT && maxcount == 0))
+    if (n < m || (mode == FAST_COUNT && maxcount == 0)) {
         return -1;
+    }
 
     /* look for special cases */
     if (m <= 1) {
-        if (m <= 0)
+        if (m <= 0) {
             return -1;
+        }
         /* use special case for 1-character strings */
         if (mode == FAST_SEARCH)
             return STRINGLIB(find_char)(s, n, p[0]);
         else if (mode == FAST_RSEARCH)
             return STRINGLIB(rfind_char)(s, n, p[0]);
-        else {  /* FAST_COUNT */
-            for (i = 0; i < n; i++)
-                if (s[i] == p[0]) {
-                    count++;
-                    if (count == maxcount)
-                        return maxcount;
-                }
-            return count;
+        else {
+            return STRINGLIB(count_char)(s, n, p[0], maxcount);
         }
     }
 
-    mlast = m - 1;
-    skip = mlast;
-    mask = 0;
-
     if (mode != FAST_RSEARCH) {
-        if (m >= 100 && w >= 2000 && w / m >= 5) {
+        if (n < 2000 || m < 6 || (m < 100 && n < 30000)) {
+            return STRINGLIB(default_find)(s, n, p, m, maxcount, mode);
+        }
+        else if (5 * m < n) {
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
                expensive O(m) startup cost of the two-way algorithm
@@ -565,170 +756,18 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                 return STRINGLIB(_two_way_count)(s, n, p, m, maxcount);
             }
         }
-        const STRINGLIB_CHAR *ss = s + m - 1;
-        const STRINGLIB_CHAR *pp = p + m - 1;
-
-        /* create compressed boyer-moore delta 1 table */
-
-        /* process pattern[:-1] */
-        for (i = 0; i < mlast; i++) {
-            STRINGLIB_BLOOM_ADD(mask, p[i]);
-            if (p[i] == p[mlast]) {
-                skip = mlast - i - 1;
-            }
-        }
-        /* process pattern[-1] outside the loop */
-        STRINGLIB_BLOOM_ADD(mask, p[mlast]);
-
-        if (m >= 100 && w >= 8000) {
+        else {
             /* To ensure that we have good worst-case behavior,
                here's an adaptive version of the algorithm, where if
                we match O(m) characters without any matches of the
                entire needle, then we predict that the startup cost of
                the two-way algorithm will probably be worth it. */
-            Py_ssize_t hits = 0;
-            for (i = 0; i <= w; i++) {
-                if (ss[i] == pp[0]) {
-                    /* candidate match */
-                    for (j = 0; j < mlast; j++) {
-                        if (s[i+j] != p[j]) {
-                            break;
-                        }
-                    }
-                    if (j == mlast) {
-                        /* got a match! */
-                        if (mode != FAST_COUNT) {
-                            return i;
-                        }
-                        count++;
-                        if (count == maxcount) {
-                            return maxcount;
-                        }
-                        i = i + mlast;
-                        continue;
-                    }
-                    /* miss: check if next character is part of pattern */
-                    if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
-                        i = i + m;
-                    }
-                    else {
-                        i = i + skip;
-                    }
-                    hits += j + 1;
-                    if (hits >= m / 4 && i < w - 1000) {
-                        /* We've done O(m) fruitless comparisons
-                           anyway, so spend the O(m) cost on the
-                           setup for the two-way algorithm. */
-                        Py_ssize_t res;
-                        if (mode == FAST_COUNT) {
-                            res = STRINGLIB(_two_way_count)(
-                                s+i, n-i, p, m, maxcount-count);
-                            return count + res;
-                        }
-                        else {
-                            res = STRINGLIB(_two_way_find)(s+i, n-i, p, m);
-                            if (res == -1) {
-                                return -1;
-                            }
-                            return i + res;
-                        }
-                    }
-                }
-                else {
-                    /* skip: check if next character is part of pattern */
-                    if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
-                        i = i + m;
-                    }
-                }
-            }
-            if (mode != FAST_COUNT) {
-                return -1;
-            }
-            return count;
-        }
-        /* The standard, non-adaptive version of the algorithm. */
-        for (i = 0; i <= w; i++) {
-            /* note: using mlast in the skip path slows things down on x86 */
-            if (ss[i] == pp[0]) {
-                /* candidate match */
-                for (j = 0; j < mlast; j++) {
-                    if (s[i+j] != p[j]) {
-                        break;
-                    }
-                }
-                if (j == mlast) {
-                    /* got a match! */
-                    if (mode != FAST_COUNT) {
-                        return i;
-                    }
-                    count++;
-                    if (count == maxcount) {
-                        return maxcount;
-                    }
-                    i = i + mlast;
-                    continue;
-                }
-                /* miss: check if next character is part of pattern */
-                if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
-                    i = i + m;
-                }
-                else {
-                    i = i + skip;
-                }
-            }
-            else {
-                /* skip: check if next character is part of pattern */
-                if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
-                    i = i + m;
-                }
-            }
+            return STRINGLIB(adaptive_find)(s, n, p, m, maxcount, mode);
         }
     }
-    else {    /* FAST_RSEARCH */
-
-        /* create compressed boyer-moore delta 1 table */
-
-        /* process pattern[0] outside the loop */
-        STRINGLIB_BLOOM_ADD(mask, p[0]);
-        /* process pattern[:0:-1] */
-        for (i = mlast; i > 0; i--) {
-            STRINGLIB_BLOOM_ADD(mask, p[i]);
-            if (p[i] == p[0]) {
-                skip = i - 1;
-            }
-        }
-
-        for (i = w; i >= 0; i--) {
-            if (s[i] == p[0]) {
-                /* candidate match */
-                for (j = mlast; j > 0; j--) {
-                    if (s[i+j] != p[j]) {
-                        break;
-                    }
-                }
-                if (j == 0) {
-                    /* got a match! */
-                    return i;
-                }
-                /* miss: check if previous character is part of pattern */
-                if (i > 0 && !STRINGLIB_BLOOM(mask, s[i-1])) {
-                    i = i - m;
-                }
-                else {
-                    i = i - skip;
-                }
-            }
-            else {
-                /* skip: check if previous character is part of pattern */
-                if (i > 0 && !STRINGLIB_BLOOM(mask, s[i-1])) {
-                    i = i - m;
-                }
-            }
-        }
+    else {
+        /* FAST_RSEARCH */
+        return STRINGLIB(default_rfind)(s, n, p, m, maxcount, mode);
     }
-
-    if (mode != FAST_COUNT)
-        return -1;
-    return count;
 }
 
