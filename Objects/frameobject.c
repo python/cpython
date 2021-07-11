@@ -1537,21 +1537,16 @@ static PyNumberMethods fastlocalsproxy_as_number = {
 static int
 fastlocalsproxy_contains(fastlocalsproxyobject *flp, PyObject *key)
 {
-    assert(flp);
-    if (fastlocalsproxy_init_fast_refs(flp) != 0) {
-        return -1;
+    // This runs a full key lookup so it will return false if the name
+    // hasn't been bound yet, but still runs in O(1) time without needing
+    // to rely on the f_locals cache already being up to date
+    PyObject *value = fastlocalsproxy_getitem(flp, key);
+    int found = (value != NULL);
+    if (!found && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        PyErr_Clear();
     }
-    int result = PyDict_Contains(flp->fast_refs, key);
-    if (result) {
-        // PEP 558 TODO: This should return false if the name hasn't been bound yet
-        return result;
-    }
-    // Extra keys may have been stored directly in the frame locals
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
-    if (locals == NULL) {
-        return -1;
-    }
-    return PyDict_Contains(locals, key);
+    Py_XDECREF(value);
+    return found;
 }
 
 static PySequenceMethods fastlocalsproxy_as_sequence = {
