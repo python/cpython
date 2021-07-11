@@ -233,69 +233,6 @@ class BitFieldTest(unittest.TestCase):
         else:
             self.assertEqual(sizeof(X), sizeof(c_int) * 2)
 
-    @unittest.skipIf(os.name == 'nt', reason='Posix only')
-    def test_packed_posix(self):
-        test_cases = {
-            (
-                ("a", c_uint8, 4),
-                ("b", c_uint8, 4),
-            ): 1,
-            (
-                ("a", c_uint8, 1),
-                ("b", c_uint16, 1),
-                ("c", c_uint32, 1),
-                ("d", c_uint64, 1),
-            ): 1,
-            (
-                ("a", c_uint8, 8),
-                ("b", c_uint16, 1),
-                ("c", c_uint32, 1),
-                ("d", c_uint64, 1),
-            ): 2,
-            (
-                ("a", c_uint32, 9),
-                ("b", c_uint16, 10),
-                ("c", c_uint32, 25),
-                ("d", c_uint64, 1),
-            ): 6,
-            (
-                ("a", c_uint32, 9),
-                ("b", c_uint16, 10),
-                ("c", c_uint32, 25),
-                ("d", c_uint64, 5),
-            ): 7,
-            (
-                ("a", c_uint16),
-                ("b", c_uint16, 9),
-                ("c", c_uint16, 1),
-                ("d", c_uint16, 1),
-                ("e", c_uint16, 1),
-                ("f", c_uint16, 1),
-                ("g", c_uint16, 3),
-                ("h", c_uint32, 10),
-                ("i", c_uint32, 20),
-                ("j", c_uint32, 2),
-            ): 8,
-            (
-                ("a", c_uint16, 9),
-                ("b", c_uint16, 10),
-                ("d", c_uint16),
-                ("c", c_uint8, 8),
-            ): 6,
-            (
-                ("a", c_uint32, 9),
-                ("b", c_uint32),
-                ("c", c_uint32, 8),
-            ): 7,
-        }
-
-        for fields, size in test_cases.items():
-            with self.subTest(fields=fields):
-                class X(Structure):
-                    _pack_ = 1
-                    _fields_ = list(fields)
-                self.assertEqual(sizeof(X), size)
-
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
         class X(Structure):
