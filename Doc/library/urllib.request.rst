@@ -42,6 +42,9 @@ The :mod:`urllib.request` module defines the following functions:
    the global default timeout setting will be used).  This actually
    only works for HTTP, HTTPS and FTP connections.
 
+   Warning: the global default timeout value is to never time out, which is often
+   not the desired value for this function.
+
    If *context* is specified, it must be a :class:`ssl.SSLContext` instance
    describing the various SSL options. See :class:`~http.client.HTTPSConnection`
    for more details.
@@ -657,6 +660,8 @@ OpenerDirector Objects
    timeout setting will be used). The timeout feature actually works only for
    HTTP, HTTPS and FTP connections).
 
+   Warning: the global default timeout value is to never time out, which is often
+   not the desired value for this function.
 
 .. method:: OpenerDirector.error(proto, *args)
 
