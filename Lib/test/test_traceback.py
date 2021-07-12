@@ -6,7 +6,6 @@ import linecache
 import sys
 import inspect
 import unittest
-import tempfile
 import re
 from test import support
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
