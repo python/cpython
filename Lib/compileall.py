@@ -456,8 +456,6 @@ def main():
         if args.quiet < 2:
             print("\n[interrupted]")
         return False
-    return True
-
 
 if __name__ == '__main__':
     exit_status = int(not main())
