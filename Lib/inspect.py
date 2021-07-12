@@ -640,7 +640,7 @@ def unwrap(func, *, stop=None):
         func = func.__wrapped__
         id_func = id(func)
         if (id_func in memo) or (len(memo) >= recursion_limit):
-            raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
+            raise ValueError(f"wrapper loop when unwrapping {f!r}")
         memo[id_func] = func
     return func
 
@@ -775,13 +775,13 @@ def getfile(object):
     if ismodule(object):
         if getattr(object, '__file__', None):
             return object.__file__
-        raise TypeError('{!r} is a built-in module'.format(object))
+        raise TypeError(f"{object!r} is a built-in module")
     if isclass(object):
         if hasattr(object, '__module__'):
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
-        raise TypeError('{!r} is a built-in class'.format(object))
+        raise TypeError(f"{object!r} is a built-in class")
     if ismethod(object):
         object = object.__func__
     if isfunction(object):
@@ -792,9 +792,8 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('module, class, method, function, traceback, frame, or '
-                    'code object was expected, got {}'.format(
-                    type(object).__name__))
+    raise TypeError("module, class, method, function, traceback, frame, or "
+                    f"code object was expected, got {type(object).__name__}")
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
@@ -1193,7 +1192,7 @@ def getargs(co):
     appended. 'varargs' and 'varkw' are the names of the * and **
     arguments or None."""
     if not iscode(co):
-        raise TypeError('{!r} is not a code object'.format(co))
+        raise TypeError(f"{co!r} is not a code object")
 
     names = co.co_varnames
     nargs = co.co_argcount
@@ -1454,9 +1453,9 @@ def _missing_arguments(f_name, argnames, pos, values):
     if missing == 1:
         s = names[0]
     elif missing == 2:
-        s = "{} and {}".format(*names)
+        s = " and ".join(names)
     else:
-        tail = ", {} and {}".format(*names[-2:])
+        tail = f", {' and '.join(names[-2:])}"
         del names[-2:]
         s = ", ".join(names) + tail
     raise TypeError("%s() missing %i required %s argument%s: %s" %
@@ -1560,7 +1559,7 @@ def getclosurevars(func):
         func = func.__func__
 
     if not isfunction(func):
-        raise TypeError("{!r} is not a Python function".format(func))
+        raise TypeError(f"{func!r} is not a Python function")
 
     code = func.__code__
     # Nonlocal references are named in co_freevars and resolved
@@ -1616,7 +1615,7 @@ def getframeinfo(frame, context=1):
     else:
         lineno = frame.f_lineno
     if not isframe(frame):
-        raise TypeError('{!r} is not a frame or traceback object'.format(frame))
+        raise TypeError(f"{frame!r} is not a frame or traceback object")
 
     filename = getsourcefile(frame) or getfile(frame)
     if context > 0:
@@ -1803,7 +1802,7 @@ def getgeneratorlocals(generator):
     bound values."""
 
     if not isgenerator(generator):
-        raise TypeError("{!r} is not a Python generator".format(generator))
+        raise TypeError(f"{generator!r} is not a Python generator")
 
     frame = getattr(generator, "gi_frame", None)
     if frame is not None:
@@ -1899,7 +1898,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     try:
         ba = wrapped_sig.bind_partial(*partial_args, **partial_keywords)
     except TypeError as ex:
-        msg = 'partial object {!r} has incorrect arguments'.format(partial)
+        msg = f"partial object {partial!r} has incorrect arguments"
         raise ValueError(msg) from ex
 
 
@@ -2113,7 +2112,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         module = None
 
     if not isinstance(module, ast.Module):
-        raise ValueError("{!r} builtin has invalid signature".format(obj))
+        raise ValueError(f"{obj!r} builtin has invalid signature")
 
     f = module.body[0]
 
@@ -2236,12 +2235,11 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
     """
 
     if not _signature_is_builtin(func):
-        raise TypeError("{!r} is not a Python builtin "
-                        "function".format(func))
+        raise TypeError(f"{func!r} is not a Python builtin function")
 
     s = getattr(func, "__text_signature__", None)
     if not s:
-        raise ValueError("no signature found for builtin {!r}".format(func))
+        raise ValueError(f"no signature found for builtin {func!r}")
 
     return _signature_fromstr(cls, func, s, skip_bound_arg)
 
@@ -2257,7 +2255,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
         else:
             # If it's not a pure Python function, and not a duck type
             # of pure function:
-            raise TypeError('{!r} is not a Python function'.format(func))
+            raise TypeError(f"{func!r} is not a Python function")
 
     s = getattr(func, "__text_signature__", None)
     if s:
@@ -2362,7 +2360,7 @@ def _signature_from_callable(obj, *,
                                 eval_str=eval_str)
 
     if not callable(obj):
-        raise TypeError('{!r} is not a callable object'.format(obj))
+        raise TypeError(f"{obj!r} is not a callable object")
 
     if isinstance(obj, types.MethodType):
         # In this case we skip the first parameter of the underlying
@@ -2391,8 +2389,7 @@ def _signature_from_callable(obj, *,
         if sig is not None:
             if not isinstance(sig, Signature):
                 raise TypeError(
-                    'unexpected object {!r} in __signature__ '
-                    'attribute'.format(sig))
+                    f"unexpected object {sig!r} in __signature__ attribute")
             return sig
 
     try:
@@ -2492,7 +2489,7 @@ def _signature_from_callable(obj, *,
                     return sigcls.from_callable(object)
                 else:
                     raise ValueError(
-                        'no signature found for builtin type {!r}'.format(obj))
+                        f"no signature found for builtin type {obj!r}")
 
     elif not isinstance(obj, _NonUserDefinedCallables):
         # An object with __call__
@@ -2504,8 +2501,7 @@ def _signature_from_callable(obj, *,
             try:
                 sig = _get_signature_of(call)
             except ValueError as ex:
-                msg = 'no signature found for {!r}'.format(obj)
-                raise ValueError(msg) from ex
+                raise ValueError(f"no signature found for {obj!r}") from ex
 
     if sig is not None:
         # For classes and objects we skip the first parameter of their
@@ -2517,10 +2513,9 @@ def _signature_from_callable(obj, *,
 
     if isinstance(obj, types.BuiltinFunctionType):
         # Raise a nicer error message for builtins
-        msg = 'no signature found for builtin function {!r}'.format(obj)
-        raise ValueError(msg)
+        raise ValueError(f"no signature found for builtin function {obj!r}")
 
-    raise ValueError('callable {!r} is not supported by signature'.format(obj))
+    raise ValueError(f"callable {obj!r} is not supported by signature")
 
 
 class _void:
@@ -2596,9 +2591,9 @@ class Parameter:
             raise ValueError(f'value {kind!r} is not a valid Parameter.kind')
         if default is not _empty:
             if self._kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
-                msg = '{} parameters cannot have default values'
-                msg = msg.format(self._kind.description)
-                raise ValueError(msg)
+                raise ValueError(
+                    f"{self._kind.description} parameters cannot have default values"
+                )
         self._default = default
         self._annotation = annotation
 
@@ -2606,8 +2601,7 @@ class Parameter:
             raise ValueError('name is a required attribute for Parameter')
 
         if not isinstance(name, str):
-            msg = 'name must be a str, not a {}'.format(type(name).__name__)
-            raise TypeError(msg)
+            raise TypeError(f"name must be a str, not a {type(name).__name__}")
 
         if name[0] == '.' and name[1:].isdigit():
             # These are implicit arguments generated by comprehensions. In
@@ -2616,16 +2610,14 @@ class Parameter:
             # See issue 19611.
             if self._kind != _POSITIONAL_OR_KEYWORD:
                 msg = (
-                    'implicit arguments must be passed as '
-                    'positional or keyword arguments, not {}'
-                )
-                msg = msg.format(self._kind.description)
+                    "implicit arguments must be passed as positional "
+                    f"or keyword arguments, not {self._kind.description}")
                 raise ValueError(msg)
             self._kind = _POSITIONAL_ONLY
-            name = 'implicit{}'.format(name[1:])
+            name = f"implicit{name[1:]}"
 
         if not name.isidentifier():
-            raise ValueError('{!r} is not a valid parameter name'.format(name))
+            raise ValueError(f"{name!r} is not a valid parameter name")
 
         self._name = name
 
@@ -2679,14 +2671,13 @@ class Parameter:
 
         # Add annotation and default value
         if self._annotation is not _empty:
-            formatted = '{}: {}'.format(formatted,
-                                       formatannotation(self._annotation))
+            formatted = f"{formatted}: {formatannotation(self._annotation)}"
 
         if self._default is not _empty:
             if self._annotation is not _empty:
-                formatted = '{} = {}'.format(formatted, repr(self._default))
+                formatted = f"{formatted} = {self._default!r}"
             else:
-                formatted = '{}={}'.format(formatted, repr(self._default))
+                formatted = f"{formatted}={self._default!r}"
 
         if kind == _VAR_POSITIONAL:
             formatted = '*' + formatted
@@ -2696,7 +2687,7 @@ class Parameter:
         return formatted
 
     def __repr__(self):
-        return '<{} "{}">'.format(self.__class__.__name__, self)
+        return f'<{self.__class__.__name__} "{self}">'
 
     def __hash__(self):
         return hash((self.name, self.kind, self.annotation, self.default))
@@ -2838,9 +2829,9 @@ class BoundArguments:
     def __repr__(self):
         args = []
         for arg, value in self.arguments.items():
-            args.append('{}={!r}'.format(arg, value))
-        return '<{} ({})>'.format(self.__class__.__name__, ', '.join(args))
+            args.append(f"{arg}={value!r}")
 
+        return f"<{self.__class__.__name__} ({', '.join(args)})>"
 
 class Signature:
     """A Signature object represents the overall signature of a function.
@@ -2891,13 +2882,9 @@ class Signature:
                     name = param.name
 
                     if kind < top_kind:
-                        msg = (
-                            'wrong parameter order: {} parameter before {} '
-                            'parameter'
-                        )
-                        msg = msg.format(top_kind.description,
-                                         kind.description)
-                        raise ValueError(msg)
+                        raise ValueError(
+                            f"wrong parameter order: {top_kind.description} "
+                            f"parameter before {kind.description} parameter")
                     elif kind > top_kind:
                         kind_defaults = False
                         top_kind = kind
@@ -2916,8 +2903,7 @@ class Signature:
                             kind_defaults = True
 
                     if name in params:
-                        msg = 'duplicate parameter name: {!r}'.format(name)
-                        raise ValueError(msg)
+                        raise ValueError(f"duplicate parameter name: {name!r}")
 
                     params[name] = param
             else:
@@ -3031,9 +3017,9 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
-                            msg = '{arg!r} parameter is positional only, ' \
-                                  'but was passed as a keyword'
-                            msg = msg.format(arg=param.name)
+                            msg = (
+                                f"{param.name!r} parameter is positional only, "
+                                "but was passed as a keyword")
                             raise TypeError(msg) from None
                         parameters_ex = (param,)
                         break
@@ -3051,8 +3037,7 @@ class Signature:
                             parameters_ex = (param,)
                             break
                         else:
-                            msg = 'missing a required argument: {arg!r}'
-                            msg = msg.format(arg=param.name)
+                            msg = f"missing a required argument: {param.name!r}"
                             raise TypeError(msg) from None
             else:
                 # We have a positional argument to process
@@ -3077,9 +3062,8 @@ class Signature:
                         break
 
                     if param.name in kwargs and param.kind != _POSITIONAL_ONLY:
-                        raise TypeError(
-                            'multiple values for argument {arg!r}'.format(
-                                arg=param.name)) from None
+                        msg = f"multiple values for argument {param.name!r}"
+                        raise TypeError(msg) from None
 
                     arguments[param.name] = arg_val
 
@@ -3108,17 +3092,18 @@ class Signature:
                 # arguments.
                 if (not partial and param.kind != _VAR_POSITIONAL and
                                                     param.default is _empty):
-                    raise TypeError('missing a required argument: {arg!r}'. \
-                                    format(arg=param_name)) from None
+                    msg = f"missing a required argument: {param_name!r}"
+                    raise TypeError(msg) from None
 
             else:
                 if param.kind == _POSITIONAL_ONLY:
                     # This should never happen in case of a properly built
                     # Signature object (but let's have this check here
                     # to ensure correct behaviour just in case)
-                    raise TypeError('{arg!r} parameter is positional only, '
-                                    'but was passed as a keyword'. \
-                                    format(arg=param.name))
+                    msg = (
+                        f"{param.name!r} parameter is positional only, "
+                        "but was passed as a keyword")
+                    raise TypeError(msg)
 
                 arguments[param_name] = arg_val
 
@@ -3128,8 +3113,8 @@ class Signature:
                 arguments[kwargs_param.name] = kwargs
             else:
                 raise TypeError(
-                    'got an unexpected keyword argument {arg!r}'.format(
-                        arg=next(iter(kwargs))))
+                    f"got an unexpected keyword argument {next(iter(kwargs))!r}"
+                )
 
         return self._bound_arguments_cls(self, arguments)
 
@@ -3156,7 +3141,7 @@ class Signature:
         self._return_annotation = state['_return_annotation']
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, self)
+        return f"<{self.__class__.__name__} {self}>"
 
     def __str__(self):
         result = []
@@ -3195,11 +3180,11 @@ class Signature:
             # flag was not reset to 'False'
             result.append('/')
 
-        rendered = '({})'.format(', '.join(result))
+        rendered = f"({', '.join(result)})"
 
         if self.return_annotation is not _empty:
             anno = formatannotation(self.return_annotation)
-            rendered += ' -> {}'.format(anno)
+            rendered += f" -> {anno}"
 
         return rendered
 
@@ -3231,9 +3216,7 @@ def _main():
     try:
         obj = module = importlib.import_module(mod_name)
     except Exception as exc:
-        msg = "Failed to import {} ({}: {})".format(mod_name,
-                                                    type(exc).__name__,
-                                                    exc)
+        msg = f"Failed to import {mod_name} ({type(exc).__name__}: {exc})"
         print(msg, file=sys.stderr)
         sys.exit(2)
 
@@ -3248,20 +3231,20 @@ def _main():
         sys.exit(1)
 
     if args.details:
-        print('Target: {}'.format(target))
-        print('Origin: {}'.format(getsourcefile(module)))
-        print('Cached: {}'.format(module.__cached__))
+        print(f"Target: {target}")
+        print(f"Origin: {getsourcefile(module)}")
+        print(f"Cached: {module.__cached__}")
         if obj is module:
-            print('Loader: {}'.format(repr(module.__loader__)))
+            print(f"Loader: {module.__loader__!r}")
             if hasattr(module, '__path__'):
-                print('Submodule search path: {}'.format(module.__path__))
+                print(f"Submodule search path: {module.__path__}")
         else:
             try:
                 __, lineno = findsource(obj)
             except Exception:
                 pass
             else:
-                print('Line: {}'.format(lineno))
+                print(f"Line: {lineno}")
 
         print('\n')
     else:
