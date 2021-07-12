@@ -374,6 +374,7 @@ typedef enum {
     GETATTRIBUTE_OVERRIDDEN /* __getattribute__ has been overridden */
 } DesciptorClassification;
 
+
 static DesciptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
 {
@@ -416,6 +417,87 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
         return NON_OVERRIDING;
     }
     return NON_DESCRIPTOR;
+}
+
+static int
+specialize_dict_access(
+    PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    DesciptorClassification kind, PyObject *name,
+    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
+    int base_op, int split_op, int hint_op)
+{
+    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT);
+    // No desciptor, or non overriding.
+    if (type->tp_dictoffset < 0) {
+        SPECIALIZATION_FAIL(base_op, type, name, "negative offset");
+        return 0;
+    }
+    if (type->tp_dictoffset > 0) {
+        PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+            SPECIALIZATION_FAIL(base_op, type, name, "no dict or not a dict");
+            return 0;
+        }
+        // We found an instance with a __dict__.
+        PyDictObject *dict = (PyDictObject *)*dictptr;
+        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+        ) {
+            // Keys are shared
+            assert(PyUnicode_CheckExact(name));
+            Py_hash_t hash = PyObject_Hash(name);
+            if (hash == -1) {
+                return -1;
+            }
+            PyObject *value;
+            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+            assert (index != DKIX_ERROR);
+            if (index != (uint16_t)index) {
+                SPECIALIZATION_FAIL(base_op, type, name,
+                                    index < 0 ? "attribute not in dict" : "index out of range");
+                return 0;
+            }
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+            if (keys_version == 0) {
+                SPECIALIZATION_FAIL(base_op, type, name, "no more key versions");
+                return 0;
+            }
+            cache1->dk_version_or_hint = keys_version;
+            cache1->tp_version = type->tp_version_tag;
+            cache0->index = (uint16_t)index;
+            *instr = _Py_MAKECODEUNIT(split_op, _Py_OPARG(*instr));
+            return 0;
+        }
+        else {
+            PyObject *value = NULL;
+            Py_ssize_t hint =
+                _PyDict_GetItemHint(dict, name, -1, &value);
+            if (hint != (uint32_t)hint) {
+                SPECIALIZATION_FAIL(base_op, type, name, "hint out of range");
+                return 0;
+            }
+            cache1->dk_version_or_hint = (uint32_t)hint;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(hint_op, _Py_OPARG(*instr));
+            return 1;
+        }
+    }
+    assert(type->tp_dictoffset == 0);
+    /* No attribute in instance dictionary */
+    switch(kind) {
+        case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(base_op, type, name, "non-overriding descriptor");
+            return 0;
+        case NON_DESCRIPTOR:
+            /* To do -- Optimize this case */
+            SPECIALIZATION_FAIL(base_op, type, name, "non descriptor");
+            return 0;
+        case ABSENT:
+            SPECIALIZATION_FAIL(base_op, type, name, "no attribute");
+            return 0;
+        default:
+            Py_UNREACHABLE();
+    }
 }
 
 int
@@ -487,77 +569,15 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         case ABSENT:
             break;
     }
-    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT);
-    // No desciptor, or non overriding.
-    if (type->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "negative offset");
-        goto fail;
+    int err = specialize_dict_access(
+        owner, instr, type, kind, name, cache0, cache1,
+        LOAD_ATTR, LOAD_ATTR_SPLIT_KEYS, LOAD_ATTR_WITH_HINT
+    );
+    if (err < 0) {
+        return -1;
     }
-    if (type->tp_dictoffset > 0) {
-        PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no dict or not a dict");
-            goto fail;
-        }
-        // We found an instance with a __dict__.
-        PyDictObject *dict = (PyDictObject *)*dictptr;
-        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
-        ) {
-            // Keys are shared
-            assert(PyUnicode_CheckExact(name));
-            Py_hash_t hash = PyObject_Hash(name);
-            if (hash == -1) {
-                return -1;
-            }
-            PyObject *value;
-            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
-            assert (index != DKIX_ERROR);
-            if (index != (uint16_t)index) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name,
-                                    index < 0 ? "attribute not in dict" : "index out of range");
-                goto fail;
-            }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
-            if (keys_version == 0) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no more key versions");
-                goto fail;
-            }
-            cache1->dk_version_or_hint = keys_version;
-            cache1->tp_version = type->tp_version_tag;
-            cache0->index = (uint16_t)index;
-            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
-            goto success;
-        }
-        else {
-            PyObject *value = NULL;
-            Py_ssize_t hint =
-                _PyDict_GetItemHint(dict, name, -1, &value);
-            if (hint != (uint32_t)hint) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "hint out of range");
-                goto fail;
-            }
-            cache1->dk_version_or_hint = (uint32_t)hint;
-            cache1->tp_version = type->tp_version_tag;
-            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
-            goto success;
-        }
-    }
-    assert(type->tp_dictoffset == 0);
-    /* No attribute in instance dictionary */
-    switch(kind) {
-        case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non-overriding descriptor");
-            goto fail;
-        case NON_DESCRIPTOR:
-            /* To do -- Optimize this case */
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non descriptor");
-            goto fail;
-        case ABSENT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no attribute");
-            goto fail;
-        default:
-            Py_UNREACHABLE();
+    if (err) {
+        goto success;
     }
 fail:
     STAT_INC(LOAD_ATTR, specialization_failure);
