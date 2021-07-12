@@ -376,29 +376,18 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         Py_ssize_t memory = 0;
       periodicwindowloop:
         while (window_last < haystack_end) {
+            assert(memory == 0);
             LOG_LINEUP();
             Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
-            if (shift > 0 && memory > 0) {
-                // A mismatch has been identified to the right of
-                // where i starts, so we can jump at least as far as
-                // if the mismatch occurred on the first comparison.
-                Py_ssize_t memory_shift = Py_MAX(cut, memory) - cut + 1;
-                LOG("Skip with Memory.\n");
-                window_last += Py_MAX(shift, memory_shift);
-                LOG_LINEUP();
-                memory = 0;
-                shift = table[(*window_last) & TABLE_MASK];
-            }
-            while (shift > 0 && window_last < haystack_end) {
+            window_last += shift;
+            if (shift) {
                 LOG("Horspool skip.\n");
-                window_last += shift;
-                shift = table[(*window_last) & TABLE_MASK];
-                LOG_LINEUP();
+                continue;
             }
-            if (window_last >= haystack_end) {
-                break;
-            }
+          no_shift:
             const STRINGLIB_CHAR *const window = window_last - len_needle + 1;
+            assert((window[len_needle - 1] & TABLE_MASK) ==
+                   (needle[len_needle - 1] & TABLE_MASK));
             Py_ssize_t i = Py_MAX(cut, memory);
             for (; i < len_needle; i++) {
                 if (needle[i] != window[i]) {
@@ -413,7 +402,22 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     LOG("Left half does not match.\n");
                     window_last += period;
                     memory = len_needle - period;
-                    goto periodicwindowloop;
+                    if (window_last >= haystack_end) {
+                        return -1;
+                    }
+                    shift = table[(*window_last) & TABLE_MASK];
+                    if (shift) {
+                        // A mismatch has been identified to the right
+                        // of where i will next start, so we can jump
+                        // at least as far as if the mismatch occurred
+                        // on the first comparison.
+                        Py_ssize_t mem_jump = Py_MAX(cut, memory) - cut + 1;
+                        LOG("Skip with Memory.\n");
+                        memory = 0;
+                        window_last += Py_MAX(shift, mem_jump);
+                        goto periodicwindowloop;
+                    }
+                    goto no_shift;
                 }
             }
             LOG("Found a match!\n");
@@ -429,16 +433,14 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         while (window_last < haystack_end) {
             LOG_LINEUP();
             Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
-            while (shift > 0 && window_last < haystack_end) {
+            window_last += shift;
+            if (shift) {
                 LOG("Horspool skip.\n");
-                window_last += shift;
-                shift = table[(*window_last) & TABLE_MASK];
-                LOG_LINEUP();
+                continue;
             }
-            if (window_last >= haystack_end) {
-                break;
-            }
-            const STRINGLIB_CHAR *window = window_last - len_needle + 1;
+            const STRINGLIB_CHAR *const window = window_last - len_needle + 1;
+            assert((window[len_needle - 1] & TABLE_MASK) ==
+                   (needle[len_needle - 1] & TABLE_MASK));
             for (Py_ssize_t i = cut; i < gap_jump_end; i++) {
                 if (needle[i] != window[i]) {
                     LOG("Early right half mismatch: jump by gap.\n");
