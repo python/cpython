@@ -2689,6 +2689,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(STORE_ATTR): {
+            PREDICTED(STORE_ATTR);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *v = SECOND();
@@ -3403,6 +3404,121 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(STORE_ATTR_ADAPTIVE): {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *owner = TOP();
+                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+                next_instr--;
+                if (_Py_Specialize_StoreAttr(owner, next_instr, name, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(STORE_ATTR, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(STORE_ATTR);
+            }
+        }
+
+        case TARGET(STORE_ATTR_SPLIT_KEYS): {
+            assert(cframe.use_tracing == 0);
+            PyObject *owner = TOP();
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, STORE_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, STORE_ATTR);
+            /* Need to maintain ordering of dicts */
+            DEOPT_IF(cache0->index > 0 && dict->ma_values[cache0->index-1] == NULL, STORE_ATTR);
+            STAT_INC(STORE_ATTR, hit);
+            record_cache_hit(cache0);
+            STACK_SHRINK(1);
+            PyObject *value = POP();
+            PyObject *old_value = dict->ma_values[cache0->index];
+            dict->ma_values[cache0->index] = value;
+            if (old_value == NULL) {
+                dict->ma_used++;
+            }
+            else {
+                Py_DECREF(old_value);
+            }
+            /* Ensure dict is GC tracked if it needs to be */
+            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
+                _PyObject_GC_TRACK(dict);
+            }
+            /* PEP 509 */
+            dict->ma_version_tag = DICT_NEXT_VERSION();
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(STORE_ATTR_WITH_HINT): {
+            assert(cframe.use_tracing == 0);
+            PyObject *owner = TOP();
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, STORE_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            PyObject *name = GETITEM(names, cache0->original_oparg);
+            uint32_t hint = cache1->dk_version_or_hint;
+            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, STORE_ATTR);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+            DEOPT_IF(ep->me_key != name, STORE_ATTR);
+            PyObject *old_value = ep->me_value;
+            DEOPT_IF(old_value == NULL, STORE_ATTR);
+            STAT_INC(STORE_ATTR, hit);
+            record_cache_hit(cache0);
+            STACK_SHRINK(1);
+            PyObject *value = POP();
+            ep->me_value = value;
+            Py_DECREF(old_value);
+            /* Ensure dict is GC tracked if it needs to be */
+            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
+                _PyObject_GC_TRACK(dict);
+            }
+            /* PEP 509 */
+            dict->ma_version_tag = DICT_NEXT_VERSION();
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(STORE_ATTR_SLOT): {
+            assert(cframe.use_tracing == 0);
+            PyObject *owner = TOP();
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
+            char *addr = (char *)owner + cache0->index;
+            STAT_INC(STORE_ATTR, hit);
+            record_cache_hit(cache0);
+            STACK_SHRINK(1);
+            PyObject *value = POP();
+            PyObject *old_value = *(PyObject **)addr;
+            *(PyObject **)addr = value;
+            Py_XDECREF(old_value);
             Py_DECREF(owner);
             DISPATCH();
         }
@@ -4328,6 +4444,7 @@ opname ## _miss: \
     }
 
 MISS_WITH_CACHE(LOAD_ATTR)
+MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 
 error:

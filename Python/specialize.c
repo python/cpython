@@ -78,6 +78,7 @@ _Py_PrintSpecializationStats(void)
     printf("Specialization stats:\n");
     print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(&_specialization_stats[STORE_ATTR], "store_attr");
 }
 
 #if SPECIALIZATION_STATS_DETAILED
@@ -162,12 +163,14 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
+    [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -371,16 +374,24 @@ typedef enum {
     MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
-    GETATTRIBUTE_OVERRIDDEN /* __getattribute__ has been overridden */
+    GETSET_OVERRIDDEN /* __getattribute__ or __setattr__ has been overridden */
 } DesciptorClassification;
 
 
 static DesciptorClassification
-analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
+analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
-    if (type->tp_getattro != PyObject_GenericGetAttr) {
-        *descr = NULL;
-        return GETATTRIBUTE_OVERRIDDEN;
+    if (store) {
+        if (type->tp_setattro != PyObject_GenericSetAttr) {
+            *descr = NULL;
+            return GETSET_OVERRIDDEN;
+        }
+    }
+    else {
+        if (type->tp_getattro != PyObject_GenericGetAttr) {
+            *descr = NULL;
+            return GETSET_OVERRIDDEN;
+        }
     }
     PyObject *descriptor = _PyType_Lookup(type, name);
     *descr = descriptor;
@@ -519,7 +530,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         }
     }
     PyObject *descr;
-    DesciptorClassification kind = analyze_descriptor(type, name, &descr);
+    DesciptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "overriding descriptor");
@@ -535,6 +546,10 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
             struct PyMemberDef *dmem = member->d_member;
             Py_ssize_t offset = dmem->offset;
+            if (dmem->flags & PY_AUDIT_READ) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "audit read");
+                goto fail;
+            }
             if (offset != (uint16_t)offset) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "offset out of range");
                 goto fail;
@@ -561,7 +576,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         case MUTABLE:
             SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "mutable class attribute");
             goto fail;
-        case GETATTRIBUTE_OVERRIDDEN:
+        case GETSET_OVERRIDDEN:
             SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "__getattribute__ overridden");
             goto fail;
         case NON_OVERRIDING:
@@ -590,6 +605,87 @@ success:
     cache0->counter = saturating_start();
     return 0;
 }
+
+int
+_Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyAttrCache *cache1 = &cache[-1].attr;
+    PyTypeObject *type = Py_TYPE(owner);
+    if (PyModule_CheckExact(owner)) {
+        SPECIALIZATION_FAIL(STORE_ATTR, type, name, "module attribute");
+        goto fail;
+    }
+    PyObject *descr;
+    DesciptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    switch(kind) {
+        case OVERRIDING:
+            SPECIALIZATION_FAIL(STORE_ATTR, type, name, "overriding descriptor");
+            goto fail;
+        case METHOD:
+            SPECIALIZATION_FAIL(STORE_ATTR, type, name, "method");
+            goto fail;
+        case PROPERTY:
+            SPECIALIZATION_FAIL(STORE_ATTR, type, name, "property");
+            goto fail;
+        case OBJECT_SLOT:
+        {
+            PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
+            struct PyMemberDef *dmem = member->d_member;
+            Py_ssize_t offset = dmem->offset;
+            if (dmem->flags & READONLY) {
+                SPECIALIZATION_FAIL(STORE_ATTR, type, name, "read only");
+                goto fail;
+            }
+            if (offset != (uint16_t)offset) {
+                SPECIALIZATION_FAIL(STORE_ATTR, type, name, "offset out of range");
+                goto fail;
+            }
+            assert(dmem->type == T_OBJECT_EX);
+            assert(offset > 0);
+            cache0->index = (uint16_t)offset;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(STORE_ATTR_SLOT, _Py_OPARG(*instr));
+            goto success;
+        }
+        case DUNDER_CLASS:
+        case OTHER_SLOT:
+            SPECIALIZATION_FAIL(STORE_ATTR, type, name, "other slot");
+            goto fail;
+        case MUTABLE:
+            SPECIALIZATION_FAIL(STORE_ATTR, type, name, "mutable class attribute");
+            goto fail;
+        case GETSET_OVERRIDDEN:
+            SPECIALIZATION_FAIL(STORE_ATTR, type, name, "__setattr__ overridden");
+            goto fail;
+        case NON_OVERRIDING:
+        case NON_DESCRIPTOR:
+        case ABSENT:
+            break;
+    }
+
+    int err = specialize_dict_access(
+        owner, instr, type, kind, name, cache0, cache1,
+        STORE_ATTR, STORE_ATTR_SPLIT_KEYS, STORE_ATTR_WITH_HINT
+    );
+    if (err < 0) {
+        return -1;
+    }
+    if (err) {
+        goto success;
+    }
+fail:
+    STAT_INC(STORE_ATTR, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(STORE_ATTR, specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}
+
 
 int
 _Py_Specialize_LoadGlobal(
