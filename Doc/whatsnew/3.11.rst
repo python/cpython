@@ -126,8 +126,9 @@ and Ammar Askar in :issue:`43950`.)
 .. note::
 
    This feature requires storing column positions in code objects which may
-   increase disk usage of compiled Python files or interpreter memory usage.
-   It can be disabled with the ``-X no_debug_ranges`` command line flag.
+   result in a small increase of disk usage of compiled Python files or interpreter memory usage.
+   To avoid storing the extra information or to deactivate printing the extra traceback information,
+   the feature can be fully disabled with the ``-X no_debug_ranges`` command line flag or the ``PYTHONNODEBUGRANGES`` environment variable.
 
 Column information for code objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
