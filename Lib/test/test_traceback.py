@@ -464,16 +464,15 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_traceback_specialization_with_syntax_error(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as file:
-            bytecode = compile("1 / 0 / 1 / 2\n", file.name, "exec")
+        bytecode = compile("1 / 0 / 1 / 2\n", TESTFN, "exec")
 
-            # make the file invalid
+        with open(TESTFN, "w") as file:
+            # make the file's contents invalid
             file.write("1 $ 0 / 1 / 2\n")
-            file.flush()
+        self.addCleanup(unlink, TESTFN)
 
         func = partial(exec, bytecode)
         result_lines = self.get_exception(func)
-        os.unlink(file.name)
 
         lineno_f = bytecode.co_firstlineno
         expected_error = (
@@ -481,7 +480,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
             '    ^^^^^^^^^^\n'
-            f'  File "{file.name}", line {lineno_f}, in <module>\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             "    1 $ 0 / 1 / 2\n"
             '    ^^^^^\n'
         )
