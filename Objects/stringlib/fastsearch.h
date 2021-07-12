@@ -173,7 +173,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 # define LOG_STRING(s, n) printf("\"%.*s\"", (int)(n), s)
 # define LOG_LINEUP() do {                                         \
     LOG("> "); LOG_STRING(haystack, len_haystack); LOG("\n> ");    \
-    LOG("%*s",(int)(window_last + 1 - len_needle - haystack), ""); \
+    LOG("%*s",(int)(window_last - haystack + 1 - len_needle), ""); \
     LOG_STRING(needle, len_needle); LOG("\n");                     \
 } while(0)
 #else
@@ -297,7 +297,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 #define SHIFT_TYPE uint8_t
 #define MAX_SHIFT UINT8_MAX
 
-#define TABLE_SIZE_BITS 6
+#define TABLE_SIZE_BITS 6u
 #define TABLE_SIZE (1U << TABLE_SIZE_BITS)
 #define TABLE_MASK (TABLE_SIZE - 1U)
 
@@ -336,7 +336,8 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
         p->gap = len_needle;
         STRINGLIB_CHAR last = needle[len_needle - 1] & TABLE_MASK;
         for (Py_ssize_t i = len_needle - 2; i >= 0; i--) {
-            if ((needle[i] & TABLE_MASK) == last) {
+            STRINGLIB_CHAR x = needle[i] & TABLE_MASK;
+            if (x == last) {
                 p->gap = len_needle - 1 - i;
                 break;
             }
@@ -423,8 +424,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         Py_ssize_t gap = p->gap;
         period = Py_MAX(gap, period);
         LOG("Needle is not periodic.\n");
-        assert(cut < len_needle);
-        STRINGLIB_CHAR needle_cut = needle[cut];
         Py_ssize_t gap_jump_end = Py_MIN(len_needle, cut + gap);
       windowloop:
         while (window_last < haystack_end) {
