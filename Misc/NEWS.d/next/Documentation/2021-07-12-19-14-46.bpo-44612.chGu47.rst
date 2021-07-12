@@ -1,0 +1,1 @@
+Modernize :mod:`inspect` examples from str.format() to f-strings.
