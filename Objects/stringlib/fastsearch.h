@@ -369,6 +369,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     const STRINGLIB_CHAR *window_last = haystack + len_needle - 1;
     const STRINGLIB_CHAR *const haystack_end = haystack + len_haystack;
     SHIFT_TYPE *table = p->table;
+    const STRINGLIB_CHAR *window;
     LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
 
     if (p->is_periodic) {
@@ -385,7 +386,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 continue;
             }
           no_shift:
-            const STRINGLIB_CHAR *const window = window_last - len_needle + 1;
+            window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
                    (needle[len_needle - 1] & TABLE_MASK));
             Py_ssize_t i = Py_MAX(cut, memory);
@@ -438,7 +439,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 LOG("Horspool skip.\n");
                 continue;
             }
-            const STRINGLIB_CHAR *const window = window_last - len_needle + 1;
+            window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
                    (needle[len_needle - 1] & TABLE_MASK));
             for (Py_ssize_t i = cut; i < gap_jump_end; i++) {
