@@ -92,6 +92,43 @@ class TracebackCases(unittest.TestCase):
         lst = traceback.format_exception_only(e.__class__, e)
         self.assertEqual(lst, ['KeyboardInterrupt\n'])
 
+    def test_traceback_context_recursionerror(self):
+        # Test that for long traceback chains traceback does not itself
+        # raise a recursion error while printing (Issue43048)
+
+        # Calling f() creates a stack-overflowing __context__ chain.
+        def f():
+            try:
+                raise ValueError('hello')
+            except ValueError:
+                f()
+
+        try:
+            f()
+        except RecursionError:
+            exc_info = sys.exc_info()
+
+        traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
+
+    def test_traceback_cause_recursionerror(self):
+        # Same as test_traceback_context_recursionerror, but with
+        # a __cause__ chain.
+
+        def f():
+            e = None
+            try:
+                f()
+            except Exception as exc:
+                e = exc
+            raise Exception from e
+
+        try:
+            f()
+        except Exception:
+            exc_info = sys.exc_info()
+
+        traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
+
     def test_format_exception_only_bad__str__(self):
         class X(Exception):
             def __str__(self):
