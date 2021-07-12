@@ -881,7 +881,7 @@ class HTTPPasswordMgr:
         return authority, path
 
     def is_suburi(self, base, test):
-        """Check if test is below base in a URI tree (inclusive)
+        """Check if test is equal or below base in a URI tree
 
         Both args must be URIs in reduced form.
         """
