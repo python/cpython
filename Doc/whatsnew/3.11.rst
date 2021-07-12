@@ -123,8 +123,8 @@ as well as complex arithmetic expressions:
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
-Column information for code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Column information for code objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The information used by the enhanced traceback feature is made available as a
 general API that can be used to correlate bytecode instructions with source
