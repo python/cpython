@@ -1041,9 +1041,12 @@ Internal types
          .. versionadded:: 3.11
 
          .. note::
-            Storing positions may increase the disk usage of compiled Python
-            files and memory usage of the interpreter. This feature can be
-            disabled with the ``-X no_debug_ranges`` command line flag.
+            This feature requires storing column positions in code objects which may
+            result in a small increase of disk usage of compiled Python files or
+            interpreter memory usage. To avoid storing the extra information and/or
+            deactivate printing the extra traceback information, the
+            ``-X no_debug_ranges`` command line flag or the ``PYTHONNODEBUGRANGES``
+            environment variable can be used.
 
    .. _frame-objects:
 
