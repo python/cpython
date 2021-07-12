@@ -166,7 +166,7 @@ static uint8_t adaptive_opcodes[256] = {
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
+    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
 };
 
@@ -312,7 +312,7 @@ _Py_Quicken(PyCodeObject *code) {
 static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-    _PyAdaptiveEntry *cache0, _PyLoadAttrCache *cache1)
+    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1)
 {
     PyModuleObject *m = (PyModuleObject *)owner;
     PyObject *value = NULL;
@@ -422,7 +422,7 @@ int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    _PyAttrCache *cache1 = &cache[-1].attr;
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0, cache1);
         if (err) {

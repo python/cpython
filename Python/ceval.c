@@ -3315,7 +3315,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyTypeObject *tp = Py_TYPE(owner);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
             assert(tp->tp_dictoffset > 0);
@@ -3339,7 +3339,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *res;
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            _PyAttrCache *cache1 = &caches[-1].attr;
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
@@ -3364,7 +3364,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyTypeObject *tp = Py_TYPE(owner);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
             assert(tp->tp_dictoffset > 0);
@@ -3393,7 +3393,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyTypeObject *tp = Py_TYPE(owner);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            _PyAttrCache *cache1 = &caches[-1].attr;
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
             char *addr = (char *)owner + cache0->index;
