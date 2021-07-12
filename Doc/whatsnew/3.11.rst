@@ -98,6 +98,14 @@ New Modules
 Improved Modules
 ================
 
+builtins
+--------
+
+* In the interactive REPL, typing "exit" or "quit" will directly exit the
+  interpreter session instead of printing a message suggesting to use "exit()" or
+  "quit()" instead. Contributed by Pablo Galindo in :issue:`44603`.
+
+
 fractions
 ---------
 

@@ -188,6 +188,25 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 
 }
 
+static int
+PyRun_IsInteractiveExitCommand(mod_ty mod) {
+    if (asdl_seq_LEN(mod->v.Module.body) != 1) {
+        return 0;
+    }
+    stmt_ty statement = asdl_seq_GET(mod->v.Module.body, 0);
+    if (statement->kind != Expr_kind) {
+        return 0;
+    }
+    expr_ty expr = statement->v.Expr.value;
+    if (expr->kind != Name_kind) {
+        return 0;
+    }
+    if (expr->v.Name.ctx != Load) {
+        return 0;
+    }
+    return PyUnicode_CompareWithASCIIString(expr->v.Name.id, "exit") == 0 ||
+           PyUnicode_CompareWithASCIIString(expr->v.Name.id, "quit") == 0;
+}
 
 /* A PyRun_InteractiveOneObject() auxiliary function that does not print the
  * error on failure. */
@@ -267,6 +286,14 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         }
         return -1;
     }
+
+    if (PyRun_IsInteractiveExitCommand(mod)) {
+        Py_INCREF(Py_None);
+        PyErr_SetObject(PyExc_SystemExit, Py_None);
+        _PyArena_Free(arena);
+        return -1;
+    }
+
     m = PyImport_AddModuleObject(mod_name);
     if (m == NULL) {
         _PyArena_Free(arena);
