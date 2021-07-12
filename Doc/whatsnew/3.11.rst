@@ -91,7 +91,7 @@ that caused the error instead of just the line. For example:
 
 Previous versions of the interpreter would point to just the line making it
 ambiguous which object was ``None``. These enhanced errors can also be helpful
-when dealing with deeply nested dictionary objects and multiple function calls:
+when dealing with deeply nested dictionary objects and multiple function calls,
 
 .. code-block:: python
 
@@ -109,6 +109,16 @@ when dealing with deeply nested dictionary objects and multiple function calls:
         return 1 + query_count(db, response['a']['b']['c']['user'], retry=True)
                                    ~~~~~~~~~~~~~~~~~~^^^^^
     TypeError: 'NoneType' object is not subscriptable
+
+as well as complex arithmetic expressions:
+
+.. code-block:: python
+
+    Traceback (most recent call last):
+      File "calculation.py", line 54, in <module>
+        result = (x / y / z) * (a / b / c)
+                  ~~~~~~^~~
+    ZeroDivisionError: division by zero
 
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
