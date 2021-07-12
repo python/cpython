@@ -66,4 +66,4 @@ bound into a function.
    for the instruction at ``byte_offset``. Sets the value to ``0`` when
    information is not available for any particular element.
 
-   Returns ``1`` if the function succeeds.
+   Returns ``1`` if the function succeeds and 0 otherwise.
