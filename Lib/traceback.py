@@ -505,9 +505,9 @@ class StackSummary(list):
                     row.append(' ' * (colno - stripped_characters))
 
                     if anchors:
-                        row.append('~' * (anchors[0]))
-                        row.append('^' * (anchors[1] - anchors[0]))
-                        row.append('~' * (end_colno - colno - anchors[1]))
+                        row.append(anchors.primary_char * (anchors.left_end_offset))
+                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
+                        row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
                     else:
                         row.append('^' * (end_colno - colno))
 
@@ -533,6 +533,17 @@ def _byte_offset_to_character_offset(str, offset):
 
     return len(as_utf8[:offset + 1].decode("utf-8"))
 
+
+_Anchors = collections.namedtuple(
+    "_Anchors",
+    [
+        "left_end_offset",
+        "right_start_offset",
+        "primary_char",
+        "secondary_char",
+    ],
+    defaults=["~", "^"]
+)
 
 def _extract_caret_anchors_from_line_segment(segment):
     import ast
@@ -560,9 +571,9 @@ def _extract_caret_anchors_from_line_segment(segment):
                         and not operator_str[operator_offset + 1].isspace()
                     ):
                         right_anchor += 1
-                    return left_anchor, right_anchor
+                    return _Anchors(left_anchor, right_anchor)
                 case ast.Subscript():
-                    return expr.value.end_col_offset, expr.slice.end_col_offset + 1
+                    return _Anchors(expr.value.end_col_offset, expr.slice.end_col_offset + 1)
 
     return None
 

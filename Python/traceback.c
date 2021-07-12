@@ -539,7 +539,7 @@ static int
 extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
                           char** primary_error_char, char** secondary_error_char)
 {
-switch (expr->kind) {
+    switch (expr->kind) {
         case BinOp_kind: {
             expr_ty left = expr->v.BinOp.left;
             expr_ty right = expr->v.BinOp.right;
@@ -743,23 +743,20 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // right_end_offset will be set to -1.
 
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
-    Py_ssize_t start_offset = (Py_ssize_t)start_col_byte_offset;
-    Py_ssize_t end_offset = (Py_ssize_t)end_col_byte_offset;
+    assert(source_line);
+    Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+    Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
     Py_ssize_t left_end_offset = -1;
     Py_ssize_t right_start_offset = -1;
 
     char *primary_error_char = "^";
     char *secondary_error_char = primary_error_char;
 
-    if (source_line) {
-        start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
-        end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
-        int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
-                                            &left_end_offset, &right_start_offset,
-                                            &primary_error_char, &secondary_error_char);
-        if (res < 0 && ignore_source_errors() < 0) {
-            goto done;
-        }
+    int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
+                                        &left_end_offset, &right_start_offset,
+                                        &primary_error_char, &secondary_error_char);
+    if (res < 0 && ignore_source_errors() < 0) {
+        goto done;
     }
 
     err = print_error_location_carets(f, truncation, start_offset, end_offset,
