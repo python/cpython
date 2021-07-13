@@ -1994,13 +1994,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             Py_DECREF(sub);
             SET_TOP(res);
             Py_DECREF(dict);
-            if (res == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_SetKeyError(sub);
-                }
-                Py_DECREF(sub);
-                goto error;
-            }
             DISPATCH();
         }
 
