@@ -133,8 +133,7 @@ class build_py (Command):
 
     def build_package_data(self):
         """Copy data files into build directory"""
-        lastdir = None
-        for package, src_dir, build_dir, filenames in self.data_files:
+        for _, src_dir, build_dir, filenames in self.data_files:
             for filename in filenames:
                 target = os.path.join(build_dir, filename)
                 self.mkpath(os.path.dirname(target))
@@ -307,7 +306,7 @@ class build_py (Command):
     def get_outputs(self, include_bytecode=1):
         modules = self.find_all_modules()
         outputs = []
-        for (package, module, module_file) in modules:
+        for (package, module, _) in modules:
             package = package.split('.')
             filename = self.get_module_outfile(self.build_lib, package, module)
             outputs.append(filename)
@@ -321,7 +320,7 @@ class build_py (Command):
 
         outputs += [
             os.path.join(build_dir, filename)
-            for package, src_dir, build_dir, filenames in self.data_files
+            for _, _, build_dir, filenames in self.data_files
             for filename in filenames
             ]
 
