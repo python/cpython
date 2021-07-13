@@ -148,16 +148,19 @@ See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
 and Ammar Askar in :issue:`43950`.)
 
 
-
 Other Language Changes
 ======================
 
-A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
-:meth:`contextlib.ExitStack.enter_context` and
-:meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do not
-support the :term:`context manager` or :term:`asynchronous context manager`
-protocols correspondingly.
-(Contributed by Serhiy Storchaka in :issue:`44471`.)
+* Asynchronous comprehensions are now allowed inside comprehensions in
+  asynchronous functions. Outer comprehensions implicitly become
+  asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
+
+* A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+  :meth:`contextlib.ExitStack.enter_context` and
+  :meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do not
+  support the :term:`context manager` or :term:`asynchronous context manager`
+  protocols correspondingly.
+  (Contributed by Serhiy Storchaka in :issue:`44471`.)
 
 * A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
   :keyword:`with` and :keyword:`async with` statements for objects which do not
