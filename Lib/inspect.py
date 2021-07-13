@@ -2096,10 +2096,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    # Lazy import ast because it's relatively heavy and
-    # it's not used for other than this function.
-    import ast
-
     Parameter = cls._parameter_cls
 
     clean_signature, self_parameter, last_positional_only = \
