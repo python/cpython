@@ -322,3 +322,8 @@ Writing and reading a bzip2-compressed file in binary mode:
     ...     content = f.read()
     >>> content == data  # Check equality to original object after round-trip
     True
+
+.. testcleanup::
+
+   import os
+   os.remove("myfile.bz2")
