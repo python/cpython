@@ -166,6 +166,9 @@ Functions
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
+   Use :func:`clock_gettime_ns` to avoid the precision loss caused by the
+   :class:`float` type.
+
    .. availability:: Unix.
 
    .. versionadded:: 3.3
@@ -184,6 +187,9 @@ Functions
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
+
+   Use :func:`clock_settime_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. availability:: Unix.
 
@@ -271,11 +277,18 @@ Functions
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
    The reference point of the returned value is undefined, so that only the
-   difference between the results of consecutive calls is valid.
+   difference between the results of two calls is valid.
+
+   Use :func:`monotonic_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
+
    .. versionchanged:: 3.5
       The function is now always available and always system-wide.
+
+   .. versionchanged:: 3.10
+      On macOS, the function is now system-wide.
 
 
 .. function:: monotonic_ns() -> int
@@ -293,9 +306,15 @@ Functions
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep and is system-wide.  The reference
    point of the returned value is undefined, so that only the difference between
-   the results of consecutive calls is valid.
+   the results of two calls is valid.
+
+   Use :func:`perf_counter_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      On Windows, the function is now system-wide.
 
 .. function:: perf_counter_ns() -> int
 
@@ -315,7 +334,10 @@ Functions
    CPU time of the current process.  It does not include time elapsed during
    sleep.  It is process-wide by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
-   of consecutive calls is valid.
+   of two calls is valid.
+
+   Use :func:`process_time_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
 
@@ -581,6 +603,17 @@ Functions
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
+   Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
+   type.
+
+
+.. function:: time_ns() -> int
+
+   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
+   since the epoch_.
+
+   .. versionadded:: 3.7
+
 
 .. function:: thread_time() -> float
 
@@ -593,7 +626,10 @@ Functions
    CPU time of the current thread.  It does not include time elapsed during
    sleep.  It is thread-specific by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
-   of consecutive calls in the same thread is valid.
+   of two calls in the same thread is valid.
+
+   Use :func:`thread_time_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. availability::  Windows, Linux, Unix systems supporting
       ``CLOCK_THREAD_CPUTIME_ID``.
@@ -607,13 +643,6 @@ Functions
 
    .. versionadded:: 3.7
 
-
-.. function:: time_ns() -> int
-
-   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
-   since the epoch_.
-
-   .. versionadded:: 3.7
 
 .. function:: tzset()
 

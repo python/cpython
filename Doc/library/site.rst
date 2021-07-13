@@ -231,7 +231,9 @@ Module contents
 
    Return the path of the user-specific site-packages directory,
    :data:`USER_SITE`.  If it is not initialized yet, this function will also set
-   it, respecting :envvar:`PYTHONNOUSERSITE` and :data:`USER_BASE`.
+   it, respecting :data:`USER_BASE`.  To determine if the user-specific
+   site-packages was added to ``sys.path`` :data:`ENABLE_USER_SITE` should be
+   used.
 
    .. versionadded:: 3.2
 

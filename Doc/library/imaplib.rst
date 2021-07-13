@@ -143,7 +143,7 @@ The following utility functions are defined:
 
 .. function:: Int2AP(num)
 
-   Converts an integer into a string representation using characters from the set
+   Converts an integer into a bytes representation using characters from the set
    [``A`` .. ``P``].
 
 
@@ -174,9 +174,9 @@ example of usage.
 
 .. seealso::
 
-   Documents describing the protocol, and sources and binaries  for servers
-   implementing it, can all be found at the University of Washington's *IMAP
-   Information Center* (https://www.washington.edu/imap/).
+   Documents describing the protocol, sources for servers
+   implementing it, by the University of Washington's IMAP Information Center
+   can all be found at (**Source Code**) https://github.com/uw-imap/imap (**Not Maintained**).
 
 
 .. _imap4-objects:
@@ -197,7 +197,7 @@ you want to avoid having an argument string quoted (eg: the *flags* argument to
 
 Each command returns a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
-or mandated results from the command. Each *data* is either a string, or a
+or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
 second part contains the data (ie: 'literal' value).
 

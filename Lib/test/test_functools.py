@@ -19,15 +19,17 @@ import gc
 from weakref import proxy
 import contextlib
 
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 import functools
 
-py_functools = support.import_fresh_module('functools', blocked=['_functools'])
-c_functools = support.import_fresh_module('functools', fresh=['_functools'])
+py_functools = import_helper.import_fresh_module('functools',
+                                                 blocked=['_functools'])
+c_functools = import_helper.import_fresh_module('functools')
 
-decimal = support.import_fresh_module('decimal', fresh=['_decimal'])
+decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -945,6 +947,13 @@ class TestCmpToKey:
 class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
     if c_functools:
         cmp_to_key = c_functools.cmp_to_key
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        support.check_disallow_instantiation(
+            self, type(c_functools.cmp_to_key(None))
+        )
 
 
 class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):

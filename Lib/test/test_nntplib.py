@@ -37,6 +37,8 @@ else:
 
 class NetworkedNNTPTestsMixin:
 
+    ssl_context = None
+
     def test_welcome(self):
         welcome = self.server.getwelcome()
         self.assertEqual(str, type(welcome))
@@ -82,7 +84,7 @@ class NetworkedNNTPTestsMixin:
         desc = self.server.description(self.GROUP_NAME)
         _check_desc(desc)
         # Another sanity check
-        self.assertIn("Python", desc)
+        self.assertIn(self.DESC, desc)
         # With a pattern
         desc = self.server.description(self.GROUP_PAT)
         _check_desc(desc)
@@ -197,11 +199,11 @@ class NetworkedNNTPTestsMixin:
         self.assertTrue(resp.startswith("220 "), resp)
         self.check_article_resp(resp, article, art_num)
         # Tolerate running the tests from behind a NNTP virus checker
-        blacklist = lambda line: line.startswith(b'X-Antivirus')
+        denylist = lambda line: line.startswith(b'X-Antivirus')
         filtered_head_lines = [line for line in head.lines
-                               if not blacklist(line)]
+                               if not denylist(line)]
         filtered_lines = [line for line in article.lines
-                          if not blacklist(line)]
+                          if not denylist(line)]
         self.assertEqual(filtered_lines, filtered_head_lines + [b''] + body.lines)
 
     def test_capabilities(self):
@@ -273,18 +275,21 @@ class NetworkedNNTPTestsMixin:
                 return False
             return True
 
+        kwargs = dict(
+            timeout=support.INTERNET_TIMEOUT,
+            usenetrc=False
+        )
+        if self.ssl_context is not None:
+            kwargs["ssl_context"] = self.ssl_context
+
         try:
-            server = self.NNTP_CLASS(self.NNTP_HOST,
-                                     timeout=support.INTERNET_TIMEOUT,
-                                     usenetrc=False)
+            server = self.NNTP_CLASS(self.NNTP_HOST, **kwargs)
             with server:
                 self.assertTrue(is_connected())
                 self.assertTrue(server.help())
             self.assertFalse(is_connected())
 
-            server = self.NNTP_CLASS(self.NNTP_HOST,
-                                     timeout=support.INTERNET_TIMEOUT,
-                                     usenetrc=False)
+            server = self.NNTP_CLASS(self.NNTP_HOST, **kwargs)
             with server:
                 server.quit()
             self.assertFalse(is_connected())
@@ -309,22 +314,28 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     NNTP_HOST = 'news.trigofacile.com'
     GROUP_NAME = 'fr.comp.lang.python'
     GROUP_PAT = 'fr.comp.lang.*'
+    DESC = 'Python'
 
     NNTP_CLASS = NNTP
 
     @classmethod
     def setUpClass(cls):
         support.requires("network")
+        kwargs = dict(
+            timeout=support.INTERNET_TIMEOUT,
+            usenetrc=False
+        )
+        if cls.ssl_context is not None:
+            kwargs["ssl_context"] = cls.ssl_context
         with socket_helper.transient_internet(cls.NNTP_HOST):
             try:
-                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST,
-                                            timeout=support.INTERNET_TIMEOUT,
-                                            usenetrc=False)
+                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, **kwargs)
             except SSLError as ssl_err:
                 # matches "[SSL: DH_KEY_TOO_SMALL] dh key too small"
                 if re.search(r'(?i)KEY.TOO.SMALL', ssl_err.reason):
                     raise unittest.SkipTest(f"{cls} got {ssl_err} connecting "
                                             f"to {cls.NNTP_HOST!r}")
+                print(cls.NNTP_HOST)
                 raise
             except EOF_ERRORS:
                 raise unittest.SkipTest(f"{cls} got EOF error on connecting "
@@ -343,8 +354,11 @@ class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
     # 400 connections per day are accepted from each IP address."
 
     NNTP_HOST = 'nntp.aioe.org'
-    GROUP_NAME = 'comp.lang.python'
-    GROUP_PAT = 'comp.lang.*'
+    # bpo-42794: aioe.test is one of the official groups on this server
+    # used for testing: https://news.aioe.org/manual/aioe-hierarchy/
+    GROUP_NAME = 'aioe.test'
+    GROUP_PAT = 'aioe.*'
+    DESC = 'test'
 
     NNTP_CLASS = getattr(nntplib, 'NNTP_SSL', None)
 
@@ -354,6 +368,10 @@ class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
     # Disabled as the connection will already be encrypted.
     test_starttls = None
 
+    if ssl is not None:
+        ssl_context = ssl._create_unverified_context()
+        ssl_context.set_ciphers("DEFAULT")
+        ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
 #
 # Non-networked tests using a local server (or something mocking it).
@@ -1598,7 +1616,7 @@ class LocalServerTests(unittest.TestCase):
                 elif cmd == b'STARTTLS\r\n':
                     reader.close()
                     client.sendall(b'382 Begin TLS negotiation now\r\n')
-                    context = ssl.SSLContext()
+                    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     context.load_cert_chain(certfile)
                     client = context.wrap_socket(
                         client, server_side=True)

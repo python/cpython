@@ -1,4 +1,4 @@
-from test.support import temp_dir
+from test.support.os_helper import temp_dir
 from test.support.script_helper import assert_python_failure
 import unittest
 import sys

@@ -1,8 +1,10 @@
 import unittest
 from test import support
+from test.support import import_helper
 import builtins
 import contextlib
 import copy
+import enum
 import io
 import os
 import pickle
@@ -10,8 +12,8 @@ import sys
 import weakref
 from unittest import mock
 
-py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
-c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
 
 def importable(name):
     try:
@@ -29,6 +31,13 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_safe_uuid_enum(self):
+        class CheckedSafeUUID(enum.Enum):
+            safe = 0
+            unsafe = -1
+            unknown = None
+        enum._test_simple_enum(CheckedSafeUUID, py_uuid.SafeUUID)
 
     def test_UUID(self):
         equal = self.assertEqual
@@ -638,7 +647,7 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any

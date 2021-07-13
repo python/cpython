@@ -1,4 +1,3 @@
-import datetime
 import faulthandler
 import locale
 import os
@@ -150,9 +149,12 @@ class Regrtest:
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
-        test_time = datetime.timedelta(seconds=int(test_time))
-        line = f"{test_time} {line}"
 
+        mins, secs = divmod(int(test_time), 60)
+        hours, mins = divmod(mins, 60)
+        test_time = "%d:%02d:%02d" % (hours, mins, secs)
+
+        line = f"{test_time} {line}"
         if empty:
             line = line[:-1]
 
@@ -216,7 +218,7 @@ class Regrtest:
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
             regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
-            with open(os.path.join(support.SAVEDCWD, self.ns.fromfile)) as fp:
+            with open(os.path.join(os_helper.SAVEDCWD, self.ns.fromfile)) as fp:
                 for line in fp:
                     line = line.split('#', 1)[0]
                     line = line.strip()
@@ -559,7 +561,7 @@ class Regrtest:
         for k, v in totals.items():
             root.set(k, str(v))
 
-        xmlpath = os.path.join(support.SAVEDCWD, self.ns.xmlpath)
+        xmlpath = os.path.join(os_helper.SAVEDCWD, self.ns.xmlpath)
         with open(xmlpath, 'wb') as f:
             for s in ET.tostringlist(root):
                 f.write(s)
@@ -597,7 +599,7 @@ class Regrtest:
             test_cwd = 'test_python_worker_{}'.format(pid)
         else:
             test_cwd = 'test_python_{}'.format(pid)
-        test_cwd += support.FS_NONASCII
+        test_cwd += os_helper.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
 
@@ -609,10 +611,10 @@ class Regrtest:
         for name in glob.glob(path):
             if os.path.isdir(name):
                 print("Remove directory: %s" % name)
-                support.rmtree(name)
+                os_helper.rmtree(name)
             else:
                 print("Remove file: %s" % name)
-                support.unlink(name)
+                os_helper.unlink(name)
 
     def main(self, tests=None, **kwargs):
         self.parse_args(kwargs)
@@ -629,7 +631,7 @@ class Regrtest:
             # Run the tests in a context manager that temporarily changes the CWD
             # to a temporary and writable directory. If it's not possible to
             # create or change the CWD, the original CWD will be used.
-            # The original CWD is available from support.SAVEDCWD.
+            # The original CWD is available from os_helper.SAVEDCWD.
             with os_helper.temp_cwd(test_cwd, quiet=True):
                 # When using multiprocessing, worker processes will use test_cwd
                 # as their parent temporary directory. So when the main process

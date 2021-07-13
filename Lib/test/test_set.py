@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import warnings_helper
 import gc
 import weakref
 import operator
@@ -361,8 +362,8 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertEqual(s, set(self.word))
         s.__init__(self.otherword)
         self.assertEqual(s, set(self.otherword))
-        self.assertRaises(TypeError, s.__init__, s, 2);
-        self.assertRaises(TypeError, s.__init__, 1);
+        self.assertRaises(TypeError, s.__init__, s, 2)
+        self.assertRaises(TypeError, s.__init__, 1)
 
     def test_constructor_identity(self):
         s = self.thetype(range(3))
@@ -953,7 +954,7 @@ class TestBasicOpsBytes(TestBasicOps, unittest.TestCase):
 
 class TestBasicOpsMixedStringBytes(TestBasicOps, unittest.TestCase):
     def setUp(self):
-        self._warning_filters = support.check_warnings()
+        self._warning_filters = warnings_helper.check_warnings()
         self._warning_filters.__enter__()
         warnings.simplefilter('ignore', BytesWarning)
         self.case   = "string and bytes set"

@@ -14,27 +14,13 @@ import time
 import types
 import unittest
 
-from .import_helper import (
-    CleanImport, DirsOnSysPath, _ignore_deprecated_imports,
-    _save_and_block_module, _save_and_remove_module,
-    forget, import_fresh_module, import_module, make_legacy_pyc,
-    modules_cleanup, modules_setup, unload)
-from .os_helper import (
-    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_ASCII, TESTFN_NONASCII,
-    TESTFN_UNENCODABLE, TESTFN_UNDECODABLE,
-    TESTFN_UNICODE, can_symlink, can_xattr,
-    change_cwd, create_empty_file, fd_count,
-    fs_is_case_insensitive, make_bad_fd, rmdir,
-    rmtree, skip_unless_symlink, skip_unless_xattr,
-    temp_cwd, temp_dir, temp_umask, unlink,
-    EnvironmentVarGuard, FakePath, _longpath)
-from .warnings_helper import (
-    WarningsRecorder, _filterwarnings,
-    check_no_resource_warning, check_no_warnings,
-    check_syntax_warning, check_warnings, ignore_warnings)
-
 from .testresult import get_test_runner
 
+
+try:
+    from _testcapi import unicode_legacy_string
+except ImportError:
+    unicode_legacy_string = None
 
 __all__ = [
     # globals
@@ -54,6 +40,7 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
+    "check_disallow_instantiation",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -62,7 +49,7 @@ __all__ = [
     # processes
     "reap_children",
     # miscellaneous
-    "run_with_locale", "swap_item", "findfile",
+    "run_with_locale", "swap_item", "findfile", "infinite_recursion",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
@@ -83,6 +70,8 @@ LOOPBACK_TIMEOUT = 5.0
 if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
+    LOOPBACK_TIMEOUT = 10
+elif sys.platform == 'vxworks':
     LOOPBACK_TIMEOUT = 10
 
 # Timeout in seconds for network requests going to the Internet. The timeout is
@@ -426,11 +415,22 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
+def has_no_debug_ranges():
+    import _testinternalcapi
+    config = _testinternalcapi.get_config()
+    return bool(config['no_debug_ranges'])
+
+def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
+    return unittest.skipIf(has_no_debug_ranges(), reason)
+
+requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
+                        'requires legacy Unicode C API')
+
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
 
-if sys.platform != 'win32':
+if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
@@ -496,6 +496,7 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
+    from .os_helper import unlink
     try:
         import gzip
     except ImportError:
@@ -1316,6 +1317,8 @@ def skip_if_buggy_ucrt_strfptime(test):
 class PythonSymlink:
     """Creates a symlink for the current Python executable"""
     def __init__(self, link=None):
+        from .os_helper import TESTFN
+
         self.link = link or os.path.abspath(TESTFN)
         self._linked = []
         self.real = os.path.realpath(sys.executable)
@@ -1416,7 +1419,7 @@ def detect_api_mismatch(ref_api, other_api, *, ignore=()):
 
 
 def check__all__(test_case, module, name_of_module=None, extra=(),
-                 blacklist=()):
+                 not_exported=()):
     """Assert that the __all__ variable of 'module' contains all public names.
 
     The module's public names (its API) are detected automatically based on
@@ -1433,7 +1436,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     '__module__' attribute. If provided, it will be added to the
     automatically detected ones.
 
-    The 'blacklist' argument can be a set of names that must not be treated
+    The 'not_exported' argument can be a set of names that must not be treated
     as part of the public API even though their names indicate otherwise.
 
     Usage:
@@ -1449,10 +1452,10 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
         class OtherTestCase(unittest.TestCase):
             def test__all__(self):
                 extra = {'BAR_CONST', 'FOO_CONST'}
-                blacklist = {'baz'}  # Undocumented name.
+                not_exported = {'baz'}  # Undocumented name.
                 # bar imports part of its API from _bar.
                 support.check__all__(self, bar, ('bar', '_bar'),
-                                     extra=extra, blacklist=blacklist)
+                                     extra=extra, not_exported=not_exported)
 
     """
 
@@ -1464,7 +1467,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     expected = set(extra)
 
     for name in dir(module):
-        if name.startswith('_') or name in blacklist:
+        if name.startswith('_') or name in not_exported:
             continue
         obj = getattr(module, name)
         if (getattr(obj, '__module__', None) in name_of_module or
@@ -1673,9 +1676,16 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from distutils import ccompiler, sysconfig, spawn
+    # TODO (PEP 632): alternate check without using distutils
+    from distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
+    if compiler.compiler_type == "msvc":
+        # MSVC has no executables, so check whether initialization succeeds
+        try:
+            compiler.initialize()
+        except errors.DistutilsPlatformError:
+            return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
             continue
@@ -1964,6 +1974,7 @@ def skip_if_broken_multiprocessing_synchronize():
     is no available semaphore implementation, or if creating a lock raises an
     OSError (on Linux only).
     """
+    from .import_helper import import_module
 
     # Skip tests if the _multiprocessing extension is missing.
     import_module('_multiprocessing')
@@ -1980,3 +1991,34 @@ def skip_if_broken_multiprocessing_synchronize():
             synchronize.Lock(ctx=None)
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
+
+
+def check_disallow_instantiation(testcase, tp, *args, **kwds):
+    """
+    Check that given type cannot be instantiated using *args and **kwds.
+
+    See bpo-43916: Add Py_TPFLAGS_DISALLOW_INSTANTIATION type flag.
+    """
+    mod = tp.__module__
+    name = tp.__name__
+    if mod != 'builtins':
+        qualname = f"{mod}.{name}"
+    else:
+        qualname = f"{name}"
+    msg = f"cannot create '{re.escape(qualname)}' instances"
+    testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+
+@contextlib.contextmanager
+def infinite_recursion(max_depth=75):
+    """Set a lower limit for tests that interact with infinite recursions
+    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
+    debug windows builds, due to not enough functions being inlined the
+    stack size might not handle the default recursion limit (1000). See
+    bpo-11105 for details."""
+
+    original_depth = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(max_depth)
+        yield
+    finally:
+        sys.setrecursionlimit(original_depth)

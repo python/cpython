@@ -248,7 +248,7 @@ class TestThreadedServer(SocketThread):
                     conn, addr = self._sock.accept()
                 except BlockingIOError:
                     continue
-                except socket.timeout:
+                except TimeoutError:
                     if not self._active:
                         return
                     else:

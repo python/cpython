@@ -1,0 +1,2 @@
+Accelerate speed of :mod:`mimetypes` initialization using a native
+implementation of the registry scan.

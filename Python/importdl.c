@@ -220,10 +220,9 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     def->m_base.m_init = p0;
 
     /* Remember the filename as the __file__ attribute */
-    if (PyModule_AddObject(m, "__file__", path) < 0)
+    if (PyModule_AddObjectRef(m, "__file__", path) < 0) {
         PyErr_Clear(); /* Not important enough to report */
-    else
-        Py_INCREF(path);
+    }
 
     PyObject *modules = PyImport_GetModuleDict();
     if (_PyImport_FixupExtensionObject(m, name_unicode, path, modules) < 0)

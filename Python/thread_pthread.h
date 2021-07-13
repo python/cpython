@@ -62,6 +62,10 @@
 #   define THREAD_STACK_SIZE    0x800000
 #   endif
 #endif
+#if defined(__VXWORKS__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#undef  THREAD_STACK_SIZE
+#define THREAD_STACK_SIZE       0x100000
+#endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
@@ -134,7 +138,7 @@ do { \
 static pthread_condattr_t *condattr_monotonic = NULL;
 
 static void
-init_condattr()
+init_condattr(void)
 {
 #ifdef CONDATTR_MONOTONIC
     static pthread_condattr_t ca;

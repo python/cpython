@@ -1,0 +1,3 @@
+Implement quickening in the interpreter. This offers no advantages as
+yet, but is an enabler of future optimizations. See PEP 659 for full
+explanation.

@@ -412,7 +412,7 @@ uses were to provide type hints to function parameters and return values.  It
 became evident that it would be beneficial for Python users, if the
 standard library included the base definitions and tools for type annotations.
 
-:pep:`484` introduces a :term:`provisional module <provisional api>` to
+:pep:`484` introduces a :term:`provisional module <provisional API>` to
 provide these standard definitions and tools, along with some conventions
 for situations where annotations are not available.
 
@@ -726,7 +726,7 @@ New Modules
 typing
 ------
 
-The new :mod:`typing` :term:`provisional <provisional api>` module
+The new :mod:`typing` :term:`provisional <provisional API>` module
 provides standard definitions and tools for function type annotations.
 See :ref:`Type Hints <whatsnew-pep-484>` for more information.
 
@@ -772,7 +772,7 @@ Steven Bethard, paul j3 and Daniel Eriksson in :issue:`14910`.)
 asyncio
 -------
 
-Since the :mod:`asyncio` module is :term:`provisional <provisional api>`,
+Since the :mod:`asyncio` module is :term:`provisional <provisional API>`,
 all changes introduced in Python 3.5 have also been backported to Python 3.4.x.
 
 Notable changes in the :mod:`asyncio` module since Python 3.4.0:
@@ -1867,7 +1867,7 @@ A new :func:`~sys.set_coroutine_wrapper` function allows setting a global
 hook that will be called whenever a :term:`coroutine object <coroutine>`
 is created by an :keyword:`async def` function.  A corresponding
 :func:`~sys.get_coroutine_wrapper` can be used to obtain a currently set
-wrapper.  Both functions are :term:`provisional <provisional api>`,
+wrapper.  Both functions are :term:`provisional <provisional API>`,
 and are intended for debugging purposes only.  (Contributed by Yury Selivanov
 in :issue:`24017`.)
 

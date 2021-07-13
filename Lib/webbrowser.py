@@ -532,6 +532,10 @@ def register_standard_browsers():
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
 
+    if sys.platform == "serenityos":
+        # SerenityOS webbrowser, simply called "Browser".
+        register("Browser", None, BackgroundBrowser("Browser"))
+
     if sys.platform[:3] == "win":
         # First try to use the default Windows browser
         register("windows-default", WindowsDefault)
@@ -550,7 +554,7 @@ def register_standard_browsers():
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
                 result = raw_result.decode().strip()
-            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError) :
+            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError, NotADirectoryError) :
                 pass
             else:
                 global _os_preferred_browser

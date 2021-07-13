@@ -1,0 +1,3 @@
+Heap types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit the
+:pep:`590` vectorcall protocol.  Previously, this was only possible for
+:ref:`static types <static-types>`.  Patch by Erlend E. Aasland.

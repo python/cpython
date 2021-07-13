@@ -1,7 +1,9 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale
+from test.support import run_with_locale, cpython_only
 import collections.abc
+from collections import namedtuple
+import gc
 import inspect
 import pickle
 import locale
@@ -9,6 +11,12 @@ import sys
 import types
 import unittest.mock
 import weakref
+import typing
+
+class Example:
+    pass
+
+class Forward: ...
 
 class TypesTests(unittest.TestCase):
 
@@ -598,6 +606,193 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
         self.assertIsInstance(int.__new__, types.BuiltinMethodType)
 
+    def test_or_types_operator(self):
+        self.assertEqual(int | str, typing.Union[int, str])
+        self.assertNotEqual(int | list, typing.Union[int, str])
+        self.assertEqual(str | int, typing.Union[int, str])
+        self.assertEqual(int | None, typing.Union[int, None])
+        self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(int | str | list, typing.Union[int, str, list])
+        self.assertEqual(int | (str | list), typing.Union[int, str, list])
+        self.assertEqual(str | (int | list), typing.Union[int, str, list])
+        self.assertEqual(typing.List | typing.Tuple, typing.Union[typing.List, typing.Tuple])
+        self.assertEqual(typing.List[int] | typing.Tuple[int], typing.Union[typing.List[int], typing.Tuple[int]])
+        self.assertEqual(typing.List[int] | None, typing.Union[typing.List[int], None])
+        self.assertEqual(None | typing.List[int], typing.Union[None, typing.List[int]])
+        self.assertEqual(str | float | int | complex | int, (int | str) | (float | complex))
+        self.assertEqual(typing.Union[str, int, typing.List[int]], str | int | typing.List[int])
+        self.assertEqual(int | int, int)
+        self.assertEqual(
+            BaseException |
+            bool |
+            bytes |
+            complex |
+            float |
+            int |
+            list |
+            map |
+            set,
+            typing.Union[
+                BaseException,
+                bool,
+                bytes,
+                complex,
+                float,
+                int,
+                list,
+                map,
+                set,
+            ])
+        with self.assertRaises(TypeError):
+            int | 3
+        with self.assertRaises(TypeError):
+            3 | int
+        with self.assertRaises(TypeError):
+            Example() | int
+        with self.assertRaises(TypeError):
+            (int | str) < typing.Union[str, int]
+        with self.assertRaises(TypeError):
+            (int | str) < (int | bool)
+        with self.assertRaises(TypeError):
+            (int | str) <= (int | str)
+        with self.assertRaises(TypeError):
+            # Check that we don't crash if typing.Union does not have a tuple in __args__
+            x = typing.Union[str, int]
+            x.__args__ = [str, int]
+            (int | str ) == x
+
+    def test_or_type_operator_with_TypeVar(self):
+        TV = typing.TypeVar('T')
+        assert TV | str == typing.Union[TV, str]
+        assert str | TV == typing.Union[str, TV]
+
+    def test_union_parameter_chaining(self):
+        T = typing.TypeVar("T")
+        S = typing.TypeVar("S")
+
+        self.assertEqual((float | list[T])[int], float | list[int])
+        self.assertEqual(list[int | list[T]].__parameters__, (T,))
+        self.assertEqual(list[int | list[T]][str], list[int | list[str]])
+        self.assertEqual((list[T] | list[S]).__parameters__, (T, S))
+        self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
+
+    def test_or_type_operator_with_forward(self):
+        T = typing.TypeVar('T')
+        ForwardAfter = T | 'Forward'
+        ForwardBefore = 'Forward' | T
+        def forward_after(x: ForwardAfter[int]) -> None: ...
+        def forward_before(x: ForwardBefore[int]) -> None: ...
+        assert typing.get_args(typing.get_type_hints(forward_after)['x']) == (int, Forward)
+        assert typing.get_args(typing.get_type_hints(forward_before)['x']) == (int, Forward)
+
+    def test_or_type_operator_with_Protocol(self):
+        class Proto(typing.Protocol):
+            def meth(self) -> int:
+                ...
+        assert Proto | str == typing.Union[Proto, str]
+
+    def test_or_type_operator_with_Alias(self):
+        assert list | str == typing.Union[list, str]
+        assert typing.List | str == typing.Union[typing.List, str]
+
+    def test_or_type_operator_with_NamedTuple(self):
+        NT=namedtuple('A', ['B', 'C', 'D'])
+        assert NT | str == typing.Union[NT,str]
+
+    def test_or_type_operator_with_TypedDict(self):
+        class Point2D(typing.TypedDict):
+            x: int
+            y: int
+            label: str
+        assert Point2D | str == typing.Union[Point2D, str]
+
+    def test_or_type_operator_with_NewType(self):
+        UserId = typing.NewType('UserId', int)
+        assert UserId | str == typing.Union[UserId, str]
+
+    def test_or_type_operator_with_IO(self):
+        assert typing.IO | str == typing.Union[typing.IO, str]
+
+    def test_or_type_operator_with_SpecialForm(self):
+        assert typing.Any | str == typing.Union[typing.Any, str]
+        assert typing.NoReturn | str == typing.Union[typing.NoReturn, str]
+        assert typing.Optional[int] | str == typing.Union[typing.Optional[int], str]
+        assert typing.Optional[int] | str == typing.Union[int, str, None]
+        assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
+
+    def test_or_type_repr(self):
+        assert repr(int | None) == "int | None"
+        assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
+
+    def test_or_type_operator_with_genericalias(self):
+        a = list[int]
+        b = list[str]
+        c = dict[float, str]
+        class SubClass(types.GenericAlias): ...
+        d = SubClass(list, float)
+        # equivalence with typing.Union
+        self.assertEqual(a | b | c | d, typing.Union[a, b, c, d])
+        # de-duplicate
+        self.assertEqual(a | c | b | b | a | c | d | d, a | b | c | d)
+        # order shouldn't matter
+        self.assertEqual(a | b | d, b | a | d)
+        self.assertEqual(repr(a | b | c | d),
+                         "list[int] | list[str] | dict[float, str] | list[float]")
+
+        class BadType(type):
+            def __eq__(self, other):
+                return 1 / 0
+
+        bt = BadType('bt', (), {})
+        # Comparison should fail and errors should propagate out for bad types.
+        with self.assertRaises(ZeroDivisionError):
+            list[int] | list[bt]
+
+        union_ga = (int | list[str], int | collections.abc.Callable[..., str],
+                    int | d)
+        # Raise error when isinstance(type, type | genericalias)
+        for type_ in union_ga:
+            with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
+                with self.assertRaises(TypeError):
+                    isinstance(list, type_)
+                with self.assertRaises(TypeError):
+                    issubclass(list, type_)
+
+    def test_or_type_operator_with_bad_module(self):
+        class TypeVar:
+            @property
+            def __module__(self):
+                1 / 0
+        # Crashes in Issue44483
+        with self.assertRaises(ZeroDivisionError):
+            str | TypeVar()
+
+    @cpython_only
+    def test_or_type_operator_reference_cycle(self):
+        if not hasattr(sys, 'gettotalrefcount'):
+            self.skipTest('Cannot get total reference count.')
+        gc.collect()
+        before = sys.gettotalrefcount()
+        for _ in range(30):
+            T = typing.TypeVar('T')
+            U = int | list[T]
+            T.blah = U
+            del T
+            del U
+        gc.collect()
+        leeway = 15
+        self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
+                             msg='Check for union reference leak.')
+
+    def test_ellipsis_type(self):
+        self.assertIsInstance(Ellipsis, types.EllipsisType)
+
+    def test_notimplemented_type(self):
+        self.assertIsInstance(NotImplemented, types.NotImplementedType)
+
+    def test_none_type(self):
+        self.assertIsInstance(None, types.NoneType)
+
 
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
@@ -1175,6 +1370,24 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             N(5)
         self.assertEqual(str(cm.exception), expected_message)
+
+    def test_metaclass_new_error(self):
+        # bpo-44232: The C function type_new() must properly report the
+        # exception when a metaclass constructor raises an exception and the
+        # winner class is not the metaclass.
+        class ModelBase(type):
+            def __new__(cls, name, bases, attrs):
+                super_new = super().__new__
+                new_class = super_new(cls, name, bases, {})
+                if name != "Model":
+                    raise RuntimeWarning(f"{name=}")
+                return new_class
+
+        class Model(metaclass=ModelBase):
+            pass
+
+        with self.assertRaises(RuntimeWarning):
+            type("SouthPonies", (Model,), {})
 
 
 class SimpleNamespaceTests(unittest.TestCase):

@@ -43,7 +43,9 @@ For example, ``'[?]'`` matches the character ``'?'``.
    (like :file:`/usr/src/Python-1.5/Makefile`) or relative (like
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
    symlinks are included in the results (as in the shell). Whether or not the
-   results are sorted depends on the file system.
+   results are sorted depends on the file system.  If a file that satisfies
+   conditions is removed or added during the call of this function, whether
+   a path name for that file be included is unspecified.
 
    If *root_dir* is not ``None``, it should be a :term:`path-like object`
    specifying the root directory for searching.  It has the same effect on
@@ -63,6 +65,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    match.
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
+   .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -81,6 +84,13 @@ For example, ``'[?]'`` matches the character ``'?'``.
    without actually storing them all simultaneously.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
+   .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
+
+   .. versionchanged:: 3.5
+      Support for recursive globs using "``**``".
+
+   .. versionchanged:: 3.10
+      Added the *root_dir* and *dir_fd* parameters.
 
 
 .. function:: escape(pathname)
@@ -126,4 +136,3 @@ default. For example, consider a directory containing :file:`card.gif` and
 
    Module :mod:`fnmatch`
       Shell-style filename (not path) expansion
-

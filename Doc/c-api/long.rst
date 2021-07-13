@@ -27,13 +27,13 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: int PyLong_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyLongObject` or a subtype of
-   :c:type:`PyLongObject`.
+   :c:type:`PyLongObject`.  This function always succeeds.
 
 
 .. c:function:: int PyLong_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyLongObject`, but not a subtype of
-   :c:type:`PyLongObject`.
+   :c:type:`PyLongObject`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyLong_FromLong(long v)
@@ -97,9 +97,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
 
    Convert a sequence of Unicode digits in the string *u* to a Python integer
-   value.  The Unicode string is first encoded to a byte string using
-   :c:func:`PyUnicode_EncodeDecimal` and then converted using
-   :c:func:`PyLong_FromString`.
+   value.
 
    .. versionadded:: 3.3
 

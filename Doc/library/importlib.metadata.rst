@@ -4,6 +4,13 @@
  Using :mod:`!importlib.metadata`
 =================================
 
+.. module:: importlib.metadata
+   :synopsis: The implementation of the importlib metadata.
+
+.. versionadded:: 3.8
+
+**Source code:** :source:`Lib/importlib/metadata.py`
+
 .. note::
    This functionality is provisional and may deviate from the usual
    version semantics of the standard library.
@@ -74,18 +81,48 @@ This package provides the following functionality via its public API.
 Entry points
 ------------
 
-The ``entry_points()`` function returns a dictionary of all entry points,
-keyed by group.  Entry points are represented by ``EntryPoint`` instances;
+The ``entry_points()`` function returns a collection of entry points.
+Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
 a ``.load()`` method to resolve the value.  There are also ``.module``,
 ``.attr``, and ``.extras`` attributes for getting the components of the
-``.value`` attribute::
+``.value`` attribute.
+
+Query all entry points::
 
     >>> eps = entry_points()  # doctest: +SKIP
-    >>> list(eps)  # doctest: +SKIP
+
+The ``entry_points()`` function returns an ``EntryPoints`` object,
+a sequence of all ``EntryPoint`` objects with ``names`` and ``groups``
+attributes for convenience::
+
+    >>> sorted(eps.groups)  # doctest: +SKIP
     ['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
-    >>> scripts = eps['console_scripts']  # doctest: +SKIP
-    >>> wheel = [ep for ep in scripts if ep.name == 'wheel'][0]  # doctest: +SKIP
+
+``EntryPoints`` has a ``select`` method to select entry points
+matching specific properties. Select entry points in the
+``console_scripts`` group::
+
+    >>> scripts = eps.select(group='console_scripts')  # doctest: +SKIP
+
+Equivalently, since ``entry_points`` passes keyword arguments
+through to select::
+
+    >>> scripts = entry_points(group='console_scripts')  # doctest: +SKIP
+
+Pick out a specific script named "wheel" (found in the wheel project)::
+
+    >>> 'wheel' in scripts.names  # doctest: +SKIP
+    True
+    >>> wheel = scripts['wheel']  # doctest: +SKIP
+
+Equivalently, query for that entry point during selection::
+
+    >>> (wheel,) = entry_points(group='console_scripts', name='wheel')  # doctest: +SKIP
+    >>> (wheel,) = entry_points().select(group='console_scripts', name='wheel')  # doctest: +SKIP
+
+Inspect the resolved entry point::
+
     >>> wheel  # doctest: +SKIP
     EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')
     >>> wheel.module  # doctest: +SKIP
@@ -104,6 +141,17 @@ group.  Read `the setuptools docs
 <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
 for more information on entry points, their definition, and usage.
 
+*Compatibility Note*
+
+The "selectable" entry points were introduced in ``importlib_metadata``
+3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
+no parameters and always returned a dictionary of entry points, keyed
+by group. For compatibility, if no parameters are passed to entry_points,
+a ``SelectableGroups`` object is returned, implementing that dict
+interface. In the future, calling ``entry_points`` with no parameters
+will return an ``EntryPoints`` object. Users should rely on the selection
+interface to retrieve entry points by group.
+
 
 .. _metadata:
 
@@ -115,11 +163,25 @@ Every distribution includes some metadata, which you can extract using the
 
     >>> wheel_metadata = metadata('wheel')  # doctest: +SKIP
 
-The keys of the returned data structure [#f1]_ name the metadata keywords, and
-their values are returned unparsed from the distribution metadata::
+The keys of the returned data structure, a ``PackageMetadata``,
+name the metadata keywords, and
+the values are returned unparsed from the distribution metadata::
 
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+
+``PackageMetadata`` also presents a ``json`` attribute that returns
+all the metadata in a JSON-compatible form per :PEP:`566`::
+
+    >>> wheel_metadata.json['requires_python']
+    '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+
+.. versionchanged:: 3.10
+   The ``Description`` is now included in the metadata when presented
+   through the payload. Line continuation characters have been removed.
+
+.. versionadded:: 3.10
+   The ``json`` attribute was added.
 
 
 .. _version:
@@ -142,7 +204,7 @@ Distribution files
 You can also get the full set of files contained within a distribution.  The
 ``files()`` function takes a distribution package name and returns all of the
 files installed by this distribution.  Each file object returned is a
-``PackagePath``, a :class:`pathlib.Path` derived object with additional ``dist``,
+``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
 ``size``, and ``hash`` properties as indicated by the metadata.  For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
@@ -166,6 +228,12 @@ Once you have the file, you can also read its contents::
             return s.encode('utf-8')
         return s
 
+You can also use the ``locate`` method to get a the absolute path to the
+file::
+
+    >>> util.locate()  # doctest: +SKIP
+    PosixPath('/home/gustav/example/lib/site-packages/wheel/util.py')
+
 In the case where the metadata file listing files
 (RECORD or SOURCES.txt) is missing, ``files()`` will
 return ``None``. The caller may wish to wrap calls to
@@ -184,6 +252,19 @@ function::
 
     >>> requires('wheel')  # doctest: +SKIP
     ["pytest (>=3.0.0) ; extra == 'test'", "pytest-cov ; extra == 'test'"]
+
+
+Package distributions
+---------------------
+
+A convience method to resolve the distribution or
+distributions (in the case of a namespace package) for top-level
+Python packages or modules::
+
+    >>> packages_distributions()
+    {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
+
+.. versionadded:: 3.10
 
 
 Distributions
@@ -206,9 +287,9 @@ Thus, an alternative way to get the version number is through the
 There are all kinds of additional metadata available on the ``Distribution``
 instance::
 
-    >>> d.metadata['Requires-Python']  # doctest: +SKIP
+    >>> dist.metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
-    >>> d.metadata['License']  # doctest: +SKIP
+    >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
 The full set of available metadata is not described here.  See :pep:`566`
@@ -259,9 +340,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 
 
 .. rubric:: Footnotes
-
-.. [#f1] Technically, the returned distribution metadata object is an
-         :class:`email.message.EmailMessage`
-         instance, but this is an implementation detail, and not part of the
-         stable API.  You should only use dictionary-like methods and syntax
-         to access the metadata contents.
