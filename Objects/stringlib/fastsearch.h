@@ -378,12 +378,17 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
       periodicwindowloop:
         while (window_last < haystack_end) {
             assert(memory == 0);
-            LOG_LINEUP();
-            Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
-            window_last += shift;
-            if (shift) {
-                LOG("Horspool skip.\n");
-                continue;
+            for (;;) {
+                LOG_LINEUP();
+                Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
+                window_last += shift;
+                if (shift == 0) {
+                    break;
+                }
+                if (window_last >= haystack_end) {
+                    return -1;
+                }
+                LOG("Horspool skip");
             }
           no_shift:
             window = window_last - len_needle + 1;
@@ -406,7 +411,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     if (window_last >= haystack_end) {
                         return -1;
                     }
-                    shift = table[(*window_last) & TABLE_MASK];
+                    Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
                     if (shift) {
                         // A mismatch has been identified to the right
                         // of where i will next start, so we can jump
@@ -432,12 +437,17 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         Py_ssize_t gap_jump_end = Py_MIN(len_needle, cut + gap);
       windowloop:
         while (window_last < haystack_end) {
-            LOG_LINEUP();
-            Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
-            window_last += shift;
-            if (shift) {
-                LOG("Horspool skip.\n");
-                continue;
+            for (;;) {
+                LOG_LINEUP();
+                Py_ssize_t shift = table[(*window_last) & TABLE_MASK];
+                window_last += shift;
+                if (shift == 0) {
+                    break;
+                }
+                if (window_last >= haystack_end) {
+                    return -1;
+                }
+                LOG("Horspool skip");
             }
             window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
