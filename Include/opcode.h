@@ -137,8 +137,8 @@ extern "C" {
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
 #define BINARY_SUBSCR_ADAPTIVE    7
-#define BINARY_SUBSCR_LIST        8
-#define BINARY_SUBSCR_TUPLE      13
+#define BINARY_SUBSCR_LIST_INT    8
+#define BINARY_SUBSCR_TUPLE_INT  13
 #define BINARY_SUBSCR_DICT       14
 #define JUMP_ABSOLUTE_QUICK      18
 #define LOAD_ATTR_ADAPTIVE       21

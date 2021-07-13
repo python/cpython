@@ -221,8 +221,8 @@ del def_op, name_op, jrel_op, jabs_op
 
 _specialized_instructions = [
     "BINARY_SUBSCR_ADAPTIVE",
-    "BINARY_SUBSCR_LIST",
-    "BINARY_SUBSCR_TUPLE",
+    "BINARY_SUBSCR_LIST_INT",
+    "BINARY_SUBSCR_TUPLE_INT",
     "BINARY_SUBSCR_DICT",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",

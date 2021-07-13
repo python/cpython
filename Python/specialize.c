@@ -649,7 +649,7 @@ _Py_Specialize_BinarySubscr(
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     if (PyList_CheckExact(container)) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, _Py_OPARG(*instr));
             goto success;
         } else {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "list; non-integer subscr");
@@ -657,7 +657,7 @@ _Py_Specialize_BinarySubscr(
     }
     if (PyTuple_CheckExact(container)) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, _Py_OPARG(*instr));
             goto success;
         } else {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "tuple; non-integer subscr");

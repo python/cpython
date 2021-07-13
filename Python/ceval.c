@@ -1944,7 +1944,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
         }
 
-        case TARGET(BINARY_SUBSCR_LIST): {
+        case TARGET(BINARY_SUBSCR_LIST_INT): {
             PyObject *sub = TOP();
             PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -1962,7 +1962,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        case TARGET(BINARY_SUBSCR_TUPLE): {
+        case TARGET(BINARY_SUBSCR_TUPLE_INT): {
             PyObject *sub = TOP();
             PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -1987,7 +1987,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *sub = TOP();
             PyObject *res = PyDict_GetItemWithError(dict, sub);
             if (res == NULL) {
-                goto binary_subscr_error;
+                goto binary_subscr_dict_error;
             }
             Py_INCREF(res);
             STACK_SHRINK(1);
@@ -4411,13 +4411,14 @@ MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(BINARY_SUBSCR)
 
-binary_subscr_error:
+binary_subscr_dict_error:
         {
             PyObject *sub = POP();
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_SetKeyError(sub);
             }
             Py_DECREF(sub);
+            goto error;
         }
 
 error:
