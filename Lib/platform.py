@@ -280,6 +280,7 @@ def _syscmd_ver(system='', release='', version='',
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
             info = subprocess.check_output(cmd,
+                                           stdin=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL,
                                            text=True,
                                            shell=True)
