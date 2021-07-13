@@ -991,6 +991,15 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ.clear()
         return os.environ
 
+    def _mock_os_environ_repr(self):
+        """Returns a mocked represeting the repr() of os.environ."""
+        environ_items = [
+            f"{key!r}: {value!r}"
+            for key, value in os.environ.items()
+        ]
+        formatted_repr_items = ", ".join(environ_items)
+        return f"environ({{{formatted_repr_items}}})"
+
     # Bug 1110478
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
@@ -1028,10 +1037,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     # Issue 7310
     def test___repr__(self):
         """Check that the repr() of os.environ looks like environ({...})."""
-        env = os.environ
-        self.assertEqual(repr(env), 'environ({{{}}})'.format(', '.join(
-            '{!r}: {!r}'.format(key, value)
-            for key, value in env.items())))
+        self.assertEqual(repr(os.environ), self._mock_os_environ_repr())
 
     def test_get_exec_path(self):
         defpath_list = os.defpath.split(os.pathsep)
