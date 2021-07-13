@@ -82,7 +82,7 @@ def read_values(base, key):
     i = 0
     while True:
         try:
-            name, value, type = RegEnumValue(handle, i)
+            name, value, _ = RegEnumValue(handle, i)
         except RegError:
             break
         name = name.lower()
@@ -122,7 +122,7 @@ class MacroExpander:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
             else:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
-        except KeyError as exc: #
+        except KeyError: #
             raise DistutilsPlatformError(
             """Python was built with Visual Studio 2003;
 extensions must be built with a compiler than can generate compatible binaries.
