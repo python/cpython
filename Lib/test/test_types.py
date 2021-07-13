@@ -674,6 +674,9 @@ class TypesTests(unittest.TestCase):
         x = int | None
         self.assertIsInstance(None, x)
         self.assertTrue(issubclass(type(None), x))
+        x = int | collections.abc.Mapping
+        self.assertIsInstance({}, x)
+        self.assertTrue(issubclass(dict, x))
 
     def test_bad_instancecheck(self):
         class BadMeta(type):
