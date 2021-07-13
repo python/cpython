@@ -459,7 +459,7 @@ class TestDialectRegistry(unittest.TestCase):
             delimiter = "\u039B"
 
         class unspecified():
-            # A class to pass as dialect but with no attributes attributes.
+            # A class to pass as dialect but with no dialect attributes.
             pass
 
         csv.register_dialect('testC', testC)
