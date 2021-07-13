@@ -3197,8 +3197,10 @@ _tkinter__flatten(PyObject *module, PyObject *item)
 
     context.size = 0;
 
-    if (!_flatten1(&context, item,0))
+    if (!_flatten1(&context, item, 0)) {
+        Py_XDECREF(context.tuple);
         return NULL;
+    }
 
     if (_PyTuple_Resize(&context.tuple, context.size))
         return NULL;

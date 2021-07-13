@@ -606,6 +606,18 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
         self.assertIsInstance(int.__new__, types.BuiltinMethodType)
 
+    def test_ellipsis_type(self):
+        self.assertIsInstance(Ellipsis, types.EllipsisType)
+
+    def test_notimplemented_type(self):
+        self.assertIsInstance(NotImplemented, types.NotImplementedType)
+
+    def test_none_type(self):
+        self.assertIsInstance(None, types.NoneType)
+
+
+class UnionTests(unittest.TestCase):
+
     def test_or_types_operator(self):
         self.assertEqual(int | str, typing.Union[int, str])
         self.assertNotEqual(int | list, typing.Union[int, str])
@@ -649,17 +661,37 @@ class TypesTests(unittest.TestCase):
             3 | int
         with self.assertRaises(TypeError):
             Example() | int
+        x = int | str
+        self.assertTrue(x == x)
         with self.assertRaises(TypeError):
-            (int | str) < typing.Union[str, int]
+            x < x
         with self.assertRaises(TypeError):
-            (int | str) < (int | bool)
+            x <= x
+        y = typing.Union[str, int]
         with self.assertRaises(TypeError):
-            (int | str) <= (int | str)
+            x < y
+        y = int | bool
         with self.assertRaises(TypeError):
-            # Check that we don't crash if typing.Union does not have a tuple in __args__
-            x = typing.Union[str, int]
-            x.__args__ = [str, int]
-            (int | str ) == x
+            x < y
+        # Check that we don't crash if typing.Union does not have a tuple in __args__
+        y = typing.Union[str, int]
+        y.__args__ = [str, int]
+        with self.assertRaises(TypeError):
+            x == y
+
+    def test_instancecheck(self):
+        x = int | str
+        self.assertIsInstance(1, x)
+        self.assertIsInstance(True, x)
+        self.assertIsInstance('a', x)
+        self.assertNotIsInstance(None, x)
+        self.assertTrue(issubclass(int, x))
+        self.assertTrue(issubclass(bool, x))
+        self.assertTrue(issubclass(str, x))
+        self.assertFalse(issubclass(type(None), x))
+        x = int | None
+        self.assertIsInstance(None, x)
+        self.assertTrue(issubclass(type(None), x))
 
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
@@ -754,9 +786,9 @@ class TypesTests(unittest.TestCase):
         for type_ in union_ga:
             with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
                 with self.assertRaises(TypeError):
-                    isinstance(list, type_)
+                    isinstance(1, type_)
                 with self.assertRaises(TypeError):
-                    issubclass(list, type_)
+                    issubclass(int, type_)
 
     def test_or_type_operator_with_bad_module(self):
         class TypeVar:
@@ -783,15 +815,6 @@ class TypesTests(unittest.TestCase):
         leeway = 15
         self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
                              msg='Check for union reference leak.')
-
-    def test_ellipsis_type(self):
-        self.assertIsInstance(Ellipsis, types.EllipsisType)
-
-    def test_notimplemented_type(self):
-        self.assertIsInstance(NotImplemented, types.NotImplementedType)
-
-    def test_none_type(self):
-        self.assertIsInstance(None, types.NoneType)
 
 
 class MappingProxyTests(unittest.TestCase):
