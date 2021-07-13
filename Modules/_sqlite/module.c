@@ -358,7 +358,6 @@ do {                                                                     \
         goto error;                                                      \
     }                                                                    \
     int res = PyModule_AddObjectRef(module, #name, state->name);         \
-    Py_DECREF(state->name);                                              \
     if (res < 0) {                                                       \
         goto error;                                                      \
     }                                                                    \
