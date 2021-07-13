@@ -4064,6 +4064,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         case TARGET(CALL_METHOD_KW): {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
@@ -4087,6 +4088,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         case TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
@@ -4100,6 +4102,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         case TARGET(CALL_FUNCTION_ADAPTIVE): {
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
@@ -4117,6 +4120,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 JUMP_TO_INSTRUCTION(CALL_FUNCTION);
             }
         }
+
         case TARGET(CALL_CFUNCTION_FAST): {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -4155,6 +4159,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
             DISPATCH();
         }
+
         case TARGET(CALL_CFUNCTION_O): {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
@@ -4182,6 +4187,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
             DISPATCH();
         }
+
         case TARGET(CALL_FUNCTION_KW): {
             PyObject **sp, *res, *names;
 
