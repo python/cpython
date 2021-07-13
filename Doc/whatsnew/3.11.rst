@@ -141,7 +141,7 @@ code. This information can be retrieved using:
 - The :meth:`codeobject.co_positions` method in Python.
 - The :c:func:`PyCode_Addr2Location` function in the C-API.
 
-The ``-X no_debug_ranges`` option and the environment variable
+The :option:`-X` ``no_debug_ranges`` option and the environment variable
 :envvar:`PYTHONNODEBUGRANGES` can be used to disable this feature.
 
 See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
