@@ -1029,8 +1029,8 @@ Internal types
          This positional information can be missing. A non-exhaustive lists of
          cases where this may happen:
 
-         - Running the interpreter with ``-X no_debug_ranges``.
-         - Loading a pyc file compiled while using ``-X no_debug_ranges``.
+         - Running the interpreter with :option:`-X` ``no_debug_ranges``.
+         - Loading a pyc file compiled while using :option:`-X` ``no_debug_ranges``.
          - Position tuples corresponding to artificial instructions.
          - Line and column numbers that can't be represented due to
            implementation specific limitations.
