@@ -1337,7 +1337,6 @@ if HAS_SHMEM:
 
         def __del__(self):
             util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
-            pass
 
         def get_server(self):
             'Better than monkeypatching for now; merge into Server ultimately'
