@@ -230,7 +230,7 @@ See also :pep:`530`.
 .. versionchanged:: 3.8
    ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
    Asynchronous comprehensions are now allowed inside comprehensions in
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.

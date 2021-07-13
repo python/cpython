@@ -70,7 +70,9 @@ Summary -- Release highlights
 New Features
 ============
 
-
+* Asynchronous comprehensions are now allowed inside comprehensions in
+  asynchronous functions. Outer comprehensions implicitly become
+  asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
 
 Other Language Changes
 ======================
