@@ -70,6 +70,83 @@ Summary -- Release highlights
 New Features
 ============
 
+.. _whatsnew311-pep657:
+
+Enhanced error locations in tracebacks
+--------------------------------------
+
+When printing tracebacks, the interpreter will now point to the exact expression
+that caused the error instead of just the line. For example:
+
+.. code-block:: python
+
+    Traceback (most recent call last):
+      File "distance.py", line 11, in <module>
+        print(manhattan_distance(p1, p2))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "distance.py", line 6, in manhattan_distance
+        return abs(point_1.x - point_2.x) + abs(point_1.y - point_2.y)
+                               ^^^^^^^^^
+    AttributeError: 'NoneType' object has no attribute 'x'
+
+Previous versions of the interpreter would point to just the line making it
+ambiguous which object was ``None``. These enhanced errors can also be helpful
+when dealing with deeply nested dictionary objects and multiple function calls,
+
+.. code-block:: python
+
+    Traceback (most recent call last):
+      File "query.py", line 37, in <module>
+        magic_arithmetic('foo')
+        ^^^^^^^^^^^^^^^^^^^^^^^
+      File "query.py", line 18, in magic_arithmetic
+        return add_counts(x) / 25
+               ^^^^^^^^^^^^^
+      File "query.py", line 24, in add_counts
+        return 25 + query_user(user1) + query_user(user2)
+                    ^^^^^^^^^^^^^^^^^
+      File "query.py", line 32, in query_user
+        return 1 + query_count(db, response['a']['b']['c']['user'], retry=True)
+                                   ~~~~~~~~~~~~~~~~~~^^^^^
+    TypeError: 'NoneType' object is not subscriptable
+
+as well as complex arithmetic expressions:
+
+.. code-block:: python
+
+    Traceback (most recent call last):
+      File "calculation.py", line 54, in <module>
+        result = (x / y / z) * (a / b / c)
+                  ~~~~~~^~~
+    ZeroDivisionError: division by zero
+
+See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
+and Ammar Askar in :issue:`43950`.)
+
+.. note::
+   This feature requires storing column positions in code objects which may
+   result in a small increase of disk usage of compiled Python files or
+   interpreter memory usage. To avoid storing the extra information and/or
+   deactivate printing the extra traceback information, the
+   :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
+   environment variable can be used.
+
+Column information for code objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The information used by the enhanced traceback feature is made available as a
+general API that can be used to correlate bytecode instructions with source
+code. This information can be retrieved using:
+
+- The :meth:`codeobject.co_positions` method in Python.
+- The :c:func:`PyCode_Addr2Location` function in the C-API.
+
+The :option:`-X` ``no_debug_ranges`` option and the environment variable
+:envvar:`PYTHONNODEBUGRANGES` can be used to disable this feature.
+
+See :pep:`657` for more details. (Contributed by Pablo Galindo, Batuhan Taskaya
+and Ammar Askar in :issue:`43950`.)
+
 
 
 Other Language Changes
