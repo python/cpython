@@ -1045,7 +1045,7 @@ Internal types
             result in a small increase of disk usage of compiled Python files or
             interpreter memory usage. To avoid storing the extra information and/or
             deactivate printing the extra traceback information, the
-            ``-X no_debug_ranges`` command line flag or the ``PYTHONNODEBUGRANGES``
+            ``-X no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
             environment variable can be used.
 
    .. _frame-objects:
