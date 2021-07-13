@@ -351,16 +351,13 @@ do {                                           \
     }                                          \
 } while (0)
 
-#define ADD_EXCEPTION(module, state, name, base)                         \
-do {                                                                     \
-    state->name = PyErr_NewException(MODULE_NAME "." #name, base, NULL); \
-    if (state->name == NULL) {                                           \
-        goto error;                                                      \
-    }                                                                    \
-    int res = PyModule_AddObjectRef(module, #name, state->name);         \
-    if (res < 0) {                                                       \
-        goto error;                                                      \
-    }                                                                    \
+#define ADD_EXCEPTION(module, state, exc, base)                        \
+do {                                                                   \
+    state->exc = PyErr_NewException(MODULE_NAME "." #exc, base, NULL); \
+    if (state->exc == NULL) {                                          \
+        goto error;                                                    \
+    }                                                                  \
+    ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
 } while (0)
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
