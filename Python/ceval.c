@@ -1927,19 +1927,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(BINARY_SUBSCR_ADAPTIVE): {
-            SpecializedCacheEntry *cache = GET_CACHE();
-            if (cache->adaptive.counter == 0) {
+            if (oparg == 0) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
                 next_instr--;
-                if (_Py_Specialize_BinarySubscr(container, sub, next_instr, cache) < 0) {
+                if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
                     goto error;
                 }
                 DISPATCH();
             }
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
-                cache->adaptive.counter--;
+                // oparg is the adaptive cache counter
+                *(next_instr-1) = _Py_MAKECODEUNIT(opcode, oparg-1);
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }
         }
@@ -2955,7 +2955,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            record_cache_hit(cache0);
+            record_cache_hit(&cache0->counter);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
@@ -2976,7 +2976,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache0->index;
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            record_cache_hit(cache0);
+            record_cache_hit(&cache0->counter);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
@@ -3399,7 +3399,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = dict->ma_values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
+            record_cache_hit(&cache0->counter);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -3423,7 +3423,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
+            record_cache_hit(&cache0->counter);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -3452,7 +3452,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
+            record_cache_hit(&cache0->counter);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -3473,7 +3473,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = *(PyObject **)addr;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
+            record_cache_hit(&cache0->counter);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -4390,19 +4390,33 @@ opname ## _miss: \
     { \
         STAT_INC(opname, miss); \
         _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive; \
-        record_cache_miss(cache); \
-        if (too_many_cache_misses(cache)) { \
+        record_cache_miss(&cache->counter); \
+        if (too_many_cache_misses(cache->counter)) { \
             next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
             STAT_INC(opname, deopt); \
-            cache_backoff(cache); \
+            cache->counter = cache_backoff(); \
         } \
         oparg = cache->original_oparg; \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
+#define MISS_WITH_OPARG_COUNTER(opname) \
+opname ## _miss: \
+    { \
+        STAT_INC(opname, miss); \
+        uint8_t oparg = _Py_OPARG(next_instr[-1]); \
+        record_cache_miss(&oparg); \
+        if (too_many_cache_misses(oparg)) { \
+            oparg = cache_backoff(); \
+            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
+            STAT_INC(opname, deopt); \
+        } \
+        JUMP_TO_INSTRUCTION(opname); \
+    }
+
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
-MISS_WITH_CACHE(BINARY_SUBSCR)
+MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 
 binary_subscr_dict_error:
         {

@@ -170,7 +170,7 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
-    [BINARY_SUBSCR] = 1, /* _PyAdaptiveEntry */
+    [BINARY_SUBSCR] = 0,
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -254,7 +254,6 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 previous_opcode = opcode;
                 continue;
             }
-            instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
             previous_opcode = adaptive_opcode;
             int entries_needed = cache_requirements[opcode];
             if (entries_needed) {
@@ -264,7 +263,11 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                     _GetSpecializedCacheEntry(instructions, cache0_offset);
                 cache->adaptive.original_oparg = oparg;
                 cache->adaptive.counter = 0;
+            } else {
+                // oparg is the adaptive cache counter
+                new_oparg = 0;
             }
+            instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
         }
         else {
             /* Super instructions don't use the cache,
@@ -565,7 +568,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
 fail:
     STAT_INC(LOAD_ATTR, specialization_failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache0->counter = cache_backoff();
     return 0;
 success:
     STAT_INC(LOAD_ATTR, specialization_success);
@@ -632,7 +635,7 @@ _Py_Specialize_LoadGlobal(
 fail:
     STAT_INC(LOAD_GLOBAL, specialization_failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    cache0->counter = cache_backoff();
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, specialization_success);
@@ -643,15 +646,12 @@ success:
 
 int
 _Py_Specialize_BinarySubscr(
-     PyObject *container, PyObject *sub,
-    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
-
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
             goto success;
         } else {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "list; non-integer subscr");
@@ -659,14 +659,14 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
             goto success;
         } else {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "tuple; non-integer subscr");
         }
     }
     if (container_type == &PyDict_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
         goto success;
     }
 
@@ -675,12 +675,11 @@ _Py_Specialize_BinarySubscr(
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);
     assert(!PyErr_Occurred());
-    cache_backoff(cache0);
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), cache_backoff());
     return 0;
 success:
     STAT_INC(BINARY_SUBSCR, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
     return 0;
 }
 
