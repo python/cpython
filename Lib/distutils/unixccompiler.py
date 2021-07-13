@@ -219,8 +219,6 @@ class UnixCCompiler(CCompiler):
 
     def runtime_library_dir_option(self, dir):
         # XXX Hackish, at the very least.  See Python bug #445902:
-        # http://sourceforge.net/tracker/index.php
-        #   ?func=detail&aid=445902&group_id=5470&atid=105470
         # Linkers on different platforms need different options to
         # specify that directories need to be added to the list of
         # directories searched for dependencies when a dynamic library
