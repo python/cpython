@@ -146,8 +146,7 @@ extern "C" {
 #define LOAD_GLOBAL_MODULE       38
 #define LOAD_GLOBAL_BUILTIN      39
 #define CALL_FUNCTION_ADAPTIVE   40
-#define CALL_CFUNCTION_FAST      41
-#define CALL_CFUNCTION_O         42
+#define CALL_CFUNCTION_O         41
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

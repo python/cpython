@@ -659,16 +659,16 @@ _Py_Specialize_CallFunction(PyObject *builtins,
         if (PyCFunction_GET_FUNCTION(callable) == NULL) {
             goto fail;
         }
-        /* Don't optimize anything that isn't FASTCALL, has keywords, has varargs, or
-           has no args. Microbenchmarks show they don't benefit much to be worth a 
-           specialized instruction.
+        /* Currently not optimizing anything that is FASTCALL, has keywords, has
+           varargs, or has no args. Microbenchmarks show they don't benefit much to be
+           worth a specialized instruction.
         */
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
             case METH_FASTCALL:
-                // _PYCFUNCTION_FAST;
-                *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_FAST, _Py_OPARG(*instr));
-                goto success;
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+                    "_PYCFUNCTION_FAST");
+                goto fail;
             case METH_O:
                 // PYCFUNCTION_O;
                 *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_O, _Py_OPARG(*instr));

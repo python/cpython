@@ -1,4 +1,4 @@
-Specialize ``CALL_FUNCTION`` opcode with ``CALL_CFUNCTION_O`` and
-``CALL_CFUNCTION_FAST``. This speeds up calls to ``PyCFunctionObject``.
-As a result, many builtin functions and C-extension functions should experience
-reduced call overhead.
+Setup initial specialization infrastructure for the ``CALL_FUNCTION`` opcode.
+The first specialization, ``CALL_CFUNCTION_O``, speeds up calls to
+``PyCFunctionObject`` if they have the ``METH_O`` flag set.  More
+specializations to come in the future.
