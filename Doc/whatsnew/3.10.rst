@@ -4,6 +4,7 @@
 
 :Release: |release|
 :Date: |today|
+:Editor: Pablo Galindo Salgado
 
 .. Rules for maintenance:
 
@@ -65,7 +66,34 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
-* :pep:`644`, require OpenSSL 1.1.1 or newer
+New syntax features:
+
+* :pep:`634`, Structural Pattern Matching: Specification
+* :pep:`635`, Structural Pattern Matching: Motivation and Rationale
+* :pep:`636`, Structural Pattern Matching: Tutorial
+* :issue:`12782`, Parenthesized context managers are now officially allowed.
+
+New features in the standard library:
+
+* :pep:`618`, Add Optional Length-Checking To zip.
+
+Interpreter improvements:
+
+* :pep:`626`, Precise line numbers for debugging and other tools.
+
+New typing features:
+
+* :pep:`604`, Allow writing union types as X | Y
+* :pep:`613`, Explicit Type Aliases
+* :pep:`612`, Parameter Specification Variables
+
+Important deprecations, removals or restrictions:
+
+* :pep:`644`, Require OpenSSL 1.1.1 or newer
+* :pep:`632`, Deprecate distutils module.
+* :pep:`623`, Deprecate and prepare for the removal of the wstr member in PyUnicodeObject.
+* :pep:`624`, Remove Py_UNICODE encoder APIs
+* :pep:`597`, Add optional EncodingWarning
 
 
 New Features
