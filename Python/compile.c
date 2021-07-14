@@ -6175,6 +6175,13 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
+
+    // will hold only Constant_kind keys
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        return -1;
+    }
+
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
@@ -6183,12 +6190,26 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
             SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, i)));
             return compiler_error(c, e);
         }
+
+        if (key->kind == Constant_kind) {
+            if (PySet_Contains(seen, key->v.Constant.value)) {
+                const char *e =  "Duplicate literal keys in match pattern are "
+                                 "not allowed";
+                return compiler_error(c, e);
+            }
+            PySet_Add(seen, key->v.Constant.value);
+        }
+
         if (!MATCH_VALUE_EXPR(key)) {
             const char *e = "mapping pattern keys may only match literals and attribute lookups";
             return compiler_error(c, e);
         }
         VISIT(c, expr, key);
     }
+
+    // all keys have been checked; there are no duplicates
+    Py_DECREF(seen);
+
     ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
     // There's now a tuple of keys and a tuple of values on top of the subject:

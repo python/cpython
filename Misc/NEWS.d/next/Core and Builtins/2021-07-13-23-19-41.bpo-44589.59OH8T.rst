@@ -1,0 +1,2 @@
+Mapping patterns in match/case statements with two or more identical literal
+keys causes a syntax error.
