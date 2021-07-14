@@ -968,9 +968,9 @@ Syntax:
 At most one double star pattern may be in a mapping pattern.  The double star
 pattern must be the last subpattern in the mapping pattern.
 
-Duplicate key values in mapping patterns are disallowed. (If all key patterns
-are literal patterns this is considered a syntax error; otherwise this is a
-runtime error and will raise :exc:`ValueError`.)
+Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will
+raise a :exc:`SyntaxError`. Two keys that otherwise have the same value will
+raise a :exc:`ValueError` at runtime.
 
 The following is the logical flow for matching a mapping pattern against a
 subject value:
@@ -982,7 +982,8 @@ subject value:
    mapping, the mapping pattern succeeds.
 
 #. If duplicate keys are detected in the mapping pattern, the pattern is
-   considered invalid and :exc:`ValueError` is raised.
+   considered invalid. A :exc:`SyntaxError` is raised for duplicate literal
+   values; or a :exc:`ValueError` for named keys of the same value.
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
