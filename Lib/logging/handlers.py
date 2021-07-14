@@ -1399,7 +1399,7 @@ class QueueHandler(logging.Handler):
 
     def prepare(self, record):
         """
-        Prepares a record for queuing. The object returned by this method is
+        Prepare a record for queuing. The object returned by this method is
         enqueued.
 
         The base implementation formats the record to merge the message and
