@@ -661,6 +661,39 @@ class TypesTests(unittest.TestCase):
             x.__args__ = [str, int]
             (int | str ) == x
 
+    def test_instancecheck(self):
+        x = int | str
+        self.assertIsInstance(1, x)
+        self.assertIsInstance(True, x)
+        self.assertIsInstance('a', x)
+        self.assertNotIsInstance(None, x)
+        self.assertTrue(issubclass(int, x))
+        self.assertTrue(issubclass(bool, x))
+        self.assertTrue(issubclass(str, x))
+        self.assertFalse(issubclass(type(None), x))
+        x = int | None
+        self.assertIsInstance(None, x)
+        self.assertTrue(issubclass(type(None), x))
+        x = int | collections.abc.Mapping
+        self.assertIsInstance({}, x)
+        self.assertTrue(issubclass(dict, x))
+
+    def test_bad_instancecheck(self):
+        class BadMeta(type):
+            def __instancecheck__(cls, inst):
+                1/0
+        x = int | BadMeta('A', (), {})
+        self.assertTrue(isinstance(1, x))
+        self.assertRaises(ZeroDivisionError, isinstance, [], x)
+
+    def test_bad_subclasscheck(self):
+        class BadMeta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+        x = int | BadMeta('A', (), {})
+        self.assertTrue(issubclass(int, x))
+        self.assertRaises(ZeroDivisionError, issubclass, list, x)
+
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
         assert TV | str == typing.Union[TV, str]
@@ -754,9 +787,9 @@ class TypesTests(unittest.TestCase):
         for type_ in union_ga:
             with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
                 with self.assertRaises(TypeError):
-                    isinstance(list, type_)
+                    isinstance(1, type_)
                 with self.assertRaises(TypeError):
-                    issubclass(list, type_)
+                    issubclass(int, type_)
 
     def test_or_type_operator_with_bad_module(self):
         class TypeVar:
