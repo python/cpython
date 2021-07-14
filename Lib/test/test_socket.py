@@ -6411,6 +6411,12 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             sock.bind(("type", "n" * 64))
 
 
+@unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
+class TestMacOSTCPFlags(unittest.TestCase):
+    def test_tcp_keepalive(self):
+        self.assertTrue(socket.TCP_KEEPALIVE)
+
+
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
 class TestMSWindowsTCPFlags(unittest.TestCase):
     knownTCPFlags = {
@@ -6669,6 +6675,7 @@ def test_main():
         SendfileUsingSendfileTest,
     ])
     tests.append(TestMSWindowsTCPFlags)
+    tests.append(TestMacOSTCPFlags)
 
     thread_info = threading_helper.threading_setup()
     support.run_unittest(*tests)
