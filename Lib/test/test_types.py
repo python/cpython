@@ -612,6 +612,8 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(str | int, typing.Union[int, str])
         self.assertEqual(int | None, typing.Union[int, None])
         self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(int | type(None), int | None)
+        self.assertEqual(type(None) | int, None | int)
         self.assertEqual(int | str | list, typing.Union[int, str, list])
         self.assertEqual(int | (str | list), typing.Union[int, str, list])
         self.assertEqual(str | (int | list), typing.Union[int, str, list])
@@ -699,6 +701,13 @@ class TypesTests(unittest.TestCase):
         assert TV | str == typing.Union[TV, str]
         assert str | TV == typing.Union[str, TV]
 
+    def test_union_args(self):
+        self.assertEqual((int | str).__args__, (int, str))
+        self.assertEqual(((int | str) | list).__args__, (int, str, list))
+        self.assertEqual((int | (str | list)).__args__, (int, str, list))
+        self.assertEqual((int | None).__args__, (int, type(None)))
+        self.assertEqual((int | type(None)).__args__, (int, type(None)))
+
     def test_union_parameter_chaining(self):
         T = typing.TypeVar("T")
         S = typing.TypeVar("S")
@@ -754,7 +763,11 @@ class TypesTests(unittest.TestCase):
         assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
 
     def test_or_type_repr(self):
+        assert repr(int | str) == "int | str"
+        assert repr((int | str) | list) == "int | str | list"
+        assert repr(int | (str | list)) == "int | str | list"
         assert repr(int | None) == "int | None"
+        assert repr(int | type(None)) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
 
     def test_or_type_operator_with_genericalias(self):
