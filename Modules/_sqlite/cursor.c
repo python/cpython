@@ -147,7 +147,8 @@ _pysqlite_get_converter(const char *keystr, Py_ssize_t keylen)
         return NULL;
     }
 
-    retval = PyDict_GetItemWithError(_pysqlite_converters, upcase_key);
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    retval = PyDict_GetItemWithError(state->converters, upcase_key);
     Py_DECREF(upcase_key);
 
     return retval;

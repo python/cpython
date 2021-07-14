@@ -42,7 +42,6 @@ module _sqlite3
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
 /* static objects at module-level */
-PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
 
@@ -197,7 +196,8 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
         goto error;
     }
 
-    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    if (PyDict_SetItem(state->converters, name, callable) != 0) {
         goto error;
     }
 
@@ -246,15 +246,13 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
 
 static int converters_init(PyObject* module)
 {
-    _pysqlite_converters = PyDict_New();
-    if (!_pysqlite_converters) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->converters = PyDict_New();
+    if (state->converters == NULL) {
         return -1;
     }
 
-    int res = PyModule_AddObjectRef(module, "converters", _pysqlite_converters);
-    Py_DECREF(_pysqlite_converters);
-
-    return res;
+    return PyModule_AddObjectRef(module, "converters", state->converters);
 }
 
 static int
