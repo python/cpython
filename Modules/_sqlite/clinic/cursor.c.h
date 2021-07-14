@@ -114,7 +114,7 @@ PyDoc_STRVAR(pysqlite_cursor_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
 "\n"
-"Executes a multiple SQL statements at once. Non-standard.");
+"Executes multiple SQL statements at once. Non-standard.");
 
 #define PYSQLITE_CURSOR_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_O, pysqlite_cursor_executescript__doc__},
@@ -259,4 +259,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=6a2d4d49784aa686 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c319842c7e7e4c51 input=a9049054013a1b77]*/
