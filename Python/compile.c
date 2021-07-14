@@ -6179,7 +6179,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     // will hold only Constant_kind keys
     PyObject *seen = PySet_New(NULL);
     if (seen == NULL) {
-        return -1;
+        return 0;
     }
 
     for (Py_ssize_t i = 0; i < size; i++) {
