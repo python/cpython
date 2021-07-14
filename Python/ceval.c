@@ -1949,8 +1949,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
-            Py_ssize_t index = PyLong_AsSsize_t(sub);
-            DEOPT_IF(index < 0 || index >= PyList_Size(list), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyList_Size(list)
+            DEOPT_IF(Py_SIZE(sub) < 0, BINARY_SUBSCR);
+            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            DEOPT_IF(index >= PyList_Size(list), BINARY_SUBSCR);
+
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
@@ -1967,8 +1972,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
-            Py_ssize_t index = PyLong_AsSsize_t(sub);
-            DEOPT_IF(index < 0 || index >= PyTuple_Size(tuple), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyTuple_Size(list)
+            DEOPT_IF(Py_SIZE(sub) < 0, BINARY_SUBSCR);
+            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            DEOPT_IF(index >= PyTuple_Size(tuple), BINARY_SUBSCR);
+
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
