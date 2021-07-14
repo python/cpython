@@ -568,7 +568,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
 fail:
     STAT_INC(LOAD_ATTR, specialization_failure);
     assert(!PyErr_Occurred());
-    cache0->counter = cache_backoff();
+    cache_backoff(cache0);
     return 0;
 success:
     STAT_INC(LOAD_ATTR, specialization_success);
@@ -635,7 +635,7 @@ _Py_Specialize_LoadGlobal(
 fail:
     STAT_INC(LOAD_GLOBAL, specialization_failure);
     assert(!PyErr_Occurred());
-    cache0->counter = cache_backoff();
+    cache_backoff(cache0);
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, specialization_success);
@@ -675,7 +675,7 @@ _Py_Specialize_BinarySubscr(
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);
     assert(!PyErr_Occurred());
-    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), cache_backoff());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
     return 0;
 success:
     STAT_INC(BINARY_SUBSCR, specialization_success);

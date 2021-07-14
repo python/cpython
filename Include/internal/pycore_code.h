@@ -296,25 +296,25 @@ saturating_start(void)
 }
 
 static inline void
-record_cache_hit(uint8_t *counter) {
-    *counter = saturating_increment(*counter);
+record_cache_hit(_PyAdaptiveEntry *entry) {
+    entry->counter = saturating_increment(entry->counter);
 }
 
 static inline void
-record_cache_miss(uint8_t *counter) {
-    *counter = saturating_decrement(*counter);
+record_cache_miss(_PyAdaptiveEntry *entry) {
+    entry->counter = saturating_decrement(entry->counter);
 }
 
 static inline int
-too_many_cache_misses(uint8_t counter) {
-    return counter == saturating_zero();
+too_many_cache_misses(_PyAdaptiveEntry *entry) {
+    return entry->counter == saturating_zero();
 }
 
-#define BACKOFF 64
+#define ADAPTIVE_CACHE_BACKOFF 64
 
-static inline uint8_t
-cache_backoff() {
-    return BACKOFF;
+static inline void
+cache_backoff(_PyAdaptiveEntry *entry) {
+    entry->counter = ADAPTIVE_CACHE_BACKOFF;
 }
 
 /* Specialization functions */
