@@ -4107,7 +4107,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 next_instr--;
-                if (_Py_Specialize_CallFunction(BUILTINS(), stack_pointer,
+                if (_Py_Specialize_CallFunction(
+                #if SPECIALIZATION_STATS
+                    BUILTINS(),
+                #endif
+                    stack_pointer,
                     cache->adaptive.original_oparg, next_instr, cache) < 0) {
                     goto error;
                 }
@@ -4121,7 +4125,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
         }
 
-        case TARGET(CALL_CFUNCTION_O): {
+        case TARGET(CALL_FUNCTION_BUILTIN_O): {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             SpecializedCacheEntry *caches = GET_CACHE();

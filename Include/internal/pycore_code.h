@@ -317,15 +317,19 @@ cache_backoff(_PyAdaptiveEntry *entry) {
     entry->counter = BACKOFF;
 }
 
+#define SPECIALIZATION_STATS 0
+#define SPECIALIZATION_STATS_DETAILED 0
+
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_CallFunction(PyObject *builtins, PyObject **stack_pointer,
-    uint8_t original_oparg, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
-
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
+int _Py_Specialize_CallFunction(
+#if SPECIALIZATION_STATS
+    PyObject *builtins,
+#endif
+    PyObject **stack_pointer, uint8_t original_oparg, _Py_CODEUNIT *instr,
+    SpecializedCacheEntry *cache);
 
 #if SPECIALIZATION_STATS
 

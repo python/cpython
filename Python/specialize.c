@@ -646,7 +646,10 @@ success:
     - Specialize python function calls.
 */
 int
-_Py_Specialize_CallFunction(PyObject *builtins,
+_Py_Specialize_CallFunction(
+#if SPECIALIZATION_STATS
+    PyObject *builtins,
+#endif
     PyObject **stack_pointer, uint8_t original_oparg,
     _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
@@ -670,41 +673,41 @@ _Py_Specialize_CallFunction(PyObject *builtins,
                     "_PYCFUNCTION_FAST");
                 goto fail;
             case METH_O:
-                // PYCFUNCTION_O;
-                *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_O, _Py_OPARG(*instr));
+                *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_O,
+                    _Py_OPARG(*instr));
                 goto success;
             case METH_VARARGS:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION");
                 goto fail;
             case METH_VARARGS | METH_KEYWORDS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, 
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
                     "PYCFUNCTION_WITH_KEYWORDS");
                 goto fail;
             case METH_FASTCALL | METH_KEYWORDS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, 
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
                     "_PYCFUNCTION_FAST_WITH_KEYWORDS");
                 goto fail;
             case METH_NOARGS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION_NOARGS");
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+                    "PYCFUNCTION_NOARGS");
                 goto fail;
-            /* This case should never happen with PyCFunctionObject -- only
-               PyMethodObject. See zlib.compressobj()'s methods for an example.
-            */
             case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-                // PYCMETHOD
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PyCMethod");
+                goto fail;
             default:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
                 goto fail;
         }
     }
-    /* These will be implemented in the future. Collecting stats for now. */
+    /* These might be implemented in the future. Collecting stats for now. */
 #if SPECIALIZATION_STATS
     if (PyFunction_Check(callable)) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python function");
         goto fail;
     }
     if (PyInstanceMethod_Check(callable)) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "new style bound method");
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+            "new style bound method");
         goto fail;
     }
     if (PyMethod_Check(callable)) {
@@ -716,11 +719,19 @@ _Py_Specialize_CallFunction(PyObject *builtins,
             PyObject_HasAttrString(callable, "__slots__")) &&
             PyObject_TypeCheck(callable, &PyType_Type) &&
             !PyType_CheckExact(callable)) {
-            SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python class");
+            if (PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+                    "immutable python class");
+            }
+            else {
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+                    "python class");
+            }
             goto fail;
         }
         if (PyMapping_HasKeyString(builtins, ((PyTypeObject *)callable)->tp_name)) {
-            SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "__builtins__ type init");
+            SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+                "__builtins__ type init");
             goto fail;
         }
         SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "C class");
