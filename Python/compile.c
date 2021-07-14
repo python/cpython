@@ -6173,16 +6173,17 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     if (INT_MAX < size - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
-
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
 
-    // will hold only Constant_kind keys
+    // Maintaining a set of Constant_kind kind keys allows us to raise a
+    // SyntaxError in the case of duplicates.
     PyObject *seen = PySet_New(NULL);
     if (seen == NULL) {
         return 0;
     }
 
+    // NOTE: goto error on failure in the loop below to avoid leaking `seen`
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
@@ -6208,7 +6209,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
 
-        if (!MATCH_VALUE_EXPR(key)) {
+        else if (key->kind != Attribute_kind) {
             const char *e = "mapping pattern keys may only match literals and attribute lookups";
             compiler_error(c, e);
             goto error;
