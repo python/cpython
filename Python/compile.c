@@ -6214,7 +6214,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
             compiler_error(c, e);
             goto error;
         }
-        VISIT(c, expr, key);
+        if (!compiler_visit_expr(c, key)) {
+            goto error;
+        }
     }
 
     // all keys have been checked; there are no duplicates
