@@ -70,8 +70,14 @@ union_instancecheck(PyObject *self, PyObject *instance)
         if (arg == Py_None) {
             arg = (PyObject *)&_PyNone_Type;
         }
-        if (PyType_Check(arg) && PyObject_IsInstance(instance, arg) != 0) {
-            Py_RETURN_TRUE;
+        if (PyType_Check(arg)) {
+            int res = PyObject_IsInstance(instance, arg);
+            if (res < 0) {
+                return NULL;
+            }
+            if (res) {
+                Py_RETURN_TRUE;
+            }
         }
     }
     Py_RETURN_FALSE;
@@ -93,8 +99,17 @@ union_subclasscheck(PyObject *self, PyObject *instance)
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        if (PyType_Check(arg) && (PyType_IsSubtype((PyTypeObject *)instance, (PyTypeObject *)arg) != 0)) {
-            Py_RETURN_TRUE;
+        if (arg == Py_None) {
+            arg = (PyObject *)&_PyNone_Type;
+        }
+        if (PyType_Check(arg)) {
+            int res = PyObject_IsSubclass(instance, arg);
+            if (res < 0) {
+                return NULL;
+            }
+            if (res) {
+                Py_RETURN_TRUE;
+            }
         }
     }
    Py_RETURN_FALSE;

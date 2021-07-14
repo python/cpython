@@ -4947,11 +4947,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
     PyObject *qualname = NULL;
+    int scope_type = c->u->u_scope_type;
     int is_async_generator = 0;
-    int top_level_await = IS_TOP_LEVEL_AWAIT(c);
-
-
-    int is_async_function = c->u->u_ste->ste_coroutine;
+    int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
@@ -4963,7 +4961,11 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
-    if (is_async_generator && !is_async_function && type != COMP_GENEXP  && !top_level_await) {
+    if (is_async_generator && type != COMP_GENEXP &&
+        scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
+        scope_type != COMPILER_SCOPE_COMPREHENSION &&
+        !is_top_level_await)
+    {
         compiler_error(c, "asynchronous comprehension outside of "
                           "an asynchronous function");
         goto error_in_scope;
@@ -5002,7 +5004,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
-    if (top_level_await && is_async_generator){
+    if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
     }
     if (co == NULL)
