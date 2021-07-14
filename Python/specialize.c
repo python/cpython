@@ -642,14 +642,11 @@ success:
 }
 
 /* TODO:
-    - Specialize calling C types like int() with CALL_CTYPE
+    - Specialize calling C types like type() with CALL_FUNCTION_BUILTIN_TYPE
     - Specialize python function calls.
 */
 int
 _Py_Specialize_CallFunction(
-#if SPECIALIZATION_STATS
-    PyObject *builtins,
-#endif
     PyObject **stack_pointer, uint8_t original_oparg,
     _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
@@ -712,26 +709,9 @@ _Py_Specialize_CallFunction(
         goto fail;
     }
     if (PyType_Check(callable)) {
-        if ((PyObject_HasAttrString(callable, "__dict__") ||
-            PyObject_HasAttrString(callable, "__slots__")) &&
-            PyObject_TypeCheck(callable, &PyType_Type) &&
-            !PyType_CheckExact(callable)) {
-            if (PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "immutable python class");
-            }
-            else {
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "python class");
-            }
-            goto fail;
-        }
-        if (PyMapping_HasKeyString(builtins, ((PyTypeObject *)callable)->tp_name)) {
-            SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                "__builtins__ type init");
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "C class");
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+            PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE) ?
+            "immutable class" : "mutable class");
         goto fail;
     }
     /* So far this catches things like weakref.weakref */

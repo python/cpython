@@ -4108,9 +4108,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             if (cache->adaptive.counter == 0) {
                 next_instr--;
                 if (_Py_Specialize_CallFunction(
-                #if SPECIALIZATION_STATS
-                    BUILTINS(),
-                #endif
                     stack_pointer,
                     cache->adaptive.original_oparg, next_instr, cache) < 0) {
                     goto error;

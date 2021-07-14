@@ -325,9 +325,6 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_CallFunction(
-#if SPECIALIZATION_STATS
-    PyObject *builtins,
-#endif
     PyObject **stack_pointer, uint8_t original_oparg, _Py_CODEUNIT *instr,
     SpecializedCacheEntry *cache);
 
