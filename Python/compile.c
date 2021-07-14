@@ -6199,7 +6199,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
                 Py_DECREF(seen);
                 return compiler_error(c, e);
             }
-            PySet_Add(seen, key->v.Constant.value);
+            if (PySet_Add(seen, key->v.Constant.value)) {
+                Py_DECREF(seen);
+                return 0;
+            }
         }
 
         if (!MATCH_VALUE_EXPR(key)) {
