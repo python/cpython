@@ -2904,10 +2904,37 @@ class TestSyntaxErrors(unittest.TestCase):
     def test_mapping_pattern_duplicate_key(self):
         self.assert_syntax_error("""
         match ...:
-            case {"a": y, "a": z}:
+            case {"a": _, "a": _}:
                 pass
         """)
 
+    def test_mapping_pattern_duplicate_key_edge_case0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, False: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, 0.0: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, -0: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, 0j: _}:
+                pass
+        """)
 
 class TestTypeErrors(unittest.TestCase):
 
