@@ -205,6 +205,10 @@ sqlite3
   :meth:`~sqlite3.Connection.set_authorizer`.
   (Contributed by Erlend E. Aasland in :issue:`44491`.)
 
+* Added :meth:`~sqlite3.Connection.create_window_function` to create aggregate
+  window functions.
+  (Contributed by Erlend E. Aasland in :issue:`34916`.)
+
 
 Removed
 =======
