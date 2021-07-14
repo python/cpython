@@ -746,6 +746,7 @@ class TypesTests(unittest.TestCase):
     def test_or_type_repr(self):
         assert repr(int | None) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
+        assert repr(int | typing.TypeVar('T')) == "int | ~T"
 
     def test_or_type_operator_with_genericalias(self):
         a = list[int]
@@ -782,13 +783,18 @@ class TypesTests(unittest.TestCase):
                     issubclass(int, type_)
 
     def test_or_type_operator_with_bad_module(self):
-        class TypeVar:
+        class BadMeta(type):
+            __qualname__ = 'TypeVar'
             @property
             def __module__(self):
                 1 / 0
+        TypeVar = BadMeta('TypeVar', (), {})
+        _SpecialForm = BadMeta('_SpecialForm', (), {})
         # Crashes in Issue44483
         with self.assertRaises(ZeroDivisionError):
             str | TypeVar()
+        with self.assertRaises(ZeroDivisionError):
+            str | _SpecialForm()
 
     @cpython_only
     def test_or_type_operator_reference_cycle(self):
