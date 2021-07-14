@@ -6173,6 +6173,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     if (INT_MAX < size - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
+
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
 
@@ -6188,31 +6189,29 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
             const char *e = "can't use NULL keys in MatchMapping "
                             "(set 'rest' parameter instead)";
             SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, i)));
-            Py_DECREF(seen);
-            return compiler_error(c, e);
+            compiler_error(c, e);
+            goto error;
         }
 
         if (key->kind == Constant_kind) {
             int in_seen = PySet_Contains(seen, key->v.Constant.value);
             if (in_seen < 0) {
-                Py_DECREF(seen);
-                return 0;
+                goto error;
             }
             if (in_seen) {
-                const char *e =  "mapping pattern checks duplicate key (%R)";
-                Py_DECREF(seen);
-                return compiler_error(c, e);
+                const char *e = "mapping pattern checks duplicate key (%R)";
+                compiler_error(c, e, key->v.Constant.value);
+                goto error;
             }
             if (PySet_Add(seen, key->v.Constant.value)) {
-                Py_DECREF(seen);
-                return 0;
+                goto error;
             }
         }
 
         if (!MATCH_VALUE_EXPR(key)) {
             const char *e = "mapping pattern keys may only match literals and attribute lookups";
-            Py_DECREF(seen);
-            return compiler_error(c, e);
+            compiler_error(c, e);
+            goto error;
         }
         VISIT(c, expr, key);
     }
@@ -6254,6 +6253,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     pc->on_top--;
     ADDOP(c, POP_TOP);
     return 1;
+
+error:
+    Py_DECREF(seen);
+    return 0;
 }
 
 static int
