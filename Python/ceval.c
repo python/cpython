@@ -1399,6 +1399,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
+#define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
+
 #define GLOBALS() specials[FRAME_SPECIALS_GLOBALS_OFFSET]
 #define BUILTINS() specials[FRAME_SPECIALS_BUILTINS_OFFSET]
 #define LOCALS() specials[FRAME_SPECIALS_LOCALS_OFFSET]
@@ -1940,7 +1942,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
                 // oparg is the adaptive cache counter
-                *(next_instr-1) = _Py_MAKECODEUNIT(opcode, oparg-1);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                assert(_Py_OPCODE(next_instr[-1]) == BINARY_SUBSCR_ADAPTIVE);
+                assert(_Py_OPARG(next_instr[-1]) == oparg - 1);
                 JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
             }
         }
@@ -4415,8 +4419,9 @@ opname ## _miss: \
 opname ## _miss: \
     { \
         STAT_INC(opname, miss); \
-        uint8_t oparg = _Py_OPARG(next_instr[-1]); \
-        oparg = saturating_decrement(oparg); \
+        uint8_t oparg = saturating_decrement(_Py_OPARG(next_instr[-1])); \
+        UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
+        assert(_Py_OPARG(next_instr[-1]) == oparg); \
         if (oparg == saturating_zero()) /* too many cache misses */ { \
             oparg = ADAPTIVE_CACHE_BACKOFF; \
             next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
