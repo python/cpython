@@ -679,7 +679,7 @@ PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
 "\n"
-"Executes a multiple SQL statements at once. Non-standard.");
+"Executes multiple SQL statements at once. Non-standard.");
 
 #define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
@@ -918,4 +918,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=2bd5b40089f4dd55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f3f36b032bb6443 input=a9049054013a1b77]*/
