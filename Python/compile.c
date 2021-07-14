@@ -6193,7 +6193,12 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
 
         if (key->kind == Constant_kind) {
-            if (PySet_Contains(seen, key->v.Constant.value)) {
+            int in_seen = PySet_Contains(seen, key->v.Constant.value);
+            if (in_seen < 0) {
+                Py_DECREF(seen);
+                return 0;
+            }
+            if (in_seen) {
                 const char *e =  "Duplicate literal keys in match pattern are "
                                  "not allowed";
                 Py_DECREF(seen);
