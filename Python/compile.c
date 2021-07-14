@@ -6185,8 +6185,8 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
-            const char *e = "can't use NULL keys in MatchMapping (set 'rest' "
-                            "parameter instead)";
+            const char *e = "can't use NULL keys in MatchMapping "
+                            "(set 'rest' parameter instead)";
             SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, i)));
             Py_DECREF(seen);
             return compiler_error(c, e);
