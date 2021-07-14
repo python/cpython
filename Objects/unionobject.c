@@ -127,7 +127,7 @@ is_typing_name(PyObject *obj, char *name)
     if (strcmp(type->tp_name, name) != 0) {
         return 0;
     }
-    return is_typing_module(obj);
+    return is_typing_module((PyObject *)type);
 }
 
 static PyObject *
