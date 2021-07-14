@@ -41,14 +41,16 @@ typedef struct {
     PyObject *ProgrammingError;
     PyObject *Warning;
 
+
     /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
      * functions, that convert the SQL value to the appropriate Python value.
      * The key is uppercase.
      */
     PyObject *converters;
 
-    int enable_callback_tracebacks;
     PyObject *lru_cache;
+    int BaseTypeAdapted;
+    int enable_callback_tracebacks;
 
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
@@ -64,8 +66,6 @@ pysqlite_get_state(PyObject *Py_UNUSED(module))
 {
     return &pysqlite_global_state;
 }
-
-extern int pysqlite_BaseTypeAdapted;
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

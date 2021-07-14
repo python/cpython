@@ -41,9 +41,6 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-/* static objects at module-level */
-int pysqlite_BaseTypeAdapted = 0;
-
 pysqlite_state pysqlite_global_state;
 
 // NOTE: This must equal sqlite3.Connection.__init__ argument spec!
@@ -157,7 +154,8 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
             || type == &PyUnicode_Type || type == &PyByteArray_Type) {
-        pysqlite_BaseTypeAdapted = 1;
+        pysqlite_state *state = pysqlite_get_state(module);
+        state->BaseTypeAdapted = 1;
     }
 
     pysqlite_state *state = pysqlite_get_state(NULL);
