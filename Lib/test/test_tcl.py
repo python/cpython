@@ -43,8 +43,14 @@ def get_tk_patchlevel():
 class TkinterTest(unittest.TestCase):
 
     def testFlattenLen(self):
-        # flatten(<object with no length>)
+        # Object without length.
         self.assertRaises(TypeError, _tkinter._flatten, True)
+        # Object with length, but not sequence.
+        self.assertRaises(TypeError, _tkinter._flatten, {})
+        # Sequence or set, but not tuple or list.
+        # (issue44608: there were leaks in the following cases)
+        self.assertRaises(TypeError, _tkinter._flatten, 'string')
+        self.assertRaises(TypeError, _tkinter._flatten, {'set'})
 
 
 class TclTest(unittest.TestCase):
