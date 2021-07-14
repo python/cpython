@@ -67,9 +67,6 @@ union_instancecheck(PyObject *self, PyObject *instance)
     }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        if (arg == Py_None) {
-            arg = (PyObject *)&_PyNone_Type;
-        }
         if (PyType_Check(arg)) {
             int res = PyObject_IsInstance(instance, arg);
             if (res < 0) {
@@ -99,9 +96,6 @@ union_subclasscheck(PyObject *self, PyObject *instance)
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        if (arg == Py_None) {
-            arg = (PyObject *)&_PyNone_Type;
-        }
         if (PyType_Check(arg)) {
             int res = PyObject_IsSubclass(instance, arg);
             if (res < 0) {
@@ -175,9 +169,6 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         Py_ssize_t b_arg_length = PyTuple_GET_SIZE(b_args);
         for (Py_ssize_t i = 0; i < b_arg_length; i++) {
             PyObject* arg = PyTuple_GET_ITEM(b_args, i);
-            if (arg == (PyObject *)&_PyNone_Type) {
-                arg = Py_None;
-            }
             if (PySet_Add(b_set, arg) == -1) {
                 Py_DECREF(b_args);
                 goto exit;
@@ -239,6 +230,9 @@ flatten_args(PyObject* args)
                 pos++;
             }
         } else {
+            if (arg == Py_None) {
+                arg = (PyObject *)&_PyNone_Type;
+            }
             Py_INCREF(arg);
             PyTuple_SET_ITEM(flattened_args, pos, arg);
             pos++;
@@ -364,6 +358,10 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     PyObject *tmp;
     PyObject *r = NULL;
     int err;
+
+    if (p == (PyObject *)&_PyNone_Type) {
+        return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
+    }
 
     if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
         goto exit;
