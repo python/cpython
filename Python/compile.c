@@ -6199,8 +6199,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
                 return 0;
             }
             if (in_seen) {
-                const char *e =  "Duplicate literal keys in match pattern are "
-                                 "not allowed";
+                const char *e =  "mapping pattern checks duplicate key (%R)";
                 Py_DECREF(seen);
                 return compiler_error(c, e);
             }
