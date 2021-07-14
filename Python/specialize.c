@@ -662,10 +662,6 @@ _Py_Specialize_CallFunction(
         if (PyCFunction_GET_FUNCTION(callable) == NULL) {
             goto fail;
         }
-        /* Currently not optimizing anything that is FASTCALL, has keywords, has
-           varargs, or has no args. Microbenchmarks show they don't benefit much to be
-           worth a specialized instruction.
-        */
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
             case METH_FASTCALL:
@@ -691,9 +687,10 @@ _Py_Specialize_CallFunction(
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
                     "PYCFUNCTION_NOARGS");
                 goto fail;
+            /* This case should never happen with PyCFunctionObject -- only
+               PyMethodObject. See zlib.compressobj()'s methods for an example.
+            */
             case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PyCMethod");
-                goto fail;
             default:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
                 goto fail;
