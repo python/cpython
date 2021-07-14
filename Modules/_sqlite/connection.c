@@ -186,16 +186,17 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    self->Warning               = pysqlite_Warning;
-    self->Error                 = pysqlite_Error;
-    self->InterfaceError        = pysqlite_InterfaceError;
-    self->DatabaseError         = pysqlite_DatabaseError;
-    self->DataError             = pysqlite_DataError;
-    self->OperationalError      = pysqlite_OperationalError;
-    self->IntegrityError        = pysqlite_IntegrityError;
-    self->InternalError         = pysqlite_InternalError;
-    self->ProgrammingError      = pysqlite_ProgrammingError;
-    self->NotSupportedError     = pysqlite_NotSupportedError;
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    self->Warning               = state->Warning;
+    self->Error                 = state->Error;
+    self->InterfaceError        = state->InterfaceError;
+    self->DatabaseError         = state->DatabaseError;
+    self->DataError             = state->DataError;
+    self->OperationalError      = state->OperationalError;
+    self->IntegrityError        = state->IntegrityError;
+    self->InternalError         = state->InternalError;
+    self->ProgrammingError      = state->ProgrammingError;
+    self->NotSupportedError     = state->NotSupportedError;
 
     if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
         return -1;
@@ -393,13 +394,16 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
  */
 int pysqlite_check_connection(pysqlite_Connection* con)
 {
+    pysqlite_state *state = pysqlite_get_state(NULL);
     if (!con->initialized) {
-        PyErr_SetString(pysqlite_ProgrammingError, "Base Connection.__init__ not called.");
+        PyErr_SetString(state->ProgrammingError,
+                        "Base Connection.__init__ not called.");
         return 0;
     }
 
     if (!con->db) {
-        PyErr_SetString(pysqlite_ProgrammingError, "Cannot operate on a closed database.");
+        PyErr_SetString(state->ProgrammingError,
+                        "Cannot operate on a closed database.");
         return 0;
     } else {
         return 1;
@@ -834,10 +838,10 @@ static void _destructor(void* args)
     PyGILState_Release(gstate);
 }
 
-#define NOT_SUPPORTED(name, ver)                                        \
+#define NOT_SUPPORTED(con, name, ver)                                   \
 do {                                                                    \
     if (is_set) {                                                       \
-        PyErr_SetString(pysqlite_NotSupportedError,                     \
+        PyErr_SetString(con->NotSupportedError,                         \
                         name "=True requires SQLite " ver "or higher"); \
         return -1;                                                      \
     }                                                                   \
@@ -852,13 +856,14 @@ do {                       \
 } while (0)
 
 static int
-add_deterministic_flag_if_supported(int *flags, int is_set)
+add_deterministic_flag_if_supported(pysqlite_Connection *self, int *flags,
+                                    int is_set)
 {
 #if SQLITE_VERSION_NUMBER < 3008003
-    NOT_SUPPORTED("deterministic", "3.8.3");
+    NOT_SUPPORTED(self, "deterministic", "3.8.3");
 #else
     if (sqlite3_libversion_number() < 3008003) {
-        NOT_SUPPORTED("deterministic", "3.8.3");
+        NOT_SUPPORTED(self, "deterministic", "3.8.3");
     }
     SET_FLAG(SQLITE_DETERMINISTIC);
 #endif
@@ -866,13 +871,14 @@ add_deterministic_flag_if_supported(int *flags, int is_set)
 }
 
 static int
-add_innocuous_flag_if_supported(int *flags, int is_set)
+add_innocuous_flag_if_supported(pysqlite_Connection *self, int *flags,
+                                int is_set)
 {
 #if SQLITE_VERSION_NUMBER < 3031000
-    NOT_SUPPORTED("innocuous", "3.31.0");
+    NOT_SUPPORTED(self, "innocuous", "3.31.0");
 #else
     if (sqlite3_libversion_number() < 3031000) {
-        NOT_SUPPORTED("innocuous", "3.31.0");
+        NOT_SUPPORTED(self, "innocuous", "3.31.0");
     }
     SET_FLAG(SQLITE_INNOCUOUS);
 #endif
@@ -880,13 +886,14 @@ add_innocuous_flag_if_supported(int *flags, int is_set)
 }
 
 static int
-add_directonly_flag_if_supported(int *flags, int is_set)
+add_directonly_flag_if_supported(pysqlite_Connection *self, int *flags,
+                                 int is_set)
 {
 #if SQLITE_VERSION_NUMBER < 3030000
-    NOT_SUPPORTED("directonly", "3.30.0");
+    NOT_SUPPORTED(self, "directonly", "3.30.0");
 #else
     if (sqlite3_libversion_number() < 3030000) {
-        NOT_SUPPORTED("directonly", "3.30.0");
+        NOT_SUPPORTED(self, "directonly", "3.30.0");
     }
     SET_FLAG(SQLITE_DIRECTONLY);
 #endif
@@ -922,7 +929,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    if (add_deterministic_flag_if_supported(&flags, deterministic) < 0) {
+    if (add_deterministic_flag_if_supported(self, &flags, deterministic) < 0) {
         return NULL;
     }
     rc = sqlite3_create_function_v2(self->db,
@@ -937,7 +944,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
-        PyErr_SetString(pysqlite_OperationalError, "Error creating function");
+        PyErr_SetString(self->OperationalError, "Error creating function");
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1080,7 +1087,7 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
 /*[clinic end generated code: output=fbbfad556264ea1e input=877311e540865c3b]*/
 {
     if (sqlite3_libversion_number() < 3025000) {
-        PyErr_SetString(pysqlite_NotSupportedError,
+        PyErr_SetString(self->NotSupportedError,
                         "create_window_function() requires "
                         "SQLite 3.25.0 or higher");
         return NULL;
@@ -1091,13 +1098,13 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
     }
 
     int flags = SQLITE_UTF8;
-    if (add_deterministic_flag_if_supported(&flags, deterministic) < 0) {
+    if (add_deterministic_flag_if_supported(self, &flags, deterministic) < 0) {
         return NULL;
     }
-    if (add_directonly_flag_if_supported(&flags, directonly) < 0) {
+    if (add_directonly_flag_if_supported(self, &flags, directonly) < 0) {
         return NULL;
     }
-    if (add_innocuous_flag_if_supported(&flags, innocuous) < 0) {
+    if (add_innocuous_flag_if_supported(self, &flags, innocuous) < 0) {
         return NULL;
     }
 
@@ -1117,7 +1124,7 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
     }
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError,
+        PyErr_SetString(self->OperationalError,
                         "Error creating window function");
         return NULL;
     }
@@ -1158,7 +1165,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                     &_destructor); // will decref func
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
-        PyErr_SetString(pysqlite_OperationalError, "Error creating aggregate");
+        PyErr_SetString(self->OperationalError, "Error creating aggregate");
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1290,20 +1297,25 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
                                         PyObject *authorizer_cb)
 /*[clinic end generated code: output=f18ba575d788b35c input=df079724c020d2f2]*/
 {
-    int rc;
-
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    rc = sqlite3_set_authorizer(self->db, _authorizer_callback, (void*)authorizer_cb);
-    if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Error setting authorizer callback");
+    int rc;
+    if (authorizer_cb == Py_None) {
+        rc = sqlite3_set_authorizer(self->db, NULL, NULL);
         Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
-        return NULL;
-    } else {
+    }
+    else {
         Py_INCREF(authorizer_cb);
         Py_XSETREF(self->function_pinboard_authorizer_cb, authorizer_cb);
+        rc = sqlite3_set_authorizer(self->db, _authorizer_callback, authorizer_cb);
+    }
+    if (rc != SQLITE_OK) {
+        PyErr_SetString(self->OperationalError,
+                        "Error setting authorizer callback");
+        Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -1414,7 +1426,8 @@ pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
     rc = sqlite3_enable_load_extension(self->db, onoff);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Error enabling load extension");
+        PyErr_SetString(self->OperationalError,
+                        "Error enabling load extension");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -1448,7 +1461,7 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
 
     rc = sqlite3_load_extension(self->db, extension_name, 0, &errmsg);
     if (rc != 0) {
-        PyErr_SetString(pysqlite_OperationalError, errmsg);
+        PyErr_SetString(self->OperationalError, errmsg);
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -1460,7 +1473,7 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 {
     if (self->check_same_thread) {
         if (PyThread_get_thread_ident() != self->thread_ident) {
-            PyErr_Format(pysqlite_ProgrammingError,
+            PyErr_Format(self->ProgrammingError,
                         "SQLite objects created in a thread can only be used in that same thread. "
                         "The object was created in thread id %lu and this is thread id %lu.",
                         self->thread_ident, PyThread_get_thread_ident());
@@ -1812,7 +1825,7 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
     pyfn_iterdump = _PyDict_GetItemIdWithError(module_dict, &PyId__iterdump);
     if (!pyfn_iterdump) {
         if (!PyErr_Occurred()) {
-            PyErr_SetString(pysqlite_OperationalError,
+            PyErr_SetString(self->OperationalError,
                             "Failed to obtain _iterdump() reference");
         }
         goto finally;
@@ -1867,7 +1880,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     /* Since 3.8.8 this is already done, per commit
        https://www.sqlite.org/src/info/169b5505498c0a7e */
     if (!sqlite3_get_autocommit(target->db)) {
-        PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
+        PyErr_SetString(self->OperationalError, "target is in transaction");
         return NULL;
     }
 #endif
@@ -1979,7 +1992,8 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
         {
             continue;
         } else {
-            PyErr_SetString(pysqlite_ProgrammingError, "invalid character in collation name");
+            PyErr_SetString(self->ProgrammingError,
+                            "invalid character in collation name");
             goto finally;
         }
     }

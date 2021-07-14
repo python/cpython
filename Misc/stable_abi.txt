@@ -1602,12 +1602,6 @@ function _PyThreadState_Init
 function _PyThreadState_Prealloc
     added 3.2
     abi_only
-function _PyTrash_deposit_object
-    added 3.2
-    abi_only
-function _PyTrash_destroy_chain
-    added 3.2
-    abi_only
 data _PyWeakref_CallableProxyType
     added 3.2
     abi_only
@@ -1920,12 +1914,6 @@ function Py_EncodeLocale
     added 3.7  # (and 3.6.1 and 3.5.3)
 function Py_SetPath
     added 3.7  # (and 3.6.1 and 3.5.3)
-function _PyTrash_thread_deposit_object
-    added 3.7  # (and 3.6.1 and 3.5.3)
-    abi_only
-function _PyTrash_thread_destroy_chain
-    added 3.7  # (and 3.6.1 and 3.5.3)
-    abi_only
 function PyErr_SetExcFromWindowsErr
     added 3.7  # (and 3.6.1 and 3.5.3)
     ifdef MS_WINDOWS

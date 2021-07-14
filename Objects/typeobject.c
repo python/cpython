@@ -1065,6 +1065,12 @@ static PyGetSetDef type_getsets[] = {
 static PyObject *
 type_repr(PyTypeObject *type)
 {
+    if (type->tp_name == NULL) {
+        // type_repr() called before the type is fully initialized
+        // by PyType_Ready().
+        return PyUnicode_FromFormat("<class at %p>", type);
+    }
+
     PyObject *mod, *name, *rtn;
 
     mod = type_module(type, NULL);
@@ -1158,7 +1164,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyObject *
-PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
+_PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
     PyObject *obj;
     const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
@@ -1182,6 +1188,16 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
     }
     else {
         _PyObject_InitVar((PyVarObject *)obj, type, nitems);
+    }
+    return obj;
+}
+
+PyObject *
+PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
+{
+    PyObject *obj = _PyType_AllocNoTrack(type, nitems);
+    if (obj == NULL) {
+        return NULL;
     }
 
     if (_PyType_IS_GC(type)) {
@@ -5865,8 +5881,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         /* Inherit Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
         * if tp_call is not overridden */
         if (!type->tp_call &&
-            (base->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) &&
-            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+            _PyType_HasFeature(base, Py_TPFLAGS_HAVE_VECTORCALL) &&
+            _PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE))
         {
             type->tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
         }
@@ -5899,8 +5915,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
          * but only for extension types */
         if (base->tp_descr_get &&
             type->tp_descr_get == base->tp_descr_get &&
-            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) &&
-            (base->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR))
+            _PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE) &&
+            _PyType_HasFeature(base, Py_TPFLAGS_METHOD_DESCRIPTOR))
         {
             type->tp_flags |= Py_TPFLAGS_METHOD_DESCRIPTOR;
         }
@@ -8864,7 +8880,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 
     PyObject *firstarg = f->f_localsptr[0];
     // The first argument might be a cell.
-    if (firstarg != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
+    if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
         if (f->f_lasti >= 0) {
@@ -8883,7 +8899,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     PyTypeObject *type = NULL;
     int i = co->co_nlocals + co->co_nplaincellvars;
     for (; i < co->co_nlocalsplus; i++) {
-        assert((co->co_localspluskinds[i] & CO_FAST_FREE) != 0);
+        assert((_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
