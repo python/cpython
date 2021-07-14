@@ -612,6 +612,8 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(str | int, typing.Union[int, str])
         self.assertEqual(int | None, typing.Union[int, None])
         self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(int | type(None), int | None)
+        self.assertEqual(type(None) | int, None | int)
         self.assertEqual(int | str | list, typing.Union[int, str, list])
         self.assertEqual(int | (str | list), typing.Union[int, str, list])
         self.assertEqual(str | (int | list), typing.Union[int, str, list])
