@@ -56,8 +56,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_ssize_t size;
     const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
     if (sql_cstr == NULL) {
-        PyObject *exc = connection->Warning;
-        PyErr_Format(exc, "SQL is of wrong type ('%s'). Must be string.",
+        PyErr_Format(connection->Warning,
+                     "SQL is of wrong type ('%s'). Must be string.",
                      Py_TYPE(sql)->tp_name);
         return NULL;
     }
@@ -65,7 +65,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     sqlite3 *db = connection->db;
     int max_length = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
     if (size >= max_length) {
-        PyErr_SetString(pysqlite_DataError, "query string is too large");
+        PyErr_SetString(connection->DataError,
+                        "query string is too large");
         return NULL;
     }
     if (strlen(sql_cstr) != (size_t)size) {
@@ -87,8 +88,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     if (pysqlite_check_remaining_sql(tail)) {
-        PyObject *exc = connection->Warning;
-        PyErr_SetString(exc, "You can only execute one statement at a time.");
+        PyErr_SetString(connection->Warning,
+                        "You can only execute one statement at a time.");
         goto error;
     }
 
@@ -250,7 +251,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             }
         }
         if (num_params != num_params_needed) {
-            PyErr_Format(pysqlite_ProgrammingError,
+            PyErr_Format(state->ProgrammingError,
                          "Incorrect number of bindings supplied. The current "
                          "statement uses %d, and there are %zd supplied.",
                          num_params_needed, num_params);
@@ -303,7 +304,9 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             binding_name = sqlite3_bind_parameter_name(self->st, i);
             Py_END_ALLOW_THREADS
             if (!binding_name) {
-                PyErr_Format(pysqlite_ProgrammingError, "Binding %d has no name, but you supplied a dictionary (which has only names).", i);
+                PyErr_Format(state->ProgrammingError,
+                             "Binding %d has no name, but you supplied a "
+                             "dictionary (which has only names).", i);
                 return;
             }
 
@@ -321,7 +324,9 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             Py_DECREF(binding_name_obj);
             if (!current_param) {
                 if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
-                    PyErr_Format(pysqlite_ProgrammingError, "You did not supply a value for binding parameter :%s.", binding_name);
+                    PyErr_Format(state->ProgrammingError,
+                                 "You did not supply a value for binding "
+                                 "parameter :%s.", binding_name);
                 }
                 return;
             }
