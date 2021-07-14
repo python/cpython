@@ -470,6 +470,7 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 static PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
+    pysqlite_state *state = pysqlite_get_state(NULL);
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -584,7 +585,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
-                if (_pysqlite_enable_callback_tracebacks) {
+                if (state->enable_callback_tracebacks) {
                     PyErr_Print();
                 } else {
                     PyErr_Clear();

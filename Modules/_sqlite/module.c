@@ -42,7 +42,6 @@ module _sqlite3
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
 /* static objects at module-level */
-int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
 
 pysqlite_state pysqlite_global_state;
@@ -220,7 +219,8 @@ static PyObject *
 pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
 /*[clinic end generated code: output=4ff1d051c698f194 input=cb79d3581eb77c40]*/
 {
-    _pysqlite_enable_callback_tracebacks = enable;
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->enable_callback_tracebacks = enable;
 
     Py_RETURN_NONE;
 }

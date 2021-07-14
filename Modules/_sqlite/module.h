@@ -47,6 +47,7 @@ typedef struct {
      */
     PyObject *converters;
 
+    int enable_callback_tracebacks;
     PyObject *lru_cache;
 
     PyTypeObject *ConnectionType;
@@ -64,7 +65,6 @@ pysqlite_get_state(PyObject *Py_UNUSED(module))
     return &pysqlite_global_state;
 }
 
-extern int _pysqlite_enable_callback_tracebacks;
 extern int pysqlite_BaseTypeAdapted;
 
 #define PARSE_DECLTYPES 1
