@@ -15,6 +15,7 @@
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
@@ -1398,6 +1399,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
+#define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
+
 #define GLOBALS() specials[FRAME_SPECIALS_GLOBALS_OFFSET]
 #define BUILTINS() specials[FRAME_SPECIALS_BUILTINS_OFFSET]
 #define LOCALS() specials[FRAME_SPECIALS_LOCALS_OFFSET]
@@ -1913,6 +1916,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(BINARY_SUBSCR): {
+            PREDICTED(BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, unquickened);
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -1921,6 +1926,91 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             SET_TOP(res);
             if (res == NULL)
                 goto error;
+            DISPATCH();
+        }
+
+        case TARGET(BINARY_SUBSCR_ADAPTIVE): {
+            if (oparg == 0) {
+                PyObject *sub = TOP();
+                PyObject *container = SECOND();
+                next_instr--;
+                if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_SUBSCR, deferred);
+                // oparg is the adaptive cache counter
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                assert(_Py_OPCODE(next_instr[-1]) == BINARY_SUBSCR_ADAPTIVE);
+                assert(_Py_OPARG(next_instr[-1]) == oparg - 1);
+                JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
+            }
+        }
+
+        case TARGET(BINARY_SUBSCR_LIST_INT): {
+            PyObject *sub = TOP();
+            PyObject *list = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyList_Size(list)
+            Py_ssize_t signed_magnitude = Py_SIZE(sub);
+            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
+            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
+
+            STAT_INC(BINARY_SUBSCR, hit);
+            PyObject *res = PyList_GET_ITEM(list, index);
+            assert(res != NULL);
+            Py_INCREF(res);
+            STACK_SHRINK(1);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            Py_DECREF(list);
+            DISPATCH();
+        }
+
+        case TARGET(BINARY_SUBSCR_TUPLE_INT): {
+            PyObject *sub = TOP();
+            PyObject *tuple = SECOND();
+            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
+
+            // Deopt unless 0 <= sub < PyTuple_Size(list)
+            Py_ssize_t signed_magnitude = Py_SIZE(sub);
+            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
+            assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
+
+            STAT_INC(BINARY_SUBSCR, hit);
+            PyObject *res = PyTuple_GET_ITEM(tuple, index);
+            assert(res != NULL);
+            Py_INCREF(res);
+            STACK_SHRINK(1);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            Py_DECREF(tuple);
+            DISPATCH();
+        }
+
+        case TARGET(BINARY_SUBSCR_DICT): {
+            PyObject *dict = SECOND();
+            DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
+            STAT_INC(BINARY_SUBSCR, hit);
+            PyObject *sub = TOP();
+            PyObject *res = PyDict_GetItemWithError(dict, sub);
+            if (res == NULL) {
+                goto binary_subscr_dict_error;
+            }
+            Py_INCREF(res);
+            STACK_SHRINK(1);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            Py_DECREF(dict);
             DISPATCH();
         }
 
@@ -4327,8 +4417,34 @@ opname ## _miss: \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
+#define MISS_WITH_OPARG_COUNTER(opname) \
+opname ## _miss: \
+    { \
+        STAT_INC(opname, miss); \
+        uint8_t oparg = saturating_decrement(_Py_OPARG(next_instr[-1])); \
+        UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
+        assert(_Py_OPARG(next_instr[-1]) == oparg); \
+        if (oparg == saturating_zero()) /* too many cache misses */ { \
+            oparg = ADAPTIVE_CACHE_BACKOFF; \
+            next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
+            STAT_INC(opname, deopt); \
+        } \
+        JUMP_TO_INSTRUCTION(opname); \
+    }
+
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
+MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
+
+binary_subscr_dict_error:
+        {
+            PyObject *sub = POP();
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_SetKeyError(sub);
+            }
+            Py_DECREF(sub);
+            goto error;
+        }
 
 error:
         /* Double-check exception status. */
