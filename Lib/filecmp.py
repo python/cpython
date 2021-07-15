@@ -14,6 +14,7 @@ from os import stat, pardir, curdir, listdir
 from os.path import normcase, join
 from stat import S_IFREG, S_IFMT, S_ISDIR, S_ISREG
 from itertools import filterfalse
+from types import GenericAlias
 
 __all__ = ['clear_cache', 'cmp', 'dircmp', 'cmpfiles', 'DEFAULT_IGNORES']
 
@@ -77,7 +78,7 @@ def _do_cmp(filename_1, filename_2):
             if not bytes_1:
                 return True
 
-def cmpfiles(a, b, common, shallow = True):
+def cmpfiles(a, b, common, shallow = True, generator = False):
     """Compare common files in two directories.
 
     a, b -- directory names
@@ -88,16 +89,20 @@ def cmpfiles(a, b, common, shallow = True):
       files that compare equal
       files that are different
       filenames that aren't regular files.
+    Yields a tuple of string with number identifiying type:
+      0 - files that compare equal
+      1 - files that are different
+      3 - filenames that aren't regular files.
 
     """
-    for x in common:
-        case = _cmp(join(a, x), join(b, x), shallow)
-        if case == 0:
-            yield (x, None, None)
-        elif case == 1:
-            yield (None, x, None)
-        elif case == 2:
-            yield (None, None, x)
+    if not generator:
+        result = ([], [], [])
+        for x in common:
+            result[_cmp(join(a, x), join(b, x), shallow)].append(x)
+        return result
+    else:
+        for x in common:
+            yield (x, _cmp(join(a, x), join(b, x), shallow))
 
 # Compare two files.
 # Return:
@@ -119,15 +124,15 @@ def _filter_only(a, b):
     for x in map(a.__getitem__, filterfalse(b.__contains__, a)):
         yield x
 
-
 # Return a copy with items that occur in skip removed.
 #
 class dircmp:
-    def __init__(self, left, right, *args):
+    def __init__(self, left, right, *args, generator = False):
         self.left, self.right = left, right
         print(args, len(args))
         self.hide = [curdir, pardir] if len(args) == 0 else args[0]
         self.ignore = DEFAULT_IGNORES if len(args) < 2 else args[1]
+        self.generator = generator if isinstance(generator, bool) else False
 
     def _left_list(self):
         yield from _filter_list(self.left, self.hide, self.ignore)
@@ -137,13 +142,11 @@ class dircmp:
 
     def _left_only(self):
         left_zip = dict(zip(map(normcase, self._left_list()), self._left_list()))
-        # right_zip = zip(map(normcase, self._right_list()), self._right_list())
         for left, right in zip(left_zip, map(normcase, self._right_list())):
             if not (right in left_zip):
                 yield left_zip[left]
 
     def _right_only(self):
-        # left_zip = zip(map(normcase, self._left_list()), self._left_list())
         right_zip = dict(zip(map(normcase, self._right_list()), self._right_list()))
         for left, right in zip(map(normcase, self._left_list()), right_zip):
             if not (left in right_zip):
@@ -151,7 +154,6 @@ class dircmp:
 
     def _common(self):
         left_zip = dict(zip(map(normcase, self._left_list()), self._left_list()))
-        # right_zip = zip(map(normcase, self._right_list()), self._right_list())
         for left, right in zip(left_zip, map(normcase, self._right_list())):
             if right in left_zip:
                 yield left_zip[right]
@@ -178,24 +180,27 @@ class dircmp:
                 yield name
 
     def _same_files(self):
-        for file, *_ in cmpfiles(self.left, self.right, self._common_files()):
+        l, r = self.left, self.right
+        for file, *_ in cmpfiles(l, r, self._common_files(), True):
             yield file
 
     def _diff_files(self):
-        for _, file, _ in cmpfiles(self.left, self.right, self._common_files()):
+        l, r = self.left, self.right
+        for _, file, _ in cmpfiles(l, r, self._common_files(), True):
             yield file
 
     def _funny_files(self):
-        for *_, file in cmpfiles(self.left, self.right, self._common_files()):
+        l, r = self.left, self.right
+        for *_, file in cmpfiles(l, r, self._common_files(), True):
             yield file
     
     def _subdirs(self):
+        l, r = self.left, self.right
         for directory in self._common_dirs():
             yield (directory, dircmp(
-                join(self.left, directory), join(self.right, directory),
-                self.ignore, self.hide))
+                join(l, directory), join(r, directory), self.ignore, self.hide))
     
-    def recurs_subdirs(self):
+    def recurs_subdirs(self, lst = list()):
         if self._subdirs():
             for directory, dircmp_object in self._subdirs():
                 yield dircmp_object
@@ -214,7 +219,12 @@ class dircmp:
     def __getattr__(self, attr):
         if attr not in self.methodmap:
             raise AttributeError(attr)
-        yield from self.methodmap[attr](self)
+        if self.generator:
+            return list(self.methodmap[attr](self))
+        else:
+            yield from self.methodmap[attr](self)
+    
+    __class_getitem__ = classmethod(GenericAlias)
     
     def report(self): # Print a report on the differences between a and b
         # Output format is purposely lousy
