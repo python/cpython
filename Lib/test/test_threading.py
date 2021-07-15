@@ -1606,14 +1606,19 @@ class InterruptMainTests(unittest.TestCase):
 
     @threading_helper.reap_threads
     def test_can_interrupt_tight_loops(self):
-        #Nothing to assert here. It just shouldn't hang.
-
         cont = True
         started = False
+        iterations = 100_000_000
+
         def worker():
+            nonlocal iterations
             nonlocal started
             started = True
             while cont:
+                if iterations:
+                    iterations -= 1
+                else:
+                    return
                 pass
 
         t = threading.Thread(target=worker)
@@ -1622,6 +1627,7 @@ class InterruptMainTests(unittest.TestCase):
             pass
         cont = False
         t.join()
+        self.assertNotEqual(iterations, 0)
 
 
 class AtexitTests(unittest.TestCase):
