@@ -226,9 +226,9 @@ class ExceptionTests(unittest.TestCase):
         # Errors thrown by tokenizer.c
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
-        check('0010 + 2', 1, 4)
+        check('0010 + 2', 1, 1)
         check('x = 32e-+4', 1, 8)
-        check('x = 0o9', 1, 6)
+        check('x = 0o9', 1, 7)
         check('\u03b1 = 0xI', 1, 6)
         check(b'\xce\xb1 = 0xI', 1, 6)
         check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,

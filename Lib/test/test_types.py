@@ -612,6 +612,8 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(str | int, typing.Union[int, str])
         self.assertEqual(int | None, typing.Union[int, None])
         self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(int | type(None), int | None)
+        self.assertEqual(type(None) | int, None | int)
         self.assertEqual(int | str | list, typing.Union[int, str, list])
         self.assertEqual(int | (str | list), typing.Union[int, str, list])
         self.assertEqual(str | (int | list), typing.Union[int, str, list])
@@ -661,10 +663,50 @@ class TypesTests(unittest.TestCase):
             x.__args__ = [str, int]
             (int | str ) == x
 
+    def test_instancecheck(self):
+        x = int | str
+        self.assertIsInstance(1, x)
+        self.assertIsInstance(True, x)
+        self.assertIsInstance('a', x)
+        self.assertNotIsInstance(None, x)
+        self.assertTrue(issubclass(int, x))
+        self.assertTrue(issubclass(bool, x))
+        self.assertTrue(issubclass(str, x))
+        self.assertFalse(issubclass(type(None), x))
+        x = int | None
+        self.assertIsInstance(None, x)
+        self.assertTrue(issubclass(type(None), x))
+        x = int | collections.abc.Mapping
+        self.assertIsInstance({}, x)
+        self.assertTrue(issubclass(dict, x))
+
+    def test_bad_instancecheck(self):
+        class BadMeta(type):
+            def __instancecheck__(cls, inst):
+                1/0
+        x = int | BadMeta('A', (), {})
+        self.assertTrue(isinstance(1, x))
+        self.assertRaises(ZeroDivisionError, isinstance, [], x)
+
+    def test_bad_subclasscheck(self):
+        class BadMeta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+        x = int | BadMeta('A', (), {})
+        self.assertTrue(issubclass(int, x))
+        self.assertRaises(ZeroDivisionError, issubclass, list, x)
+
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
         assert TV | str == typing.Union[TV, str]
         assert str | TV == typing.Union[str, TV]
+
+    def test_union_args(self):
+        self.assertEqual((int | str).__args__, (int, str))
+        self.assertEqual(((int | str) | list).__args__, (int, str, list))
+        self.assertEqual((int | (str | list)).__args__, (int, str, list))
+        self.assertEqual((int | None).__args__, (int, type(None)))
+        self.assertEqual((int | type(None)).__args__, (int, type(None)))
 
     def test_union_parameter_chaining(self):
         T = typing.TypeVar("T")
@@ -721,8 +763,13 @@ class TypesTests(unittest.TestCase):
         assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
 
     def test_or_type_repr(self):
+        assert repr(int | str) == "int | str"
+        assert repr((int | str) | list) == "int | str | list"
+        assert repr(int | (str | list)) == "int | str | list"
         assert repr(int | None) == "int | None"
+        assert repr(int | type(None)) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
+        assert repr(int | typing.TypeVar('T')) == "int | ~T"
 
     def test_or_type_operator_with_genericalias(self):
         a = list[int]
@@ -754,18 +801,23 @@ class TypesTests(unittest.TestCase):
         for type_ in union_ga:
             with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
                 with self.assertRaises(TypeError):
-                    isinstance(list, type_)
+                    isinstance(1, type_)
                 with self.assertRaises(TypeError):
-                    issubclass(list, type_)
+                    issubclass(int, type_)
 
     def test_or_type_operator_with_bad_module(self):
-        class TypeVar:
+        class BadMeta(type):
+            __qualname__ = 'TypeVar'
             @property
             def __module__(self):
                 1 / 0
+        TypeVar = BadMeta('TypeVar', (), {})
+        _SpecialForm = BadMeta('_SpecialForm', (), {})
         # Crashes in Issue44483
         with self.assertRaises(ZeroDivisionError):
             str | TypeVar()
+        with self.assertRaises(ZeroDivisionError):
+            str | _SpecialForm()
 
     @cpython_only
     def test_or_type_operator_reference_cycle(self):

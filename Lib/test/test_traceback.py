@@ -12,9 +12,11 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import textwrap
 
+import os
+import textwrap
 import traceback
+from functools import partial
 
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
@@ -406,6 +408,82 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+    def test_caret_for_binary_operators(self):
+        def f_with_binary_operator():
+            divisor = 20
+            return 10 + divisor / 0 + 30
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    return 10 + divisor / 0 + 30\n'
+            '                ~~~~~~~~^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_two_char(self):
+        def f_with_binary_operator():
+            divisor = 20
+            return 10 + divisor // 0 + 30
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    return 10 + divisor // 0 + 30\n'
+            '                ~~~~~~~~^^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript(self):
+        def f_with_subscript():
+            some_dict = {'x': {'y': None}}
+            return some_dict['x']['y']['z']
+
+        lineno_f = f_with_subscript.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
+            "    return some_dict['x']['y']['z']\n"
+            '           ~~~~~~~~~~~~~~~~~~~^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_traceback_specialization_with_syntax_error(self):
+        bytecode = compile("1 / 0 / 1 / 2\n", TESTFN, "exec")
+
+        with open(TESTFN, "w") as file:
+            # make the file's contents invalid
+            file.write("1 $ 0 / 1 / 2\n")
+        self.addCleanup(unlink, TESTFN)
+
+        func = partial(exec, bytecode)
+        result_lines = self.get_exception(func)
+
+        lineno_f = bytecode.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
+            "    1 $ 0 / 1 / 2\n"
+            '    ^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
 
 @cpython_only
 @requires_debug_ranges()
@@ -1615,7 +1693,7 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(
             output.getvalue().split('\n')[-5:],
             ['    x/0',
-             '    ^^^',
+             '    ~^~',
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
