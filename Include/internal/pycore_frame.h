@@ -19,7 +19,7 @@ enum _framestate {
 
 typedef signed char PyFrameState;
 
-typedef struct _py_frame {
+typedef struct _interpreter_frame {
     PyObject *f_globals;
     PyObject *f_builtins;
     PyObject *f_locals;
@@ -27,32 +27,34 @@ typedef struct _py_frame {
     PyFrameObject *frame_obj;
     /* Borrowed reference to a generator, or NULL */
     PyObject *generator;
-    struct _py_frame *previous;
+    struct _interpreter_frame *previous;
     int f_lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
     int nlocalsplus;
     PyFrameState f_state;       /* What state the frame is in */
     PyObject *stack[1];
-} _PyFrame;
+} InterpreterFrame;
 
-static inline int _PyFrame_IsRunnable(_PyFrame *f) {
+static inline int _PyFrame_IsRunnable(InterpreterFrame *f) {
     return f->f_state < FRAME_EXECUTING;
 }
 
-static inline int _PyFrame_IsExecuting(_PyFrame *f) {
+static inline int _PyFrame_IsExecuting(InterpreterFrame *f) {
     return f->f_state == FRAME_EXECUTING;
 }
 
-static inline int _PyFrameHasCompleted(_PyFrame *f) {
+static inline int _PyFrameHasCompleted(InterpreterFrame *f) {
     return f->f_state > FRAME_EXECUTING;
 }
 
-#define FRAME_SPECIALS_SIZE ((sizeof(_PyFrame)-1)/sizeof(PyObject *))
+#define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-void _PyFrame_TakeLocals(PyFrameObject *f, _PyFrame *locals);
+void _PyFrame_TakeLocals(PyFrameObject *f, InterpreterFrame *locals);
 
 static inline void
-_PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *locals, int nlocalsplus)
+_PyFrame_InitializeSpecials(
+    InterpreterFrame *frame, PyFrameConstructor *con,
+    PyObject *locals, int nlocalsplus)
 {
     frame->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
     frame->f_builtins = Py_NewRef(con->fc_builtins);
@@ -67,7 +69,7 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
 }
 
 static inline void
-_PyFrame_ClearSpecials(_PyFrame *frame)
+_PyFrame_ClearSpecials(InterpreterFrame *frame)
 {
     frame->generator = NULL;
     Py_XDECREF(frame->frame_obj);
@@ -81,7 +83,7 @@ _PyFrame_ClearSpecials(_PyFrame *frame)
  * that precedes this frame.
  */
 static inline PyObject**
-_PyFrame_GetLocalsArray(_PyFrame *frame)
+_PyFrame_GetLocalsArray(InterpreterFrame *frame)
 {
     return ((PyObject **)frame) - frame->nlocalsplus;
 }
@@ -89,13 +91,13 @@ _PyFrame_GetLocalsArray(_PyFrame *frame)
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
 PyFrameObject *
-_PyFrame_MakeAndSetFrameObject(_PyFrame *frame);
+_PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
  * creating it if necessary.
  * Returns a borrowed referennce */
 static inline PyFrameObject *
-_PyFrame_GetFrameObject(_PyFrame *frame)
+_PyFrame_GetFrameObject(InterpreterFrame *frame)
 {
     PyFrameObject *res =  frame->frame_obj;
     if (res != NULL) {
@@ -114,13 +116,13 @@ _PyFrame_GetFrameObject(_PyFrame *frame)
  * frames.
  */
 int
-_PyFrame_Clear(_PyFrame * frame, int take);
+_PyFrame_Clear(InterpreterFrame * frame, int take);
 
 int
-_PyFrame_FastToLocalsWithError(_PyFrame *frame);
+_PyFrame_FastToLocalsWithError(InterpreterFrame *frame);
 
 void
-_PyFrame_LocalsToFast(_PyFrame *frame, int clear);
+_PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
 
 #ifdef __cplusplus
 }

@@ -1835,7 +1835,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyFrame *frame = tstate->frame;
+    InterpreterFrame *frame = tstate->frame;
     if (frame == NULL) {
         return 0;
     }

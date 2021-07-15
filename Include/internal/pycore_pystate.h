@@ -147,10 +147,10 @@ PyAPI_FUNC(int) _PyState_AddModule(
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
-struct _py_frame *_PyThreadState_PushFrame(
+struct _interpreter_frame *_PyThreadState_PushFrame(
     PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
 
-void _PyThreadState_PopFrame(PyThreadState *tstate, struct _py_frame *frame);
+void _PyThreadState_PopFrame(PyThreadState *tstate, struct _interpreter_frame *frame);
 
 #ifdef __cplusplus
 }

@@ -521,7 +521,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
  * When displaying a new traceback line, for certain syntactical constructs
  * (e.g a subscript, an arithmetic operation) we try to create a representation
  * that separates the primary source of error from the rest.
- * 
+ *
  * Example specialization of BinOp nodes:
  *  Traceback (most recent call last):
  *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
@@ -995,7 +995,7 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, _PyFrame *frame)
+dump_frame(int fd, InterpreterFrame *frame)
 {
     PyCodeObject *code = frame->f_code;
     PUTS(fd, "  File ");
@@ -1033,7 +1033,7 @@ dump_frame(int fd, _PyFrame *frame)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _PyFrame *frame;
+    InterpreterFrame *frame;
     unsigned int depth;
 
     if (write_header) {

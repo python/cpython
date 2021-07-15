@@ -7,7 +7,7 @@
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
-    struct _py_frame *f_frame; /* points to the frame data */
+    struct _interpreter_frame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
@@ -26,7 +26,7 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
 
 /* only internal use */
 PyFrameObject*
-_PyFrame_New_NoTrack(struct _py_frame *, int);
+_PyFrame_New_NoTrack(struct _interpreter_frame *, int);
 
 
 /* The rest of the interface is specific for frame objects */

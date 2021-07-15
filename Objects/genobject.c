@@ -35,7 +35,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     Py_VISIT(gen->gi_code);
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    _PyFrame *frame = gen->gi_xframe;
+    InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
         assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
         Py_VISIT(frame->frame_obj);
@@ -141,7 +141,7 @@ gen_dealloc(PyGenObject *gen)
            and GC_Del. */
         Py_CLEAR(((PyAsyncGenObject*)gen)->ag_finalizer);
     }
-    _PyFrame *frame = gen->gi_xframe;
+    InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
         gen->gi_xframe = NULL;
         frame->previous = NULL;
@@ -162,7 +162,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyFrame *frame = gen->gi_xframe;
+    InterpreterFrame *frame = gen->gi_xframe;
     PyObject *result;
 
     *presult = NULL;
@@ -347,7 +347,7 @@ _PyGen_yf(PyGenObject *gen)
     PyObject *yf = NULL;
 
     if (gen->gi_xframe) {
-        _PyFrame *frame = gen->gi_xframe;
+        InterpreterFrame *frame = gen->gi_xframe;
         PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
@@ -439,7 +439,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
             PyThreadState *tstate = _PyThreadState_GET();
-            _PyFrame *frame = gen->gi_xframe;
+            InterpreterFrame *frame = gen->gi_xframe;
 
 
             /* Since we are fast-tracking things by skipping the eval loop,
@@ -447,7 +447,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            _PyFrame *prev = tstate->frame;
+            InterpreterFrame *prev = tstate->frame;
             frame->previous = prev;
             tstate->frame = frame;
             /* Close the generator that we are currently iterating with
@@ -855,7 +855,7 @@ PyTypeObject PyGen_Type = {
 };
 
 static PyObject *
-make_gen(PyTypeObject *type, PyFrameConstructor *con, _PyFrame *frame)
+make_gen(PyTypeObject *type, PyFrameConstructor *con, InterpreterFrame *frame)
 {
     PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
     if (gen == NULL) {
@@ -890,7 +890,7 @@ static PyObject *
 compute_cr_origin(int origin_depth);
 
 PyObject *
-_Py_MakeCoro(PyFrameConstructor *con, _PyFrame *frame)
+_Py_MakeCoro(PyFrameConstructor *con, InterpreterFrame *frame)
 {
     int coro_flags = ((PyCodeObject *)con->fc_code)->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
@@ -1284,7 +1284,7 @@ PyTypeObject _PyCoroWrapper_Type = {
 static PyObject *
 compute_cr_origin(int origin_depth)
 {
-    _PyFrame *frame = _PyEval_GetFrame();
+    InterpreterFrame *frame = _PyEval_GetFrame();
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
@@ -2004,7 +2004,7 @@ static PyObject *
 async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
 {
     PyGenObject *gen = (PyGenObject*)o->agt_gen;
-    _PyFrame *frame = gen->gi_xframe;
+    InterpreterFrame *frame = gen->gi_xframe;
     PyObject *retval;
 
     if (o->agt_state == AWAITABLE_STATE_CLOSED) {

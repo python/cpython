@@ -625,7 +625,7 @@ frame_dealloc(PyFrameObject *f)
     /* Kill all local variables including specials, if we own them */
     if (f->f_own_locals_memory) {
         f->f_own_locals_memory = 0;
-        _PyFrame *frame = f->f_frame;
+        InterpreterFrame *frame = f->f_frame;
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
@@ -803,7 +803,7 @@ PyTypeObject PyFrame_Type = {
 
 _Py_IDENTIFIER(__builtins__);
 
-static _PyFrame *
+static InterpreterFrame *
 allocate_heap_frame(PyFrameConstructor *con, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
@@ -816,13 +816,13 @@ allocate_heap_frame(PyFrameConstructor *con, PyObject *locals)
     for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
         localsarray[i] = NULL;
     }
-    _PyFrame *frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
+    InterpreterFrame *frame = (InterpreterFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     return frame;
 }
 
 static inline PyFrameObject*
-frame_alloc(_PyFrame *frame, int owns)
+frame_alloc(InterpreterFrame *frame, int owns)
 {
     PyFrameObject *f;
     struct _Py_frame_state *state = get_frame_state();
@@ -857,7 +857,7 @@ frame_alloc(_PyFrame *frame, int owns)
 }
 
 void
-_PyFrame_TakeLocals(PyFrameObject *f, _PyFrame *frame)
+_PyFrame_TakeLocals(PyFrameObject *f, InterpreterFrame *frame)
 {
     assert(f->f_own_locals_memory == 0);
     assert(frame->frame_obj == NULL);
@@ -883,7 +883,7 @@ _PyFrame_TakeLocals(PyFrameObject *f, _PyFrame *frame)
 }
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(_PyFrame *frame, int owns)
+_PyFrame_New_NoTrack(InterpreterFrame *frame, int owns)
 {
     PyFrameObject *f = frame_alloc(frame, owns);
     if (f == NULL) {
@@ -916,7 +916,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    _PyFrame *frame = allocate_heap_frame(&desc, locals);
+    InterpreterFrame *frame = allocate_heap_frame(&desc, locals);
     if (frame == NULL) {
         return NULL;
     }
@@ -928,7 +928,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 }
 
 static int
-_PyFrame_OpAlreadyRan(_PyFrame *frame, int opcode, int oparg)
+_PyFrame_OpAlreadyRan(InterpreterFrame *frame, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->f_code->co_code);
@@ -941,7 +941,7 @@ _PyFrame_OpAlreadyRan(_PyFrame *frame, int opcode, int oparg)
 }
 
 int
-_PyFrame_FastToLocalsWithError(_PyFrame *frame) {
+_PyFrame_FastToLocalsWithError(InterpreterFrame *frame) {
     /* Merge fast locals into f->f_locals */
     PyObject *locals;
     PyObject **fast;
@@ -1041,7 +1041,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 }
 
 void
-_PyFrame_LocalsToFast(_PyFrame *frame, int clear)
+_PyFrame_LocalsToFast(InterpreterFrame *frame, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;

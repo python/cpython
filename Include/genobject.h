@@ -16,7 +16,7 @@ extern "C" {
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
-    struct _py_frame *prefix##_xframe;                                      \
+    struct _interpreter_frame *prefix##_xframe;                             \
     /* The code object backing the generator */                             \
     PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \

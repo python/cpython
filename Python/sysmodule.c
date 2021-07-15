@@ -1815,7 +1815,7 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyFrame *frame = tstate->frame;
+    InterpreterFrame *frame = tstate->frame;
 
     if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
         return NULL;

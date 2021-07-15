@@ -1261,7 +1261,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            _PyFrame *frame = t->frame;
+            InterpreterFrame *frame = t->frame;
             if (frame == NULL) {
                 continue;
             }
@@ -2037,7 +2037,7 @@ _PyThreadState_PushChunk(PyThreadState *tstate, int size)
     return res;
 }
 
-_PyFrame *
+InterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
@@ -2055,7 +2055,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     else {
         tstate->datastack_top = top;
     }
-    _PyFrame * frame = (_PyFrame *)(localsarray + nlocalsplus);
+    InterpreterFrame * frame = (InterpreterFrame *)(localsarray + nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
         localsarray[i] = NULL;
@@ -2064,7 +2064,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, _PyFrame * frame)
+_PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
 {
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
     if (locals == &tstate->datastack_chunk->data[0]) {
