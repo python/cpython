@@ -485,6 +485,44 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def assertSpecialized(self, func, expected_specialization):
+        result_lines = self.get_exception(func)
+        specialization_line = result_lines[-1]
+        self.assertEqual(specialization_line.lstrip(), expected_specialization)
+
+    def test_specialization_variations(self):
+        self.assertSpecialized(lambda: 1/0,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1/0/3,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1 / 0,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1 / 0 / 3,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1/ 0,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1/ 0/3,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1    /  0,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1    /  0   / 5,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1 /0,
+                                      "~~^~")
+        self.assertSpecialized(lambda: 1//0,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1//0//4,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1 // 0,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 // 0 // 4,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 //0,
+                                      "~~^^~")
+        self.assertSpecialized(lambda: 1// 0,
+                                      "~^^~~")
+
+
 @cpython_only
 @requires_debug_ranges()
 class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):

@@ -496,7 +496,7 @@ class StackSummary(list):
 
                     try:
                         anchors = _extract_caret_anchors_from_line_segment(
-                            frame._original_line[colno - 1:end_colno]
+                            frame._original_line[colno - 1:end_colno - 1]
                         )
                     except Exception:
                         anchors = None
