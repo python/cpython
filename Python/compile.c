@@ -7521,10 +7521,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 /* For debugging purposes only */
 #if 0
 static void
-dump_instr(const struct instr *i)
+dump_instr(struct instr *i)
 {
-    const char *jrel = (is_relative_jump(instr)) ? "jrel " : "";
-    const char *jabs = (is_jump(instr) && !is_relative_jump(instr))? "jabs " : "";
+    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
+    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
+
     char arg[128];
 
     *arg = '\0';
@@ -7560,6 +7561,9 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 
 static int
 ensure_exits_have_lineno(struct compiler *c);
+
+static int
+extend_block(basicblock *bb);
 
 static int *
 build_cellfixedoffsets(struct compiler *c)
@@ -7783,6 +7787,12 @@ assemble(struct compiler *c, int addNone)
         }
     }
 
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (extend_block(b)) {
+            return NULL;
+        }
+    }
+
     if (ensure_exits_have_lineno(c)) {
         return NULL;
     }
@@ -7839,6 +7849,7 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
+
     if (optimize_cfg(c, &a, consts)) {
         goto error;
     }
@@ -8246,19 +8257,14 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             goto error;
                         }
                         break;
-                    default:
-                        if (inst->i_target->b_exit && inst->i_target->b_iused <= MAX_COPY_SIZE) {
-                            basicblock *to_copy = inst->i_target;
-                            inst->i_opcode = NOP;
-                            for (i = 0; i < to_copy->b_iused; i++) {
-                                int index = compiler_next_instr(bb);
-                                if (index < 0) {
-                                    return -1;
-                                }
-                                bb->b_instr[index] = to_copy->b_instr[i];
-                            }
-                            bb->b_exit = 1;
-                        }
+                }
+                break;
+            case FOR_ITER:
+                assert (i == bb->b_iused-1);
+                if (target->i_opcode == JUMP_FORWARD) {
+                    if (eliminate_jump_to_jump(bb, inst->i_opcode)) {
+                        goto error;
+                    }
                 }
                 break;
             case ROT_N:
@@ -8288,6 +8294,32 @@ error:
     return -1;
 }
 
+/* If this block ends with an unconditional jump to an exit block,
+ * then remove the jump and extend this block with the target.
+ */
+static int
+extend_block(basicblock *bb) {
+    if (bb->b_iused == 0) {
+        return 0;
+    }
+    struct instr *last = &bb->b_instr[bb->b_iused-1];
+    if (last->i_opcode != JUMP_ABSOLUTE && last->i_opcode != JUMP_FORWARD) {
+        return 0;
+    }
+    if (last->i_target->b_exit && last->i_target->b_iused <= MAX_COPY_SIZE) {
+        basicblock *to_copy = last->i_target;
+        last->i_opcode = NOP;
+        for (int i = 0; i < to_copy->b_iused; i++) {
+            int index = compiler_next_instr(bb);
+            if (index < 0) {
+                return -1;
+            }
+            bb->b_instr[index] = to_copy->b_instr[i];
+        }
+        bb->b_exit = 1;
+    }
+    return 0;
+}
 
 static void
 clean_basic_block(basicblock *bb) {
