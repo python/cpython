@@ -1960,7 +1960,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            DEOPT_IF(index >= PyList_Size(list), BINARY_SUBSCR);
+            DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
 
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyList_GET_ITEM(list, index);
@@ -1984,7 +1984,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            DEOPT_IF(index >= PyTuple_Size(tuple), BINARY_SUBSCR);
+            DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
 
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyTuple_GET_ITEM(tuple, index);
