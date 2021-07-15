@@ -585,6 +585,15 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
+class TestGetsourceInteractive(unittest.TestCase):
+    def tearDown(self):
+        mod.ParrotDroppings.__module__ = mod
+
+    def test_getclasses_interactive(self):
+        mod.ParrotDroppings.__module__ = '__main__'
+        with self.assertRaises(OSError) as e:
+            inspect.getsource(mod.ParrotDroppings)
+
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
     fodderModule = mod
 
@@ -4301,7 +4310,8 @@ def test_main():
         TestBoundArguments, TestSignaturePrivateHelpers,
         TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
+        TestGetCoroutineState, TestGettingSourceOfToplevelFrames,
+        TestGetsourceInteractive,
     )
 
 if __name__ == "__main__":

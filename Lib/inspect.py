@@ -781,6 +781,8 @@ def getfile(object):
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
+            if object.__module__ == '__main__':
+                raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
