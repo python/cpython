@@ -735,7 +735,7 @@ STRINGLIB(count_char)(const STRINGLIB_CHAR *s, Py_ssize_t n,
 }
 
 
-static inline Py_ssize_t
+Py_LOCAL_INLINE(Py_ssize_t)
 FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
            Py_ssize_t maxcount, int mode)
