@@ -178,12 +178,6 @@ New Modules
 Improved Modules
 ================
 
-os
----
-* On Windows, :func:`os.urandom`: uses BCryptGenRandom API instead of CryptGenRandom API
-  which is deprecated from Microsoft Windows API.
-  (Contributed by Dong-hee Na in :issue:`44611`.)
-
 fractions
 ---------
 
@@ -202,6 +196,14 @@ math
   ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
   ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
   Dickinson in :issue:`44339`.)
+
+
+os
+--
+
+* On Windows, :func:`os.urandom`: uses BCryptGenRandom API instead of CryptGenRandom API
+  which is deprecated from Microsoft Windows API.
+  (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
 sqlite3
