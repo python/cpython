@@ -855,7 +855,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             with self.subTest(headers):
                 res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
                 self.assertEqual(http.HTTPStatus.OK, res.status)
-                print(count, self.HOST, self.PORT, res.length, res.status, repr(str(res.headers)), str(os.environ))
+                print(count, self.HOST, self.PORT, res.length, res.status, repr(str(res.headers)), dict(os.environ))
                 expected = f"'HTTP_ACCEPT': {expected!r}"
                 self.assertIn(expected.encode('ascii'), res.read())
 
