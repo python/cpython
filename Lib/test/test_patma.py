@@ -2901,6 +2901,40 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_mapping_pattern_duplicate_key(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {"a": _, "a": _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, False: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, 0.0: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, -0: _}:
+                pass
+        """)
+
+    def test_mapping_pattern_duplicate_key_edge_case3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0: _, 0j: _}:
+                pass
+        """)
 
 class TestTypeErrors(unittest.TestCase):
 
@@ -3007,17 +3041,6 @@ class TestTypeErrors(unittest.TestCase):
 
 
 class TestValueErrors(unittest.TestCase):
-
-    def test_mapping_pattern_checks_duplicate_key_0(self):
-        x = {"a": 0, "b": 1}
-        w = y = z = None
-        with self.assertRaises(ValueError):
-            match x:
-                case {"a": y, "a": z}:
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
 
     def test_mapping_pattern_checks_duplicate_key_1(self):
         class Keys:

@@ -8,12 +8,10 @@
    :synopsis: The implementation of the importlib metadata.
 
 .. versionadded:: 3.8
+.. versionchanged:: 3.10
+   ``importlib.metadata`` is no longer provisional.
 
 **Source code:** :source:`Lib/importlib/metadata.py`
-
-.. note::
-   This functionality is provisional and may deviate from the usual
-   version semantics of the standard library.
 
 ``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library

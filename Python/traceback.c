@@ -7,6 +7,10 @@
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_frame.h"         // _PyFrame_GetCode()
+#include "pycore_pyarena.h"       // _PyArena_Free()
+#include "pycore_ast.h"           // asdl_seq_*
+#include "pycore_compile.h"       // _PyAST_Optimize
+#include "pycore_parser.h"        // _PyParser_ASTFromString
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
@@ -512,7 +516,171 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
     return err;
 }
 
+/* AST based Traceback Specialization
+ *
+ * When displaying a new traceback line, for certain syntactical constructs
+ * (e.g a subscript, an arithmetic operation) we try to create a representation
+ * that separates the primary source of error from the rest.
+ * 
+ * Example specialization of BinOp nodes:
+ *  Traceback (most recent call last):
+ *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
+ *      add_values(1, 2, 'x', 3, 4)
+ *      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ *    File "/home/isidentical/cpython/cpython/t.py", line 2, in add_values
+ *      return a + b + c + d + e
+ *             ~~~~~~^~~
+ *  TypeError: 'NoneType' object is not subscriptable
+ */
+
+#define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\f'))
+
+static int
+extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
+                          char** primary_error_char, char** secondary_error_char)
+{
+    switch (expr->kind) {
+        case BinOp_kind: {
+            expr_ty left = expr->v.BinOp.left;
+            expr_ty right = expr->v.BinOp.right;
+            for (int i = left->end_col_offset + 1; i < right->col_offset; i++) {
+                if (IS_WHITESPACE(segment_str[i])) {
+                    continue;
+                }
+
+                *left_anchor = i;
+                *right_anchor = i + 1;
+
+                // Check whether if this a two-character operator (e.g //)
+                if (i + 1 < right->col_offset && !IS_WHITESPACE(segment_str[i + 1])) {
+                    ++*right_anchor;
+                }
+
+                // Set the error characters
+                *primary_error_char = "~";
+                *secondary_error_char = "^";
+                break;
+            }
+            return 1;
+        }
+        case Subscript_kind: {
+            *left_anchor = expr->v.Subscript.value->end_col_offset;
+            *right_anchor = expr->v.Subscript.slice->end_col_offset + 1;
+
+            // Set the error characters
+            *primary_error_char = "~";
+            *secondary_error_char = "^";
+            return 1;
+        }
+        default:
+            return 0;
+    }
+}
+
+static int
+extract_anchors_from_stmt(const char *segment_str, stmt_ty statement, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
+                          char** primary_error_char, char** secondary_error_char)
+{
+    switch (statement->kind) {
+        case Expr_kind: {
+            return extract_anchors_from_expr(segment_str, statement->v.Expr.value, left_anchor, right_anchor,
+                                             primary_error_char, secondary_error_char);
+        }
+        default:
+            return 0;
+    }
+}
+
+static int
+extract_anchors_from_line(PyObject *filename, PyObject *line,
+                          Py_ssize_t start_offset, Py_ssize_t end_offset,
+                          Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
+                          char** primary_error_char, char** secondary_error_char)
+{
+    int res = -1;
+    PyArena *arena = NULL;
+    PyObject *segment = PyUnicode_Substring(line, start_offset, end_offset);
+    if (!segment) {
+        goto done;
+    }
+
+    const char *segment_str = PyUnicode_AsUTF8(segment);
+    if (!segment) {
+        goto done;
+    }
+
+    arena = _PyArena_New();
+    if (!arena) {
+        goto done;
+    }
+
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+
+    _PyASTOptimizeState state;
+    state.optimize = _Py_GetConfig()->optimization_level;
+    state.ff_features = 0;
+
+    mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
+                                            &flags, arena);
+    if (!module) {
+        goto done;
+    }
+    if (!_PyAST_Optimize(module, arena, &state)) {
+        goto done;
+    }
+
+    assert(module->kind == Module_kind);
+    if (asdl_seq_LEN(module->v.Module.body) == 1) {
+        stmt_ty statement = asdl_seq_GET(module->v.Module.body, 0);
+        res = extract_anchors_from_stmt(segment_str, statement, left_anchor, right_anchor,
+                                        primary_error_char, secondary_error_char);
+    } else {
+        res = 0;
+    }
+
+done:
+    if (res > 0) {
+        *left_anchor += start_offset;
+        *right_anchor += start_offset;
+    }
+    Py_XDECREF(segment);
+    if (arena) {
+        _PyArena_Free(arena);
+    }
+    return res;
+}
+
 #define _TRACEBACK_SOURCE_LINE_INDENT 4
+
+static inline int
+ignore_source_errors(void) {
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
+static inline int
+print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py_ssize_t end_offset,
+                            Py_ssize_t right_start_offset, Py_ssize_t left_end_offset,
+                            const char *primary, const char *secondary) {
+    int err = 0;
+    int special_chars = (left_end_offset != -1 || right_start_offset != -1);
+    while (++offset <= end_offset) {
+        if (offset <= start_offset || offset > end_offset) {
+            err = PyFile_WriteString(" ", f);
+        } else if (special_chars && left_end_offset < offset && offset <= right_start_offset) {
+            err = PyFile_WriteString(secondary, f);
+        } else {
+            err = PyFile_WriteString(primary, f);
+        }
+    }
+    err = PyFile_WriteString("\n", f);
+    return err;
+}
 
 static int
 tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
@@ -533,52 +701,68 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         return err;
     int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
     PyObject* source_line = NULL;
-    /* ignore errors since we can't report them, can we? */
-    if (!_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
-                               &truncation, &source_line)) {
-        int code_offset = tb->tb_lasti;
-        PyCodeObject* code = _PyFrame_GetCode(frame);
 
-        int start_line;
-        int end_line;
-        int start_col_byte_offset;
-        int end_col_byte_offset;
-        if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
-                                 &end_line, &end_col_byte_offset)) {
-            goto done;
-        }
-        if (start_line != end_line) {
-            goto done;
-        }
-
-        if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
-            goto done;
-        }
-        // Convert the utf-8 byte offset to the actual character offset so we
-        // print the right number of carets.
-        Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
-        Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
-
-        char offset = truncation;
-        while (++offset <= start_offset) {
-            err = PyFile_WriteString(" ", f);
-            if (err < 0) {
-                goto done;
-            }
-        }
-        while (++offset <= end_offset + 1) {
-            err = PyFile_WriteString("^", f);
-            if (err < 0) {
-                goto done;
-            }
-        }
-        err = PyFile_WriteString("\n", f);
+    if (_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
+                               &truncation, &source_line) != 0) {
+        /* ignore errors since we can't report them, can we? */
+        err = ignore_source_errors();
+        goto done;
     }
 
-    else {
-        PyErr_Clear();
+    int code_offset = tb->tb_lasti;
+    PyCodeObject* code = _PyFrame_GetCode(frame);
+
+    int start_line;
+    int end_line;
+    int start_col_byte_offset;
+    int end_col_byte_offset;
+    if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
+                              &end_line, &end_col_byte_offset)) {
+        goto done;
     }
-    
+    if (start_line != end_line) {
+        goto done;
+    }
+
+    if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
+        goto done;
+    }
+
+    // When displaying errors, we will use the following generic structure:
+    //
+    //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
+    //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
+    //        |              |-> left_end_offset     |                  |-> left_offset
+    //        |-> start_offset                       |-> right_start_offset
+    //
+    // In general we will only have (start_offset, end_offset) but we can gather more information
+    // by analyzing the AST of the text between *start_offset* and *end_offset*. If this succeeds
+    // we could get *left_end_offset* and *right_start_offset* and some selection of characters for
+    // the different ranges (primary_error_char and secondary_error_char). If we cannot obtain the
+    // AST information or we cannot identify special ranges within it, then left_end_offset and
+    // right_end_offset will be set to -1.
+
+    // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
+    assert(source_line);
+    Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+    Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
+    Py_ssize_t left_end_offset = -1;
+    Py_ssize_t right_start_offset = -1;
+
+    char *primary_error_char = "^";
+    char *secondary_error_char = primary_error_char;
+
+    int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
+                                        &left_end_offset, &right_start_offset,
+                                        &primary_error_char, &secondary_error_char);
+    if (res < 0 && ignore_source_errors() < 0) {
+        goto done;
+    }
+
+    err = print_error_location_carets(f, truncation, start_offset, end_offset,
+                                      right_start_offset, left_end_offset,
+                                      primary_error_char, secondary_error_char);
+
 done:
     Py_XDECREF(source_line);
     return err;
