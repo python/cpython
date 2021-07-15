@@ -36,8 +36,13 @@ def cmp(f1, f2, shallow=True):
 
     f2 -- Second file name
 
-    shallow -- Just check stat signature (do not read the files).
-               defaults to True.
+    shallow [True]
+        True: - if stat signature matches, return True; otherwise fall back to
+        the logic of shallow=False.
+
+        False: - return False if file sizes differ, otherwise compare full file contents.
+
+    Note that stat signature contains 3 values: type, size and mtime.
 
     Return value:
 
