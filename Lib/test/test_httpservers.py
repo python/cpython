@@ -597,7 +597,13 @@ print("X-ambv: was here")
 print("Content-type: text/html")
 print()
 print("<pre>")
-print(repr(os.environ))
+for k, v in os.environ.items():
+    try:
+        k.encode('ascii')
+        v.encode('ascii')
+    except UnicodeEncodeError:
+        continue  # see: BPO-44647
+    print(f"{k}={v}")
 print("</pre>")
 """
 
@@ -848,16 +854,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
             ((('Accept', 'text/html'), ('ACCEPT', 'text/plain')),
                'text/html,text/plain'),
         )
-        count = 0
         for headers, expected in tests:
-            count += 1
             headers = OrderedDict(headers)
             with self.subTest(headers):
                 res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
                 self.assertEqual(http.HTTPStatus.OK, res.status)
-                print(count, self.HOST, self.PORT, res.length, res.status, repr(str(res.headers)), dict(os.environ))
-                expected = f"'HTTP_ACCEPT': {expected!r}"
-                self.assertIn(expected.encode('ascii'), res.read())
+                expected = f"HTTP_ACCEPT={expected}".encode('ascii')
+                self.assertIn(expected, res.read())
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
