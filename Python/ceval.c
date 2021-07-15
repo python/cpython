@@ -106,19 +106,6 @@ static long dxp[256];
 #endif
 #endif
 
-/* per opcode cache */
-static int opcache_min_runs = 1024;  /* create opcache when code executed this many times */
-#define OPCODE_CACHE_MAX_TRIES 20
-
-// This function allows to deactivate the opcode cache. As different cache mechanisms may hold
-// references, this can mess with the reference leak detector functionality so the cache needs
-// to be deactivated in such scenarios to avoid false positives. See bpo-3714 for more information.
-void
-_PyEval_DeactivateOpCache(void)
-{
-    opcache_min_runs = 0;
-}
-
 #ifndef NDEBUG
 /* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
    PyEval_RestoreThread(). Detect if tstate memory was freed. It can happen
