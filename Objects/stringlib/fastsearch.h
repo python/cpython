@@ -182,7 +182,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 # define LOG_LINEUP()
 #endif
 
-static inline Py_ssize_t
+Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
                        Py_ssize_t *return_period, int invert_alphabet)
 {
@@ -234,7 +234,7 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     return max_suffix;
 }
 
-static Py_ssize_t
+Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
                       Py_ssize_t len_needle,
                       Py_ssize_t *return_period)
