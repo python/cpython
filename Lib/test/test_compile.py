@@ -951,7 +951,7 @@ if 1:
 
         async def test(aseq):
             async for i in aseq:
-               body
+                body
 
         expected_lines = [None, 1, 2, 1]
         code_lines = [ None if line is None else line-test.__code__.co_firstlineno
