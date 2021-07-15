@@ -543,7 +543,7 @@ extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *lef
         case BinOp_kind: {
             expr_ty left = expr->v.BinOp.left;
             expr_ty right = expr->v.BinOp.right;
-            for (int i = left->end_col_offset + 1; i < right->col_offset; i++) {
+            for (int i = left->end_col_offset; i < right->col_offset; i++) {
                 if (IS_WHITESPACE(segment_str[i])) {
                     continue;
                 }
