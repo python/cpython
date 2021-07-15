@@ -652,7 +652,9 @@ _Py_Specialize_CallFunction(
 {
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
+#if SPECIALIZATION_STATS
     PyTypeObject *type = Py_TYPE(callable);
+#endif
     /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
         PyCFunctionObject *meth = (PyCFunctionObject *)callable;
@@ -661,14 +663,14 @@ _Py_Specialize_CallFunction(
         }
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
-            case METH_FASTCALL:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "_PYCFUNCTION_FAST");
-                goto fail;
             case METH_O:
                 *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_O,
                     _Py_OPARG(*instr));
                 goto success;
+            case METH_FASTCALL:
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+                    "_PYCFUNCTION_FAST");
+                goto fail;
             case METH_VARARGS:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION");
                 goto fail;
