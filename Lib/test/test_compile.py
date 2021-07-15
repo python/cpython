@@ -943,7 +943,7 @@ if 1:
         genexp_lines = [None, 1, 3, 1]
 
         genexp_code = return_genexp.__code__.co_consts[1]
-        code_lines = [None if line is None else line-return_genexp.__code__.co_firstlineno
+        code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
                       for (_, _, line) in genexp_code.co_lines() ]
         self.assertEqual(genexp_lines, code_lines)
 
@@ -954,10 +954,9 @@ if 1:
                body
 
         expected_lines = [None, 1, 2, 1]
-        code_lines = [None if line is None else line-test.__code__.co_firstlineno
+        code_lines = [ None if line is None else line-test.__code__.co_firstlineno
                       for (_, _, line) in test.__code__.co_lines() ]
         self.assertEqual(expected_lines, code_lines)
-
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
