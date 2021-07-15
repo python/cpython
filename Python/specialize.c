@@ -652,9 +652,6 @@ _Py_Specialize_CallFunction(
 {
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-#if SPECIALIZATION_STATS
-    PyTypeObject *type = Py_TYPE(callable);
-#endif
     /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
         PyCFunctionObject *meth = (PyCFunctionObject *)callable;
@@ -697,6 +694,7 @@ _Py_Specialize_CallFunction(
     }
     /* These might be implemented in the future. Collecting stats for now. */
 #if SPECIALIZATION_STATS
+    PyTypeObject *type = Py_TYPE(callable);
     if (PyFunction_Check(callable)) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python function");
         goto fail;
