@@ -593,9 +593,12 @@ cgi_file6 = """\
 #!%s
 import os
 
-print("Content-type: text/plain")
+print("X-ambv: was here")
+print("Content-type: text/html")
 print()
+print("<pre>")
 print(repr(os.environ))
+print("</pre>")
 """
 
 
