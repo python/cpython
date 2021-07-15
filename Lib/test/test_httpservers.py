@@ -845,11 +845,14 @@ class CGIHTTPServerTestCase(BaseTestCase):
             ((('Accept', 'text/html'), ('ACCEPT', 'text/plain')),
                'text/html,text/plain'),
         )
+        count = 0
         for headers, expected in tests:
+            count += 1
             headers = OrderedDict(headers)
             with self.subTest(headers):
                 res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
                 self.assertEqual(http.HTTPStatus.OK, res.status)
+                print(count, res.length, res.status, res.headers)
                 expected = f"'HTTP_ACCEPT': {expected!r}"
                 self.assertIn(expected.encode('ascii'), res.read())
 
