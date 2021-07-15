@@ -3002,7 +3002,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Except block for __anext__ */
     compiler_use_next_block(c, except);
 
-    UNSET_LOC(c);
+    SET_LOC(c, s->v.AsyncFor.iter);
     ADDOP(c, END_ASYNC_FOR);
 
     /* `else` block */

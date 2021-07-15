@@ -947,6 +947,17 @@ if 1:
                       for (_, _, line) in genexp_code.co_lines() ]
         self.assertEqual(genexp_lines, code_lines)
 
+    def test_line_number_implicit_return_after_async_for(self):
+
+        async def test(aseq):
+            async for i in aseq:
+               body
+
+        expected_lines = [None, 1, 2, 1]
+        code_lines = [None if line is None else line-test.__code__.co_firstlineno
+                      for (_, _, line) in test.__code__.co_lines() ]
+        self.assertEqual(expected_lines, code_lines)
+
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
