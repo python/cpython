@@ -6176,20 +6176,53 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
+
+    // Maintaining a set of Constant_kind kind keys allows us to raise a
+    // SyntaxError in the case of duplicates.
+    PyObject *seen = PySet_New(NULL);
+    if (seen == NULL) {
+        return 0;
+    }
+
+    // NOTE: goto error on failure in the loop below to avoid leaking `seen`
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
             const char *e = "can't use NULL keys in MatchMapping "
                             "(set 'rest' parameter instead)";
             SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, i)));
-            return compiler_error(c, e);
+            compiler_error(c, e);
+            goto error;
         }
-        if (!MATCH_VALUE_EXPR(key)) {
+
+        if (key->kind == Constant_kind) {
+            int in_seen = PySet_Contains(seen, key->v.Constant.value);
+            if (in_seen < 0) {
+                goto error;
+            }
+            if (in_seen) {
+                const char *e = "mapping pattern checks duplicate key (%R)";
+                compiler_error(c, e, key->v.Constant.value);
+                goto error;
+            }
+            if (PySet_Add(seen, key->v.Constant.value)) {
+                goto error;
+            }
+        }
+
+        else if (key->kind != Attribute_kind) {
             const char *e = "mapping pattern keys may only match literals and attribute lookups";
-            return compiler_error(c, e);
+            compiler_error(c, e);
+            goto error;
         }
-        VISIT(c, expr, key);
+        if (!compiler_visit_expr(c, key)) {
+            goto error;
+        }
     }
+
+    // all keys have been checked; there are no duplicates
+    Py_DECREF(seen);
+
     ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
     // There's now a tuple of keys and a tuple of values on top of the subject:
@@ -6224,6 +6257,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     pc->on_top--;
     ADDOP(c, POP_TOP);
     return 1;
+
+error:
+    Py_DECREF(seen);
+    return 0;
 }
 
 static int
