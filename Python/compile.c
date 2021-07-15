@@ -2816,6 +2816,12 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     /* Except block for __anext__ */
     compiler_use_next_block(c, except);
+
+    /* We don't want to trace the END_ASYNC_FOR, so make sure
+     * that it has the same lineno as the following instruction. */
+    if (asdl_seq_LEN(s->v.For.orelse)) {
+        SET_LOC(c, (stmt_ty)asdl_seq_GET(s->v.For.orelse, 0));
+    }
     ADDOP(c, END_ASYNC_FOR);
 
     /* `else` block */
