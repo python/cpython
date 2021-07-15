@@ -367,7 +367,7 @@ def init(files=None):
     if files is None or _db is None:
         db = MimeTypes()
         # Quick return if not supported
-        db.read_windows_registry()
+        # db.read_windows_registry()
 
         if files is None:
             files = knownfiles
