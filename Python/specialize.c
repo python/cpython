@@ -303,6 +303,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
     _Py_CODEUNIT *instructions = first_instruction(quickened);
     int cache_offset = 0;
     int previous_opcode = -1;
+    int previous_oparg = 0;
     for(int i = 0; i < len; i++) {
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
@@ -338,14 +339,32 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 case JUMP_ABSOLUTE:
                     instructions[i] = _Py_MAKECODEUNIT(JUMP_ABSOLUTE_QUICK, oparg);
                     break;
-                /* Insert superinstructions here
-                 E.g.
                 case LOAD_FAST:
-                    if (previous_opcode == LOAD_FAST)
-                        instructions[i-1] = _Py_MAKECODEUNIT(LOAD_FAST__LOAD_FAST, oparg);
-                 */
+                    switch(previous_opcode) {
+                        case LOAD_FAST:
+                            instructions[i-1] = _Py_MAKECODEUNIT(LOAD_FAST__LOAD_FAST, previous_oparg);
+                            break;
+                        case STORE_FAST:
+                            instructions[i-1] = _Py_MAKECODEUNIT(STORE_FAST__LOAD_FAST, previous_oparg);
+                            break;
+                        case LOAD_CONST:
+                            instructions[i-1] = _Py_MAKECODEUNIT(LOAD_CONST__LOAD_FAST, previous_oparg);
+                            break;
+                    }
+                    break;
+                case STORE_FAST:
+                    if (previous_opcode == STORE_FAST) {
+                        instructions[i-1] = _Py_MAKECODEUNIT(STORE_FAST__STORE_FAST, previous_oparg);
+                    }
+                    break;
+                case LOAD_CONST:
+                    if (previous_opcode == LOAD_FAST) {
+                        instructions[i-1] = _Py_MAKECODEUNIT(LOAD_FAST__LOAD_CONST, previous_oparg);
+                    }
+                    break;
             }
             previous_opcode = opcode;
+            previous_oparg = oparg;
         }
     }
     assert(cache_offset+1 == get_cache_count(quickened));
