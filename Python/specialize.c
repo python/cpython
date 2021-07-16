@@ -40,6 +40,82 @@ Py_ssize_t _Py_QuickenedCount = 0;
 #if SPECIALIZATION_STATS
 SpecializationStats _specialization_stats[256] = { 0 };
 
+#define ADD_STAT_TO_DICT(res, field) \
+    do { \
+        PyObject *val = PyLong_FromUnsignedLongLong(stats->field); \
+        if (val == NULL) { \
+            Py_DECREF(res); \
+            return NULL; \
+        } \
+        if (PyDict_SetItemString(res, #field, val) == -1) { \
+            Py_DECREF(res); \
+            return NULL; \
+        } \
+        Py_DECREF(val); \
+    } while(0);
+
+static PyObject*
+stats_to_dict(SpecializationStats *stats)
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    ADD_STAT_TO_DICT(res, specialization_success);
+    ADD_STAT_TO_DICT(res, specialization_failure);
+    ADD_STAT_TO_DICT(res, hit);
+    ADD_STAT_TO_DICT(res, deferred);
+    ADD_STAT_TO_DICT(res, miss);
+    ADD_STAT_TO_DICT(res, deopt);
+    ADD_STAT_TO_DICT(res, unquickened);
+#if SPECIALIZATION_STATS_DETAILED
+    if (stats->miss_types != NULL) {
+        if (PyDict_SetItemString(res, "detailed", stats->miss_types) == -1) {
+            Py_DECREF(res);
+            return NULL;
+        }
+    }
+#endif
+    return res;
+}
+#undef ADD_STAT_TO_DICT
+
+static int
+add_stat_dict(
+    PyObject *res,
+    int opcode,
+    const char *name) {
+
+    SpecializationStats *stats = &_specialization_stats[opcode];
+    PyObject *d = stats_to_dict(stats);
+    if (d == NULL) {
+        return -1;
+    }
+    int err = PyDict_SetItemString(res, name, d);
+    Py_DECREF(d);
+    return err;
+}
+
+#if SPECIALIZATION_STATS
+PyObject*
+_Py_GetSpecializationStats(void) {
+    PyObject *stats = PyDict_New();
+    if (stats == NULL) {
+        return NULL;
+    }
+    int err = 0;
+    err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
+    err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
+    err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
+    if (err < 0) {
+        Py_DECREF(stats);
+        return NULL;
+    }
+    return stats;
+}
+#endif
+
+
 #define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
 
 static void
@@ -71,6 +147,7 @@ print_stats(SpecializationStats *stats, const char *name)
     }
 #endif
 }
+#undef PRINT_STAT
 
 void
 _Py_PrintSpecializationStats(void)

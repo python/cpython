@@ -64,5 +64,27 @@ class OpcodeTests(unittest.TestCase):
                     self.assertEqual(nojump, common)
 
 
+class SpecializationStatsTests(unittest.TestCase):
+    def test_specialization_stats(self):
+        STAT_NAMES = ['specialization_success', 'specialization_failure',
+                      'hit', 'deferred', 'miss', 'deopt', 'unquickened']
+
+        stats = _opcode.get_specialization_stats()
+        if stats is not None:
+            self.assertIsInstance(stats, dict)
+            self.assertCountEqual(
+                stats.keys(),
+                ['load_attr', 'load_global', 'binary_subscr'])
+            self.assertCountEqual(
+                stats['load_attr'].keys(),
+                STAT_NAMES + ['detailed'])
+            for sn in STAT_NAMES:
+                self.assertIsInstance(stats['load_attr'][sn], int)
+            self.assertIsInstance(stats['load_attr']['detailed'], dict)
+            for k,v in stats['load_attr']['detailed'].items():
+                self.assertIsInstance(k, tuple)
+                self.assertIsInstance(v, int)
+
+
 if __name__ == "__main__":
     unittest.main()
