@@ -3063,6 +3063,34 @@ class TestSignatureObject(unittest.TestCase):
                            ('bar', 2, ..., "keyword_only")),
                           ...))
 
+    def test_signature_on_subclass(self):
+        class A:
+            def __new__(cls, a=1, *args, **kwargs):
+                return object.__new__(cls)
+        class B(A):
+            def __init__(self, b):
+                pass
+        class C(A):
+            def __new__(cls, a=1, b=2, *args, **kwargs):
+                return object.__new__(cls)
+        class D(A):
+            pass
+
+        self.assertEqual(self.signature(B),
+                         ((('b', ..., ..., "positional_or_keyword"),),
+                          ...))
+        self.assertEqual(self.signature(C),
+                         ((('a', 1, ..., 'positional_or_keyword'),
+                           ('b', 2, ..., 'positional_or_keyword'),
+                           ('args', ..., ..., 'var_positional'),
+                           ('kwargs', ..., ..., 'var_keyword')),
+                          ...))
+        self.assertEqual(self.signature(D),
+                         ((('a', 1, ..., 'positional_or_keyword'),
+                           ('args', ..., ..., 'var_positional'),
+                           ('kwargs', ..., ..., 'var_keyword')),
+                          ...))
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_class_without_init(self):
