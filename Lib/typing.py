@@ -988,8 +988,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
     @_tp_cache
     def __getitem__(self, params):
@@ -1099,8 +1099,8 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
