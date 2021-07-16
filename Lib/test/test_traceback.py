@@ -1429,6 +1429,21 @@ class TestStack(unittest.TestCase):
              '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
 
+    def test_custom_format_frame(self):
+        class CustomStackSummary(traceback.StackSummary):
+            def format_frame(self, frame):
+                return f'{frame.filename}:{frame.lineno}'
+
+        def some_inner():
+            return CustomStackSummary.extract(
+                traceback.walk_stack(None), limit=1)
+
+        s = some_inner()
+        self.assertEqual(
+            s.format(),
+            [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
+
+
 class TestTracebackException(unittest.TestCase):
 
     def test_smoke(self):

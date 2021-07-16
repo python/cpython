@@ -353,6 +353,14 @@ capture data for later printing in a lightweight fashion.
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
 
+   .. method:: format_frame(frame)
+
+      Returns a string for printing one of the frames involved in the stack.
+      This method gets called for each frame object to be printed in the
+      :class:`StackSummary`.
+
+      .. versionadded:: 3.11
+
 
 :class:`FrameSummary` Objects
 -----------------------------
