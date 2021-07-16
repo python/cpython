@@ -322,7 +322,8 @@ PEGEN_OBJS=		\
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Parser/pegen.h \
-		$(srcdir)/Parser/string_parser.h
+		$(srcdir)/Parser/string_parser.h \
+		$(srcdir)/Parser/wcwidth.h
 
 POBJS=		\
 		Parser/token.o \

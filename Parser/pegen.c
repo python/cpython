@@ -6,6 +6,8 @@
 #include "pegen.h"
 #include "string_parser.h"
 
+#include "wcwidth.h"
+
 PyObject *
 _PyPegen_new_type_comment(Parser *p, const char *s)
 {
@@ -414,8 +416,16 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
         return 0;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
+    size_t the_size = size;
+    for (int l=0;l<size;l++) {
+        size_t w = mk_wcwidth(PyUnicode_ReadChar(text, l));
+        if (w>1) {
+            the_size += (w-1);
+        }
+    }
+
     Py_DECREF(text);
-    return size;
+    return the_size;
 }
 
 void *

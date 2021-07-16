@@ -291,6 +291,7 @@
     <ClInclude Include="..\Objects\unicodetype_db.h" />
     <ClInclude Include="..\Parser\tokenizer.h" />
     <ClInclude Include="..\Parser\string_parser.h" />
+    <ClInclude Include="..\Parser\wcwidth.h" />
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
