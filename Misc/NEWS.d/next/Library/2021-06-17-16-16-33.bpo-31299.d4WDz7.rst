@@ -1,0 +1,1 @@
+Added the ``stack_summary_cls`` parameter to :class:`TracebackException`, to allow fine-grained control over the content of a formatted traceback.  Added option to completely drop frames from the output by returning ``None`` from a :meth:`~StackSummary.format_frame` override.

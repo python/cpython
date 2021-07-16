@@ -1443,6 +1443,40 @@ class TestStack(unittest.TestCase):
             s.format(),
             [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
 
+    def test_dropping_frames(self):
+        def f():
+            1/0
+        def g():
+            try:
+                f()
+            except:
+                return sys.exc_info()
+        exc_info = g()
+
+        class Skip_G(traceback.StackSummary):
+            def format_frame(self, frame):
+                if frame.name == 'g':
+                    return None
+                return super().format_frame(frame)
+
+        def get_output(stack_summary_cls=None):
+            output = StringIO()
+            traceback.TracebackException(
+                *exc_info, stack_summary_cls=stack_summary_cls,
+            ).print(file=output)
+            return output.getvalue().split('\n')
+
+        default = get_output()
+        skip_g = get_output(Skip_G)
+
+        for l in skip_g:
+            default.remove(l)
+        # Only the lines for g's frame should remain:
+        self.assertEqual(len(default), 3)
+        self.assertRegex(default[0], ', line [0-9]*, in g')
+        self.assertEqual(default[1], '    f()')
+        self.assertEqual(default[2], '    ^^^')
+
 
 class TestTracebackException(unittest.TestCase):
 

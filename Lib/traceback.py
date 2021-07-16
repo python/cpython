@@ -507,6 +507,7 @@ class StackSummary(list):
         last_file = None
         last_line = None
         last_name = None
+        last_line_displayed = False
         count = 0
         for frame in self:
             if (last_file is None or last_file != frame.filename or
@@ -514,10 +515,11 @@ class StackSummary(list):
                 last_name is None or last_name != frame.name):
                 if count > _RECURSIVE_CUTOFF:
                     count -= _RECURSIVE_CUTOFF
-                    result.append(
-                        f'  [Previous line repeated {count} more '
-                        f'time{"s" if count > 1 else ""}]\n'
-                    )
+                    if last_line_displayed:
+                        result.append(
+                            f'  [Previous line repeated {count} more '
+                            f'time{"s" if count > 1 else ""}]\n'
+                        )
                 last_file = frame.filename
                 last_line = frame.lineno
                 last_name = frame.name
@@ -525,7 +527,12 @@ class StackSummary(list):
             count += 1
             if count > _RECURSIVE_CUTOFF:
                 continue
-            result.append(self.format_frame(frame))
+            formatted_frame = self.format_frame(frame)
+            if formatted_frame is not None:
+                last_line_displayed = True
+                result.append(formatted_frame)
+            else:
+                last_line_displayed = False
 
         if count > _RECURSIVE_CUTOFF:
             count -= _RECURSIVE_CUTOFF
@@ -618,7 +625,7 @@ class TracebackException:
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
-            _seen=None):
+            stack_summary_cls=None, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -628,8 +635,9 @@ class TracebackException:
             _seen = set()
         _seen.add(id(exc_value))
 
-        # TODO: locals.
-        self.stack = StackSummary._extract_from_extended_frame_gen(
+        if stack_summary_cls is None:
+            stack_summary_cls = StackSummary
+        self.stack = stack_summary_cls._extract_from_extended_frame_gen(
             _walk_tb_with_full_positions(exc_traceback),
             limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
