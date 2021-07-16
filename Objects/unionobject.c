@@ -36,11 +36,13 @@ static Py_hash_t
 union_hash(PyObject *self)
 {
     unionobject *alias = (unionobject *)self;
-    Py_hash_t h1 = PyObject_Hash(alias->args);
-    if (h1 == -1) {
-        return -1;
+    PyObject *args = PyFrozenSet_New(alias->args);
+    if (args == NULL) {
+        return (Py_hash_t)-1;
     }
-    return h1;
+    Py_hash_t hash = PyObject_Hash(args);
+    Py_DECREF(args);
+    return hash;
 }
 
 static int
