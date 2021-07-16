@@ -623,7 +623,7 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(None | typing.List[int], typing.Union[None, typing.List[int]])
         self.assertEqual(str | float | int | complex | int, (int | str) | (float | complex))
         self.assertEqual(typing.Union[str, int, typing.List[int]], str | int | typing.List[int])
-        self.assertEqual(int | int, int)
+        self.assertIs(int | int, int)
         self.assertEqual(
             BaseException |
             bool |
@@ -651,6 +651,8 @@ class TypesTests(unittest.TestCase):
             3 | int
         with self.assertRaises(TypeError):
             Example() | int
+        x = int | str
+        self.assertNotEqual(x, {})
         with self.assertRaises(TypeError):
             (int | str) < typing.Union[str, int]
         with self.assertRaises(TypeError):
@@ -704,6 +706,8 @@ class TypesTests(unittest.TestCase):
         TV = typing.TypeVar('T')
         assert TV | str == typing.Union[TV, str]
         assert str | TV == typing.Union[str, TV]
+        self.assertIs((int | TV)[int], int)
+        self.assertIs((TV | int)[int], int)
 
     def test_union_args(self):
         self.assertEqual((int | str).__args__, (int, str))
@@ -721,6 +725,7 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(list[int | list[T]][str], list[int | list[str]])
         self.assertEqual((list[T] | list[S]).__parameters__, (T, S))
         self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
+        self.assertEqual((list[T] | list[S])[int, int], list[int])
 
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
