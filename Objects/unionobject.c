@@ -260,8 +260,8 @@ dedup_and_flatten_args(PyObject* args)
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         int is_duplicate = 0;
         PyObject* i_element = PyTuple_GET_ITEM(args, i);
-        for (Py_ssize_t j = i + 1; j < arg_length; j++) {
-            PyObject* j_element = PyTuple_GET_ITEM(args, j);
+        for (Py_ssize_t j = 0; j < added_items; j++) {
+            PyObject* j_element = PyTuple_GET_ITEM(new_args, j);
             int is_ga = PyObject_TypeCheck(i_element, &Py_GenericAliasType) &&
                         PyObject_TypeCheck(j_element, &Py_GenericAliasType);
             // RichCompare to also deduplicate GenericAlias types (slower)
