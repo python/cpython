@@ -14,6 +14,9 @@ from test.libregrtest.utils import (setup_unraisable_hook,
                                     setup_threading_excepthook)
 
 
+UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
+
+
 def setup_tests(ns):
     try:
         stderr_fd = sys.__stderr__.fileno()
@@ -97,6 +100,13 @@ def setup_tests(ns):
     if ns.xmlpath:
         from test.support.testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
+
+    # Ensure there's a non-ASCII character in env vars at all times to force
+    # tests consider this case. See BPO-44647 for details.
+    os.environ.setdefault(
+        UNICODE_GUARD_ENV,
+        "\N{SMILING FACE WITH SUNGLASSES}",
+    )
 
 
 def replace_stdout():
