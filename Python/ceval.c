@@ -4181,6 +4181,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
+            STAT_INC(CALL_FUNCTION, unquickened);
             PyObject **sp, *res;
             sp = stack_pointer;
             res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
