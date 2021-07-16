@@ -451,6 +451,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 
     const unsigned char *ascii_data = data->buf;
     size_t ascii_len = data->len;
+    binascii_state *state = NULL;
     char padding_started = 0;
 
     /* Allocate the buffer */
@@ -463,7 +464,12 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     unsigned char *bin_data_start = bin_data;
 
     if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
-        goto malformed_padding;
+        malformed_padding:
+        state = PyModule_GetState(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Malformed padding in strict mode");
+        }
+        goto error_end;
     }
 
     int quad_pos = 0;
@@ -484,7 +490,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
                 ** in strict mode, an error should raise if there's excess data after the padding.
                 */
                 if (strict_mode && i + 1 < ascii_len) {
-                    binascii_state *state = PyModule_GetState(module);
+                    state = PyModule_GetState(module);
                     if (state) {
                         PyErr_SetString(state->Error, "Excess data after padding is not allowed when using strict mode");
                     }
@@ -499,7 +505,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         this_ch = table_a2b_base64[this_ch];
         if (this_ch >= 64) {
             if (strict_mode) {
-                binascii_state *state = PyModule_GetState(module);
+                state = PyModule_GetState(module);
                 if (state) {
                     PyErr_SetString(state->Error, "Only base64 data is allowed when using strict mode");
                 }
@@ -510,12 +516,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 
         // Characters that are not '=', in the middle of the padding, are not allowed
         if (strict_mode && padding_started) {
-            malformed_padding:
-            binascii_state *state = PyModule_GetState(module);
-            if (state) {
-                PyErr_SetString(state->Error, "Malformed padding in strict mode");
-            }
-            goto error_end;
+            goto malformed_padding;
         }
         pads = 0;
 
@@ -543,7 +544,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     }
 
     if (quad_pos != 0) {
-        binascii_state *state = PyModule_GetState(module);
+        state = PyModule_GetState(module);
         if (state == NULL) {
             /* error already set, from PyModule_GetState */
         } else if (quad_pos == 1) {
