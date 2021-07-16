@@ -29,6 +29,13 @@ class EOFTestCase(unittest.TestCase):
         else:
             raise support.TestFailed
 
+    def test_EOFS_with_file(self):
+        expect = ("(<string>, line 1)")
+        with os_helper.temp_dir() as temp_dir:
+            file_name = script_helper.make_script(temp_dir, 'foo', """'''this is \na \ntest""")
+            rc, out, err = script_helper.assert_python_failure(file_name)
+        self.assertIn(b'unterminated triple-quoted string literal (detected at line 3)', err)
+
     def test_eof_with_line_continuation(self):
         expect = "unexpected EOF while parsing (<string>, line 1)"
         try:

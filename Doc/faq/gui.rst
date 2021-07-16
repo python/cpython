@@ -92,7 +92,7 @@ FLTK
 
 Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
-PyFLTK project <http://pyfltk.sourceforge.net>`_.
+PyFLTK project <https://pyfltk.sourceforge.io/>`_.
 
 OpenGL
 ------

@@ -1,0 +1,2 @@
+:c:func:`PyCodec_Unregister` is now properly exported as a function in the
+Windows Stable ABI DLL.

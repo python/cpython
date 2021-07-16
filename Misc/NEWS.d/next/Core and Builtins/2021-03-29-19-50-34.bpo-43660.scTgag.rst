@@ -1,3 +1,0 @@
-Fix crash that happens when replacing ``sys.stderr`` with a callable that
-can remove the object while an exception is being printed. Patch by Pablo
-Galindo.

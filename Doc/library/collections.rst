@@ -313,6 +313,16 @@ For example::
 
         .. versionadded:: 3.2
 
+    .. method:: total()
+
+        Compute the sum of the counts.
+
+            >>> c = Counter(a=10, b=5, c=0)
+            >>> c.total()
+            15
+
+        .. versionadded:: 3.10
+
     The usual dictionary methods are available for :class:`Counter` objects
     except for two which work differently for counters.
 
@@ -342,7 +352,7 @@ All of those tests treat missing elements as having zero counts so that
 
 Common patterns for working with :class:`Counter` objects::
 
-    sum(c.values())                 # total of all counts
+    c.total()                       # total of all counts
     c.clear()                       # reset all counts
     list(c)                         # list unique elements
     set(c)                          # convert to a set
@@ -697,9 +707,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` objects
 ----------------------------
 
-.. class:: defaultdict([default_factory[, ...]])
+.. class:: defaultdict(default_factory=None, /, [...])
 
-    Returns a new dictionary-like object.  :class:`defaultdict` is a subclass of the
+    Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
     built-in :class:`dict` class.  It overrides one method and adds one writable
     instance variable.  The remaining functionality is the same as for the
     :class:`dict` class and is not documented here.

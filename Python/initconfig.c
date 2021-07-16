@@ -95,6 +95,11 @@ static const char usage_3[] = "\
          -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
              given directory instead of to the code tree\n\
          -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
+         -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
+            information (end line, start column offset and end column offset) to every \n\
+            instruction in code objects. This is useful when smaller code objects and pyc \n\
+            files are desired as well as supressing the extra visual location indicators \n\
+            when the interpreter displays tracebacks.\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -131,7 +136,12 @@ static const char usage_6[] =
 "   debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
-"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n";
+"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
+"PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
+"   tables mapping extra location information (end line, start column offset \n"
+"   and end column offset) to every instruction in code objects. This is useful \n"
+"   when smaller cothe de objects and pyc files are desired as well as supressing the \n"
+"   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -597,6 +607,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->faulthandler >= 0);
     assert(config->tracemalloc >= 0);
     assert(config->import_time >= 0);
+    assert(config->no_debug_ranges >= 0);
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
@@ -884,6 +895,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
+    COPY_ATTR(no_debug_ranges);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
@@ -988,6 +1000,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
+    SET_ITEM_INT(no_debug_ranges);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
@@ -1264,6 +1277,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(faulthandler);
     GET_UINT(tracemalloc);
     GET_UINT(import_time);
+    GET_UINT(no_debug_ranges);
     GET_UINT(show_ref_count);
     GET_UINT(dump_refs);
     GET_UINT(malloc_stats);
@@ -1800,6 +1814,11 @@ config_read_complex_options(PyConfig *config)
     if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
+    }
+
+    if (config_get_env(config, "PYTHONNODEBUGRANGES")
+       || config_get_xoption(config, L"no_debug_ranges")) {
+        config->no_debug_ranges = 1;
     }
 
     PyStatus status;

@@ -52,6 +52,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_opcode",
 "_operator",
 "_osx_support",
+"_overlapped",
 "_pickle",
 "_posixshmem",
 "_posixsubprocess",

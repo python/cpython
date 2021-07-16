@@ -89,8 +89,7 @@ class LoaderTests(abc.LoaderTests):
  ) = util.test_both(LoaderTests, machinery=machinery)
 
 class MultiPhaseExtensionModuleTests(abc.LoaderTests):
-    """Test loading extension modules with multi-phase initialization (PEP 489)
-    """
+    # Test loading extension modules with multi-phase initialization (PEP 489).
 
     def setUp(self):
         self.name = '_testmultiphase'
@@ -101,13 +100,13 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             self.name, self.spec.origin)
 
     def load_module(self):
-        '''Load the module from the test extension'''
+        # Load the module from the test extension.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             return self.loader.load_module(self.name)
 
     def load_module_by_name(self, fullname):
-        '''Load a module from the test extension by name'''
+        # Load a module from the test extension by name.
         origin = self.spec.origin
         loader = self.machinery.ExtensionFileLoader(fullname, origin)
         spec = importlib.util.spec_from_loader(fullname, loader)
@@ -125,7 +124,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     test_state_after_failure = None
 
     def test_module(self):
-        '''Test loading an extension module'''
+        # Test loading an extension module.
         with util.uncache(self.name):
             module = self.load_module()
             for attr, value in [('__name__', self.name),
@@ -139,7 +138,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                                   self.machinery.ExtensionFileLoader)
 
     def test_functionality(self):
-        '''Test basic functionality of stuff defined in an extension module'''
+        # Test basic functionality of stuff defined in an extension module.
         with util.uncache(self.name):
             module = self.load_module()
             self.assertIsInstance(module, types.ModuleType)
@@ -159,7 +158,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             self.assertEqual(module.str_const, 'something different')
 
     def test_reload(self):
-        '''Test that reload didn't re-set the module's attributes'''
+        # Test that reload didn't re-set the module's attributes.
         with util.uncache(self.name):
             module = self.load_module()
             ex_class = module.Example
@@ -167,7 +166,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             self.assertIs(ex_class, module.Example)
 
     def test_try_registration(self):
-        '''Assert that the PyState_{Find,Add,Remove}Module C API doesn't work'''
+        # Assert that the PyState_{Find,Add,Remove}Module C API doesn't work.
         module = self.load_module()
         with self.subTest('PyState_FindModule'):
             self.assertEqual(module.call_state_registration_func(0), None)
@@ -179,14 +178,14 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 module.call_state_registration_func(2)
 
     def test_load_submodule(self):
-        '''Test loading a simulated submodule'''
+        # Test loading a simulated submodule.
         module = self.load_module_by_name('pkg.' + self.name)
         self.assertIsInstance(module, types.ModuleType)
         self.assertEqual(module.__name__, 'pkg.' + self.name)
         self.assertEqual(module.str_const, 'something different')
 
     def test_load_short_name(self):
-        '''Test loading module with a one-character name'''
+        # Test loading module with a one-character name.
         module = self.load_module_by_name('x')
         self.assertIsInstance(module, types.ModuleType)
         self.assertEqual(module.__name__, 'x')
@@ -194,27 +193,27 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         self.assertNotIn('x', sys.modules)
 
     def test_load_twice(self):
-        '''Test that 2 loads result in 2 module objects'''
+        # Test that 2 loads result in 2 module objects.
         module1 = self.load_module_by_name(self.name)
         module2 = self.load_module_by_name(self.name)
         self.assertIsNot(module1, module2)
 
     def test_unloadable(self):
-        '''Test nonexistent module'''
+        # Test nonexistent module.
         name = 'asdfjkl;'
         with self.assertRaises(ImportError) as cm:
             self.load_module_by_name(name)
         self.assertEqual(cm.exception.name, name)
 
     def test_unloadable_nonascii(self):
-        '''Test behavior with nonexistent module with non-ASCII name'''
+        # Test behavior with nonexistent module with non-ASCII name.
         name = 'fo\xf3'
         with self.assertRaises(ImportError) as cm:
             self.load_module_by_name(name)
         self.assertEqual(cm.exception.name, name)
 
     def test_nonmodule(self):
-        '''Test returning a non-module object from create works'''
+        # Test returning a non-module object from create works.
         name = self.name + '_nonmodule'
         mod = self.load_module_by_name(name)
         self.assertNotEqual(type(mod), type(unittest))
@@ -222,7 +221,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
     # issue 27782
     def test_nonmodule_with_methods(self):
-        '''Test creating a non-module object with methods defined'''
+        # Test creating a non-module object with methods defined.
         name = self.name + '_nonmodule_with_methods'
         mod = self.load_module_by_name(name)
         self.assertNotEqual(type(mod), type(unittest))
@@ -230,14 +229,14 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         self.assertEqual(mod.bar(10, 1), 9)
 
     def test_null_slots(self):
-        '''Test that NULL slots aren't a problem'''
+        # Test that NULL slots aren't a problem.
         name = self.name + '_null_slots'
         module = self.load_module_by_name(name)
         self.assertIsInstance(module, types.ModuleType)
         self.assertEqual(module.__name__, name)
 
     def test_bad_modules(self):
-        '''Test SystemError is raised for misbehaving extensions'''
+        # Test SystemError is raised for misbehaving extensions.
         for name_base in [
                 'bad_slot_large',
                 'bad_slot_negative',
@@ -261,9 +260,9 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                     self.load_module_by_name(name)
 
     def test_nonascii(self):
-        '''Test that modules with non-ASCII names can be loaded'''
+        # Test that modules with non-ASCII names can be loaded.
         # punycode behaves slightly differently in some-ASCII and no-ASCII
-        # cases, so test both
+        # cases, so test both.
         cases = [
             (self.name + '_zkou\u0161ka_na\u010dten\xed', 'Czech'),
             ('\uff3f\u30a4\u30f3\u30dd\u30fc\u30c8\u30c6\u30b9\u30c8',

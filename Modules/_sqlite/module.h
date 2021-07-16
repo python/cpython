@@ -29,16 +29,34 @@
 #define PYSQLITE_VERSION "2.6.0"
 #define MODULE_NAME "sqlite3"
 
-extern PyObject* pysqlite_Error;
-extern PyObject* pysqlite_Warning;
-extern PyObject* pysqlite_InterfaceError;
-extern PyObject* pysqlite_DatabaseError;
-extern PyObject* pysqlite_InternalError;
-extern PyObject* pysqlite_OperationalError;
-extern PyObject* pysqlite_ProgrammingError;
-extern PyObject* pysqlite_IntegrityError;
-extern PyObject* pysqlite_DataError;
-extern PyObject* pysqlite_NotSupportedError;
+typedef struct {
+    PyObject *DataError;
+    PyObject *DatabaseError;
+    PyObject *Error;
+    PyObject *IntegrityError;
+    PyObject *InterfaceError;
+    PyObject *InternalError;
+    PyObject *NotSupportedError;
+    PyObject *OperationalError;
+    PyObject *ProgrammingError;
+    PyObject *Warning;
+
+    PyObject *lru_cache;
+
+    PyTypeObject *ConnectionType;
+    PyTypeObject *CursorType;
+    PyTypeObject *PrepareProtocolType;
+    PyTypeObject *RowType;
+    PyTypeObject *StatementType;
+} pysqlite_state;
+
+extern pysqlite_state pysqlite_global_state;
+
+static inline pysqlite_state *
+pysqlite_get_state(PyObject *Py_UNUSED(module))
+{
+    return &pysqlite_global_state;
+}
 
 /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
  * functions, that convert the SQL value to the appropriate Python value.

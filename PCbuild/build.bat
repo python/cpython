@@ -34,7 +34,7 @@ echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
 echo.  --test-marker  Enable the test marker within the build.
-echo.  --regen        Regenerate all opcodes, grammar and tokens
+echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -116,8 +116,14 @@ rem Setup the environment
 call "%dir%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
+call "%dir%find_python.bat" %PYTHON%
+if ERRORLEVEL 1 (echo Cannot locate python.exe on PATH or as PYTHON variable & exit /b 3)
+set PythonForBuild=%PYTHON%
+
 if "%kill%"=="true" call :Kill
-if ERRORLEVEL 1 exit /B 3
+if ERRORLEVEL 1 exit /B %ERRORLEVEL%
+
+if "%regen%"=="true" goto :Regen
 
 if "%do_pgo%"=="true" (
     set conf=PGInstrument
@@ -147,6 +153,15 @@ echo on
 @echo off
 exit /B %ERRORLEVEL%
 
+:Regen
+echo on
+%MSBUILD% "%dir%\pythoncore.vcxproj" /t:Regen %verbose%^
+ /p:Configuration=%conf% /p:Platform=%platf%^
+ /p:ForceRegen=true
+
+@echo off
+exit /B %ERRORLEVEL%
+
 :Build
 rem Call on MSBuild to do the work, echo the command.
 rem Passing %1-9 is not the preferred option, but argument parsing in
@@ -159,14 +174,6 @@ echo on
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
-
-@if not ERRORLEVEL 1 @if "%Regen%"=="true" (
-    %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
-     /p:IncludeExternals=%IncludeExternals%^
-     /p:Configuration=%conf% /p:Platform=%platf%^
-     /p:UseTestMarker=%UseTestMarker% %GITProperty%^
-     %1 %2 %3 %4 %5 %6 %7 %8 %9
-)
 
 @echo off
 exit /b %ERRORLEVEL%

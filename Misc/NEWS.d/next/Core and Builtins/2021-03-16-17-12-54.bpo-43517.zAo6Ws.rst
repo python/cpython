@@ -1,2 +1,0 @@
-Fix misdetection of circular imports when using ``from pkg.mod import
-attr``, which caused false positives in non-trivial multi-threaded code.

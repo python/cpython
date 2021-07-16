@@ -13,6 +13,8 @@ detected.
 It can be enabled using the :option:`-X dev <-X>` command line option or by
 setting the :envvar:`PYTHONDEVMODE` environment variable to ``1``.
 
+See also :ref:`Python debug build <debug-build>`.
+
 Effects of the Python Development Mode
 ======================================
 

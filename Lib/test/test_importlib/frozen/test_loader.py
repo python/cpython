@@ -78,7 +78,7 @@ class ExecModuleTests(abc.LoaderTests):
     test_state_after_failure = None
 
     def test_unloadable(self):
-        assert self.machinery.FrozenImporter.find_module('_not_real') is None
+        assert self.machinery.FrozenImporter.find_spec('_not_real') is None
         with self.assertRaises(ImportError) as cm:
             self.exec_module('_not_real')
         self.assertEqual(cm.exception.name, '_not_real')

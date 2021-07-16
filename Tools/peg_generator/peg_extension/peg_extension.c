@@ -109,20 +109,27 @@ error:
 static PyObject *
 clear_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
+#if defined(PY_DEBUG)
     _PyPegen_clear_memo_statistics();
+#endif
     Py_RETURN_NONE;
 }
 
 static PyObject *
 get_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
+#if defined(PY_DEBUG)
     return _PyPegen_get_memo_statistics();
+#else
+    Py_RETURN_NONE;
+#endif
 }
 
 // TODO: Write to Python's sys.stdout instead of C's stdout.
 static PyObject *
 dump_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
+#if defined(PY_DEBUG)
     PyObject *list = _PyPegen_get_memo_statistics();
     if (list == NULL) {
         return NULL;
@@ -139,6 +146,7 @@ dump_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         }
     }
     Py_DECREF(list);
+#endif
     Py_RETURN_NONE;
 }
 

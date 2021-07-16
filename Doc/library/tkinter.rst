@@ -34,9 +34,6 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
    `Tkinter 8.5 reference: a GUI for Python <https://www.tkdocs.com/shipman/>`_
       On-line reference material.
 
-   `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
-      Online reference for tkinter supported by effbot.org.
-
    `Programming Python <http://learning-python.com/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 

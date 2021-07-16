@@ -1,1 +1,0 @@
-It's now possible to create MPTCP sockets with IPPROTO_MPTCP

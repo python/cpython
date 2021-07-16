@@ -1,2 +1,0 @@
-The :mod:`hmac` module now uses OpenSSL's HMAC implementation when digestmod
-argument is a hash name or builtin hash function.

@@ -4,6 +4,7 @@ from test.support import import_helper
 import builtins
 import contextlib
 import copy
+import enum
 import io
 import os
 import pickle
@@ -30,6 +31,13 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_safe_uuid_enum(self):
+        class CheckedSafeUUID(enum.Enum):
+            safe = 0
+            unsafe = -1
+            unknown = None
+        enum._test_simple_enum(CheckedSafeUUID, py_uuid.SafeUUID)
 
     def test_UUID(self):
         equal = self.assertEqual

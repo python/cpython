@@ -705,7 +705,10 @@ call fails (for example because the path doesn't exist).
 .. classmethod:: Path.home()
 
    Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct)::
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
 
       >>> Path.home()
       PosixPath('/home/antoine')
@@ -713,10 +716,13 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.stat()
+.. method:: Path.stat(*, follow_symlinks=True)
 
    Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
+
+   This method normally follows symlinks; to stat a symlink add the argument
+   ``follow_symlinks=False``, or use :meth:`~Path.lstat`.
 
    ::
 
@@ -726,10 +732,18 @@ call fails (for example because the path doesn't exist).
       >>> p.stat().st_mtime
       1327883547.852554
 
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
-.. method:: Path.chmod(mode)
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
 
-   Change the file mode and permissions, like :func:`os.chmod`::
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
 
       >>> p = Path('setup.py')
       >>> p.stat().st_mode
@@ -738,6 +752,8 @@ call fails (for example because the path doesn't exist).
       >>> p.stat().st_mode
       33060
 
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.exists()
 
@@ -760,7 +776,10 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.expanduser()
 
    Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`::
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
 
       >>> p = PosixPath('~/films/Monty Python')
       >>> p.expanduser()
@@ -779,8 +798,9 @@ call fails (for example because the path doesn't exist).
       >>> sorted(Path('.').glob('*/*.py'))
       [PosixPath('docs/conf.py')]
 
-   The "``**``" pattern means "this directory and all subdirectories,
-   recursively".  In other words, it enables recursive globbing::
+   Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
+   which means "this directory and all subdirectories, recursively".  In other
+   words, it enables recursive globbing::
 
       >>> sorted(Path('.').glob('**/*.py'))
       [PosixPath('build/lib/pathlib.py'),
@@ -1120,6 +1140,35 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+.. method:: Path.hardlink_to(target)
+
+   Make this path a hard link to the same file as *target*.
+
+   .. note::
+      The order of arguments (link, target) is the reverse
+      of :func:`os.link`'s.
+
+   .. versionadded:: 3.10
+
+.. method:: Path.link_to(target)
+
+   Make *target* a hard link to this path.
+
+   .. warning::
+
+      This function does not make this path a hard link to *target*, despite
+      the implication of the function and argument names. The argument order
+      (target, link) is the reverse of :func:`Path.symlink_to` and
+      :func:`Path.hardlink_to`, but matches that of :func:`os.link`.
+
+   .. versionadded:: 3.8
+
+   .. deprecated:: 3.10
+
+      This method is deprecated in favor of :meth:`Path.hardlink_to`, as the
+      argument order of :meth:`Path.link_to`  does not match that of
+      :meth:`Path.symlink_to`.
+
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
 
@@ -1143,13 +1192,6 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.8
       The *missing_ok* parameter was added.
-
-
-.. method:: Path.link_to(target)
-
-   Create a hard link pointing to a path named *target*.
-
-   .. versionadded:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1219,7 +1261,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
-:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.link`                        :meth:`Path.hardlink_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.path.relpath`                :meth:`Path.relative_to` [#]_

@@ -1,1 +1,0 @@
-``image/heic`` and ``image/heif`` were added to :mod:`mimetypes`.

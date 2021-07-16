@@ -162,6 +162,9 @@ following combinations of SDKs and universal-archs flavors are available:
 The makefile for a framework build will also install ``python3.x-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit`` and ``intel-64``).
+It will also install ``python3.x-intel64`` binaries in the ``universal2``
+case to allow easy execution with the Rosetta 2 Intel emulator on Apple
+Silicon Macs.
 
 Running a specific architecture
 ...............................
@@ -181,12 +184,15 @@ subprocesses also run in 32-bit-mode if the main interpreter does, use
 a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 ``subprocess`` ``Popen`` executable value.
 
+Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
+with ``universal2`` binaries.
+
 Building and using a framework-based Python on macOS
 ====================================================
 
 
 1. Why would I want a framework Python instead of a normal static Python?
---------------------------------------------------------------------------
+-------------------------------------------------------------------------
 
 The main reason is because you want to create GUI programs in Python. With the
 exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run
@@ -200,7 +206,7 @@ only two places: "/Library/Framework/Python.framework" and
 "/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.8",
 "2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
-due to the way frameworks work, usera without admin privileges can install a
+due to the way frameworks work, users without admin privileges can install a
 binary distribution in their home directory without recompilation.
 
 2. How does a framework Python differ from a normal static Python?
@@ -266,7 +272,7 @@ normal frameworkinstall which installs the Tools directory into
 distributions.
 
 What do all these programs do?
-===============================
+==============================
 
 "IDLE.app" is an integrated development environment for Python: editor,
 debugger, etc.

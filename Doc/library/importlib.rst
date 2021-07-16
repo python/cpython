@@ -257,6 +257,10 @@ ABC hierarchy::
          Returns ``None`` when called instead of raising
          :exc:`NotImplementedError`.
 
+      .. deprecated:: 3.10
+         Implement :meth:`MetaPathFinder.find_spec` or
+         :meth:`PathEntryFinder.find_spec` instead.
+
 
 .. class:: MetaPathFinder
 
@@ -264,6 +268,9 @@ ABC hierarchy::
    compatibility, this is a subclass of :class:`Finder`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      No longer a subclass of :class:`Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -313,10 +320,12 @@ ABC hierarchy::
    An abstract base class representing a :term:`path entry finder`.  Though
    it bears some similarities to :class:`MetaPathFinder`, ``PathEntryFinder``
    is meant for use only within the path-based import subsystem provided
-   by :class:`PathFinder`. This ABC is a subclass of :class:`Finder` for
-   compatibility reasons only.
+   by :class:`importlib.machinery.PathFinder`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      No longer a subclass of :class:`Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
@@ -363,7 +372,8 @@ ABC hierarchy::
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
-      cache used by the finder. Used by :meth:`PathFinder.invalidate_caches`
+      cache used by the finder. Used by
+      :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
 
 
@@ -481,7 +491,7 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
-    *Superseded by TraversableReader*
+    *Superseded by TraversableResources*
 
     An :term:`abstract base class` to provide the ability to read
     *resources*.
@@ -612,7 +622,7 @@ ABC hierarchy::
 
     .. method:: is_package(fullname)
 
-        An abstract method to return a true value if the module is a package, a
+        An optional method to return a true value if the module is a package, a
         false value otherwise. :exc:`ImportError` is raised if the
         :term:`loader` cannot find the module.
 
@@ -806,7 +816,7 @@ ABC hierarchy::
     .. versionadded:: 3.9
 
 
-.. class:: TraversableReader
+.. class:: TraversableResources
 
     An abstract base class for resource readers capable of serving
     the ``files`` interface. Subclasses ResourceReader and provides
@@ -1192,6 +1202,9 @@ find and load modules.
    .. method:: find_loader(fullname)
 
       Attempt to find the loader to handle *fullname* within :attr:`path`.
+
+      .. deprecated:: 3.10
+         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 

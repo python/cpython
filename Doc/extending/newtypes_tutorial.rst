@@ -69,7 +69,8 @@ at the start of each object struct and defines a field called ``ob_base``
 of type :c:type:`PyObject`, containing a pointer to a type object and a
 reference count (these can be accessed using the macros :c:macro:`Py_REFCNT`
 and :c:macro:`Py_TYPE` respectively).  The reason for the macro is to
-abstract away the layout and to enable additional fields in debug builds.
+abstract away the layout and to enable additional fields in :ref:`debug builds
+<debug-build>`.
 
 .. note::
    There is no semicolon above after the :c:macro:`PyObject_HEAD` macro.

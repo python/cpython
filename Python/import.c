@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
@@ -255,6 +254,9 @@ _PyImport_Fini2(void)
     /* Use the same memory allocator than PyImport_ExtendInittab(). */
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    // Reset PyImport_Inittab
+    PyImport_Inittab = _PyImport_Inittab;
 
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);

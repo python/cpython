@@ -28,6 +28,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>> ftp.login()                     # user anonymous, passwd anonymous@
    '230 Login successful.'
    >>> ftp.cwd('debian')               # change into "debian" directory
+   '250 Directory successfully changed.'
    >>> ftp.retrlines('LIST')           # list directory contents
    -rw-rw-r--    1 1176     1176         1063 Jun 15 10:18 README
    ...
@@ -39,6 +40,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>>     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
+   '221 Goodbye.'
 
 
 The module defines the following items:

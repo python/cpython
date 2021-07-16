@@ -149,6 +149,27 @@ class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
 
     def test_fstrings(self):
+        self.check_ast_roundtrip("f'a'")
+        self.check_ast_roundtrip("f'{{}}'")
+        self.check_ast_roundtrip("f'{{5}}'")
+        self.check_ast_roundtrip("f'{{5}}5'")
+        self.check_ast_roundtrip("f'X{{}}X'")
+        self.check_ast_roundtrip("f'{a}'")
+        self.check_ast_roundtrip("f'{ {1:2}}'")
+        self.check_ast_roundtrip("f'a{a}a'")
+        self.check_ast_roundtrip("f'a{a}{a}a'")
+        self.check_ast_roundtrip("f'a{a}a{a}a'")
+        self.check_ast_roundtrip("f'{a!r}x{a!s}12{{}}{a!a}'")
+        self.check_ast_roundtrip("f'{a:10}'")
+        self.check_ast_roundtrip("f'{a:100_000{10}}'")
+        self.check_ast_roundtrip("f'{a!r:10}'")
+        self.check_ast_roundtrip("f'{a:a{b}10}'")
+        self.check_ast_roundtrip(
+                "f'a{b}{c!s}{d!r}{e!a}{f:a}{g:a{b}}{h!s:a}"
+                "{j!s:{a}b}{k!s:a{b}c}{l!a:{b}c{d}}{x+y=}'"
+        )
+
+    def test_fstrings_special_chars(self):
         # See issue 25180
         self.check_ast_roundtrip(r"""f'{f"{0}"*3}'""")
         self.check_ast_roundtrip(r"""f'{f"{y}"*3}'""")
@@ -323,15 +344,13 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_raise(self):
         self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
 
-    def test_invalid_fstring_constant(self):
-        self.check_invalid(ast.JoinedStr(values=[ast.Constant(value=100)]))
-
-    def test_invalid_fstring_conversion(self):
+    def test_invalid_fstring_value(self):
         self.check_invalid(
-            ast.FormattedValue(
-                value=ast.Constant(value="a", kind=None),
-                conversion=ord("Y"),  # random character
-                format_spec=None,
+            ast.JoinedStr(
+                values=[
+                    ast.Name(id="test"),
+                    ast.Constant(value="test")
+                ]
             )
         )
 
@@ -512,13 +531,62 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("a[1, 2]")
         self.check_src_roundtrip("a[(1, *a)]")
 
+    def test_lambda_parameters(self):
+        self.check_src_roundtrip("lambda: something")
+        self.check_src_roundtrip("four = lambda: 2 + 2")
+        self.check_src_roundtrip("lambda x: x * 2")
+        self.check_src_roundtrip("square = lambda n: n ** 2")
+        self.check_src_roundtrip("lambda x, y: x + y")
+        self.check_src_roundtrip("add = lambda x, y: x + y")
+        self.check_src_roundtrip("lambda x, y, /, z, q, *, u: None")
+        self.check_src_roundtrip("lambda x, *y, **z: None")
+
+    def test_star_expr_assign_target(self):
+        for source_type, source in [
+            ("single assignment", "{target} = foo"),
+            ("multiple assignment", "{target} = {target} = bar"),
+            ("for loop", "for {target} in foo:\n    pass"),
+            ("async for loop", "async for {target} in foo:\n    pass")
+        ]:
+            for target in [
+                "a",
+                "a,",
+                "a, b",
+                "a, *b, c",
+                "a, (b, c), d",
+                "a, (b, c, d), *e",
+                "a, (b, *c, d), e",
+                "a, (b, *c, (d, e), f), g",
+                "[a]",
+                "[a, b]",
+                "[a, *b, c]",
+                "[a, [b, c], d]",
+                "[a, [b, c, d], *e]",
+                "[a, [b, *c, d], e]",
+                "[a, [b, *c, [d, e], f], g]",
+                "a, [b, c], d",
+                "[a, b, (c, d), (e, f)]",
+                "a, b, [*c], d, e"
+            ]:
+                with self.subTest(source_type=source_type, target=target):
+                    self.check_src_roundtrip(source.format(target=target))
+
+    def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("a = b = c = d")
+        self.check_src_roundtrip("a, b = c, d = e, f = g")
+        self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
+        self.check_src_roundtrip("a, b = [c, d] = e, f = g")
+
+
+
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
 
     lib_dir = pathlib.Path(__file__).parent / ".."
     test_directories = (lib_dir, lib_dir / "test")
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
-                        "test_ast.py", "test_asdl_parser.py", "test_fstring.py"}
+                        "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
+                        "test_patma.py"}
 
     _files_to_test = None
 

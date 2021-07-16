@@ -1,2 +1,0 @@
-:class:`xmlrpc.client.ServerProxy` no longer ignores query and fragment in
-the URL of the server.

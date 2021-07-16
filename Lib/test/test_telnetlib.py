@@ -29,7 +29,7 @@ class GeneralTests(unittest.TestCase):
         self.sock.settimeout(60)  # Safety net. Look issue 11812
         self.port = socket_helper.bind_port(self.sock)
         self.thread = threading.Thread(target=server, args=(self.evt,self.sock))
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
         self.evt.wait()
 

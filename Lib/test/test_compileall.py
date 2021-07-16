@@ -58,7 +58,7 @@ class CompileallTestsBase:
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         self.bc_path = importlib.util.cache_from_source(self.source_path)
-        with open(self.source_path, 'w') as file:
+        with open(self.source_path, 'w', encoding="utf-8") as file:
             file.write('x = 123\n')
         self.source_path2 = os.path.join(self.directory, '_test2.py')
         self.bc_path2 = importlib.util.cache_from_source(self.source_path2)
@@ -73,7 +73,7 @@ class CompileallTestsBase:
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
-        with open(self.bad_source_path, 'w') as file:
+        with open(self.bad_source_path, 'w', encoding="utf-8") as file:
             file.write('x (\n')
 
     def timestamp_metadata(self):
@@ -164,7 +164,7 @@ class CompileallTestsBase:
         data_file = os.path.join(data_dir, 'file')
         os.mkdir(data_dir)
         # touch data/file
-        with open(data_file, 'w'):
+        with open(data_file, 'wb'):
             pass
         compileall.compile_file(data_file)
         self.assertFalse(os.path.exists(os.path.join(data_dir, '__pycache__')))
@@ -440,8 +440,7 @@ class CommandLineTestsBase:
                 if not directory.is_dir():
                     directory.mkdir()
                     directory_created = True
-                with path.open('w') as file:
-                    file.write('# for test_compileall')
+                path.write_text('# for test_compileall', encoding="utf-8")
             except OSError:
                 sys_path_writable = False
                 break
@@ -704,7 +703,7 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        with open(os.path.join(self.directory, 'l1'), 'w') as l1:
+        with open(os.path.join(self.directory, 'l1'), 'w', encoding="utf-8") as l1:
             l1.write(os.path.join(self.pkgdir, 'f1.py')+os.linesep)
             l1.write(os.path.join(self.pkgdir, 'f2.py')+os.linesep)
         self.assertRunOK('-i', os.path.join(self.directory, 'l1'), f4)
@@ -718,7 +717,7 @@ class CommandLineTestsBase:
         f2 = script_helper.make_script(self.pkgdir, 'f2', '')
         f3 = script_helper.make_script(self.pkgdir, 'f3', '')
         f4 = script_helper.make_script(self.pkgdir, 'f4', '')
-        with open(os.path.join(self.directory, 'l1'), 'w') as l1:
+        with open(os.path.join(self.directory, 'l1'), 'w', encoding="utf-8") as l1:
             l1.write(os.path.join(self.pkgdir, 'f2.py')+os.linesep)
         self.assertRunOK('-i', os.path.join(self.directory, 'l1'))
         self.assertNotCompiled(f1)
