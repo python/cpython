@@ -1916,6 +1916,18 @@ class AttributeErrorTests(unittest.TestCase):
 
             self.assertIn("blech", err.getvalue())
 
+    def test_getattr_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        try:
+            A().blech
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("Did you mean", err.getvalue())
+
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
