@@ -4217,7 +4217,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             /* Builtin METH_O functions */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            DEOPT_IF(cache0->original_oparg != 1, CALL_FUNCTION);
+            assert(cache0->original_oparg == 1);
 
             PyObject *callable = SECOND();
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
