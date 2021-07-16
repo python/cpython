@@ -1,4 +1,6 @@
 Setup initial specialization infrastructure for the ``CALL_FUNCTION`` opcode.
-The first specialization, ``CALL_CFUNCTION_O``, speeds up calls to
-``PyCFunctionObject`` if they have the ``METH_O`` flag set.  More
-specializations to come in the future.
+Implemented two initial specializations for ``PyCFunctionObject``:
+
+* ``CALL_FUNCTION_BUILTIN_O`` for ``METH_O`` flag.
+
+* ``CALL_FUNCTION_BUILTIN_FAST`` for ``METH_FASTCALL`` flag without keywords.

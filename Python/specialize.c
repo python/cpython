@@ -713,9 +713,9 @@ _Py_Specialize_CallFunction(
                     _Py_OPARG(*instr));
                 goto success;
             case METH_FASTCALL:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "_PYCFUNCTION_FAST");
-                goto fail;
+                *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_FAST,
+                    _Py_OPARG(*instr));
+                goto success;
             case METH_VARARGS:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION");
                 goto fail;

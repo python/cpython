@@ -151,6 +151,7 @@ extern "C" {
 #define LOAD_GLOBAL_BUILTIN      43
 #define CALL_FUNCTION_ADAPTIVE   44
 #define CALL_FUNCTION_BUILTIN_O  45
+#define CALL_FUNCTION_BUILTIN_FAST  46
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

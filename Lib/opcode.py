@@ -235,4 +235,5 @@ _specialized_instructions = [
     "LOAD_GLOBAL_BUILTIN",
     "CALL_FUNCTION_ADAPTIVE",
     "CALL_FUNCTION_BUILTIN_O",
+    "CALL_FUNCTION_BUILTIN_FAST",
 ]
