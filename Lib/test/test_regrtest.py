@@ -19,7 +19,7 @@ import unittest
 from test import libregrtest
 from test import support
 from test.support import os_helper
-from test.libregrtest import utils
+from test.libregrtest import utils, setup
 
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
@@ -1297,6 +1297,14 @@ class ArgsTestCase(BaseTestCase):
                                   fail_env_changed=True)
         self.assertIn("Warning -- Uncaught thread exception", output)
         self.assertIn("Exception: bug in thread", output)
+
+    def test_unicode_guard_env(self):
+        guard = os.environ.get(setup.UNICODE_GUARD_ENV)
+        self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
+        if guard != "\N{SMILING FACE WITH SUNGLASSES}":
+            # Skip to signify that the env var value was changed by the user;
+            # possibly to something ASCII to work around Unicode issues.
+            self.skipTest("Modified guard")
 
     def test_cleanup(self):
         dirname = os.path.join(self.tmptestdir, "test_python_123")
