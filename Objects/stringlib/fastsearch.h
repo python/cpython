@@ -763,7 +763,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         if (n < 2500 || (m < 100 && n < 30000) || m < 6) {
             return STRINGLIB(default_find)(s, n, p, m, maxcount, mode);
         }
-        else if ((m >> 2) * 3 > (n >> 2)) {
+        else if ((m >> 2) * 3 < (n >> 2)) {
             /* 33% threshold, but don't overflow. */
             /* For larger problems where the needle isn't a huge
                percentage of the size of the haystack, the relatively
