@@ -55,7 +55,7 @@ The :mod:`binascii` module defines the following functions:
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
 
-   If `strict_mode` is true, only valid base64 data will be converted. Invalid base64
+   If *strict_mode* is true, only valid base64 data will be converted. Invalid base64
    data will raise :exc:`binascii.Error`.
 
    Valid base64:
