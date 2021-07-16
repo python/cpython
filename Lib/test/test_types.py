@@ -706,8 +706,6 @@ class TypesTests(unittest.TestCase):
         TV = typing.TypeVar('T')
         assert TV | str == typing.Union[TV, str]
         assert str | TV == typing.Union[str, TV]
-        self.assertIs((int | TV)[int], int)
-        self.assertIs((TV | int)[int], int)
 
     def test_union_args(self):
         self.assertEqual((int | str).__args__, (int, str))
