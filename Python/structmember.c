@@ -73,7 +73,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
             PyObject *obj = (PyObject *)obj_addr;
             PyTypeObject *tp = Py_TYPE(obj);
             PyErr_Format(PyExc_AttributeError,
-                         "'%.50s' object has no attribute '%s'",
+                         "'%.200s' object has no attribute '%s'",
                          tp->tp_name, l->name);
        }
         Py_XINCREF(v);
