@@ -729,7 +729,6 @@ class TypesTests(unittest.TestCase):
         check((str | int) | (int | list), (str, int, list))
         check((str | int) | typing.Union[int, list], (str, int, list))
         check(typing.Union[str, int] | (int | list), (str, int, list))
-        return
         check(int | type(None), (int, type(None)))
         check(type(None) | int, (type(None), int))
 
