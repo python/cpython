@@ -18,6 +18,11 @@ class Example:
 
 class Forward: ...
 
+def clear_typing_caches():
+    for f in typing._cleanups:
+        f()
+
+
 class TypesTests(unittest.TestCase):
 
     def test_truth_values(self):
@@ -710,11 +715,34 @@ class TypesTests(unittest.TestCase):
         self.assertIs((TV | int)[int], int)
 
     def test_union_args(self):
-        self.assertEqual((int | str).__args__, (int, str))
-        self.assertEqual(((int | str) | list).__args__, (int, str, list))
-        self.assertEqual((int | (str | list)).__args__, (int, str, list))
-        self.assertEqual((int | None).__args__, (int, type(None)))
-        self.assertEqual((int | type(None)).__args__, (int, type(None)))
+        def check(arg, expected):
+            clear_typing_caches()
+            self.assertEqual(arg.__args__, expected)
+
+        check(int | str, (int, str))
+        check((int | str) | list, (int, str, list))
+        check(int | (str | list), (int, str, list))
+        check((int | str) | int, (int, str))
+        check(int | (str | int), (int, str))
+        check((int | str) | (str | int), (int, str))
+        check(typing.Union[int, str] | list, (int, str, list))
+        check(int | typing.Union[str, list], (int, str, list))
+        check((int | str) | (list | int), (int, str, list))
+        check((int | str) | typing.Union[list, int], (int, str, list))
+        check(typing.Union[int, str] | (list | int), (int, str, list))
+        check((str | int) | (int | list), (str, int, list))
+        check((str | int) | typing.Union[int, list], (str, int, list))
+        check(typing.Union[str, int] | (int | list), (str, int, list))
+        check(int | type(None), (int, type(None)))
+        check(type(None) | int, (type(None), int))
+
+        args = (int, list[int], typing.List[int],
+                typing.Tuple[int, int], typing.Callable[[int], int],
+                typing.Hashable, typing.TypeVar('T'))
+        for x in args:
+            with self.subTest(x):
+                check(x | None, (x, type(None)))
+                check(None | x, (type(None), x))
 
     def test_union_parameter_chaining(self):
         T = typing.TypeVar("T")
