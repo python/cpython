@@ -755,6 +755,10 @@ _Py_Specialize_CallFunction(
         SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bound method");
         goto fail;
     }
+    if (PyCMethod_Check(callable)) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "builtin method");
+        goto fail;
+    }
     if (PyType_Check(callable)) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
             PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE) ?
