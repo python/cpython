@@ -663,6 +663,10 @@ class TypesTests(unittest.TestCase):
             x.__args__ = [str, int]
             (int | str ) == x
 
+    def test_hash(self):
+        self.assertEqual(hash(int | str), hash(str | int))
+        self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
+
     def test_instancecheck(self):
         x = int | str
         self.assertIsInstance(1, x)
