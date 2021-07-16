@@ -3091,6 +3091,19 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., ..., 'var_keyword')),
                           ...))
 
+    def test_signature_on_generic_subclass(self):
+        from typing import Generic, TypeVar
+
+        T = TypeVar('T')
+
+        class A(Generic[T]):
+            def __init__(self, *, a: int) -> None:
+                pass
+
+        self.assertEqual(self.signature(A),
+                         ((('a', ..., int, 'keyword_only'),),
+                          None))
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_class_without_init(self):

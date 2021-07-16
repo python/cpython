@@ -2444,23 +2444,23 @@ def _signature_from_callable(obj, *,
         if call is not None:
             sig = _get_signature_of(call)
         else:
-            create_method = None
-            # Now we check if the 'obj' class has a '__new__' method
+            factory_method = None
             new = _signature_get_user_defined_method(obj, '__new__')
-            # Finally, we should have at least __init__ implemented
             init = _signature_get_user_defined_method(obj, '__init__')
-            # Give priority to using the current class constructor
+            # Now we check if the 'obj' class has an own '__new__' method
             if '__new__' in obj.__dict__:
-                create_method = new
+                factory_method = new
+            # or an own '__init__' method
             elif '__init__' in obj.__dict__:
-                create_method = init
+                factory_method = init
+            # If not, we take inherited '__new__' or '__init__', if present
             elif new is not None:
-                create_method = new
+                factory_method = new
             elif init is not None:
-                create_method = init
+                factory_method = init
 
-            if create_method is not None:
-                sig = _get_signature_of(create_method)
+            if factory_method is not None:
+                sig = _get_signature_of(factory_method)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
