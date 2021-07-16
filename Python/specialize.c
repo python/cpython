@@ -49,6 +49,7 @@ SpecializationStats _specialization_stats[256] = { 0 };
         } \
         if (PyDict_SetItemString(res, #field, val) == -1) { \
             Py_DECREF(res); \
+            Py_DECREF(val); \
             return NULL; \
         } \
         Py_DECREF(val); \
