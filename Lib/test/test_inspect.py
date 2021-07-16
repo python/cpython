@@ -588,10 +588,15 @@ class TestRetrievingSourceCode(GetSourceBase):
 class TestGetsourceInteractive(unittest.TestCase):
     def tearDown(self):
         mod.ParrotDroppings.__module__ = mod
+        sys.modules['__main__'] = self.main
 
     def test_getclasses_interactive(self):
+        self.main = sys.modules['__main__']
+        class MockModule:
+            __file__ = None
+        sys.modules['__main__'] = MockModule
         mod.ParrotDroppings.__module__ = '__main__'
-        with self.assertRaises(OSError) as e:
+        with self.assertRaisesRegex(OSError, 'source code not available') as e:
             inspect.getsource(mod.ParrotDroppings)
 
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
