@@ -185,9 +185,9 @@ union_richcompare(PyObject *a, PyObject *b, int op)
             }
         }
     } else {
-        if (PySet_Add(b_set, b) == -1) {
-            goto exit;
-        }
+        Py_DECREF(a_set);
+        Py_DECREF(b_set);
+        Py_RETURN_NOTIMPLEMENTED;
     }
     result = PyObject_RichCompare(a_set, b_set, op);
 exit:
@@ -549,17 +549,25 @@ _Py_Union(PyObject *args)
         }
     }
 
+    args = dedup_and_flatten_args(args);
+    if (args == NULL) {
+        return NULL;
+    }
+    if (PyTuple_GET_SIZE(args) == 1) {
+        PyObject *result1 = PyTuple_GET_ITEM(args, 0);
+        Py_INCREF(result1);
+        Py_DECREF(args);
+        return result1;
+    }
+
     result = PyObject_GC_New(unionobject, &_Py_UnionType);
     if (result == NULL) {
+        Py_DECREF(args);
         return NULL;
     }
 
     result->parameters = NULL;
-    result->args = dedup_and_flatten_args(args);
+    result->args = args;
     _PyObject_GC_TRACK(result);
-    if (result->args == NULL) {
-        Py_DECREF(result);
-        return NULL;
-    }
     return (PyObject*)result;
 }
