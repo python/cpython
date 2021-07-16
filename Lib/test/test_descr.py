@@ -1303,6 +1303,7 @@ order (MRO) for bases """
         with self.assertRaises(AttributeError):
             del X().a
 
+        # Inherit from object on purpose to check some backwards compatibility paths
         class X(object):
             __slots__ = "a"
         with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
