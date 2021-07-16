@@ -453,7 +453,8 @@ class StackSummary(list):
         """Format the lines for a single frame.
 
         Returns a string representing one frame involved in the stack. This
-        gets called for every frame to be printed in the stack summary.
+        gets called for every frame to be printed in the stack summary. If
+        it returns ``None``, the frame is omitted from the output.
         """
         row = []
         row.append('  File "{}", line {}, in {}\n'.format(
