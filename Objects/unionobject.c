@@ -49,11 +49,12 @@ union_hash(PyObject *self)
 }
 
 static int
-is_generic_alias_in_args(PyObject *args) {
+is_generic_alias_in_args(PyObject *args)
+{
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (PyObject_TypeCheck(arg, &Py_GenericAliasType)) {
+        if (_PyGenericAlias_Check(arg)) {
             return 0;
         }
     }
@@ -111,22 +112,26 @@ union_subclasscheck(PyObject *self, PyObject *instance)
             }
         }
     }
-   Py_RETURN_FALSE;
+    Py_RETURN_FALSE;
 }
 
 static int
-is_typing_module(PyObject *obj) {
-    PyObject *module = PyObject_GetAttrString(obj, "__module__");
-    if (module == NULL) {
+is_typing_module(PyObject *obj)
+{
+    _Py_IDENTIFIER(__module__);
+    PyObject *module;
+    if (_PyObject_LookupAttrId(obj, &PyId___module__, &module) < 0) {
         return -1;
     }
-    int is_typing = PyUnicode_Check(module) && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
+    int is_typing = (module != NULL &&
+                     PyUnicode_Check(module) &&
+                     _PyUnicode_EqualToASCIIString(module, "typing"));
+    Py_XDECREF(module);
     return is_typing;
 }
 
 static int
-is_typing_name(PyObject *obj, char *name)
+is_typing_name(PyObject *obj, const char *name)
 {
     PyTypeObject *type = Py_TYPE(obj);
     if (strcmp(type->tp_name, name) != 0) {
@@ -138,66 +143,22 @@ is_typing_name(PyObject *obj, char *name)
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
 {
-    PyObject *result = NULL;
-    if (op != Py_EQ && op != Py_NE) {
-        result = Py_NotImplemented;
-        Py_INCREF(result);
-        return result;
+    if (!_PyUnion_Check(b) || (op != Py_EQ && op != Py_NE)) {
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
-    PyTypeObject *type = Py_TYPE(b);
-
-    PyObject* a_set = PySet_New(((unionobject*)a)->args);
+    PyObject *a_set = PySet_New(((unionobject*)a)->args);
     if (a_set == NULL) {
         return NULL;
     }
-    PyObject* b_set = PySet_New(NULL);
+    PyObject *b_set = PySet_New(((unionobject*)b)->args);
     if (b_set == NULL) {
-        goto exit;
-    }
-
-    // Populate b_set with the data from the right object
-    int is_typing_union = is_typing_name(b, "_UnionGenericAlias");
-    if (is_typing_union < 0) {
-        goto exit;
-    }
-    if (is_typing_union) {
-        PyObject *b_args = PyObject_GetAttrString(b, "__args__");
-        if (b_args == NULL) {
-            goto exit;
-        }
-        if (!PyTuple_CheckExact(b_args)) {
-            Py_DECREF(b_args);
-            PyErr_SetString(PyExc_TypeError, "__args__ argument of typing.Union object is not a tuple");
-            goto exit;
-        }
-        Py_ssize_t b_arg_length = PyTuple_GET_SIZE(b_args);
-        for (Py_ssize_t i = 0; i < b_arg_length; i++) {
-            PyObject* arg = PyTuple_GET_ITEM(b_args, i);
-            if (PySet_Add(b_set, arg) == -1) {
-                Py_DECREF(b_args);
-                goto exit;
-            }
-        }
-        Py_DECREF(b_args);
-    } else if (type == &_Py_UnionType) {
-        PyObject* args = ((unionobject*) b)->args;
-        Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
-        for (Py_ssize_t i = 0; i < arg_length; i++) {
-            PyObject* arg = PyTuple_GET_ITEM(args, i);
-            if (PySet_Add(b_set, arg) == -1) {
-                goto exit;
-            }
-        }
-    } else {
         Py_DECREF(a_set);
-        Py_DECREF(b_set);
-        Py_RETURN_NOTIMPLEMENTED;
+        return NULL;
     }
-    result = PyObject_RichCompare(a_set, b_set, op);
-exit:
-    Py_XDECREF(a_set);
-    Py_XDECREF(b_set);
+    PyObject *result = PyObject_RichCompare(a_set, b_set, op);
+    Py_DECREF(b_set);
+    Py_DECREF(a_set);
     return result;
 }
 
@@ -209,8 +170,7 @@ flatten_args(PyObject* args)
     // Get number of total args once it's flattened.
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
-        PyTypeObject* arg_type = Py_TYPE(arg);
-        if (arg_type == &_Py_UnionType) {
+        if (_PyUnion_Check(arg)) {
             total_args += PyTuple_GET_SIZE(((unionobject*) arg)->args);
         } else {
             total_args++;
@@ -224,8 +184,7 @@ flatten_args(PyObject* args)
     Py_ssize_t pos = 0;
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
-        PyTypeObject* arg_type = Py_TYPE(arg);
-        if (arg_type == &_Py_UnionType) {
+        if (_PyUnion_Check(arg)) {
             PyObject* nested_args = ((unionobject*)arg)->args;
             Py_ssize_t nested_arg_length = PyTuple_GET_SIZE(nested_args);
             for (Py_ssize_t j = 0; j < nested_arg_length; j++) {
@@ -243,6 +202,7 @@ flatten_args(PyObject* args)
             pos++;
         }
     }
+    assert(pos == total_args);
     return flattened_args;
 }
 
@@ -256,6 +216,7 @@ dedup_and_flatten_args(PyObject* args)
     Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
     PyObject *new_args = PyTuple_New(arg_length);
     if (new_args == NULL) {
+        Py_DECREF(args);
         return NULL;
     }
     // Add unique elements to an array.
@@ -265,8 +226,8 @@ dedup_and_flatten_args(PyObject* args)
         PyObject* i_element = PyTuple_GET_ITEM(args, i);
         for (Py_ssize_t j = 0; j < added_items; j++) {
             PyObject* j_element = PyTuple_GET_ITEM(new_args, j);
-            int is_ga = PyObject_TypeCheck(i_element, &Py_GenericAliasType) &&
-                        PyObject_TypeCheck(j_element, &Py_GenericAliasType);
+            int is_ga = _PyGenericAlias_Check(i_element) &&
+                        _PyGenericAlias_Check(j_element);
             // RichCompare to also deduplicate GenericAlias types (slower)
             is_duplicate = is_ga ? PyObject_RichCompareBool(i_element, j_element, Py_EQ)
                 : i_element == j_element;
@@ -317,7 +278,7 @@ is_new_type(PyObject *obj)
 #define CHECK_RES(res) { \
     int result = res; \
     if (result) { \
-       return result; \
+        return result; \
     } \
 }
 
@@ -325,18 +286,17 @@ is_new_type(PyObject *obj)
 static int
 is_unionable(PyObject *obj)
 {
-    if (obj == Py_None) {
+    if (obj == Py_None ||
+        PyType_Check(obj) ||
+        _PyGenericAlias_Check(obj) ||
+        _PyUnion_Check(obj))
+    {
         return 1;
     }
-    PyTypeObject *type = Py_TYPE(obj);
     CHECK_RES(is_typevar(obj));
     CHECK_RES(is_new_type(obj));
     CHECK_RES(is_special_form(obj));
-    return (
-        // The following checks never fail.
-        PyType_Check(obj) ||
-        PyObject_TypeCheck(obj, &Py_GenericAliasType) ||
-        type == &_Py_UnionType);
+    return 0;
 }
 
 PyObject *
@@ -534,7 +494,7 @@ static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
-PyTypeObject _Py_UnionType = {
+PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.Union",
     .tp_doc = "Represent a PEP 604 union type\n"
@@ -562,8 +522,6 @@ make_union(PyObject *args)
 {
     assert(PyTuple_CheckExact(args));
 
-    unionobject* result = NULL;
-
     args = dedup_and_flatten_args(args);
     if (args == NULL) {
         return NULL;
@@ -575,7 +533,7 @@ make_union(PyObject *args)
         return result1;
     }
 
-    result = PyObject_GC_New(unionobject, &_Py_UnionType);
+    unionobject *result = PyObject_GC_New(unionobject, &_PyUnion_Type);
     if (result == NULL) {
         Py_DECREF(args);
         return NULL;

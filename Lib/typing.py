@@ -1184,7 +1184,7 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
         return Union[params]
 
     def __eq__(self, other):
-        if not isinstance(other, _UnionGenericAlias):
+        if not isinstance(other, (_UnionGenericAlias, types.Union)):
             return NotImplemented
         return set(self.__args__) == set(other.__args__)
 

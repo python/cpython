@@ -11,7 +11,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_unionobject.h"   // _Py_UnionType
+#include "pycore_unionobject.h"   // _PyUnion_Type
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -1878,7 +1878,7 @@ _PyTypes_Init(void)
     INIT_TYPE(_PyWeakref_CallableProxyType);
     INIT_TYPE(_PyWeakref_ProxyType);
     INIT_TYPE(_PyWeakref_RefType);
-    INIT_TYPE(_Py_UnionType);
+    INIT_TYPE(_PyUnion_Type);
 
     return _PyStatus_OK();
 #undef INIT_TYPE
