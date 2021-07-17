@@ -3948,12 +3948,6 @@ class TypedDictTests(BaseTestCase):
             'voice': str,
         }
 
-    def test_is_typeddict(self):
-        assert is_typeddict(Point2D) is True
-        assert is_typeddict(Union[str, int]) is False
-        # classes, not instances
-        assert is_typeddict(Point2D()) is False
-
     def test_get_type_hints(self):
         self.assertEqual(
             get_type_hints(Bar),
