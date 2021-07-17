@@ -128,7 +128,7 @@ Lib/ast.py                    @isidentical
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @gvanrossum @Fidget-Spinner
 
 **/*asyncore                  @giampaolo
 **/*asynchat                  @giampaolo
