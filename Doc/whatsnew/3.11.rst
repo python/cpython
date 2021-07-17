@@ -205,6 +205,21 @@ sqlite3
   :meth:`~sqlite3.Connection.set_authorizer`.
   (Contributed by Erlend E. Aasland in :issue:`44491`.)
 
+typing
+------
+
+* Add :attr:`__parameters__` and :meth:`__getitem__` to :class:`types.Union`.
+  Fix various :class:`types.Union` compatibility issues with :mod:`typing`
+  module.
+
+.. code-block:: python
+   >>> from typing import TypeVar
+   >>> T = TypeVar("T")
+   >>> (int | T)[float]
+   int | float
+
+  (Contributed by Yurii Karabas in :issue:`44490`.)
+
 
 Removed
 =======
