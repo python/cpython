@@ -2552,7 +2552,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
     }
 
     /* copy keyword args using kwtuple to drive process */
-    for (i = Py_MAX((int)nargs, posonly) - varargssize; i < maxargs; i++) {
+    for (i = Py_MAX((int)nargs, posonly) - (int)varargssize; i < maxargs; i++) {
         if (nkwargs) {
             keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
             if (kwargs != NULL) {
