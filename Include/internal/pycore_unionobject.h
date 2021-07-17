@@ -12,8 +12,8 @@ PyAPI_FUNC(PyObject *) _Py_Union(PyObject *args);
 PyAPI_DATA(PyTypeObject) _Py_UnionType;
 PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject* self, PyObject* param);
 
-PyAPI_FUNC(PyObject *) _Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _Py_make_parameters(PyObject *);
+PyObject *_Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
+PyObject *_Py_make_parameters(PyObject *);
 
 #ifdef __cplusplus
 }
