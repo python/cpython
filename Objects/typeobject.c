@@ -9,7 +9,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
+#include "pycore_unionobject.h"   // _Py_union_type_or
 #include "frameobject.h"
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
