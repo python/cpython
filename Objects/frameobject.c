@@ -34,7 +34,6 @@ _frame_get_locals_mapping(PyFrameObject *f)
 {
     PyObject *locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
     if (locals == NULL) {
-        printf("Allocating new frame locals cache\n");
         locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = PyDict_New();
     }
     return locals;
