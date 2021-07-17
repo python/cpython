@@ -111,7 +111,7 @@ Include/pytime.h              @pganssle @abalkin
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @gvanrossum @Fidget-Spinner
 
 **/*asyncore                  @giampaolo
 **/*asynchat                  @giampaolo
