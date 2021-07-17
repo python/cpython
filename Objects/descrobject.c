@@ -1633,10 +1633,12 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         }
         return -1;
     }
-    if (value == NULL)
+    if (value == NULL) {
         res = PyObject_CallOneArg(func, obj);
-    else
-        res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
+    } else {
+        PyObject *args[] = { obj, value };
+        res = PyObject_Vectorcall(func, args, 2, NULL);
+    }
     if (res == NULL)
         return -1;
     Py_DECREF(res);
