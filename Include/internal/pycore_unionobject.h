@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-PyAPI_DATA(PyTypeObject) _PyUnion_Type;
+extern PyTypeObject _PyUnion_Type;
 #define _PyUnion_Check(op) Py_IS_TYPE(op, &_PyUnion_Type)
 PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject *, PyObject *);
 
