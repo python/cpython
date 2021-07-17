@@ -13,9 +13,6 @@ PyAPI_DATA(PyTypeObject) _PyUnion_Type;
 PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject *, PyObject *);
 
 #define _PyGenericAlias_Check(op) PyObject_TypeCheck(op, &Py_GenericAliasType)
-PyAPI_FUNC(PyObject *) _Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _Py_make_parameters(PyObject *);
-
 PyObject *_Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
 PyObject *_Py_make_parameters(PyObject *);
 
