@@ -3812,6 +3812,7 @@ Here's the message body
             '=E2=93=98=E2=93=A2 =E2=93=8A=E2=93=9D=E2=93=98=E2=93=92=E2=93=9E=E2=93=\r\n'
             '=93=E2=93=94 =E2=93=A3=E2=93=94=E2=93=A7=E2=93=A3.\r\n'
             '\r\n'
+            # Quoted-printable-encoded subpart body:
             'This is ASCII text.\r\n'
             '=E2=93=89=E2=93=97=E2=93=98=E2=93=A2 =E2=93=98=E2=93=A2 =E2=93=8A=E2=93=\r\n'
             '=9D=E2=93=98=E2=93=92=E2=93=9E=E2=93=93=E2=93=94 =E2=93=A3=E2=93=94=\r\n'
@@ -3895,7 +3896,7 @@ Here's the message body
             'Content-Transfer-Encoding: base64\r\n'
             '\r\n'
             # Top-level part body:
-            # Base-64-encoded subpart header:
+            # Base-64-encoded subpart (header and body):
             'Q29udGVudC1UeXBlOiB0ZXh0L3BsYWluDQpYLUhlYWRlci1GaWVsZC13aXRoLVVuaWNvZGUtVmFs\r\n'
             'dWU6IOKTieKTl+KTmOKToiDik5jik6Ig4pOK4pOd4pOY4pOS4pOe4pOT4pOUIOKTo+KTlOKTp+KT\r\n'
             'oy4NCg0KVGhpcyBpcyBBU0NJSSB0ZXh0Lg==\r\n'
