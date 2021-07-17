@@ -5,6 +5,9 @@
 #include "structmember.h"
 
 
+static PyObject *make_union(PyObject *);
+
+
 typedef struct {
     PyObject_HEAD
     PyObject *args;
@@ -337,13 +340,25 @@ is_unionable(PyObject *obj)
 }
 
 PyObject *
-_Py_union_type_or(PyObject* self, PyObject* param)
+_Py_union_type_or(PyObject* self, PyObject* other)
 {
-    PyObject *tuple = PyTuple_Pack(2, self, param);
+    int r = is_unionable(self);
+    if (r > 0) {
+        r = is_unionable(other);
+    }
+    if (r < 0) {
+        return NULL;
+    }
+    if (!r) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    PyObject *tuple = PyTuple_Pack(2, self, other);
     if (tuple == NULL) {
         return NULL;
     }
-    PyObject *new_union = _Py_Union(tuple);
+
+    PyObject *new_union = make_union(tuple);
     Py_DECREF(tuple);
     return new_union;
 }
@@ -471,7 +486,22 @@ union_getitem(PyObject *self, PyObject *item)
         return NULL;
     }
 
-    PyObject *res = _Py_Union(newargs);
+    // Check arguments are unionable.
+    Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
+        int is_arg_unionable = is_unionable(arg);
+        if (is_arg_unionable <= 0) {
+            Py_DECREF(newargs);
+            if (is_arg_unionable == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "Each union arg must be a type, got %.100R", arg);
+            }
+            return NULL;
+        }
+    }
+
+    PyObject *res = make_union(newargs);
 
     Py_DECREF(newargs);
     return res;
@@ -527,29 +557,12 @@ PyTypeObject _Py_UnionType = {
     .tp_getset = union_properties,
 };
 
-PyObject *
-_Py_Union(PyObject *args)
+static PyObject *
+make_union(PyObject *args)
 {
     assert(PyTuple_CheckExact(args));
 
     unionobject* result = NULL;
-
-    // Check arguments are unionable.
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (arg == NULL) {
-            return NULL;
-        }
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable < 0) {
-            return NULL;
-        }
-        if (!is_arg_unionable) {
-            Py_INCREF(Py_NotImplemented);
-            return Py_NotImplemented;
-        }
-    }
 
     args = dedup_and_flatten_args(args);
     if (args == NULL) {
