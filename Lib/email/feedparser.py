@@ -21,6 +21,9 @@ object's .defects attribute.
 
 __all__ = ['FeedParser', 'BytesFeedParser']
 
+import abc
+import base64
+import quopri
 import re
 
 from email import errors
@@ -292,6 +295,28 @@ class FeedParser:
                 # Not at EOF so this is a line we're going to need.
                 self._input.unreadline(line)
             return
+        if self._cur.get_content_type() == 'message/global':
+            # Support for message/global parts that have non-identity
+            # content-transfer-encodings as outlined in RFC 6532
+            # (s. 1, p. 3; s 3.5; "Encoding considerations," s. 3.7).
+            transfer_decoding_parser = _new_transfer_decoding_parser(
+                self._cur['Content-Transfer-Encoding'],
+                policy=self.policy,
+                _factory=self._factory
+            )
+            if isinstance(transfer_decoding_parser,
+                          NonIdentityTransferDecodingFeedParser):
+                for line in self._input:  # Consume all of the content.
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                    if line == '':
+                        break
+                    transfer_decoding_parser.feed(line)
+                # Retrieve and attach subpart:
+                subpart = transfer_decoding_parser.close()
+                self._cur.attach(subpart)
+                return
         if self._cur.get_content_maintype() == 'message':
             # The message claims to be a message/* type, then what follows is
             # another RFC 2822 message.
@@ -534,3 +559,85 @@ class BytesFeedParser(FeedParser):
 
     def feed(self, data):
         super().feed(data.decode('ascii', 'surrogateescape'))
+
+
+class NonIdentityTransferDecodingFeedParser(abc.ABC):
+    """
+    This is an abstract base class; only its subclasses should be instantiated
+     directly.
+
+    Instances of this class work like FeedParser except that the feed() method,
+     prior to parsing the input, transparently decodes the input consistent with
+     RFC 2045, s. 6.2.  Each concrete subclass reverses one of the non-identity
+     Content-Transfer-Encoding transformations described there.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._bytes_feed_parser = BytesFeedParser(*args, **kwargs)
+
+    @abc.abstractmethod
+    def feed(self, text):
+        pass
+
+    def close(self):
+        return self._bytes_feed_parser.close()
+
+
+class Base64TransferDecodingFeedParser(NonIdentityTransferDecodingFeedParser):
+    """
+    Concrete, "base64" implementation of TransferDecodingFeedParser.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.encoded_buffer = bytearray()
+
+    def feed(self, line):
+        self.encoded_buffer.extend(line.rstrip().encode('ascii'))
+        total_decodable = int(len(self.encoded_buffer) / 4) * 4
+        if total_decodable >= 1:
+            decodable_bytes = self.encoded_buffer[:total_decodable]
+            self.encoded_buffer = self.encoded_buffer[total_decodable:]
+            decoded_bytes = base64.standard_b64decode(decodable_bytes)
+            self._bytes_feed_parser.feed(decoded_bytes)
+
+    def close(self):
+        if len(self.encoded_buffer) >= 1:
+            decoded_bytes = base64.standard_b64decode(self.encoded_buffer)
+            self._bytes_feed_parser.feed(decoded_bytes)
+            self.encoded_buffer.clear()
+        return self._bytes_feed_parser.close()
+
+
+class QuotedPrintableTransferDecodingFeedParser(
+    NonIdentityTransferDecodingFeedParser
+):
+    """
+    Concrete, "quoted-printable" implementation of TransferDecodingFeedParser.
+    """
+
+    def feed(self, line):
+        if line == '':
+            return
+        if line[-1] != '\n':
+            line += '\r\n'
+        encoded_bytes = line.encode('ascii')
+        decoded_bytes = quopri.decodestring(encoded_bytes)
+        self._bytes_feed_parser.feed(decoded_bytes)
+
+
+def _new_transfer_decoding_parser(content_transfer_encoding, **kwargs):
+    """
+    Creates a new FeedParser object that transparently reverses the specified
+     content_transfer_encoding transformation.
+    :param content_transfer_encoding: str
+    :return: Union[NoneType,NonIdentityTransferDecodingFeedParser] None if
+     content_transfer_encoding specifies an identity transformation (i.e. no
+     decoding is required), is None or invalid;
+     NonIdentityTransferDecodingFeedParser, otherwise.
+    """
+
+    if content_transfer_encoding == 'quoted-printable':
+        return QuotedPrintableTransferDecodingFeedParser(**kwargs)
+    if content_transfer_encoding == 'base64':
+        return Base64TransferDecodingFeedParser(**kwargs)
