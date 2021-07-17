@@ -1,2 +1,1 @@
-The project demo(test2to3) that demonstrates how a distutils package is
-removed. Patch by Dong-hee Na
+Removed the `test2to3` demo project that demonstrated using lib2to3 to support Python 2.x and Python 3.x from a single source in a distutils package. Patch by Dong-hee Na
