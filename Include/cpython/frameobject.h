@@ -91,21 +91,12 @@ PyAPI_DATA(PyTypeObject) _PyFastLocalsProxy_Type;
 // TODO: Add specific test cases for these (as any PyLocals_* tests won't cover
 //       checking the status of a frame other than the currently active one)
 PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *);
-
-// TODO: Implement the rest of these, and add API tests
 PyAPI_FUNC(PyObject *) PyFrame_GetLocalsCopy(PyFrameObject *);
 PyAPI_FUNC(PyObject *) PyFrame_GetLocalsView(PyFrameObject *);
 PyAPI_FUNC(int) PyFrame_GetLocalsReturnsCopy(PyFrameObject *);
 
 // Underlying API supporting PyEval_GetLocals()
 PyAPI_FUNC(PyObject *) _PyFrame_BorrowLocals(PyFrameObject *);
-
-/* Force an update of any selectively updated views previously returned by
- * PyFrame_GetLocalsView(frame). Currently also needed in CPython when
- * accessing the f_locals attribute directly and it is not a plain dict
- * instance (otherwise it may report stale information).
- */
-PyAPI_FUNC(int) PyFrame_RefreshLocalsView(PyFrameObject *);
 
 #ifdef __cplusplus
 }

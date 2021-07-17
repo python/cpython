@@ -34,6 +34,7 @@ _frame_get_locals_mapping(PyFrameObject *f)
 {
     PyObject *locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
     if (locals == NULL) {
+        printf("Allocating new frame locals cache\n");
         locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = PyDict_New();
     }
     return locals;
@@ -53,16 +54,20 @@ _frame_get_updated_locals(PyFrameObject *f)
 PyObject *
 _PyFrame_BorrowLocals(PyFrameObject *f)
 {
-    // This is called by PyEval_GetLocals(), which has historically returned
-    // a borrowed reference, so this does the same
+    // This frame API supports the PyEval_GetLocals() stable API, which has
+    // historically returned a borrowed reference (so this does the same)
     return _frame_get_updated_locals(f);
 }
 
 PyObject *
 PyFrame_GetLocals(PyFrameObject *f)
 {
-    // This API implements the Python level locals() builtin
+    // This frame API implements the Python level locals() builtin
+    // and supports the PyLocals_Get() stable API
     PyObject *updated_locals = _frame_get_updated_locals(f);
+    if (updated_locals == NULL) {
+        return NULL;
+    }
     PyCodeObject *co = _PyFrame_GetCode(f);
 
     assert(co);
@@ -75,6 +80,26 @@ PyFrame_GetLocals(PyFrameObject *f)
     }
 
     return updated_locals;
+}
+
+int
+PyFrame_GetLocalsReturnsCopy(PyFrameObject *f)
+{
+    // This frame API supports the stable PyLocals_GetReturnsCopy() API
+    PyCodeObject *co = _PyFrame_GetCode(f);
+    assert(co);
+    return (co->co_flags & CO_OPTIMIZED);
+}
+
+PyObject *
+PyFrame_GetLocalsCopy(PyFrameObject *f)
+{
+    // This frame API supports the stable PyLocals_GetCopy() API
+    PyObject *updated_locals = _frame_get_updated_locals(f);
+    if (updated_locals == NULL) {
+        return NULL;
+    }
+    return PyDict_Copy(updated_locals);
 }
 
 static PyObject *
@@ -97,9 +122,23 @@ frame_getlocals(PyFrameObject *f, void *Py_UNUSED(ignored))
     } else {
         // Share a direct locals reference for class and module scopes
         f_locals_attr = _frame_get_updated_locals(f);
+        if (f_locals_attr == NULL) {
+            return NULL;
+        }
         Py_INCREF(f_locals_attr);
     }
     return f_locals_attr;
+}
+
+PyObject *
+PyFrame_GetLocalsView(PyFrameObject *f)
+{
+    // This frame API supports the stable PyLocals_GetView() API
+    PyObject *rw_locals = frame_getlocals(f, NULL);
+    if (rw_locals == NULL) {
+        return NULL;
+    }
+    return PyDictProxy_New(rw_locals);
 }
 
 int
@@ -1018,6 +1057,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         return -1;
     }
     co = _PyFrame_GetCode(f);
+    assert(co);
     fast = f->f_localsptr;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
@@ -1648,8 +1688,10 @@ static PyObject *
 fastlocalsproxy_richcompare(fastlocalsproxyobject *flp, PyObject *w, int op)
 {
     // Need values, so use the dynamic snapshot on the frame
-    // Ensure it is up to date, as checking is O(n) anyway
-    PyObject *locals = _frame_get_updated_locals(flp->frame);
+    // Assume f_locals snapshot is up to date, as even though the worst
+    // case comparison is O(n) to determine equality, there are O(1) shortcuts
+    // for inequality checks (i.e. different sizes)
+    PyObject *locals = _frame_get_locals_mapping(flp->frame);
     return PyObject_RichCompare(locals, w, op);
 }
 
@@ -1841,7 +1883,7 @@ static PyObject *
 fastlocalsproxy_str(fastlocalsproxyobject *flp)
 {
     // Need values, so use the dynamic snapshot on the frame
-    // Ensure it is up to date, as checking is O(n) anyway
+    // Ensure it is up to date, as displaying everything is O(n) anyway
     PyObject *locals = _frame_get_updated_locals(flp->frame);
     return PyObject_Str(locals);
 }

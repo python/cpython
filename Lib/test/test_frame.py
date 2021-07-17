@@ -5,6 +5,7 @@ import unittest
 import weakref
 
 from test import support
+from test.support import import_helper
 
 
 class ClearTest(unittest.TestCase):
@@ -194,6 +195,149 @@ class FrameAttrsTest(unittest.TestCase):
         f, _, _ = self.make_frames()
         with self.assertRaises(AttributeError):
             del f.f_lineno
+
+class FastLocalsProxyTest(unittest.TestCase):
+
+    def check_proxy_contents(self, proxy, expected_contents):
+        # These checks should never implicitly resync the frame proxy's cache,
+        # even if the proxy is referenced as a local variable in the frame
+        self.assertEqual(len(proxy), len(expected_contents))
+        self.assertCountEqual(proxy, expected_contents)
+        self.assertCountEqual(proxy.keys(), expected_contents.keys())
+        self.assertCountEqual(proxy.values(), expected_contents.values())
+        self.assertCountEqual(proxy.items(), expected_contents.items())
+
+    def test_dict_operations(self):
+        # No real iteration order guarantees for the locals proxy, as it
+        # depends on exactly how the compiler composes the frame locals array
+        proxy = sys._getframe().f_locals
+        # Not yet set values aren't visible in the proxy
+        self.check_proxy_contents(proxy, {"self": self})
+
+        # Ensuring copying the proxy produces a plain dict instance
+        dict_copy = proxy.copy()
+        self.assertIsInstance(dict_copy, dict)
+        self.assertEqual(dict_copy.keys(), {"proxy", "self"})
+        # The proxy automatically updates its cache for O(n) operations like copying,
+        # but won't pick up new local variables until it is resync'ed with the frame
+        # or that particular key is accessed or queried
+        self.check_proxy_contents(proxy, dict_copy)
+        self.assertIn("dict_copy", proxy) # Implicitly updates cache for this key
+        dict_copy["dict_copy"] = dict_copy
+        self.check_proxy_contents(proxy, dict_copy)
+
+        self.fail("Test not finished yet")
+
+    def test_active_frame_c_apis(self):
+        # Use ctypes to access the C APIs under test
+        ctypes = import_helper.import_module('ctypes')
+        Py_IncRef = ctypes.pythonapi.Py_IncRef
+        PyEval_GetLocals = ctypes.pythonapi.PyEval_GetLocals
+        PyLocals_Get = ctypes.pythonapi.PyLocals_Get
+        PyLocals_GetReturnsCopy = ctypes.pythonapi.PyLocals_GetReturnsCopy
+        PyLocals_GetCopy = ctypes.pythonapi.PyLocals_GetCopy
+        PyLocals_GetView = ctypes.pythonapi.PyLocals_GetView
+        for capi_func in (Py_IncRef,):
+            capi_func.argtypes = (ctypes.py_object,)
+        for capi_func in (PyEval_GetLocals,
+                          PyLocals_Get, PyLocals_GetCopy, PyLocals_GetView):
+            capi_func.restype = ctypes.py_object
+
+        # PyEval_GetLocals() always accesses the running frame,
+        # so Py_IncRef has to be called inline (no helper function)
+
+        # This test covers the retrieval APIs, the behavioural tests are covered
+        # elsewhere using the `frame.f_locals` attribute and the locals() builtin
+
+        # Test retrieval API behaviour in an optimised scope
+        print("Retrieving C locals cache for frame")
+        c_locals_cache = PyEval_GetLocals()
+        Py_IncRef(c_locals_cache) # Make the borrowed reference a real one
+        Py_IncRef(c_locals_cache) # Account for next check's borrowed reference
+        self.assertIs(PyEval_GetLocals(), c_locals_cache)
+        self.assertTrue(PyLocals_GetReturnsCopy())
+        locals_get = PyLocals_Get()
+        self.assertIsInstance(locals_get, dict)
+        self.assertIsNot(locals_get, c_locals_cache)
+        locals_copy = PyLocals_GetCopy()
+        self.assertIsInstance(locals_copy, dict)
+        self.assertIsNot(locals_copy, c_locals_cache)
+        locals_view = PyLocals_GetView()
+        self.assertIsInstance(locals_view, types.MappingProxyType)
+
+        # Test API behaviour in an unoptimised scope
+        class ExecFrame:
+            c_locals_cache = PyEval_GetLocals()
+            Py_IncRef(c_locals_cache) # Make the borrowed reference a real one
+            Py_IncRef(c_locals_cache) # Account for next check's borrowed reference
+            self.assertIs(PyEval_GetLocals(), c_locals_cache)
+            self.assertFalse(PyLocals_GetReturnsCopy())
+            locals_get = PyLocals_Get()
+            self.assertIs(locals_get, c_locals_cache)
+            locals_copy = PyLocals_GetCopy()
+            self.assertIsInstance(locals_copy, dict)
+            self.assertIsNot(locals_copy, c_locals_cache)
+            locals_view = PyLocals_GetView()
+            self.assertIsInstance(locals_view, types.MappingProxyType)
+
+    def test_arbitrary_frame_c_apis(self):
+        # Use ctypes to access the C APIs under test
+        ctypes = import_helper.import_module('ctypes')
+        Py_IncRef = ctypes.pythonapi.Py_IncRef
+        _PyFrame_BorrowLocals = ctypes.pythonapi._PyFrame_BorrowLocals
+        PyFrame_GetLocals = ctypes.pythonapi.PyFrame_GetLocals
+        PyFrame_GetLocalsReturnsCopy = ctypes.pythonapi.PyFrame_GetLocalsReturnsCopy
+        PyFrame_GetLocalsCopy = ctypes.pythonapi.PyFrame_GetLocalsCopy
+        PyFrame_GetLocalsView = ctypes.pythonapi.PyFrame_GetLocalsView
+        for capi_func in (Py_IncRef, _PyFrame_BorrowLocals,
+                          PyFrame_GetLocals, PyFrame_GetLocalsReturnsCopy,
+                          PyFrame_GetLocalsCopy, PyFrame_GetLocalsView):
+            capi_func.argtypes = (ctypes.py_object,)
+        for capi_func in (_PyFrame_BorrowLocals, PyFrame_GetLocals,
+                          PyFrame_GetLocalsCopy, PyFrame_GetLocalsView):
+            capi_func.restype = ctypes.py_object
+
+        def get_c_locals(frame):
+            c_locals = _PyFrame_BorrowLocals(frame)
+            Py_IncRef(c_locals) # Make the borrowed reference a real one
+            return c_locals
+
+        # This test covers the retrieval APIs, the behavioural tests are covered
+        # elsewhere using the `frame.f_locals` attribute and the locals() builtin
+
+        # Test querying an optimised frame from an unoptimised scope
+        func_frame = sys._getframe()
+        cls_frame = None
+        def set_cls_frame(f):
+            nonlocal cls_frame
+            cls_frame = f
+        class ExecFrame:
+            c_locals_cache = get_c_locals(func_frame)
+            self.assertIs(get_c_locals(func_frame), c_locals_cache)
+            self.assertTrue(PyFrame_GetLocalsReturnsCopy(func_frame))
+            locals_get = PyFrame_GetLocals(func_frame)
+            self.assertIsInstance(locals_get, dict)
+            self.assertIsNot(locals_get, c_locals_cache)
+            locals_copy = PyFrame_GetLocalsCopy(func_frame)
+            self.assertIsInstance(locals_copy, dict)
+            self.assertIsNot(locals_copy, c_locals_cache)
+            locals_view = PyFrame_GetLocalsView(func_frame)
+            self.assertIsInstance(locals_view, types.MappingProxyType)
+
+            # Keep the class frame alive for the functions below to access
+            set_cls_frame(sys._getframe())
+
+        # Test querying an unoptimised frame from an optimised scope
+        c_locals_cache = get_c_locals(cls_frame)
+        self.assertIs(get_c_locals(cls_frame), c_locals_cache)
+        self.assertFalse(PyFrame_GetLocalsReturnsCopy(cls_frame))
+        locals_get = PyFrame_GetLocals(cls_frame)
+        self.assertIs(locals_get, c_locals_cache)
+        locals_copy = PyFrame_GetLocalsCopy(cls_frame)
+        self.assertIsInstance(locals_copy, dict)
+        self.assertIsNot(locals_copy, c_locals_cache)
+        locals_view = PyFrame_GetLocalsView(cls_frame)
+        self.assertIsInstance(locals_view, types.MappingProxyType)
 
 
 class ReprTest(unittest.TestCase):

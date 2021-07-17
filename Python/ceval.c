@@ -5798,6 +5798,46 @@ PyLocals_Get(void)
     return PyFrame_GetLocals(current_frame);
 }
 
+int
+PyLocals_GetReturnsCopy(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *current_frame = tstate->frame;
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return PyFrame_GetLocalsReturnsCopy(current_frame);
+}
+
+PyObject *
+PyLocals_GetCopy(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *current_frame = tstate->frame;
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return PyFrame_GetLocalsCopy(current_frame);
+}
+
+PyObject *
+PyLocals_GetView(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *current_frame = tstate->frame;
+    if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
+        return NULL;
+    }
+
+    return PyFrame_GetLocalsView(current_frame);
+}
+
+
 PyObject *
 PyEval_GetGlobals(void)
 {
