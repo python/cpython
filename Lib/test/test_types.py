@@ -611,6 +611,18 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
         self.assertIsInstance(int.__new__, types.BuiltinMethodType)
 
+    def test_ellipsis_type(self):
+        self.assertIsInstance(Ellipsis, types.EllipsisType)
+
+    def test_notimplemented_type(self):
+        self.assertIsInstance(NotImplemented, types.NotImplementedType)
+
+    def test_none_type(self):
+        self.assertIsInstance(None, types.NoneType)
+
+
+class UnionTests(unittest.TestCase):
+
     def test_or_types_operator(self):
         self.assertEqual(int | str, typing.Union[int, str])
         self.assertNotEqual(int | list, typing.Union[int, str])
@@ -657,18 +669,23 @@ class TypesTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             Example() | int
         x = int | str
-        self.assertNotEqual(x, {})
+        self.assertEqual(x, int | str)
+        self.assertEqual(x, str | int)
+        self.assertNotEqual(x, {})  # should not raise exception
         with self.assertRaises(TypeError):
-            (int | str) < typing.Union[str, int]
+            x < x
         with self.assertRaises(TypeError):
-            (int | str) < (int | bool)
+            x <= x
+        y = typing.Union[str, int]
         with self.assertRaises(TypeError):
-            (int | str) <= (int | str)
+            x < y
+        y = int | bool
         with self.assertRaises(TypeError):
-            # Check that we don't crash if typing.Union does not have a tuple in __args__
-            x = typing.Union[str, int]
-            x.__args__ = [str, int]
-            (int | str ) == x
+            x < y
+        # Check that we don't crash if typing.Union does not have a tuple in __args__
+        y = typing.Union[str, int]
+        y.__args__ = [str, int]
+        self.assertEqual(x, y)
 
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
@@ -872,15 +889,6 @@ class TypesTests(unittest.TestCase):
         leeway = 15
         self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
                              msg='Check for union reference leak.')
-
-    def test_ellipsis_type(self):
-        self.assertIsInstance(Ellipsis, types.EllipsisType)
-
-    def test_notimplemented_type(self):
-        self.assertIsInstance(NotImplemented, types.NotImplementedType)
-
-    def test_none_type(self):
-        self.assertIsInstance(None, types.NoneType)
 
 
 class MappingProxyTests(unittest.TestCase):
