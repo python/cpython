@@ -988,8 +988,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
     @_tp_cache
     def __getitem__(self, params):
@@ -1099,8 +1099,8 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
@@ -2512,7 +2512,7 @@ class TextIO(IO[str]):
 
 class _DeprecatedType(type):
     def __getattribute__(cls, name):
-        if name != "__dict__" and name in cls.__dict__:
+        if name not in ("__dict__", "__module__") and name in cls.__dict__:
             warnings.warn(
                 f"{cls.__name__} is deprecated, import directly "
                 f"from typing instead. {cls.__name__} will be removed "

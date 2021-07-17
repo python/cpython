@@ -1627,6 +1627,40 @@ def bœr():
                 if save_home is not None:
                     os.environ["HOME"] = save_home
 
+    def test_read_pdbrc_with_ascii_encoding(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+            print('hello')
+        """)
+        save_home = os.environ.pop('HOME', None)
+        try:
+            with os_helper.temp_cwd():
+                with open('.pdbrc', 'w', encoding='utf-8') as f:
+                    f.write("Fran\u00E7ais")
+
+                with open('main.py', 'w', encoding='utf-8') as f:
+                    f.write(script)
+
+                cmd = [sys.executable, 'main.py']
+                env = {'PYTHONIOENCODING': 'ascii'}
+                if sys.platform == 'win32':
+                    env['PYTHONLEGACYWINDOWSSTDIO'] = 'non-empty-string'
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, **env}
+                )
+                with proc:
+                    stdout, stderr = proc.communicate(b'c\n')
+                    self.assertIn(b"UnicodeEncodeError: \'ascii\' codec can\'t encode character "
+                                  b"\'\\xe7\' in position 21: ordinal not in range(128)", stderr)
+
+        finally:
+            if save_home is not None:
+                os.environ['HOME'] = save_home
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'
@@ -1800,6 +1834,21 @@ def bœr():
             '(Pdb) ',
         ])
 
+    def test_issue34266(self):
+        '''do_run handles exceptions from parsing its arg'''
+        def check(bad_arg, msg):
+            commands = "\n".join([
+                f'run {bad_arg}',
+                'q',
+            ])
+            stdout, _ = self.run_pdb_script('pass', commands + '\n')
+            self.assertEqual(stdout.splitlines()[1:], [
+                '-> pass',
+                f'(Pdb) *** Cannot run {bad_arg}: {msg}',
+                '(Pdb) ',
+            ])
+        check('\\', 'No escaped character')
+        check('"', 'No closing quotation')
 
     def test_issue42384(self):
         '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''

@@ -1368,14 +1368,22 @@ subtype_dealloc(PyObject *self)
         /* Extract the type again; tp_del may have changed it */
         type = Py_TYPE(self);
 
+        // Don't read type memory after calling basedealloc() since basedealloc()
+        // can deallocate the type and free its memory.
+        int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
+                                 && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
         /* Call the base tp_dealloc() */
         assert(basedealloc);
         basedealloc(self);
 
-       /* Only decref if the base type is not already a heap allocated type.
-          Otherwise, basedealloc should have decref'd it already */
-        if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
+        /* Can't reference self beyond this point. It's possible tp_del switched
+           our type from a HEAPTYPE to a non-HEAPTYPE, so be careful about
+           reference counting. Only decref if the base type is not already a heap
+           allocated type. Otherwise, basedealloc should have decref'd it already */
+        if (type_needs_decref) {
             Py_DECREF(type);
+        }
 
         /* Done */
         return;
@@ -5881,8 +5889,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         /* Inherit Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
         * if tp_call is not overridden */
         if (!type->tp_call &&
-            (base->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) &&
-            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+            _PyType_HasFeature(base, Py_TPFLAGS_HAVE_VECTORCALL) &&
+            _PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE))
         {
             type->tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
         }
@@ -5915,8 +5923,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
          * but only for extension types */
         if (base->tp_descr_get &&
             type->tp_descr_get == base->tp_descr_get &&
-            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE) &&
-            (base->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR))
+            _PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE) &&
+            _PyType_HasFeature(base, Py_TPFLAGS_METHOD_DESCRIPTOR))
         {
             type->tp_flags |= Py_TPFLAGS_METHOD_DESCRIPTOR;
         }

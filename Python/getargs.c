@@ -2465,6 +2465,166 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
     return buf;
 }
 
+PyObject * const *
+_PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
+                                PyObject *kwargs, PyObject *kwnames,
+                                struct _PyArg_Parser *parser,
+                                int minpos, int maxpos, int minkw,
+                                int vararg, PyObject **buf)
+{
+    PyObject *kwtuple;
+    PyObject *keyword;
+    Py_ssize_t varargssize = 0;
+    int i, posonly, minposonly, maxargs;
+    int reqlimit = minkw ? maxpos + minkw : minpos;
+    Py_ssize_t nkwargs;
+    PyObject *current_arg;
+    PyObject * const *kwstack = NULL;
+
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(kwargs == NULL || kwnames == NULL);
+
+    if (parser == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (kwnames != NULL && !PyTuple_Check(kwnames)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (args == NULL && nargs == 0) {
+        args = buf;
+    }
+
+    if (!parser_init(parser)) {
+        return NULL;
+    }
+
+    kwtuple = parser->kwtuple;
+    posonly = parser->pos;
+    minposonly = Py_MIN(posonly, minpos);
+    maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
+    if (kwargs != NULL) {
+        nkwargs = PyDict_GET_SIZE(kwargs);
+    }
+    else if (kwnames != NULL) {
+        nkwargs = PyTuple_GET_SIZE(kwnames);
+        kwstack = args + nargs;
+    }
+    else {
+        nkwargs = 0;
+    }
+    if (nargs < minposonly) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s%s takes %s %d positional argument%s"
+                     " (%zd given)",
+                     (parser->fname == NULL) ? "function" : parser->fname,
+                     (parser->fname == NULL) ? "" : "()",
+                     minposonly < maxpos ? "at least" : "exactly",
+                     minposonly,
+                     minposonly == 1 ? "" : "s",
+                     nargs);
+        return NULL;
+    }
+
+    /* create varargs tuple */
+    varargssize = nargs - maxpos;
+    if (varargssize < 0) {
+        varargssize = 0;
+    }
+    buf[vararg] = PyTuple_New(varargssize);
+    if (!buf[vararg]) {
+        return NULL;
+    }
+
+    /* copy tuple args */
+    for (i = 0; i < nargs; i++) {
+        if (i >= vararg) {
+            Py_INCREF(args[i]);
+            PyTuple_SET_ITEM(buf[vararg], i - vararg, args[i]);
+            continue;
+        }
+        else {
+            buf[i] = args[i];
+        }
+    }
+
+    /* copy keyword args using kwtuple to drive process */
+    for (i = Py_MAX((int)nargs, posonly) - varargssize; i < maxargs; i++) {
+        if (nkwargs) {
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
+            if (kwargs != NULL) {
+                current_arg = PyDict_GetItemWithError(kwargs, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    goto exit;
+                }
+            }
+            else {
+                current_arg = find_keyword(kwnames, kwstack, keyword);
+            }
+        }
+        else {
+            current_arg = NULL;
+        }
+
+        buf[i + vararg + 1] = current_arg;
+
+        if (current_arg) {
+            --nkwargs;
+        }
+        else if (i < minpos || (maxpos <= i && i < reqlimit)) {
+            /* Less arguments than required */
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
+            PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
+                         "argument '%U' (pos %d)",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()",
+                         keyword, i+1);
+            goto exit;
+        }
+    }
+
+    if (nkwargs > 0) {
+        Py_ssize_t j;
+        /* make sure there are no extraneous keyword arguments */
+        j = 0;
+        while (1) {
+            int match;
+            if (kwargs != NULL) {
+                if (!PyDict_Next(kwargs, &j, &keyword, NULL))
+                    break;
+            }
+            else {
+                if (j >= PyTuple_GET_SIZE(kwnames))
+                    break;
+                keyword = PyTuple_GET_ITEM(kwnames, j);
+                j++;
+            }
+
+            match = PySequence_Contains(kwtuple, keyword);
+            if (match <= 0) {
+                if (!match) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "'%S' is an invalid keyword "
+                                 "argument for %.200s%s",
+                                 keyword,
+                                 (parser->fname == NULL) ? "this function" : parser->fname,
+                                 (parser->fname == NULL) ? "" : "()");
+                }
+                goto exit;
+            }
+        }
+    }
+
+    return buf;
+
+exit:
+    Py_XDECREF(buf[vararg]);
+    return NULL;
+}
+
 
 static const char *
 skipitem(const char **p_format, va_list *p_va, int flags)

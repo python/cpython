@@ -42,13 +42,6 @@ module _sqlite3
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
 /* static objects at module-level */
-
-PyObject *pysqlite_OperationalError = NULL;
-PyObject *pysqlite_ProgrammingError = NULL;
-PyObject *pysqlite_IntegrityError = NULL;
-PyObject *pysqlite_DataError = NULL;
-PyObject *pysqlite_NotSupportedError = NULL;
-
 PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
@@ -137,7 +130,8 @@ pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
     rc = sqlite3_enable_shared_cache(do_enable);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
+        pysqlite_state *state = pysqlite_get_state(module);
+        PyErr_SetString(state->OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -357,17 +351,13 @@ do {                                           \
     }                                          \
 } while (0)
 
-#define ADD_EXCEPTION(module, name, exc, base)                  \
-do {                                                            \
-    exc = PyErr_NewException(MODULE_NAME "." name, base, NULL); \
-    if (!exc) {                                                 \
-        goto error;                                             \
-    }                                                           \
-    int res = PyModule_AddObjectRef(module, name, exc);         \
-    Py_DECREF(exc);                                             \
-    if (res < 0) {                                              \
-        goto error;                                             \
-    }                                                           \
+#define ADD_EXCEPTION(module, state, exc, base)                        \
+do {                                                                   \
+    state->exc = PyErr_NewException(MODULE_NAME "." #exc, base, NULL); \
+    if (state->exc == NULL) {                                          \
+        goto error;                                                    \
+    }                                                                  \
+    ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
 } while (0)
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
@@ -404,27 +394,20 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-    ADD_EXCEPTION(module, "Error", state->Error, PyExc_Exception);
-    ADD_EXCEPTION(module, "Warning", state->Warning, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Error, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Warning, PyExc_Exception);
 
     /* Error subclasses */
-    ADD_EXCEPTION(module, "InterfaceError", state->InterfaceError,
-                  state->Error);
-    ADD_EXCEPTION(module, "DatabaseError", state->DatabaseError, state->Error);
+    ADD_EXCEPTION(module, state, InterfaceError, state->Error);
+    ADD_EXCEPTION(module, state, DatabaseError, state->Error);
 
     /* DatabaseError subclasses */
-    ADD_EXCEPTION(module, "InternalError", state->InternalError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "DataError", pysqlite_DataError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError,
-                  state->DatabaseError);
+    ADD_EXCEPTION(module, state, InternalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, OperationalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, ProgrammingError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, IntegrityError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, DataError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {

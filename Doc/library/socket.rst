@@ -381,6 +381,8 @@ Constants
 
    .. versionchanged:: 3.10
       ``IP_RECVTOS`` was added.
+       Added ``TCP_KEEPALIVE``. On MacOS this constant can be used in the same
+       way that ``TCP_KEEPIDLE`` is used on Linux.
 
 .. data:: AF_CAN
           PF_CAN
