@@ -1062,7 +1062,7 @@ are always available.  They are listed here in alphabetical order.
 
    Retrieve the next item from the *iterator* by calling its
    :meth:`~iterator.__next__` method.  If *default* is given, it is returned
-   if the iterator is exhausted, otherwise, :exc:`StopIteration` is raised.
+   if the iterator is exhausted otherwise, :exc:`StopIteration` is raised.
 
 
 .. class:: object()
