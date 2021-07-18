@@ -468,9 +468,10 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 }
 
 static PyObject *
-_pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
+_pysqlite_query_execute(pysqlite_state *state, pysqlite_Cursor *self,
+                        int multiple, PyObject *operation,
+                        PyObject *second_argument)
 {
-    pysqlite_state *state = pysqlite_get_state(NULL);
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -576,7 +577,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
         pysqlite_statement_mark_dirty(self->statement);
 
-        pysqlite_statement_bind_parameters(self->statement, parameters);
+        pysqlite_statement_bind_parameters(state, self->statement, parameters);
         if (PyErr_Occurred()) {
             goto error;
         }
@@ -597,7 +598,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         if (pysqlite_build_row_cast_map(self) != 0) {
-            _PyErr_FormatFromCause(self->connection->OperationalError,
+            _PyErr_FormatFromCause(state->OperationalError,
                                    "Error while building row_cast_map");
             goto error;
         }
@@ -651,7 +652,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
         if (rc == SQLITE_ROW) {
             if (multiple) {
-                PyErr_SetString(self->connection->ProgrammingError,
+                PyErr_SetString(state->ProgrammingError,
                                 "executemany() can only execute DML "
                                 "statements.");
                 goto error;
@@ -689,6 +690,7 @@ error:
 /*[clinic input]
 _sqlite3.Cursor.execute as pysqlite_cursor_execute
 
+    cls: defining_class
     sql: unicode
     parameters: object(c_default = 'NULL') = ()
     /
@@ -697,16 +699,18 @@ Executes a SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
-                             PyObject *parameters)
-/*[clinic end generated code: output=d81b4655c7c0bbad input=91d7bb36f127f597]*/
+pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyTypeObject *cls,
+                             PyObject *sql, PyObject *parameters)
+/*[clinic end generated code: output=240cbdd024d071c2 input=754c85bca348dc35]*/
 {
-    return _pysqlite_query_execute(self, 0, sql, parameters);
+    pysqlite_state *state = pysqlite_get_state_by_cls(cls);
+    return _pysqlite_query_execute(state, self, 0, sql, parameters);
 }
 
 /*[clinic input]
 _sqlite3.Cursor.executemany as pysqlite_cursor_executemany
 
+    cls: defining_class
     sql: unicode
     seq_of_parameters: object
     /
@@ -715,11 +719,12 @@ Repeatedly executes a SQL statement.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
-                                 PyObject *seq_of_parameters)
-/*[clinic end generated code: output=2c65a3c4733fb5d8 input=440707b7af87fba8]*/
+pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyTypeObject *cls,
+                                 PyObject *sql, PyObject *seq_of_parameters)
+/*[clinic end generated code: output=0b767529517fbaf4 input=cd9f263377d1a7a4]*/
 {
-    return _pysqlite_query_execute(self, 1, sql, seq_of_parameters);
+    pysqlite_state *state = pysqlite_get_state_by_cls(cls);
+    return _pysqlite_query_execute(state, self, 1, sql, seq_of_parameters);
 }
 
 /*[clinic input]
@@ -1023,15 +1028,17 @@ pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
 /*[clinic input]
 _sqlite3.Cursor.close as pysqlite_cursor_close
 
+    cls: defining_class
+
 Closes the cursor.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_close_impl(pysqlite_Cursor *self)
-/*[clinic end generated code: output=b6055e4ec6fe63b6 input=08b36552dbb9a986]*/
+pysqlite_cursor_close_impl(pysqlite_Cursor *self, PyTypeObject *cls)
+/*[clinic end generated code: output=a08ab3d772f45438 input=28ba9b532ab46ba0]*/
 {
     if (!self->connection) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
+        pysqlite_state *state = pysqlite_get_state_by_cls(cls);
         PyErr_SetString(state->ProgrammingError,
                         "Base Cursor.__init__ not called.");
         return NULL;

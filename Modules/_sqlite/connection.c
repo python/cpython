@@ -322,14 +322,17 @@ error:
 /*[clinic input]
 _sqlite3.Connection.cursor as pysqlite_connection_cursor
 
+    cls: defining_class
+    /
     factory: object = NULL
 
 Return a cursor for the connection.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
-/*[clinic end generated code: output=562432a9e6af2aa1 input=4127345aa091b650]*/
+pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyTypeObject *cls,
+                                PyObject *factory)
+/*[clinic end generated code: output=c48c9335315ba58d input=c19d77941a005430]*/
 {
     PyObject* cursor;
 
@@ -337,7 +340,7 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
+    pysqlite_state *state = pysqlite_get_state_by_cls(cls);
     if (factory == NULL) {
         factory = (PyObject *)state->CursorType;
     }

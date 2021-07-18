@@ -68,6 +68,12 @@ pysqlite_get_state(PyObject *Py_UNUSED(module))
     return &pysqlite_global_state;
 }
 
+static inline pysqlite_state *
+pysqlite_get_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+{
+    return &pysqlite_global_state;
+}
+
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2
 #endif

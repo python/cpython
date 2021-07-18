@@ -110,31 +110,25 @@ PyDoc_STRVAR(pysqlite_connection_cursor__doc__,
 "Return a cursor for the connection.");
 
 #define PYSQLITE_CONNECTION_CURSOR_METHODDEF    \
-    {"cursor", (PyCFunction)(void(*)(void))pysqlite_connection_cursor, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_cursor__doc__},
+    {"cursor", (PyCFunction)(void(*)(void))pysqlite_connection_cursor, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_cursor__doc__},
 
 static PyObject *
-pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory);
+pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyTypeObject *cls,
+                                PyObject *factory);
 
 static PyObject *
-pysqlite_connection_cursor(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_connection_cursor(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"factory", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "cursor", 0};
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    static _PyArg_Parser _parser = {"|O:cursor", _keywords, 0};
     PyObject *factory = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &factory)) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    factory = args[0];
-skip_optional_pos:
-    return_value = pysqlite_connection_cursor_impl(self, factory);
+    return_value = pysqlite_connection_cursor_impl(self, cls, factory);
 
 exit:
     return return_value;
@@ -811,4 +805,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=30f11f2d8f09bdf0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b81bc52da6810c0e input=a9049054013a1b77]*/
