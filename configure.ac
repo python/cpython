@@ -1423,7 +1423,7 @@ if test "$Py_LTO" = 'true' ; then
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          if test $Py_LTO_POLICY = 'default'
+          if test $Py_LTO_POLICY = default
           then
             LTOFLAGS="-flto -Wl,-export_dynamic"
             LTOCFLAGS="-flto"
@@ -1433,11 +1433,11 @@ if test "$Py_LTO" = 'true' ; then
           fi
           ;;
         *)
-          if test $Py_LTO_POLICY = 'default'
+          if test $Py_LTO_POLICY = default
           then
             LTOFLAGS="-flto"
           else
-            LTOFLAGS="-flto={Py_LTO_POLICY}"
+            LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
           ;;
       esac

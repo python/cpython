@@ -6753,7 +6753,7 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          if test $Py_LTO_POLICY = 'default'
+          if test $Py_LTO_POLICY = default
           then
             LTOFLAGS="-flto -Wl,-export_dynamic"
             LTOCFLAGS="-flto"
@@ -6763,11 +6763,11 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
           fi
           ;;
         *)
-          if test $Py_LTO_POLICY = 'default'
+          if test $Py_LTO_POLICY = default
           then
             LTOFLAGS="-flto"
           else
-            LTOFLAGS="-flto={Py_LTO_POLICY}"
+            LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
           ;;
       esac
