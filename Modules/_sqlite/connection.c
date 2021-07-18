@@ -60,13 +60,13 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
 static PyObject *
-new_statement_cache(pysqlite_Connection *self, int maxsize)
+new_statement_cache(pysqlite_state *state, pysqlite_Connection *self,
+                    int maxsize)
 {
     PyObject *args[] = { PyLong_FromLong(maxsize), };
     if (args[0] == NULL) {
         return NULL;
     }
-    pysqlite_state *state = pysqlite_get_state(NULL);
     PyObject *inner = PyObject_Vectorcall(state->lru_cache, args, 1, NULL);
     Py_DECREF(args[0]);
     if (inner == NULL) {
@@ -150,7 +150,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
     Py_DECREF(isolation_level);
 
-    self->statement_cache = new_statement_cache(self, cached_statements);
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    self->statement_cache = new_statement_cache(state, self,
+                                                cached_statements);
     if (self->statement_cache == NULL) {
         return -1;
     }
@@ -182,7 +184,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
     self->InterfaceError        = state->InterfaceError;
