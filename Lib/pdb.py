@@ -84,6 +84,8 @@ import functools
 import traceback
 import linecache
 
+from typing import Union
+
 
 class Restart(Exception):
     """Causes a debugger to be restarted for the debugged python program."""
@@ -147,6 +149,23 @@ class ScriptTarget(str):
         # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(self)
 
+    @property
+    def filename(self):
+        return self
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=self,
+            __builtins__=__builtins__,
+        )
+
+    @property
+    def code(self):
+        with io.open(self) as fp:
+            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
+
 
 class ModuleTarget(str):
     def check(self):
@@ -156,6 +175,31 @@ class ModuleTarget(str):
     def details(self):
         import runpy
         return runpy._get_module_details(self)
+
+    @property
+    def filename(self):
+        return self.code.co_filename
+
+    @property
+    def code(self):
+        name, spec, code = self.details
+        return code
+
+    @property
+    def spec(self):
+        name, spec, code = self.details
+        return spec
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=os.path.normcase(os.path.abspath(self.filename)),
+            __package__=self.spec.parent,
+            __loader__=self.spec.loader,
+            __spec__=self.spec,
+            __builtins__=__builtins__,
+        )
 
 
 # Interaction prompt line will separate file and call info from code
@@ -1564,50 +1608,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    @functools.singledispatchmethod
-    def _run(self, target: 'ModuleTarget'):
-        self._wait_for_mainpyfile = True
-        self._user_requested_quit = False
-        mod_name, mod_spec, code = target.details
-        self.mainpyfile = self.canonic(code.co_filename)
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update({
-            "__name__": "__main__",
-            "__file__": self.mainpyfile,
-            "__package__": mod_spec.parent,
-            "__loader__": mod_spec.loader,
-            "__spec__": mod_spec,
-            "__builtins__": __builtins__,
-        })
-        self.run(code)
-
-    @_run.register
-    def _(self, filename: 'ScriptTarget'):
-        # The script has to run in __main__ namespace (or imports from
-        # __main__ will break).
-        #
-        # So we clear up the __main__ and set several special variables
-        # (this gets rid of pdb's globals and cleans old variables on restarts).
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update({"__name__"    : "__main__",
-                                  "__file__"    : filename,
-                                  "__builtins__": __builtins__,
-                                 })
-
-        # When bdb sets tracing, a number of call and line events happens
+    def _run(self, target: Union[ModuleTarget, ScriptTarget]):
+        # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
-        # events depends on python version). So we take special measures to
-        # avoid stopping before we reach the main script (see user_line and
+        # events depends on python version). Take special measures to
+        # avoid stopping before reaching the main script (see user_line and
         # user_call for details).
         self._wait_for_mainpyfile = True
-        self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = False
-        with io.open_code(filename) as fp:
-            statement = "exec(compile(%r, %r, 'exec'))" % \
-                        (fp.read(), self.mainpyfile)
-        self.run(statement)
+
+        self.mainpyfile = self.canonic(target.filename)
+
+        # The target has to run in __main__ namespace (or imports from
+        # __main__ will break). Clear __main__ and replace with
+        # the target namespace.
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update(target.namespace)
+
+        self.run(target.code)
+
 
 # Collect all command help into docstring, if not run with -OO
 
