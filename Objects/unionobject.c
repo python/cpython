@@ -302,10 +302,22 @@ is_unionable(PyObject *obj)
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
+    int r = is_unionable(self);
+    if (r > 0) {
+        r = is_unionable(other);
+    }
+    if (r < 0) {
+        return NULL;
+    }
+    if (!r) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     PyObject *tuple = PyTuple_Pack(2, self, other);
     if (tuple == NULL) {
         return NULL;
     }
+
     PyObject *new_union = make_union(tuple);
     Py_DECREF(tuple);
     return new_union;
@@ -434,6 +446,21 @@ union_getitem(PyObject *self, PyObject *item)
         return NULL;
     }
 
+    // Check arguments are unionable.
+    Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
+        int is_arg_unionable = is_unionable(arg);
+        if (is_arg_unionable <= 0) {
+            Py_DECREF(newargs);
+            if (is_arg_unionable == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "Each union argument must be a type, got %.100R", arg);
+            }
+            return NULL;
+        }
+    }
+
     PyObject *res = make_union(newargs);
 
     Py_DECREF(newargs);
@@ -495,21 +522,6 @@ make_union(PyObject *args)
 {
     assert(PyTuple_CheckExact(args));
 
-    unionobject* result = NULL;
-
-    // Check arguments are unionable.
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable < 0) {
-            return NULL;
-        }
-        if (!is_arg_unionable) {
-            Py_RETURN_NOTIMPLEMENTED;
-        }
-    }
-
     args = dedup_and_flatten_args(args);
     if (args == NULL) {
         return NULL;
@@ -521,7 +533,7 @@ make_union(PyObject *args)
         return result1;
     }
 
-    result = PyObject_GC_New(unionobject, &_PyUnion_Type);
+    unionobject *result = PyObject_GC_New(unionobject, &_PyUnion_Type);
     if (result == NULL) {
         Py_DECREF(args);
         return NULL;
