@@ -131,7 +131,7 @@ class BinASCIITest(unittest.TestCase):
             _assertRegexTemplate(r'(?i)Only base64 data', data, non_strict_mode_expected_result)
 
         def assertMalformedPadding(data, non_strict_mode_expected_result: bytes):
-            _assertRegexTemplate(r'(?i)Malformed padding', data, non_strict_mode_expected_result)
+            _assertRegexTemplate(r'(?i)Leading padding', data, non_strict_mode_expected_result)
 
         # Test excess data exceptions
         assertExcessData(b'ab==a', b'i')
