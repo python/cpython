@@ -119,8 +119,10 @@ class BinASCIITest(unittest.TestCase):
         def _assertRegexTemplate(assert_regex: str, data: bytes, non_strict_mode_expected_result: bytes):
             with self.assertRaisesRegex(binascii.Error, assert_regex):
                 binascii.a2b_base64(self.type2test(data), strict_mode=True)
-            assert binascii.a2b_base64(self.type2test(data), strict_mode=False) == non_strict_mode_expected_result
-            assert binascii.a2b_base64(self.type2test(data)) == non_strict_mode_expected_result
+            self.assertEqual(binascii.a2b_base64(self.type2test(data), strict_mode=False),
+                             non_strict_mode_expected_result)
+            self.assertEqual(binascii.a2b_base64(self.type2test(data)),
+                             non_strict_mode_expected_result)
 
         def assertExcessData(data, non_strict_mode_expected_result: bytes):
             _assertRegexTemplate(r'(?i)Excess data', data, non_strict_mode_expected_result)
