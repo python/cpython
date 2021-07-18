@@ -96,7 +96,7 @@ are always available.  They are listed here in alphabetical order.
    This calls the :meth:`~object.__anext__` method of *async_iterator*,
    returning an :term:`awaitable`. Awaiting this returns the next value of the
    iterator. If *default* is given, it is returned if the iterator is exhausted,
-   otherwise, :exc:`StopAsyncIteration` is raised.
+   otherwise :exc:`StopAsyncIteration` is raised.
 
    .. versionadded:: 3.10
 
