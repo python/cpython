@@ -772,6 +772,12 @@ class UnionTests(unittest.TestCase):
         self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
         self.assertEqual((list[T] | list[S])[int, int], list[int])
 
+    def test_union_parameter_substitution_errors(self):
+        T = typing.TypeVar("T")
+        x = int | T
+        with self.assertRaises(TypeError):
+            x[42]
+
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
         ForwardAfter = T | 'Forward'
