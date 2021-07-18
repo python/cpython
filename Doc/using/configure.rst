@@ -171,7 +171,7 @@ recommended for best performance.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --with-lto
+.. cmdoption:: --with-lto=[full|thin|no|yes]
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
@@ -179,6 +179,9 @@ recommended for best performance.
    as an LTO-aware linker (``ld.gold`` or ``lld``).
 
    .. versionadded:: 3.6
+
+   .. versionadded:: 3.11
+      To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
 
 .. cmdoption:: --with-computed-gotos
 
