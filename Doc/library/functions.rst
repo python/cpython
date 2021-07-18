@@ -724,7 +724,7 @@ are always available.  They are listed here in alphabetical order.
    If the string is the name of one of the object's attributes, the result is the
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
-   provided, otherwise, :exc:`AttributeError` is raised.
+   provided, otherwise :exc:`AttributeError` is raised.
 
    .. note::
 
@@ -928,7 +928,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
-   second argument, *object* must be a collection object that supports the
+   second argument, *object* must be a collection object which supports the
    iteration protocol (the :meth:`__iter__` method), or it must support the
    sequence protocol (the :meth:`__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
@@ -936,7 +936,7 @@ are always available.  They are listed here in alphabetical order.
    then *object* must be a callable object.  The iterator created in this case
    will call *object* with no arguments for each call to its
    :meth:`~iterator.__next__` method; if the value returned is equal to
-   *sentinel*, :exc:`StopIteration` will be raised, otherwise, the value will
+   *sentinel*, :exc:`StopIteration` will be raised, otherwise the value will
    be returned.
 
    See also :ref:`typeiter`.
@@ -1138,7 +1138,7 @@ are always available.  They are listed here in alphabetical order.
    ``'r'``   open for reading (default)
    ``'w'``   open for writing, truncating the file first
    ``'x'``   open for exclusive creation, failing if the file already exists
-   ``'a'``   open for writing, appending to the end of the file if it exists
+   ``'a'``   open for writing, appending to the end of file if it exists
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open for updating (reading and writing)
@@ -1250,7 +1250,7 @@ are always available.  They are listed here in alphabetical order.
 
    If *closefd* is ``False`` and a file descriptor rather than a filename was
    given, the underlying file descriptor will be kept open when the file is
-   closed.  If a filename is given *closefd* must be ``True`` (the default)
+   closed.  If a filename is given *closefd* must be ``True`` (the default),
    otherwise, an error will be raised.
 
    A custom opener can be used by passing a callable as *opener*. The underlying
@@ -1730,7 +1730,7 @@ are always available.  They are listed here in alphabetical order.
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
    It does so by implementing its own :meth:`__getattribute__` method for searching
-   classes in a predictable order that supports cooperative multiple inheritance.
+   classes in a predictable order which supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``.
 
