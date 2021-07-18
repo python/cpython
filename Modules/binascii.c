@@ -467,7 +467,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         malformed_padding:
         state = get_binascii_state(module);
         if (state) {
-            PyErr_SetString(state->Error, "Malformed padding in strict mode");
+            PyErr_SetString(state->Error, "Leading padding not allowed");
         }
         goto error_end;
     }
@@ -492,7 +492,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
                 if (strict_mode && i + 1 < ascii_len) {
                     state = get_binascii_state(module);
                     if (state) {
-                        PyErr_SetString(state->Error, "Excess data after padding is not allowed when using strict mode");
+                        PyErr_SetString(state->Error, "Excess data after padding");
                     }
                     goto error_end;
                 }
@@ -507,7 +507,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
             if (strict_mode) {
                 state = get_binascii_state(module);
                 if (state) {
-                    PyErr_SetString(state->Error, "Only base64 data is allowed when using strict mode");
+                    PyErr_SetString(state->Error, "Only base64 data is allowed");
                 }
                 goto error_end;
             }
