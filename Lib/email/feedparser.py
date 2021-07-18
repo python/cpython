@@ -600,11 +600,15 @@ class Base64EncodedFeedParser(EncodedFeedParser):
         super().__init__(*args, **kwargs)
         # This buffer, when non-empty between calls to feed(), represents an
         # incomplete base64 block that can't be decoded or parsed yet:
-        self._encoded_buffer = bytearray()
         self._decoder = Base64FeedDecoder(self._bytes_feed_parser.feed)
+        self._errors = []
 
     def feed(self, text):
-        self._decoder.feed(text.encode('ascii'))
+        encoded_bytes = text.encode('ascii')
+        try:
+            self._decoder.feed(encoded_bytes)
+        except Exception as e:
+            self._errors.append(e)
         # self._encoded_buffer.extend(text.rstrip().encode('ascii'))
         # # Decode and parse the largest group of contiguous "strings of 4
         # # encoded characters" (described in RFC 2045, s. 6.8, p. 4) available.
@@ -616,12 +620,16 @@ class Base64EncodedFeedParser(EncodedFeedParser):
         #     self._bytes_feed_parser.feed(decoded_bytes)
 
     def close(self):
+        message_part = self._bytes_feed_parser.close()
+        # Attempt to close the decoder in case any further errors occur:
         try:
             self._decoder.close()
         except Exception as e:
-            # TODO: Add a defect to the message object.
-            pass
-        return self._bytes_feed_parser.close()
+            self._errors.append(e)
+        # Include the decoding-related errors in the message:
+        for error in self._errors:
+            self.policy.handle_defect(message_part, error)
+        return message_part
 
 
 class QuotedPrintableFeedParser(EncodedFeedParser):
