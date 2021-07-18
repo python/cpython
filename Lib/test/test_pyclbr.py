@@ -224,7 +224,8 @@ class PyclbrTest(TestCase):
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm(
             'pdb',
-            ignore=('ModuleTarget',),  # cached_property
+            # pyclbr does not handle elegantly `typing` or properties
+            ignore=('Union', 'ModuleTarget', 'ScriptTarget'),
         )
         cm('pydoc', ignore=('input', 'output',)) # properties
 
