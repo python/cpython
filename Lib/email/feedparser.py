@@ -609,15 +609,6 @@ class Base64EncodedFeedParser(EncodedFeedParser):
             self._decoder.feed(encoded_bytes)
         except Exception as e:
             self._errors.append(e)
-        # self._encoded_buffer.extend(text.rstrip().encode('ascii'))
-        # # Decode and parse the largest group of contiguous "strings of 4
-        # # encoded characters" (described in RFC 2045, s. 6.8, p. 4) available.
-        # decodable_length = int(len(self._encoded_buffer) / 4) * 4
-        # if decodable_length >= 1:
-        #     decodable_bytes = self._encoded_buffer[:decodable_length]
-        #     self._encoded_buffer = self._encoded_buffer[decodable_length:]
-        #     decoded_bytes = base64.standard_b64decode(decodable_bytes)
-        #     self._bytes_feed_parser.feed(decoded_bytes)
 
     def close(self):
         message_part = self._bytes_feed_parser.close()
@@ -671,6 +662,7 @@ class QuotedPrintableFeedParser(EncodedFeedParser):
             # TODO: Add a defect to the message object.
             pass
         return self._bytes_feed_parser.close()
+
 
 # Map of EncodedFeedParser "factory" functions keyed by
 # Content-Transfer-Encodings.  Note that the semantics of "decoding" in this
