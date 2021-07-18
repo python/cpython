@@ -1,1 +1,1 @@
-Add support for building with clang's "thin" link time optimization using `--with-lto=thin`.
+Add support for building with clang's "thin" link time optimization using ``--with-lto=thin``.
