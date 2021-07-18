@@ -455,7 +455,7 @@ union_getitem(PyObject *self, PyObject *item)
             Py_DECREF(newargs);
             if (is_arg_unionable == 0) {
                 PyErr_Format(PyExc_TypeError,
-                             "Each union arg must be a type, got %.100R", arg);
+                             "Each union argument must be a type, got %.100R", arg);
             }
             return NULL;
         }
