@@ -87,7 +87,7 @@ The :mod:`pprint` module defines one class:
       Added the *underscore_numbers* parameter.
 
    .. versionchanged:: 3.11
-      No longer attempts to write to ``sys.stdout`` if it is None.
+      No longer attempts to write to ``sys.stdout`` if it is ``None``.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
