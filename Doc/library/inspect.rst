@@ -187,6 +187,10 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
+|           | co_qualname       | fully-qualified name with |
+|           |                   | which this code object    |
+|           |                   | was defined               |
++-----------+-------------------+---------------------------+
 |           | co_names          | tuple of names of local   |
 |           |                   | variables                 |
 +-----------+-------------------+---------------------------+

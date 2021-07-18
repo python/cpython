@@ -1894,6 +1894,113 @@ _winapi_GetFileType_impl(PyObject *module, HANDLE handle)
     return result;
 }
 
+/*[clinic input]
+_winapi._mimetypes_read_windows_registry
+
+    on_type_read: object
+
+Optimized function for reading all known MIME types from the registry.
+
+*on_type_read* is a callable taking *type* and *ext* arguments, as for
+MimeTypes.add_type.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi__mimetypes_read_windows_registry_impl(PyObject *module,
+                                              PyObject *on_type_read)
+/*[clinic end generated code: output=20829f00bebce55b input=cd357896d6501f68]*/
+{
+#define CCH_EXT 128
+#define CB_TYPE 510
+    struct {
+        wchar_t ext[CCH_EXT];
+        wchar_t type[CB_TYPE / sizeof(wchar_t) + 1];
+    } entries[64];
+    int entry = 0;
+    HKEY hkcr = NULL;
+    LRESULT err;
+
+    Py_BEGIN_ALLOW_THREADS
+    err = RegOpenKeyExW(HKEY_CLASSES_ROOT, NULL, 0, KEY_READ, &hkcr);
+    for (DWORD i = 0; err == ERROR_SUCCESS || err == ERROR_MORE_DATA; ++i) {
+        LPWSTR ext = entries[entry].ext;
+        LPWSTR type = entries[entry].type;
+        DWORD cchExt = CCH_EXT;
+        DWORD cbType = CB_TYPE;
+        HKEY subkey;
+        DWORD regType;
+
+        err = RegEnumKeyExW(hkcr, i, ext, &cchExt, NULL, NULL, NULL, NULL);
+        if (err != ERROR_SUCCESS || (cchExt && ext[0] != L'.')) {
+            continue;
+        }
+
+        err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
+        if (err == ERROR_FILE_NOT_FOUND) {
+            err = ERROR_SUCCESS;
+            continue;
+        } else if (err != ERROR_SUCCESS) {
+            continue;
+        }
+
+        err = RegQueryValueExW(subkey, L"Content Type", NULL,
+                              &regType, (LPBYTE)type, &cbType);
+        RegCloseKey(subkey);
+        if (err == ERROR_FILE_NOT_FOUND) {
+            err = ERROR_SUCCESS;
+            continue;
+        } else if (err != ERROR_SUCCESS) {
+            continue;
+        } else if (regType != REG_SZ || !cbType) {
+            continue;
+        }
+        type[cbType / sizeof(wchar_t)] = L'\0';
+
+        entry += 1;
+
+        /* Flush our cached entries if we are full */
+        if (entry == sizeof(entries) / sizeof(entries[0])) {
+            Py_BLOCK_THREADS
+            for (int j = 0; j < entry; ++j) {
+                PyObject *r = PyObject_CallFunction(
+                    on_type_read, "uu", entries[j].type, entries[j].ext
+                );
+                if (!r) {
+                    /* We blocked threads, so safe to return from here */
+                    RegCloseKey(hkcr);
+                    return NULL;
+                }
+                Py_DECREF(r);
+            }
+            Py_UNBLOCK_THREADS
+            entry = 0;
+        }
+    }
+    if (hkcr) {
+        RegCloseKey(hkcr);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err != ERROR_SUCCESS && err != ERROR_NO_MORE_ITEMS) {
+        PyErr_SetFromWindowsErr((int)err);
+        return NULL;
+    }
+
+    for (int j = 0; j < entry; ++j) {
+        PyObject *r = PyObject_CallFunction(
+            on_type_read, "uu", entries[j].type, entries[j].ext
+        );
+        if (!r) {
+            return NULL;
+        }
+        Py_DECREF(r);
+    }
+
+    Py_RETURN_NONE;
+#undef CCH_EXT
+#undef CB_TYPE
+}
+
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -1926,6 +2033,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WRITEFILE_METHODDEF
     _WINAPI_GETACP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
+    _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     {NULL, NULL}
 };
 

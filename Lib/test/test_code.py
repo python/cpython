@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>', "'f.<locals>.g'")
+consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
 name: g
@@ -137,7 +137,8 @@ try:
 except ImportError:
     ctypes = None
 from test.support import (run_doctest, run_unittest, cpython_only,
-                          check_impl_detail)
+                          check_impl_detail, requires_debug_ranges)
+from test.support.script_helper import assert_python_ok
 
 
 def consts(t):
@@ -223,6 +224,7 @@ class CodeTest(unittest.TestCase):
                         co.co_varnames,
                         co.co_filename,
                         co.co_name,
+                        co.co_qualname,
                         co.co_firstlineno,
                         co.co_lnotab,
                         co.co_endlinetable,
@@ -230,6 +232,12 @@ class CodeTest(unittest.TestCase):
                         co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
+
+    def test_qualname(self):
+        self.assertEqual(
+            CodeTest.test_qualname.__code__.co_qualname,
+            CodeTest.test_qualname.__qualname__
+        )
 
     def test_replace(self):
         def func():
@@ -297,6 +305,7 @@ class CodeTest(unittest.TestCase):
                          co.co_varnames,
                          co.co_filename,
                          co.co_name,
+                         co.co_qualname,
                          co.co_firstlineno,
                          co.co_lnotab,
                          co.co_endlinetable,
@@ -317,6 +326,7 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
+    @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
         import dis
 
@@ -364,8 +374,32 @@ class CodeTest(unittest.TestCase):
             ]
         )
 
+    def test_endline_and_columntable_none_when_no_debug_ranges(self):
+        # Make sure that if `-X no_debug_ranges` is used, the endlinetable and
+        # columntable are None.
+        code = textwrap.dedent("""
+            def f():
+                pass
+
+            assert f.__code__.co_endlinetable is None
+            assert f.__code__.co_columntable is None
+            """)
+        assert_python_ok('-X', 'no_debug_ranges', '-c', code)
+
+    def test_endline_and_columntable_none_when_no_debug_ranges_env(self):
+        # Same as above but using the environment variable opt out.
+        code = textwrap.dedent("""
+            def f():
+                pass
+
+            assert f.__code__.co_endlinetable is None
+            assert f.__code__.co_columntable is None
+            """)
+        assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
+
     # co_positions behavior when info is missing.
 
+    @requires_debug_ranges()
     def test_co_positions_empty_linetable(self):
         def func():
             x = 1
@@ -374,6 +408,7 @@ class CodeTest(unittest.TestCase):
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
 
+    @requires_debug_ranges()
     def test_co_positions_empty_endlinetable(self):
         def func():
             x = 1
@@ -382,6 +417,7 @@ class CodeTest(unittest.TestCase):
             self.assertEqual(line, new_code.co_firstlineno + 1)
             self.assertIsNone(end_line)
 
+    @requires_debug_ranges()
     def test_co_positions_empty_columntable(self):
         def func():
             x = 1

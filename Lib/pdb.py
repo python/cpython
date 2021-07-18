@@ -166,12 +166,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.rcLines = []
         if readrc:
             try:
-                with open(os.path.expanduser('~/.pdbrc')) as rcFile:
+                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
             try:
-                with open(".pdbrc") as rcFile:
+                with open(".pdbrc", encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass

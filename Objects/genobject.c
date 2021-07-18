@@ -840,7 +840,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     if (qualname != NULL)
         gen->gi_qualname = qualname;
     else
-        gen->gi_qualname = gen->gi_name;
+        gen->gi_qualname = gen->gi_code->co_qualname;
     Py_INCREF(gen->gi_qualname);
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;

@@ -2808,10 +2808,12 @@ out of the binary module.
 
 try:
     os.fsencode("foo-bär@baz.py")
+    supports_unicode = True
 except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
-    pass
-else:
+    supports_unicode = False
+
+if supports_unicode and not support.has_no_debug_ranges():
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
