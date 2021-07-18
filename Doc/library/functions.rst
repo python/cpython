@@ -687,7 +687,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert a *value* to a "formatted" representation, as controlled by
    *format_spec*.  The interpretation of *format_spec* will depend on the type
-   of the *value* argument, however, there is a standard formatting syntax that
+   of the *value* argument; however, there is a standard formatting syntax that
    is used by most built-in types: :ref:`formatspec`.
 
    The default *format_spec* is an empty string which usually gives the same
@@ -943,7 +943,7 @@ are always available.  They are listed here in alphabetical order.
 
    One useful application of the second form of :func:`iter` is to build a
    block-reader. For example, reading fixed-width blocks from a binary
-   database file until the end of the file is reached::
+   database file until the end of file is reached::
 
       from functools import partial
       with open('mydata.db', 'rb') as f:
