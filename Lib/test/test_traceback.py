@@ -1473,7 +1473,8 @@ class TestStack(unittest.TestCase):
             default.remove(l)
         # Only the lines for g's frame should remain:
         self.assertEqual(len(default), 3)
-        self.assertRegex(default[0], ', line [0-9]*, in g')
+        lno = g.__code__.co_firstlineno + 2
+        self.assertEqual(default[0], f'  File "{__file__}", line {lno}, in g')
         self.assertEqual(default[1], '    f()')
         self.assertEqual(default[2], '    ^^^')
 
