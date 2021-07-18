@@ -146,27 +146,33 @@ class Base64FeedDecoder:
          properly.
         :param data: bytes-like object of arbitrary-length.
         """
+        # Remove whitespace to ensure accurate length calculation:
         data = bytes(encoded_byte
                      for encoded_byte in data
                      if encoded_byte not in b'\r\n')
+        # Update buffer and decode any complete base-64 blocks:
         self._encoded_buffer.extend(data)
         decodable_length = int(len(self._encoded_buffer) / 4) * 4
         if decodable_length >= 1:
             decodable_bytes = self._encoded_buffer[:decodable_length]
             self._encoded_buffer = self._encoded_buffer[decodable_length:]
             decoded_bytes = self._decode(decodable_bytes)
+            # If _feed were made optional, then the decoded bytes could be
+            # appended to a new self._decoded_buffer variable when _feed is
+            # None:
             self._feed(decoded_bytes)
 
     def close(self):
         """
         Ensure the decoding of all previously fed data; and validate the input
-         length.  If this class had a buffer with the decoded data, normally
-         this function would also return the buffer.  It is undefined what
-         happens if feed() is called after this method has been called.
+         length.  It is undefined what happens if feed() is called after this
+         method has been called.
         :raises: ValueError if the input fails length validation.
         """
         if len(self._encoded_buffer) >= 1:
             raise ValueError('The base-64 input has invalid length.')
+        # If _feed were made optional, then a new self._decoded_buffer variable
+        # could be returned when _feed is None.
 
 
 # For convenience and backwards compatibility w/ standard base64 module
