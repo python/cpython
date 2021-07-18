@@ -1,0 +1,1 @@
+Support ``typing.Union`` in parameter substitution of the union type.

@@ -273,6 +273,12 @@ is_new_type(PyObject *obj)
     return is_typing_module(obj);
 }
 
+static int
+is_typing_union(PyObject *obj)
+{
+    return is_typing_name(obj, "_UnionGenericAlias");
+}
+
 // Emulates short-circuiting behavior of the ``||`` operator
 // while also checking negative values.
 #define CHECK_RES(res) { \
@@ -430,6 +436,19 @@ static PyMethodDef union_methods[] = {
 
 
 static PyObject *
+from_typing_union(PyObject *obj)
+{
+    _Py_IDENTIFIER(__args__);
+    PyObject *args = _PyObject_GetAttrId(obj, &PyId___args__);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *result = make_union(args);
+    Py_DECREF(args);
+    return result;
+}
+
+static PyObject *
 union_getitem(PyObject *self, PyObject *item)
 {
     unionobject *alias = (unionobject *)self;
@@ -447,16 +466,34 @@ union_getitem(PyObject *self, PyObject *item)
     }
 
     // Check arguments are unionable.
+    assert(Py_REFCNT(newargs) == 1);
     Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable <= 0) {
-            Py_DECREF(newargs);
-            if (is_arg_unionable == 0) {
+        int r = is_unionable(arg);
+        if (r == 0) {
+            r = is_typing_union(arg);
+            if (r == 0) {
                 PyErr_Format(PyExc_TypeError,
                              "Each union argument must be a type, got %.100R", arg);
+                Py_DECREF(newargs);
+                return NULL;
             }
+            if (r > 0) {
+                // Replace typing.Union with types.Union.
+                PyObject *newarg = from_typing_union(arg);
+                if (newarg == NULL) {
+                    Py_DECREF(newargs);
+                    return NULL;
+                }
+                assert(Py_REFCNT(newargs) == 1);
+                assert(PyTuple_GET_ITEM(newargs, iarg) == arg);
+                PyTuple_SET_ITEM(newargs, iarg, newarg);
+                Py_DECREF(arg);
+            }
+        }
+        if (r < 0) {
+            Py_DECREF(newargs);
             return NULL;
         }
     }
