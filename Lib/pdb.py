@@ -172,7 +172,7 @@ class ModuleTarget(str):
         pass
 
     @functools.cached_property
-    def details(self):
+    def _details(self):
         import runpy
         return runpy._get_module_details(self)
 
@@ -182,12 +182,12 @@ class ModuleTarget(str):
 
     @property
     def code(self):
-        name, spec, code = self.details
+        name, spec, code = self._details
         return code
 
     @property
-    def spec(self):
-        name, spec, code = self.details
+    def _spec(self):
+        name, spec, code = self._details
         return spec
 
     @property
@@ -195,9 +195,9 @@ class ModuleTarget(str):
         return dict(
             __name__='__main__',
             __file__=os.path.normcase(os.path.abspath(self.filename)),
-            __package__=self.spec.parent,
-            __loader__=self.spec.loader,
-            __spec__=self.spec,
+            __package__=self._spec.parent,
+            __loader__=self._spec.loader,
+            __spec__=self._spec,
             __builtins__=__builtins__,
         )
 
