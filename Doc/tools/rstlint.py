@@ -175,7 +175,7 @@ def check_suspicious_constructs(fn, lines):
         if double_backtick_role.search(line):
             yield lno, "role use a single backtick, double backtick found."
         if role_with_no_backticks.search(line):
-            yield lno, "role use a single backtick, backtick found."
+            yield lno, "role use a single backtick, no backtick found."
         if ".. productionlist::" in line:
             inprod = True
         elif not inprod and default_role_re.search(line):
