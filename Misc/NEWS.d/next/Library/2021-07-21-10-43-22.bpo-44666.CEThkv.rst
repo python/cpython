@@ -1,0 +1,1 @@
+fixed issue in :func:`compileall.compile_file` when ``sys.stdout`` is redirected
