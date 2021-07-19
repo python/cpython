@@ -4,7 +4,7 @@
 #include "code.h"
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
-#include "pycore_code.h"          // _PyOpcache
+#include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()

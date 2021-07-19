@@ -485,6 +485,44 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def assertSpecialized(self, func, expected_specialization):
+        result_lines = self.get_exception(func)
+        specialization_line = result_lines[-1]
+        self.assertEqual(specialization_line.lstrip(), expected_specialization)
+
+    def test_specialization_variations(self):
+        self.assertSpecialized(lambda: 1/0,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1/0/3,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1 / 0,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1 / 0 / 3,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1/ 0,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1/ 0/3,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1    /  0,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1    /  0   / 5,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1 /0,
+                                      "~~^~")
+        self.assertSpecialized(lambda: 1//0,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1//0//4,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1 // 0,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 // 0 // 4,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 //0,
+                                      "~~^^~")
+        self.assertSpecialized(lambda: 1// 0,
+                                      "~^^~~")
+
+
 @cpython_only
 @requires_debug_ranges()
 class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
@@ -1390,6 +1428,21 @@ class TestStack(unittest.TestCase):
              '    k = 3\n'
              '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
+
+    def test_custom_format_frame(self):
+        class CustomStackSummary(traceback.StackSummary):
+            def format_frame(self, frame):
+                return f'{frame.filename}:{frame.lineno}'
+
+        def some_inner():
+            return CustomStackSummary.extract(
+                traceback.walk_stack(None), limit=1)
+
+        s = some_inner()
+        self.assertEqual(
+            s.format(),
+            [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
+
 
 class TestTracebackException(unittest.TestCase):
 

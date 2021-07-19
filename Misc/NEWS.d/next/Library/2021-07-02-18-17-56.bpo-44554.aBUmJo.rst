@@ -1,0 +1,1 @@
+Refactor argument processing in :func:pdb.main to simplify detection of errors in input loading and clarify behavior around module or script invocation.
