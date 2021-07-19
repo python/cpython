@@ -1446,11 +1446,13 @@ class TestStack(unittest.TestCase):
     def test_dropping_frames(self):
         def f():
             1/0
+
         def g():
             try:
                 f()
             except:
                 return sys.exc_info()
+
         exc_info = g()
 
         class Skip_G(traceback.StackSummary):
@@ -1459,24 +1461,15 @@ class TestStack(unittest.TestCase):
                     return None
                 return super().format_frame(frame)
 
-        def get_output(stack_summary_cls=None):
-            output = StringIO()
-            traceback.TracebackException(
-                *exc_info, stack_summary_cls=stack_summary_cls,
-            ).print(file=output)
-            return output.getvalue().split('\n')
+        stack = Skip_G.extract(
+            traceback.walk_tb(exc_info[2])).format()
 
-        default = get_output()
-        skip_g = get_output(Skip_G)
-
-        for l in skip_g:
-            default.remove(l)
-        # Only the lines for g's frame should remain:
-        self.assertEqual(len(default), 3)
-        lno = g.__code__.co_firstlineno + 2
-        self.assertEqual(default[0], f'  File "{__file__}", line {lno}, in g')
-        self.assertEqual(default[1], '    f()')
-        self.assertEqual(default[2], '    ^^^')
+        self.assertEqual(len(stack), 1)
+        lno = f.__code__.co_firstlineno + 1
+        self.assertEqual(
+            stack[0],
+            f'  File "{__file__}", line {lno}, in f\n    1/0\n'
+        )
 
 
 class TestTracebackException(unittest.TestCase):
@@ -1785,6 +1778,184 @@ class TestTracebackException(unittest.TestCase):
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
+
+
+class TestTracebackException_CustomStackSummary(unittest.TestCase):
+    def _get_output(self, *exc_info, stack_summary_cls=None):
+            output = StringIO()
+            traceback.TracebackException(
+                *exc_info, stack_summary_cls=stack_summary_cls,
+            ).print(file=output)
+            return output.getvalue().split('\n')
+
+    class MyStackSummary(traceback.StackSummary):
+        def format_frame(self, frame):
+            return f'{frame.filename}:{frame.lineno}\n'
+
+    class SkipG(traceback.StackSummary):
+        def format_frame(self, frame):
+            if frame.name == 'g':
+                return None
+            return super().format_frame(frame)
+
+    def test_custom_stack_summary(self):
+        def f():
+            1/0
+
+        def g():
+            try:
+                f()
+            except:
+                return sys.exc_info()
+
+        exc_info = g()
+        stack = self._get_output(
+            *exc_info,
+            stack_summary_cls=self.MyStackSummary)
+        self.assertEqual(
+            stack,
+            ['Traceback (most recent call last):',
+             f'{__file__}:{g.__code__.co_firstlineno+2}',
+             f'{__file__}:{f.__code__.co_firstlineno+1}',
+             'ZeroDivisionError: division by zero',
+             ''])
+
+    def test_custom_stack_summary_with_context(self):
+        def f():
+            try:
+                1/0
+            except ZeroDivisionError as e:
+                raise ValueError('bad value')
+
+        def g():
+            try:
+                f()
+            except:
+                return sys.exc_info()
+
+        exc_info = g()
+        stack = self._get_output(
+            *exc_info,
+            stack_summary_cls=self.MyStackSummary)
+        self.assertEqual(
+            stack,
+            ['Traceback (most recent call last):',
+             f'{__file__}:{f.__code__.co_firstlineno+2}',
+             'ZeroDivisionError: division by zero',
+             '',
+             context_message.replace('\n', ''),
+             '',
+             'Traceback (most recent call last):',
+             f'{__file__}:{g.__code__.co_firstlineno+2}',
+             f'{__file__}:{f.__code__.co_firstlineno+4}',
+             'ValueError: bad value',
+             ''])
+
+    def test_custom_stack_summary_with_cause(self):
+        def f():
+            try:
+                1/0
+            except ZeroDivisionError as e:
+                raise ValueError('bad value') from e
+
+        def g():
+            try:
+                f()
+            except:
+                return sys.exc_info()
+
+        exc_info = g()
+        stack = self._get_output(
+            *exc_info,
+            stack_summary_cls=self.MyStackSummary)
+        self.assertEqual(
+            stack,
+            ['Traceback (most recent call last):',
+             f'{__file__}:{f.__code__.co_firstlineno+2}',
+             'ZeroDivisionError: division by zero',
+             '',
+             cause_message.replace('\n', ''),
+             '',
+             'Traceback (most recent call last):',
+             f'{__file__}:{g.__code__.co_firstlineno+2}',
+             f'{__file__}:{f.__code__.co_firstlineno+4}',
+             'ValueError: bad value',
+             ''])
+
+    @requires_debug_ranges
+    def test_dropping_frames(self):
+        def f():
+            1/0
+
+        def g():
+            try:
+                f()
+            except:
+                return sys.exc_info()
+
+        exc_info = g()
+        full = self._get_output(*exc_info)
+        skipped = self._get_output(
+            *exc_info,
+            stack_summary_cls=self.SkipG)
+
+        for l in skipped:
+            full.remove(l)
+        # Only the lines for g's frame should remain:
+        self.assertEqual(len(full), 3)
+        lno = g.__code__.co_firstlineno + 2
+        self.assertEqual(
+            full,
+            [f'  File "{__file__}", line {lno}, in g',
+            '    f()',
+            '    ^^^'])
+
+    def test_dropping_frames_recursion_limit_msg1(self):
+        # recursion at bottom of the stack
+        def g():
+            g()
+
+        def h():
+            g()
+
+        try:
+            h()
+        except:
+            exc_info = sys.exc_info()
+
+        full = self._get_output(*exc_info)
+        skipped = self._get_output(
+            *exc_info,
+            stack_summary_cls=self.SkipG)
+
+        rep_txt_regex = 'Previous line repeated (\\d+) more times'
+        self.assertRegex(''.join(full), rep_txt_regex)
+        self.assertNotRegex(''.join(skipped), rep_txt_regex)
+
+    def test_dropping_frames_recursion_limit_msg2(self):
+        # recursion in the middle of the stack
+        def f():
+            1/0
+
+        def g(i):
+            if i < 10:
+                g(i+1)
+            else:
+                f()
+
+        try:
+            g(0)
+        except:
+            exc_info = sys.exc_info()
+
+        full = self._get_output(*exc_info)
+        skipped = self._get_output(
+            *exc_info,
+            stack_summary_cls=self.SkipG)
+
+        rep_txt_regex = 'Previous line repeated (\\d+) more times'
+        self.assertRegex(''.join(full), rep_txt_regex)
+        self.assertNotRegex(''.join(skipped), rep_txt_regex)
 
 
 class MiscTest(unittest.TestCase):

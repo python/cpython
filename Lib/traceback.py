@@ -537,10 +537,11 @@ class StackSummary(list):
 
         if count > _RECURSIVE_CUTOFF:
             count -= _RECURSIVE_CUTOFF
-            result.append(
-                f'  [Previous line repeated {count} more '
-                f'time{"s" if count > 1 else ""}]\n'
-            )
+            if last_line_displayed:
+                result.append(
+                    f'  [Previous line repeated {count} more '
+                    f'time{"s" if count > 1 else ""}]\n'
+                )
         return result
 
 
@@ -674,6 +675,7 @@ class TracebackException:
                         limit=limit,
                         lookup_lines=lookup_lines,
                         capture_locals=capture_locals,
+                        stack_summary_cls=stack_summary_cls,
                         _seen=_seen)
                 else:
                     cause = None
@@ -693,6 +695,7 @@ class TracebackException:
                         limit=limit,
                         lookup_lines=lookup_lines,
                         capture_locals=capture_locals,
+                        stack_summary_cls=stack_summary_cls,
                         _seen=_seen)
                 else:
                     context = None
