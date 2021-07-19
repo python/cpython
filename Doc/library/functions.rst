@@ -206,7 +206,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: bytes([source[, encoding[, errors]]])
    :noindex:
 
-   Return a new "bytes" object that is an immutable sequence of integers in
+   Return a new "bytes" object which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
    :class:`bytearray` -- it has the same non-mutating methods and the same
    indexing and slicing behavior.
