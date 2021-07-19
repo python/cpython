@@ -668,5 +668,5 @@ This last example demonstrates the final few formatting functions:
    ['  File "spam.py", line 3, in <module>\n    spam.eggs()\n',
     '  File "eggs.py", line 42, in eggs\n    return "bacon"\n']
    >>> an_error = IndexError('tuple index out of range')
-   >>> traceback.format_exception_only(type(an_error), an_error)
+   >>> traceback.format_exception_only(an_error)
    ['IndexError: tuple index out of range\n']
