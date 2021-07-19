@@ -13,9 +13,6 @@ import unittest.mock
 import weakref
 import typing
 
-
-T = typing.TypeVar('T')
-
 class Example:
     pass
 
@@ -774,31 +771,6 @@ class UnionTests(unittest.TestCase):
         self.assertEqual((list[T] | list[S]).__parameters__, (T, S))
         self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
         self.assertEqual((list[T] | list[S])[int, int], list[int])
-
-    def test_union_pickle(self):
-        alias = list[T] | int
-        s = pickle.dumps(alias)
-        loaded = pickle.loads(s)
-        self.assertEqual(alias.__args__, loaded.__args__)
-        self.assertEqual(alias.__parameters__, loaded.__parameters__)
-
-    def test_union_from_args(self):
-        with self.assertRaisesRegex(
-                TypeError,
-                r"^Each union argument must be a type, got 1$",
-        ):
-            types.Union.from_args((1,))
-
-        with self.assertRaisesRegex(
-                TypeError,
-                r"Union.from_args\(\) argument '__args__' must be tuple, not int$",
-        ):
-            types.Union.from_args(1)
-
-        alias = types.Union.from_args((int, str, T))
-
-        self.assertEqual(alias.__args__, (int, str, T))
-        self.assertEqual(alias.__parameters__, (T,))
 
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
