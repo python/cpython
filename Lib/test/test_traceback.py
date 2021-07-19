@@ -1782,11 +1782,11 @@ class TestTracebackException(unittest.TestCase):
 
 class TestTracebackException_CustomStackSummary(unittest.TestCase):
     def _get_output(self, *exc_info, stack_summary_cls=None):
-            output = StringIO()
-            traceback.TracebackException(
-                *exc_info, stack_summary_cls=stack_summary_cls,
-            ).print(file=output)
-            return output.getvalue().split('\n')
+        output = StringIO()
+        traceback.TracebackException(
+            *exc_info, stack_summary_cls=stack_summary_cls,
+        ).print(file=output)
+        return output.getvalue().split('\n')
 
     class MyStackSummary(traceback.StackSummary):
         def format_frame(self, frame):
