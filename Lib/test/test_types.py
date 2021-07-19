@@ -782,20 +782,20 @@ class UnionTests(unittest.TestCase):
         self.assertEqual(alias.__args__, loaded.__args__)
         self.assertEqual(alias.__parameters__, loaded.__parameters__)
 
-    def test_union_new(self):
+    def test_union_from_args(self):
         with self.assertRaisesRegex(
                 TypeError,
-                r"^__args__ argument of typing.Union object is not a valid as type$",
+                r"^Each union argument must be a type, got 1$",
         ):
-            types.Union((1,))
+            types.Union.from_args((1,))
 
         with self.assertRaisesRegex(
                 TypeError,
-                r"Union\(\) argument '__args__' must be tuple, not int$",
+                r"Union.from_args\(\) argument '__args__' must be tuple, not int$",
         ):
-            types.Union(1)
+            types.Union.from_args(1)
 
-        alias = types.Union((int, str, T))
+        alias = types.Union.from_args((int, str, T))
 
         self.assertEqual(alias.__args__, (int, str, T))
         self.assertEqual(alias.__parameters__, (T,))

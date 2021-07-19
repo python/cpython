@@ -299,6 +299,24 @@ is_unionable(PyObject *obj)
     return 0;
 }
 
+static int
+is_args_unionable(PyObject *args)
+{
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
+        int is_arg_unionable = is_unionable(arg);
+        if (is_arg_unionable <= 0) {
+            if (is_arg_unionable == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "Each union argument must be a type, got %.100R", arg);
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
+
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
@@ -422,7 +440,12 @@ static PyObject *
 union_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     unionobject *alias = (unionobject *)self;
-    return Py_BuildValue("O(O)", Py_TYPE(alias), alias->args);
+    PyObject* from_args = PyObject_GetAttrString(self, "from_args");
+    if (from_args == NULL) {
+        return NULL;
+    }
+
+    return Py_BuildValue("O(O)", from_args, alias->args);
 }
 
 static PyMemberDef union_members[] = {
@@ -430,7 +453,23 @@ static PyMemberDef union_members[] = {
         {0}
 };
 
+static PyObject *
+union_from_args(PyObject *cls, PyObject *args)
+{
+    if (!PyTuple_CheckExact(args)) {
+        _PyArg_BadArgument("Union.from_args", "argument '__args__'", "tuple", args);
+        return NULL;
+    }
+
+    if (is_args_unionable(args) <= 0) {
+        return NULL;
+    }
+
+    return make_union(args);
+}
+
 static PyMethodDef union_methods[] = {
+        {"from_args", union_from_args, METH_O | METH_CLASS},
         {"__instancecheck__", union_instancecheck, METH_O},
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {"__reduce__", union_reduce, METH_NOARGS},
@@ -455,18 +494,9 @@ union_getitem(PyObject *self, PyObject *item)
     }
 
     // Check arguments are unionable.
-    Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable <= 0) {
-            Py_DECREF(newargs);
-            if (is_arg_unionable == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "Each union argument must be a type, got %.100R", arg);
-            }
-            return NULL;
-        }
+    if (is_args_unionable(newargs) <= 0) {
+        Py_DECREF(newargs);
+        return NULL;
     }
 
     PyObject *res = make_union(newargs);
@@ -501,34 +531,6 @@ static PyGetSetDef union_properties[] = {
 static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
-
-static PyObject *
-union_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    if (!_PyArg_NoKeywords("Union", kwds)) {
-        return NULL;
-    }
-    if (!_PyArg_CheckPositional("Union", PyTuple_GET_SIZE(args), 1, 1)) {
-        return NULL;
-    }
-
-    PyObject* unionargs = PyTuple_GET_ITEM(args, 0);
-
-    if (!PyTuple_CheckExact(unionargs)) {
-        _PyArg_BadArgument("Union", "argument '__args__'", "tuple", unionargs);
-        return NULL;
-    }
-
-    PyObject* result = _Py_Union(unionargs);
-
-    if (result == Py_NotImplemented) {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_TypeError, "__args__ argument of typing.Union object is not a valid as type");
-        return NULL;
-    }
-
-    return result;
-}
 
 static const char* const cls_attrs[] = {
         "__name__",
@@ -574,7 +576,6 @@ PyTypeObject _PyUnion_Type = {
     .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
     .tp_getset = union_properties,
-    .tp_new = union_new,
 };
 
 static PyObject *
