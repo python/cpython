@@ -1,0 +1,2 @@
+Add missed ``__name__`` and ``__qualname__`` attribute to ``typing`` module
+objects. Patch provided by Yurii Karabas.
