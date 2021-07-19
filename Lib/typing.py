@@ -358,6 +358,12 @@ class _SpecialForm(_Final, _root=True):
         self._name = getitem.__name__
         self.__doc__ = getitem.__doc__
 
+    def __getattr__(self, item):
+        if item in {'__name__', '__qualname__'}:
+            return self._name
+
+        raise AttributeError(item)
+
     def __mro_entries__(self, bases):
         raise TypeError(f"Cannot subclass {self!r}")
 
@@ -935,6 +941,9 @@ class _BaseGenericAlias(_Final, _root=True):
         return tuple(res)
 
     def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return self._name
+
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
