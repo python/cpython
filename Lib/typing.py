@@ -935,10 +935,8 @@ class _BaseGenericAlias(_Final, _root=True):
         return tuple(res)
 
     def __getattr__(self, attr):
-        if attr == '__name__':
+        if attr in {'__name__', '__qualname__'}:
             return self._name
-        if attr == '__qualname__':
-            return f'typing.{self._name}'
 
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
