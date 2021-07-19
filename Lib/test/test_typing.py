@@ -4554,9 +4554,10 @@ class SpecialAttrsTests(BaseTestCase):
         )
 
         for cls in cls_to_check:
-            self.assertEqual(cls.__name__, cls._name)
-            self.assertEqual(cls.__qualname__, cls._name)
-            self.assertEqual(cls.__module__, 'typing')
+            with self.subTest(cls=cls):
+                self.assertEqual(cls.__name__, cls._name)
+                self.assertEqual(cls.__qualname__, cls._name)
+                self.assertEqual(cls.__module__, 'typing')
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""
