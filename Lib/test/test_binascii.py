@@ -114,6 +114,47 @@ class BinASCIITest(unittest.TestCase):
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
 
+    def test_base64_strict_mode(self):
+        # Test base64 with strict mode on
+        def _assertRegexTemplate(assert_regex: str, data: bytes, non_strict_mode_expected_result: bytes):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(self.type2test(data), strict_mode=False),
+                             non_strict_mode_expected_result)
+            self.assertEqual(binascii.a2b_base64(self.type2test(data)),
+                             non_strict_mode_expected_result)
+
+        def assertExcessData(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Excess data', data, non_strict_mode_expected_result)
+
+        def assertNonBase64Data(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Only base64 data', data, non_strict_mode_expected_result)
+
+        def assertMalformedPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Leading padding', data, non_strict_mode_expected_result)
+
+        # Test excess data exceptions
+        assertExcessData(b'ab==a', b'i')
+        assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab==:', b'i')
+        assertExcessData(b'abc=a', b'i\xb7')
+        assertExcessData(b'abc=:', b'i\xb7')
+        assertExcessData(b'ab==\n', b'i')
+
+        # Test non-base64 data exceptions
+        assertNonBase64Data(b'\nab==', b'i')
+        assertNonBase64Data(b'ab:(){:|:&};:==', b'i')
+        assertNonBase64Data(b'a\nb==', b'i')
+        assertNonBase64Data(b'a\x00b==', b'i')
+
+        # Test malformed padding
+        assertMalformedPadding(b'=', b'')
+        assertMalformedPadding(b'==', b'')
+        assertMalformedPadding(b'===', b'')
+        assertMalformedPadding(b'ab=c=', b'i\xb7')
+        assertMalformedPadding(b'ab=ab==', b'i\xb6\x9b')
+
+
     def test_base64errors(self):
         # Test base64 with invalid padding
         def assertIncorrectPadding(data):
