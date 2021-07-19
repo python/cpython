@@ -5167,7 +5167,6 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
             return 0;
         }
         Py_DECREF(f);
-        assert(_PyObject_IsFreed((PyObject *)f) || Py_REFCNT(f) == 0);
     }
     for (int i = 0; i < frame->nlocalsplus; i++) {
         Py_XDECREF(localsarray[i]);
