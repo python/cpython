@@ -3265,9 +3265,8 @@ Foo
 
     def test_getaddresses_header_obj(self):
         """Test the handling of a Header object."""
-        eq = self.assertEqual
         addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
-        eq(addrs[0][1], 'aperson@dom.ain')
+        self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads

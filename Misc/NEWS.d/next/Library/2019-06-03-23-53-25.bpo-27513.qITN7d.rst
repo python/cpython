@@ -1,2 +1,3 @@
-:func:`email.charset.getaddresses` can now handle
-:class:`~email.header.Header` objects.
+:func:`email.utils.getaddresses` now accepts
+:class:`email.header.Header` objects along with string values.
+Patch by Zackery Spytz.
