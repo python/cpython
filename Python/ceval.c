@@ -3759,14 +3759,17 @@ main_loop:
             if (Py_IsFalse(cond)) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0)
                 ;
-            else if (err == 0)
+            else if (err == 0) {
                 JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
+            }
             else
                 goto error;
             DISPATCH();
@@ -3783,12 +3786,14 @@ main_loop:
             if (Py_IsTrue(cond)) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
                 DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
             if (err > 0) {
                 JUMPTO(oparg);
+                CHECK_EVAL_BREAKER();
             }
             else if (err == 0)
                 ;
