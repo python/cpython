@@ -505,13 +505,14 @@ static PyObject *
 union_getattro(PyObject *self, PyObject *name)
 {
     unionobject *alias = (unionobject *)self;
-
-    for (const char * const *p = cls_attrs; ; p++) {
-        if (*p == NULL) {
-            break;
-        }
-        if (_PyUnicode_EqualToASCIIString(name, *p)) {
-            return PyObject_GetAttr((PyObject *) Py_TYPE(alias), name);
+    if (PyUnicode_Check(name)) {
+        for (const char * const *p = cls_attrs; ; p++) {
+            if (*p == NULL) {
+                break;
+            }
+            if (_PyUnicode_EqualToASCIIString(name, *p)) {
+                return PyObject_GetAttr((PyObject *) Py_TYPE(alias), name);
+            }
         }
     }
     return PyObject_GenericGetAttr(self, name);
