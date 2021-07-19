@@ -8,11 +8,12 @@
 
 --------------
 
-This module provides a standard interface to extract, format and print stack
-traces of Python programs.  It exactly mimics the behavior of the Python
-interpreter when it prints a stack trace.  This is useful when you want to print
-stack traces under program control, such as in a "wrapper" around the
-interpreter.
+This module provides a standard interface to extract, format and print
+stack traces of Python programs.  It can mimic the behavior of the Python
+interpreter when it prints a stack trace, which is useful when you want
+to print stack traces under program control. It is also more flexible
+than the interpreter's default traceback printout, so it is possible to
+configure certain aspects of the output.
 
 .. index:: pair: object; traceback
 
@@ -29,7 +30,18 @@ which are assigned to the :attr:`~BaseException.__traceback__` field of
    Module :mod:`pdb`
       Interactive source code debugger for Python programs.
 
-The module defines the following functions:
+In the following, we first introduce a number of module-level functions that
+offer basic functionality. They are sufficient for many use cases, including
+interactive inspection of exceptions and tracebacks. We then describe the
+:class:`TracebackException` class and its two helper classes
+:class:`StackSummary` and :class:`FrameSummary`. They offer both more
+flexibility in the output generated and the ability to store the information
+necessary for later formatting without holding references to actual exception
+and traceback objects.
+
+
+Module-Level Functions
+----------------------
 
 .. function:: print_tb(tb, limit=None, file=None)
 
@@ -237,20 +249,23 @@ The module defines the following functions:
 
    .. versionadded:: 3.5
 
-The module also defines the following classes:
 
 :class:`!TracebackException` Objects
 ------------------------------------
 
 .. versionadded:: 3.5
 
-:class:`!TracebackException` objects are created from actual exceptions to
-capture data for later printing in a lightweight fashion.
+:class:`TracebackException` objects are created from actual exceptions to
+capture data for later printing.  They offer a more lightweight method of
+storing this information because they don't hold references to traceback
+and frame objects.  In addition, they expose more options to configure the
+output compared to the module-level functions described above.
 
 .. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
-   Capture an exception for later rendering. *limit*, *lookup_lines* and
-   *capture_locals* are as for the :class:`StackSummary` class.
+   Capture an exception for later rendering. The meaning of *limit*,
+   *lookup_lines* and *capture_locals* are as for the :class:`StackSummary`
+   class.
 
    If *compact* is true, only data that is required by
    :class:`!TracebackException`'s :meth:`format` method
