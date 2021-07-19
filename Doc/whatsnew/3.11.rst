@@ -206,7 +206,6 @@ sqlite3
   (Contributed by Erlend E. Aasland in :issue:`44491`.)
 
 
-
 Removed
 =======
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without
@@ -249,6 +248,7 @@ Build Changes
 
 Deprecated
 ==========
+
 
 
 Removed
