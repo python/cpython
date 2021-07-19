@@ -4501,6 +4501,7 @@ class TypeGuardTests(BaseTestCase):
 class SpecialAttrsTests(BaseTestCase):
     def test_special_attrs(self):
         cls_to_check = (
+            # ABC classes
             typing.AbstractSet,
             typing.AsyncContextManager,
             typing.AsyncGenerator,
@@ -4539,6 +4540,17 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Tuple,
             typing.Type,
             typing.ValuesView,
+            # Special Forms
+            typing.Any,
+            typing.NoReturn,
+            typing.ClassVar,
+            typing.Final,
+            typing.Union,
+            typing.Optional,
+            typing.Literal,
+            typing.TypeAlias,
+            typing.Concatenate,
+            typing.TypeGuard,
         )
 
         for cls in cls_to_check:
