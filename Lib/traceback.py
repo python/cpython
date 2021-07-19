@@ -508,40 +508,34 @@ class StackSummary(list):
         last_file = None
         last_line = None
         last_name = None
-        last_line_displayed = False
         count = 0
         for frame in self:
-            if (last_file is None or last_file != frame.filename or
-                last_line is None or last_line != frame.lineno or
-                last_name is None or last_name != frame.name):
-                if count > _RECURSIVE_CUTOFF:
-                    count -= _RECURSIVE_CUTOFF
-                    if last_line_displayed:
+            formatted_frame = self.format_frame(frame)
+            if formatted_frame is not None:
+                if (last_file is None or last_file != frame.filename or
+                    last_line is None or last_line != frame.lineno or
+                    last_name is None or last_name != frame.name):
+                    if count > _RECURSIVE_CUTOFF:
+                        count -= _RECURSIVE_CUTOFF
                         result.append(
                             f'  [Previous line repeated {count} more '
                             f'time{"s" if count > 1 else ""}]\n'
                         )
-                last_file = frame.filename
-                last_line = frame.lineno
-                last_name = frame.name
-                count = 0
-            count += 1
-            if count > _RECURSIVE_CUTOFF:
-                continue
-            formatted_frame = self.format_frame(frame)
-            if formatted_frame is not None:
-                last_line_displayed = True
+                    last_file = frame.filename
+                    last_line = frame.lineno
+                    last_name = frame.name
+                    count = 0
+                count += 1
+                if count > _RECURSIVE_CUTOFF:
+                    continue
                 result.append(formatted_frame)
-            else:
-                last_line_displayed = False
 
         if count > _RECURSIVE_CUTOFF:
             count -= _RECURSIVE_CUTOFF
-            if last_line_displayed:
-                result.append(
-                    f'  [Previous line repeated {count} more '
-                    f'time{"s" if count > 1 else ""}]\n'
-                )
+            result.append(
+                f'  [Previous line repeated {count} more '
+                f'time{"s" if count > 1 else ""}]\n'
+            )
         return result
 
 
