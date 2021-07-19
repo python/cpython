@@ -1113,6 +1113,21 @@ class PyFramePtr:
                      lineno,
                      self.co_name.proxyval(visited)))
 
+    def get_truncated_repr(self, maxlen):
+        '''
+        Get a repr-like string for the data, but truncate it at "maxlen" bytes
+        (ending the object graph traversal as soon as you do)
+        '''
+        out = TruncatedStringIO(maxlen)
+        try:
+            self.write_repr(out, set())
+        except StringTruncated:
+            # Truncation occurred:
+            return out.getvalue() + '...(truncated)'
+
+        # No truncation occurred:
+        return out.getvalue()
+
 class PySetObjectPtr(PyObjectPtr):
     _typename = 'PySetObject'
 
@@ -1779,7 +1794,7 @@ class Frame(object):
         if self.is_evalframe():
             pyop = self.get_pyop()
             if pyop:
-                line = PyObjectPtr.get_truncated_repr(pyop, MAX_OUTPUT_LEN)
+                line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
                 write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
                 if not pyop.is_optimized_out():
                     line = pyop.current_line()
