@@ -504,7 +504,7 @@ static const char* const cls_attrs[] = {
 static PyObject *
 union_getattro(PyObject *self, PyObject *name)
 {
-    unionobject *alias = (unionobject  *)self;
+    unionobject *alias = (unionobject *)self;
 
     for (const char * const *p = cls_attrs; ; p++) {
         if (*p == NULL) {
