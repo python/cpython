@@ -5209,7 +5209,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (is_coro) {
         return make_coro(tstate, con, locals, args, argcount, kwnames);
     }
-    InterpreterFrame * frame = _PyEvalFramePushAndInit(
+    InterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, con, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
