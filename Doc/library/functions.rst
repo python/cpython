@@ -1730,7 +1730,7 @@ are always available.  They are listed here in alphabetical order.
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
    It does so by implementing its own :meth:`__getattribute__` method for searching
-   classes in a predictable order which supports cooperative multiple inheritance.
+   classes in a predictable order that supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``.
 
