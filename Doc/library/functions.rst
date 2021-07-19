@@ -1250,7 +1250,7 @@ are always available.  They are listed here in alphabetical order.
 
    If *closefd* is ``False`` and a file descriptor rather than a filename was
    given, the underlying file descriptor will be kept open when the file is
-   closed.  If a filename is given *closefd* must be ``True`` (the default),
+   closed.  If a filename is given *closefd* must be ``True`` (the default);
    otherwise, an error will be raised.
 
    A custom opener can be used by passing a callable as *opener*. The underlying
