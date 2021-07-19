@@ -1,0 +1,1 @@
+Update macOS installer to use BZip2 1.0.8.

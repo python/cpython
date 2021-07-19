@@ -378,9 +378,9 @@ def library_recipes():
     if getDeptargetTuple() < (10, 5):
         result.extend([
           dict(
-              name="Bzip2 1.0.6",
-              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
-              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
+              name="Bzip2 1.0.8",
+              url="https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+              checksum='67e051268d0c475ea773822f7500d0e5',
               configure=None,
               install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s"'%(
                   CC, CXX,
