@@ -130,8 +130,11 @@ class BinASCIITest(unittest.TestCase):
         def assertNonBase64Data(data, non_strict_mode_expected_result: bytes):
             _assertRegexTemplate(r'(?i)Only base64 data', data, non_strict_mode_expected_result)
 
-        def assertMalformedPadding(data, non_strict_mode_expected_result: bytes):
+        def assertLeadingPadding(data, non_strict_mode_expected_result: bytes):
             _assertRegexTemplate(r'(?i)Leading padding', data, non_strict_mode_expected_result)
+
+        def assertDiscontinuousPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Discontinuous padding', data, non_strict_mode_expected_result)
 
         # Test excess data exceptions
         assertExcessData(b'ab==a', b'i')
@@ -148,11 +151,11 @@ class BinASCIITest(unittest.TestCase):
         assertNonBase64Data(b'a\x00b==', b'i')
 
         # Test malformed padding
-        assertMalformedPadding(b'=', b'')
-        assertMalformedPadding(b'==', b'')
-        assertMalformedPadding(b'===', b'')
-        assertMalformedPadding(b'ab=c=', b'i\xb7')
-        assertMalformedPadding(b'ab=ab==', b'i\xb6\x9b')
+        assertLeadingPadding(b'=', b'')
+        assertLeadingPadding(b'==', b'')
+        assertLeadingPadding(b'===', b'')
+        assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
+        assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
 
 
     def test_base64errors(self):
