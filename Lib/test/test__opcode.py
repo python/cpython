@@ -67,8 +67,7 @@ class OpcodeTests(unittest.TestCase):
 
 class SpecializationStatsTests(unittest.TestCase):
     def test_specialization_stats(self):
-        STAT_NAMES = ['specialization_success', 'specialization_failure',
-                      'hit', 'deferred', 'miss', 'deopt', 'unquickened']
+        stat_names = opcode._specialization_stats
 
         specialized_opcodes = [
             op[:-len("_ADAPTIVE")].lower() for
@@ -83,8 +82,8 @@ class SpecializationStatsTests(unittest.TestCase):
             self.assertCountEqual(stats.keys(), specialized_opcodes)
             self.assertCountEqual(
                 stats['load_attr'].keys(),
-                STAT_NAMES + ['detailed'])
-            for sn in STAT_NAMES:
+                stat_names + ['detailed'])
+            for sn in stat_names:
                 self.assertIsInstance(stats['load_attr'][sn], int)
             self.assertIsInstance(stats['load_attr']['detailed'], dict)
             for k,v in stats['load_attr']['detailed'].items():
