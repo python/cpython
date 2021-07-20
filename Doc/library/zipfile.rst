@@ -483,16 +483,26 @@ Path Objects
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
-Path objects are traversable using the ``/`` operator.
+Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. attribute:: Path.name
 
    The final path component.
 
-.. method:: Path.open(*, **)
+.. method:: Path.open(mode='r', *, pwd, **)
 
-   Invoke :meth:`ZipFile.open` on the current path. Accepts
-   the same arguments as :meth:`ZipFile.open`.
+   Invoke :meth:`ZipFile.open` on the current path.
+   Allows opening for read or write, text or binary
+   through supported modes: 'r', 'w', 'rb', 'wb'.
+   Positional and keyword arguments are passed through to
+   :class:`io.TextIOWrapper` when opened as text and
+   ignored otherwise.
+   ``pwd`` is the ``pwd`` parameter to
+   :meth:`ZipFile.open`.
+
+   .. versionchanged:: 3.9
+      Added support for text and binary modes for open. Default
+      mode is now text.
 
 .. method:: Path.iterdir()
 
@@ -511,6 +521,27 @@ Path objects are traversable using the ``/`` operator.
    Return ``True`` if the current context references a file or
    directory in the zip file.
 
+.. data:: Path.suffix
+
+   The file extension of the final component.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffix` property.
+
+.. data:: Path.stem
+
+   The final path component, without its suffix.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.stem` property.
+
+.. data:: Path.suffixes
+
+   A list of the path’s file extensions.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffixes` property.
+
 .. method:: Path.read_text(*, **)
 
    Read the current file as unicode text. Positional and
@@ -522,6 +553,23 @@ Path objects are traversable using the ``/`` operator.
 
    Read the current file as bytes.
 
+.. method:: Path.joinpath(*other)
+
+   Return a new Path object with each of the *other* arguments
+   joined. The following are equivalent::
+
+   >>> Path(...).joinpath('child').joinpath('grandchild')
+   >>> Path(...).joinpath('child', 'grandchild')
+   >>> Path(...) / 'child' / 'grandchild'
+
+   .. versionchanged:: 3.10
+      Prior to 3.10, ``joinpath`` was undocumented and accepted
+      exactly one parameter.
+
+The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+of the latest path object functionality to older Pythons. Use
+``zipp.Path`` in place of ``zipfile.Path`` for early access to
+changes.
 
 .. _pyzipfile-objects:
 

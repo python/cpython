@@ -19,7 +19,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -154,7 +154,7 @@ oss_dealloc(oss_audio_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -199,7 +199,7 @@ oss_mixer_dealloc(oss_mixer_t *self)
     /* if already closed, don't reclose it */
     if (self->fd != -1)
         close(self->fd);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 
@@ -240,7 +240,7 @@ static int _is_fd_valid(int fd)
      arg = dsp.xxx(arg)
 */
 static PyObject *
-_do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[33] = "i:";
     int arg;
@@ -265,7 +265,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
    way.
 */
 static PyObject *
-_do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1_internal(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int arg = 0;
@@ -285,7 +285,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
 static PyObject *
-_do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_0(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int rv;

@@ -1,0 +1,1 @@
+For IPv4 mapped IPv6 addresses (:rfc:`4291` Section 2.5.5.2), the :mod:`ipaddress.IPv6Address.is_private` check is deferred to the mapped IPv4 address. This solves a bug where public mapped IPv4 addresses were considered private by the IPv6 check.

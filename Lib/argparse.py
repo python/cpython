@@ -129,7 +129,7 @@ class _AttributeHolder(object):
         return '%s(%s)' % (type_name, ', '.join(arg_strings))
 
     def _get_kwargs(self):
-        return sorted(self.__dict__.items())
+        return list(self.__dict__.items())
 
     def _get_args(self):
         return []
@@ -857,7 +857,6 @@ class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const=None,
                  default=None,
                  type=None,
                  choices=None,
@@ -1720,7 +1719,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
-        self._optionals = add_group(_('optional arguments'))
+        self._optionals = add_group(_('options'))
         self._subparsers = None
 
         # register types

@@ -208,6 +208,7 @@ number of frames must be filled in.
 
 
 .. method:: aifc.tell()
+   :noindex:
 
    Return the current write position in the output file.  Useful in combination
    with :meth:`setmark`.
@@ -232,6 +233,7 @@ number of frames must be filled in.
 
 
 .. method:: aifc.close()
+   :noindex:
 
    Close the AIFF file.  The header of the file is updated to reflect the actual
    size of the audio data. After calling this method, the object can no longer be

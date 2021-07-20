@@ -317,12 +317,12 @@ class BaseProcess(object):
             finally:
                 util._exit_function()
         except SystemExit as e:
-            if not e.args:
-                exitcode = 1
-            elif isinstance(e.args[0], int):
-                exitcode = e.args[0]
+            if e.code is None:
+                exitcode = 0
+            elif isinstance(e.code, int):
+                exitcode = e.code
             else:
-                sys.stderr.write(str(e.args[0]) + '\n')
+                sys.stderr.write(str(e.code) + '\n')
                 exitcode = 1
         except:
             exitcode = 1

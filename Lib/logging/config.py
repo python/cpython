@@ -48,7 +48,7 @@ RESET_ERROR = errno.ECONNRESET
 #   _listener holds the server object doing the listening
 _listener = None
 
-def fileConfig(fname, defaults=None, disable_existing_loggers=True):
+def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=None):
     """
     Read the logging configuration from a ConfigParser-format file.
 
@@ -66,7 +66,8 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True):
         if hasattr(fname, 'readline'):
             cp.read_file(fname)
         else:
-            cp.read(fname)
+            encoding = io.text_encoding(encoding)
+            cp.read(fname, encoding=encoding)
 
     formatters = _create_formatters(cp)
 

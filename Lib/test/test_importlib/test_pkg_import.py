@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from importlib.util import cache_from_source
-from test.support import create_empty_file
+from test.support.os_helper import create_empty_file
 
 class TestImport(unittest.TestCase):
 
@@ -42,7 +42,7 @@ class TestImport(unittest.TestCase):
         compiled_path = cache_from_source(self.module_path)
         if os.path.exists(compiled_path):
             os.remove(compiled_path)
-        with open(self.module_path, 'w') as f:
+        with open(self.module_path, 'w', encoding='utf-8') as f:
             f.write(contents)
 
     def test_package_import__semantics(self):

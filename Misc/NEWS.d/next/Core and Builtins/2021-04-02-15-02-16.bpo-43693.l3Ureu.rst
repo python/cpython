@@ -1,0 +1,4 @@
+Compute cell offsets relative to locals in compiler. Allows the interpreter
+to treats locals and cells a single array, which is slightly more efficient.
+Also make the LOAD_CLOSURE opcode an alias for LOAD_FAST.  Preserving
+LOAD_CLOSURE helps keep bytecode a bit more readable.

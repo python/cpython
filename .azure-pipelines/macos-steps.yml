@@ -6,7 +6,7 @@ steps:
 - script: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-azdev
   displayName: 'Configure CPython (debug)'
 
-- script: make -s -j4
+- script: make -j4
   displayName: 'Build CPython'
 
 - script: make pythoninfo

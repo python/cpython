@@ -1,1 +1,0 @@
-Collections.deque now holds strong references during deque.__contains__ and deque.count, fixing crashes.
