@@ -2062,7 +2062,7 @@ class TestAddSubparsers(TestCase):
 
     def test_required_subparsers_no_destination_error(self):
         parser = ErrorRaisingArgumentParser()
-        subparsers = parser.add_subparsers()
+        subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
         with self.assertRaises(ArgumentParserError) as excinfo:
@@ -2074,7 +2074,7 @@ class TestAddSubparsers(TestCase):
 
     def test_wrong_argument_subparsers_no_destination_error(self):
         parser = ErrorRaisingArgumentParser()
-        subparsers = parser.add_subparsers()
+        subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
         with self.assertRaises(ArgumentParserError) as excinfo:
