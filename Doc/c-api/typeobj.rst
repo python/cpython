@@ -1098,8 +1098,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This is a bitmask of all the bits that pertain to the existence of certain
       fields in the type object and its extension structures. Currently, it includes
-      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`,
-      :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
+      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`.
 
       **Inheritance:**
 
