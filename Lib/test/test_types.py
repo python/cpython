@@ -779,7 +779,6 @@ class UnionTests(unittest.TestCase):
 
         T = typing.TypeVar('T')
         S = typing.TypeVar('S')
-        P = typing.ParamSpec('P')
         NT = typing.NewType('NT', str)
         x = int | T | bytes
 
@@ -802,8 +801,6 @@ class UnionTests(unittest.TestCase):
         eq(x[typing.Union[str, int]], typing.Union[int, str, bytes])
         eq(x[NT], int | NT | bytes)
         eq(x[S], int | S | bytes)
-        eq(x[P], int | P | bytes)
-        eq(x[typing.Concatenate[int, P]], int | typing.Concatenate[int, P] | bytes)
 
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
