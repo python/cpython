@@ -1,0 +1,1 @@
+You no longer need to compile Python on the same version of MacOS that you will be running it on (Catalina vs Big Sur) in order for ctypes.util.find_library to work.
