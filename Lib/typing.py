@@ -2375,6 +2375,8 @@ class NewType:
         num = UserId(5) + 1     # type: int
     """
 
+    __call__ = functools._idfunc
+
     def __init__(self, name, tp):
         self.__name__ = name
         self.__qualname__ = name
@@ -2383,9 +2385,6 @@ class NewType:
 
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
-
-    def __call__(self, x):
-        return x
 
     def __or__(self, other):
         return Union[self, other]
