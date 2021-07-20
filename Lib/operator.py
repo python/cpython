@@ -411,6 +411,12 @@ except ImportError:
 else:
     from _operator import __doc__
 
+try:
+    from _operator import _idfunc
+except ImportError:
+    def _idfunc(_, x):
+        return x
+
 # All of these "__func__ = func" assignments have to happen after importing
 # from _operator to make sure they're set to the right function
 __lt__ = lt

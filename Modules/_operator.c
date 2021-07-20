@@ -886,6 +886,14 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
     return PyBool_FromLong(rc);
 }
 
+/* helper function to make typing.NewType.__call__ method faster */
+
+static PyObject *
+functools_idfunc(PyObject* self, PyObject* x) {
+    Py_INCREF(x);
+    return x;
+}
+
 /* operator methods **********************************************************/
 
 static struct PyMethodDef operator_methods[] = {
@@ -942,6 +950,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
+    {"_idfunc",         (PyCFunction)functools_idfunc, METH_O},
     {NULL,              NULL}           /* sentinel */
 
 };

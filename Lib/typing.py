@@ -2375,7 +2375,7 @@ class NewType:
         num = UserId(5) + 1     # type: int
     """
 
-    __call__ = functools._idfunc
+    __call__ = operator._idfunc
 
     def __init__(self, name, tp):
         self.__name__ = name
