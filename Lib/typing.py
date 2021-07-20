@@ -1374,6 +1374,12 @@ def _no_init(self, *args, **kwargs):
     if type(self)._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
+def _callee(depth=2, default=None):
+    try:
+        return sys._getframe(depth).f_globals['__name__']
+    except (AttributeError, ValueError):  # For platforms without _getframe()
+        return default
+
 
 def _allow_reckless_class_checks(depth=3):
     """Allow instance and class checks for special stdlib modules.
@@ -2350,7 +2356,7 @@ _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 
 
-def NewType(name, tp):
+class NewType:
     """NewType creates simple unique types with almost zero
     runtime overhead. NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
@@ -2369,12 +2375,23 @@ def NewType(name, tp):
         num = UserId(5) + 1     # type: int
     """
 
-    def new_type(x):
+    def __init__(self, name, tp):
+        self.__name__ = name
+        self.__qualname__ = name
+        self.__module__ = _callee(default='typing')
+        self.__supertype__ = tp
+
+    def __repr__(self):
+        return f'{self.__module__}.{self.__qualname__}'
+
+    def __call__(self, x):
         return x
 
-    new_type.__name__ = name
-    new_type.__supertype__ = tp
-    return new_type
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
 
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
