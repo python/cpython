@@ -66,10 +66,6 @@
 #include "ctypes_dlfcn.h"
 #endif
 
-#ifdef __APPLE__
-#include <mach-o/dyld.h>
-#endif
-
 #ifdef MS_WIN32
 #include <malloc.h>
 #endif
@@ -1443,40 +1439,31 @@ copy_com_pointer(PyObject *self, PyObject *args)
 }
 #else
 
-#ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
-static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args)
-{
-     PyObject *name, *name2;
-     char *name_str;
+#ifndef MS_WIN32
+static PyObject *py_shared_library_is_loadable(PyObject *self, PyObject *args) {
+    PyObject *name, *name2;
+    char *name_str;
+    void* handle;
 
-     if (__builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)) {
-         int r;
+    if (!PyArg_ParseTuple(args, "O", &name))
+        return NULL;
 
-         if (!PyArg_ParseTuple(args, "O", &name))
-             return NULL;
+    if (name == Py_None)
+        Py_RETURN_FALSE;
 
-         if (name == Py_None)
-             Py_RETURN_FALSE;
+    if (PyUnicode_FSConverter(name, &name2) == 0)
+        return NULL;
 
-         if (PyUnicode_FSConverter(name, &name2) == 0)
-             return NULL;
-         name_str = PyBytes_AS_STRING(name2);
-
-         r = _dyld_shared_cache_contains_path(name_str);
-         Py_DECREF(name2);
-
-         if (r) {
-             Py_RETURN_TRUE;
-         } else {
-             Py_RETURN_FALSE;
-         }
-
-     } else {
-         PyErr_SetString(PyExc_NotImplementedError, "_dyld_shared_cache_contains_path symbol is missing");
-         return NULL;
-     }
-
- }
+    name_str = PyBytes_AS_STRING(name2);
+    handle = dlopen(name_str, RTLD_LAZY);
+    Py_DECREF(name2);
+    if (handle == NULL) {
+        Py_RETURN_FALSE;
+    } else {
+        dlclose(handle);
+        Py_RETURN_TRUE;
+    }
+}
 #endif
 
 static PyObject *py_dl_open(PyObject *self, PyObject *args)
@@ -1991,9 +1978,8 @@ PyMethodDef _ctypes_module_methods[] = {
      "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
-#endif
-#ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
-     {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
+    {"shared_library_is_loadable", py_shared_library_is_loadable, METH_VARARGS,
+     "check if shared library exists/is loadable with dlopen"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
     {"sizeof", sizeof_func, METH_O, sizeof_doc},
