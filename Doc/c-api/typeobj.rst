@@ -1178,14 +1178,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       .. versionadded:: 3.9
 
-
-   .. data:: Py_TPFLAGS_HAVE_AM_SEND
-
-      This bit is set when the :c:member:`~PyAsyncMethods.am_send` entry is present in the
-      :c:member:`~PyTypeObject.tp_as_async` slot of type structure.
-
-      .. versionadded:: 3.10
-
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
       This bit is set for type objects that are immutable: type attributes cannot be set nor deleted.

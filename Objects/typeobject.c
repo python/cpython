@@ -5967,14 +5967,6 @@ type_ready_pre_checks(PyTypeObject *type)
         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
     }
 
-    /* Consistency check for Py_TPFLAGS_HAVE_AM_SEND - flag requires
-     * type->tp_as_async->am_send to be present.
-     */
-    if (type->tp_flags & Py_TPFLAGS_HAVE_AM_SEND) {
-        _PyObject_ASSERT((PyObject *)type, type->tp_as_async != NULL);
-        _PyObject_ASSERT((PyObject *)type, type->tp_as_async->am_send != NULL);
-    }
-
     /* Consistency checks for pattern matching
      * Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING are mutually exclusive */
     _PyObject_ASSERT((PyObject *)type, (type->tp_flags & COLLECTION_FLAGS) != COLLECTION_FLAGS);

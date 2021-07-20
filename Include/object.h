@@ -374,11 +374,6 @@ given type object has a specified feature.
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
-/* Type has am_send entry in tp_as_async slot */
-#define Py_TPFLAGS_HAVE_AM_SEND (1UL << 21)
-#endif
-
 // This undocumented flag gives certain built-ins their unique pattern-matching
 // behavior, which allows a single positional subpattern to match against the
 // subject itself (rather than a mapped attribute on it):
