@@ -1776,7 +1776,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
          * the context before returning.
          */
         if (callable != Py_None) {
-            _destructor(callable);
+            Py_DECREF(callable);
         }
         _pysqlite_seterror(self->db);
         goto finally;
