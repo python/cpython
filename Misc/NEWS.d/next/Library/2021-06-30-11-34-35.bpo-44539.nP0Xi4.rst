@@ -1,8 +1,1 @@
-.. bpo: 44539
-
-.. section: Library
-
-
-
-
-Added quantized case checker for JPG headers in ``Imghdr.what``. Previously, it was failing to identify quantized cases.
+Added support for recognizing JPEG files without JFIF or Exif markers.
