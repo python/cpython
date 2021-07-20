@@ -1,0 +1,1 @@
+Refactored the ``repr()`` code of the ``_Environ`` (os module).
