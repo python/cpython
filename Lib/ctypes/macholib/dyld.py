@@ -6,7 +6,12 @@ import os
 from ctypes.macholib.framework import framework_info
 from ctypes.macholib.dylib import dylib_info
 from itertools import *
-from _ctypes import shared_library_is_loadable
+
+try:
+    from _ctypes import shared_library_is_loadable
+except ImportError:
+    def shared_library_is_loadable(path):
+        raise NotImplementedError
 
 __all__ = [
     'dyld_find', 'framework_find',
