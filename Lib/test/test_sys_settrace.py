@@ -602,6 +602,50 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(doit_async.__code__.co_firstlineno,
                             tracer.events, events)
 
+    def test_21_async_for_else(self):
+
+        async def async_gen():
+            yield -2
+
+        async def async_test():
+            global a
+            a = 2
+            async for i in async_gen():
+                a = 4
+            else:
+                a = 6
+
+        def run(tracer):
+            x = async_test()
+            try:
+                sys.settrace(tracer)
+                x.send(None)
+            finally:
+                sys.settrace(None)
+
+        tracer = self.make_tracer()
+        events = [
+                (0, 'call'),
+                (2, 'line'),
+                (3, 'line'),
+                (-3, 'call'),
+                (-2, 'line'),
+                (-2, 'return'),
+                (3, 'exception'),
+                (4, 'line'),
+                (3, 'line'),
+                (-2, 'call'),
+                (-2, 'return'),
+                (3, 'exception'),
+                (6, 'line'),
+                (6, 'return')]
+        try:
+            run(tracer.trace)
+        except Exception:
+            pass
+        self.compare_events(async_test.__code__.co_firstlineno,
+                            tracer.events, events)
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
