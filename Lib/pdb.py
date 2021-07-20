@@ -563,7 +563,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error("Usage: commands [bnum]\n        ...\n        end")
                 return
         try:
-            bp = self.get_bpbynumber(bnum)
+            self.get_bpbynumber(bnum)
         except ValueError as err:
             self.error(err)
             return
