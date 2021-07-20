@@ -1,2 +1,2 @@
-Add helper ``functolls._idfunc`` to make ``typing.NewType`` ``__call__``
+Add helper ``functools._idfunc`` to make ``typing.NewType`` ``__call__``
 method faster. Patch provided by Yurii Karabas.
