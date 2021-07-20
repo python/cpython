@@ -1425,7 +1425,8 @@ static PyType_Spec lru_cache_type_spec = {
 
 /* helper function to make typing.NewType.__call__ method faster */
 
-PyObject* functools_idfunc(PyObject* self, PyObject* x) {
+static PyObject *
+functools_idfunc(PyObject* self, PyObject* x) {
     Py_INCREF(x);
     return x;
 }
