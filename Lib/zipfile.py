@@ -123,6 +123,32 @@ _CD_INTERNAL_FILE_ATTRIBUTES = 16
 _CD_EXTERNAL_FILE_ATTRIBUTES = 17
 _CD_LOCAL_HEADER_OFFSET = 18
 
+# General purpose bit flags
+# Zip Appnote: 4.4.4 general purpose bit flag: (2 bytes)
+_MASK_ENCRYPTED = 1 << 0
+# Bits 1 and 2 have different meanings depending on the compression used.
+_MASK_COMPRESS_OPTION_1 = 1 << 1
+# _MASK_COMPRESS_OPTION_2 = 1 << 2
+# _MASK_USE_DATA_DESCRIPTOR: If set, crc-32, compressed size and uncompressed
+# size are zero in the local header and the real values are written in the data
+# descriptor immediately following the compressed data.
+_MASK_USE_DATA_DESCRIPTOR = 1 << 3
+# Bit 4: Reserved for use with compression method 8, for enhanced deflating.
+# _MASK_RESERVED_BIT_4 = 1 << 4
+_MASK_COMPRESSED_PATCH = 1 << 5
+_MASK_STRONG_ENCRYPTION = 1 << 6
+# _MASK_UNUSED_BIT_7 = 1 << 7
+# _MASK_UNUSED_BIT_8 = 1 << 8
+# _MASK_UNUSED_BIT_9 = 1 << 9
+# _MASK_UNUSED_BIT_10 = 1 << 10
+_MASK_UTF_FILENAME = 1 << 11
+# Bit 12: Reserved by PKWARE for enhanced compression.
+# _MASK_RESERVED_BIT_12 = 1 << 12
+# _MASK_ENCRYPTED_CENTRAL_DIR = 1 << 13
+# Bit 14, 15: Reserved by PKWARE
+# _MASK_RESERVED_BIT_14 = 1 << 14
+# _MASK_RESERVED_BIT_15 = 1 << 15
+
 # The "local file header" structure, magic number, size, and indices
 # (section V.A in the format document)
 structFileHeader = "<4s2B4HL2L2H"
@@ -411,7 +437,7 @@ class ZipInfo (object):
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
         dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
-        if self.flag_bits & 0x08:
+        if self.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
             # Set these to zero because we write them after the file data
             CRC = compress_size = file_size = 0
         else:
@@ -456,7 +482,7 @@ class ZipInfo (object):
         try:
             return self.filename.encode('ascii'), self.flag_bits
         except UnicodeEncodeError:
-            return self.filename.encode('utf-8'), self.flag_bits | 0x800
+            return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
     def _decodeExtra(self):
         # Try to decode the extra field.
@@ -825,7 +851,7 @@ class ZipExtFile(io.BufferedIOBase):
 
         self._decrypter = None
         if pwd:
-            if zipinfo.flag_bits & 0x8:
+            if zipinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
                 # compare against the file type from extended local headers
                 check_byte = (zipinfo._raw_time >> 8) & 0xff
             else:
@@ -1147,7 +1173,7 @@ class _ZipWriteFile(io.BufferedIOBase):
             self._zinfo.file_size = self._file_size
 
             # Write updated header info
-            if self._zinfo.flag_bits & 0x08:
+            if self._zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
                 # Write CRC and file sizes after the file data
                 fmt = '<LLQQ' if self._zip64 else '<LLLL'
                 self._fileobj.write(struct.pack(fmt, _DD_SIGNATURE, self._zinfo.CRC,
@@ -1355,7 +1381,7 @@ class ZipFile:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
             flags = centdir[5]
-            if flags & 0x800:
+            if flags & _MASK_UTF_FILENAME:
                 # UTF-8 file names extension
                 filename = filename.decode('utf-8')
             else:
@@ -1527,15 +1553,15 @@ class ZipFile:
             if fheader[_FH_EXTRA_FIELD_LENGTH]:
                 zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
 
-            if zinfo.flag_bits & 0x20:
+            if zinfo.flag_bits & _MASK_COMPRESSED_PATCH:
                 # Zip 2.7: compressed patched data
                 raise NotImplementedError("compressed patched data (flag bit 5)")
 
-            if zinfo.flag_bits & 0x40:
+            if zinfo.flag_bits & _MASK_STRONG_ENCRYPTION:
                 # strong encryption
                 raise NotImplementedError("strong encryption (flag bit 6)")
 
-            if fheader[_FH_GENERAL_PURPOSE_FLAG_BITS] & 0x800:
+            if fheader[_FH_GENERAL_PURPOSE_FLAG_BITS] & _MASK_UTF_FILENAME:
                 # UTF-8 filename
                 fname_str = fname.decode("utf-8")
             else:
@@ -1547,7 +1573,7 @@ class ZipFile:
                     % (zinfo.orig_filename, fname))
 
             # check for encrypted flag & handle password
-            is_encrypted = zinfo.flag_bits & 0x1
+            is_encrypted = zinfo.flag_bits & _MASK_ENCRYPTED
             if is_encrypted:
                 if not pwd:
                     pwd = self.pwd
@@ -1580,9 +1606,9 @@ class ZipFile:
         zinfo.flag_bits = 0x00
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
-            zinfo.flag_bits |= 0x02
+            zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
         if not self._seekable:
-            zinfo.flag_bits |= 0x08
+            zinfo.flag_bits |= _MASK_USE_DATA_DESCRIPTOR
 
         if not zinfo.external_attr:
             zinfo.external_attr = 0o600 << 16  # permissions: ?rw-------
@@ -1749,7 +1775,7 @@ class ZipFile:
                 zinfo.header_offset = self.fp.tell()  # Start of header bytes
                 if zinfo.compress_type == ZIP_LZMA:
                 # Compressed data includes an end-of-stream (EOS) marker
-                    zinfo.flag_bits |= 0x02
+                    zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
 
                 self._writecheck(zinfo)
                 self._didModify = True

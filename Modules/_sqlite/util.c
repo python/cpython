@@ -71,20 +71,20 @@ _pysqlite_seterror(sqlite3 *db)
         case SQLITE_PROTOCOL:
         case SQLITE_EMPTY:
         case SQLITE_SCHEMA:
-            PyErr_SetString(pysqlite_OperationalError, sqlite3_errmsg(db));
+            PyErr_SetString(state->OperationalError, sqlite3_errmsg(db));
             break;
         case SQLITE_CORRUPT:
             PyErr_SetString(state->DatabaseError, sqlite3_errmsg(db));
             break;
         case SQLITE_TOOBIG:
-            PyErr_SetString(pysqlite_DataError, sqlite3_errmsg(db));
+            PyErr_SetString(state->DataError, sqlite3_errmsg(db));
             break;
         case SQLITE_CONSTRAINT:
         case SQLITE_MISMATCH:
-            PyErr_SetString(pysqlite_IntegrityError, sqlite3_errmsg(db));
+            PyErr_SetString(state->IntegrityError, sqlite3_errmsg(db));
             break;
         case SQLITE_MISUSE:
-            PyErr_SetString(pysqlite_ProgrammingError, sqlite3_errmsg(db));
+            PyErr_SetString(state->ProgrammingError, sqlite3_errmsg(db));
             break;
         default:
             PyErr_SetString(state->DatabaseError, sqlite3_errmsg(db));

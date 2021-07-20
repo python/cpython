@@ -114,7 +114,9 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="regen.targets" />
   </ImportGroup>
+  <Target Name="_TriggerPostRegen" AfterTargets="Build" DependsOnTargets="PostBuildRegen" />
   <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGInstrument' and $(Platform) != 'ARM' and $(Platform) != 'ARM64'">
     <PropertyGroup>
       <UcrtName>ucrtbase</UcrtName>
@@ -144,24 +146,5 @@ $(_PGOPath)
       <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
     </PropertyGroup>
     <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
-  </Target>
-  <Target Name="GenerateLicense" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <LicenseFiles Include="$(PySourcePath)LICENSE;
-                             $(PySourcePath)PC\crtlicense.txt;
-                             $(bz2Dir)LICENSE;
-                             $(opensslOutDir)LICENSE;
-                             $(libffiDir)LICENSE;" />
-      <LicenseFiles Include="$(tcltkDir)tcllicense.terms;
-                             $(tcltkDir)tklicense.terms;
-                             $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
-      <_LicenseFiles Include="@(LicenseFiles)">
-        <Content Condition="Exists(%(FullPath))">$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
-      </_LicenseFiles>
-    </ItemGroup>
-
-    <WriteLinesToFile File="$(OutDir)LICENSE.txt"
-                      Overwrite="true"
-                      Lines="@(_LicenseFiles->'%(Content)')" />
   </Target>
 </Project>

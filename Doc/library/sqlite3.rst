@@ -430,6 +430,11 @@ Connection Objects
       argument and the meaning of the second and third argument depending on the first
       one. All necessary constants are available in the :mod:`sqlite3` module.
 
+      Passing :const:`None` as *authorizer_callback* will disable the authorizer.
+
+      .. versionchanged:: 3.11
+         Added support for disabling the authorizer using :const:`None`.
+
 
    .. method:: set_progress_handler(handler, n)
 
@@ -649,7 +654,7 @@ Cursor Objects
       This is a nonstandard convenience method for executing multiple SQL statements
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
       gets as a parameter.  This method disregards :attr:`isolation_level`; any
-      transation control must be added to *sql_script*.
+      transaction control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 

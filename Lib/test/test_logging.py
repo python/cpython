@@ -54,12 +54,15 @@ import unittest
 import warnings
 import weakref
 
-import asyncore
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import smtpd
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes

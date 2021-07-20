@@ -1791,32 +1791,6 @@ PyObject_TypeCheck:int:::
 PyObject_TypeCheck:PyObject*:o:0:
 PyObject_TypeCheck:PyTypeObject*:type:0:
 
-PyParser_SimpleParseFile:struct _node*:::
-PyParser_SimpleParseFile:FILE*:fp::
-PyParser_SimpleParseFile:const char*:filename::
-PyParser_SimpleParseFile:int:start::
-
-PyParser_SimpleParseFileFlags:struct _node*:::
-PyParser_SimpleParseFileFlags:FILE*:fp::
-PyParser_SimpleParseFileFlags:const char*:filename::
-PyParser_SimpleParseFileFlags:int:start::
-PyParser_SimpleParseFileFlags:int:flags::
-
-PyParser_SimpleParseString:struct _node*:::
-PyParser_SimpleParseString:const char*:str::
-PyParser_SimpleParseString:int:start::
-
-PyParser_SimpleParseStringFlags:struct _node*:::
-PyParser_SimpleParseStringFlags:const char*:str::
-PyParser_SimpleParseStringFlags:int:start::
-PyParser_SimpleParseStringFlags:int:flags::
-
-PyParser_SimpleParseStringFlagsFilename:struct _node*:::
-PyParser_SimpleParseStringFlagsFilename:const char*:str::
-PyParser_SimpleParseStringFlagsFilename:const char*:filename::
-PyParser_SimpleParseStringFlagsFilename:int:start::
-PyParser_SimpleParseStringFlagsFilename:int:flags::
-
 PyRun_AnyFile:int:::
 PyRun_AnyFile:FILE*:fp::
 PyRun_AnyFile:const char*:filename::

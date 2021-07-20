@@ -1014,8 +1014,12 @@ possible, while any potentially slow operations (such as sending an email via
       method is enqueued.
 
       The base implementation formats the record to merge the message,
-      arguments, and exception information, if present.  It also
-      removes unpickleable items from the record in-place.
+      arguments, and exception information, if present.  It also removes
+      unpickleable items from the record in-place. Specifically, it overwrites
+      the record's :attr:`msg` and :attr:`message` attributes with the merged
+      message (obtained by calling the handler's :meth:`format` method), and
+      sets the :attr:`args`, :attr:`exc_info` and :attr:`exc_text` attributes
+      to ``None``.
 
       You might want to override this method if you want to convert
       the record to a dict or JSON string, or send a modified copy
