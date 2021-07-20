@@ -3693,12 +3693,15 @@ class NewTypeTests(BaseTestCase):
 
     def test_or(self):
         UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
 
-        self.assertEqual(UserId | int, Union[UserId, int])
-        self.assertEqual(int | UserId, Union[int, UserId])
+        for cls in (int, UserName):
+            with self.subTest(cls=cls):
+                self.assertEqual(UserId | cls, Union[UserId, cls])
+                self.assertEqual(cls | UserId, Union[cls, UserId])
 
-        self.assertEqual(get_args(UserId | int), (UserId, int))
-        self.assertEqual(get_args(int | UserId), (int, UserId))
+                self.assertEqual(get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
         UserId = NewType('UserId', int)
