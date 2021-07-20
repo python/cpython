@@ -637,9 +637,11 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
         sqlite3_result_error(context, "user-defined function raised exception", -1);
@@ -669,9 +671,12 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
         if (PyErr_Occurred()) {
             *aggregate_instance = 0;
-            if (_pysqlite_enable_callback_tracebacks) {
+
+            pysqlite_state *state = pysqlite_get_state(NULL);
+            if (state->enable_callback_tracebacks) {
                 PyErr_Print();
-            } else {
+            }
+            else {
                 PyErr_Clear();
             }
             sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
@@ -693,9 +698,11 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
         sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
@@ -746,9 +753,11 @@ _pysqlite_final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
         sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
@@ -941,10 +950,13 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
     if (ret == NULL) {
-        if (_pysqlite_enable_callback_tracebacks)
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        else
+        }
+        else {
             PyErr_Clear();
+        }
 
         rc = SQLITE_DENY;
     }
@@ -952,10 +964,13 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
         if (PyLong_Check(ret)) {
             rc = _PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
-                if (_pysqlite_enable_callback_tracebacks)
+                pysqlite_state *state = pysqlite_get_state(NULL);
+                if (state->enable_callback_tracebacks) {
                     PyErr_Print();
-                else
+                }
+                else {
                     PyErr_Clear();
+                }
                 rc = SQLITE_DENY;
             }
         }
@@ -979,9 +994,11 @@ static int _progress_handler(void* user_arg)
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
 
@@ -1030,9 +1047,11 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     if (ret) {
         Py_DECREF(ret);
     } else {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
     }
