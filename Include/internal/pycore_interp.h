@@ -13,7 +13,6 @@ extern "C" {
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-#include "pycore_dtoa.h"
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -34,12 +33,6 @@ struct _pending_calls {
 
 struct _ceval_state {
     int recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       _PyEval_EvalFrameDefault() after fast_next_opcode. */
-    int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;
@@ -254,10 +247,6 @@ struct _is {
     // importlib module
     PyObject *importlib;
 
-    // Kept handy for pattern matching:
-    PyObject *map_abc;  // _collections_abc.Mapping
-    PyObject *seq_abc;  // _collections_abc.Sequence
-
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
@@ -322,9 +311,6 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
-#ifndef PY_NO_SHORT_FLOAT_REPR
-    struct _PyDtoa_Bigint *dtoa_freelist[_PyDtoa_Kmax + 1];
-#endif
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
@@ -348,7 +334,7 @@ struct _xidregitem {
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
 
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 #ifdef __cplusplus

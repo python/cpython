@@ -140,6 +140,7 @@ typedef struct PyConfig {
     int faulthandler;
     int tracemalloc;
     int import_time;
+    int no_debug_ranges;
     int show_ref_count;
     int dump_refs;
     int malloc_stats;
@@ -153,6 +154,7 @@ typedef struct PyConfig {
     PyWideStringList warnoptions;
     int site_import;
     int bytes_warning;
+    int warn_default_encoding;
     int inspect;
     int interactive;
     int optimization_level;

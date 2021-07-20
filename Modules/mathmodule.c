@@ -845,13 +845,15 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
+
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < nargs; i++) {
         x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_GetOne()) {
+        if (res == one) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -918,13 +920,15 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
+
+    PyObject *zero = _PyLong_GetZero();  // borrowed ref
     for (i = 1; i < nargs; i++) {
         x = PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_GetZero()) {
+        if (res == zero) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -1178,6 +1182,9 @@ FUNC2(atan2, m_atan2,
 FUNC1(atanh, m_atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.")
+FUNC1(cbrt, cbrt, 0,
+      "cbrt($module, x, /)\n--\n\n"
+      "Return the cube root of x.")
 
 /*[clinic input]
 math.ceil
@@ -2803,8 +2810,6 @@ math_pow_impl(PyObject *module, double x, double y)
                 r = y;
             else if (y < 0. && fabs(x) < 1.0) {
                 r = -y; /* result is +inf */
-                if (x == 0.) /* 0**-inf: divide-by-zero */
-                    errno = EDOM;
             }
             else
                 r = 0.;
@@ -3293,10 +3298,10 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
         goto done;
     }
 
-    factor = n;
-    Py_INCREF(factor);
+    factor = Py_NewRef(n);
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
+        Py_SETREF(factor, PyNumber_Subtract(factor, one));
         if (factor == NULL) {
             goto error;
         }
@@ -3415,10 +3420,10 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto done;
     }
 
-    factor = n;
-    Py_INCREF(factor);
+    factor = Py_NewRef(n);
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
+        Py_SETREF(factor, PyNumber_Subtract(factor, one));
         if (factor == NULL) {
             goto error;
         }
@@ -3546,6 +3551,7 @@ static PyMethodDef math_methods[] = {
     {"atan",            math_atan,      METH_O,         math_atan_doc},
     {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
+    {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
     {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},

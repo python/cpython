@@ -237,7 +237,7 @@ class TraceCallbackTests(unittest.TestCase):
             traced_statements.append(statement)
         con.set_trace_callback(trace)
         con.execute("create table foo(x)")
-        con.execute('insert into foo(x) values ("%s")' % unicode_value)
+        con.execute("insert into foo(x) values ('%s')" % unicode_value)
         con.commit()
         self.assertTrue(any(unicode_value in stmt for stmt in traced_statements),
                         "Unicode data %s garbled in trace callback: %s"
@@ -254,11 +254,15 @@ class TraceCallbackTests(unittest.TestCase):
         self.addCleanup(unlink, TESTFN)
         con1 = sqlite.connect(TESTFN, isolation_level=None)
         con2 = sqlite.connect(TESTFN)
-        con1.set_trace_callback(trace)
-        cur = con1.cursor()
-        cur.execute(queries[0])
-        con2.execute("create table bar(x)")
-        cur.execute(queries[1])
+        try:
+            con1.set_trace_callback(trace)
+            cur = con1.cursor()
+            cur.execute(queries[0])
+            con2.execute("create table bar(x)")
+            cur.execute(queries[1])
+        finally:
+            con1.close()
+            con2.close()
         self.assertEqual(traced_statements, queries)
 
 

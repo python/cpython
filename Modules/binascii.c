@@ -66,7 +66,7 @@ typedef struct binascii_state {
     PyObject *Incomplete;
 } binascii_state;
 
-static binascii_state *
+static inline binascii_state *
 get_binascii_state(PyObject *module)
 {
     return (binascii_state *)PyModule_GetState(module);
@@ -312,7 +312,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
             ** '`' as zero instead of space.
             */
             if ( this_ch < ' ' || this_ch > (' ' + 64)) {
-                state = PyModule_GetState(module);
+                state = get_binascii_state(module);
                 if (state == NULL) {
                     return NULL;
                 }
@@ -344,7 +344,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
         /* Extra '`' may be written as padding in some cases */
         if ( this_ch != ' ' && this_ch != ' '+64 &&
              this_ch != '\n' && this_ch != '\r' ) {
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -385,7 +385,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     bin_len = data->len;
     if ( bin_len > 45 ) {
         /* The 45 is a limit that appears in all uuencode's */
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -433,18 +433,26 @@ binascii.a2b_base64
 
     data: ascii_buffer
     /
+    *
+    strict_mode: bool(accept={int}) = False
 
 Decode a line of base64 data.
+
+  strict_mode
+    When set to True, bytes that are not part of the base64 standard are not allowed.
+    The same applies to excess data after padding (= / ==).
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=0628223f19fd3f9b input=5872acf6e1cac243]*/
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
+/*[clinic end generated code: output=5409557788d4f975 input=3a30c4e3528317c6]*/
 {
     assert(data->len >= 0);
 
     const unsigned char *ascii_data = data->buf;
     size_t ascii_len = data->len;
+    binascii_state *state = NULL;
+    char padding_started = 0;
 
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
@@ -454,6 +462,14 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     if (bin_data == NULL)
         return NULL;
     unsigned char *bin_data_start = bin_data;
+
+    if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
+        state = get_binascii_state(module);
+        if (state) {
+            PyErr_SetString(state->Error, "Leading padding not allowed");
+        }
+        goto error_end;
+    }
 
     int quad_pos = 0;
     unsigned char leftchar = 0;
@@ -465,11 +481,21 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
         ** the invalid ones.
         */
         if (this_ch == BASE64_PAD) {
+            padding_started = 1;
+
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
-                /* A pad sequence means no more input.
-                ** We've already interpreted the data
-                ** from the quad at this point.
+                /* A pad sequence means we should not parse more input.
+                ** We've already interpreted the data from the quad at this point.
+                ** in strict mode, an error should raise if there's excess data after the padding.
                 */
+                if (strict_mode && i + 1 < ascii_len) {
+                    state = get_binascii_state(module);
+                    if (state) {
+                        PyErr_SetString(state->Error, "Excess data after padding");
+                    }
+                    goto error_end;
+                }
+
                 goto done;
             }
             continue;
@@ -477,7 +503,23 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 
         this_ch = table_a2b_base64[this_ch];
         if (this_ch >= 64) {
+            if (strict_mode) {
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Only base64 data is allowed");
+                }
+                goto error_end;
+            }
             continue;
+        }
+
+        // Characters that are not '=', in the middle of the padding, are not allowed
+        if (strict_mode && padding_started) {
+            state = get_binascii_state(module);
+            if (state) {
+                PyErr_SetString(state->Error, "Discontinuous padding not allowed");
+            }
+            goto error_end;
         }
         pads = 0;
 
@@ -505,9 +547,9 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     }
 
     if (quad_pos != 0) {
-        binascii_state *state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
-            /* error already set, from PyModule_GetState */
+            /* error already set, from get_binascii_state */
         } else if (quad_pos == 1) {
             /*
             ** There is exactly one extra valid, non-padding, base64 character.
@@ -522,6 +564,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
         } else {
             PyErr_SetString(state->Error, "Incorrect padding");
         }
+        error_end:
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
@@ -562,7 +605,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     assert(bin_len >= 0);
 
     if ( bin_len > BASE64_MAXBIN ) {
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -657,7 +700,7 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
         if ( this_ch == SKIP )
             continue;
         if ( this_ch == FAIL ) {
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -682,7 +725,7 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
     }
 
     if ( leftbits && !done ) {
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -878,7 +921,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
 #define INBYTE(b)                                                       \
     do {                                                                \
          if ( --in_len < 0 ) {                                          \
-           state = PyModule_GetState(module);           \
+           state = get_binascii_state(module);                          \
            if (state == NULL) {                                         \
                return NULL;                                             \
            }                                                            \
@@ -904,7 +947,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
             /* Note Error, not Incomplete (which is at the end
             ** of the string only). This is a programmer error.
             */
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -1235,7 +1278,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
      * raise an exception.
      */
     if (arglen % 2) {
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -1252,7 +1295,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
         unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
         if (top >= 16 || bot >= 16) {
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }

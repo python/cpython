@@ -87,6 +87,9 @@ The module defines the following user-callable items:
    attribute is the underlying true file object. This file-like object can
    be used in a :keyword:`with` statement, just like a normal file.
 
+   On POSIX (only), a process that is terminated abruptly with SIGKILL
+   cannot automatically delete any NamedTemporaryFiles it created.
+
    .. audit-event:: tempfile.mkstemp fullpath tempfile.NamedTemporaryFile
 
    .. versionchanged:: 3.8
@@ -305,7 +308,7 @@ not surprise other unsuspecting code by changing global API behavior.
       explicit ``prefix``, ``suffix``, or ``dir`` arguments of type
       str are supplied. Please do not write code expecting or
       depending on this. This awkward behavior is maintained for
-      compatibility with the historcal implementation.
+      compatibility with the historical implementation.
 
 .. _tempfile-examples:
 

@@ -78,7 +78,7 @@ class ExecModuleTests(abc.LoaderTests):
     test_state_after_failure = None
 
     def test_unloadable(self):
-        assert self.machinery.FrozenImporter.find_module('_not_real') is None
+        assert self.machinery.FrozenImporter.find_spec('_not_real') is None
         with self.assertRaises(ImportError) as cm:
             self.exec_module('_not_real')
         self.assertEqual(cm.exception.name, '_not_real')
@@ -159,14 +159,6 @@ class LoaderTests(abc.LoaderTests):
                 repr_str = self.machinery.FrozenImporter.module_repr(module)
             self.assertEqual(repr_str,
                              "<module '__hello__' (frozen)>")
-
-    def test_module_repr_indirect(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with util.uncache('__hello__'), captured_stdout():
-                module = self.machinery.FrozenImporter.load_module('__hello__')
-            self.assertEqual(repr(module),
-                            "<module '__hello__' (frozen)>")
 
     # No way to trigger an error in a frozen module.
     test_state_after_failure = None

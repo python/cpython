@@ -10,7 +10,11 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.utils import setup_unraisable_hook
+from test.libregrtest.utils import (setup_unraisable_hook,
+                                    setup_threading_excepthook)
+
+
+UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
 
 def setup_tests(ns):
@@ -62,7 +66,6 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
-        sys._deactivate_opcache()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -81,6 +84,7 @@ def setup_tests(ns):
         sys.addaudithook(_test_audit_hook)
 
     setup_unraisable_hook()
+    setup_threading_excepthook()
 
     if ns.timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
@@ -92,6 +96,17 @@ def setup_tests(ns):
         support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
         support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+
+    if ns.xmlpath:
+        from test.support.testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
+
+    # Ensure there's a non-ASCII character in env vars at all times to force
+    # tests consider this case. See BPO-44647 for details.
+    os.environ.setdefault(
+        UNICODE_GUARD_ENV,
+        "\N{SMILING FACE WITH SUNGLASSES}",
+    )
 
 
 def replace_stdout():

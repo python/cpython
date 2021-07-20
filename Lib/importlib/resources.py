@@ -11,8 +11,7 @@ from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from types import ModuleType
 from typing import ContextManager, Iterable, Union
-from typing import cast
-from typing.io import BinaryIO, TextIO
+from typing import cast, BinaryIO, TextIO
 from collections.abc import Sequence
 from functools import singledispatch
 
@@ -68,9 +67,7 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
             if data is not None:
                 return BytesIO(data)
 
-    raise FileNotFoundError(
-        '{!r} resource not found in {!r}'.format(resource, spec.name)
-    )
+    raise FileNotFoundError(f'{resource!r} resource not found in {spec.name!r}')
 
 
 def open_text(

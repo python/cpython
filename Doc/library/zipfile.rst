@@ -521,6 +521,27 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
    Return ``True`` if the current context references a file or
    directory in the zip file.
 
+.. data:: Path.suffix
+
+   The file extension of the final component.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffix` property.
+
+.. data:: Path.stem
+
+   The final path component, without its suffix.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.stem` property.
+
+.. data:: Path.suffixes
+
+   A list of the path’s file extensions.
+
+   .. versionadded:: 3.11
+      Added :data:`Path.suffixes` property.
+
 .. method:: Path.read_text(*, **)
 
    Read the current file as unicode text. Positional and
@@ -545,6 +566,10 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
+The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+of the latest path object functionality to older Pythons. Use
+``zipp.Path`` in place of ``zipfile.Path`` for early access to
+changes.
 
 .. _pyzipfile-objects:
 

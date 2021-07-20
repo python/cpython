@@ -6,7 +6,7 @@
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unionobject.h"   // _Py_UnionType && _Py_Union()
+#include "pycore_unionobject.h"   // _PyUnion_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
 #include "longintrepr.h"
@@ -2623,9 +2623,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
                      "issubclass() arg 1 must be a class"))
         return -1;
 
-    PyTypeObject *type = Py_TYPE(cls);
-    int is_union = (PyType_Check(type) && type == &_Py_UnionType);
-    if (!is_union && !check_class(cls,
+    if (!_PyUnion_Check(cls) && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
                             " a tuple of classes, or a union.")) {
         return -1;
@@ -2738,12 +2736,43 @@ PyObject_GetIter(PyObject *o)
     }
 }
 
+PyObject *
+PyObject_GetAiter(PyObject *o) {
+    PyTypeObject *t = Py_TYPE(o);
+    unaryfunc f;
+
+    if (t->tp_as_async == NULL || t->tp_as_async->am_aiter == NULL) {
+        return type_error("'%.200s' object is not an AsyncIterable", o);
+    }
+    f = t->tp_as_async->am_aiter;
+    PyObject *it = (*f)(o);
+    if (it != NULL && !PyAiter_Check(it)) {
+        PyErr_Format(PyExc_TypeError,
+                     "aiter() returned non-AsyncIterator of type '%.100s'",
+                     Py_TYPE(it)->tp_name);
+        Py_DECREF(it);
+        it = NULL;
+    }
+    return it;
+}
+
 int
 PyIter_Check(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     return (tp->tp_iternext != NULL &&
             tp->tp_iternext != &_PyObject_NextNotImplemented);
+}
+
+int
+PyAiter_Check(PyObject *obj)
+{
+    PyTypeObject *tp = Py_TYPE(obj);
+    return (tp->tp_as_async != NULL &&
+            tp->tp_as_async->am_aiter != NULL &&
+            tp->tp_as_async->am_aiter != &_PyObject_NextNotImplemented &&
+            tp->tp_as_async->am_anext != NULL &&
+            tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }
 
 /* Return next item.

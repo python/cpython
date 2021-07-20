@@ -1,0 +1,2 @@
+:func:`ast.unparse` now doesn't use redundant spaces to separate ``lambda``
+and the ``:`` if there are no parameters.

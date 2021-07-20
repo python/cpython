@@ -90,7 +90,7 @@ class FindLibraryLinux(unittest.TestCase):
             srcname = os.path.join(d, 'dummy.c')
             libname = 'py_ctypes_test_dummy'
             dstname = os.path.join(d, 'lib%s.so' % libname)
-            with open(srcname, 'w') as f:
+            with open(srcname, 'wb') as f:
                 pass
             self.assertTrue(os.path.exists(srcname))
             # compile the file to a shared library

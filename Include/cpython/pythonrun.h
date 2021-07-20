@@ -77,17 +77,6 @@ PyAPI_FUNC(const char *) _Py_SourceAsString(
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
 
-PyAPI_FUNC(struct symtable *) Py_SymtableStringObject(
-    const char *str,
-    PyObject *filename,
-    int start);
-
-PyAPI_FUNC(struct symtable *) _Py_SymtableStringObjectFlags(
-    const char *str,
-    PyObject *filename,
-    int start,
-    PyCompilerFlags *flags);
-
 
 /* A function flavor is also exported by libpython. It is required when
     libpython is accessed directly rather than using header files which defines
@@ -129,3 +118,4 @@ PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject 
 /* Stuff with no proper home (yet) */
 PyAPI_FUNC(char *) PyOS_Readline(FILE *, FILE *, const char *);
 PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
+PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);

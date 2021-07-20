@@ -103,6 +103,7 @@ static int
 set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table;
+    setentry *freeslot;
     setentry *entry;
     size_t perturb;
     size_t mask;
@@ -118,6 +119,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
     mask = so->mask;
     i = (size_t)hash & mask;
+    freeslot = NULL;
     perturb = hash;
 
     while (1) {
@@ -125,7 +127,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
         probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
         do {
             if (entry->hash == 0 && entry->key == NULL)
-                goto found_unused;
+                goto found_unused_or_dummy;
             if (entry->hash == hash) {
                 PyObject *startkey = entry->key;
                 assert(startkey != dummy);
@@ -147,11 +149,23 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                     goto restart;
                 mask = so->mask;
             }
+            else if (entry->hash == -1) {
+                assert (entry->key == dummy);
+                freeslot = entry;
+            }
             entry++;
         } while (probes--);
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
     }
+
+  found_unused_or_dummy:
+    if (freeslot == NULL)
+        goto found_unused;
+    so->used++;
+    freeslot->key = key;
+    freeslot->hash = hash;
+    return 0;
 
   found_unused:
     so->fill++;

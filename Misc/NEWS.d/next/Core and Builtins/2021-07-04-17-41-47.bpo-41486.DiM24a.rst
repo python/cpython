@@ -1,0 +1,3 @@
+Fix a memory consumption and copying performance regression in earlier 3.10
+beta releases if someone used an output buffer larger than 4GiB with
+zlib.decompress on input data that expands that large.

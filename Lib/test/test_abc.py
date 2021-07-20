@@ -459,6 +459,24 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             with self.assertRaisesRegex(Exception, exc_msg):
                 issubclass(int, S)
 
+        def test_subclasshook(self):
+            class A(metaclass=abc.ABCMeta):
+                @classmethod
+                def __subclasshook__(cls, C):
+                    if cls is A:
+                        return 'foo' in C.__dict__
+                    return NotImplemented
+            self.assertFalse(issubclass(A, A))
+            self.assertFalse(issubclass(A, (A,)))
+            class B:
+                foo = 42
+            self.assertTrue(issubclass(B, A))
+            self.assertTrue(issubclass(B, (A,)))
+            class C:
+                spam = 42
+            self.assertFalse(issubclass(C, A))
+            self.assertFalse(issubclass(C, (A,)))
+
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
                 pass

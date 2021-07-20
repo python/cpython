@@ -1245,23 +1245,28 @@ Control flow
             type_ignores=[])
 
 
+Pattern matching
+^^^^^^^^^^^^^^^^
+
+
 .. class:: Match(subject, cases)
 
    A ``match`` statement. ``subject`` holds the subject of the match (the object
    that is being matched against the cases) and ``cases`` contains an iterable of
    :class:`match_case` nodes with the different cases.
 
-
 .. class:: match_case(pattern, guard, body)
 
-    A single case pattern in a ``match`` statement. ``pattern`` contains the
-    match pattern that will be used to match the subject against. Notice that
-    the meaning of the :class:`AST` nodes in this attribute have a different
-    meaning than in other places, as they represent patterns to match against.
-    The ``guard`` attribute contains an expression that will be evaluated if
-    the pattern matches the subject. If the pattern matches and the ``guard`` condition
-    is truthy, the body of the case shall be executed. ``body`` contains a list
-    of nodes to execute if the guard is truthy.
+   A single case pattern in a ``match`` statement. ``pattern`` contains the
+   match pattern that the subject will be matched against. Note that the
+   :class:`AST` nodes produced for patterns differ from those produced for
+   expressions, even when they share the same syntax.
+
+   The ``guard`` attribute contains an expression that will be evaluated if
+   the pattern matches the subject.
+
+   ``body`` contains a list of nodes to execute if the pattern matches and
+   the result of evaluating the guard expression is truthy.
 
    .. doctest::
 
@@ -1278,10 +1283,9 @@ Control flow
                     subject=Name(id='x', ctx=Load()),
                     cases=[
                         match_case(
-                            pattern=List(
-                                elts=[
-                                    Name(id='x', ctx=Store())],
-                                ctx=Load()),
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchAs(name='x')]),
                             guard=Compare(
                                 left=Name(id='x', ctx=Load()),
                                 ops=[
@@ -1292,10 +1296,244 @@ Control flow
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
                         match_case(
-                            pattern=Call(
-                                func=Name(id='tuple', ctx=Load()),
-                                args=[],
-                                keywords=[]),
+                            pattern=MatchClass(
+                                cls=Name(id='tuple', ctx=Load()),
+                                patterns=[],
+                                kwd_attrs=[],
+                                kwd_patterns=[]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchValue(value)
+
+   A match literal or value pattern that compares by equality. ``value`` is
+   an expression node. Permitted value nodes are restricted as described in
+   the match statement documentation. This pattern succeeds if the match
+   subject is equal to the evaluated value.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case "Relevant":
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchValue(
+                                value=Constant(value='Relevant')),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchSingleton(value)
+
+   A match literal pattern that compares by identity. ``value`` is the
+   singleton to be compared against: ``None``, ``True``, or ``False``. This
+   pattern succeeds if the match subject is the given constant.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case None:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSingleton(value=None),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchSequence(patterns)
+
+   A match sequence pattern. ``patterns`` contains the patterns to be matched
+   against the subject elements if the subject is a sequence. Matches a variable
+   length sequence if one of the subpatterns is a ``MatchStar`` node, otherwise
+   matches a fixed length sequence.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [1, 2]:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchValue(
+                                        value=Constant(value=1)),
+                                    MatchValue(
+                                        value=Constant(value=2))]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchStar(name)
+
+   Matches the rest of the sequence in a variable length match sequence pattern.
+   If ``name`` is not ``None``, a list containing the remaining sequence
+   elements is bound to that name if the overall sequence pattern is successful.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [1, 2, *rest]:
+        ...         ...
+        ...     case [*_]:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchValue(
+                                        value=Constant(value=1)),
+                                    MatchValue(
+                                        value=Constant(value=2)),
+                                    MatchStar(name='rest')]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchStar()]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchMapping(keys, patterns, rest)
+
+   A match mapping pattern. ``keys`` is a sequence of expression nodes.
+   ``patterns`` is a corresponding sequence of pattern nodes. ``rest`` is an
+   optional name that can be specified to capture the remaining mapping elements.
+   Permitted key expressions are restricted as described in the match statement
+   documentation.
+
+   This pattern succeeds if the subject is a mapping, all evaluated key
+   expressions are present in the mapping, and the value corresponding to each
+   key matches the corresponding subpattern. If ``rest`` is not ``None``, a dict
+   containing the remaining mapping elements is bound to that name if the overall
+   mapping pattern is successful.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case {1: _, 2: _}:
+        ...         ...
+        ...     case {**rest}:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchMapping(
+                                keys=[
+                                    Constant(value=1),
+                                    Constant(value=2)],
+                                patterns=[
+                                    MatchAs(),
+                                    MatchAs()]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchMapping(keys=[], patterns=[], rest='rest'),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchClass(cls, patterns, kwd_attrs, kwd_patterns)
+
+   A match class pattern. ``cls`` is an expression giving the nominal class to
+   be matched. ``patterns`` is a sequence of pattern nodes to be matched against
+   the class defined sequence of pattern matching attributes. ``kwd_attrs`` is a
+   sequence of additional attributes to be matched (specified as keyword arguments
+   in the class pattern), ``kwd_patterns`` are the corresponding patterns
+   (specified as keyword values in the class pattern).
+
+   This pattern succeeds if the subject is an instance of the nominated class,
+   all positional patterns match the corresponding class-defined attributes, and
+   any specified keyword attributes match their corresponding pattern.
+
+   Note: classes may define a property that returns self in order to match a
+   pattern node against the instance being matched. Several builtin types are
+   also matched that way, as described in the match statement documentation.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case Point2D(0, 0):
+        ...         ...
+        ...     case Point3D(x=0, y=0, z=0):
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchClass(
+                                cls=Name(id='Point2D', ctx=Load()),
+                                patterns=[
+                                    MatchValue(
+                                        value=Constant(value=0)),
+                                    MatchValue(
+                                        value=Constant(value=0))],
+                                kwd_attrs=[],
+                                kwd_patterns=[]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchClass(
+                                cls=Name(id='Point3D', ctx=Load()),
+                                patterns=[],
+                                kwd_attrs=[
+                                    'x',
+                                    'y',
+                                    'z'],
+                                kwd_patterns=[
+                                    MatchValue(
+                                        value=Constant(value=0)),
+                                    MatchValue(
+                                        value=Constant(value=0)),
+                                    MatchValue(
+                                        value=Constant(value=0))]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
@@ -1303,16 +1541,22 @@ Control flow
 
 .. class:: MatchAs(pattern, name)
 
-    A match "as-pattern".  The as-pattern matches whatever pattern is on its
-    left-hand side, but also binds the value to a name. ``pattern`` contains
-    the match pattern that will be used to match the subject agsinst. The ``name``
-    attribute contains the name that will be binded if the pattern is successful.
+   A match "as-pattern", capture pattern or wildcard pattern. ``pattern``
+   contains the match pattern that the subject will be matched against.
+   If the pattern is ``None``, the node represents a capture pattern (i.e a
+   bare name) and will always succeed.
+
+   The ``name`` attribute contains the name that will be bound if the pattern
+   is successful. If ``name`` is ``None``, ``pattern`` must also be ``None``
+   and the node represents the wildcard pattern.
 
    .. doctest::
 
         >>> print(ast.dump(ast.parse("""
         ... match x:
         ...     case [x] as y:
+        ...         ...
+        ...     case _:
         ...         ...
         ... """), indent=4))
         Module(
@@ -1322,24 +1566,27 @@ Control flow
                     cases=[
                         match_case(
                             pattern=MatchAs(
-                                pattern=List(
-                                    elts=[
-                                        Name(id='x', ctx=Store())],
-                                    ctx=Load()),
+                                pattern=MatchSequence(
+                                    patterns=[
+                                        MatchAs(name='x')]),
                                 name='y'),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchAs(),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
-
 .. class:: MatchOr(patterns)
 
-    A match "or-pattern". An or-pattern matches each of its subpatterns in turn
-    to the subject, until one succeeds. The or-pattern is then deemed to
-    succeed. If none of the subpatterns succeed the or-pattern fails. The
-    ``patterns`` attribute contains a list of match patterns nodes that will be
-    matched against the subject.
+   A match "or-pattern". An or-pattern matches each of its subpatterns in turn
+   to the subject, until one succeeds. The or-pattern is then deemed to
+   succeed. If none of the subpatterns succeed the or-pattern fails. The
+   ``patterns`` attribute contains a list of match pattern nodes that will be
+   matched against the subject.
 
    .. doctest::
 
@@ -1356,11 +1603,10 @@ Control flow
                         match_case(
                             pattern=MatchOr(
                                 patterns=[
-                                    List(
-                                        elts=[
-                                            Name(id='x', ctx=Store())],
-                                        ctx=Load()),
-                                    Name(id='y', ctx=Store())]),
+                                    MatchSequence(
+                                        patterns=[
+                                            MatchAs(name='x')]),
+                                    MatchAs(name='y')]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],

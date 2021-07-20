@@ -556,7 +556,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 static Py_hash_t
 float_hash(PyFloatObject *v)
 {
-    return _Py_HashDouble(v->ob_fval);
+    return _Py_HashDouble((PyObject *)v, v->ob_fval);
 }
 
 static PyObject *
@@ -1968,7 +1968,7 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
-int
+void
 _PyFloat_Init(void)
 {
     /* We attempt to determine if this machine is using IEEE
@@ -2016,14 +2016,18 @@ _PyFloat_Init(void)
 
     double_format = detected_double_format;
     float_format = detected_float_format;
+}
 
+int
+_PyFloat_InitTypes(void)
+{
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
-            return 0;
+            return -1;
         }
     }
-    return 1;
+    return 0;
 }
 
 void

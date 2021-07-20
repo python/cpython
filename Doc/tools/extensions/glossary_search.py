@@ -7,14 +7,16 @@
 
     :license: Python license.
 """
-from os import path
+import json
+import os.path
+from docutils.nodes import definition_list_item
 from sphinx.addnodes import glossary
 from sphinx.util import logging
-from docutils.nodes import definition_list_item
-import json
 
 
 logger = logging.getLogger(__name__)
+STATIC_DIR = '_static'
+JSON = 'glossary.json'
 
 
 def process_glossary_nodes(app, doctree, fromdocname):
@@ -45,8 +47,12 @@ def on_build_finish(app, exc):
     if not app.env.glossary_terms:
         return
 
-    logger.info('Writing glossary.json', color='green')
-    with open(path.join(app.outdir, '_static', 'glossary.json'), 'w') as f:
+    logger.info(f'Writing {JSON}', color='green')
+
+    dest_dir = os.path.join(app.outdir, STATIC_DIR)
+    os.makedirs(dest_dir, exist_ok=True)
+
+    with open(os.path.join(dest_dir, JSON), 'w') as f:
         json.dump(app.env.glossary_terms, f)
 
 

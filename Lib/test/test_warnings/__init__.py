@@ -935,10 +935,10 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     def test_tracemalloc(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        with open(os_helper.TESTFN, 'w') as fp:
+        with open(os_helper.TESTFN, 'w', encoding="utf-8") as fp:
             fp.write(textwrap.dedent("""
                 def func():
-                    f = open(__file__)
+                    f = open(__file__, "rb")
                     # Emit ResourceWarning
                     f = None
 
@@ -973,7 +973,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
               File "{filename}", lineno 7
                 func()
               File "{filename}", lineno 3
-                f = open(__file__)
+                f = open(__file__, "rb")
         ''').strip()
         self.assertEqual(stderr, expected)
 

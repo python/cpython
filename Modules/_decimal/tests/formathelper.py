@@ -31,10 +31,11 @@
 
 import os, sys, locale, random
 import platform, subprocess
+from test.support import import_fresh_module
 from distutils.spawn import find_executable
 
-import _decimal as C
-import _pydecimal as P
+C = import_fresh_module('decimal', fresh=['_decimal'])
+P = import_fresh_module('decimal', blocked=['_decimal'])
 
 
 windows_lang_strings = [

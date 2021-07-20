@@ -62,6 +62,37 @@ the definition of all other Python objects.
    See documentation of :c:type:`PyVarObject` above.
 
 
+.. c:function:: int Py_Is(const PyObject *x, const PyObject *y)
+
+   Test if the *x* object is the *y* object, the same as ``x is y`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsNone(const PyObject *x)
+
+   Test if an object is the ``None`` singleton,
+   the same as ``x is None`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsTrue(const PyObject *x)
+
+   Test if an object is the ``True`` singleton,
+   the same as ``x is True`` in Python.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int Py_IsFalse(const PyObject *x)
+
+   Test if an object is the ``False`` singleton,
+   the same as ``x is False`` in Python.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: PyTypeObject* Py_TYPE(const PyObject *o)
 
    Get the type of the Python object *o*.

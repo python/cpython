@@ -63,24 +63,24 @@
 #include "pyport.h"
 #include "pymacro.h"
 
-/* A convenient way for code to know if clang's memory sanitizer is enabled. */
+/* A convenient way for code to know if sanitizers are enabled. */
 #if defined(__has_feature)
 #  if __has_feature(memory_sanitizer)
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
 #    endif
 #  endif
+#  if __has_feature(address_sanitizer)
+#    if !defined(_Py_ADDRESS_SANITIZER)
+#      define _Py_ADDRESS_SANITIZER
+#    endif
+#  endif
+#elif defined(__GNUC__)
+#  if defined(__SANITIZE_ADDRESS__)
+#    define _Py_ADDRESS_SANITIZER
+#  endif
 #endif
 
-/* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
- *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
- */
-#if defined(Py_DEBUG) && defined(WITH_PYMALLOC) && !defined(PYMALLOC_DEBUG)
-#define PYMALLOC_DEBUG
-#endif
-#if defined(PYMALLOC_DEBUG) && !defined(WITH_PYMALLOC)
-#error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
-#endif
 #include "pymath.h"
 #include "pymem.h"
 
@@ -137,11 +137,9 @@
 #include "pystate.h"
 #include "context.h"
 
-#include "cpython/pyarena.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
-#include "cpython/parser_interface.h"
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"

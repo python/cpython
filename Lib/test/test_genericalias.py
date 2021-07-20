@@ -353,6 +353,12 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(repr(C4[dict]).split(".")[-1], "Callable[[int, dict], str]")
             self.assertEqual(C4[dict], Callable[[int, dict], str])
 
+            # substitute a nested GenericAlias (both typing and the builtin
+            # version)
+            C5 = Callable[[typing.List[T], tuple[K, T], V], int]
+            self.assertEqual(C5[int, str, float],
+                             Callable[[typing.List[int], tuple[str, int], float], int])
+
         with self.subTest("Testing type erasure"):
             class C1(Callable):
                 def __call__(self):
@@ -390,6 +396,17 @@ class BaseTest(unittest.TestCase):
             C1 = Callable[typing.Concatenate[int, P], int]
             self.assertEqual(repr(C1), "collections.abc.Callable"
                                        "[typing.Concatenate[int, ~P], int]")
+
+        with self.subTest("Testing TypeErrors"):
+            with self.assertRaisesRegex(TypeError, "variables left in"):
+                alias[int]
+            P = typing.ParamSpec('P')
+            C1 = Callable[P, T]
+            with self.assertRaisesRegex(TypeError, "many arguments for"):
+                C1[int, str, str]
+            with self.assertRaisesRegex(TypeError, "few arguments for"):
+                C1[int]
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,7 +15,7 @@ class FilesTests:
 
     def test_read_text(self):
         files = resources.files(self.data)
-        actual = files.joinpath('utf-8.file').read_text()
+        actual = files.joinpath('utf-8.file').read_text(encoding='utf-8')
         assert actual == 'Hello, UTF-8 world!\n'
 
     @unittest.skipUnless(

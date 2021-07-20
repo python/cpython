@@ -231,8 +231,8 @@ class SMTP:
                  source_address=None):
         """Initialize a new instance.
 
-        If specified, `host' is the name of the remote host to which to
-        connect.  If specified, `port' specifies the port to which to connect.
+        If specified, `host` is the name of the remote host to which to
+        connect.  If specified, `port` specifies the port to which to connect.
         By default, smtplib.SMTP_PORT is used.  If a host is specified the
         connect method is called, and if it returns anything other than a
         success code an SMTPConnectError is raised.  If specified,

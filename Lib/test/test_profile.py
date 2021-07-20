@@ -115,7 +115,7 @@ class ProfileTest(unittest.TestCase):
     def test_output_file_when_changing_directory(self):
         with temp_dir() as tmpdir, change_cwd(tmpdir):
             os.mkdir('dest')
-            with open('demo.py', 'w') as f:
+            with open('demo.py', 'w', encoding="utf-8") as f:
                 f.write('import os; os.chdir("dest")')
 
             assert_python_ok(

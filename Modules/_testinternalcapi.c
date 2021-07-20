@@ -18,6 +18,7 @@
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
+#include "pycore_pyerrors.h"      // _Py_UTF8_Edit_Cost()
 
 
 static PyObject *
@@ -279,6 +280,91 @@ test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static int
+check_edit_cost(const char *a, const char *b, Py_ssize_t expected)
+{
+    int ret = -1;
+    PyObject *a_obj = NULL;
+    PyObject *b_obj = NULL;
+
+    a_obj = PyUnicode_FromString(a);
+    if (a_obj == NULL) {
+        goto exit;
+    }
+    b_obj = PyUnicode_FromString(b);
+    if (a_obj == NULL) {
+        goto exit;
+    }
+    Py_ssize_t result = _Py_UTF8_Edit_Cost(a_obj, b_obj, -1);
+    if (result != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "Edit cost from '%s' to '%s' returns %zd, expected %zd",
+                     a, b, result, expected);
+        goto exit;
+    }
+    // Check that smaller max_edits thresholds are exceeded.
+    Py_ssize_t max_edits = result;
+    while (max_edits > 0) {
+        max_edits /= 2;
+        Py_ssize_t result2 = _Py_UTF8_Edit_Cost(a_obj, b_obj, max_edits);
+        if (result2 <= max_edits) {
+            PyErr_Format(PyExc_AssertionError,
+                         "Edit cost from '%s' to '%s' (threshold %zd) "
+                         "returns %zd, expected greater than %zd",
+                         a, b, max_edits, result2, max_edits);
+            goto exit;
+        }
+    }
+    // Check that bigger max_edits thresholds don't change anything
+    Py_ssize_t result3 = _Py_UTF8_Edit_Cost(a_obj, b_obj, result * 2 + 1);
+    if (result3 != result) {
+        PyErr_Format(PyExc_AssertionError,
+                     "Edit cost from '%s' to '%s' (threshold %zd) "
+                     "returns %zd, expected %zd",
+                     a, b, result * 2, result3, result);
+        goto exit;
+    }
+    ret = 0;
+exit:
+    Py_XDECREF(a_obj);
+    Py_XDECREF(b_obj);
+    return ret;
+}
+
+static PyObject *
+test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    #define CHECK(a, b, n) do {              \
+        if (check_edit_cost(a, b, n) < 0) {  \
+            return NULL;                     \
+        }                                    \
+    } while (0)                              \
+
+    CHECK("", "", 0);
+    CHECK("", "a", 2);
+    CHECK("a", "A", 1);
+    CHECK("Apple", "Aple", 2);
+    CHECK("Banana", "B@n@n@", 6);
+    CHECK("Cherry", "Cherry!", 2);
+    CHECK("---0---", "------", 2);
+    CHECK("abc", "y", 6);
+    CHECK("aa", "bb", 4);
+    CHECK("aaaaa", "AAAAA", 5);
+    CHECK("wxyz", "wXyZ", 2);
+    CHECK("wxyz", "wXyZ123", 8);
+    CHECK("Python", "Java", 12);
+    CHECK("Java", "C#", 8);
+    CHECK("AbstractFoobarManager", "abstract_foobar_manager", 3+2*2);
+    CHECK("CPython", "PyPy", 10);
+    CHECK("CPython", "pypy", 11);
+    CHECK("AttributeError", "AttributeErrop", 2);
+    CHECK("AttributeError", "AttributeErrorTests", 10);
+
+    #undef CHECK
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -289,6 +375,7 @@ static PyMethodDef TestMethods[] = {
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
+    {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

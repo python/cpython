@@ -1111,6 +1111,14 @@ functions.
    .. note:: If you are thinking of defining your own levels, please see the
       section on :ref:`custom-levels`.
 
+.. function:: getLevelNamesMapping()
+
+   Returns a mapping from level names to their corresponding logging levels. For example, the
+   string "CRITICAL" maps to :const:`CRITICAL`. The returned mapping is copied from an internal
+   mapping on each call to this function.
+
+   .. versionadded:: 3.11
+
 .. function:: getLevelName(level)
 
    Returns the textual or numeric representation of logging level *level*.

@@ -4,8 +4,6 @@
 # environment
 
 import ftplib
-import asyncore
-import asynchat
 import socket
 import io
 import errno
@@ -23,6 +21,13 @@ from test.support import threading_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 from test.support.socket_helper import HOST, HOSTv6
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import asynchat
+
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
 DEFAULT_ENCODING = 'utf-8'
@@ -324,7 +329,7 @@ if ssl is not None:
         _ssl_closing = False
 
         def secure_connection(self):
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             socket = context.wrap_socket(self.socket,
                                          suppress_ragged_eofs=False,

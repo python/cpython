@@ -18,7 +18,7 @@ extern "C" {
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
     PyFrameObject *prefix##_frame;                                          \
     /* The code object backing the generator */                             \
-    PyObject *prefix##_code;                                                \
+    PyCodeObject *prefix##_code;                                                \
     /* List of weak reference. */                                           \
     PyObject *prefix##_weakreflist;                                         \
     /* Name of the generator. */                                            \

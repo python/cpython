@@ -275,7 +275,7 @@ def _requires_frozen(fxn):
 def _load_module_shim(self, fullname):
     """Load the specified module into sys.modules and return it.
 
-    This method is deprecated.  Use loader.exec_module instead.
+    This method is deprecated.  Use loader.exec_module() instead.
 
     """
     msg = ("the load_module() method is deprecated and slated for removal in "
@@ -292,26 +292,16 @@ def _load_module_shim(self, fullname):
 # Module specifications #######################################################
 
 def _module_repr(module):
-    # The implementation of ModuleType.__repr__().
+    """The implementation of ModuleType.__repr__()."""
     loader = getattr(module, '__loader__', None)
-    if hasattr(loader, 'module_repr'):
-        # As soon as BuiltinImporter, FrozenImporter, and NamespaceLoader
-        # drop their implementations for module_repr. we can add a
-        # deprecation warning here.
+    if spec := getattr(module, "__spec__", None):
+        return _module_repr_from_spec(spec)
+    elif hasattr(loader, 'module_repr'):
         try:
             return loader.module_repr(module)
         except Exception:
             pass
-    try:
-        spec = module.__spec__
-    except AttributeError:
-        pass
-    else:
-        if spec is not None:
-            return _module_repr_from_spec(spec)
-
-    # We could use module.__class__.__name__ instead of 'module' in the
-    # various repr permutations.
+    # Fall through to a catch-all which always succeeds.
     try:
         name = module.__name__
     except AttributeError:
@@ -749,6 +739,8 @@ class BuiltinImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("BuiltinImporter.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return f'<module {module.__name__!r} ({BuiltinImporter._ORIGIN})>'
 
     @classmethod
@@ -769,6 +761,9 @@ class BuiltinImporter:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("BuiltinImporter.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         return spec.loader if spec is not None else None
 
@@ -824,6 +819,8 @@ class FrozenImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("FrozenImporter.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
@@ -840,6 +837,9 @@ class FrozenImporter:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FrozenImporter.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         return cls if _imp.is_frozen(fullname) else None
 
     @staticmethod
@@ -909,8 +909,9 @@ def _resolve_name(name, package, level):
 
 
 def _find_spec_legacy(finder, name, path):
-    # This would be a good place for a DeprecationWarning if
-    # we ended up going that route.
+    msg = (f"{_object_name(finder)}.find_spec() not found; "
+                           "falling back to find_module()")
+    _warnings.warn(msg, ImportWarning)
     loader = finder.find_module(name, path)
     if loader is None:
         return None

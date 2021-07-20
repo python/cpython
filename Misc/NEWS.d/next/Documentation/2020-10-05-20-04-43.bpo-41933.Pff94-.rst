@@ -1,1 +1,0 @@
-Clarified wording of s * n in the Common Sequence Operations

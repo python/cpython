@@ -149,7 +149,8 @@ def set_package(fxn):
     """
     @functools.wraps(fxn)
     def set_package_wrapper(*args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically.',
+        warnings.warn('The import system now takes care of this automatically; '
+                      'this decorator is slated for removal in Python 3.12',
                       DeprecationWarning, stacklevel=2)
         module = fxn(*args, **kwargs)
         if getattr(module, '__package__', None) is None:
@@ -168,7 +169,8 @@ def set_loader(fxn):
     """
     @functools.wraps(fxn)
     def set_loader_wrapper(self, *args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically.',
+        warnings.warn('The import system now takes care of this automatically; '
+                      'this decorator is slated for removal in Python 3.12',
                       DeprecationWarning, stacklevel=2)
         module = fxn(self, *args, **kwargs)
         if getattr(module, '__loader__', None) is None:
@@ -195,7 +197,8 @@ def module_for_loader(fxn):
     the second argument.
 
     """
-    warnings.warn('The import system now takes care of this automatically.',
+    warnings.warn('The import system now takes care of this automatically; '
+                  'this decorator is slated for removal in Python 3.12',
                   DeprecationWarning, stacklevel=2)
     @functools.wraps(fxn)
     def module_for_loader_wrapper(self, fullname, *args, **kwargs):

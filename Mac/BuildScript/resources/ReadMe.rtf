@@ -1,6 +1,6 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2513
+{\rtf1\ansi\ansicpg1252\cocoartf2580
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fswiss\fcharset0 Helvetica-Oblique;
-\f3\fmodern\fcharset0 CourierNewPSMT;}
+\f3\fmodern\fcharset0 CourierNewPSMT;\f4\fmodern\fcharset0 Courier;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
 \margl1440\margr1440\vieww13380\viewh14580\viewkind0
@@ -11,7 +11,7 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
 
 \f1\b \cf0 NOTE: 
-\f0\b0 This is an alpha test preview of Python 3.10.0, the next feature release of Python 3.  It is not intended for production use.\
+\f0\b0 This is a beta test preview of Python 3.10.0, the next feature release of Python 3.  It is not intended for production use.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
@@ -38,6 +38,16 @@ The bundled
 \f0  has its own default certificate store for verifying download connections.\
 \
 
+\f1\b \ul Install Options\
+
+\f0\b0 \ulnone \
+You can control some aspects of what is installed by this package. To see the options, click on the 
+\f4 Customize
+\f0  button in the 
+\f4 Installation Type
+\f0  step of the macOS installer app.  Click on a package name in the list shown to see more information about that option,\
+  \
+
 \f1\b \ul Using IDLE or other Tk applications 
 \f0\b0 \ulnone \
 \
@@ -56,12 +66,22 @@ Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS ma
 \f0\b0  button to proceed.\
 \
 
-\f1\b \ul macOS 11.0 (Big Sur) and Apple Silicon Mac support [new in 3.10.0a3]\
+\f1\b \ul macOS 11 (Big Sur) and Apple Silicon Mac support\
 
 \f0\b0 \ulnone \
-As of 2020-11, macOS 11.0 (Big Sur) is the latest release of macOS and one of its major features is the support of new Apple Silicon Macs that are based on the ARM64 CPU architecture specification rather than the Intel 64 (x86_64) architecture used previously. There are other changes in Big Sur that affect Python operation regardless of CPU architecture.\
+For Python 3.10 releases, we provide a new 
+\f4 universal2
+\f0  installer variant that provides universal binaries for both 
+\f4 ARM64
+\f0  and 
+\f4 Intel 64
+\f0  architectures and is also supported on all Macs that support macOS 10.9 or later.  Some of the advantages of the new installer variant: native ARM64 code on Apple Silicon Macs should run significantly faster than Rosetta2-emulated code; some operating system functions and options introduced in macOS releases since 10.9 are now exposed when available (primarily in the os module); and the new installer variant includes Tcl/Tk 8.6.11 rather than 8.6.8.\
 \
-Beginning with 3.10.0a3, we provide a new "universal2" installer variant that provides universal binaries for both ARM64 and Intel 64 architectures and is also supported on all Macs that support macOS 10.9 or later.  Some of the advantages of the new installer variant: native ARM64 code on Apple Silicon Macs should run significantly faster than Rosetta2-emulated code; some operating system functions and options introduced in macOS releases since 10.9 are now exposed when available (primarily in the os module); the new installer variant includes Tcl/Tk 8.6.10 rather than 8.6.8.\
+On Apple Silicon Macs, it is possible to run Python either with native ARM64 code or under Intel 64 emulation using Rosetta2. This option might be useful for testing or if binary wheels are not yet available with native ARM64 binaries.  To  easily force Python to run in emulation mode, invoke it from a command line shell with the 
+\f4 python3-intel64
+\f0  command instead of just 
+\f4 python3
+\f0 .\
 
 \f1\b \ul \
 Other changes\

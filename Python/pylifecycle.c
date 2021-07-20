@@ -2,9 +2,6 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
@@ -19,6 +16,10 @@
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
 #include <locale.h>               // setlocale()
+
+#if defined(__APPLE__)
+#include <mach-o/loader.h>
+#endif
 
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIG_IGN
@@ -36,7 +37,6 @@
 #  define PyWindowsConsoleIO_Check(op) \
        (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
-
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
@@ -62,7 +62,30 @@ static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
 int _Py_UnhandledKeyboardInterrupt = 0;
-_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+
+/* The following places the `_PyRuntime` structure in a location that can be
+ * found without any external information. This is meant to ease access to the
+ * interpreter state for various runtime debugging tools, but is *not* an
+ * officially supported feature */
+
+#if defined(MS_WINDOWS)
+
+#pragma section("PyRuntime", read, write)
+__declspec(allocate("PyRuntime"))
+
+#elif defined(__APPLE__)
+
+__attribute__((
+    section(SEG_DATA ",PyRuntime")
+))
+
+#endif
+
+_PyRuntimeState _PyRuntime
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+__attribute__ ((section (".PyRuntime")))
+#endif
+= _PyRuntimeState_INIT;
 static int runtime_initialized = 0;
 
 PyStatus
@@ -631,38 +654,16 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(PyInterpreterState *interp)
+pycore_init_singletons(PyInterpreterState *interp)
 {
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(interp);
 
-    status = _PyGC_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    // Create the empty tuple singleton. It must be created before the first
-    // PyType_Ready() call since PyType_Ready() creates tuples, for tp_bases
-    // for example.
-    status = _PyTuple_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    if (is_main_interp) {
-        status = _PyTypes_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (!_PyLong_Init(interp)) {
+    if (_PyLong_Init(interp) < 0) {
         return _PyStatus_ERR("can't init longs");
     }
 
-    status = _PyUnicode_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyFloat_Init();
     }
 
     status = _PyBytes_Init(interp);
@@ -670,22 +671,58 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyUnicode_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyTuple_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+pycore_init_types(PyInterpreterState *interp)
+{
+    PyStatus status;
+    int is_main_interp = _Py_IsMainInterpreter(interp);
+
+    if (is_main_interp) {
+        if (_PyStructSequence_Init() < 0) {
+            return _PyStatus_ERR("can't initialize structseq");
+        }
+
+        status = _PyTypes_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
+        if (_PyLong_InitTypes() < 0) {
+            return _PyStatus_ERR("can't init int type");
+        }
+
+        status = _PyUnicode_InitTypes();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (is_main_interp) {
+        if (_PyFloat_InitTypes() < 0) {
+            return _PyStatus_ERR("can't init float");
+        }
+    }
+
     status = _PyExc_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    if (is_main_interp) {
-        if (!_PyFloat_Init()) {
-            return _PyStatus_ERR("can't init float");
-        }
-
-        if (_PyStructSequence_Init() < 0) {
-            return _PyStatus_ERR("can't initialize structseq");
-        }
-    }
-
-    status = _PyErr_Init();
+    status = _PyErr_InitTypes();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -696,22 +733,15 @@ pycore_init_types(PyInterpreterState *interp)
         }
     }
 
-    if (_PyWarnings_InitState(interp) < 0) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-
-    status = _PyAtExit_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     return _PyStatus_OK();
 }
 
 
 static PyStatus
-pycore_init_builtins(PyInterpreterState *interp)
+pycore_init_builtins(PyThreadState *tstate)
 {
+    PyInterpreterState *interp = tstate->interp;
+
     PyObject *bimod = _PyBuiltin_Init(interp);
     if (bimod == NULL) {
         goto error;
@@ -747,6 +777,7 @@ pycore_init_builtins(PyInterpreterState *interp)
     }
     interp->import_func = Py_NewRef(import_func);
 
+    assert(!_PyErr_Occurred(tstate));
     return _PyStatus_OK();
 
 error:
@@ -758,12 +789,36 @@ error:
 static PyStatus
 pycore_interp_init(PyThreadState *tstate)
 {
+    PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
 
-    status = pycore_init_types(tstate->interp);
+    // Create singletons before the first PyType_Ready() call, since
+    // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
+    // and the empty tuple singletons (tp_bases).
+    status = pycore_init_singletons(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    // The GC must be initialized before the first GC collection.
+    status = _PyGC_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
+    }
+
+    if (_PyWarnings_InitState(interp) < 0) {
+        return _PyStatus_ERR("can't initialize warnings");
+    }
+
+    status = _PyAtExit_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PySys_Create(tstate, &sysmod);
@@ -771,16 +826,12 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    assert(!_PyErr_Occurred(tstate));
-
-    status = pycore_init_builtins(tstate->interp);
+    status = pycore_init_builtins(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
 
-    assert(!_PyErr_Occurred(tstate));
-
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     if (config->_install_importlib) {
         /* This call sets up builtin and frozen import support */
         if (init_importlib(tstate, sysmod) < 0) {
@@ -2216,7 +2267,7 @@ error:
     return NULL;
 }
 
-/* Set builtins.open to io.OpenWrapper */
+/* Set builtins.open to io.open */
 static PyStatus
 init_set_builtins_open(void)
 {
@@ -2232,7 +2283,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+    if (!(wrapper = PyObject_GetAttrString(iomod, "open"))) {
         goto error;
     }
 
@@ -2254,7 +2305,7 @@ done:
 }
 
 
-/* Initialize sys.stdin, stdout, stderr and builtins.open */
+/* Create sys.stdin, sys.stdout and sys.stderr */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
@@ -2526,12 +2577,14 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     // memory cannot be allocated on the heap in a signal handler.
     // Iterate on the dict instead.
     PyObject *stdlib_module_names = NULL;
-    pos = 0;
-    while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
-        if (PyUnicode_Check(key)
-           && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
-            stdlib_module_names = value;
-            break;
+    if (interp->sysdict != NULL) {
+        pos = 0;
+        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+            if (PyUnicode_Check(key)
+               && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+                stdlib_module_names = value;
+                break;
+            }
         }
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
