@@ -271,25 +271,25 @@ PyDoc_STRVAR(_ssl__SSLSocket_read__doc__,
     {"read", (PyCFunction)_ssl__SSLSocket_read, METH_VARARGS, _ssl__SSLSocket_read__doc__},
 
 static PyObject *
-_ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
-                          Py_buffer *buffer);
+_ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
+                          int group_right_1, Py_buffer *buffer);
 
 static PyObject *
 _ssl__SSLSocket_read(PySSLSocket *self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    int len;
+    Py_ssize_t len;
     int group_right_1 = 0;
     Py_buffer buffer = {NULL, NULL};
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "i:read", &len)) {
+            if (!PyArg_ParseTuple(args, "n:read", &len)) {
                 goto exit;
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "iw*:read", &len, &buffer)) {
+            if (!PyArg_ParseTuple(args, "nw*:read", &len, &buffer)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1358,4 +1358,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=3b6f4471fb187d85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a7d7bf5cf8ee092 input=a9049054013a1b77]*/
