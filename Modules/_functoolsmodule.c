@@ -1425,7 +1425,7 @@ static PyType_Spec lru_cache_type_spec = {
 
 /* helper function to make typing.NewType.__call__ method faster */
 
-PyObject* _idfunc(PyObject* self, PyObject* x) {
+PyObject* functools_idfunc(PyObject* self, PyObject* x) {
     return x;
 }
 
@@ -1438,7 +1438,7 @@ static PyMethodDef _functools_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
     {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
-    {"_idfunc", _idfunc, METH_O},
+    {"_idfunc", functools_idfunc, METH_O},
     {NULL,              NULL}           /* sentinel */
 };
 
