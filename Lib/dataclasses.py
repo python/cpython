@@ -261,6 +261,7 @@ class Field:
                  'metadata',
                  'kw_only',
                  '_field_type',  # Private: not to be used by user code.
+                 'doc',
                  )
 
     def __init__(self, default, default_factory, init, repr, hash, compare,
@@ -278,6 +279,7 @@ class Field:
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
         self._field_type = None
+        self.doc = None
 
     def __repr__(self):
         return ('Field('
@@ -1085,6 +1087,19 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> None', ''))
+
+    if hasattr(cls, '__field_doc__'):
+        if cls.__field_doc__:
+            cls.__doc__ += '\n'
+
+        for name, val in cls.__field_doc__.items():
+            if name not in fields:
+                raise Exception(f'Doc is specified for field "{name}" in __field_doc__, but it does not exist')
+            ann = cls_annotations[name].__name__
+            dflt = fields[name].default
+            dflt = f' [{dflt}]' if dflt is not MISSING else ' '
+            cls.__doc__ += f'\n{name}: {ann}{dflt} -- {val}\n'
+        cls.__doc__ = cls.__doc__[:-1]
 
     if match_args:
         # I could probably compute this once
