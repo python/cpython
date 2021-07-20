@@ -440,7 +440,7 @@ static PyObject *
 union_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     unionobject *alias = (unionobject *)self;
-    PyObject* from_args = PyObject_GetAttrString(self, "from_args");
+    PyObject* from_args = PyObject_GetAttrString(self, "_from_args");
     if (from_args == NULL) {
         return NULL;
     }
@@ -457,7 +457,11 @@ static PyObject *
 union_from_args(PyObject *cls, PyObject *args)
 {
     if (!PyTuple_CheckExact(args)) {
-        _PyArg_BadArgument("Union.from_args", "argument '__args__'", "tuple", args);
+        _PyArg_BadArgument("Union._from_args", "argument 'args'", "tuple", args);
+        return NULL;
+    }
+    if (!PyTuple_GET_SIZE(args)) {
+        PyErr_SetString(PyExc_ValueError, "args must be not empty");
         return NULL;
     }
 
@@ -469,7 +473,7 @@ union_from_args(PyObject *cls, PyObject *args)
 }
 
 static PyMethodDef union_methods[] = {
-        {"from_args", union_from_args, METH_O | METH_CLASS},
+        {"_from_args", union_from_args, METH_O | METH_CLASS},
         {"__instancecheck__", union_instancecheck, METH_O},
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {"__reduce__", union_reduce, METH_NOARGS},
