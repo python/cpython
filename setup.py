@@ -4,6 +4,7 @@ import argparse
 import importlib._bootstrap
 import importlib.machinery
 import importlib.util
+import logging
 import os
 import re
 import sys
@@ -44,7 +45,6 @@ with warnings.catch_warnings():
         DeprecationWarning
     )
 
-    from distutils import log
     from distutils.command.build_ext import build_ext
     from distutils.command.build_scripts import build_scripts
     from distutils.command.install import install
@@ -62,6 +62,10 @@ DISABLED_MODULE_LIST = []
 
 # --list-module-names option used by Tools/scripts/generate_module_names.py
 LIST_MODULE_NAMES = False
+
+
+logging.basicConfig(format='%(message)s', level=logging.INFO)
+log = logging.getLogger('setup')
 
 
 def get_platform():
@@ -241,6 +245,7 @@ def grep_headers_for(function, headers):
                 return True
     return False
 
+
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
@@ -259,23 +264,23 @@ def find_file(filename, std_dirs, paths):
         sysroot = macosx_sdk_root()
 
     # Check the standard locations
-    for dir in std_dirs:
-        f = os.path.join(dir, filename)
+    for dir_ in std_dirs:
+        f = os.path.join(dir_, filename)
 
-        if MACOS and is_macosx_sdk_path(dir):
-            f = os.path.join(sysroot, dir[1:], filename)
+        if MACOS and is_macosx_sdk_path(dir_):
+            f = os.path.join(sysroot, dir_[1:], filename)
 
         if os.path.exists(f): return []
 
     # Check the additional directories
-    for dir in paths:
-        f = os.path.join(dir, filename)
+    for dir_ in paths:
+        f = os.path.join(dir_, filename)
 
-        if MACOS and is_macosx_sdk_path(dir):
-            f = os.path.join(sysroot, dir[1:], filename)
+        if MACOS and is_macosx_sdk_path(dir_):
+            f = os.path.join(sysroot, dir_[1:], filename)
 
         if os.path.exists(f):
-            return [dir]
+            return [dir_]
 
     # Not found anywhere
     return None
@@ -333,6 +338,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
 
+
 def validate_tzpath():
     base_tzpath = sysconfig.get_config_var('TZPATH')
     if not base_tzpath:
@@ -345,15 +351,16 @@ def validate_tzpath():
                          + f'found:\n{tzpaths!r}\nwith invalid paths:\n'
                          + f'{bad_paths!r}')
 
+
 def find_module_file(module, dirlist):
     """Find a module in a set of possible folders. If it is not found
     return the unadorned filename"""
-    list = find_file(module, [], dirlist)
-    if not list:
+    dirs = find_file(module, [], dirlist)
+    if not dirs:
         return module
-    if len(list) > 1:
-        log.info("WARNING: multiple copies of %s found", module)
-    return os.path.join(list[0], module)
+    if len(dirs) > 1:
+        log.info(f"WARNING: multiple copies of {module} found")
+    return os.path.join(dirs[0], module)
 
 
 class PyBuildExt(build_ext):
@@ -2667,7 +2674,7 @@ class PyBuildScripts(build_scripts):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
-            log.info('renaming %s to %s', filename, newfilename)
+            log.info(f'renaming {filename} to {newfilename}')
             os.rename(filename, newfilename)
             newoutfiles.append(newfilename)
             if filename in updated_files:

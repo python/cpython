@@ -483,7 +483,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
             1/0
 
     @_async_test
-    async def test_async_enter_context(self):
+    async def test_enter_async_context(self):
         class TestCM(object):
             async def __aenter__(self):
                 result.append(1)
@@ -503,6 +503,26 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
             result.append(2)
 
         self.assertEqual(result, [1, 2, 3, 4])
+
+    @_async_test
+    async def test_enter_async_context_errors(self):
+        class LacksEnterAndExit:
+            pass
+        class LacksEnter:
+            async def __aexit__(self, *exc_info):
+                pass
+        class LacksExit:
+            async def __aenter__(self):
+                pass
+
+        async with self.exit_stack() as stack:
+            with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+                await stack.enter_async_context(LacksEnterAndExit())
+            with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+                await stack.enter_async_context(LacksEnter())
+            with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+                await stack.enter_async_context(LacksExit())
+            self.assertFalse(stack._exit_callbacks)
 
     @_async_test
     async def test_async_exit_exception_chaining(self):
@@ -535,6 +555,18 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         inner_exc = saved_details[1]
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+    @_async_test
+    async def test_instance_bypass_async(self):
+        class Example(object): pass
+        cm = Example()
+        cm.__aenter__ = object()
+        cm.__aexit__ = object()
+        stack = self.exit_stack()
+        with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+            await stack.enter_async_context(cm)
+        stack.push_async_exit(cm)
+        self.assertIs(stack._exit_callbacks[-1][1], cm)
 
 
 class TestAsyncNullcontext(unittest.TestCase):

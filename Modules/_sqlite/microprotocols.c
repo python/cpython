@@ -143,6 +143,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         return Py_NewRef(alt);
     }
     /* else set the right exception and return NULL */
-    PyErr_SetString(pysqlite_ProgrammingError, "can't adapt");
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    PyErr_SetString(state->ProgrammingError, "can't adapt");
     return NULL;
 }

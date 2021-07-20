@@ -135,16 +135,16 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_convert(arg):
+def _type_convert(arg, module=None):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg)
+        return ForwardRef(arg, module=module)
     return arg
 
 
-def _type_check(arg, msg, is_argument=True):
+def _type_check(arg, msg, is_argument=True, module=None):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -160,7 +160,7 @@ def _type_check(arg, msg, is_argument=True):
     if is_argument:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
-    arg = _type_convert(arg)
+    arg = _type_convert(arg, module=module)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -196,7 +196,7 @@ def _type_repr(obj):
     return repr(obj)
 
 
-def _collect_type_vars(types, typevar_types=None):
+def _collect_type_vars(types_, typevar_types=None):
     """Collect all type variable contained
     in types in order of first appearance (lexicographic order). For example::
 
@@ -205,10 +205,10 @@ def _collect_type_vars(types, typevar_types=None):
     if typevar_types is None:
         typevar_types = TypeVar
     tvars = []
-    for t in types:
+    for t in types_:
         if isinstance(t, typevar_types) and t not in tvars:
             tvars.append(t)
-        if isinstance(t, (_GenericAlias, GenericAlias)):
+        if isinstance(t, (_GenericAlias, GenericAlias, types.Union)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
@@ -315,12 +315,14 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
-    if isinstance(t, (_GenericAlias, GenericAlias)):
+    if isinstance(t, (_GenericAlias, GenericAlias, types.Union)):
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
             return GenericAlias(t.__origin__, ev_args)
+        if isinstance(t, types.Union):
+            return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
     return t
@@ -355,6 +357,12 @@ class _SpecialForm(_Final, _root=True):
         self._getitem = getitem
         self._name = getitem.__name__
         self.__doc__ = getitem.__doc__
+
+    def __getattr__(self, item):
+        if item in {'__name__', '__qualname__'}:
+            return self._name
+
+        raise AttributeError(item)
 
     def __mro_entries__(self, bases):
         raise TypeError(f"Cannot subclass {self!r}")
@@ -631,9 +639,9 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__')
+                 '__forward_is_argument__', '__forward_module__')
 
-    def __init__(self, arg, is_argument=True):
+    def __init__(self, arg, is_argument=True, module=None):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -645,6 +653,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
+        self.__forward_module__ = module
 
     def _evaluate(self, globalns, localns, recursive_guard):
         if self.__forward_arg__ in recursive_guard:
@@ -656,6 +665,10 @@ class ForwardRef(_Final, _root=True):
                 globalns = localns
             elif localns is None:
                 localns = globalns
+            if self.__forward_module__ is not None:
+                globalns = getattr(
+                    sys.modules.get(self.__forward_module__, None), '__dict__', globalns
+                )
             type_ =_type_check(
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
@@ -928,6 +941,9 @@ class _BaseGenericAlias(_Final, _root=True):
         return tuple(res)
 
     def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return self._name
+
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
@@ -988,8 +1004,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
     @_tp_cache
     def __getitem__(self, params):
@@ -1009,7 +1025,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         for arg in self.__args__:
             if isinstance(arg, self._typevar_types):
                 arg = subst[arg]
-            elif isinstance(arg, (_GenericAlias, GenericAlias)):
+            elif isinstance(arg, (_GenericAlias, GenericAlias, types.Union)):
                 subparams = arg.__parameters__
                 if subparams:
                     subargs = tuple(subst[x] for x in subparams)
@@ -1099,8 +1115,8 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
@@ -1177,7 +1193,7 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
         return Union[params]
 
     def __eq__(self, other):
-        if not isinstance(other, _UnionGenericAlias):
+        if not isinstance(other, (_UnionGenericAlias, types.Union)):
             return NotImplemented
         return set(self.__args__) == set(other.__args__)
 
@@ -1775,6 +1791,12 @@ def _strip_annotations(t):
         if stripped_args == t.__args__:
             return t
         return GenericAlias(t.__origin__, stripped_args)
+    if isinstance(t, types.Union):
+        stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
+        if stripped_args == t.__args__:
+            return t
+        return functools.reduce(operator.or_, stripped_args)
+
     return t
 
 
@@ -2234,7 +2256,8 @@ class _TypedDictMeta(type):
         own_annotation_keys = set(own_annotations.keys())
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_annotations = {
-            n: _type_check(tp, msg) for n, tp in own_annotations.items()
+            n: _type_check(tp, msg, module=tp_dict.__module__)
+            for n, tp in own_annotations.items()
         }
         required_keys = set()
         optional_keys = set()
@@ -2512,7 +2535,7 @@ class TextIO(IO[str]):
 
 class _DeprecatedType(type):
     def __getattribute__(cls, name):
-        if name != "__dict__" and name in cls.__dict__:
+        if name not in ("__dict__", "__module__") and name in cls.__dict__:
             warnings.warn(
                 f"{cls.__name__} is deprecated, import directly "
                 f"from typing instead. {cls.__name__} will be removed "

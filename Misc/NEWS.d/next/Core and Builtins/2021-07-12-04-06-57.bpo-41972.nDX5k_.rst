@@ -1,0 +1,1 @@
+Tuned the string-searching algorithm of fastsearch.h to have a shorter inner loop for most cases.

@@ -986,14 +986,29 @@ class TraceTestCase(unittest.TestCase):
             except Exception:
                 pass
 
-        # This doesn't conform to PEP 626
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (3, 'line'),
-             (5, 'line'),
-             (5, 'return')])
+             (3, 'return')])
+
+    def test_if_in_if_in_if(self):
+        def func(a=0, p=1, z=1):
+            if p:
+                if a:
+                    if z:
+                        pass
+                    else:
+                        pass
+            else:
+                pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'return')])
 
     def test_early_exit_with(self):
 
@@ -1040,6 +1055,64 @@ class TraceTestCase(unittest.TestCase):
              (-8, 'line'),
              (-8, 'return'),
              (1, 'return')])
+
+    def test_flow_converges_on_same_line(self):
+
+        def foo(x):
+            if x:
+                try:
+                    1/(x - 1)
+                except ZeroDivisionError:
+                    pass
+            return x
+
+        def func():
+            for i in range(2):
+                foo(i)
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (-8, 'call'),
+             (-7, 'line'),
+             (-2, 'line'),
+             (-2, 'return'),
+             (1, 'line'),
+             (2, 'line'),
+             (-8, 'call'),
+             (-7, 'line'),
+             (-6, 'line'),
+             (-5, 'line'),
+             (-5, 'exception'),
+             (-4, 'line'),
+             (-3, 'line'),
+             (-2, 'line'),
+             (-2, 'return'),
+             (1, 'line'),
+             (1, 'return')])
+
+    def test_no_tracing_of_named_except_cleanup(self):
+
+        def func():
+            x = 0
+            try:
+                1/x
+            except ZeroDivisionError as error:
+                if x:
+                    raise
+            return "done"
+
+        self.run_and_compare(func,
+        [(0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (3, 'line'),
+            (3, 'exception'),
+            (4, 'line'),
+            (5, 'line'),
+            (7, 'line'),
+            (7, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
