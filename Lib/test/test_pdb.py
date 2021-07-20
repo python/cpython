@@ -260,6 +260,7 @@ def test_pdb_breakpoint_commands():
     ...     'tbreak 5',
     ...     'continue',  # will stop at temporary breakpoint
     ...     'break',     # make sure breakpoint is gone
+    ...     'commands 10',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -319,6 +320,8 @@ def test_pdb_breakpoint_commands():
     > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(5)test_function()
     -> print(3)
     (Pdb) break
+    (Pdb) commands 10
+    *** Breakpoint number 10 out of range
     (Pdb) continue
     3
     4

@@ -1,0 +1,2 @@
+In :mod:`pdb`, *commands* directive was fixed to disallow setting commands
+for a non-existing breakpoint and to display "out of range" error.
