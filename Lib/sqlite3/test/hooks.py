@@ -38,10 +38,9 @@ class CollationTests(unittest.TestCase):
             con.create_collation("X", 42)
         self.assertEqual(str(cm.exception), 'parameter must be callable')
 
-    def test_create_collation_not_ascii(self):
+    def test_create_collation_utf8(self):
         con = sqlite.connect(":memory:")
-        with self.assertRaises(sqlite.ProgrammingError):
-            con.create_collation("collä", lambda x, y: (x > y) - (x < y))
+        con.create_collation("collä", lambda x, y: (x > y) - (x < y))
 
     def test_create_collation_bad_upper(self):
         class BadUpperStr(str):
