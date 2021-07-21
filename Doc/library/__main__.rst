@@ -80,27 +80,20 @@ importable elsewhere::
 Packaging Considerations (``console_scripts``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For detailed documentation on Python packaging, see
-`setuptools. <https://setuptools.readthedocs.io/en/latest/>`__
+For detailed documentation on Python packaging, see the
+`Python Packaging User Guide. <https://packaging.python.org/>`__
 
 *main* functions are often used to create command line tools by specifying them
 as entry points for console scripts.  When this is done, pip inserts the
-function call into a template that looks like this::
+function call into a template script, where the return value of *main* is
+passed into sys.exit. For example::
 
-   #!/path/to/python3
-   # -*- coding: utf-8 -*-
-   import re
-   import sys
-   from package.__main__ import main
-   if __name__ == '__main__':
-       sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
-       sys.exit(main())
+    sys.exit(main())
 
-Notice the **last line.** The call to *main* is wrapped in :func:`sys.exit`.
-When *main* is the entry point of a console_script, the expectation is that
-your function will return some value acceptable as an input to
-:func:`sys.exit`; typically, an integer or ``None`` (which is implicitly returned
-if your function does not have a return statement).
+Since the call to *main* is wrapped in :func:`sys.exit`, the expectation is
+that your function will return some value acceptable as an input to
+:func:`sys.exit`; typically, an integer or ``None`` (which is implicitly
+returned if your function does not have a return statement).
 
 By proactively following this convention ourselves, our module will have the
 same behavior when run directly (``python3 echo.py``) as it will have if we
@@ -108,12 +101,9 @@ later package it as an console script entry-point in a pip-installable package.
 We can revise the :file:`echo.py` example from earlier to follow this
 convention::
 
-    # echo.py
-    ...
-
     def main() -> int:  # now, main returns an integer
-        "Echo the string to standard output"
-        echo(shlex.join(sys.argv))
+        "Echo the input to standard output"
+        print(shlex.join(sys.argv))
         return 0
 
     if __name__ == '__main__':
