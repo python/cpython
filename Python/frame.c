@@ -85,7 +85,7 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
         PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
         if (back == NULL) {
             /* Memory error here. */
-            assert(_PyErr_GetTopmostException(_PyThreadState_GET())->exc_type == PyExc_MemoryError);
+            assert(PyErr_ExceptionMatches(PyExc_MemoryError));
             /* Nothing we can do about it */
             PyErr_Clear();
             _PyErr_WriteUnraisableMsg("Out of memory lazily allocating frame->f_back", NULL);
