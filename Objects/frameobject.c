@@ -671,21 +671,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
         return 0;
     }
     assert(f->f_frame->frame_obj == NULL);
-    /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
-    for (int i = 0; i < f->f_frame->nlocalsplus; i++) {
-        Py_VISIT(locals[i]);
-    }
-    /* stack */
-    for (int i = 0; i < f->f_frame->stackdepth; i++) {
-        Py_VISIT(f->f_frame->stack[i]);
-    }
-
-    Py_VISIT(f->f_frame->f_globals);
-    Py_VISIT(f->f_frame->f_builtins);
-    Py_VISIT(f->f_frame->f_locals);
-    Py_VISIT(f->f_frame->f_code);
-    return 0;
+    return _PyFrame_Traverse(f->f_frame, visit, arg);
 }
 
 static int
@@ -854,35 +840,6 @@ frame_alloc(InterpreterFrame *frame, int owns)
     f->f_frame = frame;
     f->f_own_locals_memory = owns;
     return f;
-}
-
-void
-_PyFrame_TakeInterpreterFrame(PyFrameObject *f, InterpreterFrame *frame)
-{
-    assert(f->f_own_locals_memory == 0);
-    assert(frame->frame_obj == NULL);
-
-    f->f_own_locals_memory = 1;
-    f->f_frame = frame;
-    assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
-        /* Link PyFrameObjects.f_back and remove link through InterpreterFrame.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
-        if (back == NULL) {
-            /* Memory error here. */
-            assert(_PyErr_GetTopmostException(_PyThreadState_GET())->exc_type == PyExc_MemoryError);
-            /* Nothing we can do about it */
-            PyErr_Clear();
-            _PyErr_WriteUnraisableMsg("Out of memory lazily allocating frame->f_back", NULL);
-        }
-        else {
-            f->f_back = (PyFrameObject *)Py_NewRef(back);
-        }
-        frame->previous = NULL;
-    }
-    if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
-        _PyObject_GC_TRACK((PyObject *)f);
-    }
 }
 
 PyFrameObject* _Py_HOT_FUNCTION

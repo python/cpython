@@ -38,21 +38,10 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     InterpreterFrame *frame = gen->gi_xframe;
     if (frame != NULL) {
         assert(frame->frame_obj == NULL || frame->frame_obj->f_own_locals_memory == 0);
-        Py_VISIT(frame->frame_obj);
-        /* locals */
-        PyObject **locals = _PyFrame_GetLocalsArray(frame);
-        for (int i = 0; i < frame->nlocalsplus; i++) {
-            Py_VISIT(locals[i]);
+        int err = _PyFrame_Traverse(frame, visit, arg);
+        if (err) {
+            return err;
         }
-        /* stack */
-        for (int i = 0; i < frame->stackdepth; i++) {
-            Py_VISIT(frame->stack[i]);
-        }
-
-        Py_VISIT(frame->f_globals);
-        Py_VISIT(frame->f_builtins);
-        Py_VISIT(frame->f_locals);
-        Py_VISIT(frame->f_code);
     }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */

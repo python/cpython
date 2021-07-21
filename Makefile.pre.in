@@ -350,6 +350,7 @@ PYTHON_OBJS=	\
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/frame.o \
 		Python/frozenmain.o \
 		Python/future.o \
 		Python/getargs.o \

@@ -49,7 +49,8 @@ static inline int _PyFrameHasCompleted(InterpreterFrame *f) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-void _PyFrame_TakeInterpreterFrame(PyFrameObject *f, InterpreterFrame *locals);
+InterpreterFrame *
+_PyInterpreterFrame_HeapAlloc(PyFrameConstructor *con, PyObject *locals);
 
 static inline void
 _PyFrame_InitializeSpecials(
@@ -66,17 +67,6 @@ _PyFrame_InitializeSpecials(
     frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
-}
-
-static inline void
-_PyFrame_ClearSpecials(InterpreterFrame *frame)
-{
-    frame->generator = NULL;
-    Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_globals);
-    Py_DECREF(frame->f_builtins);
-    Py_DECREF(frame->f_code);
 }
 
 /* Gets the pointer to the locals array
@@ -117,6 +107,9 @@ _PyFrame_GetFrameObject(InterpreterFrame *frame)
  */
 int
 _PyFrame_Clear(InterpreterFrame * frame, int take);
+
+int
+_PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg);
 
 int
 _PyFrame_FastToLocalsWithError(InterpreterFrame *frame);
