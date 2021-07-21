@@ -979,9 +979,3 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
-
-try:
-    from _functools import _idfunc
-except ImportError:
-    def _idfunc(_, x):
-        return x
