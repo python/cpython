@@ -2016,8 +2016,8 @@ _Py_GetConfig(void)
 
 #define MINIMUM_OVERHEAD 1000
 
-_Py_NO_INLINE PyObject **
-_PyThreadState_PushChunk(PyThreadState *tstate, int size)
+static PyObject **
+push_chunk(PyThreadState *tstate, int size)
 {
     assert(tstate->datastack_top + size >= tstate->datastack_limit);
 
@@ -2044,10 +2044,11 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     int nlocalsplus = code->co_nlocalsplus;
     size_t size = nlocalsplus + code->co_stacksize +
         FRAME_SPECIALS_SIZE;
+    assert(size < INT_MAX/sizeof(PyObject *));
     PyObject **localsarray = tstate->datastack_top;
     PyObject **top = localsarray + size;
     if (top >= tstate->datastack_limit) {
-        localsarray = _PyThreadState_PushChunk(tstate, size);
+        localsarray = push_chunk(tstate, (int)size);
         if (localsarray == NULL) {
             return NULL;
         }
