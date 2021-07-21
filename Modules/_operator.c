@@ -889,7 +889,7 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
 /* helper function to make typing.NewType.__call__ method faster */
 
 static PyObject *
-operator_idfunc(PyObject* self, PyObject* x) {
+_operator__idfunc(PyObject* self, PyObject* x) {
     Py_INCREF(x);
     return x;
 }
