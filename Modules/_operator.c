@@ -950,7 +950,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
-    {"_idfunc",         (PyCFunction)operator_idfunc, METH_O},
+    {"_idfunc",         (PyCFunction)_operator__idfunc, METH_O},
     {NULL,              NULL}           /* sentinel */
 
 };
