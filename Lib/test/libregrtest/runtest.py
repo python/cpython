@@ -12,9 +12,9 @@ import unittest
 
 from test import support
 from test.support import os_helper
-from test.libregrtest.utils import clear_caches
+from test.libregrtest.cmdline import Namespace
 from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.utils import format_duration, print_warning
+from test.libregrtest.utils import clear_caches, format_duration, print_warning
 
 
 # Test result constants.
@@ -67,7 +67,11 @@ NOTTESTS = set()
 FOUND_GARBAGE = []
 
 
-def is_failed(result, ns):
+TestResult = collections.namedtuple('TestResult',
+    'test_name result test_time xml_data')
+
+
+def is_failed(result: TestResult, ns: Namespace) -> bool:
     ok = result.result
     if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN):
         return False
@@ -76,7 +80,7 @@ def is_failed(result, ns):
     return True
 
 
-def format_test_result(result):
+def format_test_result(result: TestResult) -> str:
     fmt = _FORMAT_TEST_RESULT.get(result.result, "%s")
     text = fmt % result.test_name
     if result.result == TIMEOUT:
@@ -101,7 +105,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 
-def get_abs_module(ns, test_name):
+def get_abs_module(ns: Namespace, test_name: str) -> str:
     if test_name.startswith('test.') or ns.testdir:
         return test_name
     else:
@@ -109,10 +113,7 @@ def get_abs_module(ns, test_name):
         return 'test.' + test_name
 
 
-TestResult = collections.namedtuple('TestResult',
-    'test_name result test_time xml_data')
-
-def _runtest(ns, test_name):
+def _runtest(ns: Namespace, test_name: str) -> TestResult:
     # Handle faulthandler timeout, capture stdout+stderr, XML serialization
     # and measure time.
 
@@ -169,7 +170,7 @@ def _runtest(ns, test_name):
         support.junit_xml_list = None
 
 
-def runtest(ns, test_name):
+def runtest(ns: Namespace, test_name: str) -> TestResult:
     """Run a single test.
 
     ns -- regrtest namespace of options
@@ -210,11 +211,11 @@ def _test_module(the_module):
     support.run_unittest(tests)
 
 
-def save_env(ns, test_name):
+def save_env(ns: Namespace, test_name: str):
     return saved_test_environment(test_name, ns.verbose, ns.quiet, pgo=ns.pgo)
 
 
-def _runtest_inner2(ns, test_name):
+def _runtest_inner2(ns: Namespace, test_name: str):
     # Load the test function, run the test function, handle huntrleaks
     # and findleaks to detect leaks
 
@@ -265,7 +266,7 @@ def _runtest_inner2(ns, test_name):
     return refleak
 
 
-def _runtest_inner(ns, test_name, display_failure=True):
+def _runtest_inner(ns: Namespace, test_name: str, display_failure: bool = True) -> int:
     # Detect environment changes, handle exceptions.
 
     # Reset the environment_altered flag to detect if a test altered
@@ -313,7 +314,7 @@ def _runtest_inner(ns, test_name, display_failure=True):
     return PASSED
 
 
-def cleanup_test_droppings(test_name, verbose):
+def cleanup_test_droppings(test_name: str, verbose: int) -> None:
     # First kill any dangling references to open files etc.
     # This can also issue some ResourceWarnings which would otherwise get
     # triggered during the following test run, and possibly produce failures.
