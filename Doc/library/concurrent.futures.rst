@@ -20,7 +20,6 @@ The asynchronous execution can be performed with threads, using
 defined by the abstract :class:`Executor` class.
 
 
-
 Executor Objects
 ----------------
 
