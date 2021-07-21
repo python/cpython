@@ -3,7 +3,7 @@ if not exist c:\mnt\ goto nomntdir
 cd C:\mnt
 
 set platf=Win32
-set builddir=c:\mnt\PCBuild
+set builddir=c:\mnt\PCBuild\win32
 set outdir=c:\mnt\build-out
 set py_version=3.8.10
 
