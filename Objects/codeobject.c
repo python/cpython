@@ -156,12 +156,12 @@ validate_and_copy_tuple(PyObject *tup)
 
 // This is also used in compile.c.
 void
-_Py_set_localsplus_info(int offset, PyObject *name, _PyLocals_Kind kind,
+_Py_set_localsplus_info(int offset, PyObject *name, _PyLocal_VarKind kind,
                         PyObject *names, PyObject *kinds)
 {
     Py_INCREF(name);
     PyTuple_SET_ITEM(names, offset, name);
-    _PyLocals_SetKind(kinds, offset, kind);
+    _PyLocal_SetVarKind(kinds, offset, kind);
 }
 
 static void
@@ -175,7 +175,7 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
     int nfreevars = 0;
     Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(names);
     for (int i = 0; i < nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(kinds, i);
+        _PyLocal_VarKind kind = _PyLocal_GetVarKind(kinds, i);
         if (kind & CO_FAST_LOCAL) {
             nlocals += 1;
             if (kind & CO_FAST_CELL) {
@@ -205,7 +205,7 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
 }
 
 static PyObject *
-get_localsplus_names(PyCodeObject *co, _PyLocals_Kind kind, int num)
+get_localsplus_names(PyCodeObject *co, _PyLocal_VarKind kind, int num)
 {
     PyObject *names = PyTuple_New(num);
     if (names == NULL) {
@@ -213,7 +213,7 @@ get_localsplus_names(PyCodeObject *co, _PyLocals_Kind kind, int num)
     }
     int index = 0;
     for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
-        _PyLocals_Kind k = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        _PyLocal_VarKind k = _PyLocal_GetVarKind(co->co_localspluskinds, offset);
         if ((k & kind) == 0) {
             continue;
         }
@@ -458,8 +458,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
             // Merge the localsplus indices.
             nlocalsplus -= 1;
             offset -= 1;
-            _PyLocals_Kind kind = _PyLocals_GetKind(localspluskinds, argoffset);
-            _PyLocals_SetKind(localspluskinds, argoffset, kind | CO_FAST_CELL);
+            _PyLocal_VarKind kind = _PyLocal_GetVarKind(localspluskinds, argoffset);
+            _PyLocal_SetVarKind(localspluskinds, argoffset, kind | CO_FAST_CELL);
             continue;
         }
         _Py_set_localsplus_info(offset, name, CO_FAST_CELL,

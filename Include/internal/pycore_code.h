@@ -164,19 +164,19 @@ extern Py_ssize_t _Py_QuickenedCount;
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
 
-typedef unsigned char _PyLocals_Kind;
+typedef unsigned char _PyLocal_VarKind;
 
-static inline _PyLocals_Kind
-_PyLocals_GetKind(PyObject *kinds, int i)
+static inline _PyLocal_VarKind
+_PyLocal_GetVarKind(PyObject *kinds, int i)
 {
     assert(PyBytes_Check(kinds));
     assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
     char *ptr = PyBytes_AS_STRING(kinds);
-    return (_PyLocals_Kind)(ptr[i]);
+    return (_PyLocal_VarKind)(ptr[i]);
 }
 
 static inline void
-_PyLocals_SetKind(PyObject *kinds, int i, _PyLocals_Kind kind)
+_PyLocal_SetVarKind(PyObject *kinds, int i, _PyLocal_VarKind kind)
 {
     assert(PyBytes_Check(kinds));
     assert(0 <= i && i < PyBytes_GET_SIZE(kinds));

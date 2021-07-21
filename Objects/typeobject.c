@@ -8888,7 +8888,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 
     PyObject *firstarg = f->f_localsptr[0];
     // The first argument might be a cell.
-    if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
+    if (firstarg != NULL && (_PyLocal_GetVarKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
         if (f->f_lasti >= 0) {
@@ -8907,7 +8907,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     PyTypeObject *type = NULL;
     int i = co->co_nlocals + co->co_nplaincellvars;
     for (; i < co->co_nlocalsplus; i++) {
-        assert((_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
+        assert((_PyLocal_GetVarKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {

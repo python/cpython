@@ -7385,7 +7385,7 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
         assert(offset >= 0);
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
-        _PyLocals_Kind kind = CO_FAST_LOCAL;
+        _PyLocal_VarKind kind = CO_FAST_LOCAL;
         if (PyDict_GetItem(c->u->u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }

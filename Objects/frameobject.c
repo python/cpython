@@ -1059,7 +1059,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     assert(co);
     fast = f->f_localsptr;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+        _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, i);
 
         /* If the namespace is unoptimized, then one of the
            following cases applies:
@@ -1189,7 +1189,7 @@ _PyFrame_BuildFastRefs(PyFrameObject *f)
 
     if (f->f_state != FRAME_CLEARED) {
         for (int i = 0; i < co->co_nlocalsplus; i++) {
-            _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+            _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, i);
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *target = NULL;
             if (kind & CO_FAST_FREE) {
@@ -1420,7 +1420,7 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
         PyObject **fast_locals = f->f_localsptr;
         value = fast_locals[offset];
         // Check if MAKE_CELL has been called since the proxy was created
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, offset);
         if (kind & CO_FAST_CELL) {
             // Value hadn't been converted to a cell yet when the proxy was created
             // Update the proxy if MAKE_CELL has run since the last access,
@@ -1504,7 +1504,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     }
     PyObject **fast_locals = f->f_localsptr;
     // Check if MAKE_CELL has been called since the proxy was created
-    _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, offset);
+    _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, offset);
     if (kind & CO_FAST_CELL) {
         // Value hadn't been converted to a cell yet when the proxy was created
         // Update the proxy if MAKE_CELL has run since the last access,
