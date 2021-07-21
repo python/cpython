@@ -234,7 +234,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         Py_IncRef = ctypes.pythonapi.Py_IncRef
         PyEval_GetLocals = ctypes.pythonapi.PyEval_GetLocals
         PyLocals_Get = ctypes.pythonapi.PyLocals_Get
-        PyLocals_GetReturnsCopy = ctypes.pythonapi.PyLocals_GetReturnsCopy
+        PyLocals_GetKind = ctypes.pythonapi.PyLocals_GetKind
         PyLocals_GetCopy = ctypes.pythonapi.PyLocals_GetCopy
         PyLocals_GetView = ctypes.pythonapi.PyLocals_GetView
         for capi_func in (Py_IncRef,):
@@ -255,7 +255,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         Py_IncRef(c_locals_cache) # Make the borrowed reference a real one
         Py_IncRef(c_locals_cache) # Account for next check's borrowed reference
         self.assertIs(PyEval_GetLocals(), c_locals_cache)
-        self.assertTrue(PyLocals_GetReturnsCopy())
+        self.assertEqual(PyLocals_GetKind(), 1) # PyLocals_SHALLOW_COPY
         locals_get = PyLocals_Get()
         self.assertIsInstance(locals_get, dict)
         self.assertIsNot(locals_get, c_locals_cache)
@@ -271,7 +271,7 @@ class FastLocalsProxyTest(unittest.TestCase):
             Py_IncRef(c_locals_cache) # Make the borrowed reference a real one
             Py_IncRef(c_locals_cache) # Account for next check's borrowed reference
             self.assertIs(PyEval_GetLocals(), c_locals_cache)
-            self.assertFalse(PyLocals_GetReturnsCopy())
+            self.assertEqual(PyLocals_GetKind(), 0) # PyLocals_DIRECT_REFERENCE
             locals_get = PyLocals_Get()
             self.assertIs(locals_get, c_locals_cache)
             locals_copy = PyLocals_GetCopy()
@@ -286,11 +286,11 @@ class FastLocalsProxyTest(unittest.TestCase):
         Py_IncRef = ctypes.pythonapi.Py_IncRef
         _PyFrame_BorrowLocals = ctypes.pythonapi._PyFrame_BorrowLocals
         PyFrame_GetLocals = ctypes.pythonapi.PyFrame_GetLocals
-        PyFrame_GetLocalsReturnsCopy = ctypes.pythonapi.PyFrame_GetLocalsReturnsCopy
+        PyFrame_GetLocalsKind = ctypes.pythonapi.PyFrame_GetLocalsKind
         PyFrame_GetLocalsCopy = ctypes.pythonapi.PyFrame_GetLocalsCopy
         PyFrame_GetLocalsView = ctypes.pythonapi.PyFrame_GetLocalsView
         for capi_func in (Py_IncRef, _PyFrame_BorrowLocals,
-                          PyFrame_GetLocals, PyFrame_GetLocalsReturnsCopy,
+                          PyFrame_GetLocals, PyFrame_GetLocalsKind,
                           PyFrame_GetLocalsCopy, PyFrame_GetLocalsView):
             capi_func.argtypes = (ctypes.py_object,)
         for capi_func in (_PyFrame_BorrowLocals, PyFrame_GetLocals,
@@ -314,7 +314,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         class ExecFrame:
             c_locals_cache = get_c_locals(func_frame)
             self.assertIs(get_c_locals(func_frame), c_locals_cache)
-            self.assertTrue(PyFrame_GetLocalsReturnsCopy(func_frame))
+            self.assertEqual(PyFrame_GetLocalsKind(func_frame), 1) # PyLocals_SHALLOW_COPY
             locals_get = PyFrame_GetLocals(func_frame)
             self.assertIsInstance(locals_get, dict)
             self.assertIsNot(locals_get, c_locals_cache)
@@ -330,7 +330,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         # Test querying an unoptimised frame from an optimised scope
         c_locals_cache = get_c_locals(cls_frame)
         self.assertIs(get_c_locals(cls_frame), c_locals_cache)
-        self.assertFalse(PyFrame_GetLocalsReturnsCopy(cls_frame))
+        self.assertEqual(PyFrame_GetLocalsKind(cls_frame), 0) # PyLocals_DIRECT_REFERENCE
         locals_get = PyFrame_GetLocals(cls_frame)
         self.assertIs(locals_get, c_locals_cache)
         locals_copy = PyFrame_GetLocalsCopy(cls_frame)

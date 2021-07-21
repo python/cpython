@@ -2143,7 +2143,7 @@ function PyLocals_Get
     added 3.11
 function PyLocals_GetCopy
     added 3.11
-function PyLocals_GetReturnsCopy
+function PyLocals_GetKind
     added 3.11
 function PyLocals_GetView
     added 3.11

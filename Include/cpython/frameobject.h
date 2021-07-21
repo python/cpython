@@ -79,7 +79,7 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 
 /* Fast locals proxy allows for reliable write-through from trace functions */
 // TODO: Perhaps this should be hidden, and API users told to query for
-//       PyFrame_GetLocalsReturnsCopy() instead. Having this available
+//       PyFrame_GetLocalsKind() instead. Having this available
 //       seems like a nice way to let folks write some useful debug assertions,
 //       though.
 PyAPI_DATA(PyTypeObject) _PyFastLocalsProxy_Type;
@@ -93,7 +93,7 @@ PyAPI_DATA(PyTypeObject) _PyFastLocalsProxy_Type;
 PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *);
 PyAPI_FUNC(PyObject *) PyFrame_GetLocalsCopy(PyFrameObject *);
 PyAPI_FUNC(PyObject *) PyFrame_GetLocalsView(PyFrameObject *);
-PyAPI_FUNC(int) PyFrame_GetLocalsReturnsCopy(PyFrameObject *);
+PyAPI_FUNC(PyLocals_Kind) PyFrame_GetLocalsKind(PyFrameObject *);
 
 // Underlying API supporting PyEval_GetLocals()
 PyAPI_FUNC(PyObject *) _PyFrame_BorrowLocals(PyFrameObject *);

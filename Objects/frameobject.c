@@ -81,13 +81,16 @@ PyFrame_GetLocals(PyFrameObject *f)
     return updated_locals;
 }
 
-int
-PyFrame_GetLocalsReturnsCopy(PyFrameObject *f)
+PyLocals_Kind
+PyFrame_GetLocalsKind(PyFrameObject *f)
 {
-    // This frame API supports the stable PyLocals_GetReturnsCopy() API
+    // This frame API supports the stable PyLocals_GetKind() API
     PyCodeObject *co = _PyFrame_GetCode(f);
     assert(co);
-    return (co->co_flags & CO_OPTIMIZED);
+    if (co->co_flags & CO_OPTIMIZED) {
+        return PyLocals_SHALLOW_COPY;
+    }
+    return PyLocals_DIRECT_REFERENCE;
 }
 
 PyObject *

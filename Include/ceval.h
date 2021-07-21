@@ -43,20 +43,22 @@ PyAPI_FUNC(PyFrameObject *) PyEval_GetFrame(void);
  * It returns a read/write reference or a shallow copy depending on the scope
  * of the active frame.
  */
-// TODO: Add API tests for this
 PyAPI_FUNC(PyObject *) PyLocals_Get(void);
 
 /* PyLocals_GetCopy() returns a fresh shallow copy of the active local namespace */
-// TODO: Implement this, and add API tests
 PyAPI_FUNC(PyObject *) PyLocals_GetCopy(void);
 
 /* PyLocals_GetView() returns a read-only proxy for the active local namespace */
-// TODO: Implement this, and add API tests
 PyAPI_FUNC(PyObject *) PyLocals_GetView(void);
 
-/* Returns true if PyLocals_Get() returns a shallow copy in the active scope */
-// TODO: Implement this, and add API tests
-PyAPI_FUNC(int) PyLocals_GetReturnsCopy(void);
+/* PyLocals_GetKind()reports the behaviour of PyLocals_Get() in the active scope */
+typedef enum {
+    PyLocals_UNDEFINED = -1,      // Indicates error (e.g. no thread state defined)
+    PyLocals_DIRECT_REFERENCE = 0,
+    PyLocals_SHALLOW_COPY = 1
+} PyLocals_Kind;
+
+PyAPI_FUNC(PyLocals_Kind) PyLocals_GetKind(void);
 #endif
 
 
