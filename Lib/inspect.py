@@ -739,6 +739,10 @@ def getdoc(object):
             return None
     if not isinstance(doc, str):
         return None
+
+    from dataclasses import is_dataclass, add_field_docs
+    if is_dataclass(object):
+        doc = add_field_docs(object, doc)
     return cleandoc(doc)
 
 def cleandoc(doc):

@@ -265,7 +265,7 @@ class Field:
                  )
 
     def __init__(self, default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only):
+                 metadata, kw_only, doc=''):
         self.name = None
         self.type = None
         self.default = default
@@ -279,7 +279,7 @@ class Field:
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
         self._field_type = None
-        self.doc = None
+        self.doc = doc
 
     def __repr__(self):
         return ('Field('
@@ -346,7 +346,7 @@ class _DataclassParams:
 # so that a type checker can be told (via overloads) that this is a
 # function whose type depends on its parameters.
 def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
-          hash=None, compare=True, metadata=None, kw_only=MISSING):
+          hash=None, compare=True, metadata=None, kw_only=MISSING, doc=''):
     """Return an object to identify dataclass fields.
 
     default is the default value of the field.  default_factory is a
@@ -366,7 +366,7 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return Field(default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only)
+                 metadata, kw_only, doc)
 
 
 def _fields_in_init_order(fields):
@@ -1088,19 +1088,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> None', ''))
 
-    if hasattr(cls, '__field_doc__'):
-        if cls.__field_doc__:
-            cls.__doc__ += '\n'
-
-        for name, val in cls.__field_doc__.items():
-            if name not in fields:
-                raise Exception(f'Doc is specified for field "{name}" in __field_doc__, but it does not exist')
-            ann = cls_annotations[name].__name__
-            dflt = fields[name].default
-            dflt = f' [{dflt}]' if dflt is not MISSING else ' '
-            cls.__doc__ += f'\n{name}: {ann}{dflt} -- {val}\n'
-        cls.__doc__ = cls.__doc__[:-1]
-
     if match_args:
         # I could probably compute this once
         _set_new_attribute(cls, '__match_args__',
@@ -1460,3 +1447,41 @@ def replace(obj, /, **changes):
     # changes that aren't fields, this will correctly raise a
     # TypeError.
     return obj.__class__(**changes)
+
+def add_field_docs(cls, doc):
+    cls_annotations = cls.__dict__.get('__annotations__', {})
+    fields = {}
+    for b in cls.__mro__[-1:0:-1]:
+        # Only process classes that have been processed by our
+        # decorator.  That is, they have a _FIELDS attribute.
+        base_fields = getattr(b, _FIELDS, None)
+        if base_fields is not None:
+            has_dataclass_bases = True
+            for f in base_fields.values():
+                fields[f.name] = f
+            if getattr(b, _PARAMS).frozen:
+                any_frozen_base = True
+    if doc:
+        doc += '\n'
+    # Now find fields in our class.  While doing so, validate some
+    # things, and set the default values (as class attributes) where
+    # we can.
+    cls_fields = []
+    # Get a reference to this module for the _is_kw_only() test.
+    KW_ONLY_seen = False
+    dataclasses = sys.modules[__name__]
+    for name, type in cls_annotations.items():
+        cls_fields.append(_get_field(cls, name, type, True))
+
+    for f in cls_fields:
+        fields[f.name] = f
+    # print("fields", fields)
+    for f in getattr(cls, _FIELDS).values():
+        name = f.name
+        ann = cls_annotations[name].__name__
+        dflt = fields[name].default
+        dflt = f' [{dflt}]' if dflt is not MISSING else ' '
+        fdoc = f' -- {f.doc}' if f.doc else ''
+        doc += f'\n{name}: {ann}{dflt}{fdoc}\n'
+    doc = doc[:-1]
+    return doc
