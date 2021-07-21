@@ -857,7 +857,7 @@ frame_alloc(InterpreterFrame *frame, int owns)
 }
 
 void
-_PyFrame_TakeLocals(PyFrameObject *f, InterpreterFrame *frame)
+_PyFrame_TakeInterpreterFrame(PyFrameObject *f, InterpreterFrame *frame)
 {
     assert(f->f_own_locals_memory == 0);
     assert(frame->frame_obj == NULL);
@@ -866,17 +866,20 @@ _PyFrame_TakeLocals(PyFrameObject *f, InterpreterFrame *frame)
     f->f_frame = frame;
     assert(f->f_back == NULL);
     if (frame->previous != NULL) {
+        /* Link PyFrameObjects.f_back and remove link through InterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
         if (back == NULL) {
-            /* Memory error here. Nothing we can do about it */
+            /* Memory error here. */
+            assert(_PyErr_GetTopmostException(_PyThreadState_GET())->exc_type == PyExc_MemoryError);
+            /* Nothing we can do about it */
             PyErr_Clear();
             _PyErr_WriteUnraisableMsg("Out of memory lazily allocating frame->f_back", NULL);
         }
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
+        frame->previous = NULL;
     }
-    frame->previous = NULL;
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
     }

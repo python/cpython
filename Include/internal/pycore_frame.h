@@ -49,7 +49,7 @@ static inline int _PyFrameHasCompleted(InterpreterFrame *f) {
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
 
-void _PyFrame_TakeLocals(PyFrameObject *f, InterpreterFrame *locals);
+void _PyFrame_TakeInterpreterFrame(PyFrameObject *f, InterpreterFrame *locals);
 
 static inline void
 _PyFrame_InitializeSpecials(
@@ -107,13 +107,13 @@ _PyFrame_GetFrameObject(InterpreterFrame *frame)
 }
 
 /* Clears all references in the frame.
- * If take is non-zero, then the frame
- * may be transfered to the frame object
+ * If take is non-zero, then the InterpreterFrame frame
+ * may be transfered to the frame object it references
  * instead of being cleared. Either way
  * the caller no longer owns the references
  * in the frame.
  * take should  be set to 1 for heap allocated
- * frames.
+ * frames like the ones in generators and coroutines.
  */
 int
 _PyFrame_Clear(InterpreterFrame * frame, int take);
@@ -123,6 +123,11 @@ _PyFrame_FastToLocalsWithError(InterpreterFrame *frame);
 
 void
 _PyFrame_LocalsToFast(InterpreterFrame *frame, int clear);
+
+InterpreterFrame *_PyThreadState_PushFrame(
+    PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
+
+void _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame *frame);
 
 #ifdef __cplusplus
 }

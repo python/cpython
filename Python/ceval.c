@@ -5162,7 +5162,7 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
                     return -1;
                 }
             }
-            _PyFrame_TakeLocals(f, frame);
+            _PyFrame_TakeInterpreterFrame(f, frame);
             Py_DECREF(f);
             return 0;
         }

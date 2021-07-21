@@ -2042,7 +2042,7 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int nlocalsplus = code->co_nlocalsplus;
-    int size = nlocalsplus + code->co_stacksize +
+    size_t size = nlocalsplus + code->co_stacksize +
         FRAME_SPECIALS_SIZE;
     PyObject **localsarray = tstate->datastack_top;
     PyObject **top = localsarray + size;
