@@ -3691,6 +3691,29 @@ class NewTypeTests(BaseTestCase):
             class D(UserName):
                 pass
 
+    def test_or(self):
+        UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
+
+        for cls in (int, UserName):
+            with self.subTest(cls=cls):
+                self.assertEqual(UserId | cls, Union[UserId, cls])
+                self.assertEqual(cls | UserId, Union[cls, UserId])
+
+                self.assertEqual(get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(get_args(cls | UserId), (cls, UserId))
+
+    def test_special_attrs(self):
+        UserId = NewType('UserId', int)
+
+        self.assertEqual(UserId.__name__, 'UserId')
+        self.assertEqual(UserId.__qualname__, 'UserId')
+        self.assertEqual(UserId.__module__, __name__)
+
+    def test_repr(self):
+        UserId = NewType('UserId', int)
+
+        self.assertEqual(repr(UserId), f'{__name__}.UserId')
 
 class NamedTupleTests(BaseTestCase):
     class NestedEmployee(NamedTuple):
@@ -4497,6 +4520,67 @@ class TypeGuardTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, TypeGuard)
 
+
+class SpecialAttrsTests(BaseTestCase):
+    def test_special_attrs(self):
+        cls_to_check = (
+            # ABC classes
+            typing.AbstractSet,
+            typing.AsyncContextManager,
+            typing.AsyncGenerator,
+            typing.AsyncIterable,
+            typing.AsyncIterator,
+            typing.Awaitable,
+            typing.ByteString,
+            typing.Callable,
+            typing.ChainMap,
+            typing.Collection,
+            typing.Container,
+            typing.ContextManager,
+            typing.Coroutine,
+            typing.Counter,
+            typing.DefaultDict,
+            typing.Deque,
+            typing.Dict,
+            typing.FrozenSet,
+            typing.Generator,
+            typing.Hashable,
+            typing.ItemsView,
+            typing.Iterable,
+            typing.Iterator,
+            typing.KeysView,
+            typing.List,
+            typing.Mapping,
+            typing.MappingView,
+            typing.MutableMapping,
+            typing.MutableSequence,
+            typing.MutableSet,
+            typing.OrderedDict,
+            typing.Reversible,
+            typing.Sequence,
+            typing.Set,
+            typing.Sized,
+            typing.Tuple,
+            typing.Type,
+            typing.ValuesView,
+            # Special Forms
+            typing.Any,
+            typing.NoReturn,
+            typing.ClassVar,
+            typing.Final,
+            typing.Union,
+            typing.Optional,
+            typing.Literal,
+            typing.TypeAlias,
+            typing.Concatenate,
+            typing.TypeGuard,
+        )
+
+        for cls in cls_to_check:
+            with self.subTest(cls=cls):
+                self.assertEqual(cls.__name__, cls._name)
+                self.assertEqual(cls.__qualname__, cls._name)
+                self.assertEqual(cls.__module__, 'typing')
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""

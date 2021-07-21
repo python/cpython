@@ -745,7 +745,17 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
     assert(source_line);
     Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
+    if (start_offset < 0) {
+        err = ignore_source_errors() < 0;
+        goto done;
+    }
+
     Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
+    if (end_offset < 0) {
+        err = ignore_source_errors() < 0;
+        goto done;
+    }
+
     Py_ssize_t left_end_offset = -1;
     Py_ssize_t right_start_offset = -1;
 
