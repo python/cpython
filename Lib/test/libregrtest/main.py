@@ -116,6 +116,7 @@ class Regrtest:
         elif isinstance(result, Failed):
             if not rerun:
                 self.bad.append(test_name)
+                self.rerun.append(result)
         elif isinstance(result, DidNotRun):
             self.run_no_tests.append(test_name)
         elif isinstance(result, Interrupted):
@@ -311,10 +312,24 @@ class Regrtest:
 
         self.log()
         self.log("Re-running failed tests in verbose mode")
-        self.rerun = self.bad[:]
-        for test_name in self.rerun:
-            self.log(f"Re-running {test_name} in verbose mode")
+        rerun_list = self.rerun[:]
+        self.rerun = []
+        for result in rerun_list:
+            test_name = result.name
+            errors = result.errors or []
+            failures = result.failures or []
+            error_names = [e[0].split(" ")[0] for e in errors]
+            failure_names = [f[0].split(" ")[0] for f in failures]
             self.ns.verbose = True
+            if errors or failures:
+                if self.ns.match_tests is None:
+                    self.ns.match_tests = []
+                self.ns.match_tests.extend(error_names)
+                self.ns.match_tests.extend(failure_names)
+                matching = "matching: " + ", ".join(self.ns.match_tests)
+                self.log(f"Re-running {test_name} in verbose mode ({matching})")
+            else:
+                self.log(f"Re-running {test_name} in verbose mode")
             result = runtest(self.ns, test_name)
 
             self.accumulate_result(result, rerun=True)
@@ -380,7 +395,7 @@ class Regrtest:
         if self.rerun:
             print()
             print("%s:" % count(len(self.rerun), "re-run test"))
-            printlist(self.rerun)
+            printlist(r.name for r in self.rerun)
 
         if self.run_no_tests:
             print()
