@@ -3,7 +3,7 @@ if not exist c:\mnt\ goto nomntdir
 cd C:\mnt
 
 set platf=Win32
-set builddir=c:\mnt\PCBuild\win32
+set builddir=c:\mnt\PCBuild
 set outdir=c:\mnt\build-out
 set py_version=3.8.10
 
@@ -20,6 +20,7 @@ if "%TARGET_ARCH%" == "x64" (
 if "%TARGET_ARCH%" == "x86" (
     @echo IN x86 BRANCH
     call %VSTUDIO_ROOT%\VC\Auxiliary\Build\vcvars32.bat
+    set builddir=%builddir%\win32
 )
 
 call ridk enable
