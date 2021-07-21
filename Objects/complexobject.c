@@ -526,7 +526,10 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     }
     errno = 0;
     exponent = b;
-    int_exponent = (long)exponent.real;
+    if ((double)LONG_MIN <= exponent.real && exponent.real <= (double)LONG_MAX)
+        int_exponent = (long)exponent.real;
+    else
+        int_exponent = 0;
     if (exponent.imag == 0. && exponent.real == int_exponent)
         p = c_powi(a, int_exponent);
     else
