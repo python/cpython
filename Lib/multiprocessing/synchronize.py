@@ -270,7 +270,7 @@ class Condition(object):
     def notify(self, n=1):
         assert self._lock._semlock._is_mine(), 'lock is not owned'
         assert not self._wait_semaphore.acquire(
-            False), ('notify: Should not have been able to acquire'
+            False), ('notify: Should not have been able to acquire '
                      + '_wait_semaphore')
 
         # to take account of timeouts since last notify*() we subtract

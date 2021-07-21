@@ -140,8 +140,11 @@ __all__ = [
     # Limits for the C version for compatibility
     'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
 
-    # C version: compile time choice that enables the thread local context
-    'HAVE_THREADS'
+    # C version: compile time choice that enables the thread local context (deprecated, now always true)
+    'HAVE_THREADS',
+
+    # C version: compile time choice that enables the coroutine local context
+    'HAVE_CONTEXTVAR'
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
@@ -172,6 +175,7 @@ ROUND_05UP = 'ROUND_05UP'
 
 # Compatibility with the C version
 HAVE_THREADS = True
+HAVE_CONTEXTVAR = True
 if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999
@@ -947,7 +951,7 @@ class Decimal(object):
             if self.is_snan():
                 raise TypeError('Cannot hash a signaling NaN value.')
             elif self.is_nan():
-                return _PyHASH_NAN
+                return object.__hash__(self)
             else:
                 if self._sign:
                     return -_PyHASH_INF
@@ -2226,7 +2230,7 @@ class Decimal(object):
             if xe != 0 and len(str(abs(yc*xe))) <= -ye:
                 return None
             xc_bits = _nbits(xc)
-            if xc != 1 and len(str(abs(yc)*xc_bits)) <= -ye:
+            if len(str(abs(yc)*xc_bits)) <= -ye:
                 return None
             m, n = yc, 10**(-ye)
             while m % 2 == n % 2 == 0:
@@ -2239,7 +2243,7 @@ class Decimal(object):
         # compute nth root of xc*10**xe
         if n > 1:
             # if 1 < xc < 2**n then xc isn't an nth power
-            if xc != 1 and xc_bits <= n:
+            if xc_bits <= n:
                 return None
 
             xe, rem = divmod(xe, n)

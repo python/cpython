@@ -36,8 +36,9 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
             return -1;
         }
         oparg_int = (int)PyLong_AsLong(oparg);
-        if ((oparg_int == -1) && PyErr_Occurred())
+        if ((oparg_int == -1) && PyErr_Occurred()) {
             return -1;
+        }
     }
     else if (oparg != Py_None) {
         PyErr_SetString(PyExc_ValueError,
@@ -58,7 +59,12 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
                 "stack_effect: jump must be False, True or None");
         return -1;
     }
-    effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
+    if (IS_ARTIFICIAL(opcode)) {
+        effect = PY_INVALID_STACK_EFFECT;
+    }
+    else {
+        effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
+    }
     if (effect == PY_INVALID_STACK_EFFECT) {
             PyErr_SetString(PyExc_ValueError,
                     "invalid opcode or oparg");
@@ -67,30 +73,22 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
     return effect;
 }
 
-
-
-
 static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
-
 static struct PyModuleDef opcodemodule = {
     PyModuleDef_HEAD_INIT,
-    "_opcode",
-    "Opcode support module.",
-    -1,
-    opcode_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_opcode",
+    .m_doc = "Opcode support module.",
+    .m_size = 0,
+    .m_methods = opcode_functions
 };
 
 PyMODINIT_FUNC
 PyInit__opcode(void)
 {
-    return PyModule_Create(&opcodemodule);
+    return PyModuleDef_Init(&opcodemodule);
 }

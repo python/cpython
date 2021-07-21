@@ -4,10 +4,18 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{a76a90d8-8e8b-4c36-8f58-8bd46abe9f5e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{071b2ff4-e5a1-4e79-b0c5-cf46b0094a80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testcapimodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

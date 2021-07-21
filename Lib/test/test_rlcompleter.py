@@ -40,12 +40,12 @@ class TestRlcompleter(unittest.TestCase):
 
         # test with a customized namespace
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe('])
+                         ['CompleteMe()'])
         self.assertEqual(self.completer.global_matches('eg'),
                          ['egg('])
         # XXX: see issue5256
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe('])
+                         ['CompleteMe()'])
 
     def test_attr_matches(self):
         # test with builtins namespace
@@ -64,7 +64,7 @@ class TestRlcompleter(unittest.TestCase):
                          ['CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('Completeme.egg'), [])
         self.assertEqual(self.completer.attr_matches('CompleteMe.'),
-                         ['CompleteMe.mro(', 'CompleteMe.spam'])
+                         ['CompleteMe.mro()', 'CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('CompleteMe._'),
                          ['CompleteMe._ham'])
         matches = self.completer.attr_matches('CompleteMe.__')
@@ -134,7 +134,7 @@ class TestRlcompleter(unittest.TestCase):
         # No opening bracket "(" because we overrode the built-in class
         self.assertEqual(completer.complete('memoryview', 0), 'memoryview')
         self.assertIsNone(completer.complete('memoryview', 1))
-        self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis(')
+        self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis()')
         self.assertIsNone(completer.complete('Ellipsis', 1))
 
 if __name__ == '__main__':

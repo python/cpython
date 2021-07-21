@@ -23,8 +23,8 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows Vista and newer. If you require Windows XP
-support then please install Python 3.4.
+Python |version| supports Windows 8.1 and newer. If you require Windows 7
+support, please install Python 3.8.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
@@ -103,14 +103,12 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
-path functionality to accept and return paths longer than 260 characters when
-using strings. (Use of bytes as paths is deprecated on Windows, and this feature
-is not available when using bytes.)
+path functionality to accept and return paths longer than 260 characters.
 
 After changing the above option, no further configuration is required.
 
@@ -340,6 +338,11 @@ Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
+
+For more detail on the technical basis for these limitations, please consult
+Microsoft's documentation on packaged full-trust apps, currently available at
+`docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
+<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
 
 
 .. _windows-nuget:
@@ -616,21 +619,14 @@ Page).  Python uses it for the default encoding of text files (e.g.
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-You can use UTF-8 mode to change the default text encoding to UTF-8.
-You can enable UTF-8 mode via the ``-X utf8`` command line option, or
-the ``PYTHONUTF8=1`` environment variable.  See :envvar:`PYTHONUTF8` for
-enabling UTF-8 mode, and :ref:`setting-envvars` for how to modify
-environment variables.
+You can use the :ref:`Python UTF-8 Mode <utf8-mode>` to change the default text
+encoding to UTF-8. You can enable the :ref:`Python UTF-8 Mode <utf8-mode>` via
+the ``-X utf8`` command line option, or the ``PYTHONUTF8=1`` environment
+variable.  See :envvar:`PYTHONUTF8` for enabling UTF-8 mode, and
+:ref:`setting-envvars` for how to modify environment variables.
 
-When UTF-8 mode is enabled:
-
-* :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
-  the system encoding.  This function is used for the default text
-  encoding in many places, including :func:`open`, :class:`Popen`,
-  :meth:`Path.read_text`, etc.
-* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
-  all use UTF-8 as their text encoding.
-* You can still use the system encoding via the "mbcs" codec.
+When the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, you can still use the
+system encoding (the ANSI Code Page) via the "mbcs" codec.
 
 Note that adding ``PYTHONUTF8=1`` to the default environment variables
 will affect all Python 3.7+ applications on your system.
@@ -643,7 +639,8 @@ temporarily or use the ``-X utf8`` command line option.
    on Windows for:
 
    * Console I/O including standard I/O (see :pep:`528` for details).
-   * The filesystem encoding (see :pep:`529` for details).
+   * The :term:`filesystem encoding <filesystem encoding and error handler>`
+     (see :pep:`529` for details).
 
 
 .. _launcher:
@@ -1109,7 +1106,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install
@@ -1151,8 +1148,6 @@ For extension modules, consult :ref:`building-on-windows`.
       or "Creating Python extensions in C/C++ with SWIG and compiling them with
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
-
-   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

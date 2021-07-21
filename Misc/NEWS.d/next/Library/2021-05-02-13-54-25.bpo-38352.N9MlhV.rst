@@ -1,0 +1,2 @@
+Add ``IO``, ``BinaryIO``, ``TextIO``, ``Match``, and ``Pattern`` to
+``typing.__all__``. Patch by Jelle Zijlstra.

@@ -22,13 +22,13 @@ Floating Point Objects
 .. c:function:: int PyFloat_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyFloatObject` or a subtype of
-   :c:type:`PyFloatObject`.
+   :c:type:`PyFloatObject`.  This function always succeeds.
 
 
 .. c:function:: int PyFloat_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyFloatObject`, but not a subtype of
-   :c:type:`PyFloatObject`.
+   :c:type:`PyFloatObject`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyFloat_FromString(PyObject *str)
@@ -76,8 +76,3 @@ Floating Point Objects
 .. c:function:: double PyFloat_GetMin()
 
    Return the minimum normalized positive float *DBL_MIN* as C :c:type:`double`.
-
-.. c:function:: int PyFloat_ClearFreeList()
-
-   Clear the float free list. Return the number of items that could not
-   be freed.

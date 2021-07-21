@@ -1,3 +1,0 @@
-Optimized the idiom for assignment a temporary variable in comprehensions.
-Now ``for y in [expr]`` in comprehensions is as fast as a simple assignment
-``y = expr``.

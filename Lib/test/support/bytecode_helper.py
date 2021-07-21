@@ -35,7 +35,8 @@ class BytecodeTestCase(unittest.TestCase):
                 disassembly = self.get_disassembly_as_string(x)
                 if argval is _UNSPECIFIED:
                     msg = '%s occurs in bytecode:\n%s' % (opname, disassembly)
+                    self.fail(msg)
                 elif instr.argval == argval:
                     msg = '(%s,%r) occurs in bytecode:\n%s'
                     msg = msg % (opname, argval, disassembly)
-                self.fail(msg)
+                    self.fail(msg)

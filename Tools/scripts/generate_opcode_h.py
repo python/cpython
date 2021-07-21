@@ -16,13 +16,11 @@ extern "C" {
 """.lstrip()
 
 footer = """
-/* EXCEPT_HANDLER is a special, implicit block type which is created when
-   entering an except handler. It is not an opcode but we define it here
-   as we want it to be available to both frameobject.c and ceval.c, while
-   remaining private.*/
-#define EXCEPT_HANDLER 257
-
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
+
+/* Reserve some bytecodes for internal use in the compiler.
+ * The value of 240 is arbitrary. */
+#define IS_ARTIFICIAL(op) ((op) > 240)
 
 #ifdef __cplusplus
 }
@@ -30,6 +28,18 @@ footer = """
 #endif /* !Py_OPCODE_H */
 """
 
+UINT32_MASK = (1<<32)-1
+
+def write_int_array_from_ops(name, ops, out):
+    bits = 0
+    for op in ops:
+        bits |= 1<<op
+    out.write(f"static uint32_t {name}[8] = {{\n")
+    for i in range(8):
+        out.write(f"    {bits & UINT32_MASK}U,\n")
+        bits >>= 32
+    assert bits == 0
+    out.write(f"}};\n")
 
 def main(opcode_py, outfile='Include/opcode.h'):
     opcode = {}
@@ -41,6 +51,12 @@ def main(opcode_py, outfile='Include/opcode.h'):
         code = fp.read()
     exec(code, opcode)
     opmap = opcode['opmap']
+    hasjrel = opcode['hasjrel']
+    hasjabs = opcode['hasjabs']
+    used = [ False ] * 256
+    next_op = 1
+    for name, op in opmap.items():
+        used[op] = True
     with open(outfile, 'w') as fobj:
         fobj.write(header)
         for name in opcode['opname']:
@@ -49,7 +65,17 @@ def main(opcode_py, outfile='Include/opcode.h'):
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
                 fobj.write("#define %-23s %3d\n" %
                             ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
+        for name in opcode['_specialized_instructions']:
+            while used[next_op]:
+                next_op += 1
+            fobj.write("#define %-23s %3s\n" % (name, next_op))
+            used[next_op] = True
+        fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
+        write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
+        write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
+        fobj.write("#endif /* OPCODE_TABLES */\n")
         fobj.write(footer)
+
 
     print("%s regenerated from %s" % (outfile, opcode_py))
 
