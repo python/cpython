@@ -318,8 +318,8 @@ class Regrtest:
             test_name = result.name
             errors = result.errors or []
             failures = result.failures or []
-            error_names = [e[0].split(" ")[0] for e in errors]
-            failure_names = [f[0].split(" ")[0] for f in failures]
+            error_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in errors]
+            failure_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in failures]
             self.ns.verbose = True
             orig_match_tests = self.ns.match_tests
             if errors or failures:
