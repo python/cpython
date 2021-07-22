@@ -495,7 +495,7 @@ class EncodeTestResult(json.JSONEncoder):
             result = vars(o)
             result["__test_result__"] = o.__class__.__name__
             return result
-        
+
         return super().default(o)
 
 
@@ -504,7 +504,7 @@ def decode_test_result(d: dict[str, Any]) -> TestResult | dict[str, Any]:
 
     if "__test_result__" not in d:
         return d
-    
+
     cls_name = d.pop("__test_result__")
     for cls in get_all_test_result_classes():
         if cls.__name__ == cls_name:
