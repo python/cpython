@@ -1846,14 +1846,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 setattr(namespace, dest, self._defaults[dest])
 
         # parse the arguments and exit if there are any errors
-        if self.exit_on_error:
-            try:
-                namespace, args = self._parse_known_args(args, namespace)
-            except ArgumentError:
-                err = _sys.exc_info()[1]
-                self.error(str(err))
-        else:
+        try:
             namespace, args = self._parse_known_args(args, namespace)
+        except ArgumentError:
+            err = _sys.exc_info()[1]
+            self.error(str(err))
 
         if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
             args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
@@ -2564,12 +2561,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def error(self, message):
         """error(message: string)
 
-        Prints a usage message incorporating the message to stderr and
-        exits.
+        When exit_on_error is true prints a usage message
+        incorporating the message to stderr and exits, otherwise raises
+        an ArgumentError.
 
         If you override this in a subclass, it should not return -- it
         should either exit or raise an exception.
         """
+        if not self.exit_on_error:
+            raise ArgumentError(None, message)
+
         self.print_usage(_sys.stderr)
         args = {'prog': self.prog, 'message': message}
         self.exit(2, _('%(prog)s: error: %(message)s\n') % args)

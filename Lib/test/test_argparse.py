@@ -5349,7 +5349,7 @@ class TestExitOnError(TestCase):
 
     def setUp(self):
         self.parser = argparse.ArgumentParser(exit_on_error=False)
-        self.parser.add_argument('--integers', metavar='N', type=int)
+        self.parser.add_argument('--integers', metavar='N', type=int, required=True)
 
     def test_exit_on_error_with_good_args(self):
         ns = self.parser.parse_args('--integers 4'.split())
@@ -5358,6 +5358,14 @@ class TestExitOnError(TestCase):
     def test_exit_on_error_with_bad_args(self):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
+
+    def test_exit_on_error_missing_required_args(self):
+        with self.assertRaises(argparse.ArgumentError):
+            self.parser.parse_args([])
+
+    def test_exit_on_error_unknown_args(self):
+        with self.assertRaises(argparse.ArgumentError):
+            self.parser.parse_args("--integers 1 --unknown-arg".split())
 
 
 def test_main():
