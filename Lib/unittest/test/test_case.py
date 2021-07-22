@@ -801,6 +801,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         seq2 = 'b' + 'x' * 80**2
         diff = difflib.unified_diff(pprint.pformat(seq1).splitlines(),
                                     pprint.pformat(seq2).splitlines(),
+                                    fromfile='expected', tofile='got',
                                     lineterm='')
         diff = '\n'.join(diff)
         # the +1 is the leading \n added by assertSequenceEqual
