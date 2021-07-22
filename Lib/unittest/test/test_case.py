@@ -8,6 +8,7 @@ import logging
 import warnings
 import weakref
 import inspect
+import time
 import types
 
 from copy import deepcopy
@@ -837,6 +838,36 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             self.fail('assertSequenceEqual did not fail.')
         self.assertGreater(len(msg), len(diff))
         self.assertNotIn(omitted, msg)
+
+    def testAssertEqualModeratelyLongSequencePerformance(self):
+        """Before fixing bpo-19217, assertTrue on different sequences of the
+        same length would never finish in circumstances like the ones below."""
+
+        TIME_LIMIT = 1
+
+        # test comparison of strings
+        arr1 = 'a' * 10000
+        arr2 = 'a' * 9999 + 'b'
+        start = time.time()
+        try:
+            self.assertEqual(arr1, arr2)
+        except self.failureException:
+            pass
+        finish = time.time()
+        if finish - start > TIME_LIMIT:
+            self.fail('String comparison took longer than one second')
+
+        # test comparison of lists
+        arr1 =  [1] * 10000
+        arr2 = ([1] * 9999) + [2]
+        start = time.time()
+        try:
+            self.assertEqual(arr1, arr2)
+        except self.failureException:
+            pass
+        finish = time.time()
+        if finish - start > TIME_LIMIT:
+            self.fail('List comparison took longer than one second')
 
     def testTruncateMessage(self):
         self.maxDiff = 1
