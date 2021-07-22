@@ -106,11 +106,11 @@ class Regrtest:
 
         if isinstance(result, Passed):
             self.good.append(test_name)
-        elif isinstance(result, Skipped):
-            self.skipped.append(test_name)
         elif isinstance(result, ResourceDenied):
             self.skipped.append(test_name)
             self.resource_denieds.append(test_name)
+        elif isinstance(result, Skipped):
+            self.skipped.append(test_name)
         elif isinstance(result, EnvChanged):
             self.environment_changed.append(test_name)
         elif isinstance(result, Failed):
