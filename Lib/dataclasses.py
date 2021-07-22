@@ -1449,39 +1449,11 @@ def replace(obj, /, **changes):
     return obj.__class__(**changes)
 
 def add_field_docs(cls, doc):
-    cls_annotations = cls.__dict__.get('__annotations__', {})
-    fields = {}
-    for b in cls.__mro__[-1:0:-1]:
-        # Only process classes that have been processed by our
-        # decorator.  That is, they have a _FIELDS attribute.
-        base_fields = getattr(b, _FIELDS, None)
-        if base_fields is not None:
-            has_dataclass_bases = True
-            for f in base_fields.values():
-                fields[f.name] = f
-            if getattr(b, _PARAMS).frozen:
-                any_frozen_base = True
     if doc:
         doc += '\n'
-    # Now find fields in our class.  While doing so, validate some
-    # things, and set the default values (as class attributes) where
-    # we can.
-    cls_fields = []
-    # Get a reference to this module for the _is_kw_only() test.
-    KW_ONLY_seen = False
-    dataclasses = sys.modules[__name__]
-    for name, type in cls_annotations.items():
-        cls_fields.append(_get_field(cls, name, type, True))
-
-    for f in cls_fields:
-        fields[f.name] = f
-    # print("fields", fields)
-    for f in getattr(cls, _FIELDS).values():
-        name = f.name
-        ann = cls_annotations[name].__name__
-        dflt = fields[name].default
-        dflt = f' [{dflt}]' if dflt is not MISSING else ' '
+    for name, f in cls.__dataclass_fields__.items():
+        dflt = f' [{f.default}]' if f.default is not MISSING else ' '
         fdoc = f' -- {f.doc}' if f.doc else ''
-        doc += f'\n{name}: {ann}{dflt}{fdoc}\n'
+        doc += f'\n{name}: {f.type}{dflt}{fdoc}\n'
     doc = doc[:-1]
     return doc
