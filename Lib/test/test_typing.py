@@ -33,8 +33,13 @@ import typing
 import weakref
 import types
 
+from test.support import import_helper
 from test import mod_generics_cache
 from test import _typed_dict_helper
+
+
+py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
+c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
 
 
 class BaseTestCase(TestCase):
@@ -3673,18 +3678,36 @@ class TypeTests(BaseTestCase):
         assert foo(None) is None
 
 
-class NewTypeTests(BaseTestCase):
+class TestModules(TestCase):
+    func_names = ['_idfunc']
+
+    def test_py_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(py_typing, fname).__module__, 'typing')
+
+    @skipUnless(c_typing, 'requires _typing')
+    def test_c_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(c_typing, fname).__module__, '_typing')
+
+
+class NewTypeTests:
+    def setUp(self):
+        sys.modules['typing'] = self.module
+
+    def tearDown(self):
+        sys.modules['typing'] = typing
 
     def test_basic(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
+        UserId = self.module.NewType('UserId', int)
+        UserName = self.module.NewType('UserName', str)
         self.assertIsInstance(UserId(5), int)
         self.assertIsInstance(UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
     def test_errors(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
+        UserId = self.module.NewType('UserId', int)
+        UserName = self.module.NewType('UserName', str)
         with self.assertRaises(TypeError):
             issubclass(UserId, int)
         with self.assertRaises(TypeError):
@@ -3692,28 +3715,37 @@ class NewTypeTests(BaseTestCase):
                 pass
 
     def test_or(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
+        UserId = self.module.NewType('UserId', int)
+        UserName = self.module.NewType('UserName', str)
 
         for cls in (int, UserName):
             with self.subTest(cls=cls):
-                self.assertEqual(UserId | cls, Union[UserId, cls])
-                self.assertEqual(cls | UserId, Union[cls, UserId])
+                self.assertEqual(UserId | cls, self.module.Union[UserId, cls])
+                self.assertEqual(cls | UserId, self.module.Union[cls, UserId])
 
-                self.assertEqual(get_args(UserId | cls), (UserId, cls))
-                self.assertEqual(get_args(cls | UserId), (cls, UserId))
+                self.assertEqual(self.module.get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(self.module.get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
-        UserId = NewType('UserId', int)
+        UserId = self.module.NewType('UserId', int)
 
         self.assertEqual(UserId.__name__, 'UserId')
         self.assertEqual(UserId.__qualname__, 'UserId')
         self.assertEqual(UserId.__module__, __name__)
 
     def test_repr(self):
-        UserId = NewType('UserId', int)
+        UserId = self.module.NewType('UserId', int)
 
         self.assertEqual(repr(UserId), f'{__name__}.UserId')
+
+class NewTypePythonTests(BaseTestCase, NewTypeTests):
+    module = py_typing
+
+
+@skipUnless(c_typing, 'requires _typing')
+class NewTypeCTests(BaseTestCase, NewTypeTests):
+    module = c_typing
+
 
 class NamedTupleTests(BaseTestCase):
     class NestedEmployee(NamedTuple):

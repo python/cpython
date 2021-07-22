@@ -81,6 +81,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_threading_local",
 "_tkinter",
 "_tracemalloc",
+"_typing",
 "_uuid",
 "_warnings",
 "_weakref",
