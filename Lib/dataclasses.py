@@ -1449,6 +1449,8 @@ def replace(obj, /, **changes):
     return obj.__class__(**changes)
 
 def add_field_docs(cls, doc):
+    if not cls.__dataclass_fields__:
+        return doc
     if doc:
         doc += '\n'
     for name, f in cls.__dataclass_fields__.items():
