@@ -1,0 +1,1 @@
+fixed errors with argparse exit_on_error causing unexpected behavior
