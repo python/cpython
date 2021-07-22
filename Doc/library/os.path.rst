@@ -485,8 +485,9 @@ the :mod:`glob` module.)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
    path``, and *ext* is empty or begins with a period and contains at most one
-   period. Leading periods on the basename are  ignored; ``splitext('.cshrc')``
-   returns  ``('.cshrc', '')``.
+   period, e.g. ``splitext('bar')`` returns ``('bar', '')`` and
+   ``splitext('foo.bar.exe')`` returns ``('foo.bar', '.exe')``. Leading periods on the
+   basename are  ignored; ``splitext('.cshrc')`` returns  ``('.cshrc', '')``.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
