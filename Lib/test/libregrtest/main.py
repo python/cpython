@@ -321,6 +321,7 @@ class Regrtest:
             error_names = [e[0].split(" ")[0] for e in errors]
             failure_names = [f[0].split(" ")[0] for f in failures]
             self.ns.verbose = True
+            orig_match_tests = self.ns.match_tests
             if errors or failures:
                 if self.ns.match_tests is None:
                     self.ns.match_tests = []
@@ -331,6 +332,7 @@ class Regrtest:
             else:
                 self.log(f"Re-running {test_name} in verbose mode")
             result = runtest(self.ns, test_name)
+            self.ns.match_tests = orig_match_tests
 
             self.accumulate_result(result, rerun=True)
 
