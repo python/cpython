@@ -446,23 +446,22 @@ union_getitem(PyObject *self, PyObject *item)
         return NULL;
     }
 
-    // Check arguments are unionable.
+    PyObject *res;
     Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable <= 0) {
-            Py_DECREF(newargs);
-            if (is_arg_unionable == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "Each union argument must be a type, got %.100R", arg);
+    if (nargs == 0) {
+        res = make_union(newargs);
+    }
+    else {
+        res = PyTuple_GET_ITEM(newargs, 0);
+        Py_INCREF(res);
+        for (Py_ssize_t iarg = 1; iarg < nargs; iarg++) {
+            PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
+            Py_SETREF(res, PyNumber_Or(res, arg));
+            if (res == NULL) {
+                break;
             }
-            return NULL;
         }
     }
-
-    PyObject *res = make_union(newargs);
-
     Py_DECREF(newargs);
     return res;
 }
