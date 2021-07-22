@@ -772,6 +772,36 @@ class UnionTests(unittest.TestCase):
         self.assertEqual((list[T] | list[S])[int, T], list[int] | list[T])
         self.assertEqual((list[T] | list[S])[int, int], list[int])
 
+    def test_union_parameter_substitution(self):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), type(expected))
+
+        T = typing.TypeVar('T')
+        S = typing.TypeVar('S')
+        NT = typing.NewType('NT', str)
+        x = int | T | bytes
+
+        eq(x[str], int | str | bytes)
+        eq(x[list[int]], int | list[int] | bytes)
+        eq(x[typing.List], int | typing.List | bytes)
+        eq(x[typing.List[int]], int | typing.List[int] | bytes)
+        eq(x[typing.Hashable], int | typing.Hashable | bytes)
+        eq(x[collections.abc.Hashable],
+           int | collections.abc.Hashable | bytes)
+        eq(x[typing.Callable[[int], str]],
+           int | typing.Callable[[int], str] | bytes)
+        eq(x[collections.abc.Callable[[int], str]],
+           int | collections.abc.Callable[[int], str] | bytes)
+        eq(x[typing.Tuple[int, str]], int | typing.Tuple[int, str] | bytes)
+        eq(x[typing.Literal['none']], int | typing.Literal['none'] | bytes)
+        eq(x[str | list], int | str | list | bytes)
+        eq(x[typing.Union[str, list]], typing.Union[int, str, list, bytes])
+        eq(x[str | int], int | str | bytes)
+        eq(x[typing.Union[str, int]], typing.Union[int, str, bytes])
+        eq(x[NT], int | NT | bytes)
+        eq(x[S], int | S | bytes)
+
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
         x = int | T
