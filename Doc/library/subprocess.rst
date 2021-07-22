@@ -689,7 +689,7 @@ execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
-:exc:`OSError` exceptions. Note that, when ``"shell=True"``, :exc:`OSError`
+:exc:`OSError` exceptions. Note that, when ``shell=True``, :exc:`OSError`
 will be raised by the child only if the selected shell itself was not found.
 To determine if the shell failed to find the requested application, it is
 necessary to check the return code or output from the subprocess.
