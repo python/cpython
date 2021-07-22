@@ -3715,13 +3715,16 @@ class NewTypeTests:
                 pass
 
     def test_or(self):
-        UserId = self.module.NewType('UserId', int)
+        UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
 
-        self.assertEqual(UserId | int, self.module.Union[UserId, int])
-        self.assertEqual(int | UserId, self.module.Union[int, UserId])
+        for cls in (int, UserName):
+            with self.subTest(cls=cls):
+                self.assertEqual(UserId | cls, Union[UserId, cls])
+                self.assertEqual(cls | UserId, Union[cls, UserId])
 
-        self.assertEqual(self.module.get_args(UserId | int), (UserId, int))
-        self.assertEqual(self.module.get_args(int | UserId), (int, UserId))
+                self.assertEqual(get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
         UserId = self.module.NewType('UserId', int)
