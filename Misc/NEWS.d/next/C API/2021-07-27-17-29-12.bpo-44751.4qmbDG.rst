@@ -1,0 +1,2 @@
+Remove crypt.h include from the public Python.h header and move it to
+_cryptmodule.c, which is the only file that needs it.
