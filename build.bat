@@ -36,25 +36,31 @@ call .\PCBuild\build.bat --no-tkinter -e -c Release -p %platf%
 REM Copy DLLs directory
 mkdir %outdir%\DLLs
 copy %builddir%\*.pyd %outdir%\DLLs || exit /b 4
+copy %builddir%\libcrypto-1_1.dll %outdir%\DLLs || exit /b 5
+copy %builddir%\libffi-7.dll %outdir%\DLLs || exit /b 6
+copy %builddir%\libssl-1_1.dll %outdir%\DLLs || exit /b 7
+copy %builddir%\sqlite3.dll %outdir%\DLLs || exit /b 8
 
 REM Copy include directory
 robocopy .\include %outdir%\include /MIR /NFL /NDL /NJH /NJS /nc /ns /np
-if %ERRORLEVEL% GEQ 8 exit /b 5
-copy PC\pyconfig.h %outdir%\include || exit /b 6
+if %ERRORLEVEL% GEQ 8 exit /b 9
+copy PC\pyconfig.h %outdir%\include || exit /b 10
 
 REM Copy Lib directory
 robocopy .\Lib %outdir%\Lib /MIR /NFL /NDL /NJH /NJS /nc /ns /np /XF *.pyc /XD __pycache__
-if %ERRORLEVEL% GEQ 8 exit /b 7
+if %ERRORLEVEL% GEQ 8 exit /b 11
 
 REM Copy libs directory
 mkdir %outdir%\libs
-copy %builddir%\*.lib %outdir%\libs || exit /b 8
+copy %builddir%\*.lib %outdir%\libs || exit /b 12
 
 REM Copy files in root directory
-copy %builddir%\python3.dll %outdir% || exit /b 9
-copy %builddir%\python38.dll %outdir% || exit /b 10
-copy %builddir%\python.exe %outdir% || exit /b 11
-copy %builddir%\pythonw.exe %outdir% || exit /b 12
+copy %builddir%\python3.dll %outdir% || exit /b 13
+copy %builddir%\python38.dll %outdir% || exit /b 14
+copy %builddir%\python.exe %outdir% || exit /b 15
+copy %builddir%\pythonw.exe %outdir% || exit /b 16
+copy %builddir%\vcruntime140.dll %outdir% || exit /b 17
+copy %builddir%\vcruntime140_1.dll %outdir% || exit /b 18
 
 REM Generate import library
 cd %builddir%
@@ -65,7 +71,7 @@ if "%TARGET_ARCH%" == "x64" (
 if "%TARGET_ARCH%" == "x86" (
     dlltool -m i386 --as-flags=--32 --dllname python38.dll --def python38.def --output-lib libpython38.a
 )
-copy libpython38.a %outdir%\libs || exit /b 13
+copy libpython38.a %outdir%\libs || exit /b 19
 
 REM Generate python zip
 7z a -r %outdir%\python-windows-%py_version%-%TARGET_ARCH%.zip %outdir%\*
