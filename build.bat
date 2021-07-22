@@ -59,8 +59,7 @@ copy %builddir%\python3.dll %outdir% || exit /b 13
 copy %builddir%\python38.dll %outdir% || exit /b 14
 copy %builddir%\python.exe %outdir% || exit /b 15
 copy %builddir%\pythonw.exe %outdir% || exit /b 16
-copy %builddir%\vcruntime140.dll %outdir% || exit /b 17
-copy %builddir%\vcruntime140_1.dll %outdir% || exit /b 18
+copy %builddir%\vcruntime140*.dll %outdir% || exit /b 17
 
 REM Generate import library
 cd %builddir%
@@ -71,7 +70,7 @@ if "%TARGET_ARCH%" == "x64" (
 if "%TARGET_ARCH%" == "x86" (
     dlltool -m i386 --as-flags=--32 --dllname python38.dll --def python38.def --output-lib libpython38.a
 )
-copy libpython38.a %outdir%\libs || exit /b 19
+copy libpython38.a %outdir%\libs || exit /b 18
 
 REM Generate python zip
 7z a -r %outdir%\python-windows-%py_version%-%TARGET_ARCH%.zip %outdir%\*
