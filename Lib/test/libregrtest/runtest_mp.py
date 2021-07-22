@@ -1,4 +1,5 @@
-import collections
+from __future__ import annotations
+
 import faulthandler
 import json
 import os
@@ -9,7 +10,7 @@ import sys
 import threading
 import time
 import traceback
-from typing import NamedTuple, NoReturn, Literal, Any
+from typing import NamedTuple, NoReturn, Literal, Any, TYPE_CHECKING
 
 from test import support
 
@@ -118,8 +119,9 @@ class MultiprocessResult(NamedTuple):
     error_msg: str
 
 
-ExcStr = str
-QueueOutput = tuple[Literal[False], MultiprocessResult] | tuple[Literal[True], ExcStr]
+if TYPE_CHECKING:
+    ExcStr = str
+    QueueOutput = tuple[Literal[False], MultiprocessResult] | tuple[Literal[True], ExcStr]
 
 
 class ExitThread(Exception):
