@@ -1,0 +1,2 @@
+Optimize unittest.TestCase.assertEqual method for long lists of varied
+items.
