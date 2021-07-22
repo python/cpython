@@ -31,6 +31,13 @@ import types
 import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
+
+try:
+    from _typing import _idfunc
+except ImportError:
+    def _idfunc(_, x):
+        return x
+
 # Please keep __all__ alphabetized within each category.
 __all__ = [
     # Super-special typing primitives.
@@ -2375,7 +2382,7 @@ class NewType:
         num = UserId(5) + 1     # type: int
     """
 
-    __call__ = operator._idfunc
+    __call__ = _idfunc
 
     def __init__(self, name, tp):
         self.__name__ = name
