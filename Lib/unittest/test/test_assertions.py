@@ -242,8 +242,8 @@ class TestLongMessage(unittest.TestCase):
         # Error messages are multiline so not testing on full message
         # assertTupleEqual and assertListEqual delegate to this method
         self.assertMessages('assertSequenceEqual', ([], [None]),
-                            [r"\+ \[None\]$", "^oops$", r"\+ \[None\]$",
-                             r"\+ \[None\] : oops$"])
+                            [r"\+\[None\]$", "^oops$", r"\+\[None\]$",
+                             r"\+\[None\] : oops$"])
 
     def testAssertSetEqual(self):
         self.assertMessages('assertSetEqual', (set(), set([None])),
