@@ -526,7 +526,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     }
     errno = 0;
     exponent = b;
-    if ((double)LONG_MIN <= exponent.real && exponent.real <= (double)LONG_MAX)
+    if ((double)LONG_MIN <= exponent.real && exponent.real < (double)LONG_MAX)
         int_exponent = (long)exponent.real;
     else
         int_exponent = 0;
