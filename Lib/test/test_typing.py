@@ -3720,8 +3720,6 @@ class NewTypeTests:
                 pass
 
     def test_or(self):
-        self.addCleanup(self.cleanup)
-
         UserId = self.module.NewType('UserId', int)
         UserName = self.module.NewType('UserName', str)
 
@@ -3745,12 +3743,12 @@ class NewTypeTests:
 
         self.assertEqual(repr(UserId), f'{__name__}.UserId')
 
-class NewTypePythonTests(BaseTestCase, NewTypeTests):
+class NewTypePythonTests(NewTypeTests, BaseTestCase):
     module = py_typing
 
 
 @skipUnless(c_typing, 'requires _typing')
-class NewTypeCTests(BaseTestCase, NewTypeTests):
+class NewTypeCTests(NewTypeTests, BaseTestCase):
     module = c_typing
 
 
