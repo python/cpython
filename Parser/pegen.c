@@ -402,7 +402,7 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
 {
     const char *str = PyUnicode_AsUTF8(line);
     if (!str) {
-        return 0;
+        return -1;
     }
     Py_ssize_t len = strlen(str);
     if (col_offset > len + 1) {
@@ -411,7 +411,7 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     assert(col_offset >= 0);
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
-        return 0;
+        return -1;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
     Py_DECREF(text);
@@ -499,9 +499,17 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (p->tok->encoding != NULL) {
         col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
-        end_col_number = end_col_number > 0 ?
-                         _PyPegen_byte_offset_to_character_offset(error_line, end_col_offset) :
-                         end_col_number;
+        if (col_number < 0) {
+            goto error;
+        }
+        if (end_col_number > 0) {
+            Py_ssize_t end_col_offset = _PyPegen_byte_offset_to_character_offset(error_line, end_col_number);
+            if (end_col_offset < 0) {
+                goto error;
+            } else {
+                end_col_number = end_col_offset;
+            }
+        }
     }
     tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {

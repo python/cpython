@@ -363,6 +363,7 @@
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
+    <ClCompile Include="..\Modules\_typingmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />

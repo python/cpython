@@ -497,14 +497,22 @@ union_getitem(PyObject *self, PyObject *item)
         return NULL;
     }
 
-    // Check arguments are unionable.
-    if (is_args_unionable(newargs) <= 0) {
-        Py_DECREF(newargs);
-        return NULL;
+    PyObject *res;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(newargs);
+    if (nargs == 0) {
+        res = make_union(newargs);
     }
-
-    PyObject *res = make_union(newargs);
-
+    else {
+        res = PyTuple_GET_ITEM(newargs, 0);
+        Py_INCREF(res);
+        for (Py_ssize_t iarg = 1; iarg < nargs; iarg++) {
+            PyObject *arg = PyTuple_GET_ITEM(newargs, iarg);
+            Py_SETREF(res, PyNumber_Or(res, arg));
+            if (res == NULL) {
+                break;
+            }
+        }
+    }
     Py_DECREF(newargs);
     return res;
 }

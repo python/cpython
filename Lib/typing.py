@@ -31,6 +31,13 @@ import types
 import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
+
+try:
+    from _typing import _idfunc
+except ImportError:
+    def _idfunc(_, x):
+        return x
+
 # Please keep __all__ alphabetized within each category.
 __all__ = [
     # Super-special typing primitives.
@@ -357,6 +364,12 @@ class _SpecialForm(_Final, _root=True):
         self._getitem = getitem
         self._name = getitem.__name__
         self.__doc__ = getitem.__doc__
+
+    def __getattr__(self, item):
+        if item in {'__name__', '__qualname__'}:
+            return self._name
+
+        raise AttributeError(item)
 
     def __mro_entries__(self, bases):
         raise TypeError(f"Cannot subclass {self!r}")
@@ -935,6 +948,9 @@ class _BaseGenericAlias(_Final, _root=True):
         return tuple(res)
 
     def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return self._name
+
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
         if '__origin__' in self.__dict__ and not _is_dunder(attr):
@@ -1364,6 +1380,12 @@ def _is_callable_members_only(cls):
 def _no_init(self, *args, **kwargs):
     if type(self)._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
+
+def _callee(depth=2, default=None):
+    try:
+        return sys._getframe(depth).f_globals['__name__']
+    except (AttributeError, ValueError):  # For platforms without _getframe()
+        return default
 
 
 def _allow_reckless_class_checks(depth=3):
@@ -2341,7 +2363,7 @@ _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 
 
-def NewType(name, tp):
+class NewType:
     """NewType creates simple unique types with almost zero
     runtime overhead. NewType(name, tp) is considered a subtype of tp
     by static type checkers. At runtime, NewType(name, tp) returns
@@ -2360,12 +2382,22 @@ def NewType(name, tp):
         num = UserId(5) + 1     # type: int
     """
 
-    def new_type(x):
-        return x
+    __call__ = _idfunc
 
-    new_type.__name__ = name
-    new_type.__supertype__ = tp
-    return new_type
+    def __init__(self, name, tp):
+        self.__name__ = name
+        self.__qualname__ = name
+        self.__module__ = _callee(default='typing')
+        self.__supertype__ = tp
+
+    def __repr__(self):
+        return f'{self.__module__}.{self.__qualname__}'
+
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
 
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
