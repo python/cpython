@@ -3692,10 +3692,15 @@ class TestModules(TestCase):
 
 
 class NewTypeTests:
+    def cleanup(self):
+        for f in self.module._cleanups:
+            f()
+
     def setUp(self):
         sys.modules['typing'] = self.module
 
     def tearDown(self):
+        self.cleanup()
         sys.modules['typing'] = typing
 
     def test_basic(self):
@@ -3715,6 +3720,8 @@ class NewTypeTests:
                 pass
 
     def test_or(self):
+        self.addCleanup(self.cleanup)
+
         UserId = self.module.NewType('UserId', int)
         UserName = self.module.NewType('UserName', str)
 
