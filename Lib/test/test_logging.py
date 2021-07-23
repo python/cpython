@@ -5190,6 +5190,7 @@ class FileHandlerTest(BaseFileTest):
         fh.close()
 
     def test_emit_after_closing_in_write_mode(self):
+        # Issue 42378
         os.unlink(self.fn)
         fh = logging.FileHandler(self.fn, encoding='utf-8', mode='w')
         fh.setFormatter(logging.Formatter('%(message)s'))
