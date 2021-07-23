@@ -2405,7 +2405,7 @@ class NewType:
         return Union[other, self]
 
     def __reduce__(self):
-        return self.__name__
+        return self.__qualname__
 
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
