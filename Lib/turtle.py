@@ -3826,7 +3826,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
                 default value is turtle_docstringdict
 
     Has to be called explicitly, (not used by the turtle-graphics classes)
-    The docstring dictionary will be written to the Python script <filname>.py
+    The docstring dictionary will be written to the Python script <filename>.py
     It is intended to serve as a template for translation of the docstrings
     into different languages.
     """

@@ -951,8 +951,9 @@ class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
     @support.cpython_only
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
-        tp = type(c_functools.cmp_to_key(None))
-        self.assertRaises(TypeError, tp)
+        support.check_disallow_instantiation(
+            self, type(c_functools.cmp_to_key(None))
+        )
 
 
 class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):

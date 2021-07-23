@@ -775,6 +775,13 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         self.assertEqual(len(m.as_string(maxheaderlen=34).strip().splitlines()),
                          6)
 
+    def test_as_string_unixform(self):
+        m = self._str_msg('test')
+        m.set_unixfrom('From foo@bar Thu Jan  1 00:00:00 1970')
+        self.assertEqual(m.as_string(unixfrom=True),
+                        'From foo@bar Thu Jan  1 00:00:00 1970\n\ntest')
+        self.assertEqual(m.as_string(unixfrom=False), '\ntest')
+
     def test_str_defaults_to_policy_max_line_length(self):
         m = self._str_msg('Subject: long line' + ' ab'*50 + '\n\n')
         self.assertEqual(len(str(m).strip().splitlines()), 3)

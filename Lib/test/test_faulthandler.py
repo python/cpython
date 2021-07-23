@@ -89,10 +89,12 @@ class FaultHandlerTests(unittest.TestCase):
             output = output.decode('ascii', 'backslashreplace')
         return output.splitlines(), exitcode
 
-    def check_error(self, code, line_number, fatal_error, *,
+    def check_error(self, code, lineno, fatal_error, *,
                     filename=None, all_threads=True, other_regex=None,
                     fd=None, know_current_thread=True,
-                    py_fatal_error=False):
+                    py_fatal_error=False,
+                    garbage_collecting=False,
+                    function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -106,20 +108,21 @@ class FaultHandlerTests(unittest.TestCase):
                 header = 'Thread 0x[0-9a-f]+'
         else:
             header = 'Stack'
-        regex = r"""
-            (?m)^{fatal_error}
-
-            {header} \(most recent call first\):
-              File "<string>", line {lineno} in <module>
-            """
+        regex = [f'^{fatal_error}']
         if py_fatal_error:
-            fatal_error += "\nPython runtime state: initialized"
-        regex = dedent(regex).format(
-            lineno=line_number,
-            fatal_error=fatal_error,
-            header=header).strip()
+            regex.append("Python runtime state: initialized")
+        regex.append('')
+        regex.append(fr'{header} \(most recent call first\):')
+        if garbage_collecting:
+            regex.append('  Garbage-collecting')
+        regex.append(fr'  File "<string>", line {lineno} in {function}')
+        regex = '\n'.join(regex)
+
         if other_regex:
-            regex += '|' + other_regex
+            regex = f'(?:{regex}|{other_regex})'
+
+        # Enable MULTILINE flag
+        regex = f'(?m){regex}'
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
@@ -167,6 +170,42 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             3,
             'Segmentation fault')
+
+    @skip_segfault_on_android
+    def test_gc(self):
+        # bpo-44466: Detect if the GC is running
+        self.check_fatal_error("""
+            import faulthandler
+            import gc
+            import sys
+
+            faulthandler.enable()
+
+            class RefCycle:
+                def __del__(self):
+                    faulthandler._sigsegv()
+
+            # create a reference cycle which triggers a fatal
+            # error in a destructor
+            a = RefCycle()
+            b = RefCycle()
+            a.b = b
+            b.a = a
+
+            # Delete the objects, not the cycle
+            a = None
+            b = None
+
+            # Break the reference cycle: call __del__()
+            gc.collect()
+
+            # Should not reach this line
+            print("exit", file=sys.stderr)
+            """,
+            9,
+            'Segmentation fault',
+            function='__del__',
+            garbage_collecting=True)
 
     def test_fatal_error_c_thread(self):
         self.check_fatal_error("""

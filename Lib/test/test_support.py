@@ -292,8 +292,8 @@ class TestSupport(unittest.TestCase):
 
     def test_CleanImport(self):
         import importlib
-        with import_helper.CleanImport("asyncore"):
-            importlib.import_module("asyncore")
+        with import_helper.CleanImport("pprint"):
+            importlib.import_module("pprint")
 
     def test_DirsOnSysPath(self):
         with import_helper.DirsOnSysPath('foo', 'bar'):

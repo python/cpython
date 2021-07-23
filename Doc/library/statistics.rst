@@ -43,7 +43,7 @@ or sample.
 
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
-:func:`fmean`            Fast, floating point arithmetic mean.
+:func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
@@ -76,7 +76,7 @@ These functions calculate statistics regarding relations between two inputs.
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
 :func:`correlation`        Pearson's correlation coefficient for two variables.
-:func:`linear_regression`  Intercept and slope for simple linear regression.
+:func:`linear_regression`  Slope and intercept for simple linear regression.
 =========================  =====================================================
 
 
@@ -128,7 +128,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(data)`` is equivalent to calculating the true population mean μ.
 
 
-.. function:: fmean(data)
+.. function:: fmean(data, weights=None)
 
    Convert *data* to floats and compute the arithmetic mean.
 
@@ -141,7 +141,24 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> fmean([3.5, 4.0, 5.25])
       4.25
 
+   Optional weighting is supported.  For example, a professor assigns a
+   grade for a course by weighting quizzes at 20%, homework at 20%, a
+   midterm exam at 30%, and a final exam at 30%:
+
+   .. doctest::
+
+      >>> grades = [85, 92, 83, 91]
+      >>> weights = [0.20, 0.20, 0.30, 0.30]
+      >>> fmean(grades, weights)
+      87.6
+
+   If *weights* is supplied, it must be the same length as the *data* or
+   a :exc:`ValueError` will be raised.
+
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added support for *weights*.
 
 
 .. function:: geometric_mean(data)
@@ -626,37 +643,38 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(regressor, dependent_variable)
+.. function:: linear_regression(x, y, /)
 
-   Return the intercept and slope of `simple linear regression
+   Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
    parameters estimated using ordinary least squares. Simple linear
-   regression describes the relationship between *regressor* and
-   *dependent variable* in terms of this linear function:
+   regression describes the relationship between an independent variable *x* and
+   a dependent variable *y* in terms of this linear function:
 
-      *dependent_variable = intercept + slope \* regressor + noise*
+      *y = slope \* x + intercept + noise*
 
-   where ``intercept`` and ``slope`` are the regression parameters that are
-   estimated, and noise represents the
+   where ``slope`` and ``intercept`` are the regression parameters that are
+   estimated, and ``noise`` represents the
    variability of the data that was not explained by the linear regression
    (it is equal to the difference between predicted and actual values
-   of dependent variable).
+   of the dependent variable).
 
-   Both inputs must be of the same length (no less than two), and regressor
-   needs not to be constant; otherwise :exc:`StatisticsError` is raised.
+   Both inputs must be of the same length (no less than two), and
+   the independent variable *x* cannot be constant;
+   otherwise a :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
-   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
-   it to predict the cumulative number of Monty Python films
+   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_
+   to predict the cumulative number of Monty Python films
    that would have been produced by 2019
-   assuming that they kept the pace.
+   assuming that they had kept the pace.
 
    .. doctest::
 
       >>> year = [1971, 1975, 1979, 1982, 1983]
       >>> films_total = [1, 2, 3, 4, 5]
-      >>> intercept, slope = linear_regression(year, films_total)
-      >>> round(intercept + slope * 2019)
+      >>> slope, intercept = linear_regression(year, films_total)
+      >>> round(slope * 2019 + intercept)
       16
 
    .. versionadded:: 3.10

@@ -9,6 +9,7 @@ import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
+from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -556,16 +557,27 @@ class TestEnum(unittest.TestCase):
             'mixin-format is still using member.value',
             )
     def test_mixin_format_warning(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(f'{self.Grades.B}', 'Grades.B')
+        class Grades(int, Enum):
+            A = 5
+            B = 4
+            C = 3
+            D = 2
+            F = 0
+        self.assertEqual(f'{self.Grades.B}', 'B')
 
     @unittest.skipIf(
             python_version >= (3, 12),
             'mixin-format now uses member instead of member.value',
             )
     def test_mixin_format_warning(self):
+        class Grades(int, Enum):
+            A = 5
+            B = 4
+            C = 3
+            D = 2
+            F = 0
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(f'{self.Grades.B}', '4')
+            self.assertEqual(f'{Grades.B}', '4')
 
     def assertFormatIsValue(self, spec, member):
         if python_version < (3, 12) and (not spec or spec in ('{}','{:}')):
@@ -598,7 +610,12 @@ class TestEnum(unittest.TestCase):
         self.assertFormatIsValue('{:f}', Konstants.TAU)
 
     def test_format_enum_int(self):
-        Grades = self.Grades
+        class Grades(int, Enum):
+            A = 5
+            B = 4
+            C = 3
+            D = 2
+            F = 0
         self.assertFormatIsValue('{}', Grades.C)
         self.assertFormatIsValue('{:}', Grades.C)
         self.assertFormatIsValue('{:20}', Grades.C)
@@ -657,6 +674,37 @@ class TestEnum(unittest.TestCase):
             def __repr__(self):
                 return '<%s.%s: %r>' % (self.__class__.__name__, self._name_, self._value_)
         self.assertEqual(repr(MyEnum.A), '<MyEnum.A: 0x1>')
+        #
+        class SillyInt(HexInt):
+            __qualname__ = 'SillyInt'
+            pass
+        class MyOtherEnum(SillyInt, enum.Enum):
+            __qualname__ = 'MyOtherEnum'
+            D = 4
+            E = 5
+            F = 6
+        self.assertIs(MyOtherEnum._member_type_, SillyInt)
+        globals()['SillyInt'] = SillyInt
+        globals()['MyOtherEnum'] = MyOtherEnum
+        test_pickle_dump_load(self.assertIs, MyOtherEnum.E)
+        test_pickle_dump_load(self.assertIs, MyOtherEnum)
+        #
+        # This did not work in 3.9, but does now with pickling by name
+        class UnBrokenInt(int):
+            __qualname__ = 'UnBrokenInt'
+            def __new__(cls, value):
+                return int.__new__(cls, value)
+        class MyUnBrokenEnum(UnBrokenInt, Enum):
+            __qualname__ = 'MyUnBrokenEnum'
+            G = 7
+            H = 8
+            I = 9
+        self.assertIs(MyUnBrokenEnum._member_type_, UnBrokenInt)
+        self.assertIs(MyUnBrokenEnum(7), MyUnBrokenEnum.G)
+        globals()['UnBrokenInt'] = UnBrokenInt
+        globals()['MyUnBrokenEnum'] = MyUnBrokenEnum
+        test_pickle_dump_load(self.assertIs, MyUnBrokenEnum.I)
+        test_pickle_dump_load(self.assertIs, MyUnBrokenEnum)
 
     def test_too_many_data_types(self):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
@@ -829,7 +877,7 @@ class TestEnum(unittest.TestCase):
         class ReplaceGlobalInt(IntEnum):
             ONE = 1
             TWO = 2
-        ReplaceGlobalInt.__reduce_ex__ = enum._reduce_ex_by_name
+        ReplaceGlobalInt.__reduce_ex__ = enum._reduce_ex_by_global_name
         for proto in range(HIGHEST_PROTOCOL):
             self.assertEqual(ReplaceGlobalInt.TWO.__reduce_ex__(proto), 'TWO')
 
@@ -1526,10 +1574,10 @@ class TestEnum(unittest.TestCase):
         NI5 = NamedInt('test', 5)
         self.assertEqual(NI5, 5)
         self.assertEqual(NEI.y.value, 2)
-        test_pickle_exception(self.assertRaises, TypeError, NEI.x)
-        test_pickle_exception(self.assertRaises, PicklingError, NEI)
+        test_pickle_dump_load(self.assertIs, NEI.y)
+        test_pickle_dump_load(self.assertIs, NEI)
 
-    def test_subclasses_without_direct_pickle_support_using_name(self):
+    def test_subclasses_with_direct_pickle_support(self):
         class NamedInt(int):
             __qualname__ = 'NamedInt'
             def __new__(cls, *args):
@@ -2143,6 +2191,50 @@ class TestEnum(unittest.TestCase):
                 return member
         self.assertEqual(Fee.TEST, 2)
 
+    def test_miltuple_mixin_with_common_data_type(self):
+        class CaseInsensitiveStrEnum(str, Enum):
+            @classmethod
+            def _missing_(cls, value):
+                for member in cls._member_map_.values():
+                    if member._value_.lower() == value.lower():
+                        return member
+                return super()._missing_(value)
+        #
+        class LenientStrEnum(str, Enum):
+            def __init__(self, *args):
+                self._valid = True
+            @classmethod
+            def _missing_(cls, value):
+                unknown = cls._member_type_.__new__(cls, value)
+                unknown._valid = False
+                unknown._name_ = value.upper()
+                unknown._value_ = value
+                cls._member_map_[value] = unknown
+                return unknown
+            @property
+            def valid(self):
+                return self._valid
+        #
+        class JobStatus(CaseInsensitiveStrEnum, LenientStrEnum):
+            ACTIVE = "active"
+            PENDING = "pending"
+            TERMINATED = "terminated"
+        #
+        JS = JobStatus
+        self.assertEqual(list(JobStatus), [JS.ACTIVE, JS.PENDING, JS.TERMINATED])
+        self.assertEqual(JS.ACTIVE, 'active')
+        self.assertEqual(JS.ACTIVE.value, 'active')
+        self.assertIs(JS('Active'), JS.ACTIVE)
+        self.assertTrue(JS.ACTIVE.valid)
+        missing = JS('missing')
+        self.assertEqual(list(JobStatus), [JS.ACTIVE, JS.PENDING, JS.TERMINATED])
+        self.assertEqual(JS.ACTIVE, 'active')
+        self.assertEqual(JS.ACTIVE.value, 'active')
+        self.assertIs(JS('Active'), JS.ACTIVE)
+        self.assertTrue(JS.ACTIVE.valid)
+        self.assertTrue(isinstance(missing, JS))
+        self.assertFalse(missing.valid)
+
     def test_empty_globals(self):
         # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
         # when using compile and exec because f_globals is empty
@@ -2160,8 +2252,10 @@ class TestEnum(unittest.TestCase):
             four = b'4', 'latin1', 'strict'
         self.assertEqual(GoodStrEnum.one, '1')
         self.assertEqual(str(GoodStrEnum.one), '1')
+        self.assertEqual('{}'.format(GoodStrEnum.one), '1')
         self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
         self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
+        self.assertEqual(repr(GoodStrEnum.one), 'GoodStrEnum.one')
         #
         class DumbMixin:
             def __str__(self):
@@ -2208,6 +2302,132 @@ class TestEnum(unittest.TestCase):
                 two = b'2', sys.getdefaultencoding
         with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
             class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
+
+    @unittest.skipIf(
+            python_version >= (3, 12),
+            'mixin-format now uses member instead of member.value',
+            )
+    def test_custom_strenum_with_warning(self):
+        class CustomStrEnum(str, Enum):
+            pass
+        class OkayEnum(CustomStrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        self.assertEqual(OkayEnum.one, '1')
+        self.assertEqual(str(OkayEnum.one), 'one')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual('{}'.format(OkayEnum.one), '1')
+        self.assertEqual(OkayEnum.one, '{}'.format(OkayEnum.one))
+        self.assertEqual(repr(OkayEnum.one), 'OkayEnum.one')
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, CustomStrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, CustomStrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(str(HelloEnum.eight), 'eight')
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, CustomStrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(str(GoodbyeEnum.nine), 'nine')
+        #
+        class FirstFailedStrEnum(CustomStrEnum):
+            one = 1   # this will become '1'
+            two = '2'
+        class SecondFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2,  # this will become '2'
+            three = '3'
+        class ThirdFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2  # this will become '2'
+        with self.assertRaisesRegex(TypeError, '.encoding. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, '.errors. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
+
+    @unittest.skipIf(
+            python_version < (3, 12),
+            'mixin-format currently uses member.value',
+            )
+    def test_custom_strenum(self):
+        class CustomStrEnum(str, Enum):
+            pass
+        class OkayEnum(CustomStrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        self.assertEqual(OkayEnum.one, '1')
+        self.assertEqual(str(OkayEnum.one), 'one')
+        self.assertEqual('{}'.format(OkayEnum.one), 'one')
+        self.assertEqual(repr(OkayEnum.one), 'OkayEnum.one')
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, CustomStrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, CustomStrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(str(HelloEnum.eight), 'eight')
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, CustomStrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(str(GoodbyeEnum.nine), 'nine')
+        #
+        class FirstFailedStrEnum(CustomStrEnum):
+            one = 1   # this will become '1'
+            two = '2'
+        class SecondFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2,  # this will become '2'
+            three = '3'
+        class ThirdFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2  # this will become '2'
+        with self.assertRaisesRegex(TypeError, '.encoding. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, '.errors. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
 
@@ -2774,13 +2994,6 @@ class TestFlag(unittest.TestCase):
             third = auto()
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
-    def test_bizarre(self):
-        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 1, 2"):
-            class Bizarre(Flag):
-                b = 3
-                c = 4
-                d = 6
-
     def test_multiple_mixin(self):
         class AllMixin:
             @classproperty
@@ -3011,15 +3224,19 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(repr(Open(~4)), '-5')
 
-    @unittest.skipUnless(
-            python_version < (3, 12),
-            'mixin-format now uses member instead of member.value',
-            )
     def test_format(self):
-        with self.assertWarns(DeprecationWarning):
-            Perm = self.Perm
-            self.assertEqual(format(Perm.R, ''), '4')
-            self.assertEqual(format(Perm.R | Perm.X, ''), '5')
+        Perm = self.Perm
+        self.assertEqual(format(Perm.R, ''), '4')
+        self.assertEqual(format(Perm.R | Perm.X, ''), '5')
+        #
+        class NewPerm(IntFlag):
+            R = 1 << 2
+            W = 1 << 1
+            X = 1 << 0
+            def __str__(self):
+                return self._name_
+        self.assertEqual(format(NewPerm.R, ''), 'R')
+        self.assertEqual(format(NewPerm.R | Perm.X, ''), 'R|X')
 
     def test_or(self):
         Perm = self.Perm
@@ -3345,12 +3562,6 @@ class TestIntFlag(unittest.TestCase):
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
 
-    def test_bizarre(self):
-        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 1, 2"):
-            class Bizarre(IntFlag):
-                b = 3
-                c = 4
-                d = 6
 
     def test_multiple_mixin(self):
         class AllMixin:
@@ -3459,6 +3670,7 @@ class TestUnique(unittest.TestCase):
             one = 1
             two = 'dos'
             tres = 4.0
+        #
         @unique
         class Cleaner(IntEnum):
             single = 1
@@ -3484,12 +3696,138 @@ class TestUnique(unittest.TestCase):
                 turkey = 3
 
     def test_unique_with_name(self):
-        @unique
+        @verify(UNIQUE)
         class Silly(Enum):
             one = 1
             two = 'dos'
             name = 3
-        @unique
+        #
+        @verify(UNIQUE)
+        class Sillier(IntEnum):
+            single = 1
+            name = 2
+            triple = 3
+            value = 4
+
+class TestVerify(unittest.TestCase):
+
+    def test_continuous(self):
+        @verify(CONTINUOUS)
+        class Auto(Enum):
+            FIRST = auto()
+            SECOND = auto()
+            THIRD = auto()
+            FORTH = auto()
+        #
+        @verify(CONTINUOUS)
+        class Manual(Enum):
+            FIRST = 3
+            SECOND = 4
+            THIRD = 5
+            FORTH = 6
+        #
+        with self.assertRaisesRegex(ValueError, 'invalid enum .Missing.: missing values 5, 6, 7, 8, 9, 10, 12'):
+            @verify(CONTINUOUS)
+            class Missing(Enum):
+                FIRST = 3
+                SECOND = 4
+                THIRD = 11
+                FORTH = 13
+        #
+        with self.assertRaisesRegex(ValueError, 'invalid flag .Incomplete.: missing values 32'):
+            @verify(CONTINUOUS)
+            class Incomplete(Flag):
+                FIRST = 4
+                SECOND = 8
+                THIRD = 16
+                FORTH = 64
+        #
+        with self.assertRaisesRegex(ValueError, 'invalid flag .StillIncomplete.: missing values 16'):
+            @verify(CONTINUOUS)
+            class StillIncomplete(Flag):
+                FIRST = 4
+                SECOND = 8
+                THIRD = 11
+                FORTH = 32
+
+
+    def test_composite(self):
+        class Bizarre(Flag):
+            b = 3
+            c = 4
+            d = 6
+        self.assertEqual(list(Bizarre), [Bizarre.c])
+        self.assertEqual(Bizarre.b.value, 3)
+        self.assertEqual(Bizarre.c.value, 4)
+        self.assertEqual(Bizarre.d.value, 6)
+        with self.assertRaisesRegex(
+                ValueError,
+                "invalid Flag 'Bizarre': aliases b and d are missing combined values of 0x3 .use enum.show_flag_values.value. for details.",
+            ):
+            @verify(NAMED_FLAGS)
+            class Bizarre(Flag):
+                b = 3
+                c = 4
+                d = 6
+        #
+        self.assertEqual(enum.show_flag_values(3), [1, 2])
+        class Bizarre(IntFlag):
+            b = 3
+            c = 4
+            d = 6
+        self.assertEqual(list(Bizarre), [Bizarre.c])
+        self.assertEqual(Bizarre.b.value, 3)
+        self.assertEqual(Bizarre.c.value, 4)
+        self.assertEqual(Bizarre.d.value, 6)
+        with self.assertRaisesRegex(
+                ValueError,
+                "invalid Flag 'Bizarre': alias d is missing value 0x2 .use enum.show_flag_values.value. for details.",
+            ):
+            @verify(NAMED_FLAGS)
+            class Bizarre(IntFlag):
+                c = 4
+                d = 6
+        self.assertEqual(enum.show_flag_values(2), [2])
+
+    def test_unique_clean(self):
+        @verify(UNIQUE)
+        class Clean(Enum):
+            one = 1
+            two = 'dos'
+            tres = 4.0
+        #
+        @verify(UNIQUE)
+        class Cleaner(IntEnum):
+            single = 1
+            double = 2
+            triple = 3
+
+    def test_unique_dirty(self):
+        with self.assertRaisesRegex(ValueError, 'tres.*one'):
+            @verify(UNIQUE)
+            class Dirty(Enum):
+                one = 1
+                two = 'dos'
+                tres = 1
+        with self.assertRaisesRegex(
+                ValueError,
+                'double.*single.*turkey.*triple',
+                ):
+            @verify(UNIQUE)
+            class Dirtier(IntEnum):
+                single = 1
+                double = 1
+                triple = 3
+                turkey = 3
+
+    def test_unique_with_name(self):
+        @verify(UNIQUE)
+        class Silly(Enum):
+            one = 1
+            two = 'dos'
+            name = 3
+        #
+        @verify(UNIQUE)
         class Sillier(IntEnum):
             single = 1
             name = 2
@@ -3716,7 +4054,7 @@ class TestStdLib(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin'})
+        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
 
 
 # These are unordered here on purpose to ensure that declaration order
@@ -3789,10 +4127,6 @@ class TestIntEnumConvert(unittest.TestCase):
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
-    @unittest.skipUnless(
-            python_version < (3, 12),
-            'mixin-format now uses member instead of member.value',
-            )
     def test_convert_repr_and_str(self):
         module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
@@ -3801,8 +4135,7 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
         self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % module)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
+        self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
 
 # global names for StrEnum._convert_ test
 CONVERT_STR_TEST_2 = 'goodbye'

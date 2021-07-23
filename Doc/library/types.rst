@@ -278,8 +278,8 @@ Standard names are defined for the following types:
 
    .. attribute:: __spec__
 
-      A record of the the module's import-system-related state. Expected to be
-      an instance of :class:`importlib.machinery.ModuleSpec`.
+      A record of the module's import-system-related state. Expected to be an
+      instance of :class:`importlib.machinery.ModuleSpec`.
 
       .. versionadded:: 3.4
 

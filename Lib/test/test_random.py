@@ -374,23 +374,6 @@ class TestBasicOps:
             restoredseq = [newgen.random() for i in range(10)]
             self.assertEqual(origseq, restoredseq)
 
-    @test.support.cpython_only
-    def test_bug_41052(self):
-        # _random.Random should not be allowed to serialization
-        import _random
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            r = _random.Random()
-            self.assertRaises(TypeError, pickle.dumps, r, proto)
-
-    @test.support.cpython_only
-    def test_bug_42008(self):
-        # _random.Random should call seed with first element of arg tuple
-        import _random
-        r1 = _random.Random()
-        r1.seed(8675309)
-        r2 = _random.Random(8675309)
-        self.assertEqual(r1.random(), r2.random())
-
     def test_bug_1727780(self):
         # verify that version-2-pickles can be loaded
         # fine, whether they are created on 32-bit or 64-bit
@@ -571,6 +554,25 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
+
+
+class TestRawMersenneTwister(unittest.TestCase):
+    @test.support.cpython_only
+    def test_bug_41052(self):
+        # _random.Random should not be allowed to serialization
+        import _random
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = _random.Random()
+            self.assertRaises(TypeError, pickle.dumps, r, proto)
+
+    @test.support.cpython_only
+    def test_bug_42008(self):
+        # _random.Random should call seed with first element of arg tuple
+        import _random
+        r1 = _random.Random()
+        r1.seed(8675309)
+        r2 = _random.Random(8675309)
+        self.assertEqual(r1.random(), r2.random())
 
 
 class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):

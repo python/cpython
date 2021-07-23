@@ -752,7 +752,7 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         check = self.check_sizeof
 
         basicsize = size('nQ2P' + '3PnPn2P')
-        keysize = calcsize('2nP2n')
+        keysize = calcsize('n2BI2n')
 
         entrysize = calcsize('n2P')
         p = calcsize('P')

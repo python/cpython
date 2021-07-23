@@ -94,7 +94,7 @@ for two inputs:
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
 >>> linear_regression(x, y)  #doctest:
-LinearRegression(intercept=1.5, slope=0.1)
+LinearRegression(slope=0.1, intercept=1.5)
 
 
 Exceptions
@@ -136,7 +136,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter
+from operator import itemgetter, mul
 from collections import Counter, namedtuple
 
 # === Exceptions ===
@@ -345,7 +345,7 @@ def mean(data):
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -363,13 +363,24 @@ def fmean(data):
             nonlocal n
             for n, x in enumerate(iterable, start=1):
                 yield x
-        total = fsum(count(data))
-    else:
+        data = count(data)
+    if weights is None:
         total = fsum(data)
-    try:
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
         return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+    try:
+        num_weights = len(weights)
+    except TypeError:
+        weights = list(weights)
+        num_weights = len(weights)
+    num = fsum(map(mul, data, weights))
+    if n != num_weights:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
+    return num / den
 
 
 def geometric_mean(data):
@@ -913,58 +924,57 @@ def correlation(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
-    s2y = fsum((yi - ybar) ** 2.0 for yi in y)
+    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
+    syy = fsum((yi - ybar) ** 2.0 for yi in y)
     try:
-        return sxy / sqrt(s2x * s2y)
+        return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
 
-LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(regressor, dependent_variable, /):
-    """Intercept and slope for simple linear regression
+def linear_regression(x, y, /):
+    """Slope and intercept for simple linear regression.
 
-    Return the intercept and slope of simple linear regression
+    Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between *regressor* and
-    *dependent variable* in terms of linear function:
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of linear function:
 
-        dependent_variable = intercept + slope * regressor + noise
+        y = slope * x + intercept + noise
 
-    where *intercept* and *slope* are the regression parameters that are
+    where *slope* and *intercept* are the regression parameters that are
     estimated, and noise represents the variability of the data that was
     not explained by the linear regression (it is equal to the
-    difference between predicted and actual values of dependent
+    difference between predicted and actual values of the dependent
     variable).
 
     The parameters are returned as a named tuple.
 
-    >>> regressor = [1, 2, 3, 4, 5]
+    >>> x = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
-    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
-    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
     """
-    n = len(regressor)
-    if len(dependent_variable) != n:
+    n = len(x)
+    if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    x, y = regressor, dependent_variable
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
+    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
     try:
-        slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
+        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
-        raise StatisticsError('regressor is constant')
+        raise StatisticsError('x is constant')
     intercept = ybar - slope * xbar
-    return LinearRegression(intercept=intercept, slope=slope)
+    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################

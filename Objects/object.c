@@ -11,7 +11,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_unionobject.h"   // _Py_UnionType
+#include "pycore_unionobject.h"   // _PyUnion_Type
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -1124,25 +1124,24 @@ _PyObject_NextNotImplemented(PyObject *self)
 int
 _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 {
-    PyTypeObject *tp = Py_TYPE(obj);
-    PyObject *descr;
-    descrgetfunc f = NULL;
-    PyObject **dictptr, *dict;
-    PyObject *attr;
     int meth_found = 0;
 
     assert(*method == NULL);
 
-    if (Py_TYPE(obj)->tp_getattro != PyObject_GenericGetAttr
-            || !PyUnicode_Check(name)) {
+    PyTypeObject *tp = Py_TYPE(obj);
+    if (!_PyType_IsReady(tp)) {
+        if (PyType_Ready(tp) < 0) {
+            return 0;
+        }
+    }
+
+    if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_Check(name)) {
         *method = PyObject_GetAttr(obj, name);
         return 0;
     }
 
-    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
-        return 0;
-
-    descr = _PyType_Lookup(tp, name);
+    PyObject *descr = _PyType_Lookup(tp, name);
+    descrgetfunc f = NULL;
     if (descr != NULL) {
         Py_INCREF(descr);
         if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
@@ -1157,23 +1156,22 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
     }
 
-    dictptr = _PyObject_GetDictPtr(obj);
+    PyObject **dictptr = _PyObject_GetDictPtr(obj);
+    PyObject *dict;
     if (dictptr != NULL && (dict = *dictptr) != NULL) {
         Py_INCREF(dict);
-        attr = PyDict_GetItemWithError(dict, name);
+        PyObject *attr = PyDict_GetItemWithError(dict, name);
         if (attr != NULL) {
-            Py_INCREF(attr);
-            *method = attr;
+            *method = Py_NewRef(attr);
             Py_DECREF(dict);
             Py_XDECREF(descr);
             return 0;
         }
-        else {
-            Py_DECREF(dict);
-            if (PyErr_Occurred()) {
-                Py_XDECREF(descr);
-                return 0;
-            }
+        Py_DECREF(dict);
+
+        if (PyErr_Occurred()) {
+            Py_XDECREF(descr);
+            return 0;
         }
     }
 
@@ -1880,7 +1878,7 @@ _PyTypes_Init(void)
     INIT_TYPE(_PyWeakref_CallableProxyType);
     INIT_TYPE(_PyWeakref_ProxyType);
     INIT_TYPE(_PyWeakref_RefType);
-    INIT_TYPE(_Py_UnionType);
+    INIT_TYPE(_PyUnion_Type);
 
     return _PyStatus_OK();
 #undef INIT_TYPE
@@ -2092,25 +2090,13 @@ finally:
 
 /* Trashcan support. */
 
-/* Add op to the _PyTrash_delete_later list.  Called when the current
+#define _PyTrash_UNWIND_LEVEL 50
+
+/* Add op to the gcstate->trash_delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a currently untracked gc'ed
  * object, with refcount 0.  Py_DECREF must already have been called on it.
  */
-void
-_PyTrash_deposit_object(PyObject *op)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _gc_runtime_state *gcstate = &interp->gc;
-
-    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
-    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
-    _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), gcstate->trash_delete_later);
-    gcstate->trash_delete_later = op;
-}
-
-/* The equivalent API, using per-thread state recursion info */
-void
+static void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2121,37 +2107,9 @@ _PyTrash_thread_deposit_object(PyObject *op)
     tstate->trash_delete_later = op;
 }
 
-/* Deallocate all the objects in the _PyTrash_delete_later list.  Called when
- * the call-stack unwinds again.
- */
-void
-_PyTrash_destroy_chain(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _gc_runtime_state *gcstate = &interp->gc;
-
-    while (gcstate->trash_delete_later) {
-        PyObject *op = gcstate->trash_delete_later;
-        destructor dealloc = Py_TYPE(op)->tp_dealloc;
-
-        gcstate->trash_delete_later =
-            (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
-
-        /* Call the deallocator directly.  This used to try to
-         * fool Py_DECREF into calling it indirectly, but
-         * Py_DECREF was already called on this object, and in
-         * assorted non-release builds calling Py_DECREF again ends
-         * up distorting allocation statistics.
-         */
-        _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
-        ++gcstate->trash_delete_nesting;
-        (*dealloc)(op);
-        --gcstate->trash_delete_nesting;
-    }
-}
-
-/* The equivalent API, using per-thread state recursion info */
-void
+/* Deallocate all the objects in the gcstate->trash_delete_later list.
+ * Called when the call-stack unwinds again. */
+static void
 _PyTrash_thread_destroy_chain(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2192,7 +2150,7 @@ _PyTrash_thread_destroy_chain(void)
 int
 _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 {
-    if (tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) {
+    if (tstate->trash_delete_nesting >= _PyTrash_UNWIND_LEVEL) {
         /* Store the object (to be deallocated later) and jump past
          * Py_TRASHCAN_END, skipping the body of the deallocator */
         _PyTrash_thread_deposit_object(op);

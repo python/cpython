@@ -262,7 +262,7 @@ the *new_callable* argument to :func:`patch`.
       this is a new Mock (created on first access). See the
       :attr:`return_value` attribute.
 
-    * *unsafe*: By default, accessing any attribute with name starting with
+    * *unsafe*: By default, accessing any attribute whose name starts with
       *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
       :exc:`AttributeError`. Passing ``unsafe=True`` will allow access to
       these attributes.
@@ -328,8 +328,8 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_once_with(*args, **kwargs)
 
-       Assert that the mock was called exactly once and that that call was
-       with the specified arguments.
+       Assert that the mock was called exactly once and that call was with the
+       specified arguments.
 
             >>> mock = Mock(return_value=None)
             >>> mock('foo', bar='baz')
