@@ -322,9 +322,7 @@ extern SpecializationStats _specialization_stats[256];
 #define STAT_INC(opname, name) _specialization_stats[opname].name++
 void _Py_PrintSpecializationStats(void);
 
-#if SPECIALIZATION_STATS
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
-#endif
 
 #else
 #define STAT_INC(opname, name) ((void)0)
