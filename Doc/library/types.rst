@@ -369,6 +369,12 @@ Standard names are defined for the following types:
       Updated to support the new union (``|``) operator from :pep:`584`, which
       simply delegates to the underlying mapping.
 
+   .. versionchanged:: 3.10
+
+      To avoid exposing the actual proxied object to arbitrary code, union and
+      rich comparison operations now delegate to a copy of the underlying
+      mapping instead.
+
    .. describe:: key in proxy
 
       Return ``True`` if the underlying mapping has a key *key*, else
