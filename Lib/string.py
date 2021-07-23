@@ -350,9 +350,7 @@ class MultilineFormatter(Formatter):
                 if recursion_depth == 2:
                   if isinstance(obj, str) and "\n" in obj:
                     
-                    pos = 0
-                    for item in result:
-                      pos += len(item)
+                    pos = sum(len(item) for item in result)
                     
                     lines = obj.split("\n")
                     obj = lines.pop(0)
