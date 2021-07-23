@@ -1044,14 +1044,24 @@ mappingproxy_or(PyObject *left, PyObject *right)
             return NULL;
         }
     }
+    else {
+        Py_INCREF(left);
+    }
     if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
         right = ((mappingproxyobject*)right)->mapping;
         right = _PyObject_CallMethodIdNoArgs(right, &PyId_copy);
         if (right == NULL) {
+            Py_DECREF(left);
             return NULL;
         }
     }
-    return PyNumber_Or(left, right);
+    else {
+        Py_INCREF(right);
+    }
+    PyObject *result = PyNumber_Or(left, right);
+    Py_DECREF(left);
+    Py_DECREF(right);
+    return result;
 }
 
 static PyObject *
@@ -1209,7 +1219,9 @@ mappingproxy_richcompare(mappingproxyobject *v, PyObject *w, int op)
     if (copy == NULL) {
         return NULL;
     }
-    return PyObject_RichCompare(copy, w, op);
+    PyObject *result = PyObject_RichCompare(copy, w, op);
+    Py_DECREF(copy);
+    return result;
 }
 
 static int
