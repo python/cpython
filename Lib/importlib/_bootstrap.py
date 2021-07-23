@@ -999,15 +999,27 @@ def _find_and_load_unlocked(name, import_):
         except AttributeError:
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
             raise ModuleNotFoundError(msg, name=name) from None
+        parent_spec = parent_module.__spec__
+        child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
-        module = _load_unlocked(spec)
+        if parent and parent_spec:
+            # add child to the parent _uninitialized_submodules so that we can
+            # flag it in case it has a circular import on the parent
+            _uninitialized = getattr(parent_module.__spec__,
+                                    '_uninitialized_submodules',
+                                    [])
+            parent_spec._uninitialized_submodules = _uninitialized + [child]
+        try:
+            module = _load_unlocked(spec)
+        finally:
+            if parent and parent_spec:
+                parent_spec._uninitialized_submodules = _uninitialized
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
-        child = name.rpartition('.')[2]
         try:
             setattr(parent_module, child, module)
         except AttributeError:
