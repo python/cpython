@@ -2800,7 +2800,7 @@ then
 		# to ensure that tests don't crash
 		# Note: This matches the value of THREAD_STACK_SIZE in
 		# thread_pthread.h
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
+		LINKFORSHARED="-Wl,-stack_size,4000000 $LINKFORSHARED"
 
 		if test "$enable_framework"
 		then
