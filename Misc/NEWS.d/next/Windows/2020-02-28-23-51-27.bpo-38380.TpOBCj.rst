@@ -1,1 +1,0 @@
-Update Windows builds to use SQLite 3.31.1

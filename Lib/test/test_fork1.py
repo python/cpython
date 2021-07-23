@@ -17,19 +17,6 @@ from test import support
 support.get_attribute(os, 'fork')
 
 class ForkTest(ForkWait):
-    def wait_impl(self, cpid):
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-        while time.monotonic() <= deadline:
-            # waitpid() shouldn't hang, but some of the buildbots seem to hang
-            # in the forking tests.  This is an attempt to fix the problem.
-            spid, status = os.waitpid(cpid, os.WNOHANG)
-            if spid == cpid:
-                break
-            time.sleep(0.1)
-
-        self.assertEqual(spid, cpid)
-        self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
-
     def test_threaded_import_lock_fork(self):
         """Check fork() in main thread works while a subthread is doing an import"""
         import_started = threading.Event()
@@ -46,6 +33,7 @@ class ForkTest(ForkWait):
         t = threading.Thread(target=importer)
         t.start()
         import_started.wait()
+        exitcode = 42
         pid = os.fork()
         try:
             # PyOS_BeforeFork should have waited for the import to complete
@@ -54,7 +42,7 @@ class ForkTest(ForkWait):
             if not pid:
                 m = __import__(fake_module_name)
                 if m == complete_module:
-                    os._exit(0)
+                    os._exit(exitcode)
                 else:
                     if support.verbose > 1:
                         print("Child encountered partial module")
@@ -64,7 +52,7 @@ class ForkTest(ForkWait):
                 # Exitcode 1 means the child got a partial module (bad.) No
                 # exitcode (but a hang, which manifests as 'got pid 0')
                 # means the child deadlocked (also bad.)
-                self.wait_impl(pid)
+                self.wait_impl(pid, exitcode=exitcode)
         finally:
             try:
                 os.kill(pid, signal.SIGKILL)
@@ -74,6 +62,7 @@ class ForkTest(ForkWait):
 
     def test_nested_import_lock_fork(self):
         """Check fork() in main thread works while the main thread is doing an import"""
+        exitcode = 42
         # Issue 9573: this used to trigger RuntimeError in the child process
         def fork_with_import_lock(level):
             release = 0
@@ -95,8 +84,8 @@ class ForkTest(ForkWait):
                     os._exit(1)
                 raise
             if in_child:
-                os._exit(0)
-            self.wait_impl(pid)
+                os._exit(exitcode)
+            self.wait_impl(pid, exitcode=exitcode)
 
         # Check this works with various levels of nested
         # import in the main thread

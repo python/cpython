@@ -1188,7 +1188,7 @@ to the above, as in the following example::
 
     class StyleAdapter(logging.LoggerAdapter):
         def __init__(self, logger, extra=None):
-            super(StyleAdapter, self).__init__(logger, extra or {})
+            super().__init__(logger, extra or {})
 
         def log(self, level, msg, /, *args, **kwargs):
             if self.isEnabledFor(level):
@@ -1368,7 +1368,7 @@ An example dictionary-based configuration
 -----------------------------------------
 
 Below is an example of a logging configuration dictionary - it's taken from
-the `documentation on the Django project <https://docs.djangoproject.com/en/1.9/topics/logging/#configuring-logging>`_.
+the `documentation on the Django project <https://docs.djangoproject.com/en/stable/topics/logging/#configuring-logging>`_.
 This dictionary is passed to :func:`~config.dictConfig` to put the configuration into effect::
 
     LOGGING = {
@@ -1424,7 +1424,7 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
     }
 
 For more information about this configuration, you can see the `relevant
-section <https://docs.djangoproject.com/en/1.9/topics/logging/#configuring-logging>`_
+section <https://docs.djangoproject.com/en/stable/topics/logging/#configuring-logging>`_
 of the Django documentation.
 
 .. _cookbook-rotator-namer:
@@ -1783,7 +1783,7 @@ as in the following complete example::
                 return tuple(o)
             elif isinstance(o, unicode):
                 return o.encode('unicode_escape').decode('ascii')
-            return super(Encoder, self).default(o)
+            return super().default(o)
 
     class StructuredMessage:
         def __init__(self, message, /, **kwargs):
@@ -2175,11 +2175,11 @@ class, as shown in the following example::
             """
             Format an exception so that it prints on a single line.
             """
-            result = super(OneLineExceptionFormatter, self).formatException(exc_info)
+            result = super().formatException(exc_info)
             return repr(result)  # or format into one line however you want to
 
         def format(self, record):
-            s = super(OneLineExceptionFormatter, self).format(record)
+            s = super().format(record)
             if record.exc_text:
                 s = s.replace('\n', '') + '|'
             return s
@@ -2813,7 +2813,7 @@ refer to the comments in the code snippet for more detailed information.
     #
     class QtHandler(logging.Handler):
         def __init__(self, slotfunc, *args, **kwargs):
-            super(QtHandler, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
             self.signaller = Signaller()
             self.signaller.signal.connect(slotfunc)
 
@@ -2883,7 +2883,7 @@ refer to the comments in the code snippet for more detailed information.
         }
 
         def __init__(self, app):
-            super(Window, self).__init__()
+            super().__init__()
             self.app = app
             self.textedit = te = QtWidgets.QPlainTextEdit(self)
             # Set whatever the default monospace font is for the platform

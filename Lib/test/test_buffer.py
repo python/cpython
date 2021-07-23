@@ -16,6 +16,7 @@
 import contextlib
 import unittest
 from test import support
+from test.support import os_helper
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
@@ -39,7 +40,7 @@ except ImportError:
     ctypes = None
 
 try:
-    with support.EnvironmentVarGuard() as os.environ, \
+    with os_helper.EnvironmentVarGuard() as os.environ, \
          warnings.catch_warnings():
         from numpy import ndarray as numpy_array
 except ImportError:
@@ -2754,6 +2755,10 @@ class TestBufferProtocol(unittest.TestCase):
         # be 1D, at least one format must be 'c', 'b' or 'B'.
         for _tshape in gencastshapes():
             for char in fmtdict['@']:
+                # Casts to _Bool are undefined if the source contains values
+                # other than 0 or 1.
+                if char == "?":
+                    continue
                 tfmt = ('', '@')[randrange(2)] + char
                 tsize = struct.calcsize(tfmt)
                 n = prod(_tshape) * tsize

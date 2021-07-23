@@ -12,15 +12,14 @@
 #include <olectl.h>
 #include <strsafe.h>
 
-#include "pyshellext_h.h"
-
 #define DDWM_UPDATEWINDOW (WM_USER+3)
 
 static HINSTANCE hModule;
 static CLIPFORMAT cfDropDescription;
 static CLIPFORMAT cfDragWindow;
 
-static const LPCWSTR CLASS_SUBKEY = L"Software\\Classes\\CLSID\\{BEA218D2-6950-497B-9434-61683EC065FE}";
+#define CLASS_GUID "{BEA218D2-6950-497B-9434-61683EC065FE}"
+static const LPCWSTR CLASS_SUBKEY = L"Software\\Classes\\CLSID\\" CLASS_GUID;
 static const LPCWSTR DRAG_MESSAGE = L"Open with %1";
 
 using namespace Microsoft::WRL;
@@ -121,8 +120,7 @@ HRESULT FilenameListCchCopyW(STRSAFE_LPWSTR pszDest, size_t cchDest, LPCWSTR psz
     return hr;
 }
 
-
-class PyShellExt : public RuntimeClass<
+class DECLSPEC_UUID(CLASS_GUID) PyShellExt : public RuntimeClass<
     RuntimeClassFlags<ClassicCom>,
     IDropTarget,
     IPersistFile
@@ -483,7 +481,7 @@ public:
     }
 
     STDMETHODIMP GetClassID(CLSID *pClassID) {
-        *pClassID = CLSID_PyShellExt;
+        *pClassID = __uuidof(PyShellExt);
         return S_OK;
     }
 };

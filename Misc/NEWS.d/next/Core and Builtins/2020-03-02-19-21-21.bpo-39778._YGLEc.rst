@@ -1,2 +1,0 @@
-Fixed a crash due to incorrect handling of weak references in
-``collections.OrderedDict`` classes. Patch by Pablo Galindo.

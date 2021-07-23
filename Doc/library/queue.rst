@@ -190,32 +190,28 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
+    import threading, queue
+
+    q = queue.Queue()
+
     def worker():
         while True:
             item = q.get()
-            if item is None:
-                break
-            do_work(item)
+            print(f'Working on {item}')
+            print(f'Finished {item}')
             q.task_done()
 
-    q = queue.Queue()
-    threads = []
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
+    # turn-on the worker thread
+    threading.Thread(target=worker, daemon=True).start()
 
-    for item in source():
+    # send thirty task requests to the worker
+    for item in range(30):
         q.put(item)
+    print('All task requests sent\n', end='')
 
     # block until all tasks are done
     q.join()
-
-    # stop workers
-    for i in range(num_worker_threads):
-        q.put(None)
-    for t in threads:
-        t.join()
+    print('All work completed')
 
 
 SimpleQueue Objects

@@ -1,4 +1,5 @@
 from test import support
+from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
@@ -1265,8 +1266,8 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
     def test_open(self):
-        filename = support.TESTFN + '.py'
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN + '.py'
+        self.addCleanup(os_helper.unlink, filename)
 
         # test coding cookie
         for encoding in ('iso-8859-15', 'utf-8'):
@@ -1605,7 +1606,7 @@ class TestRoundtrip(TestCase):
         import glob, random
         fn = support.findfile("tokenize_tests.txt")
         tempdir = os.path.dirname(fn) or os.curdir
-        testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
+        testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
         # Tokenize is broken on test_pep3131.py because regular expressions are
         # broken on the obscure unicode identifiers in it. *sigh*

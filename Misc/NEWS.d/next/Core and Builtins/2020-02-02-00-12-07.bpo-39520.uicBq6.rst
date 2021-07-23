@@ -1,2 +1,0 @@
-Fix unparsing of ext slices with no items (``foo[:,]``). Patch by Batuhan
-Taskaya.

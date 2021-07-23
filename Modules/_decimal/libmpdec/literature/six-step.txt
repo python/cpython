@@ -1,6 +1,6 @@
 
 
-(* Copyright (c) 2011 Stefan Krah. All rights reserved. *)
+(* Copyright (c) 2011-2020 Stefan Krah. All rights reserved. *)
 
 
 The Six Step Transform:

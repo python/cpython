@@ -1,2 +1,0 @@
-Relax :term:`decorator` grammar restrictions to allow any valid expression
-(:pep:`614`).

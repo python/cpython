@@ -1,3 +1,0 @@
-Open issue in the BPO indicated a desire to make the implementation of
-codecs.open() at parity with io.open(), which implements a try/except to
-assure file stream gets closed before an exception is raised.

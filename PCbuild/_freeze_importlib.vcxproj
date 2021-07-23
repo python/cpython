@@ -123,6 +123,11 @@
       <IntFile>$(IntDir)importlib_zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\importlib_zipimport.h</OutFile>
     </None>
+    <None Include="..\Tools\freeze\flag.py">
+      <ModName>hello</ModName>
+      <IntFile>$(IntDir)frozen_hello.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_hello.h</OutFile>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -130,20 +135,17 @@
   <Target Name="_RebuildImportLib">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
     
-    <PropertyGroup>
-      <_OldContent Condition="Exists($(OutTargetPath))"></_OldContent>
-      <_NewContent Condition="Exists($(IntTargetPath))">$([System.IO.File]::ReadAllText($(IntTargetPath)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_NewContent>
-    </PropertyGroup>
-    
     <Copy SourceFiles="%(None.IntFile)"
           DestinationFiles="%(None.OutFile)"
           Condition="!Exists(%(None.OutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
-    
-    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
+
+    <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
+             Condition="'@(_Updated)' != ''" Importance="high" />
+    <Warning Text="Frozen importlib files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
              Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
-    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
+    <Error Text="Frozen importlib files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
            Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
   </Target>
   <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
@@ -151,9 +153,7 @@
   </Target>
   <Target Name="_CleanImportLib" BeforeTargets="CoreClean">
     <ItemGroup>
-      <Clean Include="$(IntDir)importlib.g.h" />
-      <Clean Include="$(IntDir)importlib_external.g.h" />
-      <Clean Include="$(IntDir)importlib_zipimport.g.h" />
+      <Clean Include="%(None.IntFile)" />
     </ItemGroup>
   </Target>
 </Project>

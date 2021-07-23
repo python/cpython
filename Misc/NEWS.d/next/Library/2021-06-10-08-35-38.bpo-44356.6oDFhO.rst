@@ -1,0 +1,1 @@
+[Enum] Allow multiple data-type mixins if they are all the same.

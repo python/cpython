@@ -10,9 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
-#include "pythread.h"
+#include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -292,12 +290,11 @@ _enter_buffered_busy(buffered *self)
     }
     Py_END_ALLOW_THREADS
     if (relax_locking && st != PY_LOCK_ACQUIRED) {
-        PyObject *msgobj = PyUnicode_FromFormat(
-            "could not acquire lock for %A at interpreter "
+        PyObject *ascii = PyObject_ASCII((PyObject*)self);
+        _Py_FatalErrorFormat(__func__,
+            "could not acquire lock for %s at interpreter "
             "shutdown, possibly due to daemon threads",
-            (PyObject *) self);
-        const char *msg = PyUnicode_AsUTF8(msgobj);
-        Py_FatalError(msg);
+            ascii ? PyUnicode_AsUTF8(ascii) : "<ascii(self) failed>");
     }
     return 1;
 }
@@ -1486,6 +1483,15 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     }
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
+
+    if (n == -1 && PyErr_Occurred()) {
+        _PyErr_FormatFromCause(
+            PyExc_OSError,
+            "raw readinto() failed"
+        );
+        return -1;
+    }
+
     if (n < 0 || n > len) {
         PyErr_Format(PyExc_OSError,
                      "raw readinto() returned invalid length %zd "

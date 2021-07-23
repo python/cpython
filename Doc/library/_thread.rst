@@ -61,14 +61,26 @@ This module defines the following constants and functions:
       :func:`sys.unraisablehook` is now used to handle unhandled exceptions.
 
 
-.. function:: interrupt_main()
+.. function:: interrupt_main(signum=signal.SIGINT, /)
 
-   Simulate the effect of a :data:`signal.SIGINT` signal arriving in the main
-   thread. A thread can use this function to interrupt the main thread.
+   Simulate the effect of a signal arriving in the main thread.
+   A thread can use this function to interrupt the main thread, though
+   there is no guarantee that the interruption will happen immediately.
 
-   If :data:`signal.SIGINT` isn't handled by Python (it was set to
+   If given, *signum* is the number of the signal to simulate.
+   If *signum* is not given, :data:`signal.SIGINT` is simulated.
+
+   If the given signal isn't handled by Python (it was set to
    :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
    nothing.
+
+   .. versionchanged:: 3.10
+      The *signum* argument is added to customize the signal number.
+
+   .. note::
+      This does not emit the corresponding signal but schedules a call to
+      the associated handler (if it exists).
+      If you want to truly emit the signal, use :func:`signal.raise_signal`.
 
 
 .. function:: exit()

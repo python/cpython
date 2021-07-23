@@ -430,14 +430,9 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -515,6 +510,10 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
         goto exit;
     }
     tag = args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("makeelement", "argument 2", "dict", args[1]);
+        goto exit;
+    }
     attrib = args[1];
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
@@ -916,4 +915,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ad029ba71f5ae39 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1385b5e5688f3614 input=a9049054013a1b77]*/

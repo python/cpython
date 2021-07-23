@@ -60,7 +60,7 @@ class CMathTests(unittest.TestCase):
     test_functions.append(lambda x : cmath.log(14.-27j, x))
 
     def setUp(self):
-        self.test_values = open(test_file)
+        self.test_values = open(test_file, encoding="utf-8")
 
     def tearDown(self):
         self.test_values.close()

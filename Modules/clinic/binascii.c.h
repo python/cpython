@@ -70,11 +70,6 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     backtick = _PyLong_AsInt(args[1]);
     if (backtick == -1 && PyErr_Occurred()) {
         goto exit;
@@ -92,27 +87,48 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_a2b_base64__doc__,
-"a2b_base64($module, data, /)\n"
+"a2b_base64($module, data, /, *, strict_mode=False)\n"
 "--\n"
 "\n"
-"Decode a line of base64 data.");
+"Decode a line of base64 data.\n"
+"\n"
+"  strict_mode\n"
+"    When set to True, bytes that are not part of the base64 standard are not allowed.\n"
+"    The same applies to excess data after padding (= / ==).");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
-    {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_O, binascii_a2b_base64__doc__},
+    {"a2b_base64", (PyCFunction)(void(*)(void))binascii_a2b_base64, METH_FASTCALL|METH_KEYWORDS, binascii_a2b_base64__doc__},
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data);
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode);
 
 static PyObject *
-binascii_a2b_base64(PyObject *module, PyObject *arg)
+binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "strict_mode", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "a2b_base64", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
+    int strict_mode = 0;
 
-    if (!ascii_buffer_converter(arg, &data)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = binascii_a2b_base64_impl(module, &data);
+    if (!ascii_buffer_converter(args[0], &data)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    strict_mode = _PyLong_AsInt(args[1]);
+    if (strict_mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = binascii_a2b_base64_impl(module, &data, strict_mode);
 
 exit:
     /* Cleanup for data */
@@ -158,11 +174,6 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     newline = _PyLong_AsInt(args[1]);
     if (newline == -1 && PyErr_Occurred()) {
@@ -348,11 +359,6 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("crc_hqx", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (crc == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -400,11 +406,6 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 2) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (crc == (unsigned int)-1 && PyErr_Occurred()) {
@@ -488,11 +489,6 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     bytes_per_sep = _PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
@@ -562,11 +558,6 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     bytes_per_sep = _PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
@@ -684,11 +675,6 @@ binascii_a2b_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     header = _PyLong_AsInt(args[1]);
     if (header == -1 && PyErr_Occurred()) {
         goto exit;
@@ -749,11 +735,6 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         quotetabs = _PyLong_AsInt(args[1]);
         if (quotetabs == -1 && PyErr_Occurred()) {
             goto exit;
@@ -763,11 +744,6 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         istext = _PyLong_AsInt(args[2]);
         if (istext == -1 && PyErr_Occurred()) {
             goto exit;
@@ -775,11 +751,6 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     header = _PyLong_AsInt(args[3]);
     if (header == -1 && PyErr_Occurred()) {
@@ -796,4 +767,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a1e878d3963b615e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f261ee49971f5ca input=a9049054013a1b77]*/

@@ -35,7 +35,7 @@ Abstract Grammar
 The abstract grammar is currently defined as follows:
 
 .. literalinclude:: ../../Parser/Python.asdl
-   :language: none
+   :language: asdl
 
 
 Node classes
@@ -80,12 +80,13 @@ Node classes
                   end_col_offset
 
       Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno`, :attr:`col_offset`, :attr:`lineno`, and :attr:`col_offset`
-      attributes.  The :attr:`lineno` and :attr:`end_lineno` are the first and
-      last line numbers of source text span (1-indexed so the first line is line 1)
-      and the :attr:`col_offset` and :attr:`end_col_offset` are the corresponding
-      UTF-8 byte offsets of the first and last tokens that generated the node.
-      The UTF-8 offset is recorded because the parser uses UTF-8 internally.
+      :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`, and
+      :attr:`end_col_offset` attributes.  The :attr:`lineno` and :attr:`end_lineno`
+      are the first and last line numbers of source text span (1-indexed so the
+      first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
+      are the corresponding UTF-8 byte offsets of the first and last tokens that
+      generated the node. The UTF-8 offset is recorded because the parser uses
+      UTF-8 internally.
 
       Note that the end positions are not required by the compiler and are
       therefore optional. The end offset is *after* the last symbol, for example
@@ -120,12 +121,30 @@ Node classes
 
    Class :class:`ast.Constant` is now used for all constants.
 
+.. versionchanged:: 3.9
+
+   Simple indices are represented by their value, extended slices are
+   represented as tuples.
+
 .. deprecated:: 3.8
 
    Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In the meanwhile,
+   but they will be removed in future Python releases.  In the meantime,
    instantiating them will return an instance of a different class.
+
+.. deprecated:: 3.9
+
+   Old classes :class:`ast.Index` and :class:`ast.ExtSlice` are still
+   available, but they will be removed in future Python releases.
+   In the meantime, instantiating them will return an instance of
+   a different class.
+
+.. note::
+    The descriptions of the specific node classes displayed here
+    were initially adapted from the fantastic `Green Tree
+    Snakes <https://greentreesnakes.readthedocs.io/en/latest/>`__ project and
+    all its contributors.
 
 Literals
 ^^^^^^^^
@@ -141,7 +160,7 @@ Literals
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
-            body=Constant(value=123, kind=None))
+            body=Constant(value=123))
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -175,12 +194,11 @@ Literals
         Expression(
             body=JoinedStr(
                 values=[
-                    Constant(value='sin(', kind=None),
+                    Constant(value='sin('),
                     FormattedValue(
                         value=Name(id='a', ctx=Load()),
-                        conversion=-1,
-                        format_spec=None),
-                    Constant(value=') is ', kind=None),
+                        conversion=-1),
+                    Constant(value=') is '),
                     FormattedValue(
                         value=Call(
                             func=Name(id='sin', ctx=Load()),
@@ -190,7 +208,7 @@ Literals
                         conversion=-1,
                         format_spec=JoinedStr(
                             values=[
-                                Constant(value='.3', kind=None)]))]))
+                                Constant(value='.3')]))]))
 
 
 .. class:: List(elts, ctx)
@@ -206,17 +224,17 @@ Literals
         Expression(
             body=List(
                 elts=[
-                    Constant(value=1, kind=None),
-                    Constant(value=2, kind=None),
-                    Constant(value=3, kind=None)],
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)],
                 ctx=Load()))
         >>> print(ast.dump(ast.parse('(1, 2, 3)', mode='eval'), indent=4))
         Expression(
             body=Tuple(
                 elts=[
-                    Constant(value=1, kind=None),
-                    Constant(value=2, kind=None),
-                    Constant(value=3, kind=None)],
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)],
                 ctx=Load()))
 
 
@@ -230,9 +248,9 @@ Literals
         Expression(
             body=Set(
                 elts=[
-                    Constant(value=1, kind=None),
-                    Constant(value=2, kind=None),
-                    Constant(value=3, kind=None)]))
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)]))
 
 
 .. class:: Dict(keys, values)
@@ -251,10 +269,10 @@ Literals
         Expression(
             body=Dict(
                 keys=[
-                    Constant(value='a', kind=None),
+                    Constant(value='a'),
                     None],
                 values=[
-                    Constant(value=1, kind=None),
+                    Constant(value=1),
                     Name(id='d', ctx=Load())]))
 
 
@@ -290,8 +308,7 @@ Variables
                 Assign(
                     targets=[
                         Name(id='a', ctx=Store())],
-                    value=Constant(value=1, kind=None),
-                    type_comment=None)],
+                    value=Constant(value=1))],
             type_ignores=[])
 
         >>> print(ast.dump(ast.parse('del a'), indent=4))
@@ -323,8 +340,7 @@ Variables
                                     value=Name(id='b', ctx=Store()),
                                     ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='it', ctx=Load()),
-                    type_comment=None)],
+                    value=Name(id='it', ctx=Load()))],
             type_ignores=[])
 
 
@@ -442,13 +458,13 @@ Expressions
         >>> print(ast.dump(ast.parse('1 <= a < 10', mode='eval'), indent=4))
         Expression(
             body=Compare(
-                left=Constant(value=1, kind=None),
+                left=Constant(value=1),
                 ops=[
                     LtE(),
                     Lt()],
                 comparators=[
                     Name(id='a', ctx=Load()),
-                    Constant(value=10, kind=None)]))
+                    Constant(value=10)]))
 
 
 .. class:: Eq
@@ -493,7 +509,6 @@ Expressions
                         arg='b',
                         value=Name(id='c', ctx=Load())),
                     keyword(
-                        arg=None,
                         value=Name(id='e', ctx=Load()))]))
 
 
@@ -548,7 +563,7 @@ Expressions
         Expression(
             body=NamedExpr(
                 target=Name(id='x', ctx=Store()),
-                value=Constant(value=4, kind=None)))
+                value=Constant(value=4)))
 
 
 Subscripting
@@ -556,30 +571,33 @@ Subscripting
 
 .. class:: Subscript(value, slice, ctx)
 
-   A subscript, such as ``l[1]``. ``value`` is the object, often a
-   :class:`Name`. ``slice`` is one of :class:`Index`, :class:`Slice` or
-   :class:`ExtSlice`. ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
+   A subscript, such as ``l[1]``. ``value`` is the subscripted object
+   (usually sequence or mapping). ``slice`` is an index, slice or key.
+   It can be a :class:`Tuple` and contain a :class:`Slice`.
+   ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
    according to the action performed with the subscript.
-
-
-.. class:: Index(value)
-
-   Simple subscripting with a single value
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('l[1]', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
         Expression(
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
-                slice=Index(
-                    value=Constant(value=1, kind=None)),
+                slice=Tuple(
+                    elts=[
+                        Slice(
+                            lower=Constant(value=1),
+                            upper=Constant(value=2)),
+                        Constant(value=3)],
+                    ctx=Load()),
                 ctx=Load()))
 
 
 .. class:: Slice(lower, upper, step)
 
-   Regular slicing (on the form x:y).
+   Regular slicing (on the form ``lower:upper`` or ``lower:upper:step``).
+   Can occur only inside the *slice* field of :class:`Subscript`, either
+   directly or as an element of :class:`Tuple`.
 
    .. doctest::
 
@@ -588,31 +606,8 @@ Subscripting
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
                 slice=Slice(
-                    lower=Constant(value=1, kind=None),
-                    upper=Constant(value=2, kind=None),
-                    step=None),
-                ctx=Load()))
-
-
-.. class:: ExtSlice(dims)
-
-   Advanced slicing. ``dims`` holds a list of :class:`Slice` and
-   :class:`Index` nodes
-
-   .. doctest::
-
-        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
-        Expression(
-            body=Subscript(
-                value=Name(id='l', ctx=Load()),
-                slice=ExtSlice(
-                    dims=[
-                        Slice(
-                            lower=Constant(value=1, kind=None),
-                            upper=Constant(value=2, kind=None),
-                            step=None),
-                        Index(
-                            value=Constant(value=3, kind=None))]),
+                    lower=Constant(value=1),
+                    upper=Constant(value=2)),
                 ctx=Load()))
 
 
@@ -649,7 +644,7 @@ Comprehensions
                 value=BinOp(
                     left=Name(id='x', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2, kind=None)),
+                    right=Constant(value=2)),
                 generators=[
                     comprehension(
                         target=Name(id='x', ctx=Store()),
@@ -708,7 +703,7 @@ Comprehensions
                 elt=BinOp(
                     left=Name(id='n', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2, kind=None)),
+                    right=Constant(value=2)),
                 generators=[
                     comprehension(
                         target=Name(id='n', ctx=Store()),
@@ -719,13 +714,13 @@ Comprehensions
                                 ops=[
                                     Gt()],
                                 comparators=[
-                                    Constant(value=5, kind=None)]),
+                                    Constant(value=5)]),
                             Compare(
                                 left=Name(id='n', ctx=Load()),
                                 ops=[
                                     Lt()],
                                 comparators=[
-                                    Constant(value=10, kind=None)])],
+                                    Constant(value=10)])],
                         is_async=0)]))
 
         >>> print(ast.dump(ast.parse('[i async for i in soc]', mode='eval'),
@@ -764,8 +759,7 @@ Statements
                     targets=[
                         Name(id='a', ctx=Store()),
                         Name(id='b', ctx=Store())],
-                    value=Constant(value=1, kind=None),
-                    type_comment=None)],
+                    value=Constant(value=1))],
             type_ignores=[])
 
         >>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
@@ -778,8 +772,7 @@ Statements
                                 Name(id='a', ctx=Store()),
                                 Name(id='b', ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='c', ctx=Load()),
-                    type_comment=None)],
+                    value=Name(id='c', ctx=Load()))],
             type_ignores=[])
 
 
@@ -800,7 +793,6 @@ Statements
                 AnnAssign(
                     target=Name(id='c', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=None,
                     simple=1)],
             type_ignores=[])
 
@@ -810,7 +802,7 @@ Statements
                 AnnAssign(
                     target=Name(id='a', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=Constant(value=1, kind=None),
+                    value=Constant(value=1),
                     simple=0)],
             type_ignores=[])
 
@@ -823,7 +815,6 @@ Statements
                         attr='b',
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=None,
                     simple=0)],
             type_ignores=[])
 
@@ -833,11 +824,9 @@ Statements
                 AnnAssign(
                     target=Subscript(
                         value=Name(id='a', ctx=Load()),
-                        slice=Index(
-                            value=Constant(value=1, kind=None)),
+                        slice=Constant(value=1),
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=None,
                     simple=0)],
             type_ignores=[])
 
@@ -849,7 +838,7 @@ Statements
    context), ``op`` is :class:`Add`, and ``value`` is a :class:`Constant` with
    value for 1.
 
-   The ``target`` attribute connot be of class :class:`Tuple` or :class:`List`,
+   The ``target`` attribute cannot be of class :class:`Tuple` or :class:`List`,
    unlike the targets of :class:`Assign`.
 
    .. doctest::
@@ -860,7 +849,7 @@ Statements
                 AugAssign(
                     target=Name(id='x', ctx=Store()),
                     op=Add(),
-                    value=Constant(value=2, kind=None))],
+                    value=Constant(value=2))],
             type_ignores=[])
 
 
@@ -945,9 +934,9 @@ Imports
             body=[
                 Import(
                     names=[
-                        alias(name='x', asname=None),
-                        alias(name='y', asname=None),
-                        alias(name='z', asname=None)])],
+                        alias(name='x'),
+                        alias(name='y'),
+                        alias(name='z')])],
             type_ignores=[])
 
 
@@ -966,9 +955,9 @@ Imports
                 ImportFrom(
                     module='y',
                     names=[
-                        alias(name='x', asname=None),
-                        alias(name='y', asname=None),
-                        alias(name='z', asname=None)],
+                        alias(name='x'),
+                        alias(name='y'),
+                        alias(name='z')],
                     level=0)],
             type_ignores=[])
 
@@ -987,7 +976,7 @@ Imports
                     module='foo.bar',
                     names=[
                         alias(name='a', asname='b'),
-                        alias(name='c', asname=None)],
+                        alias(name='c')],
                     level=2)],
             type_ignores=[])
 
@@ -1023,16 +1012,16 @@ Control flow
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     orelse=[
                         If(
                             test=Name(id='y', ctx=Load()),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))],
+                                    value=Constant(value=Ellipsis))],
                             orelse=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))])])],
+                                    value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
 
@@ -1063,11 +1052,10 @@ Control flow
                     iter=Name(id='y', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
-                    type_comment=None)],
+                            value=Constant(value=Ellipsis))])],
             type_ignores=[])
 
 
@@ -1090,10 +1078,10 @@ Control flow
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))])],
+                            value=Constant(value=Ellipsis))])],
             type_ignores=[])
 
 
@@ -1124,13 +1112,12 @@ Control flow
                                 ops=[
                                     Gt()],
                                 comparators=[
-                                    Constant(value=5, kind=None)]),
+                                    Constant(value=5)]),
                             body=[
                                 Break()],
                             orelse=[
                                 Continue()])],
-                    orelse=[],
-                    type_comment=None)],
+                    orelse=[])],
             type_ignores=[])
 
 
@@ -1158,26 +1145,25 @@ Control flow
                 Try(
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='Exception', ctx=Load()),
-                            name=None,
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))]),
+                                    value=Constant(value=Ellipsis))]),
                         ExceptHandler(
                             type=Name(id='OtherException', ctx=Load()),
                             name='e',
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))])],
+                                    value=Constant(value=Ellipsis))])],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     finalbody=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))])],
+                            value=Constant(value=Ellipsis))])],
             type_ignores=[])
 
 
@@ -1204,11 +1190,10 @@ Control flow
                             value=BinOp(
                                 left=Name(id='a', ctx=Load()),
                                 op=Add(),
-                                right=Constant(value=1, kind=None)))],
+                                right=Constant(value=1)))],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='TypeError', ctx=Load()),
-                            name=None,
                             body=[
                                 Pass()])],
                     orelse=[],
@@ -1256,8 +1241,375 @@ Control flow
                                 args=[
                                     Name(id='b', ctx=Load()),
                                     Name(id='d', ctx=Load())],
-                                keywords=[]))],
-                    type_comment=None)],
+                                keywords=[]))])],
+            type_ignores=[])
+
+
+Pattern matching
+^^^^^^^^^^^^^^^^
+
+
+.. class:: Match(subject, cases)
+
+   A ``match`` statement. ``subject`` holds the subject of the match (the object
+   that is being matched against the cases) and ``cases`` contains an iterable of
+   :class:`match_case` nodes with the different cases.
+
+.. class:: match_case(pattern, guard, body)
+
+   A single case pattern in a ``match`` statement. ``pattern`` contains the
+   match pattern that the subject will be matched against. Note that the
+   :class:`AST` nodes produced for patterns differ from those produced for
+   expressions, even when they share the same syntax.
+
+   The ``guard`` attribute contains an expression that will be evaluated if
+   the pattern matches the subject.
+
+   ``body`` contains a list of nodes to execute if the pattern matches and
+   the result of evaluating the guard expression is truthy.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] if x>0:
+        ...         ...
+        ...     case tuple():
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchAs(name='x')]),
+                            guard=Compare(
+                                left=Name(id='x', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=0)]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchClass(
+                                cls=Name(id='tuple', ctx=Load()),
+                                patterns=[],
+                                kwd_attrs=[],
+                                kwd_patterns=[]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchValue(value)
+
+   A match literal or value pattern that compares by equality. ``value`` is
+   an expression node. Permitted value nodes are restricted as described in
+   the match statement documentation. This pattern succeeds if the match
+   subject is equal to the evaluated value.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case "Relevant":
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchValue(
+                                value=Constant(value='Relevant')),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchSingleton(value)
+
+   A match literal pattern that compares by identity. ``value`` is the
+   singleton to be compared against: ``None``, ``True``, or ``False``. This
+   pattern succeeds if the match subject is the given constant.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case None:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSingleton(value=None),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchSequence(patterns)
+
+   A match sequence pattern. ``patterns`` contains the patterns to be matched
+   against the subject elements if the subject is a sequence. Matches a variable
+   length sequence if one of the subpatterns is a ``MatchStar`` node, otherwise
+   matches a fixed length sequence.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [1, 2]:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchValue(
+                                        value=Constant(value=1)),
+                                    MatchValue(
+                                        value=Constant(value=2))]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchStar(name)
+
+   Matches the rest of the sequence in a variable length match sequence pattern.
+   If ``name`` is not ``None``, a list containing the remaining sequence
+   elements is bound to that name if the overall sequence pattern is successful.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [1, 2, *rest]:
+        ...         ...
+        ...     case [*_]:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchValue(
+                                        value=Constant(value=1)),
+                                    MatchValue(
+                                        value=Constant(value=2)),
+                                    MatchStar(name='rest')]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchStar()]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchMapping(keys, patterns, rest)
+
+   A match mapping pattern. ``keys`` is a sequence of expression nodes.
+   ``patterns`` is a corresponding sequence of pattern nodes. ``rest`` is an
+   optional name that can be specified to capture the remaining mapping elements.
+   Permitted key expressions are restricted as described in the match statement
+   documentation.
+
+   This pattern succeeds if the subject is a mapping, all evaluated key
+   expressions are present in the mapping, and the value corresponding to each
+   key matches the corresponding subpattern. If ``rest`` is not ``None``, a dict
+   containing the remaining mapping elements is bound to that name if the overall
+   mapping pattern is successful.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case {1: _, 2: _}:
+        ...         ...
+        ...     case {**rest}:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchMapping(
+                                keys=[
+                                    Constant(value=1),
+                                    Constant(value=2)],
+                                patterns=[
+                                    MatchAs(),
+                                    MatchAs()]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchMapping(keys=[], patterns=[], rest='rest'),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchClass(cls, patterns, kwd_attrs, kwd_patterns)
+
+   A match class pattern. ``cls`` is an expression giving the nominal class to
+   be matched. ``patterns`` is a sequence of pattern nodes to be matched against
+   the class defined sequence of pattern matching attributes. ``kwd_attrs`` is a
+   sequence of additional attributes to be matched (specified as keyword arguments
+   in the class pattern), ``kwd_patterns`` are the corresponding patterns
+   (specified as keyword values in the class pattern).
+
+   This pattern succeeds if the subject is an instance of the nominated class,
+   all positional patterns match the corresponding class-defined attributes, and
+   any specified keyword attributes match their corresponding pattern.
+
+   Note: classes may define a property that returns self in order to match a
+   pattern node against the instance being matched. Several builtin types are
+   also matched that way, as described in the match statement documentation.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case Point2D(0, 0):
+        ...         ...
+        ...     case Point3D(x=0, y=0, z=0):
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchClass(
+                                cls=Name(id='Point2D', ctx=Load()),
+                                patterns=[
+                                    MatchValue(
+                                        value=Constant(value=0)),
+                                    MatchValue(
+                                        value=Constant(value=0))],
+                                kwd_attrs=[],
+                                kwd_patterns=[]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchClass(
+                                cls=Name(id='Point3D', ctx=Load()),
+                                patterns=[],
+                                kwd_attrs=[
+                                    'x',
+                                    'y',
+                                    'z'],
+                                kwd_patterns=[
+                                    MatchValue(
+                                        value=Constant(value=0)),
+                                    MatchValue(
+                                        value=Constant(value=0)),
+                                    MatchValue(
+                                        value=Constant(value=0))]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchAs(pattern, name)
+
+   A match "as-pattern", capture pattern or wildcard pattern. ``pattern``
+   contains the match pattern that the subject will be matched against.
+   If the pattern is ``None``, the node represents a capture pattern (i.e a
+   bare name) and will always succeed.
+
+   The ``name`` attribute contains the name that will be bound if the pattern
+   is successful. If ``name`` is ``None``, ``pattern`` must also be ``None``
+   and the node represents the wildcard pattern.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] as y:
+        ...         ...
+        ...     case _:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchAs(
+                                pattern=MatchSequence(
+                                    patterns=[
+                                        MatchAs(name='x')]),
+                                name='y'),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchAs(),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchOr(patterns)
+
+   A match "or-pattern". An or-pattern matches each of its subpatterns in turn
+   to the subject, until one succeeds. The or-pattern is then deemed to
+   succeed. If none of the subpatterns succeed the or-pattern fails. The
+   ``patterns`` attribute contains a list of match pattern nodes that will be
+   matched against the subject.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] | (y):
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchOr(
+                                patterns=[
+                                    MatchSequence(
+                                        patterns=[
+                                            MatchAs(name='x')]),
+                                    MatchAs(name='y')]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
 
@@ -1295,14 +1647,12 @@ Function and class definitions
                         args=arguments(
                             posonlyargs=[],
                             args=[
-                                arg(arg='x', annotation=None, type_comment=None),
-                                arg(arg='y', annotation=None, type_comment=None)],
-                            vararg=None,
+                                arg(arg='x'),
+                                arg(arg='y')],
                             kwonlyargs=[],
                             kw_defaults=[],
-                            kwarg=None,
                             defaults=[]),
-                        body=Constant(value=Ellipsis, kind=None)))],
+                        body=Constant(value=Ellipsis)))],
             type_ignores=[])
 
 
@@ -1347,28 +1697,26 @@ Function and class definitions
                         args=[
                             arg(
                                 arg='a',
-                                annotation=Constant(value='annotation', kind=None),
-                                type_comment=None),
-                            arg(arg='b', annotation=None, type_comment=None),
-                            arg(arg='c', annotation=None, type_comment=None)],
-                        vararg=arg(arg='d', annotation=None, type_comment=None),
+                                annotation=Constant(value='annotation')),
+                            arg(arg='b'),
+                            arg(arg='c')],
+                        vararg=arg(arg='d'),
                         kwonlyargs=[
-                            arg(arg='e', annotation=None, type_comment=None),
-                            arg(arg='f', annotation=None, type_comment=None)],
+                            arg(arg='e'),
+                            arg(arg='f')],
                         kw_defaults=[
                             None,
-                            Constant(value=3, kind=None)],
-                        kwarg=arg(arg='g', annotation=None, type_comment=None),
+                            Constant(value=3)],
+                        kwarg=arg(arg='g'),
                         defaults=[
-                            Constant(value=1, kind=None),
-                            Constant(value=2, kind=None)]),
+                            Constant(value=1),
+                            Constant(value=2)]),
                     body=[
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation', kind=None),
-                    type_comment=None)],
+                    returns=Constant(value='return annotation'))],
             type_ignores=[])
 
 
@@ -1382,7 +1730,7 @@ Function and class definitions
         Module(
             body=[
                 Return(
-                    value=Constant(value=4, kind=None))],
+                    value=Constant(value=4))],
             type_ignores=[])
 
 
@@ -1508,10 +1856,8 @@ Async and await
                 args=arguments(
                     posonlyargs=[],
                     args=[],
-                    vararg=None,
                     kwonlyargs=[],
                     kw_defaults=[],
-                    kwarg=None,
                     defaults=[]),
                 body=[
                     Expr(
@@ -1520,9 +1866,7 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[],
-                returns=None,
-                type_comment=None)],
+                decorator_list=[])],
         type_ignores=[])
 
 
@@ -1532,6 +1876,13 @@ Async and await
    ``async for`` loops and ``async with`` context managers. They have the same
    fields as :class:`For` and :class:`With`, respectively. Only valid in the
    body of an :class:`AsyncFunctionDef`.
+
+.. note::
+   When a string is parsed by :func:`ast.parse`, operator nodes (subclasses
+   of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
+   :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
+   will be singletons. Changes to one will be reflected in all other
+   occurrences of the same value (e.g. :class:`ast.Add`).
 
 
 :mod:`ast` Helpers
@@ -1583,7 +1934,12 @@ and classes for traversing abstract syntax trees:
 
    .. warning::
       The produced code string will not necessarily be equal to the original
-      code that generated the :class:`ast.AST` object.
+      code that generated the :class:`ast.AST` object (without any compiler
+      optimizations, such as constant tuples/frozensets).
+
+   .. warning::
+      Trying to unparse a highly complex expression would result with
+      :exc:`RecursionError`.
 
    .. versionadded:: 3.9
 
@@ -1593,7 +1949,7 @@ and classes for traversing abstract syntax trees:
    Safely evaluate an expression node or a string containing a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
-   dicts, sets, booleans, and ``None``.
+   dicts, sets, booleans, ``None`` and ``Ellipsis``.
 
    This can be used for safely evaluating strings containing Python values from
    untrusted sources without the need to parse the values oneself.  It is not
@@ -1605,11 +1961,18 @@ and classes for traversing abstract syntax trees:
       sufficiently large/complex string due to stack depth limitations
       in Python's AST compiler.
 
+      It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
+      :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
+      input.
+
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
 
    .. versionchanged:: 3.9
       Now supports creating empty sets with ``'set()'``.
+
+   .. versionchanged:: 3.10
+      For string inputs, leading spaces and tabs are now stripped.
 
 
 .. function:: get_docstring(node, clean=True)
@@ -1732,9 +2095,9 @@ and classes for traversing abstract syntax trees:
           def visit_Name(self, node):
               return Subscript(
                   value=Name(id='data', ctx=Load()),
-                  slice=Index(value=Constant(value=node.id)),
+                  slice=Constant(value=node.id),
                   ctx=node.ctx
-              ), node)
+              )
 
    Keep in mind that if the node you're operating on has child nodes you must
    either transform the child nodes yourself or call the :meth:`generic_visit`
@@ -1776,6 +2139,34 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.9
       Added the *indent* option.
+
+
+.. _ast-compiler-flags:
+
+Compiler Flags
+--------------
+
+The following flags may be passed to :func:`compile` in order to change
+effects on the compilation of a program:
+
+.. data:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+   Enables support for top-level ``await``, ``async for``, ``async with``
+   and async comprehensions.
+
+   .. versionadded:: 3.8
+
+.. data:: PyCF_ONLY_AST
+
+   Generates and returns an abstract syntax tree instead of returning a
+   compiled code object.
+
+.. data:: PyCF_TYPE_COMMENTS
+
+   Enables support for :pep:`484` and :pep:`526` style type comments
+   (``# type: <type>``, ``# type: ignore <stuff>``).
+
+   .. versionadded:: 3.8
 
 
 .. _ast-cli:
@@ -1825,5 +2216,24 @@ to stdout.  Otherwise, the content is read from stdin.
 
 .. seealso::
 
-    `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external documentation resource, has good
-    details on working with Python ASTs.
+    `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external
+    documentation resource, has good details on working with Python ASTs.
+
+    `ASTTokens <https://asttokens.readthedocs.io/en/latest/user-guide.html>`_
+    annotates Python ASTs with the positions of tokens and text in the source
+    code that generated them. This is helpful for tools that make source code
+    transformations.
+
+    `leoAst.py <http://leoeditor.com/appendices.html#leoast-py>`_ unifies the
+    token-based and parse-tree-based views of python programs by inserting
+    two-way links between tokens and ast nodes.
+
+    `LibCST <https://libcst.readthedocs.io/>`_ parses code as a Concrete Syntax
+    Tree that looks like an ast tree and keeps all formatting details. It's
+    useful for building automated refactoring (codemod) applications and
+    linters.
+
+    `Parso <https://parso.readthedocs.io>`_ is a Python parser that supports
+    error recovery and round-trip parsing for different Python versions (in
+    multiple Python versions). Parso is also able to list multiple syntax errors
+    in your python file.
