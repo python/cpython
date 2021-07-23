@@ -69,7 +69,7 @@ def lookup(name, frame, locals):
         return 'global', frame.f_globals[name]
     if '__builtins__' in frame.f_globals:
         builtins = frame.f_globals['__builtins__']
-        if type(builtins) is dict:
+        if isinstance(builtins, dict):
             if name in builtins:
                 return 'builtin', builtins[name]
         else:

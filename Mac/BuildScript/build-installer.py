@@ -1348,7 +1348,7 @@ def buildPython():
         build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
-        if type(v) == str:
+        if isinstance(v, str):
             for p in (include_path, lib_path):
                 v = v.replace(' ' + p, '')
                 v = v.replace(p + ' ', '')
