@@ -2404,6 +2404,9 @@ class NewType:
     def __ror__(self, other):
         return Union[other, self]
 
+    def __reduce__(self):
+        return self.__name__
+
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
 Text = str
