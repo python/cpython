@@ -88,7 +88,7 @@ _opcode_get_specialization_stats_impl(PyObject *module)
 #if SPECIALIZATION_STATS
     return _Py_GetSpecializationStats();
 #else
-    return Py_NewRef(Py_None);
+    Py_RETURN_NONE;
 #endif
 }
 
