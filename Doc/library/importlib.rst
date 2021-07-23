@@ -373,7 +373,7 @@ ABC hierarchy::
     See :pep:`302` for the exact definition for a loader.
 
     Loaders that wish to support resource reading should implement a
-    :meth:`get_resource_reader(fullname)` method as specified by
+    :meth:`get_resource_reader` method as specified by
     :class:`importlib.abc.ResourceReader`.
 
     .. versionchanged:: 3.7
