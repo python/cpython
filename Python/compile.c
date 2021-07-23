@@ -6115,7 +6115,7 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, IS_OP, 1);
     // TOS is now a tuple of (nargs + nattrs) attributes (or None):
-    pc->on_top += 1;
+    pc->on_top++;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     ADDOP_I(c, UNPACK_SEQUENCE, nargs + nattrs);
     pc->on_top += nargs + nattrs - 1;
