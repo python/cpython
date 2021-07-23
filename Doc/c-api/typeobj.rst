@@ -1097,8 +1097,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This is a bitmask of all the bits that pertain to the existence of certain
       fields in the type object and its extension structures. Currently, it includes
-      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`,
-      :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
+      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`.
 
       **Inheritance:**
 
@@ -1177,14 +1176,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :ref:`Heap types <heap-types>` do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. versionadded:: 3.9
-
-
-   .. data:: Py_TPFLAGS_HAVE_AM_SEND
-
-      This bit is set when the :c:member:`~PyAsyncMethods.am_send` entry is present in the
-      :c:member:`~PyTypeObject.tp_as_async` slot of type structure.
-
-      .. versionadded:: 3.10
 
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
