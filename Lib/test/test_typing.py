@@ -3692,10 +3692,15 @@ class TestModules(TestCase):
 
 
 class NewTypeTests:
+    def cleanup(self):
+        for f in self.module._cleanups:
+            f()
+
     def setUp(self):
         sys.modules['typing'] = self.module
 
     def tearDown(self):
+        self.cleanup()
         sys.modules['typing'] = typing
 
     def test_basic(self):
@@ -3738,12 +3743,12 @@ class NewTypeTests:
 
         self.assertEqual(repr(UserId), f'{__name__}.UserId')
 
-class NewTypePythonTests(BaseTestCase, NewTypeTests):
+class NewTypePythonTests(NewTypeTests, BaseTestCase):
     module = py_typing
 
 
 @skipUnless(c_typing, 'requires _typing')
-class NewTypeCTests(BaseTestCase, NewTypeTests):
+class NewTypeCTests(NewTypeTests, BaseTestCase):
     module = c_typing
 
 
