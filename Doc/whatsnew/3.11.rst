@@ -198,6 +198,14 @@ math
   Dickinson in :issue:`44339`.)
 
 
+os
+--
+
+* On Windows, :func:`os.urandom`: uses BCryptGenRandom API instead of CryptGenRandom API
+  which is deprecated from Microsoft Windows API.
+  (Contributed by Dong-hee Na in :issue:`44611`.)
+
+
 sqlite3
 -------
 
