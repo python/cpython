@@ -16,7 +16,7 @@ printable -- a string containing all ASCII characters considered printable
 
 __all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
            "digits", "hexdigits", "octdigits", "printable", "punctuation",
-           "whitespace", "Formatter", "Template"]
+           "whitespace", "Formatter", "MultilineFormatter", "Template"]
 
 import _string
 
@@ -51,6 +51,9 @@ def capwords(s, sep=None):
 ####################################################################
 import re as _re
 from collections import ChainMap as _ChainMap
+from llist import dllist, dllistnode
+from _collections_abc import generator
+
 
 _sentinel_dict = {}
 
@@ -278,3 +281,231 @@ class Formatter:
                 obj = obj[i]
 
         return obj, first
+
+
+########################################################################
+# the Multiline Formatter class
+
+# Format strings, that are comprised of field values with newlines (Multiline)
+# as Multiline strings in a quasi tabbed format.
+#
+# --> In particular useful for logging of information, that occupies multiple lines.
+#     For example: '{levelname}:{name}:{message}:{api}', where the message is a string with multiple lines
+#
+#     The result:   2021-07-23 09:50:28,981 module_name WARNING     Quota exceeded         Google-Cloud-API
+#                                                                   Backing off for 5s     version: v1
+#                                                                   after trying 2x
+
+class MultilineFormatter(Formatter):
+  
+  def _vformat(self, format_string, args, kwargs, used_args, recursion_depth,
+                 auto_arg_index=0):
+        if recursion_depth < 0:
+            raise ValueError('Max string recursion exceeded')
+        result = []
+        positions = {}
+        for literal_text, field_name, format_spec, conversion in \
+                self.parse(format_string):
+
+            # output the literal text
+            if literal_text:
+                result.append(literal_text)
+
+            # if there's a field, output it
+            if field_name is not None:
+                # this is some markup, find the object and do
+                #  the formatting
+
+                # handle arg indexing when empty field_names are given.
+                if field_name == '':
+                    if auto_arg_index is False:
+                        raise ValueError('cannot switch from manual field '
+                                         'specification to automatic field '
+                                         'numbering')
+                    field_name = str(auto_arg_index)
+                    auto_arg_index += 1
+                elif field_name.isdigit():
+                    if auto_arg_index:
+                        raise ValueError('cannot switch from manual field '
+                                         'specification to automatic field '
+                                         'numbering')
+                    # disable auto arg incrementing, if it gets
+                    # used later on, then an exception will be raised
+                    auto_arg_index = False
+
+                # given the field_name, find the object it references
+                #  and the argument it came from
+                obj, arg_used = self.get_field(field_name, args, kwargs)
+                used_args.add(arg_used)
+
+                # do any conversion on the resulting object
+                obj = self.convert_field(obj, conversion)
+
+                # expand the format spec, if needed
+                format_spec, auto_arg_index = self._vformat(
+                    format_spec, args, kwargs,
+                    used_args, recursion_depth-1,
+                    auto_arg_index=auto_arg_index)
+                
+                if recursion_depth == 2:
+                  if isinstance(obj, str) and "\n" in obj:
+                    
+                    pos = 0
+                    for item in result:
+                      pos += len(item)
+                    
+                    lines = obj.split("\n")
+                    obj = lines.pop(0)
+                    
+                    positions[field_name] = {"pos": pos, "lines": lines}
+                    
+                """ composite a positions dictionary of form:
+                {
+                  "field_name" : {
+                                    "pos" : pos,
+                                    "lines" : [1xxxxx,
+                                                2xxx,
+                                                3xxxxxxxx
+                                               ]
+                                 },
+                  "field_name" : {
+                                    "pos" : pos,
+                                    "linese" : [1,
+                                                2,
+                                                3
+                                               ]
+                                 }
+                }
+                """
+                
+                # format the object and append to the result
+                result.append(self.format_field(obj, format_spec))
+        
+        
+        class field_register:
+          
+          def __init__(self, fieldname: str, position: int, line_n: generator):
+            self._name = fieldname
+            self._pos = position
+            self._text = ""
+            self._linegenerator = iter(line_n)
+          
+          @property
+          def name(self):
+            return self._name
+            
+          @property
+          def pos(self):
+            return self._pos
+          
+          @pos.setter
+          def pos(self, position):
+            self._pos = position
+          
+          
+          @property
+          def text(self):
+            return self._text
+          
+          def text_nextline(self):
+            try:
+              self._text = next(self._linegenerator)
+            except StopIteration:
+              raise
+            
+            return self.text
+        
+        
+        class linegenerator(dllist):
+          
+          def __init__(self, positions):
+            super().__init__(list(self._all_fieldnames_lineswithdata(positions)))
+          
+          def _all_fieldnames_lineswithdata(self, positions):
+            for fieldname, data in positions.items():
+              yield field_register(fieldname, data['pos'], data['lines'])
+              
+          def __str__(self):
+            
+            if isinstance(self.first, dllistnode):
+              linetext = {"-indent":""}
+              lineformat = "{-indent"
+              registerpos = 0
+              
+              for i, node in enumerate(self._nodeiter()):
+                 
+                width = node.value.pos - registerpos
+                if width > 0:
+                  width -= 1
+                
+                registerpos = node.value.pos
+                
+                lineformat += f":{width}}}{' ' if width > 0 else ''}{{text{i}"
+                linetext["text"+str(i)] = node.value.text
+              
+              lineformat += "}"
+              # TODO: fill format and arguments with  
+              
+            return lineformat.format(**linetext)
+          
+          def __str_all_lines__(self):
+            return "\n".join(map(lambda x: str(x), self.lineiterator()))
+          
+          def _nodeiter(self):
+            if isinstance(self.first, dllistnode):
+              
+              node = self.first
+              while True:
+                yield node
+                
+                if node == self.last:
+                  break #raise StopIteration
+                
+                node = node.next
+                
+          def _updatepositions(self):
+            if isinstance(self.first, dllistnode):
+              
+              for node in self._nodeiter():
+                if node == self.last:
+                  break
+                
+                nextregisterminpos = node.value.pos + len(node.value.text) + 1
+                if node.next.value.pos < nextregisterminpos:
+                  node.next.value.pos = nextregisterminpos
+          
+          def linestring_iterator(self):
+            return map(lambda x: str(x), self.lineiterator())
+          
+          def lineiterator(self):
+            if isinstance(self.first, dllistnode):
+              
+              while True:
+                breakloop = True
+                for node in self._nodeiter():
+                  try:
+                    node.value.text_nextline()
+                  
+                  except StopIteration:
+                    pass
+                  
+                  else:
+                    breakloop = False
+                    
+                if breakloop:
+                  break
+                
+                self._updatepositions()
+                
+                yield self
+                
+                
+        # build line generator
+        all_lines = linegenerator(positions)
+        
+        resultlines = []
+        resultlines.append(''.join(result))
+        resultlines.extend(all_lines.linestring_iterator())
+        
+        return '\n'.join(resultlines), auto_arg_index
+  
