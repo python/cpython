@@ -487,10 +487,10 @@ the :mod:`glob` module.)
    path``, and *ext* is empty or begins with a period and contains at most one
    period.
 
-   If the path contains no extension, ``ext`` will be ``''``.
+   If the path contains no extension, *ext* will be ``''``.
    e.g. ``splitext('bar')`` returns ``('bar', '')``
 
-   If the path contains an extension, then ``ext`` will be set to this extension,
+   If the path contains an extension, then *ext* will be set to this extension,
    including the leading period. Note that previous periods will be ignored.
    e.g. ``splitext('foo.bar.exe')`` returns ``('foo.bar', '.exe')``.
 
