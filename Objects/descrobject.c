@@ -1032,11 +1032,24 @@ static PyMappingMethods mappingproxy_as_mapping = {
 static PyObject *
 mappingproxy_or(PyObject *left, PyObject *right)
 {
+    // bpo-43838: We can't just return PyNumber_Or(left->mapping, right) or
+    // PyNumber_Or(left, right->mapping) here, because the operator dispatch dance can
+    // expose our hidden mapping to arbitrary code. Perform the operation with a copy of
+    // the mapping instead:
+    _Py_IDENTIFIER(copy);
     if (PyObject_TypeCheck(left, &PyDictProxy_Type)) {
         left = ((mappingproxyobject*)left)->mapping;
+        left = _PyObject_CallMethodIdNoArgs(left, &PyId_copy);
+        if (left == NULL) {
+            return NULL;
+        }
     }
     if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
         right = ((mappingproxyobject*)right)->mapping;
+        right = _PyObject_CallMethodIdNoArgs(right, &PyId_copy);
+        if (right == NULL) {
+            return NULL;
+        }
     }
     return PyNumber_Or(left, right);
 }
@@ -1188,7 +1201,15 @@ mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 mappingproxy_richcompare(mappingproxyobject *v, PyObject *w, int op)
 {
-    return PyObject_RichCompare(v->mapping, w, op);
+    // bpo-43838: We can't just return PyObject_RichCompare(v->mapping, w, op) here,
+    // because the operator dispatch dance can expose our hidden mapping to arbitrary
+    // code. Perform the operation with a copy of the mapping instead:
+    _Py_IDENTIFIER(copy);
+    PyObject *copy = _PyObject_CallMethodIdNoArgs(v->mapping, &PyId_copy);
+    if (copy == NULL) {
+        return NULL;
+    }
+    return PyObject_RichCompare(copy, w, op);
 }
 
 static int
