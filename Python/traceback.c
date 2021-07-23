@@ -699,11 +699,11 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     Py_DECREF(line);
     if (err != 0)
         return err;
+
     int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
     PyObject* source_line = NULL;
-
     if (_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
-                               &truncation, &source_line) != 0) {
+                               &truncation, &source_line) != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
         goto done;
