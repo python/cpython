@@ -121,6 +121,28 @@ class TracebackCases(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    def test_recursion_error_during_traceback(self):
+        code = textwrap.dedent("""
+                from weakref import ref
+
+                def f():
+                    ref(lambda: 0, [])
+                    f()
+
+                try:
+                    f()
+                except RecursionError:
+                    pass
+            """)
+        try:
+            with open(TESTFN, 'w') as f:
+                f.write(code)
+
+            rc, _, _ = assert_python_ok(TESTFN)
+            self.assertEqual(rc, 0)
+        finally:
+            unlink(TESTFN)
+
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
