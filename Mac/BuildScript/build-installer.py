@@ -1157,7 +1157,7 @@ def buildPython():
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "--enable-optimizations --with-lto=thin")[compilerCanOptimize()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
