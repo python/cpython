@@ -361,7 +361,7 @@ class ModuleSpec:
         self.origin = origin
         self.loader_state = loader_state
         self.submodule_search_locations = [] if is_package else None
-        self.uninitialized_submodules = [] if is_package else None
+        self.uninitialized_submodules = []
 
         # file-location attributes
         self._set_fileattr = False
