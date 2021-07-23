@@ -3684,25 +3684,30 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(MATCH_CLASS): {
-            // Pop TOS. On success, set TOS to True and TOS1 to a tuple of
-            // attributes. On failure, set TOS to False.
+            // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or None on
+            // failure.
             PyObject *names = POP();
-            PyObject *type = TOP();
-            PyObject *subject = SECOND();
+            PyObject *type = POP();
+            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
             PyObject *attrs = match_class(tstate, subject, type, oparg, names);
             Py_DECREF(names);
+            Py_DECREF(type);
             if (attrs) {
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
-                Py_DECREF(subject);
-                SET_SECOND(attrs);
+                SET_TOP(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
+                // Error!
                 goto error;
             }
-            Py_DECREF(type);
-            SET_TOP(PyBool_FromLong(!!attrs));
+            else {
+                // Failure!
+                Py_INCREF(Py_None);
+                SET_TOP(Py_None);
+            }
+            Py_DECREF(subject);
             DISPATCH();
         }
 
@@ -3712,6 +3717,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *res = match ? Py_True : Py_False;
             Py_INCREF(res);
             PUSH(res);
+            PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
@@ -3721,6 +3727,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *res = match ? Py_True : Py_False;
             Py_INCREF(res);
             PUSH(res);
+            PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 

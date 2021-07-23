@@ -1232,7 +1232,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_UPDATE:
             return -1;
         case MATCH_CLASS:
-            return -1;
+            return -2;
         case GET_LEN:
         case MATCH_MAPPING:
         case MATCH_SEQUENCE:
@@ -6049,7 +6049,10 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_LOAD_CONST_NEW(c, attr_names);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    // TOS is now a tuple of (nargs + nattrs) attributes. Preserve it:
+    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_I(c, IS_OP, 1);
+    // TOS is now a tuple of (nargs + nattrs) attributes (or None):
     pc->on_top += 1;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     ADDOP_I(c, UNPACK_SEQUENCE, nargs + nattrs);

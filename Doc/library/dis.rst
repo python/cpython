@@ -1270,11 +1270,15 @@ All of the following opcodes use their arguments.
    against, and TOS2 is the match subject.  *count* is the number of positional
    sub-patterns.
 
-   Pop TOS.  If TOS2 is an instance of TOS1 and has the positional and keyword
-   attributes required by *count* and TOS, set TOS to ``True`` and TOS1 to a
-   tuple of extracted attributes.  Otherwise, set TOS to ``False``.
+   Pop TOS, TOS1, and TOS2.  If TOS2 is an instance of TOS1 and has the
+   positional and keyword attributes required by *count* and TOS, push a tuple
+   of extracted attributes.  Otherwise, push ``None``.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Previously, this instruction also pushed a boolean value indicating
+      success (``True``) or failure (``False``).
 
 .. opcode:: GEN_START (kind)
 
