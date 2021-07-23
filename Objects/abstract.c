@@ -6,7 +6,7 @@
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unionobject.h"   // _Py_UnionType && _Py_Union()
+#include "pycore_unionobject.h"   // _PyUnion_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
 #include "longintrepr.h"
@@ -2623,9 +2623,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
                      "issubclass() arg 1 must be a class"))
         return -1;
 
-    PyTypeObject *type = Py_TYPE(cls);
-    int is_union = (PyType_Check(type) && type == &_Py_UnionType);
-    if (!is_union && !check_class(cls,
+    if (!_PyUnion_Check(cls) && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
                             " a tuple of classes, or a union.")) {
         return -1;
@@ -2806,9 +2804,7 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
     _Py_IDENTIFIER(send);
     assert(arg != NULL);
     assert(result != NULL);
-    if (PyType_HasFeature(Py_TYPE(iter), Py_TPFLAGS_HAVE_AM_SEND)) {
-        assert (Py_TYPE(iter)->tp_as_async != NULL);
-        assert (Py_TYPE(iter)->tp_as_async->am_send != NULL);
+    if (Py_TYPE(iter)->tp_as_async && Py_TYPE(iter)->tp_as_async->am_send) {
         PySendResult res = Py_TYPE(iter)->tp_as_async->am_send(iter, arg, result);
         assert(_Py_CheckSlotResult(iter, "am_send", res != PYGEN_ERROR));
         return res;

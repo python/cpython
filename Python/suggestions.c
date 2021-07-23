@@ -151,6 +151,9 @@ calculate_suggestions(PyObject *dir,
         if (item_str == NULL) {
             return NULL;
         }
+        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
+            continue;
+        }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
         // Don't take matches we've already beaten.

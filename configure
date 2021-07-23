@@ -1545,7 +1545,8 @@ Optional Packages:
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
   --with-assertions       build with C assertions enabled (default is no)
-  --with-lto              enable Link-Time-Optimization in any build (default
+  --with-lto=[full|thin|no|yes]
+                          enable Link-Time-Optimization in any build (default
                           is no)
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm for use in Python/pyhash.c
@@ -3039,27 +3040,27 @@ VERSION=3.11
 
 SOVERSION=1.0
 
-# The later defininition of _XOPEN_SOURCE disables certain features
+# The later definition of _XOPEN_SOURCE disables certain features
 # on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
 
 $as_echo "#define _GNU_SOURCE 1" >>confdefs.h
 
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
 # them.
 
 $as_echo "#define _NETBSD_SOURCE 1" >>confdefs.h
 
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
 
 $as_echo "#define __BSD_VISIBLE 1" >>confdefs.h
 
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 
@@ -6585,16 +6586,36 @@ $as_echo_n "checking for --with-lto... " >&6; }
 # Check whether --with-lto was given.
 if test "${with_lto+set}" = set; then :
   withval=$with_lto;
-if test "$withval" != no
-then
-  Py_LTO='true'
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-else
-  Py_LTO='false'
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-fi
+case "$withval" in
+    full)
+        Py_LTO='true'
+        Py_LTO_POLICY='full'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        ;;
+    thin)
+        Py_LTO='true'
+        Py_LTO_POLICY='thin'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        ;;
+    yes)
+        Py_LTO='true'
+        Py_LTO_POLICY='default'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        ;;
+    no)
+        Py_LTO='false'
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        ;;
+    *)
+        Py_LTO='false'
+        as_fn_error $? "unknown lto option: '$withval'" "$LINENO" 5
+        ;;
+esac
+
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -6732,15 +6753,30 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          LTOCFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOCFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOCFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
         *)
-          LTOFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
       esac
       ;;
     *gcc*)
+      if test $Py_LTO_POLICY = thin
+      then
+        as_fn_error $? "thin lto is not supported under gcc compiler." "$LINENO" 5
+      fi
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"

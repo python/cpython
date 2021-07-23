@@ -1399,12 +1399,15 @@ class QueueHandler(logging.Handler):
 
     def prepare(self, record):
         """
-        Prepares a record for queuing. The object returned by this method is
+        Prepare a record for queuing. The object returned by this method is
         enqueued.
 
-        The base implementation formats the record to merge the message
-        and arguments, and removes unpickleable items from the record
-        in-place.
+        The base implementation formats the record to merge the message and
+        arguments, and removes unpickleable items from the record in-place.
+        Specifically, it overwrites the record's `msg` and
+        `message` attributes with the merged message (obtained by
+        calling the handler's `format` method), and sets the `args`,
+        `exc_info` and `exc_text` attributes to None.
 
         You might want to override this method if you want to convert
         the record to a dict or JSON string, or send a modified copy

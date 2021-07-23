@@ -4300,8 +4300,6 @@ temporary_c_thread(void *data)
     PyGILState_Release(state);
 
     PyThread_release_lock(test_c_thread->exit_event);
-
-    PyThread_exit_thread();
 }
 
 static PyObject *

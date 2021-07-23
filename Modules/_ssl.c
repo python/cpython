@@ -2346,7 +2346,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_write_ex(self->ssl, b->buf, (int)b->len, &count);
+        retval = SSL_write_ex(self->ssl, b->buf, (size_t)b->len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
         self->err = err;
@@ -2418,7 +2418,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
 
 /*[clinic input]
 _ssl._SSLSocket.read
-    size as len: int
+    size as len: Py_ssize_t
     [
     buffer: Py_buffer(accept={rwbuffer})
     ]
@@ -2428,9 +2428,9 @@ Read up to size bytes from the SSL socket.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
-                          Py_buffer *buffer)
-/*[clinic end generated code: output=00097776cec2a0af input=ff157eb918d0905b]*/
+_ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
+                          int group_right_1, Py_buffer *buffer)
+/*[clinic end generated code: output=49b16e6406023734 input=ec48bf622be1c4a1]*/
 {
     PyObject *dest = NULL;
     char *mem;
@@ -2498,7 +2498,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_read_ex(self->ssl, mem, len, &count);
+        retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
         self->err = err;

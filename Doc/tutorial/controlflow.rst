@@ -110,14 +110,14 @@ The given end point is never part of the generated sequence; ``range(10)`` gener
 is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
-    range(5, 10)
-       5, 6, 7, 8, 9
+    >>> list(range(5, 10))
+    [5, 6, 7, 8, 9]
 
-    range(0, 10, 3)
-       0, 3, 6, 9
+    >>> list(range(0, 10, 3))
+    [0, 3, 6, 9]
 
-    range(-10, -100, -30)
-      -10, -40, -70
+    >>> list(range(-10, -100, -30))
+    [-10, -40, -70]
 
 To iterate over the indices of a sequence, you can combine :func:`range` and
 :func:`len` as follows::
@@ -137,7 +137,7 @@ function, see :ref:`tut-loopidioms`.
 
 A strange thing happens if you just print a range::
 
-   >>> print(range(10))
+   >>> range(10)
    range(0, 10)
 
 In many ways the object returned by :func:`range` behaves as if it is a list,
@@ -155,13 +155,7 @@ that takes an iterable is :func:`sum`::
     6
 
 Later we will see more functions that return iterables and take iterables as
-arguments.  Lastly, maybe you are curious about how to get a list from a range.
-Here is the solution::
-
-   >>> list(range(4))
-   [0, 1, 2, 3]
-
-In chapter :ref:`tut-structures`, we will discuss in more detail about
+arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail about
 :func:`list`.
 
 .. _tut-break:

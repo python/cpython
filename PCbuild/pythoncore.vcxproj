@@ -106,7 +106,7 @@
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;pathcch.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -363,6 +363,7 @@
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
+    <ClCompile Include="..\Modules\_typingmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
