@@ -514,8 +514,6 @@ static PyObject *
 complex_pow(PyObject *v, PyObject *w, PyObject *z)
 {
     Py_complex p;
-    Py_complex exponent;
-    long int_exponent;
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
@@ -525,15 +523,21 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     errno = 0;
-    exponent = b;
-    if ((double)LONG_MIN <= exponent.real && exponent.real < (double)LONG_MAX)
-        int_exponent = (long)exponent.real;
-    else
-        int_exponent = 0;
-    if (exponent.imag == 0. && exponent.real == int_exponent)
-        p = c_powi(a, int_exponent);
-    else
-        p = _Py_c_pow(a, exponent);
+    // Check if w is an integer value that fits inside a C long, so we can
+    // use a faster algorithm. TO_COMPLEX(w, b), above, already handled the
+    // conversion from larger longs, as well as other types.
+    if (PyLong_Check(w)) {
+        int overflow = 0;
+        long int_exponent = PyLong_AsLongAndOverflow(w, &overflow);
+        if (int_exponent == -1 && PyErr_Occurred())
+            return NULL;
+        if (overflow == 0)
+            p = c_powi(a, int_exponent);
+        else
+            p = _Py_c_pow(a, b);
+    } else {
+        p = _Py_c_pow(a, b);
+    }
 
     Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
