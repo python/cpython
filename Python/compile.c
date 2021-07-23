@@ -6151,7 +6151,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     // the tuple of keys and the subject:
     pc->on_top -= 2;
     if (star_target) {
-        // If we have a starred name, bind a dict of remaining items to it:
+        // If we have a starred name, bind a dict of remaining items to it (this may
+        // seem a bit inefficient, but keys is rarely big enough to actually impact
+        // runtime):
         // rest = dict(TOS1)
         // for key in TOS:
         //     del rest[key]
