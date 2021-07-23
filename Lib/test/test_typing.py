@@ -4653,9 +4653,6 @@ class AllTests(BaseTestCase):
             if k in actual_all or (
                 # avoid private names
                 not k.startswith('_') and
-                # avoid things in the io / re typing submodules
-                k not in typing.io.__all__ and
-                k not in typing.re.__all__ and
                 k not in {'io', 're'} and
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
