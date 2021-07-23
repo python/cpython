@@ -1131,6 +1131,47 @@ class MappingProxyTests(unittest.TestCase):
         self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(other, {'c': 3, 'p': 0})
 
+    def test_delegated_operators(self):
+        class MyDict(dict):
+            def __eq__(self, other):
+                return super().__eq__(other)
+            def __or__(self, other):
+                return super().__or__(other)
+            def __ror__(self, other):
+                return super().__ror__(other)
+        dict_a = {0: "a"}
+        dict_b = {0: "b"}
+        mydict_a = MyDict(dict_a)
+        mydict_b = MyDict(dict_b)
+        view_dict_a = self.mappingproxy(dict_a)
+        view_mydict_a = self.mappingproxy(mydict_a)
+        view_view_dict_a = self.mappingproxy(view_dict_a)
+        a_mappings = (dict_a, mydict_a)
+        b_mappings = (dict_b, mydict_b)
+        a_views = (view_dict_a, view_mydict_a, view_view_dict_a)
+        for view in a_views:
+            for mapping in a_mappings + a_views:
+                self.assertDictEqual(view | mapping, dict_a)
+                self.assertDictEqual(mapping | view, dict_a)
+                self.assertEqual(view, mapping)
+                self.assertEqual(mapping, view)
+            for mapping in b_mappings:
+                self.assertDictEqual(view | mapping, dict_b)
+                self.assertDictEqual(mapping | view, dict_a)
+                self.assertNotEqual(view, mapping)
+                self.assertNotEqual(mapping, view)
+
+    def test_bpo_43838(self):
+        mapping = {}
+        proxy = self.mappingproxy(mapping)
+        class Sneaky:
+            def __eq__(self, other):
+                other['x'] = 42
+                return None
+        self.assertIs(proxy == Sneaky(), None)
+        self.assertDictEqual(mapping, {})
+        self.assertEqual(proxy, {})
+
 
 class ClassCreationTests(unittest.TestCase):
 
