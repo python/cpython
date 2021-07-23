@@ -360,7 +360,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3455 (add MAKE_CELL bpo-43693)
 #     Python 3.11a1 3456 (interleave cell args bpo-43693)
 #     Python 3.11a1 3457 (Change localsplus to a bytes object bpo-43693)
-#     Python 3.11a1 3458 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS and change MATCH_KEYS)
+#     Python 3.11a1 3458 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS, change MATCH_KEYS, and add PUSH_PEEK)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

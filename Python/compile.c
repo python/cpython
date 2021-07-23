@@ -1240,6 +1240,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case ROT_N:
             return 0;
+        case PUSH_PEEK:
+            return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -6048,9 +6050,12 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP_LOAD_CONST_NEW(c, attr_names);
     ADDOP_I(c, MATCH_CLASS, nargs);
     // TOS is now a tuple of (nargs + nattrs) attributes. Preserve it:
-    pc->on_top++;
+    pc->on_top += 1;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    ADDOP_I(c, UNPACK_SEQUENCE, nargs + nattrs);
+    pc->on_top += nargs + nattrs - 1;
     for (i = 0; i < nargs + nattrs; i++) {
+        pc->on_top--;
         pattern_ty pattern;
         if (i < nargs) {
             // Positional:
@@ -6061,17 +6066,12 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
             pattern = asdl_seq_GET(kwd_patterns, i - nargs);
         }
         if (WILDCARD_CHECK(pattern)) {
+            ADDOP(c, POP_TOP);
             continue;
         }
-        // Get the i-th attribute, and match it against the i-th pattern:
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-        ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
     // Success! Pop the tuple of attributes:
-    pc->on_top--;
-    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -6152,21 +6152,15 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         // rest = dict(TOS1)
         // for key in TOS:
         //     del rest[key]
-        ADDOP_I(c, BUILD_MAP, 0);               // [subject, keys, empty]
-        ADDOP(c, ROT_THREE);                    // [empty, subject, keys]
-        ADDOP(c, ROT_TWO);                      // [empty, keys, subject]
-        ADDOP_I(c, DICT_UPDATE, 2);             // [copy, keys]
-        // This may seem a bit inefficient, but keys is rarely big enough to
-        // actually impact runtime:
-        ADDOP_I(c, UNPACK_SEQUENCE, size);      // [copy, keys...]
-        ADDOP_I(c, BUILD_TUPLE, size + 1);      // [(copy, keys...)]
-        // The keys get reversed here, but that's okay:
-        ADDOP_I(c, UNPACK_SEQUENCE, size + 1);  // [keys..., copy]
-        while (size--) {
-            ADDOP(c, DUP_TOP);                  // [keys..., copy, copy]
-            ADDOP(c, ROT_THREE);                // [keys..., copy, key, copy]
-            ADDOP(c, ROT_TWO);                  // [keys..., copy, copy, key]
-            ADDOP(c, DELETE_SUBSCR);            // [keys..., copy]
+        ADDOP_I(c, BUILD_MAP, 0);           // [subject, keys, empty]
+        ADDOP(c, ROT_THREE);                // [empty, subject, keys]
+        ADDOP(c, ROT_TWO);                  // [empty, keys, subject]
+        ADDOP_I(c, DICT_UPDATE, 2);         // [copy, keys]
+        ADDOP_I(c, UNPACK_SEQUENCE, size);  // [copy, keys...]
+        while (size) {
+            ADDOP_I(c, PUSH_PEEK, size--);  // [copy, keys..., copy]
+            ADDOP(c, ROT_TWO);              // [copy, keys..., copy, key]
+            ADDOP(c, DELETE_SUBSCR);        // [copy, keys...]
         }
         RETURN_IF_FALSE(pattern_helper_store_name(c, star_target, pc));
     }

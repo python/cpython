@@ -165,7 +165,7 @@ name_op('LOAD_GLOBAL', 116)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
-
+def_op('PUSH_PEEK', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 
 def_op('LOAD_FAST', 124)        # Local variable number

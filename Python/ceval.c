@@ -4219,6 +4219,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        case TARGET(PUSH_PEEK): {
+            PyObject *peek = PEEK(oparg + 1);
+            Py_INCREF(peek);
+            PUSH(peek);
+            DISPATCH();
+        }
+
         case TARGET(EXTENDED_ARG): {
             int oldoparg = oparg;
             NEXTOPARG();

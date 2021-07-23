@@ -103,6 +103,7 @@ extern "C" {
 #define IS_OP                   117
 #define CONTAINS_OP             118
 #define RERAISE                 119
+#define PUSH_PEEK               120
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define LOAD_FAST               124
 #define STORE_FAST              125
