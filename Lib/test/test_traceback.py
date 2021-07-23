@@ -123,7 +123,10 @@ class TracebackCases(unittest.TestCase):
 
     def test_recursion_error_during_traceback(self):
         code = textwrap.dedent("""
+                import sys
                 from weakref import ref
+
+                sys.setrecursionlimit(15)
 
                 def f():
                     ref(lambda: 0, [])
@@ -133,7 +136,7 @@ class TracebackCases(unittest.TestCase):
                     f()
                 except RecursionError:
                     pass
-            """)
+        """)
         try:
             with open(TESTFN, 'w') as f:
                 f.write(code)
