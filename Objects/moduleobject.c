@@ -741,25 +741,26 @@ _PyModuleSpec_IsInitializing(PyObject *spec)
 
 /* Check if the submodule name is in the "_uninitialized_submodules" attribute
    of the module spec.
-   Clear the exception and return 0 if spec is NULL.
  */
 int
 _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
 {
-    if (spec != NULL) {
-        _Py_IDENTIFIER(_uninitialized_submodules);
-        PyObject *value = _PyObject_GetAttrId(spec,
-                                              &PyId__uninitialized_submodules);
-        if (value != NULL) {
-            int is_uninitialized = PySequence_Contains(value, name);
-            Py_DECREF(value);
-            if (is_uninitialized >= 0) {
-                return is_uninitialized;
-            }
-        }
+    if (spec == NULL) {
+         return 0;
     }
-    PyErr_Clear();
-    return 0;
+
+    _Py_IDENTIFIER(_uninitialized_submodules);
+    PyObject *value = _PyObject_GetAttrId(spec, &PyId__uninitialized_submodules);
+    if (value == NULL) {
+        return 0;
+    }
+
+    int is_uninitialized = PySequence_Contains(value, name);
+    Py_DECREF(value);
+    if (is_uninitialized == -1) {
+        return 0;
+    }
+    return is_uninitialized;
 }
 
 static PyObject*

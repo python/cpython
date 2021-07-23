@@ -361,7 +361,7 @@ class ModuleSpec:
         self.origin = origin
         self.loader_state = loader_state
         self.submodule_search_locations = [] if is_package else None
-        self.uninitialized_submodules = []
+        self._uninitialized_submodules = []
 
         # file-location attributes
         self._set_fileattr = False
@@ -1008,14 +1008,14 @@ def _find_and_load_unlocked(name, import_):
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
         if parent_spec:
-            # Temporarily add currently imported child to parent's
-            # uninitialized_submodules for circular import tracking.
-            parent_spec.uninitialized_submodules.append(child)
+            # Temporarily add currently child we are going to import to parent's
+            # _uninitialized_submodules for circular import tracking.
+            parent_spec._uninitialized_submodules.append(child)
         try:
             module = _load_unlocked(spec)
         finally:
             if parent_spec:
-                parent_spec.uninitialized_submodules.pop()
+                parent_spec._uninitialized_submodules.pop()
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
