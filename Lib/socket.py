@@ -13,7 +13,7 @@ socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
 send_fds() -- Send file descriptor to the socket.
-recv_fds() -- Recieve file descriptors from the socket.
+recv_fds() -- Receive file descriptors from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number

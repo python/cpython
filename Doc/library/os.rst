@@ -3656,9 +3656,10 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: EX_OK
 
-   Exit code that means no error occurred.
+   Exit code that means no error occurred. May be taken from the defined value of
+   ``EXIT_SUCCESS`` on some platforms. Generally has a value of zero.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
 
 .. data:: EX_USAGE

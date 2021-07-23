@@ -1,0 +1,2 @@
+Make the implementation consistency of :func:`~operator.indexOf` between
+C and Python versions. Patch by Dong-hee Na.

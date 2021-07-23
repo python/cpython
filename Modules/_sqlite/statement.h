@@ -32,15 +32,11 @@
 typedef struct
 {
     PyObject_HEAD
-    sqlite3* db;
     sqlite3_stmt* st;
-    PyObject* sql;
     int in_use;
     int is_dml;
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Statement;
-
-extern PyTypeObject *pysqlite_StatementType;
 
 pysqlite_Statement *pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql);
 

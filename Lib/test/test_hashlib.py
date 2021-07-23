@@ -909,7 +909,11 @@ class HashLibTestCase(unittest.TestCase):
                 continue
             # all other types have DISALLOW_INSTANTIATION
             for constructor in constructors:
-                h = constructor()
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    h = constructor()
+                except ValueError:
+                    continue
                 with self.subTest(constructor=constructor):
                     support.check_disallow_instantiation(self, type(h))
 
@@ -923,7 +927,11 @@ class HashLibTestCase(unittest.TestCase):
         for algorithm, constructors in self.constructors_to_test.items():
             # all other types have DISALLOW_INSTANTIATION
             for constructor in constructors:
-                hash_type = type(constructor())
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    hash_type = type(constructor())
+                except ValueError:
+                    continue
                 with self.subTest(hash_type=hash_type):
                     with self.assertRaisesRegex(TypeError, "immutable type"):
                         hash_type.value = False

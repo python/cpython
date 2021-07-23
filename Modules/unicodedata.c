@@ -2,7 +2,6 @@
 
    unicodedata -- Provides access to the Unicode database.
 
-   Data was extracted from the UnicodeData.txt file.
    The current version number is reported in the unidata_version constant.
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).
@@ -1465,7 +1464,7 @@ static PyType_Spec ucd_type_spec = {
     .name = "unicodedata.UCD",
     .basicsize = sizeof(PreviousDBVersion),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = ucd_type_slots
 };
 

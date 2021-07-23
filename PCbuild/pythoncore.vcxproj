@@ -363,6 +363,7 @@
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
+    <ClCompile Include="..\Modules\_typingmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
@@ -487,6 +488,7 @@
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
     <ClCompile Include="..\Python\pythonrun.c" />
+    <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />

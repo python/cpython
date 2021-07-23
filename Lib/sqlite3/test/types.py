@@ -381,6 +381,43 @@ class ObjectAdaptationTests(unittest.TestCase):
         val = self.cur.fetchone()[0]
         self.assertEqual(type(val), float)
 
+    def test_missing_adapter(self):
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(1.)  # No float adapter registered
+
+    def test_missing_protocol(self):
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(1, None)
+
+    def test_defect_proto(self):
+        class DefectProto():
+            def __adapt__(self):
+                return None
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(1., DefectProto)
+
+    def test_defect_self_adapt(self):
+        class DefectSelfAdapt(float):
+            def __conform__(self, _):
+                return None
+        with self.assertRaises(sqlite.ProgrammingError):
+            sqlite.adapt(DefectSelfAdapt(1.))
+
+    def test_custom_proto(self):
+        class CustomProto():
+            def __adapt__(self):
+                return "adapted"
+        self.assertEqual(sqlite.adapt(1., CustomProto), "adapted")
+
+    def test_adapt(self):
+        val = 42
+        self.assertEqual(float(val), sqlite.adapt(val))
+
+    def test_adapt_alt(self):
+        alt = "other"
+        self.assertEqual(alt, sqlite.adapt(1., None, alt))
+
+
 @unittest.skipUnless(zlib, "requires zlib")
 class BinaryConverterTests(unittest.TestCase):
     def convert(s):

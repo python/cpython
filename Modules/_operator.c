@@ -507,12 +507,12 @@ _operator_indexOf_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic input]
 _operator.countOf = _operator.indexOf
 
-Return the number of times b occurs in a.
+Return the number of items in a which are, or which equal, b.
 [clinic start generated code]*/
 
 static Py_ssize_t
 _operator_countOf_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=9e1623197daf3382 input=0c3a2656add252db]*/
+/*[clinic end generated code: output=9e1623197daf3382 input=93ea57f170f3f0bb]*/
 {
     return PySequence_Count(a, b);
 }
@@ -1133,7 +1133,8 @@ static PyType_Spec itemgetter_type_spec = {
     .name = "operator.itemgetter",
     .basicsize = sizeof(itemgetterobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = itemgetter_type_slots,
 };
 
@@ -1464,7 +1465,8 @@ static PyType_Spec attrgetter_type_spec = {
     .name = "operator.attrgetter",
     .basicsize = sizeof(attrgetterobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = attrgetter_type_slots,
 };
 
@@ -1719,7 +1721,8 @@ static PyType_Spec methodcaller_type_spec = {
     .name = "operator.methodcaller",
     .basicsize = sizeof(methodcallerobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = methodcaller_type_slots,
 };
 

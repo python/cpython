@@ -218,9 +218,9 @@ A comprehension in an :keyword:`!async def` function may consist of either a
 :keyword:`!for` or :keyword:`!async for` clause following the leading
 expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`!async for` clauses
-or :keyword:`!await` expressions it is called an
-:dfn:`asynchronous comprehension`.  An asynchronous comprehension may
+If a comprehension contains either :keyword:`!async for` clauses or
+:keyword:`!await` expressions or other asynchronous comprehensions it is called
+an :dfn:`asynchronous comprehension`.  An asynchronous comprehension may
 suspend the execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
@@ -229,6 +229,11 @@ See also :pep:`530`.
 
 .. versionchanged:: 3.8
    ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
+
+.. versionchanged:: 3.11
+   Asynchronous comprehensions are now allowed inside comprehensions in
+   asynchronous functions. Outer comprehensions implicitly become
+   asynchronous.
 
 
 .. _lists:

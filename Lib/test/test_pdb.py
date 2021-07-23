@@ -362,7 +362,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:94
+    Breakpoint 3 at ...pdb.py:97
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -390,6 +390,34 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     Deleted breakpoint 3 at ...pdb.py:...
     (Pdb) continue
     """
+
+def test_pdb_pp_repr_exc():
+    """Test that do_p/do_pp do not swallow exceptions.
+
+    >>> class BadRepr:
+    ...     def __repr__(self):
+    ...         raise Exception('repr_exc')
+    >>> obj = BadRepr()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'p obj',
+    ...     'pp obj',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_pp_repr_exc[2]>(2)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p obj
+    *** Exception: repr_exc
+    (Pdb) pp obj
+    *** Exception: repr_exc
+    (Pdb) continue
+    """
+
 
 def do_nothing():
     pass
@@ -1288,10 +1316,39 @@ def test_pdb_issue_20766():
     -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     (Pdb) continue
     pdb 1: <built-in function default_int_handler>
-    > <doctest test.test_pdb.test_pdb_issue_20766[0]>(5)test_function()
-    -> sess.set_trace(sys._getframe())
+    > <doctest test.test_pdb.test_pdb_issue_20766[0]>(6)test_function()
+    -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     (Pdb) continue
     pdb 2: <built-in function default_int_handler>
+    """
+
+def test_pdb_issue_43318():
+    """echo breakpoints cleared with filename:lineno
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_43318[0]>(3)test_function()
+    -> print(1)
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    (Pdb) clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    (Pdb) continue
+    1
+    2
+    3
+    4
     """
 
 
@@ -1570,6 +1627,40 @@ def bœr():
                 if save_home is not None:
                     os.environ["HOME"] = save_home
 
+    def test_read_pdbrc_with_ascii_encoding(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+            print('hello')
+        """)
+        save_home = os.environ.pop('HOME', None)
+        try:
+            with os_helper.temp_cwd():
+                with open('.pdbrc', 'w', encoding='utf-8') as f:
+                    f.write("Fran\u00E7ais")
+
+                with open('main.py', 'w', encoding='utf-8') as f:
+                    f.write(script)
+
+                cmd = [sys.executable, 'main.py']
+                env = {'PYTHONIOENCODING': 'ascii'}
+                if sys.platform == 'win32':
+                    env['PYTHONLEGACYWINDOWSSTDIO'] = 'non-empty-string'
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, **env}
+                )
+                with proc:
+                    stdout, stderr = proc.communicate(b'c\n')
+                    self.assertIn(b"UnicodeEncodeError: \'ascii\' codec can\'t encode character "
+                                  b"\'\\xe7\' in position 21: ordinal not in range(128)", stderr)
+
+        finally:
+            if save_home is not None:
+                os.environ['HOME'] = save_home
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'
@@ -1743,6 +1834,21 @@ def bœr():
             '(Pdb) ',
         ])
 
+    def test_issue34266(self):
+        '''do_run handles exceptions from parsing its arg'''
+        def check(bad_arg, msg):
+            commands = "\n".join([
+                f'run {bad_arg}',
+                'q',
+            ])
+            stdout, _ = self.run_pdb_script('pass', commands + '\n')
+            self.assertEqual(stdout.splitlines()[1:], [
+                '-> pass',
+                f'(Pdb) *** Cannot run {bad_arg}: {msg}',
+                '(Pdb) ',
+            ])
+        check('\\', 'No escaped character')
+        check('"', 'No closing quotation')
 
     def test_issue42384(self):
         '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''

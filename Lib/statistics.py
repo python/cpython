@@ -924,10 +924,10 @@ def correlation(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
-    s2y = fsum((yi - ybar) ** 2.0 for yi in y)
+    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
+    syy = fsum((yi - ybar) ** 2.0 for yi in y)
     try:
-        return sxy / sqrt(s2x * s2y)
+        return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
@@ -968,9 +968,9 @@ def linear_regression(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
+    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
     try:
-        slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
+        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
     intercept = ybar - slope * xbar

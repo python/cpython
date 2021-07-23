@@ -179,7 +179,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1k, 3.0.0-alpha17]
+        openssl_ver: [1.1.1k, 3.0.0-beta1]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -218,3 +218,46 @@ jobs:
       run: make pythoninfo
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
+
+
+  build_asan:
+    name: 'Address sanitizer'
+    runs-on: ubuntu-20.04
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    env:
+      OPENSSL_VER: 1.1.1k
+      ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
+    steps:
+    - uses: actions/checkout@v2
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v2.1.6
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1
+    - name: Configure CPython
+      run: ./configure --with-address-sanitizer --without-pymalloc
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test_ctypes test_crypt test_decimal test_faulthandler test_interpreters test___all__ test_idle test_tix test_tk test_ttk_guionly test_ttk_textonly"

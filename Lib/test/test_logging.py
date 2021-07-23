@@ -54,12 +54,15 @@ import unittest
 import warnings
 import weakref
 
-import asyncore
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import smtpd
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -4389,6 +4392,14 @@ class ModuleLevelMiscTest(BaseTest):
         err = err.decode()
         self.assertNotIn("Cannot recover from stack overflow.", err)
         self.assertEqual(rc, 1)
+
+    def test_get_level_names_mapping(self):
+        mapping = logging.getLevelNamesMapping()
+        self.assertEqual(logging._nameToLevel, mapping)  # value is equivalent
+        self.assertIsNot(logging._nameToLevel, mapping)  # but not the internal data
+        new_mapping = logging.getLevelNamesMapping()     # another call -> another copy
+        self.assertIsNot(mapping, new_mapping)           # verify not the same object as before
+        self.assertEqual(mapping, new_mapping)           # but equivalent in value
 
 
 class LogRecordTest(BaseTest):

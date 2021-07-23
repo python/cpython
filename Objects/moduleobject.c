@@ -46,8 +46,7 @@ _PyModule_IsExtension(PyObject *obj)
 PyObject*
 PyModuleDef_Init(struct PyModuleDef* def)
 {
-    if (PyType_Ready(&PyModuleDef_Type) < 0)
-         return NULL;
+    assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
         max_module_number++;
         Py_SET_REFCNT(def, 1);
@@ -64,8 +63,7 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__loader__);
 
-    if (md_dict == NULL)
-        return -1;
+    assert(md_dict != NULL);
     if (doc == NULL)
         doc = Py_None;
 
@@ -87,12 +85,11 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     return 0;
 }
 
-
-PyObject *
-PyModule_NewObject(PyObject *name)
+static PyModuleObject *
+new_module_notrack(PyTypeObject *mt)
 {
     PyModuleObject *m;
-    m = PyObject_GC_New(PyModuleObject, &PyModule_Type);
+    m = PyObject_GC_New(PyModuleObject, mt);
     if (m == NULL)
         return NULL;
     m->md_def = NULL;
@@ -100,6 +97,29 @@ PyModule_NewObject(PyObject *name)
     m->md_weaklist = NULL;
     m->md_name = NULL;
     m->md_dict = PyDict_New();
+    if (m->md_dict != NULL) {
+        return m;
+    }
+    Py_DECREF(m);
+    return NULL;
+}
+
+static PyObject *
+new_module(PyTypeObject *mt, PyObject *args, PyObject *kws)
+{
+    PyObject *m = (PyObject *)new_module_notrack(mt);
+    if (m != NULL) {
+        PyObject_GC_Track(m);
+    }
+    return m;
+}
+
+PyObject *
+PyModule_NewObject(PyObject *name)
+{
+    PyModuleObject *m = new_module_notrack(&PyModule_Type);
+    if (m == NULL)
+        return NULL;
     if (module_init_dict(m, m->md_dict, name, NULL) != 0)
         goto fail;
     PyObject_GC_Track(m);
@@ -728,43 +748,42 @@ module_getattro(PyModuleObject *m, PyObject *name)
         return attr;
     }
     PyErr_Clear();
-    if (m->md_dict) {
-        _Py_IDENTIFIER(__getattr__);
-        getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
-        if (getattr) {
-            return PyObject_CallOneArg(getattr, name);
-        }
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        mod_name = _PyDict_GetItemIdWithError(m->md_dict, &PyId___name__);
-        if (mod_name && PyUnicode_Check(mod_name)) {
-            Py_INCREF(mod_name);
-            PyObject *spec = _PyDict_GetItemIdWithError(m->md_dict, &PyId___spec__);
-            if (spec == NULL && PyErr_Occurred()) {
-                Py_DECREF(mod_name);
-                return NULL;
-            }
-            Py_XINCREF(spec);
-            if (_PyModuleSpec_IsInitializing(spec)) {
-                PyErr_Format(PyExc_AttributeError,
-                             "partially initialized "
-                             "module '%U' has no attribute '%U' "
-                             "(most likely due to a circular import)",
-                             mod_name, name);
-            }
-            else {
-                PyErr_Format(PyExc_AttributeError,
-                             "module '%U' has no attribute '%U'",
-                             mod_name, name);
-            }
-            Py_XDECREF(spec);
+    assert(m->md_dict != NULL);
+    _Py_IDENTIFIER(__getattr__);
+    getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
+    if (getattr) {
+        return PyObject_CallOneArg(getattr, name);
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    mod_name = _PyDict_GetItemIdWithError(m->md_dict, &PyId___name__);
+    if (mod_name && PyUnicode_Check(mod_name)) {
+        Py_INCREF(mod_name);
+        PyObject *spec = _PyDict_GetItemIdWithError(m->md_dict, &PyId___spec__);
+        if (spec == NULL && PyErr_Occurred()) {
             Py_DECREF(mod_name);
             return NULL;
         }
-        else if (PyErr_Occurred()) {
-            return NULL;
+        Py_XINCREF(spec);
+        if (_PyModuleSpec_IsInitializing(spec)) {
+            PyErr_Format(PyExc_AttributeError,
+                            "partially initialized "
+                            "module '%U' has no attribute '%U' "
+                            "(most likely due to a circular import)",
+                            mod_name, name);
         }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                            "module '%U' has no attribute '%U'",
+                            mod_name, name);
+        }
+        Py_XDECREF(spec);
+        Py_DECREF(mod_name);
+        return NULL;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
     }
     PyErr_Format(PyExc_AttributeError,
                 "module has no attribute '%U'", name);
@@ -948,7 +967,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_descr_set */
     offsetof(PyModuleObject, md_dict),          /* tp_dictoffset */
     module___init__,                            /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
-    PyType_GenericNew,                          /* tp_new */
+    0,                                          /* tp_alloc */
+    new_module,                                 /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };

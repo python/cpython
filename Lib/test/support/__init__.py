@@ -49,7 +49,7 @@ __all__ = [
     # processes
     "reap_children",
     # miscellaneous
-    "run_with_locale", "swap_item", "findfile",
+    "run_with_locale", "swap_item", "findfile", "infinite_recursion",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
@@ -104,6 +104,17 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures):
+        self.msg = msg
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures)
+
+    def __str__(self):
+        return self.msg
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -414,6 +425,14 @@ def requires_lzma(reason='requires lzma'):
     except ImportError:
         lzma = None
     return unittest.skipUnless(lzma, reason)
+
+def has_no_debug_ranges():
+    import _testinternalcapi
+    config = _testinternalcapi.get_config()
+    return bool(config['no_debug_ranges'])
+
+def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
+    return unittest.skipIf(has_no_debug_ranges(), reason)
 
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
@@ -972,7 +991,9 @@ def _run_suite(suite):
         else:
             err = "multiple errors occurred"
             if not verbose: err += "; run in verbose mode for details"
-        raise TestFailed(err)
+        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
+        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
+        raise TestFailedWithDetails(err, errors, failures)
 
 
 # By default, don't filter tests
@@ -1999,3 +2020,18 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
         qualname = f"{name}"
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+
+@contextlib.contextmanager
+def infinite_recursion(max_depth=75):
+    """Set a lower limit for tests that interact with infinite recursions
+    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
+    debug windows builds, due to not enough functions being inlined the
+    stack size might not handle the default recursion limit (1000). See
+    bpo-11105 for details."""
+
+    original_depth = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(max_depth)
+        yield
+    finally:
+        sys.setrecursionlimit(original_depth)
