@@ -488,8 +488,8 @@ the :mod:`glob` module.)
 .. function:: splitext(path)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
-   path``, and *ext* is empty or begins with a period and contains at most one
-   period.
+   path``, and the extension, *ext*, is empty or begins with a period and contains at
+   most one period.
 
    If the path contains no extension, *ext* will be ``''``::
 
