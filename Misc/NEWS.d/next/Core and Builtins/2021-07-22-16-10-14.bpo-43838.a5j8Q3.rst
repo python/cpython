@@ -1,0 +1,3 @@
+To avoid exposing the actual proxied object to arbitrary code, union and
+rich comparison operations on :class:`types.MappingProxyType` now delegate
+to a copy of the underlying mapping instead.
