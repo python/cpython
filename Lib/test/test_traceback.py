@@ -510,6 +510,28 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_traceback_very_long_line(self):
+        source = "a" * 256
+        bytecode = compile(source, TESTFN, "exec")
+
+        with open(TESTFN, "w") as file:
+            file.write(source)
+        self.addCleanup(unlink, TESTFN)
+
+        func = partial(exec, bytecode)
+        result_lines = self.get_exception(func)
+
+        lineno_f = bytecode.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
+            f'    {source}\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
     def assertSpecialized(self, func, expected_specialization):
         result_lines = self.get_exception(func)
         specialization_line = result_lines[-1]
