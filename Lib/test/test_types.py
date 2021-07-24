@@ -823,30 +823,6 @@ class UnionTests(unittest.TestCase):
             self.assertEqual(copied.__args__, orig.__args__)
             self.assertEqual(copied.__parameters__, orig.__parameters__)
 
-    def test_union_from_args(self):
-        with self.assertRaisesRegex(
-                TypeError,
-                r"^Each union argument must be a type, got 1$",
-        ):
-            types.Union._from_args((1,))
-
-        with self.assertRaisesRegex(
-                TypeError,
-                r"Union._from_args\(\) argument 'args' must be tuple, not int$",
-        ):
-            types.Union._from_args(1)
-
-        with self.assertRaisesRegex(ValueError, r"args must be not empty"):
-            types.Union._from_args(())
-
-        alias = types.Union._from_args((int, list[T], None))
-
-        self.assertEqual(alias.__args__, (int, list[T], type(None)))
-        self.assertEqual(alias.__parameters__, (T,))
-
-        result = types.Union._from_args((int,))
-        self.assertIs(int, result)
-
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
         x = int | T

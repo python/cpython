@@ -329,7 +329,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
         if isinstance(t, GenericAlias):
             return GenericAlias(t.__origin__, ev_args)
         if isinstance(t, types.Union):
-            return types.Union._from_args(ev_args)
+            return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
     return t

@@ -235,21 +235,6 @@ is_unionable(PyObject *obj)
         _PyUnion_Check(obj));
 }
 
-static int
-is_args_unionable(PyObject *args)
-{
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
-        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (!is_unionable(arg)) {
-            PyErr_Format(PyExc_TypeError,
-                         "Each union argument must be a type, got %.100R", arg);
-            return 0;
-        }
-    }
-    return 1;
-}
-
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
@@ -367,27 +352,7 @@ static PyMemberDef union_members[] = {
         {0}
 };
 
-static PyObject *
-union_from_args(PyObject *cls, PyObject *args)
-{
-    if (!PyTuple_CheckExact(args)) {
-        _PyArg_BadArgument("Union._from_args", "argument 'args'", "tuple", args);
-        return NULL;
-    }
-    if (!PyTuple_GET_SIZE(args)) {
-        PyErr_SetString(PyExc_ValueError, "args must be not empty");
-        return NULL;
-    }
-
-    if (!is_args_unionable(args)) {
-        return NULL;
-    }
-
-    return make_union(args);
-}
-
 static PyMethodDef union_methods[] = {
-        {"_from_args", union_from_args, METH_O | METH_CLASS},
         {"__instancecheck__", union_instancecheck, METH_O},
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {0}};
