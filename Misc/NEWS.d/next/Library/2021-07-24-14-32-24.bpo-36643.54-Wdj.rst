@@ -1,0 +1,2 @@
+Unwrap ``dataclasses.Field.type`` forward references returned by
+``dataclasses.fields()``.
