@@ -3,6 +3,7 @@
 from test.support import run_with_locale, cpython_only
 import collections.abc
 from collections import namedtuple
+import copy
 import gc
 import inspect
 import pickle
@@ -807,36 +808,20 @@ class UnionTests(unittest.TestCase):
         eq(x[S], int | S | bytes)
 
     def test_union_pickle(self):
-        alias = list[T] | int
-        s = pickle.dumps(alias)
-        loaded = pickle.loads(s)
-        self.assertEqual(alias, loaded)
-        self.assertEqual(alias.__args__, loaded.__args__)
-        self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        orig = list[T] | int
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(orig, proto)
+            loaded = pickle.loads(s)
+            self.assertEqual(loaded, orig)
+            self.assertEqual(loaded.__args__, orig.__args__)
+            self.assertEqual(loaded.__parameters__, orig.__parameters__)
 
-    def test_union_from_args(self):
-        with self.assertRaisesRegex(
-                TypeError,
-                r"^Each union argument must be a type, got 1$",
-        ):
-            types.Union._from_args((1,))
-
-        with self.assertRaisesRegex(
-                TypeError,
-                r"Union._from_args\(\) argument 'args' must be tuple, not int$",
-        ):
-            types.Union._from_args(1)
-
-        with self.assertRaisesRegex(ValueError, r"args must be not empty"):
-            types.Union._from_args(())
-
-        alias = types.Union._from_args((int, list[T], None))
-
-        self.assertEqual(alias.__args__, (int, list[T], type(None)))
-        self.assertEqual(alias.__parameters__, (T,))
-
-        result = types.Union._from_args((int,))
-        self.assertIs(int, result)
+    def test_union_copy(self):
+        orig = list[T] | int
+        for copied in (copy.copy(orig), copy.deepcopy(orig)):
+            self.assertEqual(copied, orig)
+            self.assertEqual(copied.__args__, orig.__args__)
+            self.assertEqual(copied.__parameters__, orig.__parameters__)
 
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
