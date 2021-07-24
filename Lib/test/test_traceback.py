@@ -429,6 +429,7 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             '    ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_multiline\n'
             '    raise ValueError(\n'
+            '    ^^^^^^^^^^^^^^^^^'
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
