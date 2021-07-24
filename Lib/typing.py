@@ -383,6 +383,12 @@ class _SpecialForm(_Final, _root=True):
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
 
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
+
     def __instancecheck__(self, obj):
         raise TypeError(f"{self} cannot be used with isinstance()")
 
