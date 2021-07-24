@@ -3755,16 +3755,17 @@ class NewTypeTests:
     def test_pickle(self):
         UserAge = self.module.NewType('UserAge', float)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            pickled = pickle.dumps(UserId, proto)
-            loaded = pickle.loads(pickled)
-            self.assertIs(loaded, UserId)
+            with self.subTest(proto=proto):
+                pickled = pickle.dumps(UserId, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, UserId)
 
-            pickled = pickle.dumps(self.UserName, proto)
-            loaded = pickle.loads(pickled)
-            self.assertIs(loaded, self.UserName)
+                pickled = pickle.dumps(self.UserName, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, self.UserName)
 
-            with self.assertRaises(pickle.PicklingError):
-                pickle.dumps(UserAge, proto)
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(UserAge, proto)
 
 
 class NewTypePythonTests(NewTypeTests, BaseTestCase):
