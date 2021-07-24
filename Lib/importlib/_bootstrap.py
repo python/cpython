@@ -1008,7 +1008,7 @@ def _find_and_load_unlocked(name, import_):
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
         if parent_spec:
-            # Temporarily add currently child we are going to import to parent's
+            # Temporarily add child we are currently importing to parent's
             # _uninitialized_submodules for circular import tracking.
             parent_spec._uninitialized_submodules.append(child)
         try:
