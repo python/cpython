@@ -9,6 +9,7 @@ import functools
 import abc
 import _thread
 from types import FunctionType, GenericAlias
+from typing import _eval_type, ForwardRef
 
 
 __all__ = ['dataclass',
@@ -1178,22 +1179,31 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     return wrap(cls)
 
 
-def fields(class_or_instance):
+def fields(class_or_instance, globalns=None, localns=None):
     """Return a tuple describing the fields of this dataclass.
 
     Accepts a dataclass or an instance of one. Tuple elements are of
     type Field.
     """
 
+    def eval_field_type(f):
+        type_ = f.type
+        if isinstance(type_, str):
+            type_ = ForwardRef(type_)
+        f.type = _eval_type(type_, globalns, localns)
+        return f
+
     # Might it be worth caching this, per class?
     try:
         fields = getattr(class_or_instance, _FIELDS)
     except AttributeError:
         raise TypeError('must be called with a dataclass type or instance')
+    if globalns is None:
+        globalns = sys.modules[class_or_instance.__module__].__dict__
 
     # Exclude pseudo-fields.  Note that fields is sorted by insertion
     # order, so the order of the tuple is as the fields were defined.
-    return tuple(f for f in fields.values() if f._field_type is _FIELD)
+    return tuple(eval_field_type(f) for f in fields.values() if f._field_type is _FIELD)
 
 
 def _is_dataclass_instance(obj):

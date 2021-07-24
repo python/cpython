@@ -1960,6 +1960,55 @@ class TestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r"A\.__init__\(\) missing"):
             A()
 
+    def test_fields_resolves_forward_references(self):
+        from test.dataclass_forward_ref import A
+
+        fields_ = fields(A)
+
+        self.assertEqual(len(fields_), 1)
+        self.assertEqual(fields_[0].name, 'a')
+        self.assertEqual(fields_[0].type, Optional[A])
+
+    def test_fields_resolves_forward_references_with_str_annotations(self):
+        from test.dataclass_forward_ref_str import A
+
+        fields_ = fields(A)
+
+        self.assertEqual(len(fields_), 1)
+        self.assertEqual(fields_[0].name, 'a')
+        self.assertEqual(fields_[0].type, Optional[A])
+
+    def test_fields_fails_to_resolve_forward_references_in_anonymous(self):
+        @dataclass
+        class Nested:
+            child: Optional['Nested']
+
+        with self.assertRaises(NameError):
+            fields_ = fields(Nested)
+
+    def test_fields_resolves_forward_references_in_anonymous_with_locals(self):
+        @dataclass
+        class Nested:
+            child: Optional['Nested']
+
+        fields_ = fields(Nested, localns=locals())
+
+        self.assertEqual(len(fields_), 1)
+        self.assertEqual(fields_[0].name, 'child')
+        self.assertEqual(fields_[0].type, Optional[Nested])
+
+    def test_fields_resolves_forward_references_with_inheritance(self):
+        from test.dataclass_forward_ref import A
+        from test.dataclass_forward_ref_child import B
+
+        fields_ = fields(B)
+
+        self.assertEqual(len(fields_), 2)
+        self.assertEqual(fields_[0].name, 'a')
+        self.assertEqual(fields_[0].type, Optional[A])
+        self.assertEqual(fields_[1].name, 'b')
+        self.assertEqual(fields_[1].type, Optional[B])
+
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
