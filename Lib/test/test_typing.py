@@ -3673,28 +3673,35 @@ class TypeTests(BaseTestCase):
 
 
 class NewTypeTests(BaseTestCase):
+    @classmethod
+    def setUpClass(cls):
+        global UserId
+        UserId = NewType('UserId', int)
+        cls.UserName = NewType(cls.__qualname__ + '.UserName', str)
+
+    @classmethod
+    def tearDownClass(cls):
+        global UserId
+        del UserId
+        del cls.UserName
+
+    def tearDown(self):
+        self.clear_caches()
 
     def test_basic(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         self.assertIsInstance(UserId(5), int)
-        self.assertIsInstance(UserName('Joe'), str)
+        self.assertIsInstance(self.UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
     def test_errors(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         with self.assertRaises(TypeError):
             issubclass(UserId, int)
         with self.assertRaises(TypeError):
-            class D(UserName):
+            class D(UserId):
                 pass
 
     def test_or(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
-
-        for cls in (int, UserName):
+        for cls in (int, self.UserName):
             with self.subTest(cls=cls):
                 self.assertEqual(UserId | cls, Union[UserId, cls])
                 self.assertEqual(cls | UserId, Union[cls, UserId])
@@ -3703,16 +3710,37 @@ class NewTypeTests(BaseTestCase):
                 self.assertEqual(get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
-        UserId = NewType('UserId', int)
-
         self.assertEqual(UserId.__name__, 'UserId')
         self.assertEqual(UserId.__qualname__, 'UserId')
         self.assertEqual(UserId.__module__, __name__)
+        self.assertEqual(UserId.__supertype__, int)
+
+        UserName = self.UserName
+        self.assertEqual(UserName.__name__, 'UserName')
+        self.assertEqual(UserName.__qualname__,
+                         self.__class__.__qualname__ + '.UserName')
+        self.assertEqual(UserName.__module__, __name__)
+        self.assertEqual(UserName.__supertype__, str)
 
     def test_repr(self):
-        UserId = NewType('UserId', int)
-
         self.assertEqual(repr(UserId), f'{__name__}.UserId')
+        self.assertEqual(repr(self.UserName),
+                         f'{__name__}.{self.__class__.__qualname__}.UserName')
+
+    def test_pickle(self):
+        UserAge = NewType('UserAge', float)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pickled = pickle.dumps(UserId, proto)
+            loaded = pickle.loads(pickled)
+            self.assertIs(loaded, UserId)
+
+            pickled = pickle.dumps(self.UserName, proto)
+            loaded = pickle.loads(pickled)
+            self.assertIs(loaded, self.UserName)
+
+            with self.assertRaises(pickle.PicklingError):
+                pickle.dumps(UserAge, proto)
+
 
 class NamedTupleTests(BaseTestCase):
     class NestedEmployee(NamedTuple):

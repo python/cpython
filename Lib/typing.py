@@ -2375,8 +2375,10 @@ class NewType:
     """
 
     def __init__(self, name, tp):
-        self.__name__ = name
         self.__qualname__ = name
+        if '.' in name:
+            name = name.rpartition('.')[-1]
+        self.__name__ = name
         self.__module__ = _callee(default='typing')
         self.__supertype__ = tp
 
@@ -2385,6 +2387,9 @@ class NewType:
 
     def __call__(self, x):
         return x
+
+    def __reduce__(self):
+        return self.__qualname__
 
     def __or__(self, other):
         return Union[self, other]
