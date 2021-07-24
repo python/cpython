@@ -371,7 +371,7 @@ union_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    return Py_BuildValue("O(O)", from_args, alias->args);
+    return Py_BuildValue("N(O)", from_args, alias->args);
 }
 
 static PyMemberDef union_members[] = {
