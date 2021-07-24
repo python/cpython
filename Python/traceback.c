@@ -605,7 +605,7 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
     }
 
     const char *segment_str = PyUnicode_AsUTF8(segment);
-    if (!segment) {
+    if (!segment_str) {
         goto done;
     }
 
