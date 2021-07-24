@@ -362,18 +362,6 @@ error:
     return NULL;
 }
 
-static PyObject *
-union_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    unionobject *alias = (unionobject *)self;
-    PyObject* from_args = PyObject_GetAttrString(self, "_from_args");
-    if (from_args == NULL) {
-        return NULL;
-    }
-
-    return Py_BuildValue("N(O)", from_args, alias->args);
-}
-
 static PyMemberDef union_members[] = {
         {"__args__", T_OBJECT, offsetof(unionobject, args), READONLY},
         {0}
@@ -399,10 +387,8 @@ union_from_args(PyObject *cls, PyObject *args)
 }
 
 static PyMethodDef union_methods[] = {
-        {"_from_args", union_from_args, METH_O | METH_CLASS},
         {"__instancecheck__", union_instancecheck, METH_O},
         {"__subclasscheck__", union_subclasscheck, METH_O},
-        {"__reduce__", union_reduce, METH_NOARGS},
         {0}};
 
 
