@@ -1814,7 +1814,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return types.Union._from_args(stripped_args)
+        return functools.reduce(operator.or_, stripped_args)
 
     return t
 
