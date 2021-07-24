@@ -2385,13 +2385,18 @@ class NewType:
     __call__ = _idfunc
 
     def __init__(self, name, tp):
-        self.__name__ = name
         self.__qualname__ = name
+        if '.' in name:
+            name = name.rpartition('.')[-1]
+        self.__name__ = name
         self.__module__ = _callee(default='typing')
         self.__supertype__ = tp
 
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
+
+    def __reduce__(self):
+        return self.__qualname__
 
     def __or__(self, other):
         return Union[self, other]
