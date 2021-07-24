@@ -462,7 +462,11 @@ class StackSummary(list):
             row.append('    {}\n'.format(frame.line.strip()))
 
             stripped_characters = len(frame._original_line) - len(frame.line.lstrip())
-            if frame.end_lineno == frame.lineno and frame.end_colno != 0:
+            if (
+                frame.end_lineno == frame.lineno
+                and frame.colno is not None
+                and frame.end_colno is not None
+            ):
                 colno = _byte_offset_to_character_offset(frame._original_line, frame.colno)
                 end_colno = _byte_offset_to_character_offset(frame._original_line, frame.end_colno)
 
