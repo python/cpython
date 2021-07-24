@@ -36,8 +36,8 @@ inherits from :class:`Enum` itself.
     Because Enums are used to represent constants we recommend using
     UPPER_CASE names for members, and will be using that style in our examples.
 
-Depending on the nature of the enum, a member's value may or may not be
-important, but either way, that value can be used to get the corresponding
+Depending on the nature of the enum a member's value may or may not be
+important, but either way that value can be used to get the corresponding
 member::
 
     >>> Weekday(3)
@@ -540,7 +540,7 @@ The complete signature is::
 
 :value: What the new enum class will record as its name.
 
-:names: The enum members.  This can be a whitespace or comma-separated string
+:names: The enum members.  This can be a whitespace- or comma-separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
