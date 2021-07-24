@@ -385,6 +385,7 @@ def setLogRecordFactory(factory):
     """
     global _logRecordFactory
     _logRecordFactory = factory
+    return factory
 
 def getLogRecordFactory():
     """
@@ -1276,6 +1277,7 @@ def setLoggerClass(klass):
                             + klass.__name__)
     global _loggerClass
     _loggerClass = klass
+    return klass
 
 def getLoggerClass():
     """
