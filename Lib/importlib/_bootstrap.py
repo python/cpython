@@ -361,7 +361,6 @@ class ModuleSpec:
         self.origin = origin
         self.loader_state = loader_state
         self.submodule_search_locations = [] if is_package else None
-        self._uninitialized_submodules = []
 
         # file-location attributes
         self._set_fileattr = False
@@ -988,7 +987,6 @@ _ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 def _find_and_load_unlocked(name, import_):
     path = None
     parent = name.rpartition('.')[0]
-    parent_spec = None
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
@@ -1001,24 +999,15 @@ def _find_and_load_unlocked(name, import_):
         except AttributeError:
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
             raise ModuleNotFoundError(msg, name=name) from None
-        parent_spec = parent_module.__spec__
-        child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
-        if parent_spec:
-            # Temporarily add child we are currently importing to parent's
-            # _uninitialized_submodules for circular import tracking.
-            parent_spec._uninitialized_submodules.append(child)
-        try:
-            module = _load_unlocked(spec)
-        finally:
-            if parent_spec:
-                parent_spec._uninitialized_submodules.pop()
+        module = _load_unlocked(spec)
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
+        child = name.rpartition('.')[2]
         try:
             setattr(parent_module, child, module)
         except AttributeError:
