@@ -115,31 +115,6 @@ union_subclasscheck(PyObject *self, PyObject *instance)
     Py_RETURN_FALSE;
 }
 
-static int
-is_typing_module(PyObject *obj)
-{
-    _Py_IDENTIFIER(__module__);
-    PyObject *module;
-    if (_PyObject_LookupAttrId(obj, &PyId___module__, &module) < 0) {
-        return -1;
-    }
-    int is_typing = (module != NULL &&
-                     PyUnicode_Check(module) &&
-                     _PyUnicode_EqualToASCIIString(module, "typing"));
-    Py_XDECREF(module);
-    return is_typing;
-}
-
-static int
-is_typing_name(PyObject *obj, const char *name)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, name) != 0) {
-        return 0;
-    }
-    return is_typing_module((PyObject *)type);
-}
-
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
 {
@@ -252,51 +227,12 @@ dedup_and_flatten_args(PyObject* args)
 }
 
 static int
-is_typevar(PyObject *obj)
-{
-    return is_typing_name(obj, "TypeVar");
-}
-
-static int
-is_special_form(PyObject *obj)
-{
-    return is_typing_name(obj, "_SpecialForm");
-}
-
-static int
-is_new_type(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (type != &PyFunction_Type) {
-        return 0;
-    }
-    return is_typing_module(obj);
-}
-
-// Emulates short-circuiting behavior of the ``||`` operator
-// while also checking negative values.
-#define CHECK_RES(res) { \
-    int result = res; \
-    if (result) { \
-        return result; \
-    } \
-}
-
-// Returns 1 on true, 0 on false, and -1 on error.
-static int
 is_unionable(PyObject *obj)
 {
-    if (obj == Py_None ||
+    return (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj))
-    {
-        return 1;
-    }
-    CHECK_RES(is_typevar(obj));
-    CHECK_RES(is_new_type(obj));
-    CHECK_RES(is_special_form(obj));
-    return 0;
+        _PyUnion_Check(obj));
 }
 
 static int
@@ -305,12 +241,9 @@ is_args_unionable(PyObject *args)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        int is_arg_unionable = is_unionable(arg);
-        if (is_arg_unionable <= 0) {
-            if (is_arg_unionable == 0) {
-                PyErr_Format(PyExc_TypeError,
-                             "Each union argument must be a type, got %.100R", arg);
-            }
+        if (!is_unionable(arg)) {
+            PyErr_Format(PyExc_TypeError,
+                         "Each union argument must be a type, got %.100R", arg);
             return 0;
         }
     }
@@ -320,14 +253,7 @@ is_args_unionable(PyObject *args)
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
-    int r = is_unionable(self);
-    if (r > 0) {
-        r = is_unionable(other);
-    }
-    if (r < 0) {
-        return NULL;
-    }
-    if (!r) {
+    if (!is_unionable(self) || !is_unionable(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -465,7 +391,7 @@ union_from_args(PyObject *cls, PyObject *args)
         return NULL;
     }
 
-    if (is_args_unionable(args) <= 0) {
+    if (!is_args_unionable(args)) {
         return NULL;
     }
 
