@@ -437,7 +437,7 @@ class ReferencesTestCase(TestBase):
                 return weakref.proxy(not_an_iterator)
         a = A()
 
-        msg = "Weakref referenced a non-iterator"
+        msg = "Weakref proxy referenced a non-iterator"
         with self.assertRaisesRegex(TypeError, msg):
             list(a)
 

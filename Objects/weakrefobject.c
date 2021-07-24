@@ -659,8 +659,8 @@ proxy_iternext(PyWeakReference *proxy)
     PyObject *obj = PyWeakref_GET_OBJECT(proxy);
     if (!PyIter_Check(obj)) {
         PyErr_Format(PyExc_TypeError,
-                     "Weakref referenced a non-iterator '%.200s' object",
-                     Py_TYPE(obj)->tp_name);
+            "Weakref proxy referenced a non-iterator '%.200s' object",
+            Py_TYPE(obj)->tp_name);
         return NULL;
     }
     Py_INCREF(obj);
