@@ -37,6 +37,7 @@ TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
 TESTFN_DST = TESTFN + "_DST"
 MACOS = sys.platform.startswith("darwin")
+SOLARIS = sys.platform.startswith("sunos")
 AIX = sys.platform[:3] == 'aix'
 try:
     import grp
@@ -1248,6 +1249,15 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaises(Error, shutil.copyfile, src_file, src_file)
         # Make sure file is not corrupted.
         self.assertEqual(read_file(src_file), 'foo')
+
+    @unittest.skipIf(MACOS or SOLARIS or _winapi, 'On MACOS, Solaris and Windows the errors are not confusing (though different)')
+    def test_copyfile_nonexistent_dir(self):
+        # Issue 43219
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+        self.assertRaises(FileNotFoundError, shutil.copyfile, src_file, dst)
 
 
 class TestArchives(BaseTest, unittest.TestCase):

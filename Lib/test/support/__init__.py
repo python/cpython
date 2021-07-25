@@ -105,6 +105,17 @@ class Error(Exception):
 class TestFailed(Error):
     """Test failed."""
 
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures):
+        self.msg = msg
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures)
+
+    def __str__(self):
+        return self.msg
+
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
 
@@ -980,7 +991,9 @@ def _run_suite(suite):
         else:
             err = "multiple errors occurred"
             if not verbose: err += "; run in verbose mode for details"
-        raise TestFailed(err)
+        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
+        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
+        raise TestFailedWithDetails(err, errors, failures)
 
 
 # By default, don't filter tests

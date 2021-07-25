@@ -1971,22 +1971,6 @@ sys_getandroidapilevel_impl(PyObject *module)
 }
 #endif   /* ANDROID_API_LEVEL */
 
-
-/*[clinic input]
-sys._deactivate_opcache
-
-Deactivate the opcode cache permanently
-[clinic start generated code]*/
-
-static PyObject *
-sys__deactivate_opcache_impl(PyObject *module)
-/*[clinic end generated code: output=00e20982bd012122 input=501eac146735ccf9]*/
-{
-    _PyEval_DeactivateOpCache();
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2040,7 +2024,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
-    SYS__DEACTIVATE_OPCACHE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

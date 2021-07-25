@@ -23,8 +23,6 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
-typedef struct _PyOpcache _PyOpcache;
-
 
 /* Bytecode object */
 struct PyCodeObject {
