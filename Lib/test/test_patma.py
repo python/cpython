@@ -3118,9 +3118,9 @@ class TestTracing(unittest.TestCase):
                 case _:                       # 2
                     return "default"          # 3
 
-        self._test_trace(no_default, {0, 1, 2, 3}, "go n")
-        self._test_trace(no_default, {0, 1, 2, 3} , "go x")
-        self._test_trace(no_default, {0, 1, 2, 3}, "spam")
+        self._test_trace(only_default_no_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(only_default_no_assign, {0, 1, 2, 3} , "go x")
+        self._test_trace(only_default_no_assign, {0, 1, 2, 3}, "spam")
 
     def test_default_case_traces_correctly_e(self):
         def only_default_wildcard_assign(command):  # 0
@@ -3128,9 +3128,9 @@ class TestTracing(unittest.TestCase):
                 case x:                             # 2
                     return x                        # 3
 
-        self._test_trace(no_default, {0, 1, 2, 3}, "go n")
-        self._test_trace(no_default, {0, 1, 2, 3} , "go x")
-        self._test_trace(no_default, {0, 1, 2, 3}, "spam")
+        self._test_trace(only_default_wildcard_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(only_default_wildcard_assign, {0, 1, 2, 3} , "go x")
+        self._test_trace(only_default_wildcard_assign, {0, 1, 2, 3}, "spam")
 
 if __name__ == "__main__":
     """
