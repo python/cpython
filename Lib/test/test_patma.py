@@ -4,6 +4,7 @@ import dataclasses
 import enum
 import inspect
 import unittest
+import sys
 
 
 @dataclasses.dataclass
@@ -3054,6 +3055,66 @@ class TestValueErrors(unittest.TestCase):
         self.assertIs(w, None)
         self.assertIs(y, None)
         self.assertIs(z, None)
+
+
+class TestTracing(unittest.TestCase):
+
+    def _test_trace(self, func, expected_linenos, *f_args):
+        def trace(frame, event, arg):
+            if frame.f_code.co_name == func.__name__:
+                relative_lineo = frame.f_lineno - func.__code__.co_firstlineno
+                self.assertIn(relative_lineo, expected_linenos)
+            return trace
+
+        sys.settrace(trace)
+        func(*f_args)
+        sys.settrace(None)
+
+    def test_default_case_traces_correctly_a(self):
+        def default_no_assign(command):                        # 0
+            match command.split():                             # 1
+                case ["go", direction] if direction in "nesw": # 2
+                    return f"go {direction}"                   # 3
+                case ["go", _]:                                # 4
+                    return "no go"                             # 5
+                case _:                                        # 6
+                    return "default"                           # 7
+
+        options = set(range(8))
+
+        self._test_trace(default_no_assign, options - {4,5,6,7} , "go n")
+        self._test_trace(default_no_assign, options - {3,6,7} , "go x")
+        self._test_trace(default_no_assign, options - {3,5}, "spam")
+
+    def test_default_case_traces_correctly_b(self):
+        def default_wildcard_assign(command):                  # 0
+            match command.split():                             # 1
+                case ["go", direction] if direction in "nesw": # 2
+                    return f"go {direction}"                   # 3
+                case ["go", _]:                                # 4
+                    return "no go"                             # 5
+                case x:                                        # 6
+                    return x                                   # 7
+
+        options = set(range(8))
+
+        self._test_trace(default_wildcard_assign, options - {4,5,6,7} , "go n")
+        self._test_trace(default_wildcard_assign, options - {3,6,7} , "go x")
+        self._test_trace(default_wildcard_assign, options - {3,5}, "spam")
+
+    def test_default_case_traces_correctly_c(self):
+        def no_default(command):                               # 0
+            match command.split():                             # 1
+                case ["go", direction] if direction in "nesw": # 2
+                    return f"go {direction}"                   # 3
+                case ["go", _]:                                # 4
+                    return "no go"                             # 5
+
+        options = set(range(6))
+
+        self._test_trace(no_default, options - {4,5,6,7} , "go n")
+        self._test_trace(no_default, options - {3} , "go x")
+        self._test_trace(no_default, options - {3,5}, "spam")
 
 
 if __name__ == "__main__":
