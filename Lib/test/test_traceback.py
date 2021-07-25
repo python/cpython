@@ -434,6 +434,29 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
 
+    def test_caret_multiline_expression_bin_op(self):
+        # Make sure no carets are printed for expressions spanning multiple
+        # lines.
+        def f_with_multiline():
+            return (
+                1 /
+                0 +
+                2
+            )
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    1 /\n'
+            '    ^^^'
+        )
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
     def test_caret_for_binary_operators(self):
         def f_with_binary_operator():
             divisor = 20
