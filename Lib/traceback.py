@@ -4,6 +4,7 @@ import collections
 import itertools
 import linecache
 import sys
+from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -463,19 +464,20 @@ class StackSummary(list):
 
             stripped_characters = len(frame._original_line) - len(frame.line.lstrip())
             if (
-                frame.end_lineno == frame.lineno
-                and frame.colno is not None
+                frame.colno is not None
                 and frame.end_colno is not None
             ):
                 colno = _byte_offset_to_character_offset(frame._original_line, frame.colno)
                 end_colno = _byte_offset_to_character_offset(frame._original_line, frame.end_colno)
 
-                try:
-                    anchors = _extract_caret_anchors_from_line_segment(
-                        frame._original_line[colno - 1:end_colno - 1]
-                    )
-                except Exception:
-                    anchors = None
+                anchors = None
+                if frame.lineno == frame.end_lineno:
+                    with suppress(Exception):
+                        anchors = _extract_caret_anchors_from_line_segment(
+                            frame._original_line[colno - 1:end_colno - 1]
+                        )
+                else:
+                    end_colno = stripped_characters + len(frame.line.strip())
 
                 row.append('    ')
                 row.append(' ' * (colno - stripped_characters))

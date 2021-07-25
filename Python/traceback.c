@@ -720,11 +720,11 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
                               &end_line, &end_col_byte_offset)) {
         goto done;
     }
-    if (start_line != end_line) {
-        goto done;
-    }
 
-    if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
+    if (start_line < 0 || end_line < 0
+        || start_col_byte_offset < 0
+        || end_col_byte_offset < 0)
+    {
         goto done;
     }
 
@@ -762,11 +762,30 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     char *primary_error_char = "^";
     char *secondary_error_char = primary_error_char;
 
-    int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
-                                        &left_end_offset, &right_start_offset,
-                                        &primary_error_char, &secondary_error_char);
-    if (res < 0 && ignore_source_errors() < 0) {
-        goto done;
+    if (start_line == end_line) {
+        int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
+                                            &left_end_offset, &right_start_offset,
+                                            &primary_error_char, &secondary_error_char);
+        if (res < 0 && ignore_source_errors() < 0) {
+            goto done;
+        }
+    }
+    else {
+        // If this is a multi-line expression, then we will highlight until
+        // the last non-whitespace character.
+        const char *source_line_str = PyUnicode_AsUTF8(source_line);
+        if (!source_line_str) {
+            goto done;
+        }
+
+        Py_ssize_t i = PyUnicode_GET_LENGTH(source_line);
+        while (--i >= 0) {
+            if (!IS_WHITESPACE(source_line_str[i])) {
+                break;
+            }
+        }
+
+        end_offset = i + 1;
     }
 
     err = print_error_location_carets(f, truncation, start_offset, end_offset,
