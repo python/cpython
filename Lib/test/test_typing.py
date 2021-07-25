@@ -3696,34 +3696,37 @@ class NewTypeTests:
         for f in self.module._cleanups:
             f()
 
-    def setUp(self):
-        sys.modules['typing'] = self.module
+    @classmethod
+    def setUpClass(cls):
+        sys.modules['typing'] = cls.module
+        global UserId
+        UserId = cls.module.NewType('UserId', int)
+        cls.UserName = cls.module.NewType(cls.__qualname__ + '.UserName', str)
+
+    @classmethod
+    def tearDownClass(cls):
+        global UserId
+        del UserId
+        del cls.UserName
+        sys.modules['typing'] = typing
 
     def tearDown(self):
         self.cleanup()
-        sys.modules['typing'] = typing
 
     def test_basic(self):
-        UserId = self.module.NewType('UserId', int)
-        UserName = self.module.NewType('UserName', str)
         self.assertIsInstance(UserId(5), int)
-        self.assertIsInstance(UserName('Joe'), str)
+        self.assertIsInstance(self.UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
     def test_errors(self):
-        UserId = self.module.NewType('UserId', int)
-        UserName = self.module.NewType('UserName', str)
         with self.assertRaises(TypeError):
             issubclass(UserId, int)
         with self.assertRaises(TypeError):
-            class D(UserName):
+            class D(UserId):
                 pass
 
     def test_or(self):
-        UserId = self.module.NewType('UserId', int)
-        UserName = self.module.NewType('UserName', str)
-
-        for cls in (int, UserName):
+        for cls in (int, self.UserName):
             with self.subTest(cls=cls):
                 self.assertEqual(UserId | cls, self.module.Union[UserId, cls])
                 self.assertEqual(cls | UserId, self.module.Union[cls, UserId])
@@ -3732,16 +3735,38 @@ class NewTypeTests:
                 self.assertEqual(self.module.get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
-        UserId = self.module.NewType('UserId', int)
-
         self.assertEqual(UserId.__name__, 'UserId')
         self.assertEqual(UserId.__qualname__, 'UserId')
         self.assertEqual(UserId.__module__, __name__)
+        self.assertEqual(UserId.__supertype__, int)
+
+        UserName = self.UserName
+        self.assertEqual(UserName.__name__, 'UserName')
+        self.assertEqual(UserName.__qualname__,
+                         self.__class__.__qualname__ + '.UserName')
+        self.assertEqual(UserName.__module__, __name__)
+        self.assertEqual(UserName.__supertype__, str)
 
     def test_repr(self):
-        UserId = self.module.NewType('UserId', int)
-
         self.assertEqual(repr(UserId), f'{__name__}.UserId')
+        self.assertEqual(repr(self.UserName),
+                         f'{__name__}.{self.__class__.__qualname__}.UserName')
+
+    def test_pickle(self):
+        UserAge = self.module.NewType('UserAge', float)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.dumps(UserId, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, UserId)
+
+                pickled = pickle.dumps(self.UserName, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, self.UserName)
+
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(UserAge, proto)
+
 
 class NewTypePythonTests(NewTypeTests, BaseTestCase):
     module = py_typing
@@ -4653,9 +4678,6 @@ class AllTests(BaseTestCase):
             if k in actual_all or (
                 # avoid private names
                 not k.startswith('_') and
-                # avoid things in the io / re typing submodules
-                k not in typing.io.__all__ and
-                k not in typing.re.__all__ and
                 k not in {'io', 're'} and
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and

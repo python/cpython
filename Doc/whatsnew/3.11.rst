@@ -201,8 +201,8 @@ math
 os
 --
 
-* On Windows, :func:`os.urandom`: uses BCryptGenRandom API instead of CryptGenRandom API
-  which is deprecated from Microsoft Windows API.
+* On Windows, :func:`os.urandom` uses ``BCryptGenRandom()`` instead of ``CryptGenRandom()``
+  which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 

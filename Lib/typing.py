@@ -329,7 +329,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
         if isinstance(t, GenericAlias):
             return GenericAlias(t.__origin__, ev_args)
         if isinstance(t, types.Union):
-            return types.Union._from_args(ev_args)
+            return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
     return t
@@ -382,6 +382,12 @@ class _SpecialForm(_Final, _root=True):
 
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
+
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
 
     def __instancecheck__(self, obj):
         raise TypeError(f"{self} cannot be used with isinstance()")
@@ -1808,7 +1814,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return types.Union._from_args(stripped_args)
+        return functools.reduce(operator.or_, stripped_args)
 
     return t
 
@@ -2385,13 +2391,18 @@ class NewType:
     __call__ = _idfunc
 
     def __init__(self, name, tp):
-        self.__name__ = name
         self.__qualname__ = name
+        if '.' in name:
+            name = name.rpartition('.')[-1]
+        self.__name__ = name
         self.__module__ = _callee(default='typing')
         self.__supertype__ = tp
 
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
+
+    def __reduce__(self):
+        return self.__qualname__
 
     def __or__(self, other):
         return Union[self, other]
