@@ -3,8 +3,8 @@ import collections
 import dataclasses
 import enum
 import inspect
-import unittest
 import sys
+import unittest
 
 
 @dataclasses.dataclass
