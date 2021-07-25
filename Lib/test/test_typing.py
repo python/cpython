@@ -33,8 +33,13 @@ import typing
 import weakref
 import types
 
+from test.support import import_helper
 from test import mod_generics_cache
 from test import _typed_dict_helper
+
+
+py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
+c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
 
 
 class BaseTestCase(TestCase):
@@ -3683,23 +3688,103 @@ class TypeTests(BaseTestCase):
         assert foo(None) is None
 
 
-class NewTypeTests(BaseTestCase):
+class TestModules(TestCase):
+    func_names = ['_idfunc']
+
+    def test_py_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(py_typing, fname).__module__, 'typing')
+
+    @skipUnless(c_typing, 'requires _typing')
+    def test_c_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(c_typing, fname).__module__, '_typing')
+
+
+class NewTypeTests:
+    def cleanup(self):
+        for f in self.module._cleanups:
+            f()
+
+    @classmethod
+    def setUpClass(cls):
+        sys.modules['typing'] = cls.module
+        global UserId
+        UserId = cls.module.NewType('UserId', int)
+        cls.UserName = cls.module.NewType(cls.__qualname__ + '.UserName', str)
+
+    @classmethod
+    def tearDownClass(cls):
+        global UserId
+        del UserId
+        del cls.UserName
+        sys.modules['typing'] = typing
+
+    def tearDown(self):
+        self.cleanup()
 
     def test_basic(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         self.assertIsInstance(UserId(5), int)
-        self.assertIsInstance(UserName('Joe'), str)
+        self.assertIsInstance(self.UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
     def test_errors(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         with self.assertRaises(TypeError):
             issubclass(UserId, int)
         with self.assertRaises(TypeError):
-            class D(UserName):
+            class D(UserId):
                 pass
+
+    def test_or(self):
+        for cls in (int, self.UserName):
+            with self.subTest(cls=cls):
+                self.assertEqual(UserId | cls, self.module.Union[UserId, cls])
+                self.assertEqual(cls | UserId, self.module.Union[cls, UserId])
+
+                self.assertEqual(self.module.get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(self.module.get_args(cls | UserId), (cls, UserId))
+
+    def test_special_attrs(self):
+        self.assertEqual(UserId.__name__, 'UserId')
+        self.assertEqual(UserId.__qualname__, 'UserId')
+        self.assertEqual(UserId.__module__, __name__)
+        self.assertEqual(UserId.__supertype__, int)
+
+        UserName = self.UserName
+        self.assertEqual(UserName.__name__, 'UserName')
+        self.assertEqual(UserName.__qualname__,
+                         self.__class__.__qualname__ + '.UserName')
+        self.assertEqual(UserName.__module__, __name__)
+        self.assertEqual(UserName.__supertype__, str)
+
+    def test_repr(self):
+        self.assertEqual(repr(UserId), f'{__name__}.UserId')
+        self.assertEqual(repr(self.UserName),
+                         f'{__name__}.{self.__class__.__qualname__}.UserName')
+
+    def test_pickle(self):
+        UserAge = self.module.NewType('UserAge', float)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.dumps(UserId, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, UserId)
+
+                pickled = pickle.dumps(self.UserName, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, self.UserName)
+
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(UserAge, proto)
+
+
+class NewTypePythonTests(NewTypeTests, BaseTestCase):
+    module = py_typing
+
+
+@skipUnless(c_typing, 'requires _typing')
+class NewTypeCTests(NewTypeTests, BaseTestCase):
+    module = c_typing
 
 
 class NamedTupleTests(BaseTestCase):
@@ -4508,6 +4593,67 @@ class TypeGuardTests(BaseTestCase):
             issubclass(int, TypeGuard)
 
 
+class SpecialAttrsTests(BaseTestCase):
+    def test_special_attrs(self):
+        cls_to_check = (
+            # ABC classes
+            typing.AbstractSet,
+            typing.AsyncContextManager,
+            typing.AsyncGenerator,
+            typing.AsyncIterable,
+            typing.AsyncIterator,
+            typing.Awaitable,
+            typing.ByteString,
+            typing.Callable,
+            typing.ChainMap,
+            typing.Collection,
+            typing.Container,
+            typing.ContextManager,
+            typing.Coroutine,
+            typing.Counter,
+            typing.DefaultDict,
+            typing.Deque,
+            typing.Dict,
+            typing.FrozenSet,
+            typing.Generator,
+            typing.Hashable,
+            typing.ItemsView,
+            typing.Iterable,
+            typing.Iterator,
+            typing.KeysView,
+            typing.List,
+            typing.Mapping,
+            typing.MappingView,
+            typing.MutableMapping,
+            typing.MutableSequence,
+            typing.MutableSet,
+            typing.OrderedDict,
+            typing.Reversible,
+            typing.Sequence,
+            typing.Set,
+            typing.Sized,
+            typing.Tuple,
+            typing.Type,
+            typing.ValuesView,
+            # Special Forms
+            typing.Any,
+            typing.NoReturn,
+            typing.ClassVar,
+            typing.Final,
+            typing.Union,
+            typing.Optional,
+            typing.Literal,
+            typing.TypeAlias,
+            typing.Concatenate,
+            typing.TypeGuard,
+        )
+
+        for cls in cls_to_check:
+            with self.subTest(cls=cls):
+                self.assertEqual(cls.__name__, cls._name)
+                self.assertEqual(cls.__qualname__, cls._name)
+                self.assertEqual(cls.__module__, 'typing')
+
 class AllTests(BaseTestCase):
     """Tests for __all__."""
 
@@ -4542,9 +4688,6 @@ class AllTests(BaseTestCase):
             if k in actual_all or (
                 # avoid private names
                 not k.startswith('_') and
-                # avoid things in the io / re typing submodules
-                k not in typing.io.__all__ and
-                k not in typing.re.__all__ and
                 k not in {'io', 're'} and
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and

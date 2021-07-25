@@ -121,6 +121,31 @@ class TracebackCases(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    def test_recursion_error_during_traceback(self):
+        code = textwrap.dedent("""
+                import sys
+                from weakref import ref
+
+                sys.setrecursionlimit(15)
+
+                def f():
+                    ref(lambda: 0, [])
+                    f()
+
+                try:
+                    f()
+                except RecursionError:
+                    pass
+        """)
+        try:
+            with open(TESTFN, 'w') as f:
+                f.write(code)
+
+            rc, _, _ = assert_python_ok(TESTFN)
+            self.assertEqual(rc, 0)
+        finally:
+            unlink(TESTFN)
+
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
@@ -482,6 +507,28 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
             "    1 $ 0 / 1 / 2\n"
             '    ^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_traceback_very_long_line(self):
+        source = "a" * 256
+        bytecode = compile(source, TESTFN, "exec")
+
+        with open(TESTFN, "w") as file:
+            file.write(source)
+        self.addCleanup(unlink, TESTFN)
+
+        func = partial(exec, bytecode)
+        result_lines = self.get_exception(func)
+
+        lineno_f = bytecode.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
+            f'    {source}\n'
         )
         self.assertEqual(result_lines, expected_error.splitlines())
 

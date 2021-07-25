@@ -957,6 +957,8 @@ class PyBuildExt(build_ext):
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
+        # _typing module
+        self.add(Extension("_typing", ["_typingmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
