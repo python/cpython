@@ -3108,11 +3108,9 @@ class TestTracing(unittest.TestCase):
                 case ["go", _]:                                # 4
                     return "no go"                             # 5
 
-        options = set(range(6))
-
-        self._test_trace(no_default, options - {4,5,6,7} , "go n")
-        self._test_trace(no_default, options - {3} , "go x")
-        self._test_trace(no_default, options - {3,5}, "spam")
+        self._test_trace(no_default, {0, 1, 2, 3}, "go n")
+        self._test_trace(no_default, {0, 1, 2, 4, 5}, "go x")
+        self._test_trace(no_default, {0, 1, 2, 4}, "spam")
 
 
 if __name__ == "__main__":
