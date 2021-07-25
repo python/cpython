@@ -6576,17 +6576,25 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
+        // If the pattern fails to match, we want the line number of the
+        // cleanup to be associated with the failed pattern, not the last line
+        // of the body
+        SET_LOC(c, m->pattern);
         RETURN_IF_FALSE(emit_and_reset_fail_pop(c, pc));
     }
     if (has_default) {
-        if (cases == 1) {
-            // No matches. Done with the subject:
-            ADDOP(c, POP_TOP);
-        }
         // A trailing "case _" is common, and lets us save a bit of redundant
         // pushing and popping in the loop above:
         m = asdl_seq_GET(s->v.Match.cases, cases - 1);
         SET_LOC(c, m->pattern);
+        if (cases == 1) {
+            // No matches. Done with the subject:
+            ADDOP(c, POP_TOP);
+        }
+        else {
+            // Show line coverage for default case (it doesn't create bytecode)
+            ADDOP(c, NOP);
+        }
         if (m->guard) {
             RETURN_IF_FALSE(compiler_jump_if(c, m->guard, end, 0));
         }
