@@ -5174,6 +5174,9 @@ class BaseFileTest(BaseTest):
                         msg="Log file %r does not exist" % filename)
         self.rmfiles.append(filename)
 
+    def next_rec(self):
+        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
+                                 self.next_message(), None, None, None)
 
 class FileHandlerTest(BaseFileTest):
     def test_delay(self):
@@ -5186,11 +5189,18 @@ class FileHandlerTest(BaseFileTest):
         self.assertTrue(os.path.exists(self.fn))
         fh.close()
 
-class RotatingFileHandlerTest(BaseFileTest):
-    def next_rec(self):
-        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
-                                 self.next_message(), None, None, None)
+    def test_emit_after_closing_in_write_mode(self):
+        # Issue #42378
+        os.unlink(self.fn)
+        fh = logging.FileHandler(self.fn, encoding='utf-8', mode='w')
+        fh.setFormatter(logging.Formatter('%(message)s'))
+        fh.emit(self.next_rec())    # '1'
+        fh.close()
+        fh.emit(self.next_rec())    # '2'
+        with open(self.fn) as fp:
+            self.assertEqual(fp.read().strip(), '1')
 
+class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):
         # If maxbytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(
