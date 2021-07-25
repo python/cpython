@@ -3082,11 +3082,9 @@ class TestTracing(unittest.TestCase):
                 case _:                                        # 6
                     return "default"                           # 7
 
-        options = set(range(8))
-
-        self._test_trace(default_no_assign, options - {4,5,6,7} , "go n")
-        self._test_trace(default_no_assign, options - {3,6,7} , "go x")
-        self._test_trace(default_no_assign, options - {3,5}, "spam")
+        self._test_trace(default_no_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(default_no_assign, {0, 1, 2, 4, 5}, "go x")
+        self._test_trace(default_no_assign, {0, 1, 2, 4, 6, 7}, "spam")
 
     def test_default_case_traces_correctly_b(self):
         def default_wildcard_assign(command):                  # 0
