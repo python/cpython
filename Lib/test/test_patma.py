@@ -3,6 +3,7 @@ import collections
 import dataclasses
 import enum
 import inspect
+import sys
 import unittest
 
 
@@ -3055,6 +3056,81 @@ class TestValueErrors(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+
+class TestTracing(unittest.TestCase):
+
+    def _test_trace(self, func, expected_linenos, *f_args):
+        actual_linenos = set()
+        def trace(frame, event, arg):
+            if frame.f_code.co_name == func.__name__:
+                relative_lineno = frame.f_lineno - func.__code__.co_firstlineno
+                actual_linenos.add(relative_lineno)
+            return trace
+
+        sys.settrace(trace)
+        func(*f_args)
+        sys.settrace(None)
+        self.assertSetEqual(actual_linenos, expected_linenos)
+
+    def test_default_case_traces_correctly_a(self):
+        def default_no_assign(command):                        # 0
+            match command.split():                             # 1
+                case ["go", direction] if direction in "nesw": # 2
+                    return f"go {direction}"                   # 3
+                case ["go", _]:                                # 4
+                    return "no go"                             # 5
+                case _:                                        # 6
+                    return "default"                           # 7
+
+        self._test_trace(default_no_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(default_no_assign, {0, 1, 2, 4, 5}, "go x")
+        self._test_trace(default_no_assign, {0, 1, 2, 4, 6, 7}, "spam")
+
+    def test_default_case_traces_correctly_b(self):
+        def default_wildcard_assign(command):                  # 0
+            match command.split():                             # 1
+                case ["go", direction] if direction in "nesw": # 2
+                    return f"go {direction}"                   # 3
+                case ["go", _]:                                # 4
+                    return "no go"                             # 5
+                case x:                                        # 6
+                    return x                                   # 7
+
+        self._test_trace(default_wildcard_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(default_wildcard_assign, {0, 1, 2, 4, 5}, "go x")
+        self._test_trace(default_wildcard_assign, {0, 1, 2, 4, 6, 7}, "spam")
+
+    def test_default_case_traces_correctly_c(self):
+        def no_default(command):                               # 0
+            match command.split():                             # 1
+                case ["go", direction] if direction in "nesw": # 2
+                    return f"go {direction}"                   # 3
+                case ["go", _]:                                # 4
+                    return "no go"                             # 5
+
+        self._test_trace(no_default, {0, 1, 2, 3}, "go n")
+        self._test_trace(no_default, {0, 1, 2, 4, 5}, "go x")
+        self._test_trace(no_default, {0, 1, 2, 4}, "spam")
+
+    def test_default_case_traces_correctly_d(self):
+        def only_default_no_assign(command):  # 0
+            match command.split():            # 1
+                case _:                       # 2
+                    return "default"          # 3
+
+        self._test_trace(only_default_no_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(only_default_no_assign, {0, 1, 2, 3} , "go x")
+        self._test_trace(only_default_no_assign, {0, 1, 2, 3}, "spam")
+
+    def test_default_case_traces_correctly_e(self):
+        def only_default_wildcard_assign(command):  # 0
+            match command.split():                  # 1
+                case x:                             # 2
+                    return x                        # 3
+
+        self._test_trace(only_default_wildcard_assign, {0, 1, 2, 3}, "go n")
+        self._test_trace(only_default_wildcard_assign, {0, 1, 2, 3} , "go x")
+        self._test_trace(only_default_wildcard_assign, {0, 1, 2, 3}, "spam")
 
 if __name__ == "__main__":
     """
