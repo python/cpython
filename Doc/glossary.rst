@@ -451,9 +451,9 @@ Glossary
       for best practices on working with annotations.
 
    __future__
-      A :ref:`future statement <future>`, "from __future__ import *feature* 
-      ...", directs the compiler to compile the current module using syntax or 
-      semantics that will become standard in a future release of Python. The 
+      A :ref:`future statement <future>`, "from __future__ import *feature*
+      ...", directs the compiler to compile the current module using syntax or
+      semantics that will become standard in a future release of Python. The
       :mod:`__future__` module documents the possible values of *feature*.
 
       By importing the :mod:`__future__` module and evaluating its variables,
