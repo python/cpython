@@ -1,0 +1,4 @@
+Fixes the issue with log file being overwritten when
+:class:`logging.FileHandler` is used in :mod:`atexit` with *filemode* set to
+``'w'``. Note this will cause the message in *atexit* not being logged if
+the log stream is already closed due to shutdown of logging.
