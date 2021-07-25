@@ -3060,15 +3060,17 @@ class TestValueErrors(unittest.TestCase):
 class TestTracing(unittest.TestCase):
 
     def _test_trace(self, func, expected_linenos, *f_args):
+        actual_linenos = set()
         def trace(frame, event, arg):
             if frame.f_code.co_name == func.__name__:
-                relative_lineo = frame.f_lineno - func.__code__.co_firstlineno
-                self.assertIn(relative_lineo, expected_linenos)
+                relative_lineno = frame.f_lineno - func.__code__.co_firstlineno
+                actual_linenos.add(relative_lineno)
             return trace
 
         sys.settrace(trace)
         func(*f_args)
         sys.settrace(None)
+        self.assertSetEqual(actual_linenos, expected_linenos)
 
     def test_default_case_traces_correctly_a(self):
         def default_no_assign(command):                        # 0
