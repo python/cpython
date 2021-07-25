@@ -5190,7 +5190,7 @@ class FileHandlerTest(BaseFileTest):
         fh.close()
 
     def test_emit_after_closing_in_write_mode(self):
-        # Issue 42378
+        # Issue #42378
         os.unlink(self.fn)
         fh = logging.FileHandler(self.fn, encoding='utf-8', mode='w')
         fh.setFormatter(logging.Formatter('%(message)s'))
@@ -5201,10 +5201,6 @@ class FileHandlerTest(BaseFileTest):
             self.assertEqual(fp.read().strip(), '1')
 
 class RotatingFileHandlerTest(BaseFileTest):
-    def next_rec(self):
-        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
-                                 self.next_message(), None, None, None)
-
     def test_should_not_rollover(self):
         # If maxbytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(

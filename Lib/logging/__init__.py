@@ -1190,6 +1190,8 @@ class FileHandler(StreamHandler):
             finally:
                 # Issue #19523: call unconditionally to
                 # prevent a handler leak when delay is set
+                # Also see Issue #42378: we also rely on
+                # self._closed being set to True there
                 StreamHandler.close(self)
         finally:
             self.release()
@@ -1209,6 +1211,9 @@ class FileHandler(StreamHandler):
 
         If the stream was not opened because 'delay' was specified in the
         constructor, open it before calling the superclass's emit.
+
+        If stream is not open, current mode is 'w' and `_closed=True`, record
+        will not be emitted (see Issue #42378).
         """
         if self.stream is None:
             if self.mode != 'w' or not self._closed:
