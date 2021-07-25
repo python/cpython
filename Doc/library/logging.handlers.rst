@@ -117,6 +117,9 @@ sends logging output to a disk file.  It inherits the output functionality from
 
       Outputs the record to the file.
 
+      Note that if the file was closed due to logging shutdown at exit and the file
+      mode is 'w', the record will not be emitted (see :issue:`42378`).
+
 
 .. _null-handler:
 
