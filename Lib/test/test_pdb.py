@@ -260,7 +260,9 @@ def test_pdb_breakpoint_commands():
     ...     'tbreak 5',
     ...     'continue',  # will stop at temporary breakpoint
     ...     'break',     # make sure breakpoint is gone
-    ...     'commands 10',
+    ...     'commands 10',  # out of range
+    ...     'commands a',   # display help
+    ...     'commands 4',   # already deleted
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -322,6 +324,12 @@ def test_pdb_breakpoint_commands():
     (Pdb) break
     (Pdb) commands 10
     *** Breakpoint number 10 out of range
+    (Pdb) commands a
+    *** Usage: commands [bnum]
+            ...
+            end
+    (Pdb) commands 4
+    *** Breakpoint 4 already deleted
     (Pdb) continue
     3
     4
