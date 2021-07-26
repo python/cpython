@@ -1,7 +1,7 @@
 .. _tut-brieftour:
 
 **********************************
-Brief Tour of the Standard Library
+标准库简介
 **********************************
 
 

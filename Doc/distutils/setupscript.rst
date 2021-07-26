@@ -1,7 +1,7 @@
 .. _setup-script:
 
 ************************
-Writing the Setup Script
+写安装脚本
 ************************
 
 .. include:: ./_setuptools_disclaimer.rst

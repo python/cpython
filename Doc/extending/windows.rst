@@ -4,7 +4,7 @@
 .. _building-on-windows:
 
 ****************************************
-Building C and C++ Extensions on Windows
+在Window 构建 C 和 C++ 扩展 
 ****************************************
 
 This chapter briefly explains how to create a Windows extension module for

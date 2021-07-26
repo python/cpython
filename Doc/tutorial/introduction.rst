@@ -13,8 +13,8 @@ Python 速览
 几个例子：
 
    # this is the first comment
-   spam = 1  # and this is the second comment
-             # ... and now a third!
+   spam = 1 # and this is the second comment
+   # ... and now a third!
    text = "# This is not a comment because it's inside quotes."
 
 
@@ -150,8 +150,8 @@ Python 还内置支持 :ref:`complex numbers <typesnumeric>`, 使用后缀 ``j``
 
    print("""\
    Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
+   -h                        Display this usage message
+   -H hostname               Hostname to connect to
    """)
 
 输出如下 (注意，第一行没有换行):
@@ -268,8 +268,8 @@ Python 还内置支持 :ref:`complex numbers <typesnumeric>`, 使用后缀 ``j``
    >>> word[42:]
    ''
 
-Python 字符串不能修改 --- 它们 :term:`immutable`的。
-因此，为字符串中某个索引位置赋值会报错::
+   Python 字符串不能修改 --- 它们 :term:`immutable`的。
+   因此，为字符串中某个索引位置赋值会报错::
 
    >>> word[0] = 'J'
    Traceback (most recent call last):

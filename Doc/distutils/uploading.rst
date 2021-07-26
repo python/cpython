@@ -1,7 +1,7 @@
 :orphan:
 
 ***************************************
-Uploading Packages to the Package Index
+上传包去包索引平台
 ***************************************
 
 References to up to date PyPI documentation can be found at

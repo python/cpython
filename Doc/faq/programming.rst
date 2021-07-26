@@ -1,7 +1,7 @@
 :tocdepth: 2
 
 ===============
-Programming FAQ
+ 编程问答
 ===============
 
 .. only:: html

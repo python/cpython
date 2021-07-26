@@ -1,7 +1,7 @@
 .. _extending-distutils:
 
 *******************
-Extending Distutils
+扩展Distutils
 *******************
 
 .. include:: ./_setuptools_disclaimer.rst

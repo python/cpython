@@ -1,7 +1,7 @@
 :tocdepth: 2
 
 ==========================
-Graphic User Interface FAQ
+图形用户界面问答
 ==========================
 
 .. only:: html

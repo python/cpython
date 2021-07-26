@@ -3,7 +3,7 @@
 .. _defining-new-types:
 
 **********************************
-Defining Extension Types: Tutorial
+定义扩展类型: 培训
 **********************************
 
 .. sectionauthor:: Michael Hudson <mwh@python.net>

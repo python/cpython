@@ -1,7 +1,7 @@
 .. _api-reference:
 
 *************
-API Reference
+API参考
 *************
 
 .. seealso::

@@ -1,4 +1,4 @@
-Python Documentation README
+Python 文档 README
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This directory contains the reStructuredText (reST) sources to the Python
@@ -11,7 +11,7 @@ both style and markup, is available in the "`Documenting Python
 developers guide.
 
 
-Building the docs
+构建该文档
 =================
 
 The documentation is built with several tools which are not included in this
@@ -25,7 +25,7 @@ tree but are maintained separately and are available from
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
 
-Using make
+适应make
 ----------
 
 To get started on UNIX, you can create a virtual environment with the command ::

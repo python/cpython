@@ -1,5 +1,5 @@
 ****************************
-  What's New In Python 3.4
+  Python 3.4有什么新变化
 ****************************
 
 :Author: R. David Murray <rdmurray@bitdance.com> (Editor)

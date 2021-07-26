@@ -1,5 +1,5 @@
 ****************************
-  What's New in Python 2.0
+  Python 2.0有什么新变化
 ****************************
 
 :Author: A.M. Kuchling and Moshe Zadka

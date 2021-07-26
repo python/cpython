@@ -1,7 +1,7 @@
 .. _tut-io:
 
 ****************
-Input and Output
+输入输出
 ****************
 
 There are several ways to present the output of a program; data can be printed

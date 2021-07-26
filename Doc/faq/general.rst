@@ -1,7 +1,7 @@
 :tocdepth: 2
 
 ==================
-General Python FAQ
+一般Python 问答
 ==================
 
 .. only:: html

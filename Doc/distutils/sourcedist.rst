@@ -1,7 +1,7 @@
 .. _source-dist:
 
 ******************************
-Creating a Source Distribution
+创建源码发布
 ******************************
 
 .. include:: ./_setuptools_disclaimer.rst

@@ -1,7 +1,7 @@
 .. _pyporting-howto:
 
 *********************************
-Porting Python 2 Code to Python 3
+ Python 2 代码转成 Python 3
 *********************************
 
 :author: Brett Cannon

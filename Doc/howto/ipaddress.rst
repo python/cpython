@@ -5,7 +5,7 @@
 .. _ipaddress-howto:
 
 ***************************************
-An introduction to the ipaddress module
+ipaddress 模块介绍
 ***************************************
 
 :author: Peter Moody

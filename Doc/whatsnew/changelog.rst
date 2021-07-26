@@ -1,7 +1,7 @@
 .. _changelog:
 
 +++++++++
-Changelog
+更新日志
 +++++++++
 
 .. miscnews:: ../build/NEWS

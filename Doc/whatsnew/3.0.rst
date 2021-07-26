@@ -1,5 +1,5 @@
 ****************************
-  What's New In Python 3.0
+  Python 3.0有什么新变化
 ****************************
 
 .. XXX Add trademark info for Apple, Microsoft.
@@ -898,19 +898,19 @@ Porting To Python 3.0
 For porting existing Python 2.5 or 2.6 source code to Python 3.0, the
 best strategy is the following:
 
-0. (Prerequisite:) Start with excellent test coverage.
+1. (Prerequisite:) Start with excellent test coverage.
 
-1. Port to Python 2.6.  This should be no more work than the average
+2. Port to Python 2.6.  This should be no more work than the average
    port from Python 2.x to Python 2.(x+1).  Make sure all your tests
    pass.
 
-2. (Still using 2.6:) Turn on the :option:`!-3` command line switch.
+3. (Still using 2.6:) Turn on the :option:`!-3` command line switch.
    This enables warnings about features that will be removed (or
    change) in 3.0.  Run your test suite again, and fix code that you
    get warnings about until there are no warnings left, and all your
    tests still pass.
 
-3. Run the ``2to3`` source-to-source translator over your source code
+4. Run the ``2to3`` source-to-source translator over your source code
    tree.  (See :ref:`2to3-reference` for more on this tool.)  Run the
    result of the translation under Python 3.0.  Manually fix up any
    remaining issues, fixing problems until all tests pass again.

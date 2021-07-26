@@ -1,5 +1,5 @@
 ****************************
-  What's New In Python 3.6
+  Python 3.6有什么新变化
 ****************************
 
 :Editors: Elvis Pranskevichus <elvis@magic.io>, Yury Selivanov <yury@magic.io>
