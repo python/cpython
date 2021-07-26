@@ -1147,7 +1147,7 @@ class NTEventLogHandler(logging.Handler):
 
 class HTTPHandler(logging.Handler):
     """
-    A class which sends records to a Web server, using either GET or
+    A class which sends records to a web server, using either GET or
     POST semantics.
     """
     def __init__(self, host, url, method="GET", secure=False, credentials=None,
@@ -1196,7 +1196,7 @@ class HTTPHandler(logging.Handler):
         """
         Emit a record.
 
-        Send the record to the Web server as a percent-encoded dictionary
+        Send the record to the web server as a percent-encoded dictionary
         """
         try:
             import urllib.parse
