@@ -12,9 +12,11 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import textwrap
 
+import os
+import textwrap
 import traceback
+from functools import partial
 
 
 test_code = namedtuple('code', ['co_filename', 'co_name'])
@@ -116,6 +118,31 @@ class TracebackCases(unittest.TestCase):
             self.assertIn(b'line 4, in <module>', lines[1])
             self.assertEqual(lines[2], b'    x = 1 / 0')
             self.assertEqual(lines[3], b'ZeroDivisionError: division by zero')
+        finally:
+            unlink(TESTFN)
+
+    def test_recursion_error_during_traceback(self):
+        code = textwrap.dedent("""
+                import sys
+                from weakref import ref
+
+                sys.setrecursionlimit(15)
+
+                def f():
+                    ref(lambda: 0, [])
+                    f()
+
+                try:
+                    f()
+                except RecursionError:
+                    pass
+        """)
+        try:
+            with open(TESTFN, 'w') as f:
+                f.write(code)
+
+            rc, _, _ = assert_python_ok(TESTFN)
+            self.assertEqual(rc, 0)
         finally:
             unlink(TESTFN)
 
@@ -405,6 +432,142 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
+
+    def test_caret_for_binary_operators(self):
+        def f_with_binary_operator():
+            divisor = 20
+            return 10 + divisor / 0 + 30
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    return 10 + divisor / 0 + 30\n'
+            '                ~~~~~~~~^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_two_char(self):
+        def f_with_binary_operator():
+            divisor = 20
+            return 10 + divisor // 0 + 30
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    return 10 + divisor // 0 + 30\n'
+            '                ~~~~~~~~^^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript(self):
+        def f_with_subscript():
+            some_dict = {'x': {'y': None}}
+            return some_dict['x']['y']['z']
+
+        lineno_f = f_with_subscript.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
+            "    return some_dict['x']['y']['z']\n"
+            '           ~~~~~~~~~~~~~~~~~~~^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_traceback_specialization_with_syntax_error(self):
+        bytecode = compile("1 / 0 / 1 / 2\n", TESTFN, "exec")
+
+        with open(TESTFN, "w") as file:
+            # make the file's contents invalid
+            file.write("1 $ 0 / 1 / 2\n")
+        self.addCleanup(unlink, TESTFN)
+
+        func = partial(exec, bytecode)
+        result_lines = self.get_exception(func)
+
+        lineno_f = bytecode.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
+            "    1 $ 0 / 1 / 2\n"
+            '    ^^^^^\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_traceback_very_long_line(self):
+        source = "a" * 256
+        bytecode = compile(source, TESTFN, "exec")
+
+        with open(TESTFN, "w") as file:
+            file.write(source)
+        self.addCleanup(unlink, TESTFN)
+
+        func = partial(exec, bytecode)
+        result_lines = self.get_exception(func)
+
+        lineno_f = bytecode.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
+            f'    {source}\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def assertSpecialized(self, func, expected_specialization):
+        result_lines = self.get_exception(func)
+        specialization_line = result_lines[-1]
+        self.assertEqual(specialization_line.lstrip(), expected_specialization)
+
+    def test_specialization_variations(self):
+        self.assertSpecialized(lambda: 1/0,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1/0/3,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1 / 0,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1 / 0 / 3,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1/ 0,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1/ 0/3,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1    /  0,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1    /  0   / 5,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1 /0,
+                                      "~~^~")
+        self.assertSpecialized(lambda: 1//0,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1//0//4,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1 // 0,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 // 0 // 4,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 //0,
+                                      "~~^^~")
+        self.assertSpecialized(lambda: 1// 0,
+                                      "~^^~~")
 
 
 @cpython_only
@@ -1313,6 +1476,21 @@ class TestStack(unittest.TestCase):
              '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
 
+    def test_custom_format_frame(self):
+        class CustomStackSummary(traceback.StackSummary):
+            def format_frame(self, frame):
+                return f'{frame.filename}:{frame.lineno}'
+
+        def some_inner():
+            return CustomStackSummary.extract(
+                traceback.walk_stack(None), limit=1)
+
+        s = some_inner()
+        self.assertEqual(
+            s.format(),
+            [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
+
+
 class TestTracebackException(unittest.TestCase):
 
     def test_smoke(self):
@@ -1615,7 +1793,7 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(
             output.getvalue().split('\n')[-5:],
             ['    x/0',
-             '    ^^^',
+             '    ~^~',
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])

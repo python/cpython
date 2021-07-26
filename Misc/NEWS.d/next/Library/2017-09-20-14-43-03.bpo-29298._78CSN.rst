@@ -1,0 +1,2 @@
+Fix ``TypeError`` when required subparsers without ``dest`` do not receive
+arguments. Patch by Anthony Sottile.

@@ -209,7 +209,18 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         async def woohoo():
             yield
 
-        for stop_exc in (StopIteration('spam'), StopAsyncIteration('ham')):
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        class StopAsyncIterationSubclass(StopAsyncIteration):
+            pass
+
+        for stop_exc in (
+            StopIteration('spam'),
+            StopAsyncIteration('ham'),
+            StopIterationSubclass('spam'),
+            StopAsyncIterationSubclass('spam')
+        ):
             with self.subTest(type=type(stop_exc)):
                 try:
                     async with woohoo():

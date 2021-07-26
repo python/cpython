@@ -1,0 +1,1 @@
+Replace ``unittest.mock._importer`` with ``pkgutil.resolve_name``.
