@@ -297,9 +297,8 @@ def coroutine(func):
 
     return wrapped
 
-
 GenericAlias = type(list[int])
-Union = type(int | str)
+UnionType = type(int | str)
 
 EllipsisType = type(Ellipsis)
 NoneType = type(None)
