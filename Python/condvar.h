@@ -99,7 +99,7 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
    http://birrell.org/andrew/papers/ImplementingCVs.pdf
 
    Generic emulations of the pthread_cond_* API using
-   earlier Win32 functions can be found on the Web.
+   earlier Win32 functions can be found on the web.
    The following read can be give background information to these issues,
    but the implementations are all broken in some way.
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html

@@ -672,7 +672,7 @@ with older versions of the Distutils::
    from distutils import core
    kw = {'name': "Quixote",
          'version': "0.5.1",
-         'description': "A highly Pythonic Web application framework",
+         'description': "A highly Pythonic web application framework",
          # ...
          }
 
@@ -1650,7 +1650,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The new :mod:`DocXMLRPCServer` module allows writing self-documenting XML-RPC
   servers. Run it in demo mode (as a program) to see it in action.   Pointing the
-  Web browser to the RPC server produces pydoc-style documentation; pointing
+  web browser to the RPC server produces pydoc-style documentation; pointing
   xmlrpclib to the server allows invoking the actual methods. (Contributed by
   Brian Quinlan.)
 
