@@ -423,9 +423,7 @@ static PyNumberMethods union_as_number = {
 };
 
 static const char* const cls_attrs[] = {
-        "__name__",
-        "__qualname__",
-        "__module__",
+        "__module__",  // Required for compatibility with typing module
         NULL,
 };
 
