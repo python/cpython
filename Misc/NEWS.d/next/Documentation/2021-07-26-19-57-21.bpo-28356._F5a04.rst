@@ -1,0 +1,1 @@
+The documentation about os.rename() used on Windows systems updated to reflect behavior about moving across filesystems. Patch by Ryan Ozawa
