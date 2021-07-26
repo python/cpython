@@ -203,9 +203,9 @@ CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
       Licensee may substitute the following text (omitting the quotes): "Python 1.6.1
       is made available subject to the terms and conditions in CNRI's License
       Agreement.  This Agreement together with Python 1.6.1 may be located on the
-      Internet using the following unique, persistent identifier (known as a handle):
+      internet using the following unique, persistent identifier (known as a handle):
       1895.22/1013.  This Agreement may also be obtained from a proxy server on the
-      Internet using the following URL: http://hdl.handle.net/1895.22/1013."
+      internet using the following URL: http://hdl.handle.net/1895.22/1013."
 
    3. In the event Licensee prepares a derivative work that is based on or
       incorporates Python 1.6.1 or any part thereof, and wants to make the derivative

@@ -108,7 +108,7 @@ usually easy compared to the earlier task of coming up with a good design.
 Discussions of new features can often explode into lengthy mailing list threads,
 making the discussion hard to follow, and no one can read every posting to
 python-dev.  Therefore, a relatively formal process has been set up to write
-Python Enhancement Proposals (PEPs), modelled on the Internet RFC process.  PEPs
+Python Enhancement Proposals (PEPs), modelled on the internet RFC process.  PEPs
 are draft documents that describe a proposed new feature, and are continually
 revised until the community reaches a consensus, either accepting or rejecting
 the proposal.  Quoting from the introduction to :pep:`1`, "PEP Purpose and
