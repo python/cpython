@@ -508,7 +508,7 @@ evaluate to ``True``.
 Pickling enums created with the functional API can be tricky as frame stack
 implementation details are used to try and figure out which module the
 enumeration is being created in (e.g. it will fail if you use a utility
-function in separate module, and also may not work on IronPython or Jython).
+function in a separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
     >>> Animal = Enum('Animal', 'ANT BEE CAT DOG', module=__name__)
@@ -540,7 +540,7 @@ The complete signature is::
 
 :value: What the new enum class will record as its name.
 
-:names: The enum members.  This can be a whitespace or comma separated string
+:names: The enum members.  This can be a whitespace- or comma-separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
@@ -997,7 +997,7 @@ Plain :class:`Enum` classes always evaluate as :data:`True`.
 """""""""""""""""""""""""""""
 
 If you give your enum subclass extra methods, like the `Planet`_
-class above, those methods will show up in a :func:`dir` of the member,
+class below, those methods will show up in a :func:`dir` of the member,
 but not of the class::
 
     >>> dir(Planet)
@@ -1083,7 +1083,7 @@ the following are true:
     >>> Color(0)
     Color.BLACK
 
-- membership / containment checking has changed slightly -- zero valued flags
+- membership / containment checking has changed slightly -- zero-valued flags
   are never considered to be contained::
 
     >>> Color.BLACK in Color.WHITE
@@ -1152,7 +1152,7 @@ that can be used directly, or as examples for creating one's own.
 Omitting values
 ^^^^^^^^^^^^^^^
 
-In many use-cases one doesn't care what the actual value of an enumeration
+In many use-cases, one doesn't care what the actual value of an enumeration
 is. There are several ways to define this type of simple enumeration:
 
 - use instances of :class:`auto` for the value
@@ -1338,7 +1338,7 @@ alias::
 Planet
 ^^^^^^
 
-If :meth:`__new__` or :meth:`__init__` is defined the value of the enum member
+If :meth:`__new__` or :meth:`__init__` is defined, the value of the enum member
 will be passed to those methods::
 
     >>> class Planet(Enum):
@@ -1388,8 +1388,9 @@ An example to show the :attr:`_ignore_` attribute in use::
 Conforming input to Flag
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Creating a :class:`Flag` enum that is more resilient out-of-bounds results to
-mathematical operations, you can use the :attr:`FlagBoundary.CONFORM` setting::
+To create a :class:`Flag` enum that is more resilient to out-of-bounds results
+from mathematical operations, you can use the :attr:`FlagBoundary.CONFORM`
+setting::
 
     >>> from enum import Flag, CONFORM, auto
     >>> class Weekday(Flag, boundary=CONFORM):
