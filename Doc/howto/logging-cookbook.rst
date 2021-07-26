@@ -2979,3 +2979,82 @@ refer to the comments in the code snippet for more detailed information.
 
     if __name__=='__main__':
         main()
+
+
+.. patterns-to-avoid:
+
+Patterns to avoid
+-----------------
+
+Although the preceding sections have described ways of doing things you might
+need to do or deal with, it is worth mentioning some usage patterns which are
+*unhelpful*, and which should therefore be avoided in most cases. The following
+sections are in no particular order.
+
+
+Opening the same log file multiple times
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Windows, you will generally not be able to open the same file multiple times
+as this will lead to a "file is in use by another process" error. However, on
+POSIX platforms you'll not get any errors if you open the same file multiple
+times. This could be done accidentally, for example by:
+
+* Adding a file handler more than once which references the same file (e.g. by
+  a copy/paste/forget-to-change error).
+
+* Opening two files that look different, as they have different names, but are
+  the same because one is a symbolic link to the other.
+
+* Forking a process, following which both parent and child have a reference to
+  the same file. This might be through use of the :mod:`multiprocessing` module,
+  for example.
+
+Opening a file multiple times might *appear* to work most of the time, but can
+lead to a number of problems in practice:
+
+* Logging output can be garbled because multiple threads or processes try to
+  write to the same file. Although logging guards against concurrent use of the
+  same handler instance by multiple threads, there is no such protection if
+  concurrent writes are attempted by two different threads using two different
+  handler instances which happen to point to the same file.
+
+* An attempt to delete a file (e.g. during file rotation) silently fails,
+  because there is another reference pointing to it. This can lead to confusion
+  and wasted debugging time - log entries end up in unexpected places, or are
+  lost altogether.
+
+Use the techniques outlined in :ref:`multiple-processes` to circumvent such
+issues.
+
+Using loggers as attributes in a class or passing them as parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While there might be unusual cases where you'll need to do this, in general
+there is no point because loggers are singletons. Code can always access a
+given logger instance by name using ``logging.getLogger(name)``, so passing
+instances around and holding them as instance attributes is pointless. Note
+that in other languages such as Java and C#, loggers are often static class
+attributes. However, this pattern doesn't make sense in Python, where the
+module (and not the class) is the unit of software decomposition.
+
+
+Adding handlers other than :class:`NullHandler` to a logger in a library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configuring logging by adding handlers, formatters and filters is the
+responsibility of the application developer, not the library developer. If you
+are maintaining a library, ensure that you don't add handlers to any of your
+loggers other than a :class:`~logging.NullHandler` instance.
+
+
+Creating a lot of loggers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Loggers are singletons that are never freed during a script execution, and so
+creating lots of loggers will use up memory which can't then be freed. Rather
+than create a logger per e.g. file processed or network connection made, use
+the :ref:`existing mechanisms <context-info>` for passing contextual
+information into your logs and restrict the loggers created to those describing
+areas within your application (generally modules, but occasionally slightly
+more fine-grained than that).
