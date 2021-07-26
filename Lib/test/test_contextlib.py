@@ -9,7 +9,6 @@ from contextlib import *  # Tests __all__
 from test import support
 from test.support import os_helper
 import weakref
-import gc
 
 
 class TestAbstractContextManager(unittest.TestCase):
