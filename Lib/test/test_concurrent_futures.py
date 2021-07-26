@@ -1038,6 +1038,14 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertLessEqual(len(executor._processes), 2)
         executor.shutdown()
 
+    def test_maxtasksperchild(self):
+        executor = self.executor_type(1, maxtasksperchild=1)
+        executor.submit(init, "init").result()
+        status = executor.submit(get_init_status).result()
+        self.assertEqual(status, "uninitialized")
+        executor.shutdown()
+
+
 create_executor_tests(ProcessPoolExecutorTest,
                       executor_mixins=(ProcessPoolForkMixin,
                                        ProcessPoolForkserverMixin,

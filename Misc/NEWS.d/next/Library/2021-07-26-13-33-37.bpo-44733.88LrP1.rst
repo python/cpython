@@ -1,0 +1,4 @@
+Add `maxtasksperchild` to `ProcessPoolExecutor`. This allows users to
+specify the maximum number of tasks a single process should execute before
+the process needs to be restarted. Mirrors functionality (and shares name)
+with `multiprocessing.Pool`
