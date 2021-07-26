@@ -1870,7 +1870,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
     .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslsocket_class`
+      The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
 .. attribute:: SSLContext.sslsocket_class
@@ -1896,7 +1896,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
    .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslobject_class`
+      The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
 
 .. attribute:: SSLContext.sslobject_class
