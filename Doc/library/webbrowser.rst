@@ -1,8 +1,8 @@
-:mod:`webbrowser` --- Convenient Web-browser controller
+:mod:`webbrowser` --- Convenient web-browser controller
 =======================================================
 
 .. module:: webbrowser
-   :synopsis: Easy-to-use controller for Web browsers.
+   :synopsis: Easy-to-use controller for web browsers.
 
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
@@ -12,7 +12,7 @@
 --------------
 
 The :mod:`webbrowser` module provides a high-level interface to allow displaying
-Web-based documents to users. Under most circumstances, simply calling the
+web-based documents to users. Under most circumstances, simply calling the
 :func:`.open` function from this module will do the right thing.
 
 Under Unix, graphical browsers are preferred under X11, but text-mode browsers

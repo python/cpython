@@ -66,7 +66,7 @@ created.  Socket addresses are represented as follows:
 .. _host_port:
 
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
-  where *host* is a string representing either a hostname in Internet domain
+  where *host* is a string representing either a hostname in internet domain
   notation like ``'daring.cwi.nl'`` or an IPv4 address like ``'100.50.200.5'``,
   and *port* is an integer.
 
@@ -640,7 +640,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: create_connection(address[, timeout[, source_address]])
 
-   Connect to a TCP service listening on the Internet *address* (a 2-tuple
+   Connect to a TCP service listening on the internet *address* (a 2-tuple
    ``(host, port)``), and return the socket object.  This is a higher-level
    function than :meth:`socket.connect`: if *host* is a non-numeric hostname,
    it will try to resolve it for both :data:`AF_INET` and :data:`AF_INET6`,
@@ -877,7 +877,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getprotobyname(protocolname)
 
-   Translate an Internet protocol name (for example, ``'icmp'``) to a constant
+   Translate an internet protocol name (for example, ``'icmp'``) to a constant
    suitable for passing as the (optional) third argument to the :func:`.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
@@ -886,7 +886,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getservbyname(servicename[, protocolname])
 
-   Translate an Internet service name and protocol name to a port number for that
+   Translate an internet service name and protocol name to a port number for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
@@ -895,7 +895,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: getservbyport(port[, protocolname])
 
-   Translate an Internet port number and protocol name to a service name for that
+   Translate an internet port number and protocol name to a service name for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
