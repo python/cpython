@@ -1,2 +1,2 @@
 In :mod:`pdb`, *commands* directive was fixed to disallow setting commands
-for an invalid breakpoint and to display appropriate error.
+for an invalid breakpoint and to display an appropriate error.

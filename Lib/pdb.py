@@ -639,7 +639,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             self.get_bpbynumber(bnum)
         except ValueError as err:
-            self.error(err)
+            self.error('cannot set commands: %s' % err)
             return
 
         self.commands_bnum = bnum
