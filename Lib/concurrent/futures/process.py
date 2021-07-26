@@ -211,7 +211,7 @@ def _sendback_result(result_queue, work_id, result=None, exception=None):
         result_queue.put(_ResultItem(work_id, exception=exc))
 
 
-def _process_worker(call_queue, result_queue, initializer, initargs, maxtasksperchild=None):
+def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=None):
     """Evaluates calls from call_queue and places the results in result_queue.
 
     This worker is run in a separate process.
@@ -233,7 +233,7 @@ def _process_worker(call_queue, result_queue, initializer, initargs, maxtasksper
             # mark the pool broken
             return
     completed_count = 0
-    while maxtasksperchild is None or (maxtasksperchild > completed_count):
+    while max_tasks is None or (max_tasks > completed_count):
         call_item = call_queue.get(block=True)
         if call_item is None:
             # Wake up queue management thread
@@ -308,18 +308,9 @@ class _ExecutorManagerThread(threading.Thread):
         # A queue.Queue of work ids e.g. Queue([5, 6, ...]).
         self.work_ids_queue = executor._work_ids
 
-        # A multiprocessing context to use when respawning processes
-        self.mp_context = executor._mp_context
-
-        # Initializer for respawned processes
-        self.initializer = executor._initializer
-
-        # Initializer args for respawned processes
-        self.initargs = executor._initargs
-
         # Maximum number of tasks a worker process can execute before
         # exiting safely
-        self.maxtasksperchild = executor._maxtasksperchild
+        self.max_tasks_per_child = executor._max_tasks_per_child
 
         # A dict mapping work ids to _WorkItems e.g.
         #     {5: <_WorkItem...>, 6: <_WorkItem...>, ...}
@@ -422,13 +413,12 @@ class _ExecutorManagerThread(threading.Thread):
             # (avoids marking the executor broken)
             p = self.processes.pop(result_item)
             p.join()
-            if self.is_shutting_down():
+            if self.is_shutting_down() and not self.pending_work_items:
                 if not self.processes:
                     self.join_executor_internals()
-                    return
             else:
-                self._spawn_replacement_process()
-                return
+                if executor := self.executor_reference():
+                    executor._add_process_to_pool()
         else:
             # Received a _ResultItem so mark the future as completed.
             work_item = self.pending_work_items.pop(result_item.work_id, None)
@@ -543,17 +533,6 @@ class _ExecutorManagerThread(threading.Thread):
         # This is an upper bound on the number of children alive.
         return sum(p.is_alive() for p in self.processes.values())
 
-    def _spawn_replacement_process(self):
-        p = self.mp_context.Process(
-            target=_process_worker,
-            args=(self.call_queue,
-                  self.result_queue,
-                  self.initializer,
-                  self.initargs,
-                  self.maxtasksperchild))
-        p.start()
-        self.processes[p.pid] = p
-
 
 _system_limits_checked = False
 _system_limited = None
@@ -612,7 +591,7 @@ class BrokenProcessPool(_base.BrokenExecutor):
 
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None, mp_context=None,
-                 initializer=None, initargs=(), maxtasksperchild=None):
+                 initializer=None, initargs=(), *, max_tasks_per_child=None):
         """Initializes a new ProcessPoolExecutor instance.
 
         Args:
@@ -623,7 +602,7 @@ class ProcessPoolExecutor(_base.Executor):
                 object should provide SimpleQueue, Queue and Process.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
-            maxtasksperchild: The maximum number of tasks a worker process can
+            max_tasks_per_child: The maximum number of tasks a worker process can
                 complete before it will exit and be replaced with a fresh
                 worker process, to enable unused resources to be freed. The
                 default value is None, which means worker process will live
@@ -655,12 +634,12 @@ class ProcessPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-        if maxtasksperchild is not None:
-            if not isinstance(maxtasksperchild, int):
-                raise TypeError("maxtasksperchild must be an integer")
-            elif maxtasksperchild < 0:
-                raise ValueError("maxtasksperchild must be >= 1")
-        self._maxtasksperchild = maxtasksperchild
+        if max_tasks_per_child is not None:
+            if not isinstance(max_tasks_per_child, int):
+                raise TypeError("max_tasks_per_child must be an integer")
+            elif max_tasks_per_child <= 0:
+                raise ValueError("max_tasks_per_child must be >= 1")
+        self._max_tasks_per_child = max_tasks_per_child
 
         # Management thread
         self._executor_manager_thread = None
@@ -719,15 +698,18 @@ class ProcessPoolExecutor(_base.Executor):
 
         process_count = len(self._processes)
         if process_count < self._max_workers:
-            p = self._mp_context.Process(
-                target=_process_worker,
-                args=(self._call_queue,
-                      self._result_queue,
-                      self._initializer,
-                      self._initargs,
-                      self._maxtasksperchild))
-            p.start()
-            self._processes[p.pid] = p
+            self._add_process_to_pool()
+
+    def _add_process_to_pool(self):
+        p = self._mp_context.Process(
+            target=_process_worker,
+            args=(self._call_queue,
+                  self._result_queue,
+                  self._initializer,
+                  self._initargs,
+                  self._max_tasks_per_child))
+        p.start()
+        self._processes[p.pid] = p
 
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:

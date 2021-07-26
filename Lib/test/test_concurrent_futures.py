@@ -49,7 +49,6 @@ SUCCESSFUL_FUTURE = create_future(state=FINISHED, result=42)
 
 INITIALIZER_STATUS = 'uninitialized'
 
-
 def mul(x, y):
     return x * y
 
@@ -1038,12 +1037,29 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertLessEqual(len(executor._processes), 2)
         executor.shutdown()
 
-    def test_maxtasksperchild(self):
-        executor = self.executor_type(1, maxtasksperchild=1)
-        executor.submit(init, "init").result()
-        status = executor.submit(get_init_status).result()
-        self.assertEqual(status, "uninitialized")
+    def test_max_tasks_per_child(self):
+        executor = self.executor_type(1, max_tasks_per_child=3)
+        f1 = executor.submit(os.getpid)
+        original_pid = f1.result()
+
+        f2 = executor.submit(os.getpid)
+        self.assertEqual(f2.result(), original_pid)
+        f3 = executor.submit(os.getpid)
+        self.assertEqual(f3.result(), original_pid)
+
+        f4 = executor.submit(os.getpid)
+        new_pid = f4.result()
+        self.assertNotEqual(original_pid, new_pid)
         executor.shutdown()
+
+    def test_max_tasks_early_shutdown(self):
+        executor = self.executor_type(3, max_tasks_per_child=1)
+        futures = []
+        for i in range(6):
+            futures.append(executor.submit(mul, i, i))
+        executor.shutdown()
+        for i, future in enumerate(futures):
+            self.assertEqual(future.result(), mul(i, i))
 
 
 create_executor_tests(ProcessPoolExecutorTest,
