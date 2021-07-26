@@ -273,7 +273,7 @@ Data Types
          ...     SUNDAY = 7
          ...     @classmethod
          ...     def today(cls):
-         ...         print('today is %s' % cls(date.today.isoweekday).naem)
+         ...         print('today is %s' % cls(date.today().isoweekday()).name)
          >>> dir(Weekday.SATURDAY)
          ['__class__', '__doc__', '__module__', 'name', 'today', 'value']
 
