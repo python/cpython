@@ -456,6 +456,7 @@
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
+    <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\frozen.c" />
     <ClCompile Include="..\Python\future.c" />
     <ClCompile Include="..\Python\getargs.c" />
