@@ -927,7 +927,7 @@ HTTPHandler
 ^^^^^^^^^^^
 
 The :class:`HTTPHandler` class, located in the :mod:`logging.handlers` module,
-supports sending logging messages to a Web server, using either ``GET`` or
+supports sending logging messages to a web server, using either ``GET`` or
 ``POST`` semantics.
 
 
@@ -957,17 +957,17 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
    .. method:: emit(record)
 
-      Sends the record to the Web server as a URL-encoded dictionary. The
+      Sends the record to the web server as a URL-encoded dictionary. The
       :meth:`mapLogRecord` method is used to convert the record to the
       dictionary to be sent.
 
-   .. note:: Since preparing a record for sending it to a Web server is not
+   .. note:: Since preparing a record for sending it to a web server is not
       the same as a generic formatting operation, using
       :meth:`~logging.Handler.setFormatter` to specify a
       :class:`~logging.Formatter` for a :class:`HTTPHandler` has no effect.
       Instead of calling :meth:`~logging.Handler.format`, this handler calls
       :meth:`mapLogRecord` and then :func:`urllib.parse.urlencode` to encode the
-      dictionary in a form suitable for sending to a Web server.
+      dictionary in a form suitable for sending to a web server.
 
 
 .. _queue-handler:
@@ -984,7 +984,7 @@ supports sending logging messages to a queue, such as those implemented in the
 
 Along with the :class:`QueueListener` class, :class:`QueueHandler` can be used
 to let handlers do their work on a separate thread from the one which does the
-logging. This is important in Web applications and also other service
+logging. This is important in web applications and also other service
 applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.
@@ -1046,7 +1046,7 @@ because it works hand-in-hand with :class:`QueueHandler`.
 
 Along with the :class:`QueueHandler` class, :class:`QueueListener` can be used
 to let handlers do their work on a separate thread from the one which does the
-logging. This is important in Web applications and also other service
+logging. This is important in web applications and also other service
 applications where threads servicing clients need to respond as quickly as
 possible, while any potentially slow operations (such as sending an email via
 :class:`SMTPHandler`) are done on a separate thread.

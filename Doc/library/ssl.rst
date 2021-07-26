@@ -1056,7 +1056,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web servers (therefore, it will
+   context may be used to authenticate web servers (therefore, it will
    be used to create client-side sockets).
 
    .. versionadded:: 3.4
@@ -1065,7 +1065,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web clients (therefore, it will
+   context may be used to authenticate web clients (therefore, it will
    be used to create server-side sockets).
 
    .. versionadded:: 3.4

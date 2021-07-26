@@ -891,7 +891,7 @@ class ControlMixin(object):
                     single parameter - the request - in order to
                     process the request. This handler is called on the
                     server thread, effectively meaning that requests are
-                    processed serially. While not quite Web scale ;-),
+                    processed serially. While not quite web scale ;-),
                     this should be fine for testing applications.
     :param poll_interval: The polling interval in seconds.
     """
