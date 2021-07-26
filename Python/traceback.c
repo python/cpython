@@ -240,7 +240,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti*2,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->f_lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -521,7 +521,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
  * When displaying a new traceback line, for certain syntactical constructs
  * (e.g a subscript, an arithmetic operation) we try to create a representation
  * that separates the primary source of error from the rest.
- * 
+ *
  * Example specialization of BinOp nodes:
  *  Traceback (most recent call last):
  *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
@@ -710,7 +710,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = _PyFrame_GetCode(frame);
+    PyCodeObject* code = frame->f_frame->f_code;
 
     int start_line;
     int end_line;
@@ -720,11 +720,11 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
                               &end_line, &end_col_byte_offset)) {
         goto done;
     }
-    if (start_line != end_line) {
-        goto done;
-    }
 
-    if (start_col_byte_offset < 0 || end_col_byte_offset < 0) {
+    if (start_line < 0 || end_line < 0
+        || start_col_byte_offset < 0
+        || end_col_byte_offset < 0)
+    {
         goto done;
     }
 
@@ -762,11 +762,30 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     char *primary_error_char = "^";
     char *secondary_error_char = primary_error_char;
 
-    int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
-                                        &left_end_offset, &right_start_offset,
-                                        &primary_error_char, &secondary_error_char);
-    if (res < 0 && ignore_source_errors() < 0) {
-        goto done;
+    if (start_line == end_line) {
+        int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
+                                            &left_end_offset, &right_start_offset,
+                                            &primary_error_char, &secondary_error_char);
+        if (res < 0 && ignore_source_errors() < 0) {
+            goto done;
+        }
+    }
+    else {
+        // If this is a multi-line expression, then we will highlight until
+        // the last non-whitespace character.
+        const char *source_line_str = PyUnicode_AsUTF8(source_line);
+        if (!source_line_str) {
+            goto done;
+        }
+
+        Py_ssize_t i = PyUnicode_GET_LENGTH(source_line);
+        while (--i >= 0) {
+            if (!IS_WHITESPACE(source_line_str[i])) {
+                break;
+            }
+        }
+
+        end_offset = i + 1;
     }
 
     err = print_error_location_carets(f, truncation, start_offset, end_offset,
@@ -1005,9 +1024,9 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, PyFrameObject *frame)
+dump_frame(int fd, InterpreterFrame *frame)
 {
-    PyCodeObject *code = PyFrame_GetCode(frame);
+    PyCodeObject *code = frame->f_code;
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -1019,7 +1038,7 @@ dump_frame(int fd, PyFrameObject *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = PyFrame_GetLineNumber(frame);
+    int lineno = PyCode_Addr2Line(code, frame->f_lasti*2);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -1038,20 +1057,19 @@ dump_frame(int fd, PyFrameObject *frame)
     }
 
     PUTS(fd, "\n");
-    Py_DECREF(code);
 }
 
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    PyFrameObject *frame;
+    InterpreterFrame *frame;
     unsigned int depth;
 
     if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = PyThreadState_GetFrame(tstate);
+    frame = tstate->frame;
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;
@@ -1060,22 +1078,14 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
-            Py_DECREF(frame);
             PUTS(fd, "  ...\n");
             break;
         }
-        if (!PyFrame_Check(frame)) {
-            Py_DECREF(frame);
-            break;
-        }
         dump_frame(fd, frame);
-        PyFrameObject *back = PyFrame_GetBack(frame);
-        Py_DECREF(frame);
-
-        if (back == NULL) {
+        frame = frame->previous;
+        if (frame == NULL) {
             break;
         }
-        frame = back;
         depth++;
     }
 }

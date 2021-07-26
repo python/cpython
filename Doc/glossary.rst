@@ -451,12 +451,13 @@ Glossary
       for best practices on working with annotations.
 
    __future__
-      A pseudo-module which programmers can use to enable new language features
-      which are not compatible with the current interpreter.
-
-      By importing the :mod:`__future__` module and evaluating its variables,
-      you can see when a new feature was first added to the language and when it
-      becomes the default::
+      A :ref:`future statement <future>`, ``from __future__ import <feature>``,
+      directs the compiler to compile the current module using syntax or
+      semantics that will become standard in a future release of Python.
+      The :mod:`__future__` module documents the possible values of
+      *feature*.  By importing this module and evaluating its variables,
+      you can see when a new feature was first added to the language and
+      when it will (or did) become the default::
 
          >>> import __future__
          >>> __future__.division
