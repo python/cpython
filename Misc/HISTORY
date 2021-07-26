@@ -1429,7 +1429,7 @@ Library
   by Devin Cook.
 
 - Lax cookie parsing in http.cookies could be a security issue when combined
-  with non-standard cookie handling in some Web browsers.  Reported by
+  with non-standard cookie handling in some web browsers.  Reported by
   Sergey Bobrov.
 
 - Issue #22384: An exception in Tkinter callback no longer crashes the program
@@ -10380,7 +10380,7 @@ Tests
 
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
   an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
-  Web site.
+  web site.
 
 - Avoid failing in test_urllibnet.test_bad_address when some overzealous
   DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
@@ -11273,7 +11273,7 @@ Library
 
 - Issue #10549: Fix pydoc traceback when text-documenting certain classes.
 
-- Issue #2001: New HTML server with enhanced Web page features.  Patch by Ron
+- Issue #2001: New HTML server with enhanced web page features.  Patch by Ron
   Adam.
 
 - Issue #10360: In WeakSet, do not raise TypeErrors when testing for membership
@@ -31454,7 +31454,7 @@ aimed at a web server, checks that server for dead links.  Available
 are a command line utility as well as a Tkinter based GUI version.  In
 Tools/webchecker.  A simplified version of this program is dissected
 in my article in O'Reilly's WWW Journal, the issue on Scripting
-Languages (Vol 2, No 2); Scripting the Web with Python (pp 97-120).
+Languages (Vol 2, No 2); Scripting the web with Python (pp 97-120).
 Includes a parser for robots.txt files by Skip Montanaro.
 
 - New small tools: cvsfiles.py (prints a list of all files under CVS
