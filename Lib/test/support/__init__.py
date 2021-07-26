@@ -74,8 +74,8 @@ if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
 elif sys.platform == 'vxworks':
     LOOPBACK_TIMEOUT = 10
 
-# Timeout in seconds for network requests going to the Internet. The timeout is
-# short enough to prevent a test to wait for too long if the Internet request
+# Timeout in seconds for network requests going to the internet. The timeout is
+# short enough to prevent a test to wait for too long if the internet request
 # is blocked for whatever reason.
 #
 # Usually, a timeout using INTERNET_TIMEOUT should not mark a test as failed,

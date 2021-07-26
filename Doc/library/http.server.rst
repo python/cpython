@@ -14,7 +14,7 @@
 
 --------------
 
-This module defines classes for implementing HTTP servers (Web servers).
+This module defines classes for implementing HTTP servers (web servers).
 
 
 .. warning::

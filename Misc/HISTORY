@@ -1429,7 +1429,7 @@ Library
   by Devin Cook.
 
 - Lax cookie parsing in http.cookies could be a security issue when combined
-  with non-standard cookie handling in some Web browsers.  Reported by
+  with non-standard cookie handling in some web browsers.  Reported by
   Sergey Bobrov.
 
 - Issue #22384: An exception in Tkinter callback no longer crashes the program
@@ -10380,7 +10380,7 @@ Tests
 
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
   an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
-  Web site.
+  web site.
 
 - Avoid failing in test_urllibnet.test_bad_address when some overzealous
   DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
@@ -11273,7 +11273,7 @@ Library
 
 - Issue #10549: Fix pydoc traceback when text-documenting certain classes.
 
-- Issue #2001: New HTML server with enhanced Web page features.  Patch by Ron
+- Issue #2001: New HTML server with enhanced web page features.  Patch by Ron
   Adam.
 
 - Issue #10360: In WeakSet, do not raise TypeErrors when testing for membership
@@ -21043,7 +21043,7 @@ IDLE
   own when any program opens a socket.  IDLE does use sockets, talking
   on the computer's internal loopback interface.  This connection is not
   visible on any external interface and no data is sent to or received
-  from the Internet.  So, if you get such a dialog when opening IDLE,
+  from the internet.  So, if you get such a dialog when opening IDLE,
   asking whether to let pythonw.exe talk to address 127.0.0.1, say yes,
   and rest assured no communication external to your machine is taking
   place.  If you don't allow it, IDLE won't be able to start.
@@ -31454,7 +31454,7 @@ aimed at a web server, checks that server for dead links.  Available
 are a command line utility as well as a Tkinter based GUI version.  In
 Tools/webchecker.  A simplified version of this program is dissected
 in my article in O'Reilly's WWW Journal, the issue on Scripting
-Languages (Vol 2, No 2); Scripting the Web with Python (pp 97-120).
+Languages (Vol 2, No 2); Scripting the web with Python (pp 97-120).
 Includes a parser for robots.txt files by Skip Montanaro.
 
 - New small tools: cvsfiles.py (prints a list of all files under CVS
@@ -32325,7 +32325,7 @@ the Tutorial.
 of that chapter.)
 
 
-Changes to the WWW and Internet tools
+Changes to the WWW and internet tools
 =====================================
 
 The "htmllib" module has been rewritten in an incompatible fashion.
@@ -32485,7 +32485,7 @@ notice them anyway :-)
 
 - The Library Reference has been restructured, and many new and
 existing modules are now documented, in particular the debugger and
-the profiler, as well as the persistency and the WWW/Internet support
+the profiler, as well as the persistency and the WWW/internet support
 modules.
 
 - All known bugs have been fixed.  For example the pow(2,2,3L) bug on
@@ -32720,7 +32720,7 @@ New standard library modules:
 
     - types.py defines standard names for built-in types, e.g. StringType
 
-    - urlparse.py parses URLs according to the latest Internet draft
+    - urlparse.py parses URLs according to the latest internet draft
 
     - uu.py does uuencode/uudecode (not the fastest in the world, but
     quicker than installing uuencode on a non-UNIX machine :-)

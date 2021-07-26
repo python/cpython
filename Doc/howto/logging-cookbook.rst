@@ -332,7 +332,7 @@ Dealing with handlers that block
 .. currentmodule:: logging.handlers
 
 Sometimes you have to get your logging handlers to do their work without
-blocking the thread you're logging from. This is common in Web applications,
+blocking the thread you're logging from. This is common in web applications,
 though of course it also occurs in other scenarios.
 
 A common culprit which demonstrates sluggish behaviour is the

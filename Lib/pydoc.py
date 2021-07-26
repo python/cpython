@@ -23,7 +23,7 @@ Run "pydoc -p <port>" to start an HTTP server on the given port on the
 local machine.  Port number 0 can be used to get an arbitrary unused port.
 
 Run "pydoc -b" to start an HTTP server on an arbitrary unused port and
-open a Web browser to interactively browse documentation.  Combine with
+open a web browser to interactively browse documentation.  Combine with
 the -n and -p options to control the hostname and port used.
 
 Run "pydoc -w <name>" to write out the HTML documentation for a module
@@ -2065,7 +2065,7 @@ has the same effect as typing a particular string at the help> prompt.
 Welcome to Python {0}'s help utility!
 
 If this is your first time using Python, you should definitely check out
-the tutorial on the Internet at https://docs.python.org/{0}/tutorial/.
+the tutorial on the internet at https://docs.python.org/{0}/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
 Python programs and using Python modules.  To quit this help utility and
@@ -2279,13 +2279,13 @@ def apropos(key):
         warnings.filterwarnings('ignore') # ignore problems during import
         ModuleScanner().run(callback, key, onerror=onerror)
 
-# --------------------------------------- enhanced Web browser interface
+# --------------------------------------- enhanced web browser interface
 
 def _start_server(urlhandler, hostname, port):
     """Start an HTTP server thread on a specific port.
 
     Start an HTML/text server thread, so HTML or text documents can be
-    browsed dynamically and interactively with a Web browser.  Example use:
+    browsed dynamically and interactively with a web browser.  Example use:
 
         >>> import time
         >>> import pydoc
@@ -2671,7 +2671,7 @@ def _url_handler(url, content_type="text/html"):
 
 
 def browse(port=0, *, open_browser=True, hostname='localhost'):
-    """Start the enhanced pydoc Web server and open a Web browser.
+    """Start the enhanced pydoc web server and open a web browser.
 
     Use port '0' to start the server on an arbitrary port.
     Set open_browser to False to suppress opening a browser.
@@ -2823,7 +2823,7 @@ def cli():
     number 0 can be used to get an arbitrary unused port.
 
 {cmd} -b
-    Start an HTTP server on an arbitrary unused port and open a Web browser
+    Start an HTTP server on an arbitrary unused port and open a web browser
     to interactively browse documentation.  This option can be used in
     combination with -n and/or -p.
 
