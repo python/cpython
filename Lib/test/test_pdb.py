@@ -323,13 +323,13 @@ def test_pdb_breakpoint_commands():
     -> print(3)
     (Pdb) break
     (Pdb) commands 10
-    *** Breakpoint number 10 out of range
+    *** cannot set commands: Breakpoint number 10 out of range
     (Pdb) commands a
     *** Usage: commands [bnum]
             ...
             end
     (Pdb) commands 4
-    *** Breakpoint 4 already deleted
+    *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) continue
     3
     4
