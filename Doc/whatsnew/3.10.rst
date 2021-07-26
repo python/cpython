@@ -747,7 +747,8 @@ and :func:`issubclass`::
 
 See :ref:`types-union` and :pep:`604` for more details.
 
-(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`,
+with additions by Yurii Karabas and Serhiy Storchaka in :issue:`44490`.)
 
 
 PEP 612: Parameter Specification Variables
