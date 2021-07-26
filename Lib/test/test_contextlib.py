@@ -231,6 +231,8 @@ def woohoo():
         def woohoo(a, b):
             a = weakref.ref(a)
             b = weakref.ref(b)
+            # Allow test to work with a non-refcounted GC
+            support.gc_collect()
             self.assertIsNone(a())
             self.assertIsNone(b())
             yield
