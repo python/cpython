@@ -2293,7 +2293,7 @@ features:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
    The operation will fail if *src* and *dst* are on different filesystems. Use
-+  :func:`shutil.move` to support moves to a different filesystem.
+   :func:`shutil.move` to support moves to a different filesystem.
 
    On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
