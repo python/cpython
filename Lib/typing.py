@@ -798,10 +798,7 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
             raise TypeError("A single constraint is not allowed")
         msg = "TypeVar(name, constraint, ...): constraints must be types."
         self.__constraints__ = tuple(_type_check(t, msg) for t in constraints)
-        try:
-            def_mod = sys._getframe(1).f_globals.get('__name__', '__main__')  # for pickling
-        except (AttributeError, ValueError):
-            def_mod = None
+        def_mod = _callee()
         if def_mod != 'typing':
             self.__module__ = def_mod
 
@@ -904,10 +901,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     def __init__(self, name, *, bound=None, covariant=False, contravariant=False):
         self.__name__ = name
         super().__init__(bound, covariant, contravariant)
-        try:
-            def_mod = sys._getframe(1).f_globals.get('__name__', '__main__')
-        except (AttributeError, ValueError):
-            def_mod = None
+        def_mod = _callee()
         if def_mod != 'typing':
             self.__module__ = def_mod
 
@@ -1387,11 +1381,11 @@ def _no_init(self, *args, **kwargs):
     if type(self)._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
-def _callee(depth=2, default=None):
+def _callee(depth=1, default='__main__', unsupported=None):
     try:
-        return sys._getframe(depth).f_globals['__name__']
+        return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
-        return default
+        return unsupported
 
 
 def _allow_reckless_class_checks(depth=3):
@@ -1400,10 +1394,7 @@ def _allow_reckless_class_checks(depth=3):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    try:
-        return sys._getframe(depth).f_globals['__name__'] in ['abc', 'functools']
-    except (AttributeError, ValueError):  # For platforms without _getframe().
-        return True
+    return _callee(depth) in {'abc', 'functools', None}
 
 
 _PROTO_ALLOWLIST = {
@@ -2238,11 +2229,7 @@ def NamedTuple(typename, fields=None, /, **kwargs):
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
-    try:
-        module = sys._getframe(1).f_globals.get('__name__', '__main__')
-    except (AttributeError, ValueError):
-        module = None
-    return _make_nmtuple(typename, fields, module=module)
+    return _make_nmtuple(typename, fields, module=_callee())
 
 _NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
 
@@ -2357,11 +2344,10 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
                         " but not both")
 
     ns = {'__annotations__': dict(fields)}
-    try:
+    module = _callee()
+    if module is not None:
         # Setting correct module is necessary to make typed dict classes pickleable.
-        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
-    except (AttributeError, ValueError):
-        pass
+        ns['__module__'] = module
 
     return _TypedDictMeta(typename, (), ns, total=total)
 
@@ -2395,7 +2381,7 @@ class NewType:
         if '.' in name:
             name = name.rpartition('.')[-1]
         self.__name__ = name
-        self.__module__ = _callee(default='typing')
+        self.__module__ = _callee()
         self.__supertype__ = tp
 
     def __repr__(self):

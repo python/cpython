@@ -1,0 +1,2 @@
+Reduce usage of ``sys._getframe`` at ``typing`` module. Patch provided by
+Yurii Karabas.
