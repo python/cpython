@@ -175,8 +175,14 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "Missing parentheses in call to 'print'. "
                  "Did you mean print(\"old style\", end=\" \")?")
 
+        s = 'print f(a+b,c)'
+        ckmsg(s, "Missing parentheses in call to 'print'.")
+
         s = '''exec "old style"'''
         ckmsg(s, "Missing parentheses in call to 'exec'")
+
+        s = 'exec f(a+b,c)'
+        ckmsg(s, "Missing parentheses in call to 'exec'.")
 
         # should not apply to subclasses, see issue #31161
         s = '''if True:\nprint "No indent"'''
