@@ -31454,7 +31454,7 @@ aimed at a web server, checks that server for dead links.  Available
 are a command line utility as well as a Tkinter based GUI version.  In
 Tools/webchecker.  A simplified version of this program is dissected
 in my article in O'Reilly's WWW Journal, the issue on Scripting
-Languages (Vol 2, No 2); Scripting the web with Python (pp 97-120).
+Languages (Vol 2, No 2); Scripting the Web with Python (pp 97-120).
 Includes a parser for robots.txt files by Skip Montanaro.
 
 - New small tools: cvsfiles.py (prints a list of all files under CVS

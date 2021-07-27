@@ -32,7 +32,7 @@ A Note on IP Versions
 ---------------------
 
 For readers that aren't particularly familiar with IP addressing, it's
-important to know that the internet protocol is currently in the process
+important to know that the Internet Protocol (IP) is currently in the process
 of moving from version 4 of the protocol to version 6. This transition is
 occurring largely because version 4 of the protocol doesn't provide enough
 addresses to handle the needs of the whole world, especially given the
