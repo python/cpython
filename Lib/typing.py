@@ -31,6 +31,13 @@ import types
 import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
+
+try:
+    from _typing import _idfunc
+except ImportError:
+    def _idfunc(_, x):
+        return x
+
 # Please keep __all__ alphabetized within each category.
 __all__ = [
     # Super-special typing primitives.
@@ -168,7 +175,7 @@ def _type_check(arg, msg, is_argument=True, module=None):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union, ParamSpec)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.UnionType, ParamSpec)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -208,7 +215,7 @@ def _collect_type_vars(types_, typevar_types=None):
     for t in types_:
         if isinstance(t, typevar_types) and t not in tvars:
             tvars.append(t)
-        if isinstance(t, (_GenericAlias, GenericAlias, types.Union)):
+        if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
@@ -261,7 +268,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, (_UnionGenericAlias, types.Union)):
+        if isinstance(p, (_UnionGenericAlias, types.UnionType)):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
@@ -315,13 +322,13 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns, recursive_guard)
-    if isinstance(t, (_GenericAlias, GenericAlias, types.Union)):
+    if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
             return GenericAlias(t.__origin__, ev_args)
-        if isinstance(t, types.Union):
+        if isinstance(t, types.UnionType):
             return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
@@ -375,6 +382,12 @@ class _SpecialForm(_Final, _root=True):
 
     def __call__(self, *args, **kwds):
         raise TypeError(f"Cannot instantiate {self!r}")
+
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
 
     def __instancecheck__(self, obj):
         raise TypeError(f"{self} cannot be used with isinstance()")
@@ -1025,7 +1038,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         for arg in self.__args__:
             if isinstance(arg, self._typevar_types):
                 arg = subst[arg]
-            elif isinstance(arg, (_GenericAlias, GenericAlias, types.Union)):
+            elif isinstance(arg, (_GenericAlias, GenericAlias, types.UnionType)):
                 subparams = arg.__parameters__
                 if subparams:
                     subargs = tuple(subst[x] for x in subparams)
@@ -1193,7 +1206,7 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
         return Union[params]
 
     def __eq__(self, other):
-        if not isinstance(other, (_UnionGenericAlias, types.Union)):
+        if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
             return NotImplemented
         return set(self.__args__) == set(other.__args__)
 
@@ -1797,7 +1810,7 @@ def _strip_annotations(t):
         if stripped_args == t.__args__:
             return t
         return GenericAlias(t.__origin__, stripped_args)
-    if isinstance(t, types.Union):
+    if isinstance(t, types.UnionType):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
@@ -1828,8 +1841,8 @@ def get_origin(tp):
         return tp.__origin__
     if tp is Generic:
         return Generic
-    if isinstance(tp, types.Union):
-        return types.Union
+    if isinstance(tp, types.UnionType):
+        return types.UnionType
     return None
 
 
@@ -1853,7 +1866,7 @@ def get_args(tp):
                          or isinstance(res[0], (ParamSpec, _ConcatenateGenericAlias)))):
             res = (list(res[:-1]), res[-1])
         return res
-    if isinstance(tp, types.Union):
+    if isinstance(tp, types.UnionType):
         return tp.__args__
     return ()
 
@@ -2375,17 +2388,21 @@ class NewType:
         num = UserId(5) + 1     # type: int
     """
 
+    __call__ = _idfunc
+
     def __init__(self, name, tp):
-        self.__name__ = name
         self.__qualname__ = name
+        if '.' in name:
+            name = name.rpartition('.')[-1]
+        self.__name__ = name
         self.__module__ = _callee(default='typing')
         self.__supertype__ = tp
 
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
 
-    def __call__(self, x):
-        return x
+    def __reduce__(self):
+        return self.__qualname__
 
     def __or__(self, other):
         return Union[self, other]

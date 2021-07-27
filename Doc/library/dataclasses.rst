@@ -172,7 +172,7 @@ Module contents
 
    - ``kw_only``: If true (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
-     keyword-only, then the only affect is that the :meth:`__init__`
+     keyword-only, then the only effect is that the :meth:`__init__`
      parameter generated from a keyword-only field must be specified
      with a keyword when :meth:`__init__` is called.  There is no
      effect on any other aspect of dataclasses.  See the

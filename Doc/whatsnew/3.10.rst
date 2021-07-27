@@ -491,11 +491,11 @@ The associated action to the case is executed after a match::
             case 418:
                 return "I'm a teapot"
             case _:
-                return "Something's wrong with the Internet"
+                return "Something's wrong with the internet"
 
 If the above function is passed a ``status`` of 418, "I'm a teapot" is returned.
 If the above function is passed a ``status`` of 500, the case statement with
-``_`` will match as a wildcard, and "Something's wrong with the Internet" is
+``_`` will match as a wildcard, and "Something's wrong with the internet" is
 returned.
 Note the last block: the variable name, ``_``, acts as a *wildcard* and insures
 the subject will always match. The use of ``_`` is optional.
@@ -747,7 +747,8 @@ and :func:`issubclass`::
 
 See :ref:`types-union` and :pep:`604` for more details.
 
-(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`,
+with additions by Yurii Karabas and Serhiy Storchaka in :issue:`44490`.)
 
 
 PEP 612: Parameter Specification Variables

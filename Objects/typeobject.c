@@ -11,6 +11,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "frameobject.h"
+#include "pycore_frame.h"
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
@@ -324,10 +325,6 @@ PyType_Modified(PyTypeObject *type)
 
        Invariants:
 
-       - Py_TPFLAGS_VALID_VERSION_TAG is never set if
-         Py_TPFLAGS_HAVE_VERSION_TAG is not set (in case of a
-         bizarre MRO, see type_mro_modified()).
-
        - before Py_TPFLAGS_VALID_VERSION_TAG can be set on a type,
          it must first be set on all super types.
 
@@ -379,9 +376,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     PyObject *mro_meth = NULL;
     PyObject *type_mro_meth = NULL;
 
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
-        return;
-
     if (custom) {
         mro_meth = lookup_maybe_method(
             (PyObject *)type, &PyId_mro, &unbound);
@@ -404,8 +398,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         assert(PyType_Check(b));
         cls = (PyTypeObject *)b;
 
-        if (!_PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
-            !PyType_IsSubtype(type, cls)) {
+        if (!PyType_IsSubtype(type, cls)) {
             goto clear;
         }
     }
@@ -413,8 +406,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     Py_XDECREF(mro_meth);
     Py_XDECREF(type_mro_meth);
-    type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
-                        Py_TPFLAGS_VALID_VERSION_TAG);
+    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
 
@@ -431,8 +423,6 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
 
     if (_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
         return 1;
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
-        return 0;
     if (!_PyType_HasFeature(type, Py_TPFLAGS_READY))
         return 0;
 
@@ -5978,14 +5968,6 @@ type_ready_pre_checks(PyTypeObject *type)
         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
     }
 
-    /* Consistency check for Py_TPFLAGS_HAVE_AM_SEND - flag requires
-     * type->tp_as_async->am_send to be present.
-     */
-    if (type->tp_flags & Py_TPFLAGS_HAVE_AM_SEND) {
-        _PyObject_ASSERT((PyObject *)type, type->tp_as_async != NULL);
-        _PyObject_ASSERT((PyObject *)type, type->tp_as_async->am_send != NULL);
-    }
-
     /* Consistency checks for pattern matching
      * Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING are mutually exclusive */
     _PyObject_ASSERT((PyObject *)type, (type->tp_flags & COLLECTION_FLAGS) != COLLECTION_FLAGS);
@@ -8886,12 +8868,13 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    PyObject *firstarg = f->f_localsptr[0];
+    assert(f->f_frame->nlocalsplus > 0);
+    PyObject *firstarg = _PyFrame_GetLocalsArray(f->f_frame)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
         // "firstarg" is a cell here unless (very unlikely) super()
         // was called from the C-API before the first MAKE_CELL op.
-        if (f->f_lasti >= 0) {
+        if (f->f_frame->f_lasti >= 0) {
             assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL);
             assert(PyCell_Check(firstarg));
             firstarg = PyCell_GET(firstarg);
@@ -8911,7 +8894,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            PyObject *cell = f->f_localsptr[i];
+            PyObject *cell = _PyFrame_GetLocalsArray(f->f_frame)[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");

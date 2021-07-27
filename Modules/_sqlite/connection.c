@@ -60,13 +60,13 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
 static PyObject *
-new_statement_cache(pysqlite_state *state, pysqlite_Connection *self,
-                    int maxsize)
+new_statement_cache(pysqlite_Connection *self, int maxsize)
 {
     PyObject *args[] = { PyLong_FromLong(maxsize), };
     if (args[0] == NULL) {
         return NULL;
     }
+    pysqlite_state *state = pysqlite_get_state(NULL);
     PyObject *inner = PyObject_Vectorcall(state->lru_cache, args, 1, NULL);
     Py_DECREF(args[0]);
     if (inner == NULL) {
@@ -150,9 +150,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
     Py_DECREF(isolation_level);
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
-    self->statement_cache = new_statement_cache(state, self,
-                                                cached_statements);
+    self->statement_cache = new_statement_cache(self, cached_statements);
     if (self->statement_cache == NULL) {
         return -1;
     }
@@ -179,11 +177,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->function_pinboard_progress_handler = NULL;
     self->function_pinboard_authorizer_cb = NULL;
 
-    Py_XSETREF(self->collations, PyDict_New());
-    if (!self->collations) {
-        return -1;
-    }
-
+    pysqlite_state *state = pysqlite_get_state(NULL);
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
     self->InterfaceError        = state->InterfaceError;
@@ -250,7 +244,6 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(self->function_pinboard_trace_callback);
     Py_VISIT(self->function_pinboard_progress_handler);
     Py_VISIT(self->function_pinboard_authorizer_cb);
-    Py_VISIT(self->collations);
     return 0;
 }
 
@@ -266,7 +259,6 @@ connection_clear(pysqlite_Connection *self)
     Py_CLEAR(self->function_pinboard_trace_callback);
     Py_CLEAR(self->function_pinboard_progress_handler);
     Py_CLEAR(self->function_pinboard_authorizer_cb);
-    Py_CLEAR(self->collations);
     return 0;
 }
 
@@ -323,17 +315,14 @@ error:
 /*[clinic input]
 _sqlite3.Connection.cursor as pysqlite_connection_cursor
 
-    cls: defining_class
-    /
     factory: object = NULL
 
 Return a cursor for the connection.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyTypeObject *cls,
-                                PyObject *factory)
-/*[clinic end generated code: output=c48c9335315ba58d input=c19d77941a005430]*/
+pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
+/*[clinic end generated code: output=562432a9e6af2aa1 input=4127345aa091b650]*/
 {
     PyObject* cursor;
 
@@ -341,7 +330,7 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyTypeObject *cls,
         return NULL;
     }
 
-    pysqlite_state *state = pysqlite_get_state_by_cls(cls);
+    pysqlite_state *state = pysqlite_get_state(NULL);
     if (factory == NULL) {
         factory = (PyObject *)state->CursorType;
     }
@@ -1784,29 +1773,29 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     if (!uppercase_name_str)
         goto finally;
 
-    if (callable != Py_None && !PyCallable_Check(callable)) {
-        PyErr_SetString(PyExc_TypeError, "parameter must be callable");
-        goto finally;
+    int flags = SQLITE_UTF8;
+    if (callable == Py_None) {
+        rc = sqlite3_create_collation_v2(self->db, uppercase_name_str, flags,
+                                         NULL, NULL, NULL);
+    }
+    else {
+        if (!PyCallable_Check(callable)) {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            goto finally;
+        }
+        rc = sqlite3_create_collation_v2(self->db, uppercase_name_str, flags,
+                                         Py_NewRef(callable),
+                                         &pysqlite_collation_callback,
+                                         &_destructor);
     }
 
-    if (callable != Py_None) {
-        if (PyDict_SetItem(self->collations, uppercase_name, callable) == -1)
-            goto finally;
-    } else {
-        if (PyDict_DelItem(self->collations, uppercase_name) == -1)
-            goto finally;
-    }
-
-    rc = sqlite3_create_collation(self->db,
-                                  uppercase_name_str,
-                                  SQLITE_UTF8,
-                                  (callable != Py_None) ? callable : NULL,
-                                  (callable != Py_None) ? pysqlite_collation_callback : NULL);
     if (rc != SQLITE_OK) {
+        /* Unlike other sqlite3_* functions, the destructor callback is _not_
+         * called if sqlite3_create_collation_v2() fails, so we have to free
+         * the context before returning.
+         */
         if (callable != Py_None) {
-            if (PyDict_DelItem(self->collations, uppercase_name) < 0) {
-                PyErr_Clear();
-            }
+            Py_DECREF(callable);
         }
         _pysqlite_seterror(self->db);
         goto finally;
