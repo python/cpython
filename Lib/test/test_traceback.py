@@ -121,6 +121,31 @@ class TracebackCases(unittest.TestCase):
         finally:
             unlink(TESTFN)
 
+    def test_recursion_error_during_traceback(self):
+        code = textwrap.dedent("""
+                import sys
+                from weakref import ref
+
+                sys.setrecursionlimit(15)
+
+                def f():
+                    ref(lambda: 0, [])
+                    f()
+
+                try:
+                    f()
+                except RecursionError:
+                    pass
+        """)
+        try:
+            with open(TESTFN, 'w') as f:
+                f.write(code)
+
+            rc, _, _ = assert_python_ok(TESTFN)
+            self.assertEqual(rc, 0)
+        finally:
+            unlink(TESTFN)
+
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
@@ -404,6 +429,30 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             '    ^^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_f+1}, in f_with_multiline\n'
             '    raise ValueError(\n'
+            '    ^^^^^^^^^^^^^^^^^'
+        )
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+    def test_caret_multiline_expression_bin_op(self):
+        # Make sure no carets are printed for expressions spanning multiple
+        # lines.
+        def f_with_multiline():
+            return (
+                1 /
+                0 +
+                2
+            )
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    1 /\n'
+            '    ^^^'
         )
         result_lines = self.get_exception(f_with_multiline)
         self.assertEqual(result_lines, expected_f.splitlines())
@@ -484,6 +533,66 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             '    ^^^^^\n'
         )
         self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_traceback_very_long_line(self):
+        source = "a" * 256
+        bytecode = compile(source, TESTFN, "exec")
+
+        with open(TESTFN, "w") as file:
+            file.write(source)
+        self.addCleanup(unlink, TESTFN)
+
+        func = partial(exec, bytecode)
+        result_lines = self.get_exception(func)
+
+        lineno_f = bytecode.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ^^^^^^^^^^\n'
+            f'  File "{TESTFN}", line {lineno_f}, in <module>\n'
+            f'    {source}\n'
+        )
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def assertSpecialized(self, func, expected_specialization):
+        result_lines = self.get_exception(func)
+        specialization_line = result_lines[-1]
+        self.assertEqual(specialization_line.lstrip(), expected_specialization)
+
+    def test_specialization_variations(self):
+        self.assertSpecialized(lambda: 1/0,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1/0/3,
+                                      "~^~")
+        self.assertSpecialized(lambda: 1 / 0,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1 / 0 / 3,
+                                      "~~^~~")
+        self.assertSpecialized(lambda: 1/ 0,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1/ 0/3,
+                                      "~^~~")
+        self.assertSpecialized(lambda: 1    /  0,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1    /  0   / 5,
+                                      "~~~~~^~~~")
+        self.assertSpecialized(lambda: 1 /0,
+                                      "~~^~")
+        self.assertSpecialized(lambda: 1//0,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1//0//4,
+                                      "~^^~")
+        self.assertSpecialized(lambda: 1 // 0,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 // 0 // 4,
+                                      "~~^^~~")
+        self.assertSpecialized(lambda: 1 //0,
+                                      "~~^^~")
+        self.assertSpecialized(lambda: 1// 0,
+                                      "~^^~~")
+
 
 @cpython_only
 @requires_debug_ranges()
@@ -1390,6 +1499,21 @@ class TestStack(unittest.TestCase):
              '    k = 3\n'
              '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
+
+    def test_custom_format_frame(self):
+        class CustomStackSummary(traceback.StackSummary):
+            def format_frame(self, frame):
+                return f'{frame.filename}:{frame.lineno}'
+
+        def some_inner():
+            return CustomStackSummary.extract(
+                traceback.walk_stack(None), limit=1)
+
+        s = some_inner()
+        self.assertEqual(
+            s.format(),
+            [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
+
 
 class TestTracebackException(unittest.TestCase):
 

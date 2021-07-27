@@ -5040,16 +5040,16 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
+:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
 instantiated from the type::
 
    >>> import types
-   >>> isinstance(int | str, types.Union)
+   >>> isinstance(int | str, types.UnionType)
    True
-   >>> types.Union()
+   >>> types.UnionType()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.Union' instances
+   TypeError: cannot create 'types.UnionType' instances
 
 .. note::
    The :meth:`__or__` method for type objects was added to support the syntax

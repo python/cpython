@@ -177,11 +177,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->function_pinboard_progress_handler = NULL;
     self->function_pinboard_authorizer_cb = NULL;
 
-    Py_XSETREF(self->collations, PyDict_New());
-    if (!self->collations) {
-        return -1;
-    }
-
     pysqlite_state *state = pysqlite_get_state(NULL);
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
@@ -249,7 +244,6 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(self->function_pinboard_trace_callback);
     Py_VISIT(self->function_pinboard_progress_handler);
     Py_VISIT(self->function_pinboard_authorizer_cb);
-    Py_VISIT(self->collations);
     return 0;
 }
 
@@ -265,7 +259,6 @@ connection_clear(pysqlite_Connection *self)
     Py_CLEAR(self->function_pinboard_trace_callback);
     Py_CLEAR(self->function_pinboard_progress_handler);
     Py_CLEAR(self->function_pinboard_authorizer_cb);
-    Py_CLEAR(self->collations);
     return 0;
 }
 
@@ -637,9 +630,11 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
         sqlite3_result_error(context, "user-defined function raised exception", -1);
@@ -669,9 +664,12 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
         if (PyErr_Occurred()) {
             *aggregate_instance = 0;
-            if (_pysqlite_enable_callback_tracebacks) {
+
+            pysqlite_state *state = pysqlite_get_state(NULL);
+            if (state->enable_callback_tracebacks) {
                 PyErr_Print();
-            } else {
+            }
+            else {
                 PyErr_Clear();
             }
             sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
@@ -693,9 +691,11 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
         sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
@@ -746,9 +746,11 @@ _pysqlite_final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
         sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
@@ -941,10 +943,13 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
     if (ret == NULL) {
-        if (_pysqlite_enable_callback_tracebacks)
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        else
+        }
+        else {
             PyErr_Clear();
+        }
 
         rc = SQLITE_DENY;
     }
@@ -952,10 +957,13 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
         if (PyLong_Check(ret)) {
             rc = _PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
-                if (_pysqlite_enable_callback_tracebacks)
+                pysqlite_state *state = pysqlite_get_state(NULL);
+                if (state->enable_callback_tracebacks) {
                     PyErr_Print();
-                else
+                }
+                else {
                     PyErr_Clear();
+                }
                 rc = SQLITE_DENY;
             }
         }
@@ -979,9 +987,11 @@ static int _progress_handler(void* user_arg)
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
 
@@ -1030,9 +1040,11 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     if (ret) {
         Py_DECREF(ret);
     } else {
-        if (_pysqlite_enable_callback_tracebacks) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
             PyErr_Print();
-        } else {
+        }
+        else {
             PyErr_Clear();
         }
     }
@@ -1494,9 +1506,9 @@ pysqlite_collation_callback(
         goto finally; /* failed to allocate strings */
     }
 
-    retval = PyObject_CallFunctionObjArgs(callback, string1, string2, NULL);
-
-    if (!retval) {
+    PyObject *args[] = { string1, string2 };  // Borrowed refs.
+    retval = PyObject_Vectorcall(callback, args, 2, NULL);
+    if (retval == NULL) {
         /* execution failed */
         goto finally;
     }
@@ -1761,29 +1773,29 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     if (!uppercase_name_str)
         goto finally;
 
-    if (callable != Py_None && !PyCallable_Check(callable)) {
-        PyErr_SetString(PyExc_TypeError, "parameter must be callable");
-        goto finally;
+    int flags = SQLITE_UTF8;
+    if (callable == Py_None) {
+        rc = sqlite3_create_collation_v2(self->db, uppercase_name_str, flags,
+                                         NULL, NULL, NULL);
+    }
+    else {
+        if (!PyCallable_Check(callable)) {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            goto finally;
+        }
+        rc = sqlite3_create_collation_v2(self->db, uppercase_name_str, flags,
+                                         Py_NewRef(callable),
+                                         &pysqlite_collation_callback,
+                                         &_destructor);
     }
 
-    if (callable != Py_None) {
-        if (PyDict_SetItem(self->collations, uppercase_name, callable) == -1)
-            goto finally;
-    } else {
-        if (PyDict_DelItem(self->collations, uppercase_name) == -1)
-            goto finally;
-    }
-
-    rc = sqlite3_create_collation(self->db,
-                                  uppercase_name_str,
-                                  SQLITE_UTF8,
-                                  (callable != Py_None) ? callable : NULL,
-                                  (callable != Py_None) ? pysqlite_collation_callback : NULL);
     if (rc != SQLITE_OK) {
+        /* Unlike other sqlite3_* functions, the destructor callback is _not_
+         * called if sqlite3_create_collation_v2() fails, so we have to free
+         * the context before returning.
+         */
         if (callable != Py_None) {
-            if (PyDict_DelItem(self->collations, uppercase_name) < 0) {
-                PyErr_Clear();
-            }
+            Py_DECREF(callable);
         }
         _pysqlite_seterror(self->db);
         goto finally;

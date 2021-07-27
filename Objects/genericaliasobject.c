@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_unionobject.h"   // _Py_union_as_number
+#include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -441,8 +441,7 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (!PyObject_TypeCheck(a, &Py_GenericAliasType) ||
-        !PyObject_TypeCheck(b, &Py_GenericAliasType) ||
+    if (!_PyGenericAlias_Check(b) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;
@@ -622,7 +621,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyNumberMethods ga_as_number = {
-        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+        .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
 // TODO:

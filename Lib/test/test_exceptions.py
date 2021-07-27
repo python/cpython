@@ -209,7 +209,7 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
-        check('f{a + b + c}', 1, 2)
+        check('f{a + b + c}', 1, 1)
         check('[file for str(file) in []\n])', 2, 2)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
@@ -1915,6 +1915,18 @@ class AttributeErrorTests(unittest.TestCase):
                     sys.__excepthook__(*sys.exc_info())
 
             self.assertIn("blech", err.getvalue())
+
+    def test_getattr_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        try:
+            A().blech
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("Did you mean", err.getvalue())
 
     def test_attribute_error_with_failing_dict(self):
         class T:
