@@ -848,9 +848,10 @@ expression_without_invalid[expr_ty]:
     | disjunction
     | lambdef
 invalid_legacy_expression:
-    | a=NAME b=expression_without_invalid {
-        _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Missing parentheses in call to '%U'.", a->v.Name.id) : NULL}
- 
+    | a=NAME b=star_expressions {
+        _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
+            "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
+
 invalid_expression:
    | invalid_legacy_expression
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
