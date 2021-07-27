@@ -253,6 +253,35 @@ class TypeVarTests(BaseTestCase):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
 
+    def test_subscript(self):
+        T = TypeVar('T')
+        self.assertEqual(T.__parameters__, (T,))
+        self.assertIs(T.__parameters__[0], T)
+        self.assertIs(T[int], int)
+        self.assertEqual(T[list[int]], list[int])
+        self.assertEqual(T[List[int]], List[int])
+        self.assertEqual(T[List], List)
+        self.assertIs(T[Any], Any)
+        self.assertIs(T[None], type(None))
+        self.assertIs(T[T], T)
+        self.assertIs(T[(int,)], int)
+
+    def test_bad_subscript(self):
+        T = TypeVar('T')
+        bad_args = (
+            42, ..., [int], (), (int, str), Union,
+            Generic, Generic[T], Protocol, Protocol[T],
+            Final, Final[int], ClassVar, ClassVar[int],
+        )
+        for arg in bad_args:
+            with self.subTest(arg=arg):
+                with self.assertRaises(TypeError):
+                    T[arg]
+                with self.assertRaises(TypeError):
+                    List[T][arg]
+                with self.assertRaises(TypeError):
+                    list[T][arg]
+
 
 class UnionTests(BaseTestCase):
 
@@ -509,6 +538,37 @@ class CallableTests(BaseTestCase):
     def test_ellipsis_in_generic(self):
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
+
+    def test_subscript(self):
+        T = TypeVar("T")
+        T2 = TypeVar('T2')
+
+        C = Callable[[T], T2]
+        self.assertEqual(C[int, str], Callable[[int], str])
+        self.assertEqual(C[int, NoReturn], Callable[[int], NoReturn])
+        self.assertEqual(C[None, None], Callable[[type(None)], type(None)])
+
+        C = Callable[..., T]
+        self.assertEqual(C[str], Callable[..., str])
+
+        P = ParamSpec("P")
+        C = Callable[P, T]
+        self.assertEqual(C[int, str], Callable[[int], str])
+        self.assertEqual(C[[int, str], float], Callable[[int, str], float])
+        self.assertEqual(C[..., float], Callable[..., float])
+        self.assertEqual(C[P, float], Callable[P, float])
+        self.assertEqual(C[Concatenate[int, P], float],
+                         Callable[Concatenate[int, P], float])
+
+        C = Callable[P, str]
+        self.assertEqual(C[int], Callable[[int], str])
+        self.assertEqual(C[int, dict], Callable[[int, dict], str])
+        self.assertEqual(C[...], Callable[..., str])
+        self.assertEqual(C[P], Callable[P, str])
+        self.assertEqual(C[Concatenate[int, P]],
+                         Callable[Concatenate[int, P], str])
+
+        # TODO: C = Callable[Concatenate[str, P], float]
 
 
 class LiteralTests(BaseTestCase):
@@ -1890,7 +1950,10 @@ class GenericTests(BaseTestCase):
         for obj in objs:
             self.assertNotEqual(repr(obj), '')
             self.assertEqual(obj, obj)
-            if getattr(obj, '__parameters__', None) and len(obj.__parameters__) == 1:
+            if (getattr(obj, '__parameters__', None)
+                    and not isinstance(obj, typing.TypeVar)
+                    and isinstance(obj.__parameters__, tuple)
+                    and len(obj.__parameters__) == 1):
                 self.assertEqual(obj[Any].__args__, (Any,))
             if isinstance(obj, type):
                 for base in obj.__mro__:
@@ -4496,28 +4559,18 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G5.__parameters__, G6.__parameters__)
         self.assertEqual(G5, G6)
 
-    def test_var_substitution(self):
+    def test_subscript(self):
         T = TypeVar("T")
         P = ParamSpec("P")
-        C1 = Callable[P, T]
-        self.assertEqual(C1[int, str], Callable[[int], str])
-        self.assertEqual(C1[[int, str, dict], float], Callable[[int, str, dict], float])
-
-    def test_no_paramspec_in__parameters__(self):
-        # ParamSpec should not be found in __parameters__
-        # of generics. Usages outside Callable, Concatenate
-        # and Generic are invalid.
-        T = TypeVar("T")
-        P = ParamSpec("P")
-        self.assertNotIn(P, List[P].__parameters__)
-        self.assertIn(T, Tuple[T, P].__parameters__)
-
-        # Test for consistency with builtin generics.
-        self.assertNotIn(P, list[P].__parameters__)
-        self.assertIn(T, tuple[T, P].__parameters__)
-
-        self.assertNotIn(P, (list[P] | int).__parameters__)
-        self.assertIn(T, (tuple[T, P] | int).__parameters__)
+        self.assertEqual(P.__parameters__, (P,))
+        self.assertIs(P.__parameters__[0], P)
+        self.assertEqual(P[int], (int,))
+        self.assertEqual(P[int, str], (int, str))
+        self.assertEqual(P[[int, str]], (int, str))
+        self.assertEqual(P[None], (type(None),))
+        self.assertIs(P[...], ...)
+        self.assertIs(P[P], P)
+        self.assertEqual(P[Concatenate[int, P]], Concatenate[int, P])
 
     def test_paramspec_in_nested_generics(self):
         # Although ParamSpec should not be found in __parameters__ of most

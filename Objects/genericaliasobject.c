@@ -156,25 +156,6 @@ error:
     return NULL;
 }
 
-// isinstance(obj, TypeVar) without importing typing.py.
-// Returns -1 for errors.
-static int
-is_typevar(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "TypeVar") != 0) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
-    if (module == NULL) {
-        return -1;
-    }
-    int res = PyUnicode_Check(module)
-        && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
-    return res;
-}
-
 // Index of item in self[:len], or -1 if not found (self is a tuple)
 static Py_ssize_t
 tuple_index(PyObject *self, Py_ssize_t len, PyObject *item)
@@ -209,39 +190,29 @@ _Py_make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(t);
-        if (typevar < 0) {
+        _Py_IDENTIFIER(__parameters__);
+        PyObject *subparams;
+        if (_PyObject_LookupAttrId(t, &PyId___parameters__, &subparams) < 0) {
             Py_DECREF(parameters);
             return NULL;
         }
-        if (typevar) {
-            iparam += tuple_add(parameters, iparam, t);
-        }
-        else {
-            _Py_IDENTIFIER(__parameters__);
-            PyObject *subparams;
-            if (_PyObject_LookupAttrId(t, &PyId___parameters__, &subparams) < 0) {
-                Py_DECREF(parameters);
-                return NULL;
-            }
-            if (subparams && PyTuple_Check(subparams)) {
-                Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
-                Py_ssize_t needed = len2 - 1 - (iarg - iparam);
-                if (needed > 0) {
-                    len += needed;
-                    if (_PyTuple_Resize(&parameters, len) < 0) {
-                        Py_DECREF(subparams);
-                        Py_DECREF(parameters);
-                        return NULL;
-                    }
-                }
-                for (Py_ssize_t j = 0; j < len2; j++) {
-                    PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
-                    iparam += tuple_add(parameters, iparam, t2);
+        if (subparams && PyTuple_Check(subparams)) {
+            Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
+            Py_ssize_t needed = len2 - 1 - (iarg - iparam);
+            if (needed > 0) {
+                len += needed;
+                if (_PyTuple_Resize(&parameters, len) < 0) {
+                    Py_DECREF(subparams);
+                    Py_DECREF(parameters);
+                    return NULL;
                 }
             }
-            Py_XDECREF(subparams);
+            for (Py_ssize_t j = 0; j < len2; j++) {
+                PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
+                iparam += tuple_add(parameters, iparam, t2);
+            }
         }
+        Py_XDECREF(subparams);
     }
     if (iparam < len) {
         if (_PyTuple_Resize(&parameters, iparam) < 0) {
@@ -325,23 +296,10 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(arg);
-        if (typevar < 0) {
+        arg = subs_tvars(arg, parameters, argitems);
+        if (arg == NULL) {
             Py_DECREF(newargs);
             return NULL;
-        }
-        if (typevar) {
-            Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
-            assert(iparam >= 0);
-            arg = argitems[iparam];
-            Py_INCREF(arg);
-        }
-        else {
-            arg = subs_tvars(arg, parameters, argitems);
-            if (arg == NULL) {
-                Py_DECREF(newargs);
-                return NULL;
-            }
         }
         PyTuple_SET_ITEM(newargs, iarg, arg);
     }
