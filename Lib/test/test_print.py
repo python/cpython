@@ -140,21 +140,28 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print("Hello World")', str(context.exception))
+        self.assertIn('Did you mean print(...)?', str(context.exception))
 
     def test_string_with_soft_space(self):
         python2_print_str = 'print "Hello World",'
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print("Hello World", end=" ")', str(context.exception))
+        self.assertIn("Did you mean print(..., end=' ')", str(context.exception))
 
     def test_string_with_excessive_whitespace(self):
         python2_print_str = 'print  "Hello World", '
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print("Hello World", end=" ")', str(context.exception))
+        self.assertIn("Did you mean print(..., end=' ')", str(context.exception))
+
+    def test_multiple_string_comma_with_soft_space(self):
+        python2_print_str = 'print "Hello", "World", "I", "am", "python3",'
+        with self.assertRaises(SyntaxError) as context:
+            exec(python2_print_str)
+
+        self.assertIn("Did you mean print(..., end=' ')", str(context.exception))        
 
     def test_string_with_leading_whitespace(self):
         python2_print_str = '''if 1:
@@ -163,7 +170,7 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print("Hello World")', str(context.exception))
+        self.assertIn('Did you mean print(...)?', str(context.exception))
 
     # bpo-32685: Suggestions for print statement should be proper when
     # it is in the same line as the header of a compound statement
@@ -173,14 +180,14 @@ class TestPy2MigrationHint(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print(p)', str(context.exception))
+        self.assertIn('Did you mean print(...)?', str(context.exception))
 
     def test_string_in_loop_on_same_line(self):
         python2_print_str = 'for i in s: print i'
         with self.assertRaises(SyntaxError) as context:
             exec(python2_print_str)
 
-        self.assertIn('print(i)', str(context.exception))
+        self.assertIn('Did you mean print(...)?', str(context.exception))
 
     def test_stream_redirection_hint_for_py2_migration(self):
         # Test correct hint produced for Py2 redirection syntax

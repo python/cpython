@@ -847,7 +847,14 @@ expression_without_invalid[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
+invalid_legacy_expression:
+    # Helpful error messages for common python2 style prints.
+    | a="print" ','.expression_without_invalid+ b=',' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Missing parentheses in call to 'print'. Did you mean print(..., end=' ')?") }
+    | a="print" b=','.expression_without_invalid+ {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty), "Missing parentheses in call to 'print'. Did you mean print(...)?") }
 invalid_expression:
+    | invalid_legacy_expression
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
     | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
