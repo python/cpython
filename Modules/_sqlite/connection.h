@@ -82,9 +82,6 @@ typedef struct
     PyObject* function_pinboard_progress_handler;
     PyObject* function_pinboard_authorizer_cb;
 
-    /* a dictionary of registered collation name => collation callable mappings */
-    PyObject* collations;
-
     /* Exception objects: borrowed refs. */
     PyObject* Warning;
     PyObject* Error;
