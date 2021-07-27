@@ -131,7 +131,7 @@ Module Contents
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.10  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``
 
 ---------------
 
@@ -584,7 +584,7 @@ Data Types
 
    CONTINUOUS and NAMED_FLAGS are designed to work with integer-valued members.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. class:: FlagBoundary
 
@@ -647,7 +647,7 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          KeepFlag.BLUE|0x10
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 ---------------
 
@@ -673,7 +673,7 @@ Utilites and Decorators
    also injects the members, and their aliases, into the global namespace they
    were defined in.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. decorator:: property
 
@@ -686,7 +686,7 @@ Utilites and Decorators
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. decorator:: unique
 
@@ -712,7 +712,7 @@ Utilites and Decorators
    :class:`EnumCheck` are used to specify which constraints should be checked
    on the decorated enumeration.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 ---------------
 
