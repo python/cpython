@@ -108,7 +108,7 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name. The returned object haven't a prefix of module name.
+   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
 
    .. versionadded:: 3.11
 

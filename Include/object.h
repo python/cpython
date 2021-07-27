@@ -239,7 +239,7 @@ PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObje
 PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03110000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 #endif
 
