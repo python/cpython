@@ -1439,29 +1439,56 @@ copy_com_pointer(PyObject *self, PyObject *args)
 }
 #else
 
-#ifndef MS_WIN32
-static PyObject *py_shared_library_is_loadable(PyObject *self, PyObject *args) {
+#ifdef __APPLE__
+static void* libsystem_b_handle;
+typedef bool (*_dyld_shared_cache_contains_path_f)(const char* path);
+static _dyld_shared_cache_contains_path_f _dyld_shared_cache_contains_path;
+static bool _dyld_shared_cache_contains_path_fallback(const char* path) {
+    return false;
+}
+
+__attribute__((constructor)) void load_libsystemb(void) {
+    libsystem_b_handle = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY);
+    if (libsystem_b_handle != NULL) {
+        _dyld_shared_cache_contains_path = dlsym(libsystem_b_handle, "_dyld_shared_cache_contains_path");
+    }
+
+    if (_dyld_shared_cache_contains_path == NULL) {
+        _dyld_shared_cache_contains_path = _dyld_shared_cache_contains_path_fallback;
+    }
+}
+
+__attribute__((destructor)) void unload_libsystemb(void) {
+    if (libsystem_b_handle != NULL) {
+        dlclose(libsystem_b_handle);
+    }
+}
+
+static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args) {
     PyObject *name, *name2;
-    char *name_str;
-    void* handle;
 
-    if (!PyArg_ParseTuple(args, "O", &name))
+    if (!PyArg_ParseTuple(args, "O", &name)) {
         return NULL;
+    }
 
-    if (name == Py_None)
+    if (name == Py_None) {
         Py_RETURN_FALSE;
+    }
 
-    if (PyUnicode_FSConverter(name, &name2) == 0)
+    if (PyUnicode_FSConverter(name, &name2) == 0) {
         return NULL;
+    }
 
-    name_str = PyBytes_AS_STRING(name2);
-    handle = dlopen(name_str, RTLD_LAZY);
+    char *name_str = PyBytes_AS_STRING(name2);
+    int r = _dyld_shared_cache_contains_path(name_str);
+
     Py_DECREF(name2);
-    if (handle == NULL) {
-        Py_RETURN_FALSE;
-    } else {
-        dlclose(handle);
+
+    if (r) {
         Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
     }
 }
 #endif
@@ -1978,8 +2005,9 @@ PyMethodDef _ctypes_module_methods[] = {
      "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
-    {"shared_library_is_loadable", py_shared_library_is_loadable, METH_VARARGS,
-     "check if shared library exists/is loadable with dlopen"},
+#endif
+#ifdef __APPLE__
+     {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
     {"sizeof", sizeof_func, METH_O, sizeof_doc},
