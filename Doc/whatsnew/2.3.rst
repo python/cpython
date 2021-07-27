@@ -672,7 +672,7 @@ with older versions of the Distutils::
    from distutils import core
    kw = {'name': "Quixote",
          'version': "0.5.1",
-         'description': "A highly Pythonic web application framework",
+         'description': "A highly Pythonic Web application framework",
          # ...
          }
 
