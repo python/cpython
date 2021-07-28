@@ -1389,7 +1389,7 @@ def _no_init(self, *args, **kwargs):
 
 def _callee(depth=2, default=None):
     try:
-        return sys._getframe(depth).f_globals.get('__name__')
+        return sys._getframe(depth).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):  # For platforms without _getframe()
         return default
 
