@@ -1,2 +1,0 @@
-Use "__main__" instead of "typing" as ``__module__`` attribute at
-``typing.NewType``. Patch provided by Yurii Karabas.
