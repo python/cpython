@@ -28,7 +28,7 @@ functions should be good enough; otherwise, you should use an instance of
    newlines.
 
    Optional keyword arguments correspond to the instance attributes of
-   :class:`TextWrapper`, documented below.  *width* defaults to ``70``.
+   :class:`TextWrapper`, documented below.
 
    See the :meth:`TextWrapper.wrap` method for additional details on how
    :func:`wrap` behaves.
