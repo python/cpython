@@ -29,14 +29,7 @@ functions should be good enough; otherwise, you should use an instance of
    newlines.  *width* defaults to ``70``.
 
    See :class:`TextWrapper` for documentation on all optional keyword
-   arguments: :attr:`.initial_indent`, :attr:`.subsequent_indent`,
-   :attr:`.expand_tabs`, :attr:`.replace_whitespace`,
-   :attr:`.fix_sentence_endings`, :attr:`.break_long_words`,
-   :attr:`.drop_whitespace`, :attr:`.break_on_hyphens` :attr:`.tabsize`, and
-   :attr:`.max_lines`.  Be careful not to misspell keyword arguments.
-   Misspelled keyword arguments will silently have no effect, and an exception
-   will not be raised.
-
+   arguments.
 
 
 .. function:: fill(text, width=70, *, initial_indent="", \
@@ -75,12 +68,8 @@ functions should be good enough; otherwise, you should use an instance of
       'Hello...'
 
    See :class:`TextWrapper` for documentation on all optional keyword
-   arguments: :attr:`.initial_indent`, :attr:`.subsequent_indent`,
-   :attr:`.fix_sentence_endings`, :attr:`.break_long_words`,
-   :attr:`.break_on_hyphens`, and :attr:`.max_lines`.
-
-   Note that the whitespace is collapsed before the text is passed to the
-   :class:`TextWrapper` :meth:`fill` function, so changing the value of
+   arguments. Note that the whitespace is collapsed before the text is passed
+   to the :class:`TextWrapper` :meth:`fill` function, so changing the value of
    :attr:`.tabsize`, :attr:`.expand_tabs`, :attr:`.drop_whitespace`, and
    :attr:`.replace_whitespace` will have no effect.  Be careful not to misspell
    keyword arguments. Misspelled keyword arguments will silently have no
