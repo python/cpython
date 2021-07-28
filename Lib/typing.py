@@ -2382,7 +2382,7 @@ class NewType:
         if '.' in name:
             name = name.rpartition('.')[-1]
         self.__name__ = name
-        self.__module__ = _callee()
+        self.__module__ = _callee(default='typing')
         self.__supertype__ = tp
 
     def __repr__(self):
