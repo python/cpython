@@ -105,6 +105,9 @@ globals().update(http.HTTPStatus.__members__)
 # Mapping status codes to official W3C names
 responses = {v: v.phrase for v in http.HTTPStatus.__members__.values()}
 
+# maximal amount of data to read at one time in _safe_read
+MAXAMOUNT = 1048576
+
 # maximal line length when calling readline().
 _MAXLINE = 65536
 _MAXHEADERS = 100
@@ -604,24 +607,43 @@ class HTTPResponse(io.BufferedIOBase):
             raise IncompleteRead(bytes(b[0:total_bytes]))
 
     def _safe_read(self, amt):
-        """Read the number of bytes requested.
+        """Read the number of bytes requested, compensating for partial reads.
+
+        Normally, we have a blocking socket, but a read() can be interrupted
+        by a signal (resulting in a partial read).
+
+        Note that we cannot distinguish between EOF and an interrupt when zero
+        bytes have been read. IncompleteRead() will be raised in this
+        situation.
 
         This function should be used when <amt> bytes "should" be present for
         reading. If the bytes are truly not available (due to EOF), then the
         IncompleteRead exception can be used to detect the problem.
         """
-        data = self.fp.read(amt)
-        if len(data) < amt:
-            raise IncompleteRead(data, amt-len(data))
-        return data
+        s = []
+        while amt > 0:
+            chunk = self.fp.read(min(amt, MAXAMOUNT))
+            if not chunk:
+                raise IncompleteRead(b''.join(s), amt)
+            s.append(chunk)
+            amt -= len(chunk)
+        return b"".join(s)
 
     def _safe_readinto(self, b):
         """Same as _safe_read, but for reading into a buffer."""
-        amt = len(b)
-        n = self.fp.readinto(b)
-        if n < amt:
-            raise IncompleteRead(bytes(b[:n]), amt-n)
-        return n
+        total_bytes = 0
+        mvb = memoryview(b)
+        while total_bytes < len(b):
+            if MAXAMOUNT < len(mvb):
+                temp_mvb = mvb[0:MAXAMOUNT]
+                n = self.fp.readinto(temp_mvb)
+            else:
+                n = self.fp.readinto(mvb)
+            if not n:
+                raise IncompleteRead(bytes(mvb[0:total_bytes]), len(b))
+            mvb = mvb[n:]
+            total_bytes += n
+        return total_bytes
 
     def read1(self, n=-1):
         """Read with at most one underlying system call.  If at least one
