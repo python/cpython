@@ -28,28 +28,24 @@ install the tools into there.
 Using make
 ----------
 
-To get started on UNIX, you can create a virtual environment with the command ::
-
-  make venv
-
-That will install all the tools necessary to build the documentation. Assuming
-the virtual environment was created in the ``venv`` directory (the default;
-configurable with the VENVDIR variable), you can run the following command to
-build the HTML output files::
+To get started on UNIX, you can create a virtual environment and build
+documentation with the command::
 
   make html
 
-By default, if the virtual environment is not created, the Makefile will
-look for instances of sphinxbuild and blurb installed on your process PATH
-(configurable with the SPHINXBUILD and BLURB variables).
+The virtual environment in the ``venv`` directory will contain all the tools
+necessary to build the documentation.  You can also configure where the virtual
+environment directory will be with the ``VENVDIR`` variable.
 
 On Windows, we try to emulate the Makefile as closely as possible with a
 ``make.bat`` file. If you need to specify the Python interpreter to use,
-set the PYTHON environment variable instead.
+set the PYTHON environment variable.
 
 Available make targets are:
 
-* "clean", which removes all build files.
+* "clean", which removes all build files and the virtual environment.
+
+* "clean-venv", which removes the virtual environment directory.
 
 * "venv", which creates a virtual environment with all necessary tools
   installed.
