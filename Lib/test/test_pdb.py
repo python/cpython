@@ -14,7 +14,6 @@ import linecache
 from contextlib import ExitStack
 from io import StringIO
 from test import support
-from test.support import os_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -1636,12 +1635,12 @@ def bœr():
     def test_package_without_a_main(self):
         pkg_name = 't_pkg'
         module_name = 't_main'
-        os_helper.rmtree(pkg_name)
+        support.rmtree(pkg_name)
         modpath = pkg_name + '/' + module_name
         os.makedirs(modpath)
         with open(modpath + '/__init__.py', 'w') as f:
             pass
-        self.addCleanup(os_helper.rmtree, pkg_name)
+        self.addCleanup(support.rmtree, pkg_name)
         stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
