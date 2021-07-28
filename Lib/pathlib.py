@@ -124,16 +124,25 @@ class _WindowsFlavour(_Flavour):
     ext_namespace_prefix = '\\\\?\\'
 
     reserved_names = (
-        {'CON', 'PRN', 'AUX', 'NUL'} |
-        {'COM%d' % i for i in range(1, 10)} |
-        {'LPT%d' % i for i in range(1, 10)}
+        {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+        {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
+        {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
         )
 
     # Interesting findings about extended paths:
-    # - '\\?\c:\a', '//?/c:\a' and '//?/c:/a' are all supported
-    #   but '\\?\c:/a' is not
-    # - extended paths are always absolute; "relative" extended paths will
-    #   fail.
+    # * '\\?\c:\a' is an extended path, which bypasses normal Windows API
+    #   path processing. Thus relative paths are not resolved and slash is not
+    #   translated to backslash. It has the native NT path limit of 32767
+    #   characters, but a bit less after resolving device symbolic links,
+    #   such as '\??\C:' => '\Device\HarddiskVolume2'.
+    # * '\\?\c:/a' looks for a device named 'C:/a' because slash is a
+    #   regular name character in the object namespace.
+    # * '\\?\c:\foo/bar' is invalid because '/' is illegal in NT filesystems.
+    #   The only path separator at the filesystem level is backslash.
+    # * '//?/c:\a' and '//?/c:/a' are effectively equivalent to '\\.\c:\a' and
+    #   thus limited to MAX_PATH.
+    # * Prior to Windows 8, ANSI API bytes paths are limited to MAX_PATH,
+    #   even with the '\\?\' prefix.
 
     def splitroot(self, part, sep=sep):
         first = part[0:1]
@@ -195,15 +204,16 @@ class _WindowsFlavour(_Flavour):
 
     def is_reserved(self, parts):
         # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL").
-        # We err on the side of caution and return True for paths which are
-        # not considered reserved by Windows.
+        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
+        # exist). We err on the side of caution and return True for paths
+        # which are not considered reserved by Windows.
         if not parts:
             return False
         if parts[0].startswith('\\\\'):
             # UNC paths are never reserved
             return False
-        return parts[-1].partition('.')[0].upper() in self.reserved_names
+        name = parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
+        return name.upper() in self.reserved_names
 
     def make_uri(self, path):
         # Under Windows, file URIs use the UTF-8 encoding.
