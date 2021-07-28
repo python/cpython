@@ -1729,6 +1729,20 @@ def bœr():
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
 
+    def test_package_without_a_main(self):
+        pkg_name = 't_pkg'
+        module_name = 't_main'
+        os_helper.rmtree(pkg_name)
+        modpath = pkg_name + '/' + module_name
+        os.makedirs(modpath)
+        with open(modpath + '/__init__.py', 'w') as f:
+            pass
+        self.addCleanup(os_helper.rmtree, pkg_name)
+        stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
+        self.assertIn(
+            "'t_pkg.t_main' is a package and cannot be directly executed",
+            stdout)
+
     def test_blocks_at_first_code_line(self):
         script = """
                 #This is a comment, on line 2
