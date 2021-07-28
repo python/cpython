@@ -908,7 +908,7 @@ Examples::
    >>> sum(x*y for x,y in zip(xvec, yvec))         # dot product
    260
 
-   >>>  unique_words= set(word for line in page.splitlines()  for word in line.split())
+   >>> unique_words = set(word for line in page.splitlines()  for word in line.split())
 
    >>> valedictorian = max((student.gpa, student.name) for student in graduates)
 
