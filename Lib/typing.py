@@ -1394,7 +1394,8 @@ def _allow_reckless_class_checks(depth=3):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    return _callee(depth) in {'abc', 'functools', None}
+    sentinel = object()
+    return _callee(depth, unsupported=sentinel) in {'abc', 'functools', sentinel}
 
 
 _PROTO_ALLOWLIST = {
