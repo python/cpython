@@ -640,6 +640,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except:
                 self.error("Usage: commands [bnum]\n        ...\n        end")
                 return
+        try:
+            self.get_bpbynumber(bnum)
+        except ValueError as err:
+            self.error('cannot set commands: %s' % err)
+            return
+
         self.commands_bnum = bnum
         # Save old definitions for the case of a keyboard interrupt.
         if bnum in self.commands:
