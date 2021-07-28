@@ -3771,10 +3771,7 @@ class NewTypeTests:
         code = ("import typing\n"
                 "NT = typing.NewType('NT', int)\n"
                 )
-        ns = {}
-        exec(code, ns)
-
-        self.assertIs(ns['NT'].__module__, None)
+        exec(code, {})
 
 
 class NewTypePythonTests(NewTypeTests, BaseTestCase):
