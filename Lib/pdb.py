@@ -1694,6 +1694,14 @@ def main():
         print('Error:', mainpyfile, 'does not exist')
         sys.exit(1)
 
+    if run_as_module:
+        import runpy
+        try:
+            runpy._get_module_details(mainpyfile)
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
     if not run_as_module:
