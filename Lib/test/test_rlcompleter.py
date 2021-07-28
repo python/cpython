@@ -80,20 +80,21 @@ class TestRlcompleter(unittest.TestCase):
                              ['egg.{}('.format(x) for x in dir(str)
                               if x.startswith('s')])
 
-    def test_getattr_called(self):
-        # Ensure getattr() is invoked no more than once per attribute
-        # note the special case for @properties methods below; that is why
-        # we use __dir__ and __getattr__ in class Foo.
+    def test_excessive_getattr(self):
+        """Ensure getattr() is invoked no more than once per attribute"""
+
+        # note the special case for @property methods below; that is why
+        # we use __dir__ and __getattr__ in class Foo to create a "magic"
+        # class attribute 'bar'. This forces `getattr` to call __getattr__
+        # (which is doesn't necessarily do).
         class Foo:
             calls = 0
-            def __getattr__(self, name):
+            bar = ''
+            def __getattribute__(self, name):
                 if name == 'bar':
                     self.calls += 1
                     return None
-                return super().__getattr__(name)
-
-            def __dir__(self):
-                return list(super().__dir__()) + ['bar']
+                return super().__getattribute__(name)
 
         f = Foo()
         completer = rlcompleter.Completer(dict(f=f))
