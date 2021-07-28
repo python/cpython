@@ -169,7 +169,11 @@ class ScriptTarget(str):
 
 class ModuleTarget(str):
     def check(self):
-        pass
+        try:
+            self._details
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
 
     @functools.cached_property
     def _details(self):
