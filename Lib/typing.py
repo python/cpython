@@ -1388,13 +1388,12 @@ def _callee(depth=1, default='__main__', unsupported=None):
         return unsupported
 
 
-def _allow_reckless_class_checks(depth=3):
+def _allow_reckless_class_checks(depth=3, sentinel=object()):
     """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    sentinel = object()
     return _callee(depth, unsupported=sentinel) in {'abc', 'functools', sentinel}
 
 
