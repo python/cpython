@@ -1,2 +1,2 @@
-Reduce usage of ``sys._getframe`` at ``typing`` module. Patch provided by
+Refactor usage of ``sys._getframe`` in ``typing`` module. Patch provided by
 Yurii Karabas.
