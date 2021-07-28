@@ -1112,7 +1112,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | index given by *i*             |                     |
 |                              | (same as ``s[i:i] = [x]``)     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.pop([i])``               | retrieves the item at *i* and  | \(2)                |
+| ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.remove(x)``              | remove the first item from *s* | \(3)                |
