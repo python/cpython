@@ -14,6 +14,7 @@ import linecache
 from contextlib import ExitStack
 from io import StringIO
 from test import support
+from test.support import os_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
