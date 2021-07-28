@@ -25,10 +25,13 @@ functions should be good enough; otherwise, you should use an instance of
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
-   newlines.  *width* defaults to ``70``.
+   newlines.
 
-   See :class:`TextWrapper` for documentation on all optional keyword
-   arguments.
+   Optional keyword arguments correspond to the instance attributes of
+   :class:`TextWrapper`, documented below.  *width* defaults to ``70``.
+
+   See the :meth:`TextWrapper.wrap` method for additional details on how
+   :func:`wrap` behaves.
 
 
 .. function:: fill(text, width=70, *, initial_indent="", \
@@ -43,9 +46,8 @@ functions should be good enough; otherwise, you should use an instance of
 
       "\n".join(wrap(text, ...))
 
-   See :class:`TextWrapper` for documentation on all additional optional
-   arguments, which are the same as the optional arguments to :func:`wrap`
-   above.
+   In particular, :func:`fill` accepts exactly the same keyword arguments as
+   :func:`wrap`.
 
 
 .. function:: shorten(text, width, *, fix_sentence_endings=False, \
@@ -66,12 +68,11 @@ functions should be good enough; otherwise, you should use an instance of
       >>> textwrap.shorten("Hello world", width=10, placeholder="...")
       'Hello...'
 
-   See :class:`TextWrapper` for documentation on all optional keyword
-   arguments. Note that the whitespace is collapsed before the text is passed
-   to the :class:`TextWrapper` :meth:`fill` function, so changing the value of
-   :attr:`.tabsize`, :attr:`.expand_tabs`, :attr:`.drop_whitespace`, and
-   :attr:`.replace_whitespace` will have no effect.  Be careful not to misspell
-   keyword arguments.
+   Optional keyword arguments correspond to the instance attributes of
+   :class:`TextWrapper`, documented below.  Note that the whitespace is
+   collapsed before the text is passed to the :class:`TextWrapper` :meth:`fill`
+   function, so changing the value of :attr:`.tabsize`, :attr:`.expand_tabs`,
+   :attr:`.drop_whitespace`, and :attr:`.replace_whitespace` will have no effect.
 
    .. versionadded:: 3.4
 
