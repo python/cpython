@@ -503,7 +503,7 @@ validate_capture(PyObject *name)
 }
 
 static int
-validate_pattern(struct validator *state, pattern_ty p, int star_okay)
+validate_pattern(struct validator *state, pattern_ty p, int star_ok)
 {
     int ret = -1;
     if (++state->recursion_depth > state->recursion_limit) {
@@ -604,7 +604,7 @@ validate_pattern(struct validator *state, pattern_ty p, int star_okay)
             ret = validate_patterns(state, p->v.MatchClass.kwd_patterns, /*star_ok=*/0);
             break;
         case MatchStar_kind:
-            if (!star_okay) {
+            if (!star_ok) {
                 PyErr_SetString(PyExc_ValueError, "can't use MatchStar here");
                 ret = 0;
                 break;
