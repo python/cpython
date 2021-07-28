@@ -38,7 +38,7 @@ class CollationTests(unittest.TestCase):
             con.create_collation("X", 42)
         self.assertEqual(str(cm.exception), 'parameter must be callable')
 
-    def test_create_collation_utf8(self):
+    def test_create_collation_not_ascii(self):
         con = sqlite.connect(":memory:")
         con.create_collation("collä", lambda x, y: (x > y) - (x < y))
 
