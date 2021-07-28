@@ -165,7 +165,7 @@ Module functions and constants
    does not include the type, i. e. if you use something like
    ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
    everything until the first ``'['`` for the column name and strip
-   the preceeding space: the column name would simply be "Expiration date".
+   the preceding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
