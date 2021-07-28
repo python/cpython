@@ -46,8 +46,8 @@ functions should be good enough; otherwise, you should use an instance of
                    break_on_hyphens=True, tabsize=8, \
                    *, max_lines=None, **kwargs)
 
-   Wraps the single paragraph in *text*, and returns a single string containing
-   the wrapped paragraph.  :func:`fill` is shorthand for ::
+   Wraps the single paragraph in *text*, and returns a single string containing the
+   wrapped paragraph.  :func:`fill` is shorthand for  ::
 
       "\n".join(wrap(text, ...))
 
