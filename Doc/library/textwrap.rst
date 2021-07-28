@@ -21,8 +21,7 @@ functions should be good enough; otherwise, you should use an instance of
                    subsequent_indent="", expand_tabs=True, \
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
-                   break_on_hyphens=True, tabsize=8, *, max_lines=None, \
-                   **kwargs)
+                   break_on_hyphens=True, tabsize=8, max_lines=None)
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
@@ -37,7 +36,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   *, max_lines=None, **kwargs)
+                   max_lines=None)
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -50,8 +49,8 @@ functions should be good enough; otherwise, you should use an instance of
 
 
 .. function:: shorten(text, width, *, fix_sentence_endings=False, \
-                      break_long_words=True, break_on_hyphens=True, *, \
-                      placeholder=' [...]', **kwargs)
+                      break_long_words=True, break_on_hyphens=True, \
+                      placeholder=' [...]')
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
