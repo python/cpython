@@ -3767,6 +3767,15 @@ class NewTypeTests:
                 with self.assertRaises(pickle.PicklingError):
                     pickle.dumps(UserAge, proto)
 
+    def test_missing__name__(self):
+        code = ("import typing\n"
+                "NT = typing.NewType('NT', int)\n"
+                )
+        ns = {}
+        exec(code, ns)
+
+        self.assertIs(ns['NT'].__module__, None)
+
 
 class NewTypePythonTests(NewTypeTests, BaseTestCase):
     module = py_typing
