@@ -2395,8 +2395,10 @@ class NewType:
         if '.' in name:
             name = name.rpartition('.')[-1]
         self.__name__ = name
-        self.__module__ = _callee(default='typing')
         self.__supertype__ = tp
+        def_mod = _callee()
+        if def_mod != 'typing':
+            self.__module__ = def_mod
 
     def __repr__(self):
         return f'{self.__module__}.{self.__qualname__}'
