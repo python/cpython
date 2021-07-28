@@ -213,7 +213,7 @@ sqlite3
   :meth:`~sqlite3.Connection.set_authorizer`.
   (Contributed by Erlend E. Aasland in :issue:`44491`.)
 
-* Collation name :meth:`~sqlite3.Connection.create_collation` can now 
+* Collation name :meth:`~sqlite3.Connection.create_collation` can now
   contain any Unicode character.  Collation names with invalid characters
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
