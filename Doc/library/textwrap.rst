@@ -72,8 +72,7 @@ functions should be good enough; otherwise, you should use an instance of
    to the :class:`TextWrapper` :meth:`fill` function, so changing the value of
    :attr:`.tabsize`, :attr:`.expand_tabs`, :attr:`.drop_whitespace`, and
    :attr:`.replace_whitespace` will have no effect.  Be careful not to misspell
-   keyword arguments. Misspelled keyword arguments will silently have no
-   effect, and an exception will not be raised.
+   keyword arguments.
 
    .. versionadded:: 3.4
 
