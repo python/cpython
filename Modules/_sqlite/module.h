@@ -65,6 +65,19 @@ extern pysqlite_state pysqlite_global_state;
 static inline pysqlite_state *
 pysqlite_get_state(PyObject *Py_UNUSED(module))
 {
+    return &pysqlite_global_state;  // Replace with PyModule_GetState
+}
+
+static inline pysqlite_state *
+pysqlite_get_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+{
+    return &pysqlite_global_state;  // Replace with PyType_GetModuleState
+}
+
+static inline pysqlite_state *
+pysqlite_get_state_by_type(PyTypeObject *Py_UNUSED(tp))
+{
+    // Replace with _PyType_GetModuleByDef & PyModule_GetState
     return &pysqlite_global_state;
 }
 

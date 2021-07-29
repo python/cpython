@@ -106,6 +106,12 @@ Type Objects
        GC protocol itself by at least implementing the
        :c:member:`~PyTypeObject.tp_traverse` handle.
 
+.. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
+
+   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the

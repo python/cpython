@@ -3628,6 +3628,12 @@ PyType_FromSpec(PyType_Spec *spec)
     return PyType_FromSpecWithBases(spec, NULL);
 }
 
+PyObject *
+PyType_GetName(PyTypeObject *type)
+{
+    return type_name(type, NULL);
+}
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
