@@ -436,9 +436,10 @@ ABC hierarchy::
 
         - :attr:`__path__`
             The list of locations where the package's submodules will be found.
-            It is used in the same way as :attr:`sys.path` but just for the
-            package.  It is not set on non-package modules so it is the
-            indicator that a module is a package.
+            The import system passes this to ``__import__()`` and to finders
+            in the same way as :attr:`sys.path` but just for the package.
+            It is not set on non-package modules so it can be used
+            as an indicator that a module is a package.
 
         - :attr:`__package__`
             The fully-qualified name of the package the module is in (or the
@@ -1357,15 +1358,17 @@ find and load modules.
    (:attr:`__file__`)
 
    The location from which the module was loaded.
-   The :term:`finder` should always set this attribute but it may be ``None``
-   when unspecified (like for namespace packages).
+   The :term:`finder` should always set this attribute to a meaningful value
+   for the :term:`loader` to use.  In the uncommon case that there isn't one
+   (like for namespace packages), it should be set to ``None``.
 
    .. attribute:: submodule_search_locations
 
    (:attr:`__path__`)
 
    The list of locations where the package's submodules will be found.
-   The :term:`finder` should always set this attribute to ``None`` for
+   Setting this to a list, even an empty one, is how a :term:`finder` indicates
+   to the import system that this is a package.  It should be set to ``None`` for
    non-package modules.  It is set automatically later to a special object for
    namespace packages.
 
@@ -1388,8 +1391,8 @@ find and load modules.
    (:attr:`__package__`)
 
    (Read-only) The fully-qualified name of the package the module is in (or the
-   empty string for the top-level module).
-   It is the same as :attr:`__name__` for packages.
+   empty string for a top-level module).
+   If the module is a package then this is the same as :attr:`name`.
 
    .. attribute:: has_location
 
