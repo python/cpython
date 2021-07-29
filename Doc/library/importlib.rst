@@ -427,7 +427,7 @@ ABC hierarchy::
             It is ``'__main__'`` for the top-level module.
 
         - :attr:`__file__`
-            The location from which the module was loaded (usually the path).
+            The location from which the module was loaded.
             It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__cached__`
@@ -435,7 +435,7 @@ ABC hierarchy::
             It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__path__`
-            The list of paths where to find submodules within a package.
+            The list of locations where the package's submodules will be found.
             It is used in the same way as :attr:`sys.path` but just for the
             package.  It is not set on non-package modules so it is the
             indicator that a module is a package.
@@ -1356,7 +1356,7 @@ find and load modules.
 
    (:attr:`__file__`)
 
-   The location from which the module was loaded (usually the path).
+   The location from which the module was loaded.
    The :term:`finder` should always set this attribute but it may be ``None``
    when unspecified (like for namespace packages).
 
@@ -1364,7 +1364,7 @@ find and load modules.
 
    (:attr:`__path__`)
 
-   The list of paths where to find submodules within a package.
+   The list of locations where the package's submodules will be found.
    The :term:`finder` should always set this attribute to ``None`` for
    non-package modules.  It is set automatically later to a special object for
    namespace packages.
