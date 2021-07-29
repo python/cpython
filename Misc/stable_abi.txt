@@ -2132,6 +2132,10 @@ function PyGC_Enable
 function PyGC_IsEnabled
     added 3.10
 
+# Add new C API in Python 3.11
+
+function PyType_GetName
+    added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
