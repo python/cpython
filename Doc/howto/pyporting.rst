@@ -21,7 +21,7 @@ Porting Python 2 Code to Python 3
    Brett Cannon's `Why Python 3 exists`_.
 
    
-   For help with porting, you can use this python-converter-tool_.
+   For help with porting, you can view the archived python-porting_ mailing list.
 
 The Short Explanation
 =====================
