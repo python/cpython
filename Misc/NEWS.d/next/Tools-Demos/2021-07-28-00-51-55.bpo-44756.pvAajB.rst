@@ -1,0 +1,6 @@
+In the Makefile for documentation (:file:`Doc/Makefile`), the ``build`` rule
+is dependent on the ``venv`` rule. Therefore, ``html``, ``latex``, and other
+build-dependent rules are also now dependent on ``venv``. The ``venv`` rule
+only performs an action if ``$(VENVDIR)`` does not exist.
+:file:`Doc/README.rst` was updated; most users now only need to type ``make
+html``.

@@ -1621,7 +1621,7 @@ Function and class definitions
    A function definition.
 
    * ``name`` is a raw string of the function name.
-   * ``args`` is a :class:`arguments` node.
+   * ``args`` is an :class:`arguments` node.
    * ``body`` is the list of nodes inside the function.
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
      first (i.e. the first in the list will be applied last).

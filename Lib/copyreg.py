@@ -36,6 +36,12 @@ else:
 
     pickle(complex, pickle_complex, complex)
 
+def pickle_union(obj):
+    import functools, operator
+    return functools.reduce, (operator.or_, obj.__args__)
+
+pickle(type(int | str), pickle_union)
+
 # Support for pickling new-style objects
 
 def _reconstructor(cls, base, state):

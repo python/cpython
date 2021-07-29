@@ -1275,7 +1275,7 @@ class SizeofTest(unittest.TestCase):
         # frame
         import inspect
         x = inspect.currentframe()
-        check(x, size('4P3i4cP'))
+        check(x, size('3Pi3c'))
         # function
         def func(): pass
         check(func, size('14Pi'))
