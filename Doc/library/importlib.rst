@@ -424,7 +424,7 @@ ABC hierarchy::
 
         - :attr:`__name__`
             The module's fully-qualified name.
-            It is ``'__main__'`` for the top-level module.
+            It is ``'__main__'`` for a top-level module.
 
         - :attr:`__file__`
             The location from which the module was loaded.
@@ -443,8 +443,8 @@ ABC hierarchy::
 
         - :attr:`__package__`
             The fully-qualified name of the package the module is in (or the
-            empty string for the top-level module).
-            It is the same as :attr:`__name__` for packages.
+            empty string for a top-level module).
+            If the module is a package then this is the same as :attr:`__name__`.
 
         - :attr:`__loader__`
             The :term:`loader` used to load the module.
@@ -1359,7 +1359,7 @@ find and load modules.
 
    The location from which the module was loaded.
    The :term:`finder` should always set this attribute to a meaningful value
-   for the :term:`loader` to use.  In the uncommon case that there isn't one
+   for the :term:`loader` to use.  In the uncommon case that there is not one
    (like for namespace packages), it should be set to ``None``.
 
    .. attribute:: submodule_search_locations
