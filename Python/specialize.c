@@ -71,7 +71,7 @@ stats_to_dict(SpecializationStats *stats)
     ADD_STAT_TO_DICT(res, unquickened);
 #if SPECIALIZATION_STATS_DETAILED
     if (stats->miss_types != NULL) {
-        if (PyDict_SetItemString(res, "detailed", stats->miss_types) == -1) {
+        if (PyDict_SetItemString(res, "fails", stats->miss_types) == -1) {
             Py_DECREF(res);
             return NULL;
         }

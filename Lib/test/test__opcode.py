@@ -82,11 +82,11 @@ class SpecializationStatsTests(unittest.TestCase):
             self.assertCountEqual(stats.keys(), specialized_opcodes)
             self.assertCountEqual(
                 stats['load_attr'].keys(),
-                stat_names + ['detailed'])
+                stat_names + ['fails'])
             for sn in stat_names:
                 self.assertIsInstance(stats['load_attr'][sn], int)
-            self.assertIsInstance(stats['load_attr']['detailed'], dict)
-            for k,v in stats['load_attr']['detailed'].items():
+            self.assertIsInstance(stats['load_attr']['fails'], dict)
+            for k,v in stats['load_attr']['fails'].items():
                 self.assertIsInstance(k, tuple)
                 self.assertIsInstance(v, int)
 
