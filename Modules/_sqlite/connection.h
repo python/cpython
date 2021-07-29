@@ -83,7 +83,7 @@ typedef struct
     PyObject* text_factory;
 
     /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
-    PyObject* function_pinboard_trace_callback;
+    callback_context *trace_ctx;
     PyObject* function_pinboard_progress_handler;
     PyObject* function_pinboard_authorizer_cb;
 

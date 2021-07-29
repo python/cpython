@@ -55,6 +55,7 @@ static const char * const begin_statements[] = {
 
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
+static void free_callback_context(callback_context *ctx);
 
 static PyObject *
 new_statement_cache(pysqlite_Connection *self, int maxsize)
@@ -168,7 +169,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->thread_ident = PyThread_get_thread_ident();
     self->check_same_thread = check_same_thread;
 
-    self->function_pinboard_trace_callback = NULL;
+    self->trace_ctx = NULL;
     self->function_pinboard_progress_handler = NULL;
     self->function_pinboard_authorizer_cb = NULL;
 
@@ -214,6 +215,13 @@ pysqlite_do_all_statements(pysqlite_Connection *self)
     }
 }
 
+#define VISIT_CALLBACK_CONTEXT(ctx) \
+do {                                \
+    if (ctx) {                      \
+        Py_VISIT(ctx->callable);    \
+    }                               \
+} while (0)
+
 static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
@@ -223,11 +231,19 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(self->cursors);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->text_factory);
-    Py_VISIT(self->function_pinboard_trace_callback);
+    VISIT_CALLBACK_CONTEXT(self->trace_ctx);
     Py_VISIT(self->function_pinboard_progress_handler);
     Py_VISIT(self->function_pinboard_authorizer_cb);
+#undef VISIT_CALLBACK_CONTEXT
     return 0;
 }
+
+#define CLEAR_CALLBACK_CONTEXT(ctx) \
+do {                                \
+    if (ctx) {                      \
+        Py_CLEAR(ctx->callable);    \
+    }                               \
+} while (0)
 
 static int
 connection_clear(pysqlite_Connection *self)
@@ -237,9 +253,10 @@ connection_clear(pysqlite_Connection *self)
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
-    Py_CLEAR(self->function_pinboard_trace_callback);
+    CLEAR_CALLBACK_CONTEXT(self->trace_ctx);
     Py_CLEAR(self->function_pinboard_progress_handler);
     Py_CLEAR(self->function_pinboard_authorizer_cb);
+#undef CLEAR_CALLBACK_CONTEXT
     return 0;
 }
 
@@ -254,11 +271,18 @@ connection_close(pysqlite_Connection *self)
 }
 
 static void
+free_callback_contexts(pysqlite_Connection *self)
+{
+    free_callback_context(self->trace_ctx);
+}
+
+static void
 connection_dealloc(pysqlite_Connection *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tp->tp_clear((PyObject *)self);
+    free_callback_contexts(self);
 
     /* Clean up if user has not called .close() explicitly. */
     connection_close(self);
@@ -804,7 +828,7 @@ free_callback_context(callback_context *ctx)
         // This function may be called without the GIL held, so we need to
         // ensure that we destroy 'ctx' with the GIL held.
         PyGILState_STATE gstate = PyGILState_Ensure();
-        Py_DECREF(ctx->callable);
+        Py_XDECREF(ctx->callable);
         PyMem_Free(ctx);
         PyGILState_Release(gstate);
     }
@@ -1014,16 +1038,18 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     gilstate = PyGILState_Ensure();
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
+    callback_context *ctx = (callback_context *)user_arg;
+    assert(ctx != NULL);
     if (py_statement) {
-        ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
+        ret = PyObject_CallOneArg(ctx->callable, py_statement);
         Py_DECREF(py_statement);
     }
 
     if (ret) {
         Py_DECREF(ret);
     } else {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
+        assert(ctx->state != NULL);
+        if (ctx->state->enable_callback_tracebacks) {
             PyErr_Print();
         }
         else {
@@ -1136,15 +1162,22 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 #else
         sqlite3_trace(self->db, 0, (void*)0);
 #endif
-        Py_XSETREF(self->function_pinboard_trace_callback, NULL);
-    } else {
+        free_callback_context(self->trace_ctx);
+        self->trace_ctx = NULL;
+    }
+    else {
+        callback_context *ctx = create_callback_context(self->state,
+                                                        trace_callback);
+        if (ctx == NULL) {
+            return NULL;
+        }
 #ifdef HAVE_TRACE_V2
-        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, _trace_callback, trace_callback);
+        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, _trace_callback, ctx);
 #else
-        sqlite3_trace(self->db, _trace_callback, trace_callback);
+        sqlite3_trace(self->db, _trace_callback, ctx);
 #endif
-        Py_INCREF(trace_callback);
-        Py_XSETREF(self->function_pinboard_trace_callback, trace_callback);
+        free_callback_context(self->trace_ctx);
+        self->trace_ctx = ctx;
     }
 
     Py_RETURN_NONE;
