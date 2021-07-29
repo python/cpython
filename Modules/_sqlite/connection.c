@@ -1720,7 +1720,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.create_collation as pysqlite_connection_create_collation
 
-    name: unicode
+    name: str
     callback as callable: object
     /
 
@@ -1729,61 +1729,26 @@ Creates a collation function. Non-standard.
 
 static PyObject *
 pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
-                                          PyObject *name, PyObject *callable)
-/*[clinic end generated code: output=0f63b8995565ae22 input=5c3898813a776cf2]*/
+                                          const char *name,
+                                          PyObject *callable)
+/*[clinic end generated code: output=a4ceaff957fdef9a input=301647aab0f2fb1d]*/
 {
-    PyObject* uppercase_name = 0;
-    Py_ssize_t i, len;
-    _Py_IDENTIFIER(upper);
-    const char *uppercase_name_str;
-    int rc;
-    unsigned int kind;
-    const void *data;
-
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
-        goto finally;
+        return NULL;
     }
 
-    uppercase_name = _PyObject_CallMethodIdOneArg((PyObject *)&PyUnicode_Type,
-                                                  &PyId_upper, name);
-    if (!uppercase_name) {
-        goto finally;
-    }
-
-    if (PyUnicode_READY(uppercase_name))
-        goto finally;
-    len = PyUnicode_GET_LENGTH(uppercase_name);
-    kind = PyUnicode_KIND(uppercase_name);
-    data = PyUnicode_DATA(uppercase_name);
-    for (i=0; i<len; i++) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        if ((ch >= '0' && ch <= '9')
-         || (ch >= 'A' && ch <= 'Z')
-         || (ch == '_'))
-        {
-            continue;
-        } else {
-            PyErr_SetString(self->ProgrammingError,
-                            "invalid character in collation name");
-            goto finally;
-        }
-    }
-
-    uppercase_name_str = PyUnicode_AsUTF8(uppercase_name);
-    if (!uppercase_name_str)
-        goto finally;
-
+    int rc;
     int flags = SQLITE_UTF8;
     if (callable == Py_None) {
-        rc = sqlite3_create_collation_v2(self->db, uppercase_name_str, flags,
+        rc = sqlite3_create_collation_v2(self->db, name, flags,
                                          NULL, NULL, NULL);
     }
     else {
         if (!PyCallable_Check(callable)) {
             PyErr_SetString(PyExc_TypeError, "parameter must be callable");
-            goto finally;
+            return NULL;
         }
-        rc = sqlite3_create_collation_v2(self->db, uppercase_name_str, flags,
+        rc = sqlite3_create_collation_v2(self->db, name, flags,
                                          Py_NewRef(callable),
                                          &pysqlite_collation_callback,
                                          &_destructor);
@@ -1798,16 +1763,10 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
             Py_DECREF(callable);
         }
         _pysqlite_seterror(self->db);
-        goto finally;
-    }
-
-finally:
-    Py_XDECREF(uppercase_name);
-
-    if (PyErr_Occurred()) {
         return NULL;
     }
-    return Py_NewRef(Py_None);
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
