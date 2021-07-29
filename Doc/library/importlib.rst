@@ -1329,13 +1329,12 @@ find and load modules.
    A specification for a module's import-system-related state.  This is
    typically exposed as the module's :attr:`__spec__` attribute.  In the
    descriptions below, the names in parentheses give the corresponding
-   attribute available directly on the module object, e.g.
-   ``module.__spec__.origin == module.__file__``.  Note, however, that while
-   the *values* are usually equivalent, they can differ since there is no
-   synchronization between the two objects.  For example, it is possible to
-   update the module's :attr:`__file__` at runtime and this will not be
-   automatically reflected in the module's :attr:`__spec__.origin`, and vice
-   versa.
+   attribute available directly on the module object,
+   e.g. ``module.__spec__.origin == module.__file__``.  Note, however, that
+   while the *values* are usually equivalent, they can differ since there is
+   no synchronization between the two objects.  For example, it is possible to update
+   the module's :attr:`__file__` at runtime and this will not be automatically
+   reflected in the module's :attr:`__spec__.origin`, and vice versa.
 
    .. versionadded:: 3.4
 
