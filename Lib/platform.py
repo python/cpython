@@ -5,7 +5,7 @@
 
     If called from the command line, it prints the platform
     information concatenated as single string to stdout. The output
-    format is useable as part of a filename.
+    format is usable as part of a filename.
 
 """
 #    This module is maintained by Marc-Andre Lemburg <mal@egenix.com>.
@@ -169,7 +169,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
         Note that the function has intimate knowledge of how different
         libc versions add symbols to the executable and thus is probably
-        only useable for executables compiled using gcc.
+        only usable for executables compiled using gcc.
 
         The file is read and scanned in chunks of chunksize bytes.
 

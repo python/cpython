@@ -1440,7 +1440,7 @@ Do not instantiate the class directly.
       Start accepting connections.
 
       This method is idempotent, so it can be called when
-      the server is already being serving.
+      the server is already serving.
 
       The *start_serving* keyword-only parameter to
       :meth:`loop.create_server` and

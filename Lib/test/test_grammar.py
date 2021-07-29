@@ -177,8 +177,10 @@ class TokenTests(unittest.TestCase):
 
     def test_float_exponent_tokenization(self):
         # See issue 21642.
-        self.assertEqual(1 if 1else 0, 1)
-        self.assertEqual(1 if 0else 0, 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertEqual(eval("1 if 1else 0"), 1)
+            self.assertEqual(eval("1 if 0else 0"), 0)
         self.assertRaises(SyntaxError, eval, "0 if 1Else 0")
 
     def test_underscore_literals(self):
@@ -210,6 +212,92 @@ class TokenTests(unittest.TestCase):
         check("1.2_", "invalid decimal literal")
         check("1e2_", "invalid decimal literal")
         check("1e+", "invalid decimal literal")
+
+    def test_end_of_numerical_literals(self):
+        def check(test):
+            with self.assertWarns(DeprecationWarning):
+                compile(test, "<testcase>", "eval")
+
+        def check_error(test):
+            with warnings.catch_warnings(record=True) as w:
+                with self.assertRaises(SyntaxError):
+                    compile(test, "<testcase>", "eval")
+            self.assertEqual(w,  [])
+
+        check_error("0xfand x")
+        check("0o7and x")
+        check("0b1and x")
+        check("9and x")
+        check("0and x")
+        check("1.and x")
+        check("1e3and x")
+        check("1jand x")
+
+        check("0xfor x")
+        check("0o7or x")
+        check("0b1or x")
+        check("9or x")
+        check_error("0or x")
+        check("1.or x")
+        check("1e3or x")
+        check("1jor x")
+
+        check("0xfin x")
+        check("0o7in x")
+        check("0b1in x")
+        check("9in x")
+        check("0in x")
+        check("1.in x")
+        check("1e3in x")
+        check("1jin x")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            check("0xfis x")
+            check("0o7is x")
+            check("0b1is x")
+            check("9is x")
+            check("0is x")
+            check("1.is x")
+            check("1e3is x")
+            check("1jis x")
+
+        check("0xfif x else y")
+        check("0o7if x else y")
+        check("0b1if x else y")
+        check("9if x else y")
+        check("0if x else y")
+        check("1.if x else y")
+        check("1e3if x else y")
+        check("1jif x else y")
+
+        check_error("x if 0xfelse y")
+        check("x if 0o7else y")
+        check("x if 0b1else y")
+        check("x if 9else y")
+        check("x if 0else y")
+        check("x if 1.else y")
+        check("x if 1e3else y")
+        check("x if 1jelse y")
+
+        check("[0x1ffor x in ()]")
+        check("[0x1for x in ()]")
+        check("[0xfor x in ()]")
+        check("[0o7for x in ()]")
+        check("[0b1for x in ()]")
+        check("[9for x in ()]")
+        check("[1.for x in ()]")
+        check("[1e3for x in ()]")
+        check("[1jfor x in ()]")
+
+        check_error("0xfspam")
+        check_error("0o7spam")
+        check_error("0b1spam")
+        check_error("9spam")
+        check_error("0spam")
+        check_error("1.spam")
+        check_error("1e3spam")
+        check_error("1jspam")
 
     def test_string_literals(self):
         x = ''; y = ""; self.assertTrue(len(x) == 0 and x == y)

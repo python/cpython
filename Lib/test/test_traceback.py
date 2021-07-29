@@ -4,6 +4,7 @@ from collections import namedtuple
 from io import StringIO
 import linecache
 import sys
+import inspect
 import unittest
 import re
 from test import support
@@ -254,6 +255,21 @@ class TracebackCases(unittest.TestCase):
             traceback.format_exception_only(None), [NONE_EXC_STRING])
         self.assertEqual(
             traceback.format_exception_only(None, None), [NONE_EXC_STRING])
+
+    def test_signatures(self):
+        self.assertEqual(
+            str(inspect.signature(traceback.print_exception)),
+            ('(exc, /, value=<implicit>, tb=<implicit>, '
+             'limit=None, file=None, chain=True)'))
+
+        self.assertEqual(
+            str(inspect.signature(traceback.format_exception)),
+            ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
+             'chain=True)'))
+
+        self.assertEqual(
+            str(inspect.signature(traceback.format_exception_only)),
+            '(exc, /, value=<implicit>)')
 
 
 class TracebackFormatTests(unittest.TestCase):

@@ -211,9 +211,11 @@ class ExceptionTests(unittest.TestCase):
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 2, 2)
+        check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
+        check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
@@ -244,6 +246,7 @@ class ExceptionTests(unittest.TestCase):
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
@@ -2103,6 +2106,22 @@ class SyntaxErrorTests(unittest.TestCase):
                     with support.captured_stderr() as err:
                         sys.__excepthook__(*sys.exc_info())
                     the_exception = exc
+
+    def test_encodings(self):
+        source = (
+            '# -*- coding: cp437 -*-\n'
+            '"┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))\n'
+        )
+        try:
+            with open(TESTFN, 'w', encoding='cp437') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
+            self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        finally:
+            unlink(TESTFN)
 
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)

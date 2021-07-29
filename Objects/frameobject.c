@@ -4,6 +4,7 @@
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_code.h"          // CO_FAST_LOCAL, etc.
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
@@ -45,7 +46,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_code, f->f_lasti*2);
+        return PyCode_Addr2Line(_PyFrame_GetCode(f), f->f_lasti*2);
     }
 }
 
@@ -471,7 +472,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     new_lineno = (int)l_new_lineno;
 
-    if (new_lineno < f->f_code->co_firstlineno) {
+    if (new_lineno < _PyFrame_GetCode(f)->co_firstlineno) {
         PyErr_Format(PyExc_ValueError,
                     "line %d comes before the current code block",
                     new_lineno);
@@ -480,8 +481,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
-    int len = (int)(PyBytes_GET_SIZE(f->f_code->co_code) / sizeof(_Py_CODEUNIT));
-    int *lines = marklines(f->f_code, len);
+    int len = (int)(PyBytes_GET_SIZE(_PyFrame_GetCode(f)->co_code) / sizeof(_Py_CODEUNIT));
+    int *lines = marklines(_PyFrame_GetCode(f), len);
     if (lines == NULL) {
         return -1;
     }
@@ -495,7 +496,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int64_t *stacks = mark_stacks(f->f_code, len);
+    int64_t *stacks = mark_stacks(_PyFrame_GetCode(f), len);
     if (stacks == NULL) {
         PyMem_Free(lines);
         return -1;
@@ -609,11 +610,17 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_TRASHCAN_SAFE_BEGIN(f)
-    PyCodeObject *co = f->f_code;
+    PyCodeObject *co = NULL;
 
-    /* Kill all local variables */
+    /* Kill all local variables including specials. */
     if (f->f_localsptr) {
-        for (int i = 0; i < co->co_nlocalsplus+FRAME_SPECIALS_SIZE; i++) {
+        /* Don't clear code object until the end */
+        co = _PyFrame_GetCode(f);
+        PyObject **specials = _PyFrame_Specials(f);
+        Py_CLEAR(specials[FRAME_SPECIALS_GLOBALS_OFFSET]);
+        Py_CLEAR(specials[FRAME_SPECIALS_BUILTINS_OFFSET]);
+        Py_CLEAR(specials[FRAME_SPECIALS_LOCALS_OFFSET]);
+        for (int i = 0; i < co->co_nlocalsplus; i++) {
             Py_CLEAR(f->f_localsptr[i]);
         }
         /* Free items on stack */
@@ -624,6 +631,7 @@ frame_dealloc(PyFrameObject *f)
             PyMem_Free(f->f_localsptr);
             f->f_own_locals_memory = 0;
         }
+        f->f_localsptr = NULL;
     }
     f->f_stackdepth = 0;
     Py_XDECREF(f->f_back);
@@ -642,7 +650,7 @@ frame_dealloc(PyFrameObject *f)
         PyObject_GC_Del(f);
     }
 
-    Py_DECREF(co);
+    Py_XDECREF(co);
     Py_TRASHCAN_SAFE_END(f)
 }
 
@@ -659,9 +667,9 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
 
     /* locals */
-    PyObject **fastlocals = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
-        Py_VISIT(*fastlocals);
+    PyObject **localsplus = f->f_localsptr;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++localsplus) {
+        Py_VISIT(*localsplus);
     }
 
     /* stack */
@@ -682,11 +690,10 @@ frame_tp_clear(PyFrameObject *f)
     f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
-
+    PyCodeObject *co = _PyFrame_GetCode(f);
     /* locals */
-    PyObject **fastlocals = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
-        Py_CLEAR(*fastlocals);
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        Py_CLEAR(f->f_localsptr[i]);
     }
 
     /* stack */
@@ -722,7 +729,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     Py_ssize_t res;
     res = sizeof(PyFrameObject);
     if (f->f_own_locals_memory) {
-        PyCodeObject *code = f->f_code;
+        PyCodeObject *code = _PyFrame_GetCode(f);
         res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
     }
     return PyLong_FromSsize_t(res);
@@ -735,7 +742,7 @@ static PyObject *
 frame_repr(PyFrameObject *f)
 {
     int lineno = PyFrame_GetLineNumber(f);
-    PyCodeObject *code = f->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(f);
     return PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
         f, code->co_filename, lineno, code->co_name);
@@ -876,7 +883,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     PyObject **specials = f->f_localsptr + code->co_nlocalsplus;
     f->f_valuestack = specials + FRAME_SPECIALS_SIZE;
     f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
-    f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
+    specials[FRAME_SPECIALS_CODE_OFFSET] = Py_NewRef(con->fc_code);
     specials[FRAME_SPECIALS_BUILTINS_OFFSET] = Py_NewRef(con->fc_builtins);
     specials[FRAME_SPECIALS_GLOBALS_OFFSET] = Py_NewRef(con->fc_globals);
     specials[FRAME_SPECIALS_LOCALS_OFFSET] = Py_XNewRef(locals);
@@ -917,112 +924,26 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
-/* Convert between "fast" version of locals and dictionary version.
-
-   map and values are input arguments.  map is a tuple of strings.
-   values is an array of PyObject*.  At index i, map[i] is the name of
-   the variable with value values[i].  The function copies the first
-   nmap variable from map/values into dict.  If values[i] is NULL,
-   the variable is deleted from dict.
-
-   If deref is true, then the values being copied are cell variables
-   and the value is extracted from the cell variable before being put
-   in dict.
- */
-
 static int
-map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
-            int deref)
+_PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg)
 {
-    Py_ssize_t j;
-    assert(PyTuple_Check(map));
-    assert(PyDict_Check(dict));
-    assert(PyTuple_Size(map) >= nmap);
-    for (j=0; j < nmap; j++) {
-        PyObject *key = PyTuple_GET_ITEM(map, j);
-        PyObject *value = values[j];
-        assert(PyUnicode_Check(key));
-        if (deref && value != NULL) {
-            assert(PyCell_Check(value));
-            value = PyCell_GET(value);
-        }
-        if (value == NULL) {
-            if (PyObject_DelItem(dict, key) != 0) {
-                if (PyErr_ExceptionMatches(PyExc_KeyError))
-                    PyErr_Clear();
-                else
-                    return -1;
-            }
-        }
-        else {
-            if (PyObject_SetItem(dict, key, value) != 0)
-                return -1;
+    const _Py_CODEUNIT *code =
+        (const _Py_CODEUNIT *)PyBytes_AS_STRING(_PyFrame_GetCode(f)->co_code);
+    for (int i = 0; i < f->f_lasti; i++) {
+        if (_Py_OPCODE(code[i]) == opcode && _Py_OPARG(code[i]) == oparg) {
+            return 1;
         }
     }
     return 0;
-}
-
-/* Copy values from the "locals" dict into the fast locals.
-
-   dict is an input argument containing string keys representing
-   variables names and arbitrary PyObject* as values.
-
-   map and values are input arguments.  map is a tuple of strings.
-   values is an array of PyObject*.  At index i, map[i] is the name of
-   the variable with value values[i].  The function copies the first
-   nmap variable from map/values into dict.  If values[i] is NULL,
-   the variable is deleted from dict.
-
-   If deref is true, then the values being copied are cell variables
-   and the value is extracted from the cell variable before being put
-   in dict.  If clear is true, then variables in map but not in dict
-   are set to NULL in map; if clear is false, variables missing in
-   dict are ignored.
-
-   Exceptions raised while modifying the dict are silently ignored,
-   because there is no good way to report them.
-*/
-
-static void
-dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
-            int deref, int clear)
-{
-    Py_ssize_t j;
-    assert(PyTuple_Check(map));
-    assert(PyDict_Check(dict));
-    assert(PyTuple_Size(map) >= nmap);
-    for (j=0; j < nmap; j++) {
-        PyObject *key = PyTuple_GET_ITEM(map, j);
-        PyObject *value = PyObject_GetItem(dict, key);
-        assert(PyUnicode_Check(key));
-        /* We only care about NULLs if clear is true. */
-        if (value == NULL) {
-            PyErr_Clear();
-            if (!clear)
-                continue;
-        }
-        if (deref) {
-            assert(PyCell_Check(values[j]));
-            if (PyCell_GET(values[j]) != value) {
-                if (PyCell_Set(values[j], value) < 0)
-                    PyErr_Clear();
-            }
-        } else if (values[j] != value) {
-            Py_XINCREF(value);
-            Py_XSETREF(values[j], value);
-        }
-        Py_XDECREF(value);
-    }
 }
 
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
     /* Merge fast locals into f->f_locals */
-    PyObject *locals, *map;
+    PyObject *locals;
     PyObject **fast;
     PyCodeObject *co;
-    Py_ssize_t j;
 
     if (f == NULL) {
         PyErr_BadInternalCall();
@@ -1034,26 +955,10 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         if (locals == NULL)
             return -1;
     }
-    co = f->f_code;
-    map = co->co_varnames;
-    if (!PyTuple_Check(map)) {
-        PyErr_Format(PyExc_SystemError,
-                     "co_varnames must be a tuple, not %s",
-                     Py_TYPE(map)->tp_name);
-        return -1;
-    }
+    co = _PyFrame_GetCode(f);
     fast = f->f_localsptr;
-    j = PyTuple_GET_SIZE(map);
-    if (j > co->co_nlocals)
-        j = co->co_nlocals;
-    if (co->co_nlocals) {
-        if (map_to_dict(map, j, locals, fast, 0) < 0)
-            return -1;
-    }
-    if (co->co_ncellvars || co->co_nfreevars) {
-        if (map_to_dict(co->co_cellvars, co->co_ncellvars,
-                        locals, fast + co->co_nlocals, 1))
-            return -1;
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
 
         /* If the namespace is unoptimized, then one of the
            following cases applies:
@@ -1063,10 +968,54 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
            We don't want to accidentally copy free variables
            into the locals dict used by the class.
         */
-        if (co->co_flags & CO_OPTIMIZED) {
-            if (map_to_dict(co->co_freevars, co->co_nfreevars, locals,
-                            fast + co->co_nlocals + co->co_ncellvars, 1) < 0)
+        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
+            continue;
+        }
+
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        PyObject *value = fast[i];
+        if (f->f_state != FRAME_CLEARED) {
+            if (kind & CO_FAST_FREE) {
+                // The cell was set by _PyEval_MakeFrameVector() from
+                // the function's closure.
+                assert(value != NULL && PyCell_Check(value));
+                value = PyCell_GET(value);
+            }
+            else if (kind & CO_FAST_CELL) {
+                // Note that no *_DEREF ops can happen before MAKE_CELL
+                // executes.  So there's no need to duplicate the work
+                // that MAKE_CELL would otherwise do later, if it hasn't
+                // run yet.
+                if (value != NULL) {
+                    if (PyCell_Check(value) &&
+                            _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
+                        // (likely) MAKE_CELL must have executed already.
+                        value = PyCell_GET(value);
+                    }
+                    // (likely) Otherwise it it is an arg (kind & CO_FAST_LOCAL),
+                    // with the initial value set by _PyEval_MakeFrameVector()...
+                    // (unlikely) ...or it was set to some initial value by
+                    // an earlier call to PyFrame_LocalsToFast().
+                }
+            }
+        }
+        else {
+            assert(value == NULL);
+        }
+        if (value == NULL) {
+            if (PyObject_DelItem(locals, name) != 0) {
+                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                    PyErr_Clear();
+                }
+                else {
+                    return -1;
+                }
+            }
+        }
+        else {
+            if (PyObject_SetItem(locals, name, value) != 0) {
                 return -1;
+            }
         }
     }
     return 0;
@@ -1088,36 +1037,67 @@ void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
     /* Merge locals into fast locals */
-    PyObject *locals, *map;
+    PyObject *locals;
     PyObject **fast;
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
-    Py_ssize_t j;
-    if (f == NULL)
+    if (f == NULL || f->f_state == FRAME_CLEARED) {
         return;
+    }
     locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
-    co = f->f_code;
-    map = co->co_varnames;
     if (locals == NULL)
         return;
-    if (!PyTuple_Check(map))
-        return;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
     fast = f->f_localsptr;
-    j = PyTuple_GET_SIZE(map);
-    if (j > co->co_nlocals)
-        j = co->co_nlocals;
-    if (co->co_nlocals)
-        dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
-    if (co->co_ncellvars || co->co_nfreevars) {
-        dict_to_map(co->co_cellvars, co->co_ncellvars,
-                    locals, fast + co->co_nlocals, 1, clear);
+    co = _PyFrame_GetCode(f);
+
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
+
         /* Same test as in PyFrame_FastToLocals() above. */
-        if (co->co_flags & CO_OPTIMIZED) {
-            dict_to_map(co->co_freevars, co->co_nfreevars, locals,
-                        fast + co->co_nlocals + co->co_ncellvars, 1,
-                        clear);
+        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
+            continue;
         }
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        PyObject *value = PyObject_GetItem(locals, name);
+        /* We only care about NULLs if clear is true. */
+        if (value == NULL) {
+            PyErr_Clear();
+            if (!clear) {
+                continue;
+            }
+        }
+        PyObject *oldvalue = fast[i];
+        PyObject *cell = NULL;
+        if (kind == CO_FAST_FREE) {
+            // The cell was set by _PyEval_MakeFrameVector() from
+            // the function's closure.
+            assert(oldvalue != NULL && PyCell_Check(oldvalue));
+            cell = oldvalue;
+        }
+        else if (kind & CO_FAST_CELL && oldvalue != NULL) {
+            /* Same test as in PyFrame_FastToLocals() above. */
+            if (PyCell_Check(oldvalue) &&
+                    _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
+                // (likely) MAKE_CELL must have executed already.
+                cell = oldvalue;
+            }
+            // (unlikely) Otherwise, it must have been set to some
+            // initial value by an earlier call to PyFrame_LocalsToFast().
+        }
+        if (cell != NULL) {
+            oldvalue = PyCell_GET(cell);
+            if (value != oldvalue) {
+                Py_XDECREF(oldvalue);
+                Py_XINCREF(value);
+                PyCell_SET(cell, value);
+            }
+        }
+        else if (value != oldvalue) {
+            Py_XINCREF(value);
+            Py_XSETREF(fast[i], value);
+        }
+        Py_XDECREF(value);
     }
     PyErr_Restore(error_type, error_value, error_traceback);
 }
@@ -1161,7 +1141,7 @@ PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(code != NULL);
     Py_INCREF(code);
     return code;

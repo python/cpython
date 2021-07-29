@@ -311,12 +311,12 @@ Object Protocol
    returned.  This is the equivalent to the Python expression ``len(o)``.
 
 
-.. c:function:: Py_ssize_t PyObject_LengthHint(PyObject *o, Py_ssize_t default)
+.. c:function:: Py_ssize_t PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 
    Return an estimated length for the object *o*. First try to return its
    actual length, then an estimate using :meth:`~object.__length_hint__`, and
    finally return the default value. On error return ``-1``. This is the
-   equivalent to the Python expression ``operator.length_hint(o, default)``.
+   equivalent to the Python expression ``operator.length_hint(o, defaultvalue)``.
 
    .. versionadded:: 3.4
 

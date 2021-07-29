@@ -117,7 +117,7 @@ converting the dict to the combined table.
 #include "pycore_object.h"   // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h" // _PyErr_Fetch()
 #include "pycore_pystate.h"  // _PyThreadState_GET()
-#include "dict-common.h"
+#include "pycore_dict.h"
 #include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]
@@ -284,24 +284,6 @@ _PyDict_DebugMallocStats(FILE *out)
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
 }
-
-#define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
-#if SIZEOF_VOID_P > 4
-#define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : DK_LOG_SIZE(dk) <= 31 ?   \
-                4 : sizeof(int64_t))
-#else
-#define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : sizeof(int32_t))
-#endif
-#define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
 #define IS_POWER_OF_2(x) (((x) & (x-1)) == 0)
@@ -1544,10 +1526,10 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     assert(hashpos >= 0);
 
     mp->ma_used--;
+    mp->ma_keys->dk_version = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     ep = &DK_ENTRIES(mp->ma_keys)[ix];
     dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
-    mp->ma_keys->dk_version = 0;
     old_key = ep->me_key;
     ep->me_key = NULL;
     ep->me_value = NULL;

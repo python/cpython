@@ -263,10 +263,10 @@ random_seed_time_pid(RandomObject *self)
     init_by_array(self, key, Py_ARRAY_LENGTH(key));
 }
 
-static PyObject *
+static int
 random_seed(RandomObject *self, PyObject *arg)
 {
-    PyObject *result = NULL;            /* guilty until proved innocent */
+    int result = -1;  /* guilty until proved innocent */
     PyObject *n = NULL;
     uint32_t *key = NULL;
     size_t bits, keyused;
@@ -280,7 +280,7 @@ random_seed(RandomObject *self, PyObject *arg)
                use the current time and process identifier. */
             random_seed_time_pid(self);
         }
-        Py_RETURN_NONE;
+        return 0;
     }
 
     /* This algorithm relies on the number being unsigned.
@@ -339,8 +339,7 @@ random_seed(RandomObject *self, PyObject *arg)
 #endif
     init_by_array(self, key, keyused);
 
-    Py_INCREF(Py_None);
-    result = Py_None;
+    result = 0;
 
 Done:
     Py_XDECREF(n);
@@ -365,7 +364,10 @@ static PyObject *
 _random_Random_seed_impl(RandomObject *self, PyObject *n)
 /*[clinic end generated code: output=0fad1e16ba883681 input=78d6ef0d52532a54]*/
 {
-    return random_seed(self, n);
+    if (random_seed(self, n) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -515,39 +517,26 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     return result;
 }
 
-static PyObject *
-random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+random_init(RandomObject *self, PyObject *args, PyObject *kwds)
 {
-    RandomObject *self;
-    PyObject *tmp;
     PyObject *arg = NULL;
-    _randomstate *state = _randomstate_type(type);
+    _randomstate *state = _randomstate_type(Py_TYPE(self));
 
-    if (type == (PyTypeObject*)state->Random_Type &&
+    if (Py_IS_TYPE(self, (PyTypeObject *)state->Random_Type) &&
         !_PyArg_NoKeywords("Random()", kwds)) {
-        return NULL;
+        return -1;
     }
-
-    self = (RandomObject *)PyType_GenericAlloc(type, 0);
-    if (self == NULL)
-        return NULL;
 
     if (PyTuple_GET_SIZE(args) > 1) {
         PyErr_SetString(PyExc_TypeError, "Random() requires 0 or 1 argument");
-        return NULL;
+        return -1;
     }
 
     if (PyTuple_GET_SIZE(args) == 1)
         arg = PyTuple_GET_ITEM(args, 0);
 
-    tmp = random_seed(self, arg);
-    if (tmp == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    Py_DECREF(tmp);
-
-    return (PyObject *)self;
+    return random_seed(self, arg);
 }
 
 
@@ -566,7 +555,8 @@ PyDoc_STRVAR(random_doc,
 static PyType_Slot Random_Type_slots[] = {
     {Py_tp_doc, (void *)random_doc},
     {Py_tp_methods, random_methods},
-    {Py_tp_new, random_new},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, random_init},
     {Py_tp_free, PyObject_Free},
     {0, 0},
 };

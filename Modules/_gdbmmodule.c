@@ -581,7 +581,7 @@ static PyType_Spec gdbmtype_spec = {
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = gdbmtype_spec_slots,
 };
 

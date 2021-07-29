@@ -43,6 +43,13 @@ Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+Xxo_clear(XxoObject *self)
+{
+    Py_CLEAR(self->x_attr);
+    return 0;
+}
+
 static void
 Xxo_finalize(XxoObject *self)
 {
@@ -108,6 +115,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, "The Xxo type"},
     {Py_tp_traverse, Xxo_traverse},
+    {Py_tp_clear, Xxo_clear},
     {Py_tp_finalize, Xxo_finalize},
     {Py_tp_getattro, Xxo_getattro},
     {Py_tp_setattr, Xxo_setattr},

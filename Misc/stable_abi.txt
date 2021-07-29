@@ -38,11 +38,9 @@ struct PyThreadState
     added 3.2
 struct PyInterpreterState
     added 3.2
-struct _frame
+struct PyFrameObject
     added 3.2
 struct symtable
-    added 3.2
-struct _node
     added 3.2
 struct PyWeakReference
     added 3.2
@@ -2045,7 +2043,7 @@ function Py_LeaveRecursiveCall
     added 3.9
 function Py_GenericAlias
     added 3.9
-function Py_GenericAliasType
+data Py_GenericAliasType
     added 3.9
 function PyCMethod_New
     added 3.9  # Windows: 3.10 & 3.9.2 -- https://bugs.python.org/issue43155

@@ -142,24 +142,6 @@ PureProxy Objects
    chance to make you into an open relay, so please be careful.
 
 
-MailmanProxy Objects
---------------------
-
-
-.. class:: MailmanProxy(localaddr, remoteaddr)
-
-   .. deprecated-removed:: 3.9 3.11
-
-      :class:`MailmanProxy` is deprecated, it depends on a ``Mailman``
-      module which no longer exists and therefore is already broken.
-
-
-   Create a new pure proxy server. Arguments are as per :class:`SMTPServer`.
-   Everything will be relayed to *remoteaddr*, unless local mailman configurations
-   knows about an address, in which case it will be handled via mailman.  Note that
-   running this has a good chance to make you into an open relay, so please be
-   careful.
-
 SMTPChannel Objects
 -------------------
 

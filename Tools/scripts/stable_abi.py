@@ -492,6 +492,16 @@ def gcc_get_limited_api_definitions(headers):
     )
     return stable_data | stable_exported_data | stable_functions
 
+def check_private_names(manifest):
+    """Ensure limited API doesn't contain private names
+
+    Names prefixed by an underscore are private by definition.
+    """
+    for name, item in manifest.contents.items():
+        if name.startswith('_') and not item.abi_only:
+            raise ValueError(
+                f'`{name}` is private (underscore-prefixed) and should be '
+                + 'removed from the stable ABI list or or marked `abi_only`')
 
 def main():
     parser = argparse.ArgumentParser(
@@ -556,6 +566,8 @@ def main():
 
     with args.file.open() as file:
         manifest = parse_manifest(file)
+
+    check_private_names(manifest)
 
     # Remember results of all actions (as booleans).
     # At the end we'll check that at least one action was run,

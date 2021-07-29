@@ -18,6 +18,7 @@ Data members:
 #include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_object.h"        // _PyObject_IS_GC()
+#include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
@@ -1763,7 +1764,19 @@ sys_gettotalrefcount_impl(PyObject *module)
 {
     return _Py_GetRefTotal();
 }
+
 #endif /* Py_REF_DEBUG */
+
+/*[clinic input]
+sys._getquickenedcount -> Py_ssize_t
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys__getquickenedcount_impl(PyObject *module)
+/*[clinic end generated code: output=1ab259e7f91248a2 input=249d448159eca912]*/
+{
+    return _Py_QuickenedCount;
+}
 
 /*[clinic input]
 sys.getallocatedblocks -> Py_ssize_t
@@ -1995,6 +2008,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
+    SYS__GETQUICKENEDCOUNT_METHODDEF
 #ifdef Py_TRACE_REFS
     {"getobjects",      _Py_GetObjects, METH_VARARGS},
 #endif

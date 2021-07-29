@@ -1,0 +1,3 @@
+:c:func:`Py_IS_TYPE` no longer uses :c:func:`Py_TYPE` to avoid a compiler
+warning: no longer cast ``const PyObject*`` to ``PyObject*``.
+Patch by Victor Stinner.

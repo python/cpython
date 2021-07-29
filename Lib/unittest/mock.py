@@ -2205,7 +2205,7 @@ class AsyncMockMixin(Base):
                 try:
                     result = next(effect)
                 except StopIteration:
-                    # It is impossible to propogate a StopIteration
+                    # It is impossible to propagate a StopIteration
                     # through coroutines because of PEP 479
                     raise StopAsyncIteration
                 if _is_exception(result):
