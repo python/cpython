@@ -321,6 +321,9 @@ typedef struct _stats {
 extern SpecializationStats _specialization_stats[256];
 #define STAT_INC(opname, name) _specialization_stats[opname].name++
 void _Py_PrintSpecializationStats(void);
+
+PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
+
 #else
 #define STAT_INC(opname, name) ((void)0)
 #endif
