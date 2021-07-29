@@ -2944,6 +2944,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
                 STAT_INC(LOAD_GLOBAL, deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
+                STAT_DEC(LOAD_GLOBAL, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
             }
         }
