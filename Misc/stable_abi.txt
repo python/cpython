@@ -1648,6 +1648,17 @@ function _Py_VaBuildValue_SizeT
     added 3.2
     abi_only
 
+# Old buffer protocol support (deprecated)
+
+function PyObject_AsCharBuffer
+    added 3.2
+function PyObject_AsReadBuffer
+    added 3.2
+function PyObject_AsWriteBuffer
+    added 3.2
+function PyObject_CheckReadBuffer
+    added 3.2
+
 # Flags are implicitly part of the ABI:
 
 const Py_TPFLAGS_DEFAULT
