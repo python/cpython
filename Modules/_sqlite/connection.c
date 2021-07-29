@@ -1307,7 +1307,7 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
             rc = sqlite3_exec(self->db, "COMMIT", NULL, NULL, NULL);
             Py_END_ALLOW_THREADS
             if (rc != SQLITE_OK) {
-                return _pysqlite_seterror(self->db);
+                return _pysqlite_seterror(self->state, self->db);
             }
         }
 
