@@ -1406,12 +1406,13 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
     }
 
     if (exc_tb == NULL) {
-        PyFrameObject *frame = tstate->frame;
+        PyFrameObject *frame = PyThreadState_GetFrame(tstate);
         if (frame != NULL) {
             exc_tb = _PyTraceBack_FromFrame(NULL, frame);
             if (exc_tb == NULL) {
                 _PyErr_Clear(tstate);
             }
+            Py_DECREF(frame);
         }
     }
 

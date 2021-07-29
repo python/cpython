@@ -55,7 +55,7 @@ an event loop:
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if there is no running event loop.
-      If future Python releases this function will be an alias of
+      In future Python releases, this function will be an alias of
       :func:`get_running_loop`.
 
 .. function:: set_event_loop(loop)
@@ -1132,16 +1132,12 @@ Executing code in thread or process pools
 .. method:: loop.set_default_executor(executor)
 
    Set *executor* as the default executor used by :meth:`run_in_executor`.
-   *executor* should be an instance of
+   *executor* must be an instance of
    :class:`~concurrent.futures.ThreadPoolExecutor`.
 
-   .. deprecated:: 3.8
-      Using an executor that is not an instance of
-      :class:`~concurrent.futures.ThreadPoolExecutor` is deprecated and
-      will trigger an error in Python 3.9.
-
-   *executor* must be an instance of
-   :class:`concurrent.futures.ThreadPoolExecutor`.
+   .. versionchanged:: 3.11
+      *executor* must be an instance of
+      :class:`~concurrent.futures.ThreadPoolExecutor`.
 
 
 Error Handling API

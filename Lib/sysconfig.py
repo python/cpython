@@ -111,7 +111,7 @@ if _HAS_USER_BASE:
             'platstdlib': '{userbase}/lib/python',
             'purelib': '{userbase}/lib/python/site-packages',
             'platlib': '{userbase}/lib/python/site-packages',
-            'include': '{userbase}/include',
+            'include': '{userbase}/include/python{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },

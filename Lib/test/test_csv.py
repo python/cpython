@@ -458,9 +458,15 @@ class TestDialectRegistry(unittest.TestCase):
         class testUni(csv.excel):
             delimiter = "\u039B"
 
+        class unspecified():
+            # A class to pass as dialect but with no dialect attributes.
+            pass
+
         csv.register_dialect('testC', testC)
         try:
             self.compare_dialect_123("1,2,3\r\n")
+            self.compare_dialect_123("1,2,3\r\n", dialect=None)
+            self.compare_dialect_123("1,2,3\r\n", dialect=unspecified)
             self.compare_dialect_123("1\t2\t3\r\n", testA)
             self.compare_dialect_123("1:2:3\r\n", dialect=testB())
             self.compare_dialect_123("1|2|3\r\n", dialect='testC')

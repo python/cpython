@@ -33,7 +33,13 @@ import typing
 import weakref
 import types
 
+from test.support import import_helper
 from test import mod_generics_cache
+from test import _typed_dict_helper
+
+
+py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
+c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
 
 
 class BaseTestCase(TestCase):
@@ -315,6 +321,8 @@ class UnionTests(BaseTestCase):
         self.assertEqual(repr(u), 'typing.Union[typing.List[int], int]')
         u = Union[list[int], dict[str, float]]
         self.assertEqual(repr(u), 'typing.Union[list[int], dict[str, float]]')
+        u = Union[int | float]
+        self.assertEqual(repr(u), 'typing.Union[int, float]')
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
@@ -1449,6 +1457,8 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(SM1, SimpleMapping)
         self.assertIsInstance(SM1(), SimpleMapping)
+        T = TypeVar("T")
+        self.assertEqual(List[list[T] | float].__parameters__, (T,))
 
     def test_generic_errors(self):
         T = TypeVar('T')
@@ -1785,6 +1795,7 @@ class GenericTests(BaseTestCase):
     def test_generic_forward_ref(self):
         def foobar(x: List[List['CC']]): ...
         def foobar2(x: list[list[ForwardRef('CC')]]): ...
+        def foobar3(x: list[ForwardRef('CC | int')] | int): ...
         class CC: ...
         self.assertEqual(
             get_type_hints(foobar, globals(), locals()),
@@ -1793,6 +1804,10 @@ class GenericTests(BaseTestCase):
         self.assertEqual(
             get_type_hints(foobar2, globals(), locals()),
             {'x': list[list[CC]]}
+        )
+        self.assertEqual(
+            get_type_hints(foobar3, globals(), locals()),
+            {'x': list[CC | int] | int}
         )
 
         T = TypeVar('T')
@@ -2277,13 +2292,6 @@ class ClassVarTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, ClassVar)
 
-    def test_bad_module(self):
-        # bpo-41515
-        class BadModule:
-            pass
-        BadModule.__module__ = 'bad' # Something not in sys.modules
-        self.assertEqual(get_type_hints(BadModule), {})
-
 class FinalTests(BaseTestCase):
 
     def test_basics(self):
@@ -2473,6 +2481,12 @@ class ForwardRefTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Union[T]})
+
+        def foo(a: tuple[ForwardRef('T')] | int):
+            pass
+
+        self.assertEqual(get_type_hints(foo, globals(), locals()),
+                         {'a': tuple[T] | int})
 
     def test_tuple_forward(self):
 
@@ -2811,6 +2825,9 @@ class Point2D(TypedDict):
     x: int
     y: int
 
+class Bar(_typed_dict_helper.Foo, total=False):
+    b: int
+
 class LabelPoint2D(Point2D, Label): ...
 
 class Options(TypedDict, total=False):
@@ -2855,7 +2872,7 @@ class GetTypeHintTests(BaseTestCase):
             gth(None)
 
     def test_get_type_hints_modules(self):
-        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str}
+        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
@@ -3033,6 +3050,24 @@ class GetTypeHintTests(BaseTestCase):
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
 
+    def test_get_type_hints_bad_module(self):
+        # bpo-41515
+        class BadModule:
+            pass
+        BadModule.__module__ = 'bad' # Something not in sys.modules
+        self.assertNotIn('bad', sys.modules)
+        self.assertEqual(get_type_hints(BadModule), {})
+
+    def test_get_type_hints_annotated_bad_module(self):
+        # See https://bugs.python.org/issue44468
+        class BadBase:
+            foo: tuple
+        class BadType(BadBase):
+            bar: list
+        BadType.__module__ = BadBase.__module__ = 'bad'
+        self.assertNotIn('bad', sys.modules)
+        self.assertEqual(get_type_hints(BadType), {'foo': tuple, 'bar': list})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -3055,7 +3090,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(Callable), collections.abc.Callable)
         self.assertIs(get_origin(list[int]), list)
         self.assertIs(get_origin(list), None)
-        self.assertIs(get_origin(list | str), types.Union)
+        self.assertIs(get_origin(list | str), types.UnionType)
         self.assertIs(get_origin(P.args), P)
         self.assertIs(get_origin(P.kwargs), P)
 
@@ -3643,23 +3678,103 @@ class TypeTests(BaseTestCase):
         assert foo(None) is None
 
 
-class NewTypeTests(BaseTestCase):
+class TestModules(TestCase):
+    func_names = ['_idfunc']
+
+    def test_py_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(py_typing, fname).__module__, 'typing')
+
+    @skipUnless(c_typing, 'requires _typing')
+    def test_c_functions(self):
+        for fname in self.func_names:
+            self.assertEqual(getattr(c_typing, fname).__module__, '_typing')
+
+
+class NewTypeTests:
+    def cleanup(self):
+        for f in self.module._cleanups:
+            f()
+
+    @classmethod
+    def setUpClass(cls):
+        sys.modules['typing'] = cls.module
+        global UserId
+        UserId = cls.module.NewType('UserId', int)
+        cls.UserName = cls.module.NewType(cls.__qualname__ + '.UserName', str)
+
+    @classmethod
+    def tearDownClass(cls):
+        global UserId
+        del UserId
+        del cls.UserName
+        sys.modules['typing'] = typing
+
+    def tearDown(self):
+        self.cleanup()
 
     def test_basic(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         self.assertIsInstance(UserId(5), int)
-        self.assertIsInstance(UserName('Joe'), str)
+        self.assertIsInstance(self.UserName('Joe'), str)
         self.assertEqual(UserId(5) + 1, 6)
 
     def test_errors(self):
-        UserId = NewType('UserId', int)
-        UserName = NewType('UserName', str)
         with self.assertRaises(TypeError):
             issubclass(UserId, int)
         with self.assertRaises(TypeError):
-            class D(UserName):
+            class D(UserId):
                 pass
+
+    def test_or(self):
+        for cls in (int, self.UserName):
+            with self.subTest(cls=cls):
+                self.assertEqual(UserId | cls, self.module.Union[UserId, cls])
+                self.assertEqual(cls | UserId, self.module.Union[cls, UserId])
+
+                self.assertEqual(self.module.get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(self.module.get_args(cls | UserId), (cls, UserId))
+
+    def test_special_attrs(self):
+        self.assertEqual(UserId.__name__, 'UserId')
+        self.assertEqual(UserId.__qualname__, 'UserId')
+        self.assertEqual(UserId.__module__, __name__)
+        self.assertEqual(UserId.__supertype__, int)
+
+        UserName = self.UserName
+        self.assertEqual(UserName.__name__, 'UserName')
+        self.assertEqual(UserName.__qualname__,
+                         self.__class__.__qualname__ + '.UserName')
+        self.assertEqual(UserName.__module__, __name__)
+        self.assertEqual(UserName.__supertype__, str)
+
+    def test_repr(self):
+        self.assertEqual(repr(UserId), f'{__name__}.UserId')
+        self.assertEqual(repr(self.UserName),
+                         f'{__name__}.{self.__class__.__qualname__}.UserName')
+
+    def test_pickle(self):
+        UserAge = self.module.NewType('UserAge', float)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.dumps(UserId, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, UserId)
+
+                pickled = pickle.dumps(self.UserName, proto)
+                loaded = pickle.loads(pickled)
+                self.assertIs(loaded, self.UserName)
+
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(UserAge, proto)
+
+
+class NewTypePythonTests(NewTypeTests, BaseTestCase):
+    module = py_typing
+
+
+@skipUnless(c_typing, 'requires _typing')
+class NewTypeCTests(NewTypeTests, BaseTestCase):
+    module = c_typing
 
 
 class NamedTupleTests(BaseTestCase):
@@ -3968,6 +4083,12 @@ class TypedDictTests(BaseTestCase):
         assert is_typeddict(Union[str, int]) is False
         # classes, not instances
         assert is_typeddict(Point2D()) is False
+
+    def test_get_type_hints(self):
+        self.assertEqual(
+            get_type_hints(Bar),
+            {'a': typing.Optional[int], 'b': int}
+        )
 
 
 class IOTests(BaseTestCase):
@@ -4379,6 +4500,9 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotIn(P, list[P].__parameters__)
         self.assertIn(T, tuple[T, P].__parameters__)
 
+        self.assertNotIn(P, (list[P] | int).__parameters__)
+        self.assertIn(T, (tuple[T, P] | int).__parameters__)
+
     def test_paramspec_in_nested_generics(self):
         # Although ParamSpec should not be found in __parameters__ of most
         # generics, they probably should be found when nested in
@@ -4388,8 +4512,10 @@ class ParamSpecTests(BaseTestCase):
         C1 = Callable[P, T]
         G1 = List[C1]
         G2 = list[C1]
+        G3 = list[C1] | int
         self.assertEqual(G1.__parameters__, (P, T))
         self.assertEqual(G2.__parameters__, (P, T))
+        self.assertEqual(G3.__parameters__, (P, T))
 
 
 class ConcatenateTests(BaseTestCase):
@@ -4457,6 +4583,67 @@ class TypeGuardTests(BaseTestCase):
             issubclass(int, TypeGuard)
 
 
+class SpecialAttrsTests(BaseTestCase):
+    def test_special_attrs(self):
+        cls_to_check = (
+            # ABC classes
+            typing.AbstractSet,
+            typing.AsyncContextManager,
+            typing.AsyncGenerator,
+            typing.AsyncIterable,
+            typing.AsyncIterator,
+            typing.Awaitable,
+            typing.ByteString,
+            typing.Callable,
+            typing.ChainMap,
+            typing.Collection,
+            typing.Container,
+            typing.ContextManager,
+            typing.Coroutine,
+            typing.Counter,
+            typing.DefaultDict,
+            typing.Deque,
+            typing.Dict,
+            typing.FrozenSet,
+            typing.Generator,
+            typing.Hashable,
+            typing.ItemsView,
+            typing.Iterable,
+            typing.Iterator,
+            typing.KeysView,
+            typing.List,
+            typing.Mapping,
+            typing.MappingView,
+            typing.MutableMapping,
+            typing.MutableSequence,
+            typing.MutableSet,
+            typing.OrderedDict,
+            typing.Reversible,
+            typing.Sequence,
+            typing.Set,
+            typing.Sized,
+            typing.Tuple,
+            typing.Type,
+            typing.ValuesView,
+            # Special Forms
+            typing.Any,
+            typing.NoReturn,
+            typing.ClassVar,
+            typing.Final,
+            typing.Union,
+            typing.Optional,
+            typing.Literal,
+            typing.TypeAlias,
+            typing.Concatenate,
+            typing.TypeGuard,
+        )
+
+        for cls in cls_to_check:
+            with self.subTest(cls=cls):
+                self.assertEqual(cls.__name__, cls._name)
+                self.assertEqual(cls.__qualname__, cls._name)
+                self.assertEqual(cls.__module__, 'typing')
+
 class AllTests(BaseTestCase):
     """Tests for __all__."""
 
@@ -4491,9 +4678,6 @@ class AllTests(BaseTestCase):
             if k in actual_all or (
                 # avoid private names
                 not k.startswith('_') and
-                # avoid things in the io / re typing submodules
-                k not in typing.io.__all__ and
-                k not in typing.re.__all__ and
                 k not in {'io', 're'} and
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and

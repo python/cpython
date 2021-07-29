@@ -252,13 +252,13 @@ static char *soft_keywords[] = {
 #define invalid_arguments_type 1178
 #define invalid_kwarg_type 1179
 #define expression_without_invalid_type 1180
-#define invalid_expression_type 1181
-#define invalid_named_expression_type 1182
-#define invalid_assignment_type 1183
-#define invalid_ann_assign_target_type 1184
-#define invalid_del_stmt_type 1185
-#define invalid_block_type 1186
-#define invalid_primary_type 1187  // Left-recursive
+#define invalid_legacy_expression_type 1181
+#define invalid_expression_type 1182
+#define invalid_named_expression_type 1183
+#define invalid_assignment_type 1184
+#define invalid_ann_assign_target_type 1185
+#define invalid_del_stmt_type 1186
+#define invalid_block_type 1187
 #define invalid_comprehension_type 1188
 #define invalid_dict_comprehension_type 1189
 #define invalid_parameters_type 1190
@@ -678,13 +678,13 @@ static void *t_lookahead_rule(Parser *p);
 static void *invalid_arguments_rule(Parser *p);
 static void *invalid_kwarg_rule(Parser *p);
 static expr_ty expression_without_invalid_rule(Parser *p);
+static void *invalid_legacy_expression_rule(Parser *p);
 static void *invalid_expression_rule(Parser *p);
 static void *invalid_named_expression_rule(Parser *p);
 static void *invalid_assignment_rule(Parser *p);
 static expr_ty invalid_ann_assign_target_rule(Parser *p);
 static void *invalid_del_stmt_rule(Parser *p);
 static void *invalid_block_rule(Parser *p);
-static void *invalid_primary_rule(Parser *p);
 static void *invalid_comprehension_rule(Parser *p);
 static void *invalid_dict_comprehension_rule(Parser *p);
 static void *invalid_parameters_rule(Parser *p);
@@ -13853,7 +13853,6 @@ await_primary_rule(Parser *p)
 
 // Left-recursive
 // primary:
-//     | invalid_primary
 //     | primary '.' NAME
 //     | primary genexp
 //     | primary '(' arguments? ')'
@@ -13911,25 +13910,6 @@ primary_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    if (p->call_invalid_rules) { // invalid_primary
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_primary"));
-        void *invalid_primary_var;
-        if (
-            (invalid_primary_var = invalid_primary_rule(p))  // invalid_primary
-        )
-        {
-            D(fprintf(stderr, "%*c+ primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_primary"));
-            _res = invalid_primary_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s primary[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_primary"));
-    }
     { // primary '.' NAME
         if (p->error_indicator) {
             D(p->level--);
@@ -18178,7 +18158,52 @@ expression_without_invalid_rule(Parser *p)
     return _res;
 }
 
+// invalid_legacy_expression: NAME star_expressions
+static void *
+invalid_legacy_expression_rule(Parser *p)
+{
+    D(p->level++);
+    if (p->error_indicator) {
+        D(p->level--);
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // NAME star_expressions
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_legacy_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME star_expressions"));
+        expr_ty a;
+        expr_ty b;
+        if (
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (b = star_expressions_rule(p))  // star_expressions
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_legacy_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME star_expressions"));
+            _res = _PyPegen_check_legacy_stmt ( p , a ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "Missing parentheses in call to '%U'. Did you mean %U(...)?" , a -> v . Name . id , a -> v . Name . id ) : NULL;
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_legacy_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME star_expressions"));
+    }
+    _res = NULL;
+  done:
+    D(p->level--);
+    return _res;
+}
+
 // invalid_expression:
+//     | invalid_legacy_expression
 //     | !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
 static void *
 invalid_expression_rule(Parser *p)
@@ -18190,6 +18215,25 @@ invalid_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->call_invalid_rules) { // invalid_legacy_expression
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
+        void *invalid_legacy_expression_var;
+        if (
+            (invalid_legacy_expression_var = invalid_legacy_expression_rule(p))  // invalid_legacy_expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
+            _res = invalid_legacy_expression_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_legacy_expression"));
+    }
     { // !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
         if (p->error_indicator) {
             D(p->level--);
@@ -18715,51 +18759,6 @@ invalid_block_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE !INDENT"));
-    }
-    _res = NULL;
-  done:
-    D(p->level--);
-    return _res;
-}
-
-// Left-recursive
-// invalid_primary: primary '{'
-static void *
-invalid_primary_rule(Parser *p)
-{
-    D(p->level++);
-    if (p->error_indicator) {
-        D(p->level--);
-        return NULL;
-    }
-    void * _res = NULL;
-    int _mark = p->mark;
-    { // primary '{'
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> invalid_primary[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "primary '{'"));
-        Token * a;
-        expr_ty primary_var;
-        if (
-            (primary_var = primary_rule(p))  // primary
-            &&
-            (a = _PyPegen_expect_token(p, 25))  // token='{'
-        )
-        {
-            D(fprintf(stderr, "%*c+ invalid_primary[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "primary '{'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "invalid syntax" );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s invalid_primary[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "primary '{'"));
     }
     _res = NULL;
   done:
