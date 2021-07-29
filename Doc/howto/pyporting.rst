@@ -446,7 +446,7 @@ to make sure everything functions as expected in both versions of Python.
 
 .. _pytype: https://github.com/google/pytype
 .. _python-future: http://python-future.org/
-.. _python-converter-tool: https://360techexplorer.com/tools/python-2-to-3-converter/
+.. _python-porting: https://mail.python.org/pipermail/python-porting/
 .. _six: https://pypi.org/project/six
 .. _tox: https://pypi.org/project/tox
 .. _trove classifier: https://pypi.org/classifiers
