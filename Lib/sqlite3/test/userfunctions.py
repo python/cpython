@@ -422,6 +422,7 @@ class WindowFunctionTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.con.create_window_function("shouldfail", -100, WindowSumInt)
 
+    @with_tracebacks(['raise effect'])
     def test_exception_in_method(self):
         for meth in ["step", "value", "inverse"]:
             with unittest.mock.patch.object(WindowSumInt, meth,
