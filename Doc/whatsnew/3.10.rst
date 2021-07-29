@@ -2109,11 +2109,6 @@ Deprecated
 Removed
 -------
 
-* ``PyObject_AsCharBuffer()``, ``PyObject_AsReadBuffer()``, ``PyObject_CheckReadBuffer()``,
-  and ``PyObject_AsWriteBuffer()`` are removed. Please migrate to new buffer protocol;
-  :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`.
-  (Contributed by Inada Naoki in :issue:`41103`.)
-
 * Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.
   (Contributed by Inada Naoki in :issue:`41123`.)
 
