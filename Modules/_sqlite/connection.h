@@ -82,10 +82,11 @@ typedef struct
      */
     PyObject* text_factory;
 
-    /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
+    /* Remember callback contexts used by the trace_callback, progress_handler,
+     * and authorizer_cb handlers */
     callback_context *trace_ctx;
     callback_context *progress_ctx;
-    PyObject* function_pinboard_authorizer_cb;
+    callback_context *authorizer_ctx;
 
     /* Exception objects: borrowed refs. */
     PyObject* Warning;

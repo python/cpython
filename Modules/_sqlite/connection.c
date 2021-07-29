@@ -171,7 +171,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 
     self->trace_ctx = NULL;
     self->progress_ctx = NULL;
-    self->function_pinboard_authorizer_cb = NULL;
+    self->authorizer_ctx = NULL;
 
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
@@ -233,7 +233,7 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(self->text_factory);
     VISIT_CALLBACK_CONTEXT(self->trace_ctx);
     VISIT_CALLBACK_CONTEXT(self->progress_ctx);
-    Py_VISIT(self->function_pinboard_authorizer_cb);
+    VISIT_CALLBACK_CONTEXT(self->authorizer_ctx);
 #undef VISIT_CALLBACK_CONTEXT
     return 0;
 }
@@ -255,7 +255,7 @@ connection_clear(pysqlite_Connection *self)
     Py_CLEAR(self->text_factory);
     CLEAR_CALLBACK_CONTEXT(self->trace_ctx);
     CLEAR_CALLBACK_CONTEXT(self->progress_ctx);
-    Py_CLEAR(self->function_pinboard_authorizer_cb);
+    CLEAR_CALLBACK_CONTEXT(self->authorizer_ctx);
 #undef CLEAR_CALLBACK_CONTEXT
     return 0;
 }
@@ -275,6 +275,7 @@ free_callback_contexts(pysqlite_Connection *self)
 {
     free_callback_context(self->trace_ctx);
     free_callback_context(self->progress_ctx);
+    free_callback_context(self->authorizer_ctx);
 }
 
 static void
@@ -945,11 +946,14 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
 
     gilstate = PyGILState_Ensure();
 
-    ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
+    callback_context *ctx = (callback_context *)user_arg;
+    assert(ctx != NULL);
+    ret = PyObject_CallFunction(ctx->callable, "issss", action, arg1, arg2,
+                                dbname, access_attempt_source);
 
     if (ret == NULL) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
+        assert(ctx->state != NULL);
+        if (ctx->state->enable_callback_tracebacks) {
             PyErr_Print();
         }
         else {
@@ -962,8 +966,7 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
         if (PyLong_Check(ret)) {
             rc = _PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
-                pysqlite_state *state = pysqlite_get_state(NULL);
-                if (state->enable_callback_tracebacks) {
+                if (ctx->state->enable_callback_tracebacks) {
                     PyErr_Print();
                 }
                 else {
@@ -1087,17 +1090,24 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
     int rc;
     if (authorizer_cb == Py_None) {
         rc = sqlite3_set_authorizer(self->db, NULL, NULL);
-        Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
+        free_callback_context(self->authorizer_ctx);
+        self->authorizer_ctx = NULL;
     }
     else {
-        Py_INCREF(authorizer_cb);
-        Py_XSETREF(self->function_pinboard_authorizer_cb, authorizer_cb);
-        rc = sqlite3_set_authorizer(self->db, _authorizer_callback, authorizer_cb);
+        callback_context *ctx = create_callback_context(self->state,
+                                                        authorizer_cb);
+        if (ctx == NULL) {
+            return NULL;
+        }
+        rc = sqlite3_set_authorizer(self->db, _authorizer_callback, ctx);
+        free_callback_context(self->authorizer_ctx);
+        self->authorizer_ctx = ctx;
     }
     if (rc != SQLITE_OK) {
         PyErr_SetString(self->OperationalError,
                         "Error setting authorizer callback");
-        Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
+        free_callback_context(self->authorizer_ctx);
+        self->authorizer_ctx = NULL;
         return NULL;
     }
     Py_RETURN_NONE;
