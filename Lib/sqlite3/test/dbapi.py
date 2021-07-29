@@ -192,6 +192,27 @@ class ConnectionTests(unittest.TestCase):
             sqlite.connect(':memory:', check_same_thread=False)
         self.assertEqual(str(cm.exception), 'shared connections not available')
 
+
+class UninitialisedConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.cx = sqlite.Connection.__new__(sqlite.Connection)
+
+    def test_uninit_operations(self):
+        funcs = (
+            lambda: self.cx.isolation_level,
+            lambda: self.cx.total_changes,
+            lambda: self.cx.in_transaction,
+            lambda: self.cx.iterdump(),
+            lambda: self.cx.cursor(),
+            lambda: self.cx.close(),
+        )
+        for func in funcs:
+            with self.subTest(func=func):
+                self.assertRaisesRegex(sqlite.ProgrammingError,
+                                       "Base Connection.__init__ not called",
+                                       func)
+
+
 class CursorTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
@@ -943,10 +964,11 @@ def suite():
     closed_con_suite = unittest.makeSuite(ClosedConTests, "Check")
     closed_cur_suite = unittest.makeSuite(ClosedCurTests, "Check")
     on_conflict_suite = unittest.makeSuite(SqliteOnConflictTests, "Check")
+    uninit_con_suite = unittest.makeSuite(UninitialisedConnectionTests)
     return unittest.TestSuite((
         module_suite, connection_suite, cursor_suite, thread_suite,
         constructor_suite, ext_suite, closed_con_suite, closed_cur_suite,
-        on_conflict_suite,
+        on_conflict_suite, uninit_con_suite,
     ))
 
 def test():
