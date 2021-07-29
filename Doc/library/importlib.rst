@@ -491,7 +491,7 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
-    *Superseded by TraversableReader*
+    *Superseded by TraversableResources*
 
     An :term:`abstract base class` to provide the ability to read
     *resources*.
@@ -816,7 +816,7 @@ ABC hierarchy::
     .. versionadded:: 3.9
 
 
-.. class:: TraversableReader
+.. class:: TraversableResources
 
     An abstract base class for resource readers capable of serving
     the ``files`` interface. Subclasses ResourceReader and provides

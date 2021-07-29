@@ -915,7 +915,7 @@ static PyType_Spec lzma_compressor_type_spec = {
     // lzma_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lzma_compressor_type_slots,
 };
 
@@ -1359,7 +1359,7 @@ static PyType_Spec lzma_decompressor_type_spec = {
     // lzma_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lzma_decompressor_type_slots,
 };
 

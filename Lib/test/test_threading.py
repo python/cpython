@@ -124,8 +124,7 @@ class ThreadTests(BaseTestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         lock = threading.Lock()
-        tp = type(lock)
-        self.assertRaises(TypeError, tp)
+        test.support.check_disallow_instantiation(self, type(lock))
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -1604,6 +1603,31 @@ class InterruptMainTests(unittest.TestCase):
         self.assertRaises(ValueError, _thread.interrupt_main, -1)
         self.assertRaises(ValueError, _thread.interrupt_main, signal.NSIG)
         self.assertRaises(ValueError, _thread.interrupt_main, 1000000)
+
+    @threading_helper.reap_threads
+    def test_can_interrupt_tight_loops(self):
+        cont = [True]
+        started = [False]
+        interrupted = [False]
+
+        def worker(started, cont, interrupted):
+            iterations = 100_000_000
+            started[0] = True
+            while cont[0]:
+                if iterations:
+                    iterations -= 1
+                else:
+                    return
+                pass
+            interrupted[0] = True
+
+        t = threading.Thread(target=worker,args=(started, cont, interrupted))
+        t.start()
+        while not started[0]:
+            pass
+        cont[0] = False
+        t.join()
+        self.assertTrue(interrupted[0])
 
 
 class AtexitTests(unittest.TestCase):

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import contextlib
 import dataclasses
 import io
 import itertools
@@ -158,6 +159,13 @@ class QueryTestCase(unittest.TestCase):
                              "expected not isrecursive for %r" % (safe,))
             self.assertTrue(pp.isreadable(safe),
                             "expected isreadable for %r" % (safe,))
+
+    def test_stdout_is_None(self):
+        with contextlib.redirect_stdout(None):
+            # smoke test - there is no output to check
+            value = 'this should not fail'
+            pprint.pprint(value)
+            pprint.PrettyPrinter().pprint(value)
 
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion

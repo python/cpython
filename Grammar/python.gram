@@ -244,6 +244,7 @@ pattern[pattern_ty]:
 as_pattern[pattern_ty]:
     | pattern=or_pattern 'as' target=pattern_capture_target {
         _PyAST_MatchAs(pattern, target->v.Name.id, EXTRA) }
+    | invalid_as_pattern
 or_pattern[pattern_ty]:
     | patterns[asdl_pattern_seq*]='|'.closed_pattern+ {
         asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _PyAST_MatchOr(patterns, EXTRA) }
@@ -379,6 +380,7 @@ class_pattern[pattern_ty]:
                 CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, keywords)))),
             CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, keywords)),
             EXTRA) }
+    | invalid_class_pattern
 positional_patterns[asdl_pattern_seq*]:
     | args[asdl_pattern_seq*]=','.pattern+ { args }
 keyword_patterns[asdl_seq*]:
@@ -664,7 +666,6 @@ await_primary[expr_ty] (memo):
     | AWAIT a=primary { CHECK_VERSION(expr_ty, 5, "Await expressions are", _PyAST_Await(a, EXTRA)) }
     | primary
 primary[expr_ty]:
-    | invalid_primary  # must be before 'primay genexp' because of invalid_genexp
     | a=primary '.' b=NAME { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
     | a=primary b=genexp { _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=primary '(' b=[arguments] ')' {
@@ -811,11 +812,6 @@ del_t_atom[expr_ty]:
     | '(' a=[del_targets] ')' { _PyAST_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _PyAST_List(a, Del, EXTRA) }
 
-targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.target+ [','] { a }
-target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | t_atom
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
     | a=t_primary '[' b=slices ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
@@ -828,12 +824,6 @@ t_primary[expr_ty]:
                  EXTRA) }
     | a=atom &t_lookahead { a }
 t_lookahead: '(' | '[' | '.'
-t_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=target ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' b=[targets] ')' { _PyAST_Tuple(b, Store, EXTRA) }
-    | '[' b=[targets] ']' { _PyAST_List(b, Store, EXTRA) }
-
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
@@ -857,10 +847,16 @@ expression_without_invalid[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
+invalid_legacy_expression:
+    | a=NAME b=star_expressions {
+        _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
+            "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
+
 invalid_expression:
+   | invalid_legacy_expression
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
-    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
+   | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
 
 invalid_named_expression:
@@ -902,8 +898,6 @@ invalid_del_stmt:
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
-invalid_primary:
-    | primary a='{' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "invalid syntax") }
 invalid_comprehension:
     | ('[' | '(' | '{') a=starred_expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
@@ -964,6 +958,7 @@ invalid_with_stmt_indent:
 invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
+    | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
 invalid_except_stmt:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
@@ -984,6 +979,16 @@ invalid_case_block:
     | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
+invalid_as_pattern:
+    | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
+    | or_pattern 'as' !NAME a=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "invalid pattern target") }
+invalid_class_pattern:
+    | name_or_attr '(' a=invalid_class_argument_pattern  { RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+        PyPegen_first_item(a, pattern_ty),
+        PyPegen_last_item(a, pattern_ty),
+        "positional patterns follow keyword patterns") }
+invalid_class_argument_pattern[asdl_pattern_seq*]:
+    | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
 invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='if' a=named_expression ':' NEWLINE !INDENT {

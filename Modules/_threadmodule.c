@@ -313,7 +313,7 @@ static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lock_type_slots,
 };
 
@@ -326,6 +326,14 @@ typedef struct {
     unsigned long rlock_count;
     PyObject *in_weakreflist;
 } rlockobject;
+
+static int
+rlock_traverse(rlockobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 
 static void
 rlock_dealloc(rlockobject *self)
@@ -579,13 +587,15 @@ static PyType_Slot rlock_type_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, rlock_new},
     {Py_tp_members, rlock_type_members},
+    {Py_tp_traverse, rlock_traverse},
     {0, 0},
 };
 
 static PyType_Spec rlock_type_spec = {
     .name = "_thread.RLock",
     .basicsize = sizeof(rlockobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = rlock_type_slots,
 };
 
@@ -684,7 +694,8 @@ static PyType_Slot local_dummy_type_slots[] = {
 static PyType_Spec local_dummy_type_spec = {
     .name = "_thread._localdummy",
     .basicsize = sizeof(localdummyobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = local_dummy_type_slots,
 };
 
@@ -968,7 +979,8 @@ static PyType_Slot local_type_slots[] = {
 static PyType_Spec local_type_spec = {
     .name = "_thread._local",
     .basicsize = sizeof(localobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = local_type_slots,
 };
 
@@ -1071,6 +1083,11 @@ thread_run(void *boot_raw)
 
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = PyThread_get_thread_native_id();
+#else
+    tstate->native_thread_id = 0;
+#endif
     _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->num_threads++;
@@ -1093,7 +1110,9 @@ thread_run(void *boot_raw)
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
-    PyThread_exit_thread();
+    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
+    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
+    // to open the libgcc_s.so library (ex: EMFILE error).
 }
 
 static PyObject *

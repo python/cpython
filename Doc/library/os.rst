@@ -194,7 +194,7 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
@@ -369,7 +369,7 @@ process and user.
 
    .. note::
 
-      On Mac OS X, :func:`getgroups` behavior differs somewhat from
+      On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -516,7 +516,7 @@ process and user.
 
    .. note::
 
-      On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
+      On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
 
    .. audit-event:: os.putenv key,value os.putenv
@@ -554,7 +554,7 @@ process and user.
 
    .. availability:: Unix.
 
-   .. note:: On Mac OS X, the length of *groups* may not exceed the
+   .. note:: On macOS, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
@@ -1379,11 +1379,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    On Linux, if *offset* is given as ``None``, the bytes are read from the
    current position of *in_fd* and the position of *in_fd* is updated.
 
-   The second case may be used on Mac OS X and FreeBSD where *headers* and
+   The second case may be used on macOS and FreeBSD where *headers* and
    *trailers* are arbitrary sequences of buffers that are written before and
    after the data from *in_fd* is written. It returns the same as the first case.
 
-   On Mac OS X and FreeBSD, a value of ``0`` for *count* specifies to send until
+   On macOS and FreeBSD, a value of ``0`` for *count* specifies to send until
    the end of *in_fd* is reached.
 
    All platforms support sockets as *out_fd* file descriptor, and some platforms
@@ -3656,9 +3656,10 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: EX_OK
 
-   Exit code that means no error occurred.
+   Exit code that means no error occurred. May be taken from the defined value of
+   ``EXIT_SUCCESS`` on some platforms. Generally has a value of zero.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
 
 .. data:: EX_USAGE
@@ -4885,7 +4886,7 @@ Random numbers
    device. If the ``/dev/urandom`` device is not available or not readable, the
    :exc:`NotImplementedError` exception is raised.
 
-   On Windows, it will use ``CryptGenRandom()``.
+   On Windows, it will use ``BCryptGenRandom()``.
 
    .. seealso::
       The :mod:`secrets` module provides higher level functions. For an
@@ -4905,6 +4906,10 @@ Random numbers
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.11
+      On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``
+      which is deprecated.
 
 .. data:: GRND_NONBLOCK
 

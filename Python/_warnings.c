@@ -544,7 +544,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
         PyFile_WriteString("\n", f_stderr);
     }
     else {
-        _Py_DisplaySourceLine(f_stderr, filename, lineno, 2);
+        _Py_DisplaySourceLine(f_stderr, filename, lineno, 2, NULL, NULL);
     }
 
 error:
@@ -854,10 +854,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         *lineno = 1;
     }
     else {
-        globals = _PyFrame_GetGlobals(f);
-        PyCodeObject *code = PyFrame_GetCode(f);
-        *filename = code->co_filename;
-        Py_DECREF(code);
+        globals = f->f_frame->f_globals;
+        *filename = f->f_frame->f_code->co_filename;
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);

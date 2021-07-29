@@ -909,28 +909,29 @@ class HashLibTestCase(unittest.TestCase):
                 continue
             # all other types have DISALLOW_INSTANTIATION
             for constructor in constructors:
-                h = constructor()
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    h = constructor()
+                except ValueError:
+                    continue
                 with self.subTest(constructor=constructor):
-                    hash_type = type(h)
-                    self.assertRaises(TypeError, hash_type)
+                    support.check_disallow_instantiation(self, type(h))
 
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
-    def test_hash_disallow_instanciation(self):
+    def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
-        with self.assertRaisesRegex(
-            TypeError, "cannot create '_hashlib.HASH' instance"
-        ):
-            HASH()
-        with self.assertRaisesRegex(
-            TypeError, "cannot create '_hashlib.HASHXOF' instance"
-        ):
-            HASHXOF()
+        support.check_disallow_instantiation(self, HASH)
+        support.check_disallow_instantiation(self, HASHXOF)
 
     def test_readonly_types(self):
         for algorithm, constructors in self.constructors_to_test.items():
             # all other types have DISALLOW_INSTANTIATION
             for constructor in constructors:
-                hash_type = type(constructor())
+                # In FIPS mode some algorithms are not available raising ValueError
+                try:
+                    hash_type = type(constructor())
+                except ValueError:
+                    continue
                 with self.subTest(hash_type=hash_type):
                     with self.assertRaisesRegex(TypeError, "immutable type"):
                         hash_type.value = False

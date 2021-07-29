@@ -229,14 +229,22 @@ class LZMAFile(_compression.BaseStream):
         """Write a bytes object to the file.
 
         Returns the number of uncompressed bytes written, which is
-        always len(data). Note that due to buffering, the file on disk
-        may not reflect the data written until close() is called.
+        always the length of data in bytes. Note that due to buffering,
+        the file on disk may not reflect the data written until close()
+        is called.
         """
         self._check_can_write()
+        if isinstance(data, (bytes, bytearray)):
+            length = len(data)
+        else:
+            # accept any data that supports the buffer protocol
+            data = memoryview(data)
+            length = data.nbytes
+
         compressed = self._compressor.compress(data)
         self._fp.write(compressed)
-        self._pos += len(data)
-        return len(data)
+        self._pos += length
+        return length
 
     def seek(self, offset, whence=io.SEEK_SET):
         """Change the file position.

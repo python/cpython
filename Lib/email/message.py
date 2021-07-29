@@ -948,7 +948,7 @@ class MIMEPart(Message):
         if policy is None:
             from email.policy import default
             policy = default
-        Message.__init__(self, policy)
+        super().__init__(policy)
 
 
     def as_string(self, unixfrom=False, maxheaderlen=None, policy=None):
@@ -965,7 +965,7 @@ class MIMEPart(Message):
         policy = self.policy if policy is None else policy
         if maxheaderlen is None:
             maxheaderlen = policy.max_line_length
-        return super().as_string(maxheaderlen=maxheaderlen, policy=policy)
+        return super().as_string(unixfrom, maxheaderlen, policy)
 
     def __str__(self):
         return self.as_string(policy=self.policy.clone(utf8=True))

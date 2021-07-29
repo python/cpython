@@ -1,0 +1,2 @@
+Restore back :func:`parse_makefile` in :mod:`distutils.sysconfig` because it
+behaves differently than the similar implementation in :mod:`sysconfig`.

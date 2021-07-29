@@ -707,9 +707,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` objects
 ----------------------------
 
-.. class:: defaultdict([default_factory[, ...]])
+.. class:: defaultdict(default_factory=None, /, [...])
 
-    Returns a new dictionary-like object.  :class:`defaultdict` is a subclass of the
+    Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
     built-in :class:`dict` class.  It overrides one method and adds one writable
     instance variable.  The remaining functionality is the same as for the
     :class:`dict` class and is not documented here.
@@ -1209,7 +1209,7 @@ attribute.
     regular dictionary, which is accessible via the :attr:`data` attribute of
     :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
     initialized with its contents; note that a reference to *initialdata* will not
-    be kept, allowing it be used for other purposes.
+    be kept, allowing it to be used for other purposes.
 
     In addition to supporting the methods and operations of mappings,
     :class:`UserDict` instances provide the following attribute:
