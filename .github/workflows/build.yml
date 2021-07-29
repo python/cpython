@@ -75,7 +75,7 @@ jobs:
           # Check for changes in regenerated files
           if ! test -z "$changes"
           then
-            echo "Generated files not up to date. Perhaps you forgot to run make regen-all ;)"
+            echo "Generated files not up to date. Perhaps you forgot to run make regen-all or build.bat --regen ;)"
             echo "$changes"
             exit 1
           fi
