@@ -1,0 +1,9 @@
+Implement adaptive specialization for BINARY_SUBSCR
+
+ Three specialized forms of BINARY_SUBSCR are added:
+
+ * BINARY_SUBSCR_LIST_INT
+
+ * BINARY_SUBSCR_TUPLE_INT
+
+ * BINARY_SUBSCR_DICT

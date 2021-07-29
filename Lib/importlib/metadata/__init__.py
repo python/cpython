@@ -362,14 +362,6 @@ class EntryPoints(DeprecatedList):
         )
 
 
-def flake8_bypass(func):
-    # defer inspect import as performance optimization.
-    import inspect
-
-    is_flake8 = any('flake8' in str(frame.filename) for frame in inspect.stack()[:5])
-    return func if not is_flake8 else lambda: None
-
-
 class Deprecated:
     """
     Compatibility add-in for mapping to indicate that
@@ -405,7 +397,7 @@ class Deprecated:
         return super().__getitem__(name)
 
     def get(self, name, default=None):
-        flake8_bypass(self._warn)()
+        self._warn()
         return super().get(name, default)
 
     def __iter__(self):

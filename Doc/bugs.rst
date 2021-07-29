@@ -41,7 +41,7 @@ Using the Python issue tracker
 ==============================
 
 Bug reports for Python itself should be submitted via the Python Bug Tracker
-(https://bugs.python.org/).  The bug tracker offers a Web form which allows
+(https://bugs.python.org/).  The bug tracker offers a web form which allows
 pertinent information to be entered and submitted to the developers.
 
 The first step in filing a report is to determine whether the problem has

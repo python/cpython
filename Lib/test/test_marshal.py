@@ -1,5 +1,6 @@
 from test import support
-from test.support import os_helper
+from test.support import os_helper, requires_debug_ranges
+from test.support.script_helper import assert_python_ok
 import array
 import io
 import marshal
@@ -7,6 +8,7 @@ import sys
 import unittest
 import os
 import types
+import textwrap
 
 try:
     import _testcapi
@@ -125,6 +127,30 @@ class CodeTestCase(unittest.TestCase):
         co1, co2 = marshal.loads(marshal.dumps((co1, co2)))
         self.assertEqual(co1.co_filename, "f1")
         self.assertEqual(co2.co_filename, "f2")
+
+    @requires_debug_ranges()
+    def test_no_columntable_and_endlinetable_with_no_debug_ranges(self):
+        # Make sure when demarshalling objects with `-X no_debug_ranges`
+        # that the columntable and endlinetable are None.
+        co = ExceptionTestCase.test_exceptions.__code__
+        code = textwrap.dedent("""
+        import sys
+        import marshal
+        with open(sys.argv[1], 'rb') as f:
+            co = marshal.load(f)
+
+            assert co.co_endlinetable is None
+            assert co.co_columntable is None
+        """)
+
+        try:
+            with open(os_helper.TESTFN, 'wb') as f:
+                marshal.dump(co, f)
+
+            assert_python_ok('-X', 'no_debug_ranges',
+                             '-c', code, os_helper.TESTFN)
+        finally:
+            os_helper.unlink(os_helper.TESTFN)
 
     @support.cpython_only
     def test_same_filename_used(self):

@@ -42,24 +42,38 @@ The :mod:`pprint` module defines one class:
                          compact=False, sort_dicts=True, underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
-   several keyword parameters.  An output stream may be set using the *stream*
-   keyword; the only method used on the stream object is the file protocol's
-   :meth:`write` method.  If not specified, the :class:`PrettyPrinter` adopts
-   ``sys.stdout``.  The
-   amount of indentation added for each recursive level is specified by *indent*;
-   the default is one.  Other values can cause output to look a little odd, but can
-   make nesting easier to spot.  The number of levels which may be printed is
-   controlled by *depth*; if the data structure being printed is too deep, the next
-   contained level is replaced by ``...``.  By default, there is no constraint on
-   the depth of the objects being formatted.  The desired output width is
-   constrained using the *width* parameter; the default is 80 characters.  If a
-   structure cannot be formatted within the constrained width, a best effort will
-   be made.  If *compact* is false (the default) each item of a long sequence
-   will be formatted on a separate line.  If *compact* is true, as many items
-   as will fit within the *width* will be formatted on each output line. If
-   *sort_dicts* is true (the default), dictionaries will be formatted with their
-   keys sorted, otherwise they will display in insertion order.  If
-   *underscore_numbers* is true, integers will be formatted with the
+   several keyword parameters.
+
+   *stream* (default ``sys.stdout``) is a :term:`file-like object` to
+   which the output will be written by calling its :meth:`write` method.
+   If both *stream* and ``sys.stdout`` are ``None``, then
+   :meth:`~PrettyPrinter.pprint` silently returns.
+
+   Other values configure the manner in which nesting of complex data
+   structures is displayed.
+
+   *indent* (default 1) specifies the amount of indentation added for
+   each nesting level.
+
+   *depth* controls the number of nesting levels which may be printed; if
+   the data structure being printed is too deep, the next contained level
+   is replaced by ``...``.  By default, there is no constraint on the
+   depth of the objects being formatted.
+
+   *width* (default 80) specifies the desired maximum number of characters per
+   line in the output. If a structure cannot be formatted within the width
+   constraint, a best effort will be made.
+
+   *compact* impacts the way that long sequences (lists, tuples, sets, etc)
+   are formatted. If *compact* is false (the default) then each item of a
+   sequence will be formatted on a separate line.  If *compact* is true, as
+   many items as will fit within the *width* will be formatted on each output
+   line.
+
+   If *sort_dicts* is true (the default), dictionaries will be formatted with
+   their keys sorted, otherwise they will display in insertion order.
+
+   If *underscore_numbers* is true, integers will be formatted with the
    ``_`` character for a thousands separator, otherwise underscores are not
    displayed (the default).
 
@@ -71,6 +85,9 @@ The :mod:`pprint` module defines one class:
 
    .. versionchanged:: 3.10
       Added the *underscore_numbers* parameter.
+
+   .. versionchanged:: 3.11
+      No longer attempts to write to ``sys.stdout`` if it is ``None``.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -95,24 +112,13 @@ The :mod:`pprint` module defines one class:
       >>> pp.pprint(tup)
       ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
-
-The :mod:`pprint` module also provides several shortcut functions:
-
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
                       compact=False, sort_dicts=True, underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* will be passed to the
-   :class:`PrettyPrinter` constructor as formatting parameters.
-
-   .. versionchanged:: 3.4
-      Added the *compact* parameter.
-
-   .. versionchanged:: 3.8
-      Added the *sort_dicts* parameter.
-
-   .. versionchanged:: 3.10
-      Added the *underscore_numbers* parameter.
+   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
+   passed to the :class:`PrettyPrinter` constructor as formatting parameters
+   and their meanings are as described in its documentation above.
 
 
 .. function:: pp(object, *args, sort_dicts=False, **kwargs)
@@ -130,20 +136,15 @@ The :mod:`pprint` module also provides several shortcut functions:
                      compact=False, sort_dicts=True, underscore_numbers=False)
 
    Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
+   newline.  If *stream* is ``None``, ``sys.stdout`` is used. This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).  *indent*, *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* will
-   be passed to the :class:`PrettyPrinter` constructor as formatting parameters.
+   within a scope).
 
-   .. versionchanged:: 3.4
-      Added the *compact* parameter.
-
-   .. versionchanged:: 3.8
-      Added the *sort_dicts* parameter.
-
-   .. versionchanged:: 3.10
-      Added the *underscore_numbers* parameter.
+   The configuration parameters *stream*, *indent*, *width*, *depth*,
+   *compact*, *sort_dicts* and *underscore_numbers* are passed to the
+   :class:`PrettyPrinter` constructor and their meanings are as
+   described in its documentation above.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -155,7 +156,6 @@ The :mod:`pprint` module also provides several shortcut functions:
        'lumberjack',
        'knights',
        'ni']
-
 
 .. function:: isreadable(object)
 
