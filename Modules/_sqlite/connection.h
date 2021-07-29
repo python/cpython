@@ -36,6 +36,7 @@ typedef struct
 {
     PyObject_HEAD
     sqlite3* db;
+    pysqlite_state *state;
 
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */

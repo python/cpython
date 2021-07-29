@@ -37,6 +37,7 @@
 #endif
 
 static struct PyModuleDef _testcapimodule;
+static PyType_Spec HeapTypeNameType_Spec;
 
 static PyObject *TestError;     /* set to exception object in init */
 
@@ -1130,6 +1131,30 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *tp_name = PyType_GetName(&PyLong_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "int") == 0);
+    Py_DECREF(tp_name);
+
+    tp_name = PyType_GetName(&PyModule_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
+    Py_DECREF(tp_name);
+
+    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    if (HeapTypeNameType == NULL) {
+        Py_RETURN_NONE;
+    }
+    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "HeapTypeNameType") == 0);
+    Py_DECREF(tp_name);
+
+    Py_DECREF(HeapTypeNameType);
     Py_RETURN_NONE;
 }
 
@@ -5624,6 +5649,7 @@ static PyMethodDef TestMethods[] = {
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
     {"get_args",                get_args,                        METH_VARARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
+    {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
@@ -6510,6 +6536,21 @@ static PyType_Spec HeapDocCType_spec = {
     0,
     Py_TPFLAGS_DEFAULT,
     HeapDocCType_slots
+};
+
+typedef struct {
+    PyObject_HEAD
+} HeapTypeNameObject;
+
+static PyType_Slot HeapTypeNameType_slots[] = {
+    {0},
+};
+
+static PyType_Spec HeapTypeNameType_Spec = {
+    .name = "_testcapi.HeapTypeNameType",
+    .basicsize = sizeof(HeapTypeNameObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = HeapTypeNameType_slots,
 };
 
 typedef struct {
