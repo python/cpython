@@ -20,7 +20,7 @@ static int validate_patterns(struct validator *, asdl_pattern_seq *, int);
 static int _validate_nonempty_seq(asdl_seq *, const char *, const char *);
 static int validate_stmt(struct validator *, stmt_ty);
 static int validate_expr(struct validator *, expr_ty, expr_context_ty);
-static int validate_pattern(struct validator *, pattern_ty);
+static int validate_pattern(struct validator *, pattern_ty, int);
 
 static int
 validate_name(PyObject *name)
@@ -493,7 +493,17 @@ validate_pattern_match_value(struct validator *state, expr_ty exp)
 }
 
 static int
-validate_pattern(struct validator *state, pattern_ty p)
+validate_capture(PyObject *name)
+{
+    if (_PyUnicode_EqualToASCIIString(name, "_")) {
+        PyErr_Format(PyExc_ValueError, "can't capture name '_' in patterns");
+        return 0;
+    }
+    return validate_name(name);
+}
+
+static int
+validate_pattern(struct validator *state, pattern_ty p, int star_ok)
 {
     int ret = -1;
     if (++state->recursion_depth > state->recursion_limit) {
@@ -501,8 +511,6 @@ validate_pattern(struct validator *state, pattern_ty p)
                         "maximum recursion depth exceeded during compilation");
         return 0;
     }
-    // Coming soon: https://bugs.python.org/issue43897 (thanks Batuhan)!
-    // TODO: Ensure no subnodes use "_" as an ordinary identifier
     switch (p->kind) {
         case MatchValue_kind:
             ret = validate_pattern_match_value(state, p->v.MatchValue.value);
@@ -525,7 +533,7 @@ validate_pattern(struct validator *state, pattern_ty p)
                 break;
             }
 
-            if (p->v.MatchMapping.rest && !validate_name(p->v.MatchMapping.rest)) {
+            if (p->v.MatchMapping.rest && !validate_capture(p->v.MatchMapping.rest)) {
                 ret = 0;
                 break;
             }
@@ -575,16 +583,16 @@ validate_pattern(struct validator *state, pattern_ty p)
                 else {
                     PyErr_SetString(PyExc_ValueError,
                                     "MatchClass cls field can only contain Name or Attribute nodes.");
-                    state->recursion_depth--;
-                    return 0;
+                    ret = 0;
+                    break;
                 }
             }
 
             for (Py_ssize_t i = 0; i < asdl_seq_LEN(p->v.MatchClass.kwd_attrs); i++) {
                 PyObject *identifier = asdl_seq_GET(p->v.MatchClass.kwd_attrs, i);
                 if (!validate_name(identifier)) {
-                    state->recursion_depth--;
-                    return 0;
+                    ret = 0;
+                    break;
                 }
             }
 
@@ -596,10 +604,15 @@ validate_pattern(struct validator *state, pattern_ty p)
             ret = validate_patterns(state, p->v.MatchClass.kwd_patterns, /*star_ok=*/0);
             break;
         case MatchStar_kind:
-            ret = p->v.MatchStar.name == NULL || validate_name(p->v.MatchStar.name);
+            if (!star_ok) {
+                PyErr_SetString(PyExc_ValueError, "can't use MatchStar here");
+                ret = 0;
+                break;
+            }
+            ret = p->v.MatchStar.name == NULL || validate_capture(p->v.MatchStar.name);
             break;
         case MatchAs_kind:
-            if (p->v.MatchAs.name && !validate_name(p->v.MatchAs.name)) {
+            if (p->v.MatchAs.name && !validate_capture(p->v.MatchAs.name)) {
                 ret = 0;
                 break;
             }
@@ -609,10 +622,10 @@ validate_pattern(struct validator *state, pattern_ty p)
             else if (p->v.MatchAs.name == NULL) {
                 PyErr_SetString(PyExc_ValueError,
                                 "MatchAs must specify a target name if a pattern is given");
-                return 0;
+                ret = 0;
             }
             else {
-                ret = validate_pattern(state, p->v.MatchAs.pattern);
+                ret = validate_pattern(state, p->v.MatchAs.pattern, /*star_ok=*/0);
             }
             break;
         case MatchOr_kind:
@@ -759,7 +772,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
         }
         for (i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
             match_case_ty m = asdl_seq_GET(stmt->v.Match.cases, i);
-            if (!validate_pattern(state, m->pattern)
+            if (!validate_pattern(state, m->pattern, /*star_ok=*/0)
                 || (m->guard && !validate_expr(state, m->guard, Load))
                 || !validate_body(state, m->body, "match_case")) {
                 return 0;
@@ -894,12 +907,7 @@ validate_patterns(struct validator *state, asdl_pattern_seq *patterns, int star_
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(patterns); i++) {
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        if (pattern->kind == MatchStar_kind && !star_ok) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Can't use MatchStar within this sequence of patterns");
-            return 0;
-        }
-        if (!validate_pattern(state, pattern)) {
+        if (!validate_pattern(state, pattern, star_ok)) {
             return 0;
         }
     }
