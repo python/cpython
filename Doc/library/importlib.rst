@@ -427,16 +427,18 @@ ABC hierarchy::
             It is ``'__main__'`` for a top-level module.
 
         - :attr:`__file__`
-            The location from which the module was loaded.
+            The location the :term:`loader` should use to load the module.
+            For example, for modules loaded from a .py file this is the filename.
             It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__cached__`
-            The path to a compiled version of the module's code.
+            The filename of a compiled version of the module's code.
             It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__path__`
             The list of locations where the package's submodules will be found.
-            The import system passes this to ``__import__()`` and to finders
+            Most of the time this is a single directory.
+            The import system passes this attribute to ``__import__()`` and to finders
             in the same way as :attr:`sys.path` but just for the package.
             It is not set on non-package modules so it can be used
             as an indicator that the module is a package.
@@ -1356,7 +1358,8 @@ find and load modules.
 
    (:attr:`__file__`)
 
-   The location from which the module was loaded.
+   The location the :term:`loader` should use to load the module.
+   For example, for modules loaded from a .py file this is the filename.
    The :term:`finder` should always set this attribute to a meaningful value
    for the :term:`loader` to use.  In the uncommon case that there is not one
    (like for namespace packages), it should be set to ``None``.
@@ -1366,6 +1369,7 @@ find and load modules.
    (:attr:`__path__`)
 
    The list of locations where the package's submodules will be found.
+   Most of the time this is a single directory.
    The :term:`finder` should set this attribute to a list, even an empty one, to indicate
    to the import system that the module is a package.  It should be set to ``None`` for
    non-package modules.  It is set automatically later to a special object for
@@ -1381,7 +1385,7 @@ find and load modules.
 
    (:attr:`__cached__`)
 
-   The path to a compiled version of the module's code.
+   The filename of a compiled version of the module's code.
    The :term:`finder` should always set this attribute but it may be ``None``
    for modules that do not need compiled code stored.
 
