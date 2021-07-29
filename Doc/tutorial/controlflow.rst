@@ -234,7 +234,7 @@ The :func:`range` 函数
             case 418:
                 return "I'm a teapot"
             case _:
-                return "Something's wrong with the Internet"
+                return "Something's wrong with the internet"
 
 注意最会一块:  "变量名" ``_`` 扮演 *通配符* 匹配其他，如果没有事件匹配，则不执行任何分支。
 

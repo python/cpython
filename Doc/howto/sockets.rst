@@ -45,7 +45,7 @@ likely to be other forms of IPC that are faster, but for
 cross-platform communication, sockets are about the only game in town.
 
 They were invented in Berkeley as part of the BSD flavor of Unix. They spread
-like wildfire with the Internet. With good reason --- the combination of sockets
+like wildfire with the internet. With good reason --- the combination of sockets
 with INET makes talking to arbitrary machines around the world unbelievably easy
 (at least compared to other schemes).
 

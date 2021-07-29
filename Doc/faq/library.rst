@@ -20,7 +20,7 @@ library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
 <https://pypi.org>`_ or try `Google <https://www.google.com>`_ or
-another Web search engine.  Searching for "Python" plus a keyword or two for
+another web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
 

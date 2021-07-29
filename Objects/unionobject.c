@@ -1,4 +1,4 @@
-// types.Union -- used to represent e.g. Union[int, str], int | str
+// types.UnionType -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_unionobject.h"
@@ -414,7 +414,7 @@ union_parameters(PyObject *self, void *Py_UNUSED(unused))
 }
 
 static PyGetSetDef union_properties[] = {
-    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.Union.", NULL},
+    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.UnionType.", NULL},
     {0}
 };
 
@@ -424,7 +424,7 @@ static PyNumberMethods union_as_number = {
 
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "types.Union",
+    .tp_name = "types.UnionType",
     .tp_doc = "Represent a PEP 604 union type\n"
               "\n"
               "E.g. for int | str",
