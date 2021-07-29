@@ -51,7 +51,7 @@ typedef enum {
 pysqlite_Statement *
 pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 {
-    pysqlite_state *state = pysqlite_get_state(NULL);
+    pysqlite_state *state = connection->state;
     assert(PyUnicode_Check(sql));
     Py_ssize_t size;
     const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
@@ -83,7 +83,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(db);
+        _pysqlite_seterror(state, db);
         return NULL;
     }
 
@@ -209,9 +209,9 @@ final:
 }
 
 /* returns 0 if the object is one of Python's internal ones that don't need to be adapted */
-static int _need_adapt(PyObject* obj)
+static int
+_need_adapt(pysqlite_state *state, PyObject *obj)
 {
-    pysqlite_state *state = pysqlite_get_state(NULL);
     if (state->BaseTypeAdapted) {
         return 1;
     }
@@ -224,9 +224,11 @@ static int _need_adapt(PyObject* obj)
     }
 }
 
-void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters)
+void
+pysqlite_statement_bind_parameters(pysqlite_state *state,
+                                   pysqlite_Statement *self,
+                                   PyObject *parameters)
 {
-    pysqlite_state *state = pysqlite_get_state(NULL);
     PyObject* current_param;
     PyObject* adapted;
     const char* binding_name;
@@ -272,11 +274,11 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 return;
             }
 
-            if (!_need_adapt(current_param)) {
+            if (!_need_adapt(state, current_param)) {
                 adapted = current_param;
             } else {
                 PyObject *protocol = (PyObject *)state->PrepareProtocolType;
-                adapted = pysqlite_microprotocols_adapt(current_param,
+                adapted = pysqlite_microprotocols_adapt(state, current_param,
                                                         protocol,
                                                         current_param);
                 Py_DECREF(current_param);
@@ -332,11 +334,11 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 return;
             }
 
-            if (!_need_adapt(current_param)) {
+            if (!_need_adapt(state, current_param)) {
                 adapted = current_param;
             } else {
                 PyObject *protocol = (PyObject *)state->PrepareProtocolType;
-                adapted = pysqlite_microprotocols_adapt(current_param,
+                adapted = pysqlite_microprotocols_adapt(state, current_param,
                                                         protocol,
                                                         current_param);
                 Py_DECREF(current_param);

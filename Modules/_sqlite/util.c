@@ -41,9 +41,8 @@ pysqlite_step(sqlite3_stmt *statement)
  * Returns the error code (0 means no error occurred).
  */
 int
-_pysqlite_seterror(sqlite3 *db)
+_pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
 {
-    pysqlite_state *state = pysqlite_get_state(NULL);
     int errorcode = sqlite3_errcode(db);
 
     switch (errorcode)
