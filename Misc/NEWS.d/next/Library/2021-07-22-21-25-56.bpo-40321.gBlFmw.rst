@@ -1,0 +1,2 @@
+Adds support for HTTP 308 redirects to :mod:`urllib`. Patch by Jochem
+Schulenklopper.
