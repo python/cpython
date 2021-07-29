@@ -84,7 +84,7 @@ typedef struct
 
     /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
     callback_context *trace_ctx;
-    PyObject* function_pinboard_progress_handler;
+    callback_context *progress_ctx;
     PyObject* function_pinboard_authorizer_cb;
 
     /* Exception objects: borrowed refs. */

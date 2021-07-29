@@ -170,7 +170,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->check_same_thread = check_same_thread;
 
     self->trace_ctx = NULL;
-    self->function_pinboard_progress_handler = NULL;
+    self->progress_ctx = NULL;
     self->function_pinboard_authorizer_cb = NULL;
 
     self->Warning               = state->Warning;
@@ -232,7 +232,7 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(self->row_factory);
     Py_VISIT(self->text_factory);
     VISIT_CALLBACK_CONTEXT(self->trace_ctx);
-    Py_VISIT(self->function_pinboard_progress_handler);
+    VISIT_CALLBACK_CONTEXT(self->progress_ctx);
     Py_VISIT(self->function_pinboard_authorizer_cb);
 #undef VISIT_CALLBACK_CONTEXT
     return 0;
@@ -254,7 +254,7 @@ connection_clear(pysqlite_Connection *self)
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
     CLEAR_CALLBACK_CONTEXT(self->trace_ctx);
-    Py_CLEAR(self->function_pinboard_progress_handler);
+    CLEAR_CALLBACK_CONTEXT(self->progress_ctx);
     Py_CLEAR(self->function_pinboard_authorizer_cb);
 #undef CLEAR_CALLBACK_CONTEXT
     return 0;
@@ -274,6 +274,7 @@ static void
 free_callback_contexts(pysqlite_Connection *self)
 {
     free_callback_context(self->trace_ctx);
+    free_callback_context(self->progress_ctx);
 }
 
 static void
@@ -988,7 +989,10 @@ static int _progress_handler(void* user_arg)
     PyGILState_STATE gilstate;
 
     gilstate = PyGILState_Ensure();
-    ret = _PyObject_CallNoArg((PyObject*)user_arg);
+
+    callback_context *ctx = (callback_context *)user_arg;
+    assert(ctx != NULL);
+    ret = _PyObject_CallNoArg(ctx->callable);
 
     if (!ret) {
         /* abort query if error occurred */
@@ -999,8 +1003,8 @@ static int _progress_handler(void* user_arg)
         Py_DECREF(ret);
     }
     if (rc < 0) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
+        assert(ctx->state != NULL);
+        if (ctx->state->enable_callback_tracebacks) {
             PyErr_Print();
         }
         else {
@@ -1121,11 +1125,17 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
     if (progress_handler == Py_None) {
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
-        Py_XSETREF(self->function_pinboard_progress_handler, NULL);
+        free_callback_context(self->progress_ctx);
+        self->progress_ctx = NULL;
     } else {
-        sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
-        Py_INCREF(progress_handler);
-        Py_XSETREF(self->function_pinboard_progress_handler, progress_handler);
+        callback_context *ctx = create_callback_context(self->state,
+                                                        progress_handler);
+        if (ctx == NULL) {
+            return NULL;
+        }
+        sqlite3_progress_handler(self->db, n, _progress_handler, ctx);
+        free_callback_context(self->progress_ctx);
+        self->progress_ctx = ctx;
     }
     Py_RETURN_NONE;
 }
