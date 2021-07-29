@@ -1070,6 +1070,14 @@ static void _trace_callback(void* user_arg, const char* statement_string)
 #endif
 }
 
+
+#define SET_CALLBACK_CONTEXT(ctx_ptr, ctx) \
+do {                                       \
+    callback_context *tmp = ctx_ptr;       \
+    ctx_ptr = ctx;                         \
+    free_callback_context(tmp);            \
+} while (0)
+
 /*[clinic input]
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
@@ -1090,8 +1098,7 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
     int rc;
     if (authorizer_cb == Py_None) {
         rc = sqlite3_set_authorizer(self->db, NULL, NULL);
-        free_callback_context(self->authorizer_ctx);
-        self->authorizer_ctx = NULL;
+        SET_CALLBACK_CONTEXT(self->authorizer_ctx, NULL);
     }
     else {
         callback_context *ctx = create_callback_context(self->state,
@@ -1100,14 +1107,12 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
             return NULL;
         }
         rc = sqlite3_set_authorizer(self->db, _authorizer_callback, ctx);
-        free_callback_context(self->authorizer_ctx);
-        self->authorizer_ctx = ctx;
+        SET_CALLBACK_CONTEXT(self->authorizer_ctx, ctx);
     }
     if (rc != SQLITE_OK) {
         PyErr_SetString(self->OperationalError,
                         "Error setting authorizer callback");
-        free_callback_context(self->authorizer_ctx);
-        self->authorizer_ctx = NULL;
+        SET_CALLBACK_CONTEXT(self->authorizer_ctx, NULL);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1135,8 +1140,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
     if (progress_handler == Py_None) {
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
-        free_callback_context(self->progress_ctx);
-        self->progress_ctx = NULL;
+        SET_CALLBACK_CONTEXT(self->progress_ctx, NULL);
     } else {
         callback_context *ctx = create_callback_context(self->state,
                                                         progress_handler);
@@ -1144,8 +1148,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
             return NULL;
         }
         sqlite3_progress_handler(self->db, n, _progress_handler, ctx);
-        free_callback_context(self->progress_ctx);
-        self->progress_ctx = ctx;
+        SET_CALLBACK_CONTEXT(self->progress_ctx, ctx);
     }
     Py_RETURN_NONE;
 }
@@ -1182,8 +1185,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 #else
         sqlite3_trace(self->db, 0, (void*)0);
 #endif
-        free_callback_context(self->trace_ctx);
-        self->trace_ctx = NULL;
+        SET_CALLBACK_CONTEXT(self->trace_ctx, NULL);
     }
     else {
         callback_context *ctx = create_callback_context(self->state,
@@ -1196,12 +1198,13 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 #else
         sqlite3_trace(self->db, _trace_callback, ctx);
 #endif
-        free_callback_context(self->trace_ctx);
-        self->trace_ctx = ctx;
+        SET_CALLBACK_CONTEXT(self->trace_ctx, ctx);
     }
 
     Py_RETURN_NONE;
 }
+
+#undef SET_CALLBACK_CONTEXT
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*[clinic input]
