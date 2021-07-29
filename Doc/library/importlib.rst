@@ -439,7 +439,7 @@ ABC hierarchy::
             The import system passes this to ``__import__()`` and to finders
             in the same way as :attr:`sys.path` but just for the package.
             It is not set on non-package modules so it can be used
-            as an indicator that a module is a package.
+            as an indicator that the module is a package.
 
         - :attr:`__package__`
             The fully-qualified name of the package the module is in (or the
@@ -1366,14 +1366,14 @@ find and load modules.
    (:attr:`__path__`)
 
    The list of locations where the package's submodules will be found.
-   Setting this to a list, even an empty one, is how a :term:`finder` indicates
-   to the import system that this is a package.  It should be set to ``None`` for
+   The :term:`finder` should set this attribute to a list, even an empty one, to indicate
+   to the import system that the module is a package.  It should be set to ``None`` for
    non-package modules.  It is set automatically later to a special object for
    namespace packages.
 
    .. attribute:: loader_state
 
-   The :term:`finder` may set this to an object containing additional,
+   The :term:`finder` may set this attribute to an object containing additional,
    module-specific data to use when loading the module.  Otherwise it should be
    set to ``None``.
 
