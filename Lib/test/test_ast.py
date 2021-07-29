@@ -1627,7 +1627,11 @@ class ASTValidatorTests(unittest.TestCase):
         ),
         ast.MatchOr(
             [pattern_1, pattern_x, ast.MatchSingleton('xxx')]
-        )
+        ),
+        ast.MatchAs(name="_"),
+        ast.MatchStar(name="x"),
+        ast.MatchSequence([ast.MatchStar("_")]),
+        ast.MatchMapping([], [], rest="_"),
     ]
 
     def test_match_validation_pattern(self):
