@@ -1209,7 +1209,7 @@ attribute.
     regular dictionary, which is accessible via the :attr:`data` attribute of
     :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
     initialized with its contents; note that a reference to *initialdata* will not
-    be kept, allowing it be used for other purposes.
+    be kept, allowing it to be used for other purposes.
 
     In addition to supporting the methods and operations of mappings,
     :class:`UserDict` instances provide the following attribute:

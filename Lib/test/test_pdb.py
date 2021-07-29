@@ -260,6 +260,9 @@ def test_pdb_breakpoint_commands():
     ...     'tbreak 5',
     ...     'continue',  # will stop at temporary breakpoint
     ...     'break',     # make sure breakpoint is gone
+    ...     'commands 10',  # out of range
+    ...     'commands a',   # display help
+    ...     'commands 4',   # already deleted
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -319,6 +322,14 @@ def test_pdb_breakpoint_commands():
     > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(5)test_function()
     -> print(3)
     (Pdb) break
+    (Pdb) commands 10
+    *** cannot set commands: Breakpoint number 10 out of range
+    (Pdb) commands a
+    *** Usage: commands [bnum]
+            ...
+            end
+    (Pdb) commands 4
+    *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) continue
     3
     4
@@ -362,7 +373,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:94
+    Breakpoint 3 at ...pdb.py:97
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -1728,6 +1739,20 @@ def bœr():
         stdout, stderr = self._run_pdb(['-m', module_name], "")
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
+
+    def test_package_without_a_main(self):
+        pkg_name = 't_pkg'
+        module_name = 't_main'
+        os_helper.rmtree(pkg_name)
+        modpath = pkg_name + '/' + module_name
+        os.makedirs(modpath)
+        with open(modpath + '/__init__.py', 'w') as f:
+            pass
+        self.addCleanup(os_helper.rmtree, pkg_name)
+        stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
+        self.assertIn(
+            "'t_pkg.t_main' is a package and cannot be directly executed",
+            stdout)
 
     def test_blocks_at_first_code_line(self):
         script = """

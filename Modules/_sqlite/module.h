@@ -41,7 +41,17 @@ typedef struct {
     PyObject *ProgrammingError;
     PyObject *Warning;
 
+
+    /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
+     * functions, that convert the SQL value to the appropriate Python value.
+     * The key is uppercase.
+     */
+    PyObject *converters;
+
     PyObject *lru_cache;
+    PyObject *psyco_adapters;  // The adapters registry
+    int BaseTypeAdapted;
+    int enable_callback_tracebacks;
 
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
@@ -55,17 +65,21 @@ extern pysqlite_state pysqlite_global_state;
 static inline pysqlite_state *
 pysqlite_get_state(PyObject *Py_UNUSED(module))
 {
-    return &pysqlite_global_state;
+    return &pysqlite_global_state;  // Replace with PyModule_GetState
 }
 
-/* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
- * functions, that convert the SQL value to the appropriate Python value.
- * The key is uppercase.
- */
-extern PyObject* _pysqlite_converters;
+static inline pysqlite_state *
+pysqlite_get_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+{
+    return &pysqlite_global_state;  // Replace with PyType_GetModuleState
+}
 
-extern int _pysqlite_enable_callback_tracebacks;
-extern int pysqlite_BaseTypeAdapted;
+static inline pysqlite_state *
+pysqlite_get_state_by_type(PyTypeObject *Py_UNUSED(tp))
+{
+    // Replace with _PyType_GetModuleByDef & PyModule_GetState
+    return &pysqlite_global_state;
+}
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2
