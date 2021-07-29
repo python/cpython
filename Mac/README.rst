@@ -399,7 +399,7 @@ The basic implementation pattern is:
 Resources
 =========
 
-  *  https://www.python.org/downloads/mac-osx/
+  *  https://www.python.org/downloads/macos/
 
   *  https://www.python.org/community/sigs/current/pythonmac-sig/
 
