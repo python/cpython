@@ -827,6 +827,26 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
     Py_SETREF(self->cursors, new_list);
 }
 
+static callback_context *
+create_callback_context(pysqlite_state *state, PyObject *obj)
+{
+    callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
+    if (ctx != NULL) {
+        ctx->obj = Py_NewRef(obj);
+        ctx->state = state;
+    }
+    return ctx;
+}
+
+static void
+free_callback_context(callback_context *ctx)
+{
+    if (ctx != NULL) {
+        Py_DECREF(ctx->obj);
+        PyMem_Free(ctx);
+    }
+}
+
 static void _destructor(void* args)
 {
     // This function may be called without the GIL held, so we need to ensure
