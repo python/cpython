@@ -377,8 +377,9 @@ def getmodule(module):
                 print(exc)
             raise
         except DeprecationWarning as exc:
-            print("Module deprecated (skipping) %r: %s" % (module, exc))
-            return True
+            if support.verbose:
+                print("Module deprecated %r: %s" % (module, exc))
+            raise
         return sys.modules[module]
 
 def getattribute(module, name):
@@ -402,7 +403,7 @@ class CompatPickleTests(unittest.TestCase):
         for module in modules:
             try:
                 getmodule(module)
-            except ImportError:
+            except (DeprecationWarning, ImportError):
                 pass
 
     def test_import_mapping(self):
@@ -410,7 +411,7 @@ class CompatPickleTests(unittest.TestCase):
             with self.subTest((module3, module2)):
                 try:
                     getmodule(module3)
-                except ImportError:
+                except (DeprecationWarning, ImportError):
                     pass
                 if module3[:1] != '_':
                     self.assertIn(module2, IMPORT_MAPPING)
@@ -441,7 +442,7 @@ class CompatPickleTests(unittest.TestCase):
             with self.subTest((module2, module3)):
                 try:
                     getmodule(module3)
-                except ImportError as exc:
+                except (DeprecationWarning, ImportError) as exc:
                     if support.verbose:
                         print(exc)
                 if ((module2, module3) not in ALT_IMPORT_MAPPING and
