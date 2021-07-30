@@ -420,6 +420,8 @@ def Any(self, parameters):
     """
     raise TypeError(f"{self} is not subscriptable")
 
+Duck = Any
+    
 @_SpecialForm
 def NoReturn(self, parameters):
     """Special type indicating functions that never return.
