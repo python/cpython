@@ -158,7 +158,7 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
         state->BaseTypeAdapted = 1;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
+    pysqlite_state *state = pysqlite_get_state(module);
     PyObject *protocol = (PyObject *)state->PrepareProtocolType;
     rc = pysqlite_microprotocols_add(type, protocol, caster);
     if (rc == -1) {
@@ -239,7 +239,8 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
 /*[clinic end generated code: output=0c3927c5fcd23dd9 input=c8995aeb25d0e542]*/
 {
-    return pysqlite_microprotocols_adapt(obj, proto, alt);
+    pysqlite_state *state = pysqlite_get_state(module);
+    return pysqlite_microprotocols_adapt(state, obj, proto, alt);
 }
 
 static int converters_init(PyObject* module)

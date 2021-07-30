@@ -252,249 +252,250 @@ static char *soft_keywords[] = {
 #define invalid_arguments_type 1178
 #define invalid_kwarg_type 1179
 #define expression_without_invalid_type 1180
-#define invalid_expression_type 1181
-#define invalid_named_expression_type 1182
-#define invalid_assignment_type 1183
-#define invalid_ann_assign_target_type 1184
-#define invalid_del_stmt_type 1185
-#define invalid_block_type 1186
-#define invalid_comprehension_type 1187
-#define invalid_dict_comprehension_type 1188
-#define invalid_parameters_type 1189
-#define invalid_parameters_helper_type 1190
-#define invalid_lambda_parameters_type 1191
-#define invalid_lambda_parameters_helper_type 1192
-#define invalid_star_etc_type 1193
-#define invalid_lambda_star_etc_type 1194
-#define invalid_double_type_comments_type 1195
-#define invalid_with_item_type 1196
-#define invalid_for_target_type 1197
-#define invalid_group_type 1198
-#define invalid_import_from_targets_type 1199
-#define invalid_with_stmt_type 1200
-#define invalid_with_stmt_indent_type 1201
-#define invalid_try_stmt_type 1202
-#define invalid_except_stmt_type 1203
-#define invalid_finally_stmt_type 1204
-#define invalid_except_stmt_indent_type 1205
-#define invalid_match_stmt_type 1206
-#define invalid_case_block_type 1207
-#define invalid_as_pattern_type 1208
-#define invalid_class_pattern_type 1209
-#define invalid_class_argument_pattern_type 1210
-#define invalid_if_stmt_type 1211
-#define invalid_elif_stmt_type 1212
-#define invalid_else_stmt_type 1213
-#define invalid_while_stmt_type 1214
-#define invalid_for_stmt_type 1215
-#define invalid_def_raw_type 1216
-#define invalid_class_def_raw_type 1217
-#define invalid_double_starred_kvpairs_type 1218
-#define invalid_kvpair_type 1219
-#define _loop0_1_type 1220
-#define _loop0_2_type 1221
-#define _loop0_4_type 1222
-#define _gather_3_type 1223
-#define _loop0_6_type 1224
-#define _gather_5_type 1225
-#define _loop0_8_type 1226
-#define _gather_7_type 1227
-#define _loop0_10_type 1228
-#define _gather_9_type 1229
-#define _loop1_11_type 1230
-#define _loop0_13_type 1231
-#define _gather_12_type 1232
-#define _tmp_14_type 1233
-#define _tmp_15_type 1234
-#define _tmp_16_type 1235
-#define _tmp_17_type 1236
-#define _tmp_18_type 1237
-#define _tmp_19_type 1238
-#define _tmp_20_type 1239
-#define _tmp_21_type 1240
-#define _loop1_22_type 1241
-#define _tmp_23_type 1242
-#define _tmp_24_type 1243
-#define _loop0_26_type 1244
-#define _gather_25_type 1245
-#define _loop0_28_type 1246
-#define _gather_27_type 1247
-#define _tmp_29_type 1248
-#define _tmp_30_type 1249
-#define _loop0_31_type 1250
-#define _loop1_32_type 1251
-#define _loop0_34_type 1252
-#define _gather_33_type 1253
-#define _tmp_35_type 1254
-#define _loop0_37_type 1255
-#define _gather_36_type 1256
-#define _tmp_38_type 1257
-#define _loop0_40_type 1258
-#define _gather_39_type 1259
-#define _loop0_42_type 1260
-#define _gather_41_type 1261
-#define _loop0_44_type 1262
-#define _gather_43_type 1263
-#define _loop0_46_type 1264
-#define _gather_45_type 1265
-#define _tmp_47_type 1266
-#define _loop1_48_type 1267
-#define _tmp_49_type 1268
-#define _loop1_50_type 1269
-#define _loop0_52_type 1270
-#define _gather_51_type 1271
-#define _tmp_53_type 1272
-#define _tmp_54_type 1273
-#define _tmp_55_type 1274
-#define _tmp_56_type 1275
-#define _loop0_58_type 1276
-#define _gather_57_type 1277
-#define _loop0_60_type 1278
-#define _gather_59_type 1279
-#define _tmp_61_type 1280
-#define _loop0_63_type 1281
-#define _gather_62_type 1282
-#define _loop0_65_type 1283
-#define _gather_64_type 1284
-#define _tmp_66_type 1285
-#define _tmp_67_type 1286
-#define _tmp_68_type 1287
-#define _tmp_69_type 1288
-#define _loop0_70_type 1289
-#define _loop0_71_type 1290
-#define _loop0_72_type 1291
-#define _loop1_73_type 1292
-#define _loop0_74_type 1293
-#define _loop1_75_type 1294
-#define _loop1_76_type 1295
-#define _loop1_77_type 1296
-#define _loop0_78_type 1297
-#define _loop1_79_type 1298
-#define _loop0_80_type 1299
-#define _loop1_81_type 1300
-#define _loop0_82_type 1301
-#define _loop1_83_type 1302
-#define _loop1_84_type 1303
-#define _tmp_85_type 1304
-#define _loop1_86_type 1305
-#define _loop0_88_type 1306
-#define _gather_87_type 1307
-#define _loop1_89_type 1308
-#define _loop0_90_type 1309
-#define _loop0_91_type 1310
-#define _loop0_92_type 1311
-#define _loop1_93_type 1312
-#define _loop0_94_type 1313
-#define _loop1_95_type 1314
-#define _loop1_96_type 1315
-#define _loop1_97_type 1316
-#define _loop0_98_type 1317
-#define _loop1_99_type 1318
-#define _loop0_100_type 1319
-#define _loop1_101_type 1320
-#define _loop0_102_type 1321
-#define _loop1_103_type 1322
-#define _loop1_104_type 1323
-#define _loop1_105_type 1324
-#define _loop1_106_type 1325
-#define _tmp_107_type 1326
-#define _loop0_109_type 1327
-#define _gather_108_type 1328
-#define _tmp_110_type 1329
-#define _tmp_111_type 1330
-#define _tmp_112_type 1331
-#define _tmp_113_type 1332
-#define _loop1_114_type 1333
-#define _tmp_115_type 1334
-#define _tmp_116_type 1335
-#define _tmp_117_type 1336
-#define _loop0_119_type 1337
-#define _gather_118_type 1338
-#define _loop1_120_type 1339
-#define _loop0_121_type 1340
-#define _loop0_122_type 1341
-#define _loop0_124_type 1342
-#define _gather_123_type 1343
-#define _tmp_125_type 1344
-#define _loop0_127_type 1345
-#define _gather_126_type 1346
-#define _loop0_129_type 1347
-#define _gather_128_type 1348
-#define _loop0_131_type 1349
-#define _gather_130_type 1350
-#define _loop0_133_type 1351
-#define _gather_132_type 1352
-#define _loop0_134_type 1353
-#define _loop0_136_type 1354
-#define _gather_135_type 1355
-#define _loop1_137_type 1356
-#define _tmp_138_type 1357
-#define _loop0_140_type 1358
-#define _gather_139_type 1359
-#define _tmp_141_type 1360
-#define _tmp_142_type 1361
-#define _tmp_143_type 1362
-#define _tmp_144_type 1363
-#define _tmp_145_type 1364
-#define _tmp_146_type 1365
-#define _loop0_147_type 1366
-#define _loop0_148_type 1367
-#define _loop0_149_type 1368
-#define _tmp_150_type 1369
-#define _tmp_151_type 1370
-#define _tmp_152_type 1371
-#define _tmp_153_type 1372
-#define _loop0_154_type 1373
-#define _loop1_155_type 1374
-#define _loop0_156_type 1375
-#define _loop1_157_type 1376
-#define _tmp_158_type 1377
-#define _tmp_159_type 1378
-#define _tmp_160_type 1379
-#define _loop0_162_type 1380
-#define _gather_161_type 1381
-#define _loop0_164_type 1382
-#define _gather_163_type 1383
-#define _loop0_166_type 1384
-#define _gather_165_type 1385
-#define _loop0_168_type 1386
-#define _gather_167_type 1387
-#define _tmp_169_type 1388
-#define _tmp_170_type 1389
-#define _tmp_171_type 1390
-#define _tmp_172_type 1391
-#define _tmp_173_type 1392
-#define _tmp_174_type 1393
-#define _tmp_175_type 1394
-#define _loop0_177_type 1395
-#define _gather_176_type 1396
-#define _tmp_178_type 1397
-#define _tmp_179_type 1398
-#define _tmp_180_type 1399
-#define _tmp_181_type 1400
-#define _tmp_182_type 1401
-#define _tmp_183_type 1402
-#define _tmp_184_type 1403
-#define _tmp_185_type 1404
-#define _tmp_186_type 1405
-#define _tmp_187_type 1406
-#define _tmp_188_type 1407
-#define _tmp_189_type 1408
-#define _tmp_190_type 1409
-#define _tmp_191_type 1410
-#define _tmp_192_type 1411
-#define _tmp_193_type 1412
-#define _tmp_194_type 1413
-#define _tmp_195_type 1414
-#define _tmp_196_type 1415
-#define _tmp_197_type 1416
-#define _tmp_198_type 1417
-#define _tmp_199_type 1418
-#define _tmp_200_type 1419
-#define _tmp_201_type 1420
-#define _tmp_202_type 1421
-#define _tmp_203_type 1422
-#define _tmp_204_type 1423
+#define invalid_legacy_expression_type 1181
+#define invalid_expression_type 1182
+#define invalid_named_expression_type 1183
+#define invalid_assignment_type 1184
+#define invalid_ann_assign_target_type 1185
+#define invalid_del_stmt_type 1186
+#define invalid_block_type 1187
+#define invalid_comprehension_type 1188
+#define invalid_dict_comprehension_type 1189
+#define invalid_parameters_type 1190
+#define invalid_parameters_helper_type 1191
+#define invalid_lambda_parameters_type 1192
+#define invalid_lambda_parameters_helper_type 1193
+#define invalid_star_etc_type 1194
+#define invalid_lambda_star_etc_type 1195
+#define invalid_double_type_comments_type 1196
+#define invalid_with_item_type 1197
+#define invalid_for_target_type 1198
+#define invalid_group_type 1199
+#define invalid_import_from_targets_type 1200
+#define invalid_with_stmt_type 1201
+#define invalid_with_stmt_indent_type 1202
+#define invalid_try_stmt_type 1203
+#define invalid_except_stmt_type 1204
+#define invalid_finally_stmt_type 1205
+#define invalid_except_stmt_indent_type 1206
+#define invalid_match_stmt_type 1207
+#define invalid_case_block_type 1208
+#define invalid_as_pattern_type 1209
+#define invalid_class_pattern_type 1210
+#define invalid_class_argument_pattern_type 1211
+#define invalid_if_stmt_type 1212
+#define invalid_elif_stmt_type 1213
+#define invalid_else_stmt_type 1214
+#define invalid_while_stmt_type 1215
+#define invalid_for_stmt_type 1216
+#define invalid_def_raw_type 1217
+#define invalid_class_def_raw_type 1218
+#define invalid_double_starred_kvpairs_type 1219
+#define invalid_kvpair_type 1220
+#define _loop0_1_type 1221
+#define _loop0_2_type 1222
+#define _loop0_4_type 1223
+#define _gather_3_type 1224
+#define _loop0_6_type 1225
+#define _gather_5_type 1226
+#define _loop0_8_type 1227
+#define _gather_7_type 1228
+#define _loop0_10_type 1229
+#define _gather_9_type 1230
+#define _loop1_11_type 1231
+#define _loop0_13_type 1232
+#define _gather_12_type 1233
+#define _tmp_14_type 1234
+#define _tmp_15_type 1235
+#define _tmp_16_type 1236
+#define _tmp_17_type 1237
+#define _tmp_18_type 1238
+#define _tmp_19_type 1239
+#define _tmp_20_type 1240
+#define _tmp_21_type 1241
+#define _loop1_22_type 1242
+#define _tmp_23_type 1243
+#define _tmp_24_type 1244
+#define _loop0_26_type 1245
+#define _gather_25_type 1246
+#define _loop0_28_type 1247
+#define _gather_27_type 1248
+#define _tmp_29_type 1249
+#define _tmp_30_type 1250
+#define _loop0_31_type 1251
+#define _loop1_32_type 1252
+#define _loop0_34_type 1253
+#define _gather_33_type 1254
+#define _tmp_35_type 1255
+#define _loop0_37_type 1256
+#define _gather_36_type 1257
+#define _tmp_38_type 1258
+#define _loop0_40_type 1259
+#define _gather_39_type 1260
+#define _loop0_42_type 1261
+#define _gather_41_type 1262
+#define _loop0_44_type 1263
+#define _gather_43_type 1264
+#define _loop0_46_type 1265
+#define _gather_45_type 1266
+#define _tmp_47_type 1267
+#define _loop1_48_type 1268
+#define _tmp_49_type 1269
+#define _loop1_50_type 1270
+#define _loop0_52_type 1271
+#define _gather_51_type 1272
+#define _tmp_53_type 1273
+#define _tmp_54_type 1274
+#define _tmp_55_type 1275
+#define _tmp_56_type 1276
+#define _loop0_58_type 1277
+#define _gather_57_type 1278
+#define _loop0_60_type 1279
+#define _gather_59_type 1280
+#define _tmp_61_type 1281
+#define _loop0_63_type 1282
+#define _gather_62_type 1283
+#define _loop0_65_type 1284
+#define _gather_64_type 1285
+#define _tmp_66_type 1286
+#define _tmp_67_type 1287
+#define _tmp_68_type 1288
+#define _tmp_69_type 1289
+#define _loop0_70_type 1290
+#define _loop0_71_type 1291
+#define _loop0_72_type 1292
+#define _loop1_73_type 1293
+#define _loop0_74_type 1294
+#define _loop1_75_type 1295
+#define _loop1_76_type 1296
+#define _loop1_77_type 1297
+#define _loop0_78_type 1298
+#define _loop1_79_type 1299
+#define _loop0_80_type 1300
+#define _loop1_81_type 1301
+#define _loop0_82_type 1302
+#define _loop1_83_type 1303
+#define _loop1_84_type 1304
+#define _tmp_85_type 1305
+#define _loop1_86_type 1306
+#define _loop0_88_type 1307
+#define _gather_87_type 1308
+#define _loop1_89_type 1309
+#define _loop0_90_type 1310
+#define _loop0_91_type 1311
+#define _loop0_92_type 1312
+#define _loop1_93_type 1313
+#define _loop0_94_type 1314
+#define _loop1_95_type 1315
+#define _loop1_96_type 1316
+#define _loop1_97_type 1317
+#define _loop0_98_type 1318
+#define _loop1_99_type 1319
+#define _loop0_100_type 1320
+#define _loop1_101_type 1321
+#define _loop0_102_type 1322
+#define _loop1_103_type 1323
+#define _loop1_104_type 1324
+#define _loop1_105_type 1325
+#define _loop1_106_type 1326
+#define _tmp_107_type 1327
+#define _loop0_109_type 1328
+#define _gather_108_type 1329
+#define _tmp_110_type 1330
+#define _tmp_111_type 1331
+#define _tmp_112_type 1332
+#define _tmp_113_type 1333
+#define _loop1_114_type 1334
+#define _tmp_115_type 1335
+#define _tmp_116_type 1336
+#define _tmp_117_type 1337
+#define _loop0_119_type 1338
+#define _gather_118_type 1339
+#define _loop1_120_type 1340
+#define _loop0_121_type 1341
+#define _loop0_122_type 1342
+#define _loop0_124_type 1343
+#define _gather_123_type 1344
+#define _tmp_125_type 1345
+#define _loop0_127_type 1346
+#define _gather_126_type 1347
+#define _loop0_129_type 1348
+#define _gather_128_type 1349
+#define _loop0_131_type 1350
+#define _gather_130_type 1351
+#define _loop0_133_type 1352
+#define _gather_132_type 1353
+#define _loop0_134_type 1354
+#define _loop0_136_type 1355
+#define _gather_135_type 1356
+#define _loop1_137_type 1357
+#define _tmp_138_type 1358
+#define _loop0_140_type 1359
+#define _gather_139_type 1360
+#define _tmp_141_type 1361
+#define _tmp_142_type 1362
+#define _tmp_143_type 1363
+#define _tmp_144_type 1364
+#define _tmp_145_type 1365
+#define _tmp_146_type 1366
+#define _loop0_147_type 1367
+#define _loop0_148_type 1368
+#define _loop0_149_type 1369
+#define _tmp_150_type 1370
+#define _tmp_151_type 1371
+#define _tmp_152_type 1372
+#define _tmp_153_type 1373
+#define _loop0_154_type 1374
+#define _loop1_155_type 1375
+#define _loop0_156_type 1376
+#define _loop1_157_type 1377
+#define _tmp_158_type 1378
+#define _tmp_159_type 1379
+#define _tmp_160_type 1380
+#define _loop0_162_type 1381
+#define _gather_161_type 1382
+#define _loop0_164_type 1383
+#define _gather_163_type 1384
+#define _loop0_166_type 1385
+#define _gather_165_type 1386
+#define _loop0_168_type 1387
+#define _gather_167_type 1388
+#define _tmp_169_type 1389
+#define _tmp_170_type 1390
+#define _tmp_171_type 1391
+#define _tmp_172_type 1392
+#define _tmp_173_type 1393
+#define _tmp_174_type 1394
+#define _tmp_175_type 1395
+#define _loop0_177_type 1396
+#define _gather_176_type 1397
+#define _tmp_178_type 1398
+#define _tmp_179_type 1399
+#define _tmp_180_type 1400
+#define _tmp_181_type 1401
+#define _tmp_182_type 1402
+#define _tmp_183_type 1403
+#define _tmp_184_type 1404
+#define _tmp_185_type 1405
+#define _tmp_186_type 1406
+#define _tmp_187_type 1407
+#define _tmp_188_type 1408
+#define _tmp_189_type 1409
+#define _tmp_190_type 1410
+#define _tmp_191_type 1411
+#define _tmp_192_type 1412
+#define _tmp_193_type 1413
+#define _tmp_194_type 1414
+#define _tmp_195_type 1415
+#define _tmp_196_type 1416
+#define _tmp_197_type 1417
+#define _tmp_198_type 1418
+#define _tmp_199_type 1419
+#define _tmp_200_type 1420
+#define _tmp_201_type 1421
+#define _tmp_202_type 1422
+#define _tmp_203_type 1423
+#define _tmp_204_type 1424
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -677,6 +678,7 @@ static void *t_lookahead_rule(Parser *p);
 static void *invalid_arguments_rule(Parser *p);
 static void *invalid_kwarg_rule(Parser *p);
 static expr_ty expression_without_invalid_rule(Parser *p);
+static void *invalid_legacy_expression_rule(Parser *p);
 static void *invalid_expression_rule(Parser *p);
 static void *invalid_named_expression_rule(Parser *p);
 static void *invalid_assignment_rule(Parser *p);
@@ -18156,7 +18158,52 @@ expression_without_invalid_rule(Parser *p)
     return _res;
 }
 
+// invalid_legacy_expression: NAME star_expressions
+static void *
+invalid_legacy_expression_rule(Parser *p)
+{
+    D(p->level++);
+    if (p->error_indicator) {
+        D(p->level--);
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // NAME star_expressions
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_legacy_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME star_expressions"));
+        expr_ty a;
+        expr_ty b;
+        if (
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (b = star_expressions_rule(p))  // star_expressions
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_legacy_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME star_expressions"));
+            _res = _PyPegen_check_legacy_stmt ( p , a ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "Missing parentheses in call to '%U'. Did you mean %U(...)?" , a -> v . Name . id , a -> v . Name . id ) : NULL;
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_legacy_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME star_expressions"));
+    }
+    _res = NULL;
+  done:
+    D(p->level--);
+    return _res;
+}
+
 // invalid_expression:
+//     | invalid_legacy_expression
 //     | !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
 static void *
 invalid_expression_rule(Parser *p)
@@ -18168,6 +18215,25 @@ invalid_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->call_invalid_rules) { // invalid_legacy_expression
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
+        void *invalid_legacy_expression_var;
+        if (
+            (invalid_legacy_expression_var = invalid_legacy_expression_rule(p))  // invalid_legacy_expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_legacy_expression"));
+            _res = invalid_legacy_expression_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_legacy_expression"));
+    }
     { // !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
         if (p->error_indicator) {
             D(p->level--);

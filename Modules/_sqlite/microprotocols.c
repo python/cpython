@@ -71,7 +71,8 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 /* pysqlite_microprotocols_adapt - adapt an object to the built-in protocol */
 
 PyObject *
-pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
+pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
+                              PyObject *proto, PyObject *alt)
 {
     _Py_IDENTIFIER(__adapt__);
     _Py_IDENTIFIER(__conform__);
@@ -86,7 +87,6 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     if (!key) {
         return NULL;
     }
-    pysqlite_state *state = pysqlite_get_state(NULL);
     adapter = PyDict_GetItemWithError(state->psyco_adapters, key);
     Py_DECREF(key);
     if (adapter) {
