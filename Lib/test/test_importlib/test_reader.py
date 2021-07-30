@@ -10,7 +10,7 @@ from importlib.readers import MultiplexedPath, NamespaceReader
 class MultiplexedPathTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        path = pathlib.Path(__file__).parent / 'namespacedata01'
+        path = pathlib.Path(__file__).parent / 'namespacedata'
         cls.folder = str(path)
 
     def test_init_no_paths(self):
@@ -65,7 +65,7 @@ class MultiplexedPathTest(unittest.TestCase):
         path = MultiplexedPath(self.folder, data01)
         self.assertEqual(
             str(path.joinpath('binary.file'))[len(prefix) + 1 :],
-            os.path.join('namespacedata01', 'binary.file'),
+            os.path.join('namespacedata', 'binary.file'),
         )
         self.assertEqual(
             str(path.joinpath('subdirectory'))[len(prefix) + 1 :],
@@ -73,7 +73,7 @@ class MultiplexedPathTest(unittest.TestCase):
         )
         self.assertEqual(
             str(path.joinpath('imaginary'))[len(prefix) + 1 :],
-            os.path.join('namespacedata01', 'imaginary'),
+            os.path.join('namespacedata', 'imaginary'),
         )
 
     def test_repr(self):
@@ -105,10 +105,10 @@ class NamespaceReaderTest(unittest.TestCase):
             NamespaceReader(['path1', 'path2'])
 
     def test_resource_path(self):
-        namespacedata01 = import_module('namespacedata01')
-        reader = NamespaceReader(namespacedata01.__spec__.submodule_search_locations)
+        namespacedata = import_module('namespacedata01')
+        reader = NamespaceReader(namespacedata.__spec__.submodule_search_locations)
 
-        root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata01'))
+        root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata'))
         self.assertEqual(
             reader.resource_path('binary.file'), os.path.join(root, 'binary.file')
         )
@@ -117,9 +117,9 @@ class NamespaceReaderTest(unittest.TestCase):
         )
 
     def test_files(self):
-        namespacedata01 = import_module('namespacedata01')
-        reader = NamespaceReader(namespacedata01.__spec__.submodule_search_locations)
-        root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata01'))
+        namespacedata = import_module('namespacedata01')
+        reader = NamespaceReader(namespacedata.__spec__.submodule_search_locations)
+        root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata'))
         self.assertIsInstance(reader.files(), MultiplexedPath)
         self.assertEqual(repr(reader.files()), f"MultiplexedPath('{root}')")
 

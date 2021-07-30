@@ -227,14 +227,14 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
 
     def test_is_submodule_resource(self):
         self.assertTrue(
-            resources.is_resource(import_module('namespacedata01'), 'binary.file')
+            resources.is_resource(import_module('namespacedata'), 'binary.file')
         )
 
     def test_read_submodule_resource_by_name(self):
-        self.assertTrue(resources.is_resource('namespacedata01', 'binary.file'))
+        self.assertTrue(resources.is_resource('namespacedata', 'binary.file'))
 
     def test_submodule_contents(self):
-        contents = set(resources.contents(import_module('namespacedata01')))
+        contents = set(resources.contents(import_module('namespacedata')))
         try:
             contents.remove('__pycache__')
         except KeyError:
@@ -242,7 +242,7 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
         self.assertEqual(contents, {'binary.file', 'utf-8.file', 'utf-16.file'})
 
     def test_submodule_contents_by_name(self):
-        contents = set(resources.contents('namespacedata01'))
+        contents = set(resources.contents('namespacedata'))
         try:
             contents.remove('__pycache__')
         except KeyError:

@@ -64,9 +64,9 @@ class OpenDiskTests(OpenTests, unittest.TestCase):
 
 class OpenDiskNamespaceTests(OpenTests, unittest.TestCase):
     def setUp(self):
-        from . import namespacedata01
+        from . import namespacedata
 
-        self.data = namespacedata01
+        self.data = namespacedata
 
 
 class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):

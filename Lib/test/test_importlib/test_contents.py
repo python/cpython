@@ -37,6 +37,6 @@ class ContentsNamespaceTests(ContentsTests, unittest.TestCase):
     }
 
     def setUp(self):
-        from . import namespacedata01
+        from . import namespacedata
 
-        self.data = namespacedata01
+        self.data = namespacedata

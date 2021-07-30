@@ -57,9 +57,9 @@ class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
 
 class ReadNamespaceTests(ReadTests, unittest.TestCase):
     def setUp(self):
-        from . import namespacedata01
+        from . import namespacedata
 
-        self.data = namespacedata01
+        self.data = namespacedata
 
 
 if __name__ == '__main__':
