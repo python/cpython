@@ -2,7 +2,7 @@
 .. _simple:
 
 *****************
-Simple statements
+简单语句
 *****************
 
 .. index:: pair: simple; statement

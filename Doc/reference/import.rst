@@ -2,7 +2,7 @@
 .. _importsystem:
 
 *****************
-The import system
+导入系统
 *****************
 
 .. index:: single: import machinery

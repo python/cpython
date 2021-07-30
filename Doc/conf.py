@@ -173,8 +173,8 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 # Options for Epub output
 # -----------------------
 
-epub_author = 'Python Documentation Authors'
-epub_publisher = 'Python Software Foundation'
+epub_author = 'Python 文档作者'
+epub_publisher = 'Python 软件基金会'
 
 # Options for the coverage checker
 # --------------------------------

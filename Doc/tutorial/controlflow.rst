@@ -290,15 +290,12 @@ The :func:`range` 函数
     Point(x=1, y=var)
     Point(y=var, x=1)
 
-A recommended way to read patterns is to look at them as an extended form of what you
-would put on the left of an assignment, to understand which variables would be set to
-what.
-Only the standalone names (like ``var`` above) are assigned to by a match statement.
-Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) or class names
-(recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
+阅读模式的推荐方法是将它们视为你将放在赋值左侧的内容的扩展形式，以便了解哪些变量设置成什么。
+仅独立名称 (如上面的 ``var``) 被匹配语句分配。
+点名称 (如 ``foo.bar``), 属性名称 (上面的 ``x=`` 和 ``y=``) 或者类名
+(如上面的 ``Point`` 旁被识别的 "(...)" ) 则永远不会分配。
 
-Patterns can be arbitrarily nested.  For example, if we have a short
-list of points, we could match it like this::
+模式可以任意嵌套。  比如，如果有一个简短的点列表，我们可以这样匹配::
 
     match points:
         case []:
