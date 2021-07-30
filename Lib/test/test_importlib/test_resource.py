@@ -5,7 +5,7 @@ import pathlib
 
 from . import data01
 from . import zipdata01, zipdata02
-from .resources import util
+from . import util
 from importlib import resources, import_module
 from test.support import import_helper
 from test.support.os_helper import unlink
@@ -33,14 +33,14 @@ class ResourceTests:
         # are not germane to this test, so just filter them out.
         contents.discard('__pycache__')
         self.assertEqual(
-            sorted(contents),
-            [
+            contents,
+            {
                 '__init__.py',
-                'binary.file',
                 'subdirectory',
-                'utf-16.file',
                 'utf-8.file',
-            ],
+                'binary.file',
+                'utf-16.file',
+            },
         )
 
 

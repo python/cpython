@@ -4,7 +4,7 @@ import unittest
 from importlib import resources
 from importlib.abc import Traversable
 from . import data01
-from .resources import util
+from . import util
 
 
 class FilesTests:
@@ -33,13 +33,6 @@ class OpenDiskTests(FilesTests, unittest.TestCase):
 
 class OpenZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
     pass
-
-
-class OpenNamespaceTests(FilesTests, unittest.TestCase):
-    def setUp(self):
-        from . import namespacedata01
-
-        self.data = namespacedata01
 
 
 if __name__ == '__main__':

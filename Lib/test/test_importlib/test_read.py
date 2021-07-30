@@ -2,15 +2,15 @@ import unittest
 
 from importlib import import_module, resources
 from . import data01
-from .resources import util
+from . import util
 
 
-class CommonBinaryTests(util.CommonTests, unittest.TestCase):
+class CommonBinaryTests(util.CommonResourceTests, unittest.TestCase):
     def execute(self, package, path):
         resources.read_binary(package, path)
 
 
-class CommonTextTests(util.CommonTests, unittest.TestCase):
+class CommonTextTests(util.CommonResourceTests, unittest.TestCase):
     def execute(self, package, path):
         resources.read_text(package, path)
 
@@ -53,13 +53,6 @@ class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
     def test_read_submodule_resource_by_name(self):
         result = resources.read_binary('ziptestdata.subdirectory', 'binary.file')
         self.assertEqual(result, b'\0\1\2\3')
-
-
-class ReadNamespaceTests(ReadTests, unittest.TestCase):
-    def setUp(self):
-        from . import namespacedata01
-
-        self.data = namespacedata01
 
 
 if __name__ == '__main__':

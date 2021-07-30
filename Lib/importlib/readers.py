@@ -1,11 +1,7 @@
 import collections
-import operator
-import pathlib
 import zipfile
-
+import pathlib
 from . import abc
-
-from ._itertools import unique_everseen
 
 
 def remove_duplicates(items):
@@ -67,8 +63,13 @@ class MultiplexedPath(abc.Traversable):
             raise NotADirectoryError('MultiplexedPath only supports directories')
 
     def iterdir(self):
-        files = (file for path in self._paths for file in path.iterdir())
-        return unique_everseen(files, key=operator.attrgetter('name'))
+        visited = []
+        for path in self._paths:
+            for file in path.iterdir():
+                if file.name in visited:
+                    continue
+                visited.append(file.name)
+                yield file
 
     def read_bytes(self):
         raise FileNotFoundError(f'{self} is not a file')
