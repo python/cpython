@@ -1404,9 +1404,9 @@ in mathematics:
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
 
-Comparisons normally yield boolean values: ``True`` or ``False``, but
-:dfn:`rich comparison methods` not in a context of :dfn:`Boolean operations` may
-yield anything.
+Comparisons yield boolean values: ``True`` or ``False``. Custom
+:dfn:`rich comparison methods` may return non-boolean values. In this case
+Python will call :func:`bool` on such value to convert it to boolean as needed.
 
 .. index:: pair: chaining; comparisons
 
