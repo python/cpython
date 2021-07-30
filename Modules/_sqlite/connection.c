@@ -1796,7 +1796,14 @@ serialize_impl(pysqlite_Connection *self, const char *schema)
     const unsigned int flags = 0;
     const char *data = (const char *)sqlite3_serialize(self->db, schema, &size,
                                                        flags);
-    return PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
+    if (data == NULL) {
+        PyErr_Format(self->OperationalError, "unable to serialize '%s'",
+                     schema);
+        return NULL;
+    }
+    PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
+    sqlite3_free((void *)data);
+    return res;
 }
 
 /*[clinic input]
