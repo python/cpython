@@ -32,13 +32,12 @@ _typing.cast -> object
 
     typ: object
     val: object
-    /
 
 [clinic start generated code]*/
 
 static PyObject *
 _typing_cast_impl(PyObject *module, PyObject *typ, PyObject *val)
-/*[clinic end generated code: output=11224a3fa037a9a1 input=eee8018fcef8dbc8]*/
+/*[clinic end generated code: output=11224a3fa037a9a1 input=4dce97a747d81e0a]*/
 {
     Py_INCREF(val);
     return val;
