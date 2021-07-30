@@ -1020,6 +1020,42 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
 'Stonecutters ''Seafood'' and Chop House'+ 'Lemont'+ 'IL'+ '12/19/02'+ 'Week Back'
 """
 
+    sample10 = dedent("""
+                        abc,def
+                        ghijkl,mno
+                        ghi,jkl
+                        """)
+
+    sample11 = dedent("""
+                        abc,def
+                        ghijkl,mnop
+                        ghi,jkl
+                         """)
+
+    sample12 = dedent(""""time","forces"
+                        1,1.5
+                        0.5,5+0j
+                        0,0
+                        1+1j,6
+                        """)
+
+    sample13 = dedent(""""time","forces"
+                        0,0
+                        1,2
+                        a,b
+                        """)
+
+    def test_issue43625(self):
+        sniffer = csv.Sniffer()
+        self.assertTrue(sniffer.has_header(self.sample12))
+        self.assertFalse(sniffer.has_header(self.sample13))
+
+    def test_has_header_strings(self):
+        "More to document existing (unexpected?) behavior than anything else."
+        sniffer = csv.Sniffer()
+        self.assertFalse(sniffer.has_header(self.sample10))
+        self.assertFalse(sniffer.has_header(self.sample11))
+
     def test_has_header(self):
         sniffer = csv.Sniffer()
         self.assertIs(sniffer.has_header(self.sample1), False)
