@@ -376,10 +376,6 @@ def getmodule(module):
             if support.verbose:
                 print(exc)
             raise
-        except DeprecationWarning as exc:
-            if support.verbose:
-                print("Module deprecated %r: %s" % (module, exc))
-            raise
         return sys.modules[module]
 
 def getattribute(module, name):
@@ -401,17 +397,22 @@ class CompatPickleTests(unittest.TestCase):
         modules |= {module for module, name in REVERSE_NAME_MAPPING}
         modules |= {module for module, name in NAME_MAPPING.values()}
         for module in modules:
+            if module == "tkinter.tix":
+                # Fails when python is run with the -We flag (bpo-44785)
+                continue
             try:
                 getmodule(module)
-            except (DeprecationWarning, ImportError):
+            except ImportError:
                 pass
 
     def test_import_mapping(self):
         for module3, module2 in REVERSE_IMPORT_MAPPING.items():
+            if module3 == "tkinter.tix":
+                continue
             with self.subTest((module3, module2)):
                 try:
                     getmodule(module3)
-                except (DeprecationWarning, ImportError):
+                except ImportError:
                     pass
                 if module3[:1] != '_':
                     self.assertIn(module2, IMPORT_MAPPING)
@@ -439,10 +440,12 @@ class CompatPickleTests(unittest.TestCase):
 
     def test_reverse_import_mapping(self):
         for module2, module3 in IMPORT_MAPPING.items():
+            if module3 == "tkinter.tix":
+                continue
             with self.subTest((module2, module3)):
                 try:
                     getmodule(module3)
-                except (DeprecationWarning, ImportError) as exc:
+                except ImportError as exc:
                     if support.verbose:
                         print(exc)
                 if ((module2, module3) not in ALT_IMPORT_MAPPING and
