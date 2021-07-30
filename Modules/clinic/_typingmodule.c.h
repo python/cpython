@@ -13,7 +13,13 @@ PyDoc_STRVAR(_typing__idfunc__doc__,
 PyDoc_STRVAR(_typing_cast__doc__,
 "cast($module, /, typ, val)\n"
 "--\n"
-"\n");
+"\n"
+"Cast a value to a type.\n"
+"\n"
+"This returns the value unchanged.  To the type checker this\n"
+"signals that the return value has the designated type, but at\n"
+"runtime we intentionally don\'t check anything (we want this\n"
+"to be as fast as possible).");
 
 #define _TYPING_CAST_METHODDEF    \
     {"cast", (PyCFunction)(void(*)(void))_typing_cast, METH_FASTCALL|METH_KEYWORDS, _typing_cast__doc__},
@@ -42,4 +48,4 @@ _typing_cast(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dc8f1857c5f5ea4c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf387753f9744405 input=a9049054013a1b77]*/

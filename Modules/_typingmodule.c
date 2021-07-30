@@ -33,11 +33,17 @@ _typing.cast -> object
     typ: object
     val: object
 
+Cast a value to a type.
+
+This returns the value unchanged.  To the type checker this
+signals that the return value has the designated type, but at
+runtime we intentionally don't check anything (we want this
+to be as fast as possible).
 [clinic start generated code]*/
 
 static PyObject *
 _typing_cast_impl(PyObject *module, PyObject *typ, PyObject *val)
-/*[clinic end generated code: output=11224a3fa037a9a1 input=4dce97a747d81e0a]*/
+/*[clinic end generated code: output=11224a3fa037a9a1 input=b8f6ce3bf6198a5c]*/
 {
     Py_INCREF(val);
     return val;

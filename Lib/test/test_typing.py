@@ -32,8 +32,9 @@ import abc
 import typing
 import weakref
 import types
+import pydoc
 
-from test.support import import_helper
+from test.support import captured_stdout, import_helper
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -2369,6 +2370,17 @@ class CastPythonTests(CastTests, BaseTestCase):
 @skipUnless(c_typing, 'requires _typing')
 class CastCTests(CastTests, BaseTestCase):
     module = c_typing
+
+    def test_help(self):
+        def _get_doc(func):
+            with captured_stdout() as stdout:
+                pydoc.help(func)
+
+            # skip first line because it different for regular and built-in
+            _, doc = stdout.getvalue().split("\n", 1)
+            return doc
+
+        self.assertEqual(_get_doc(c_typing.cast), _get_doc(py_typing.cast))
 
 
 class ForwardRefTests(BaseTestCase):
