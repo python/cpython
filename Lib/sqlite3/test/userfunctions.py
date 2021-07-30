@@ -419,24 +419,63 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertEqual(self.cur.fetchall(), self.expected)
 
     def test_error_on_create(self):
-        with self.assertRaises(sqlite.OperationalError):
-            self.con.create_window_function("shouldfail", -100, WindowSumInt)
+        self.assertRaises(sqlite.OperationalError,
+                          self.con.create_window_function,
+                          "shouldfail", -100, WindowSumInt)
 
     @with_tracebacks(['raise effect'])
     def test_exception_in_method(self):
-        for meth in ["step", "value", "inverse"]:
-            with unittest.mock.patch.object(WindowSumInt, meth,
-                                            side_effect=Exception):
-                func = f"exc_{meth}"
-                self.con.create_window_function(func, 1, WindowSumInt)
-                with self.assertRaises(sqlite.OperationalError):
-                    self.cur.execute(self.query % func)
-                    ret = self.cur.fetchall()
+        # Fixme: "finalize" does not raise correct exception yet
+        for meth in ["__init__", "step", "value", "inverse"]:
+            with self.subTest(meth=meth):
+                with unittest.mock.patch.object(WindowSumInt, meth,
+                                                side_effect=Exception):
+                    name = f"exc_{meth}"
+                    self.con.create_window_function(name, 1, WindowSumInt)
+                    err_str = f"'{meth}' method raised error"
+                    with self.assertRaisesRegex(sqlite.OperationalError,
+                                                err_str):
+                        self.cur.execute(self.query % name)
+                        ret = self.cur.fetchall()
+
+    def test_missing_method(self):
+        class MissingValue:
+            def __init__(self): pass
+            def step(self, x): pass
+            def inverse(self, x): pass
+        class MissingInverse:
+            def __init__(self): pass
+            def step(self, x): pass
+            def value(self): return 42
+        class MissingStep:
+            def __init__(self): pass
+            def value(self): return 42
+            def inverse(self, x): pass
+        class MissingFinalize:
+            def __init__(self): pass
+            def step(self, x): pass
+            def value(self): return 42
+            def inverse(self, x): pass
+        # Fixme: step, value and finalize does not raise correct exceptions
+        dataset = (
+            #("step", MissingStep),
+            #("value", MissingValue),
+            ("inverse", MissingInverse),
+            #("finalize", MissingFinalize),
+        )
+        for meth, cls in dataset:
+            with self.subTest(meth=meth, cls=cls):
+                self.con.create_window_function(meth, 1, cls)
+                self.addCleanup(self.con.create_window_function, meth, 1, None)
+                with self.assertRaisesRegex(sqlite.OperationalError,
+                                            f"'{meth}' method not defined"):
+                    self.cur.execute(self.query % meth)
+                    self.cur.fetchall()
 
     def test_clear_function(self):
         self.con.create_window_function("sumint", 1, None)
-        with self.assertRaises(sqlite.OperationalError):
-            self.cur.execute(self.query % "sumint")
+        self.assertRaises(sqlite.OperationalError, self.cur.execute,
+                          self.query % "sumint")
 
     def test_redefine_function(self):
         class Redefined(WindowSumInt):
