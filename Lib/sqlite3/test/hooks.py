@@ -40,8 +40,7 @@ class CollationTests(unittest.TestCase):
 
     def test_create_collation_not_ascii(self):
         con = sqlite.connect(":memory:")
-        with self.assertRaises(sqlite.ProgrammingError):
-            con.create_collation("collä", lambda x, y: (x > y) - (x < y))
+        con.create_collation("collä", lambda x, y: (x > y) - (x < y))
 
     def test_create_collation_bad_upper(self):
         class BadUpperStr(str):

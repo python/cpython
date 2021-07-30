@@ -3015,6 +3015,16 @@ class GetTypeHintTests(BaseTestCase):
             get_type_hints(barfoo3, globals(), locals(), include_extras=True)["x"],
             BA2
         )
+        BA3 = typing.Annotated[int | float, "const"]
+        def barfoo4(x: BA3): ...
+        self.assertEqual(
+            get_type_hints(barfoo4, globals(), locals()),
+            {"x": int | float}
+        )
+        self.assertEqual(
+            get_type_hints(barfoo4, globals(), locals(), include_extras=True),
+            {"x": typing.Annotated[int | float, "const"]}
+        )
 
     def test_get_type_hints_annotated_refs(self):
 
