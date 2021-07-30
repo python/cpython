@@ -540,6 +540,9 @@ class PyBuildExt(build_ext):
                   "APIs, https://github.com/libressl-portable/portable/issues/381")
             print()
 
+        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (self.failed or self.failed_on_import):
+            raise RuntimeError("Failed to build some stdlib modules")
+
     def build_extension(self, ext):
 
         if ext.name == '_ctypes':
