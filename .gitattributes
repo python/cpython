@@ -28,6 +28,7 @@ Lib/test/test_email/data/*.txt -text
 Lib/test/xmltestdata/* -text
 Lib/test/coding20731.py -text
 Lib/test/test_importlib/data01/* -text
+Lib/test/test_importlib/namespacedata01/* -text
 
 # CRLF files
 *.bat text eol=crlf
