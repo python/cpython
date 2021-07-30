@@ -176,6 +176,7 @@ class Dialog(Toplevel):
         w.pack(side=LEFT, padx=5, pady=5)
 
         self.bind("<Return>", self.ok)
+        self.bind("<KP_Enter>", self.ok)
         self.bind("<Escape>", self.cancel)
 
         box.pack()
