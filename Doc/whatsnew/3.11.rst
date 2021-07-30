@@ -145,12 +145,12 @@ For full details, see the :ref:`changelog <changelog>`.
 其他语言更改
 ======================
 
-* 现在允许在异步函数中的理解中使用异步理解。外部理解隐式地变为异步。 (由 Serhiy Storchaka 在 :issue:`33346`贡献。)
+* 现在允许在异步函数中的理解中使用异步理解。外部理解隐式地变为异步。 (由 Serhiy Storchaka 在 :issue:`33346` 贡献。)
 
 * 相应地对于不支持 :term:`context manager` 或 :term:`asynchronous context manager` 协议的对象，
   现在在 :meth:`contextlib.ExitStack.enter_context` 和 :meth:`contextlib.AsyncExitStack.enter_async_context` 中
   引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。
-  (由 Serhiy Storchaka 在 :issue:`44471`贡献。)
+  (由 Serhiy Storchaka 在 :issue:`44471` 贡献。)
 
 * 相应地对于不支持 :term:`context manager` 或 :term:`asynchronous context manager` 协议的对象， 现在在
   :keyword:`with` 和 :keyword:`async with` 语句中引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。
