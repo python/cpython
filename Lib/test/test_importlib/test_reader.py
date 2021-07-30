@@ -105,7 +105,7 @@ class NamespaceReaderTest(unittest.TestCase):
             NamespaceReader(['path1', 'path2'])
 
     def test_resource_path(self):
-        namespacedata = import_module('namespacedata01')
+        namespacedata = import_module('namespacedata')
         reader = NamespaceReader(namespacedata.__spec__.submodule_search_locations)
 
         root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata'))
@@ -117,7 +117,7 @@ class NamespaceReaderTest(unittest.TestCase):
         )
 
     def test_files(self):
-        namespacedata = import_module('namespacedata01')
+        namespacedata = import_module('namespacedata')
         reader = NamespaceReader(namespacedata.__spec__.submodule_search_locations)
         root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata'))
         self.assertIsInstance(reader.files(), MultiplexedPath)
