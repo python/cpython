@@ -1227,7 +1227,7 @@ operators and one for additive operators:
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
-the other must be a sequence.  In the former case, the numbers are converted to a
+the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
@@ -1357,8 +1357,8 @@ Each of the three bitwise operations has a different priority level:
    pair: bitwise; and
    operator: & (ampersand)
 
-The ``&`` operator yields the bitwise AND of its arguments, which must be integers
-or one of them must be a custom object overriding :meth:`__and__` or
+The ``&`` operator yields the bitwise AND of its arguments, which must be
+integers or one of them must be a custom object overriding :meth:`__and__` or
 :meth:`__rand__` special methods.
 
 .. index::
@@ -1407,7 +1407,7 @@ in mathematics:
 
 Comparisons yield boolean values: ``True`` or ``False``. Custom
 :dfn:`rich comparison methods` may return non-boolean values. In this case
-Python will call :func:`bool` on such value to convert it to boolean as needed.
+Python will call :func:`bool` on such value in boolean contexts.
 
 .. index:: pair: chaining; comparisons
 
