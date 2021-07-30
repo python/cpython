@@ -1388,7 +1388,7 @@ def _caller(depth=1, default='__main__'):
         return None
 
 
-def _allow_reckless_class_checks(depth=3, sentinel=object()):
+def _allow_reckless_class_checks(depth=3):
     """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
