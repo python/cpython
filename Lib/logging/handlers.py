@@ -360,7 +360,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         fileNames = os.listdir(dirName)
         result = []
         # See bpo-44753: Don't use the extension when computing the prefix.
-        prefix = os.path.split(baseName)[0] + "."
+        prefix = os.path.splitext(baseName)[0] + "."
         plen = len(prefix)
         for fileName in fileNames:
             if fileName[:plen] == prefix:
