@@ -87,14 +87,16 @@ def _tempfile(reader, suffix=''):
     # properly.
     fd, raw_path = tempfile.mkstemp(suffix=suffix)
     try:
-        os.write(fd, reader())
-        os.close(fd)
+        try:
+            os.write(fd, reader())
+        finally:
+            os.close(fd)
         del reader
         yield pathlib.Path(raw_path)
     finally:
         try:
             os.remove(raw_path)
-        except (FileNotFoundError, PermissionError):
+        except FileNotFoundError:
             pass
 
 
