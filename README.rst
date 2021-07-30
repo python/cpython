@@ -27,11 +27,11 @@ Copyright (c) 2001-2021 Python Software Foundation.  版权所有。
 基本信息
 -------------------
 
-- Website: https://www.python.org
-- Source code: https://github.com/python/cpython
-- Issue tracker: https://bugs.python.org
-- Documentation: https://docs.python.org
-- Developer's Guide: https://devguide.python.org/
+- 官网: https://www.python.org
+- 源代码: https://github.com/python/cpython
+- 问题追踪: https://bugs.python.org
+- 文档: https://docs.python.org
+- 开发者向导: https://devguide.python.org/
 
 贡献CPython
 -----------------------
