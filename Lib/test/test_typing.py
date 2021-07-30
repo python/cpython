@@ -3752,6 +3752,12 @@ class NewTypeTests(BaseTestCase):
                 with self.assertRaises(pickle.PicklingError):
                     pickle.dumps(UserAge, proto)
 
+    def test_missing__name__(self):
+        code = ("import typing\n"
+                "NT = typing.NewType('NT', int)\n"
+                )
+        exec(code, {})
+
 
 class NamedTupleTests(BaseTestCase):
     class NestedEmployee(NamedTuple):
