@@ -798,7 +798,7 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
             raise TypeError("A single constraint is not allowed")
         msg = "TypeVar(name, constraint, ...): constraints must be types."
         self.__constraints__ = tuple(_type_check(t, msg) for t in constraints)
-        def_mod = _callee()
+        def_mod = _caller()
         if def_mod != 'typing':
             self.__module__ = def_mod
 
@@ -901,7 +901,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     def __init__(self, name, *, bound=None, covariant=False, contravariant=False):
         self.__name__ = name
         super().__init__(bound, covariant, contravariant)
-        def_mod = _callee()
+        def_mod = _caller()
         if def_mod != 'typing':
             self.__module__ = def_mod
 
@@ -1381,11 +1381,11 @@ def _no_init(self, *args, **kwargs):
     if type(self)._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
-def _callee(depth=1, default='__main__', unsupported=None):
+def _caller(depth=1, default='__main__'):
     try:
         return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
-        return unsupported
+        return None
 
 
 def _allow_reckless_class_checks(depth=3, sentinel=object()):
@@ -1394,7 +1394,7 @@ def _allow_reckless_class_checks(depth=3, sentinel=object()):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    return _callee(depth, unsupported=sentinel) in {'abc', 'functools', sentinel}
+    return _caller(depth) in {'abc', 'functools', None}
 
 
 _PROTO_ALLOWLIST = {
@@ -2229,7 +2229,7 @@ def NamedTuple(typename, fields=None, /, **kwargs):
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
-    return _make_nmtuple(typename, fields, module=_callee())
+    return _make_nmtuple(typename, fields, module=_caller())
 
 _NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
 
@@ -2344,7 +2344,7 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
                         " but not both")
 
     ns = {'__annotations__': dict(fields)}
-    module = _callee()
+    module = _caller()
     if module is not None:
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = module
@@ -2381,7 +2381,7 @@ class NewType:
         if '.' in name:
             name = name.rpartition('.')[-1]
         self.__name__ = name
-        self.__module__ = _callee(default='typing')
+        self.__module__ = _caller()
         self.__supertype__ = tp
 
     def __repr__(self):
