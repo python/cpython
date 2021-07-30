@@ -152,9 +152,8 @@ For full details, see the :ref:`changelog <changelog>`.
   引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。
   (由 Serhiy Storchaka 在 :issue:`44471` 贡献。)
 
-* 相应地对于不支持 :term:`context manager` 或 :term:`asynchronous context manager` 协议的对象， 现在在
-  :keyword:`with` 和 :keyword:`async with` 语句中引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。
-  (由 Serhiy Storchaka 在 :issue:`12022`贡献。)
+* 相应地对于不支持 :term:`context manager` 或 :term:`asynchronous context manager` 协议的对象， 
+  现在在 :keyword:`with` 和 :keyword:`async with` 语句中引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。(由 Serhiy Storchaka 在 :issue:`12022` 贡献。)
 
 
 新模块
@@ -169,15 +168,14 @@ For full details, see the :ref:`changelog <changelog>`.
 fractions
 ---------
 
-支持 :PEP:`515`-样式的 :class:`~fractions.Fraction` 从
-字符串初始化。  (由 Sergey B Kirpichev 在 :issue:`44258`贡献。)
+支持 :PEP:`515` -样式的 :class:`~fractions.Fraction` 从字符串初始化。  (由 Sergey B Kirpichev 在 :issue:`44258` 贡献。)
 
 
 math
 ----
 
-* 添加 :func:`math.cbrt`: 返回 x 的立方根。
-  (由 Ajith Ramachandran 在 :issue:`44357`贡献。)
+* 添加 :func:`math.cbrt` : 返回 x 的立方根。
+  (由 Ajith Ramachandran 在 :issue:`44357` 贡献。)
 
 * 为了与 IEEE 754 规范保持一致，更改了两个 :func:`math.pow` 极端情况的行为。
   操作 ``math.pow(0.0, -math.inf)`` 和 ``math.pow(-0.0, -math.inf)`` 现在返回 ``inf``。
@@ -185,11 +183,9 @@ math
 
 
 os
---
+-----
 
-* 在 Windows 上, :func:`os.urandom` 使用 ``BCryptGenRandom()`` 代替 ``CryptGenRandom()``
-  后者已被弃用。
-  (由 Dong-hee Na 在 :issue:`44611`贡献。)
+* 在 Windows 上，  :func:`os.urandom` 使用 ``BCryptGenRandom()`` 代替 ``CryptGenRandom()`` ，后者已被弃用。(由 Dong-hee Na 在 :issue:`44611` 贡献。）
 
 
 sqlite3
@@ -198,10 +194,9 @@ sqlite3
 * 您现在可以通过将 :const:`None` 传递给 :meth:`~sqlite3.Connection.set_authorizer` 来禁用授权器。 
   （由 Erlend E. Aasland 在 bpo-44491 中提供。）
 
-* 排序规则名 :meth:`~sqlite3.Connection.create_collation` 现在可以
-  包含任意 Unicode 字符了。  带有无效字符的排序规则名
-  现在引发 :exc:`UnicodeEncodeError` 而不是 :exc:`sqlite3.ProgrammingError`。
-  (由 Erlend E. Aasland 在 :issue:`44688`贡献。)
+* 排序规则名 :meth:`~sqlite3.Connection.create_collation` 现在可以包含任意 Unicode 字符了。  带有无效字符的排序规则名
+  现在引发 :exc:`UnicodeEncodeError` 而不是 :exc:`sqlite3.ProgrammingError` 。
+  (由 Erlend E. Aasland 在 :issue:`44688` 贡献。)
 
 
 已移除
@@ -268,17 +263,18 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
- Python API 更改
--------------------------
+Python API 更改
+------------------------
 
-* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
+* Prohibited passing non- :class:`concurrent.futures.ThreadPoolExecutor`
   executors to :meth:`loop.set_default_executor` following a deprecation in
   Python 3.8.
-  (Contributed by Illia Volochii in :issue:`43234`.)
+  (Contributed by Illia Volochii in :issue:`43234` .)
 
 
 C API 更改
 =============
+
 * Add a new :c:func:`PyType_GetName` function to get type's short name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
@@ -319,17 +315,11 @@ C API 更改
   * :c:func:`Py_SetStandardStreamEncoding`
   * :c:func:`_Py_SetProgramFullPath`
 
-  使用 :ref:`Python Initialization Configuration 
-  <init-config>` 中的  :c:type:`PyConfig` API 代替 (:pep:`587`)。
-  (由 Victor Stinner 在 :issue:`44113`贡献。)
+  使用 :ref:`Python Initialization Configuration <init-config>` 中的 :c:type:`PyConfig` API 代替 ( :pep:`587` )。
+  (由 Victor Stinner 在 :issue:`44113` 贡献。)
 
-*  在 :mod:`gettext`
-  模块中: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` 和 :func:`~gettext.ldngettext` 已被弃用的函数移除。
+*  在 :mod:`gettext` 模块中: :func:`~gettext.lgettext` , :func:`~gettext.ldgettext` , :func:`~gettext.lngettext` 和 :func:`~gettext.ldngettext` 已被弃用的函数移除。
 
-  函数 :func:`~gettext.bind_textdomain_codeset`, 方法
-  :meth:`~gettext.NullTranslations.output_charset` 和
-  :meth:`~gettext.NullTranslations.set_output_charset`, 以及函数 :func:`~gettext.translation`和  :func:`~gettext.install`  的 *codeset* 参数
-  也被移除， 因为它们仅仅能被使用在
+  函数 :func:`~gettext.bind_textdomain_codeset` , 方法 :meth:`~gettext.NullTranslations.output_charset` 和 :meth:`~gettext.NullTranslations.set_output_charset`, 以及函数 :func:`~gettext.translation`和  :func:`~gettext.install`  的 *codeset* 参数也被移除， 因为它们仅仅能被使用在
   ``l*gettext()`` 函数上。
-  (由 Dong-hee Na 和 Serhiy Storchaka 在 :issue:`44235`贡献。)
+  (由 Dong-hee Na 和 Serhiy Storchaka 在 :issue:`44235` 贡献。)
