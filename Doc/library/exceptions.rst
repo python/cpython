@@ -691,7 +691,9 @@ depending on the system error code.
 .. exception:: NotADirectoryError
 
    Raised when a directory operation (such as :func:`os.listdir`) is requested
-   on something which is not a directory.
+   on something which is not a directory.  Can also be raised on a file operation
+   that involves reading a directory, in which case this error may indicate that
+   path is either not a directory or does not exist.
    Corresponds to :c:data:`errno` ``ENOTDIR``.
 
 .. exception:: PermissionError
