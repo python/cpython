@@ -92,8 +92,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
 
     database = PyBytes_AsString(database_obj);
 
-    self->initialized = 1;
-
     self->begin_statement = NULL;
 
     Py_CLEAR(self->statement_cache);
@@ -128,7 +126,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         Py_INCREF(isolation_level);
     }
     Py_CLEAR(self->isolation_level);
-    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) < 0) {
+    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
         Py_DECREF(isolation_level);
         return -1;
     }
@@ -186,6 +184,8 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
         return -1;
     }
+
+    self->initialized = 1;
 
     return 0;
 }
@@ -356,6 +356,12 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
     int rc;
 
     if (!pysqlite_check_thread(self)) {
+        return NULL;
+    }
+
+    if (!self->initialized) {
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Base Connection.__init__ not called.");
         return NULL;
     }
 
@@ -1264,6 +1270,9 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 
 static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
 {
+    if (!pysqlite_check_connection(self)) {
+        return NULL;
+    }
     return Py_NewRef(self->isolation_level);
 }
 
@@ -1295,11 +1304,17 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         return -1;
     }
     if (isolation_level == Py_None) {
-        PyObject *res = pysqlite_connection_commit(self, NULL);
-        if (!res) {
-            return -1;
+        /* We might get called during connection init, so we cannot use
+         * pysqlite_connection_commit() here. */
+        if (self->db && !sqlite3_get_autocommit(self->db)) {
+            int rc;
+            Py_BEGIN_ALLOW_THREADS
+            rc = sqlite3_exec(self->db, "COMMIT", NULL, NULL, NULL);
+            Py_END_ALLOW_THREADS
+            if (rc != SQLITE_OK) {
+                return _pysqlite_seterror(self->db, NULL);
+            }
         }
-        Py_DECREF(res);
 
         self->begin_statement = NULL;
     } else {

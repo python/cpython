@@ -197,6 +197,26 @@ class ConnectionTests(unittest.TestCase):
                 cx.execute('insert into test(id) values(1)')
 
 
+class UninitialisedConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.cx = sqlite.Connection.__new__(sqlite.Connection)
+
+    def test_uninit_operations(self):
+        funcs = (
+            lambda: self.cx.isolation_level,
+            lambda: self.cx.total_changes,
+            lambda: self.cx.in_transaction,
+            lambda: self.cx.iterdump(),
+            lambda: self.cx.cursor(),
+            lambda: self.cx.close(),
+        )
+        for func in funcs:
+            with self.subTest(func=func):
+                self.assertRaisesRegex(sqlite.ProgrammingError,
+                                       "Base Connection.__init__ not called",
+                                       func)
+
+
 class CursorTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
@@ -949,6 +969,7 @@ def suite():
         ModuleTests,
         SqliteOnConflictTests,
         ThreadTests,
+        UninitialisedConnectionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
