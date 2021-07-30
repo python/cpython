@@ -241,7 +241,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 See :pep:`619` for Python 3.10 release details.
 
 
-Copyright and License Information
+版权及证书信息
 ---------------------------------
 
 Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
