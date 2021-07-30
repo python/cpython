@@ -269,6 +269,20 @@ The :mod:`csv` module defines the following classes:
 
       Analyze the sample text (presumed to be in CSV format) and return
       :const:`True` if the first row appears to be a series of column headers.
+      Inspecting each column, one of two key criteria will be considered to
+      estimate if the sample contains a header:
+
+        - the second through n-th rows contain numeric values
+        - the second through n-th rows contain strings where at least one value's
+          length differs from that of the putative header of that column.
+
+      Twenty rows after the first row are sampled; if more than half of columns +
+      rows meet the criteria, :const:`True` is returned.
+
+   .. note::
+
+      This method is a rough heuristic and may produce both false positives and
+      negatives.
 
 An example for :class:`Sniffer` use::
 
