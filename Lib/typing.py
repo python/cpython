@@ -1387,11 +1387,11 @@ def _no_init(self, *args, **kwargs):
     if type(self)._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
-def _callee(depth=2, default=None):
+def _caller(depth=1, default='__main__'):
     try:
-        return sys._getframe(depth).f_globals.get('__name__', '__main__')
+        return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
-        return default
+        return None
 
 
 def _allow_reckless_class_checks(depth=3):
@@ -2396,7 +2396,7 @@ class NewType:
             name = name.rpartition('.')[-1]
         self.__name__ = name
         self.__supertype__ = tp
-        def_mod = _callee()
+        def_mod = _caller()
         if def_mod != 'typing':
             self.__module__ = def_mod
 
