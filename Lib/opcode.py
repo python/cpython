@@ -234,3 +234,13 @@ _specialized_instructions = [
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
 ]
+
+_specialization_stats = [
+    "specialization_success",
+    "specialization_failure",
+    "hit",
+    "deferred",
+    "miss",
+    "deopt",
+    "unquickened",
+]
