@@ -18,13 +18,13 @@ This is Python version 3.11.0 alpha 0
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  版权所有。
 
-See the end of this file for further copyright and license information.
+请参阅此文件的末尾以获得更多的版权和许可信息。
 
 .. contents::
 
-General Information
+基本信息
 -------------------
 
 - Website: https://www.python.org
@@ -33,33 +33,31 @@ General Information
 - Documentation: https://docs.python.org
 - Developer's Guide: https://devguide.python.org/
 
-Contributing to CPython
+贡献CPython
 -----------------------
 
-For more complete instructions on contributing to CPython development,
-see the `Developer Guide`_.
+寻找有关CPython开发的更完整的说明,查看 `Developer Guide`_ 。
 
 .. _Developer Guide: https://devguide.python.org/
 
-Using Python
+使用 Python
 ------------
 
-Installable Python kits, and information about using Python, are available at
-`python.org`_.
+可安装Python工具包和有关使用Python的信息可以在 `python.org`_ 查看。
 
 .. _python.org: https://www.python.org/
 
-Build Instructions
+构建说明
 ------------------
 
-On Unix, Linux, BSD, macOS, and Cygwin::
+在 Unix, Linux, BSD, macOS, 和 Cygwin 上::
 
     ./configure
     make
     make test
     sudo make install
 
-This will install Python as ``python3``.
+这将以 ``python3`` 的形式安装Python。
 
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS case-insensitive file systems and on Cygwin,
@@ -98,7 +96,7 @@ Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
 
-Profile Guided Optimization
+概要文件指导优化
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
@@ -124,7 +122,7 @@ collected from the instrumented one.  The end result will be a Python binary
 that is optimized; suitable for distribution or production installation.
 
 
-Link Time Optimization
+链接时间优化
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
@@ -133,7 +131,7 @@ arbitrary ``.o`` file boundary when building final executables or shared
 libraries for additional performance gains.
 
 
-What's New
+新内容
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
@@ -147,7 +145,7 @@ If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
-Documentation
+文档
 -------------
 
 `Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
@@ -162,16 +160,16 @@ For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
 
 
-Converting From Python 2.x to 3.x
+从 Python 2.x 转到 3.x
 ---------------------------------
 
 Significant backward incompatible changes were made for the release of Python
 3.0, which may cause programs written for Python 2 to fail when run with Python
-3.  For more information about porting your code from Python 2 to Python 3, see
+1.  For more information about porting your code from Python 2 to Python 3, see
 the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
 
 
-Testing
+测试
 -------
 
 To test the interpreter, type ``make test`` in the top-level directory.  The
@@ -195,7 +193,7 @@ include relevant output from that command to show the issue.
 See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
 for more on running tests.
 
-Installing multiple versions
+安装多版本
 ----------------------------
 
 On Unix and Mac systems if you intend to install multiple versions of Python
@@ -214,7 +212,7 @@ primary version, you would execute ``make install`` in your 3.10 build directory
 and ``make altinstall`` in the others.
 
 
-Issue Tracker and Mailing List
+问题跟踪和邮件列表
 ------------------------------
 
 Bug reports are welcome!  You can use the `issue tracker
@@ -225,7 +223,7 @@ You can also follow development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
 
 
-Proposals for enhancement
+强烈建议
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
@@ -237,7 +235,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
 
 
-Release Schedule
+版本系列
 ----------------
 
 See :pep:`619` for Python 3.10 release details.
