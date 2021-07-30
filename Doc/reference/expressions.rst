@@ -1287,11 +1287,11 @@ point number using the :func:`abs` function if appropriate.
    single: operator; + (plus)
    single: + (plus); binary operator
 
-The ``+`` (addition) operator yields the sum of its arguments.  The arguments must either both
-be numbers or both be sequences of the same type, or either of them must be a custom object
-that overrides :meth:`add` or :meth:`radd` respectively.  In the first case, the numbers are
-converted to a common type and then added together.  In the second case, the sequences are
-concatenated.
+The ``+`` (addition) operator yields the sum of its arguments.  The arguments must
+either both be numbers or both be sequences of the same type, or either of them
+must be a custom object that overrides :meth:`add` or :meth:`radd` respectively.
+In the first case, the numbers are converted to a common type and then added
+together.  In the second case, the sequences are concatenated.
 
 .. index::
    single: subtraction
