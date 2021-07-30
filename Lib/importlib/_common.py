@@ -12,6 +12,7 @@ from .abc import ResourceReader, Traversable
 from ._adapters import wrap_spec
 
 Package = Union[types.ModuleType, str]
+Resource = Union[str, os.PathLike]
 
 
 def files(package):
@@ -93,7 +94,7 @@ def _tempfile(reader, suffix=''):
     finally:
         try:
             os.remove(raw_path)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             pass
 
 
