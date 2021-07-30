@@ -298,6 +298,9 @@ C API Changes
 * Add a new :c:func:`PyType_GetName` function to get type's short name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
+* Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
+  (Contributed by Hai Shi in :issue:`42035`.)
+
 New Features
 ------------
 
