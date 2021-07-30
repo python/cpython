@@ -1281,11 +1281,11 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
+The *modulo* operation can be customized using the special :meth:`__mod__` method.
+
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
 point number using the :func:`abs` function if appropriate.
-
-This operation can be customized using the special :meth:`__mod__` method.
 
 .. index::
    single: addition
