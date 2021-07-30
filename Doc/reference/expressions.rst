@@ -1184,7 +1184,7 @@ operation can be overridden with the :meth:`__neg__` special method.
    single: + (plus); unary operator
 
 The unary ``+`` (plus) operator yields its numeric argument unchanged; the
-operation can be overridden with the :meth:`__neg__` special method.
+operation can be overridden with the :meth:`__pos__` special method.
 
 .. index::
    single: inversion
@@ -1193,7 +1193,9 @@ operation can be overridden with the :meth:`__neg__` special method.
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
 applies to integral numbers or to custom objects that override the
-:meth:`__negate__` special method.
+:meth:`__invert__` special method.
+
+
 
 .. index:: exception: TypeError
 
@@ -1224,12 +1226,13 @@ operators and one for additive operators:
    operator: * (asterisk)
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
-arguments must either both be numbers, or one argument must be an integer and
-the other must be a sequence, or at least one of them must be a custom object
-implementing the respective :meth:`__mul__` or :meth:`__rmul__` method. In the
-first case, the numbers are converted to a common type and then multiplied
-together.  In the second case, sequence repetition is performed; a negative
-repetition factor yields an empty sequence.
+arguments must either both be numbers, or one argument must be an integer and the
+other must be a sequence.  In the former case, the numbers are converted to a
+common type and then multiplied together.  In the latter case, sequence repetition
+is performed; a negative repetition factor yields an empty sequence.
+
+This operation can be customized using the special :meth:`__mul__` and
+:meth:`__rmul__` methods.
 
 .. index::
    single: matrix multiplication
@@ -1263,10 +1266,9 @@ The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
 type.  A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
 arguments may be floating point numbers, e.g., ``3.14%0.7`` equals ``0.34``
-(since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator, unless overridden
-with the special :meth:`__mod__` method, always yields a result with the same sign
-as its second operand (or zero); the absolute value of the result is strictly
-smaller than the absolute value of the second operand [#]_.
+(since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator always yields a
+result with the same sign as its second operand (or zero); the absolute value of
+the result is strictly smaller than the absolute value of the second operand [#]_.
 
 The floor division and modulo operators are connected by the following
 identity: ``x == (x//y)*y + (x%y)``.  Floor division and modulo are also
@@ -1282,16 +1284,20 @@ The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
 point number using the :func:`abs` function if appropriate.
 
+This operation can be customized using the special :meth:`__mod__` method.
+
 .. index::
    single: addition
    single: operator; + (plus)
    single: + (plus); binary operator
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments must
-either both be numbers or both be sequences of the same type, or either of them
-must be a custom object that overrides :meth:`add` or :meth:`radd` respectively.
-In the first case, the numbers are converted to a common type and then added
-together.  In the second case, the sequences are concatenated.
+either both be numbers or both be sequences of the same type.  In the former case,
+the numbers are converted to a common type and then added together.  In the latter
+case, the sequences are concatenated.
+
+This operation can be customized using the special :meth:`__add__` and
+:meth:`__radd__` methods.
 
 .. index::
    single: subtraction
@@ -1319,10 +1325,12 @@ The shifting operations have lower priority than the arithmetic operations:
 .. productionlist:: python-grammar
    shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
-These operators accept integers as arguments or custom objects that override
-:meth:`__lshift__` and :meth:`__rshift__` special methods.  In the former case they
-shift the first argument to the left or right by the number of bits given by the
-second argument.
+These operators accept integers as arguments.  In the former case they shift the
+first argument to the left or right by the number of bits given by the second
+argument.
+
+This operation can be customized using the special :meth:`__lshift__` and
+:meth:`__rshift__` methods.
 
 .. index:: exception: ValueError
 
