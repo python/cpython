@@ -1832,16 +1832,27 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
 
     pysqlite_do_all_statements(self, ACTION_RESET, 1);
 
+    /* Transfer ownership of the buffer to SQLite:
+     * - Move buffer from Py to SQLite
+     * - Tell SQLite to free buffer memory
+     * - Tell SQLite that it is permitted to grow the resulting database
+     */
     sqlite3_int64 size = (sqlite3_int64)data->len;
-    unsigned char *buf = (unsigned char *)data->buf;
-    const unsigned int flags = 0;
+    unsigned char *buf = sqlite3_malloc(size);
+    if (buf == NULL) {
+        return PyErr_NoMemory();
+    }
+    (void)memcpy(buf, data->buf, data->len);
+
+    const unsigned int flags = SQLITE_DESERIALIZE_FREEONCLOSE |
+                               SQLITE_DESERIALIZE_RESIZEABLE;
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_deserialize(self->db, schema, buf, size, size, flags);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->state, self->db);
+        (void)_pysqlite_seterror(self->state, self->db);
         return NULL;
     }
 
