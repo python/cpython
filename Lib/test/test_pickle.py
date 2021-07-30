@@ -376,6 +376,9 @@ def getmodule(module):
             if support.verbose:
                 print(exc)
             raise
+        except DeprecationWarning as exc:
+            print("Module deprecated (skipping) %r: %s" % (module, exc))
+            return True
         return sys.modules[module]
 
 def getattribute(module, name):
