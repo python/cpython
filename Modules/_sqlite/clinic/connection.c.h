@@ -760,7 +760,16 @@ exit:
 PyDoc_STRVAR(serialize__doc__,
 "serialize($self, /, *, schema=\'main\')\n"
 "--\n"
-"\n");
+"\n"
+"Serialize a database into a byte string. Non-standard.\n"
+"\n"
+"  schema\n"
+"    Which database to serialize.\n"
+"\n"
+"For an ordinary on-disk database file, the serialization is just a copy of the\n"
+"disk file. For an in-memory database or a \"temp\" database, the serialization is\n"
+"the same sequence of bytes which would be written to disk if that database\n"
+"where backed up to disk.");
 
 #define SERIALIZE_METHODDEF    \
     {"serialize", (PyCFunction)(void(*)(void))serialize, METH_FASTCALL|METH_KEYWORDS, serialize__doc__},
@@ -812,7 +821,20 @@ exit:
 PyDoc_STRVAR(deserialize__doc__,
 "deserialize($self, data, /, *, schema=\'main\')\n"
 "--\n"
-"\n");
+"\n"
+"Load a serialized database. Non-standard.\n"
+"\n"
+"  data\n"
+"    The serialized database content\n"
+"  schema\n"
+"    Which database to reopen with the deserialization.\n"
+"\n"
+"The deserialize interface causes the database connection to disconnect from the\n"
+"target database, and then reopen it as an in-memory database based on the given\n"
+"serialized data.\n"
+"\n"
+"The deserialize interface will fail with SQLITE_BUSY if the database is\n"
+"currently in a read transaction or is involved in a backup operation.");
 
 #define DESERIALIZE_METHODDEF    \
     {"deserialize", (PyCFunction)(void(*)(void))deserialize, METH_FASTCALL|METH_KEYWORDS, deserialize__doc__},
@@ -953,4 +975,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=c79744de72ec493b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=246bf62d1e58e291 input=a9049054013a1b77]*/
