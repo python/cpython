@@ -1148,6 +1148,7 @@ Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
+This operation can be customized using the special :meth:`__pow__` method.
 
 .. _unary:
 
@@ -1169,14 +1170,16 @@ All unary arithmetic and bitwise operations have the same priority:
    single: operator; - (minus)
    single: - (minus); unary operator
 
-The unary ``-`` (minus) operator yields the negation of its numeric argument.
+The unary ``-`` (minus) operator yields the negation of its numeric argument; the
+operation can be overridden with the :meth:`__neg__` special method.
 
 .. index::
    single: plus
    single: operator; + (plus)
    single: + (plus); unary operator
 
-The unary ``+`` (plus) operator yields its numeric argument unchanged.
+The unary ``+`` (plus) operator yields its numeric argument unchanged; the
+operation can be overridden with the :meth:`__pos__` special method.
 
 .. index::
    single: inversion
@@ -1184,7 +1187,10 @@ The unary ``+`` (plus) operator yields its numeric argument unchanged.
 
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
-applies to integral numbers.
+applies to integral numbers or to custom objects that override the
+:meth:`__invert__` special method.
+
+
 
 .. index:: exception: TypeError
 
@@ -1220,6 +1226,9 @@ the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
+This operation can be customized using the special :meth:`__mul__` and
+:meth:`__rmul__` methods.
+
 .. index::
    single: matrix multiplication
    operator: @ (at)
@@ -1241,6 +1250,9 @@ Division of integers yields a float, while floor division of integers results in
 integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
+
+This operation can be customized using the special :meth:`__div__` and
+:meth:`__floordiv__` methods.
 
 .. index::
    single: modulo
@@ -1265,6 +1277,8 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
+The *modulo* operation can be customized using the special :meth:`__mod__` method.
+
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
 point number using the :func:`abs` function if appropriate.
@@ -1279,6 +1293,9 @@ must either both be numbers or both be sequences of the same type.  In the
 former case, the numbers are converted to a common type and then added together.
 In the latter case, the sequences are concatenated.
 
+This operation can be customized using the special :meth:`__add__` and
+:meth:`__radd__` methods.
+
 .. index::
    single: subtraction
    single: operator; - (minus)
@@ -1286,6 +1303,8 @@ In the latter case, the sequences are concatenated.
 
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
+
+This operation can be customized using the special :meth:`__sub__` method.
 
 
 .. _shifting:
@@ -1305,6 +1324,9 @@ The shifting operations have lower priority than the arithmetic operations:
 
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
+
+This operation can be customized using the special :meth:`__lshift__` and
+:meth:`__rshift__` methods.
 
 .. index:: exception: ValueError
 
@@ -1331,7 +1353,8 @@ Each of the three bitwise operations has a different priority level:
    operator: & (ampersand)
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
-integers.
+integers or one of them must be a custom object overriding :meth:`__and__` or
+:meth:`__rand__` special methods.
 
 .. index::
    pair: bitwise; xor
@@ -1339,7 +1362,8 @@ integers.
    operator: ^ (caret)
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
-must be integers.
+must be integers or one of them must be a custom object overriding :meth:`__xor__` or
+:meth:`__rxor__` special methods.
 
 .. index::
    pair: bitwise; or
@@ -1347,7 +1371,8 @@ must be integers.
    operator: | (vertical bar)
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which
-must be integers.
+must be integers or one of them must be a custom object overriding :meth:`__or__` or
+:meth:`__ror__` special methods.
 
 
 .. _comparisons:
@@ -1375,7 +1400,9 @@ in mathematics:
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
 
-Comparisons yield boolean values: ``True`` or ``False``.
+Comparisons yield boolean values: ``True`` or ``False``. Custom
+:dfn:`rich comparison methods` may return non-boolean values. In this case
+Python will call :func:`bool` on such value in boolean contexts.
 
 .. index:: pair: chaining; comparisons
 
