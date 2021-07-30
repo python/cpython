@@ -254,9 +254,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                 else:
                     print('*** ', end='')
                 # escape non-printable characters in msg
-                msg = err.msg.encode(sys.stdout.encoding,
-                                     errors='backslashreplace')
-                msg = msg.decode(sys.stdout.encoding)
+                encoding = sys.stdout.encoding or sys.getdefaultencoding()
+                msg = err.msg.encode(encoding, errors='backslashreplace').decode(encoding)
                 print(msg)
             except (SyntaxError, UnicodeError, OSError) as e:
                 success = False
