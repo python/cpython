@@ -141,6 +141,8 @@ jobs:
     runs-on: macos-latest
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    env:
+      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
     - name: Configure CPython
@@ -159,6 +161,7 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     env:
       OPENSSL_VER: 1.1.1k
+      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
     - name: Register gcc problem matcher

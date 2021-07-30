@@ -571,6 +571,9 @@ class PyBuildExt(build_ext):
                 print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
 
+        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (self.failed or self.failed_on_import):
+            raise RuntimeError("Failed to build some stdlib modules")
+
     def build_extension(self, ext):
 
         if ext.name == '_ctypes':
