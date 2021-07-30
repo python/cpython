@@ -1,0 +1,3 @@
+When tokenizing content that does not end in an explicit line ending
+character, the tokenize module now outputs the correct end column offset and
+the correct physical line information for the final NEWLINE token.

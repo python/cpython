@@ -55,8 +55,8 @@ class TokenizeTest(TestCase):
         # when the input lacks a trailing new line.
         f = BytesIO("x".encode('utf-8'))
         tokens = list(tokenize(f.readline))
-        self.assertEqual(tokens[-2].type, NEWLINE)
-        self.assertEqual(tokens[-1].type, ENDMARKER)
+        self.assertEqual(tokens[-2], (NEWLINE, '', (1, 1), (1, 1), 'x'))
+        self.assertEqual(tokens[-1], (ENDMARKER, '', (2, 0), (2, 0), ''))
 
     def test_basic(self):
         self.check_tokenize("1 + 1", """\
