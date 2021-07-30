@@ -982,7 +982,7 @@ class MIMEPart(Message):
             if subtype in preferencelist:
                 yield (preferencelist.index(subtype), part)
             return
-        if maintype != 'multipart':
+        if maintype != 'multipart' or not self.is_multipart():
             return
         if subtype != 'related':
             for subpart in part.iter_parts():
@@ -1087,7 +1087,7 @@ class MIMEPart(Message):
 
         Return an empty iterator for a non-multipart.
         """
-        if self.get_content_maintype() == 'multipart':
+        if self.is_multipart():
             yield from self.get_payload()
 
     def get_content(self, *args, content_manager=None, **kw):
