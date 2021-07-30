@@ -422,6 +422,28 @@ static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+static const char* const cls_attrs[] = {
+        "__module__",  // Required for compatibility with typing module
+        NULL,
+};
+
+static PyObject *
+union_getattro(PyObject *self, PyObject *name)
+{
+    unionobject *alias = (unionobject *)self;
+    if (PyUnicode_Check(name)) {
+        for (const char * const *p = cls_attrs; ; p++) {
+            if (*p == NULL) {
+                break;
+            }
+            if (_PyUnicode_EqualToASCIIString(name, *p)) {
+                return PyObject_GetAttr((PyObject *) Py_TYPE(alias), name);
+            }
+        }
+    }
+    return PyObject_GenericGetAttr(self, name);
+}
+
 PyTypeObject _PyUnion_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.UnionType",
@@ -435,7 +457,7 @@ PyTypeObject _PyUnion_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = union_traverse,
     .tp_hash = union_hash,
-    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_getattro = union_getattro,
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,

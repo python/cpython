@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
+#include "internal/pycore_code.h"
 
 /*[clinic input]
 module _opcode
@@ -73,9 +74,28 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
     return effect;
 }
 
+/*[clinic input]
+
+_opcode.get_specialization_stats
+
+Return the specialization stats
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_specialization_stats_impl(PyObject *module)
+/*[clinic end generated code: output=fcbc32fdfbec5c17 input=e1f60db68d8ce5f6]*/
+{
+#if SPECIALIZATION_STATS
+    return _Py_GetSpecializationStats();
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
 static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
+    _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

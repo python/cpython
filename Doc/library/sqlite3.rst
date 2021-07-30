@@ -402,6 +402,10 @@ Connection Objects
 
          con.create_collation("reverse", None)
 
+      .. versionchanged:: 3.11
+         The collation name can contain any Unicode character.  Earlier, only
+         ASCII characters were allowed.
+
 
    .. method:: interrupt()
 
