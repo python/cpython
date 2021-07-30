@@ -1659,16 +1659,18 @@ def runtime_checkable(cls):
     cls._is_runtime_protocol = True
     return cls
 
+try:
+    from _typing import cast
+except ImportError:
+    def cast(typ, val):
+        """Cast a value to a type.
 
-def cast(typ, val):
-    """Cast a value to a type.
-
-    This returns the value unchanged.  To the type checker this
-    signals that the return value has the designated type, but at
-    runtime we intentionally don't check anything (we want this
-    to be as fast as possible).
-    """
-    return val
+        This returns the value unchanged.  To the type checker this
+        signals that the return value has the designated type, but at
+        runtime we intentionally don't check anything (we want this
+        to be as fast as possible).
+        """
+        return val
 
 
 def _get_defaults(func):

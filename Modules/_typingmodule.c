@@ -27,9 +27,27 @@ _typing__idfunc(PyObject *module, PyObject *x)
     return x;
 }
 
+/*[clinic input]
+_typing.cast -> object
+
+    typ: object
+    val: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_typing_cast_impl(PyObject *module, PyObject *typ, PyObject *val)
+/*[clinic end generated code: output=11224a3fa037a9a1 input=eee8018fcef8dbc8]*/
+{
+    Py_INCREF(val);
+    return val;
+}
+
 
 static PyMethodDef typing_methods[] = {
     _TYPING__IDFUNC_METHODDEF
+    _TYPING_CAST_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

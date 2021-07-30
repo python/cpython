@@ -1,0 +1,2 @@
+Speed-up ``typing.cast`` by implementing it in C. Patch provided by Yurii
+Karabas.

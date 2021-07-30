@@ -2341,9 +2341,10 @@ class FinalTests(BaseTestCase):
         self.assertIs(func, final(func))
 
 
-class CastTests(BaseTestCase):
-
+class CastTests:
     def test_basics(self):
+        cast = self.module.cast
+
         self.assertEqual(cast(int, 42), 42)
         self.assertEqual(cast(float, 42), 42)
         self.assertIs(type(cast(float, 42)), int)
@@ -2354,9 +2355,20 @@ class CastTests(BaseTestCase):
         self.assertEqual(cast(None, 42), 42)
 
     def test_errors(self):
+        cast = self.module.cast
+
         # Bogus calls are not expected to fail.
         cast(42, 42)
         cast('hello', 42)
+
+
+class CastPythonTests(CastTests, BaseTestCase):
+    module = py_typing
+
+
+@skipUnless(c_typing, 'requires _typing')
+class CastCTests(CastTests, BaseTestCase):
+    module = c_typing
 
 
 class ForwardRefTests(BaseTestCase):
