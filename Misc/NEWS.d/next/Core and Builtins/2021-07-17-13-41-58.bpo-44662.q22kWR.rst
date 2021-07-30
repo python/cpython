@@ -1,0 +1,3 @@
+Add ``__module__`` to ``types.Union``. This also fixes
+``types.Union`` issues with ``typing.Annotated``. Patch provided by
+Yurii Karabas.
