@@ -1,0 +1,1 @@
+Fix bug where setting a breakpoint with :func:`pdb.set_trace` modifies ``sys.modules``.
