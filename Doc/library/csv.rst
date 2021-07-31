@@ -118,7 +118,7 @@ The :mod:`csv` module defines the following functions:
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
    by *fmtparams* keyword arguments, or both, with keyword arguments overriding
    parameters of the dialect. For full details about dialects and formatting
-   parameters, see the :ref:`csv-fmt-params` section.
+   parameters, see section :ref:`csv-fmt-params`.
 
 
 .. function:: unregister_dialect(name)
