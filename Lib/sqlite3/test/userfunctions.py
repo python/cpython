@@ -414,17 +414,17 @@ class WindowFunctionTests(unittest.TestCase):
         """)
         self.con.create_window_function("sumint", 1, WindowSumInt)
 
-    def test_sum_int(self):
+    def test_win_sum_int(self):
         self.cur.execute(self.query % "sumint")
         self.assertEqual(self.cur.fetchall(), self.expected)
 
-    def test_error_on_create(self):
+    def test_win_error_on_create(self):
         self.assertRaises(sqlite.OperationalError,
                           self.con.create_window_function,
                           "shouldfail", -100, WindowSumInt)
 
     @with_tracebacks(['raise effect'])
-    def test_exception_in_method(self):
+    def test_win_exception_in_method(self):
         # Fixme: "finalize" does not raise correct exception yet
         for meth in ["__init__", "step", "value", "inverse"]:
             with self.subTest(meth=meth):
@@ -438,7 +438,7 @@ class WindowFunctionTests(unittest.TestCase):
                         self.cur.execute(self.query % name)
                         ret = self.cur.fetchall()
 
-    def test_missing_method(self):
+    def test_win_missing_method(self):
         class MissingValue:
             def __init__(self): pass
             def step(self, x): pass
@@ -473,12 +473,12 @@ class WindowFunctionTests(unittest.TestCase):
                     self.cur.execute(self.query % meth)
                     self.cur.fetchall()
 
-    def test_clear_function(self):
+    def test_win_clear_function(self):
         self.con.create_window_function("sumint", 1, None)
         self.assertRaises(sqlite.OperationalError, self.cur.execute,
                           self.query % "sumint")
 
-    def test_redefine_function(self):
+    def test_win_redefine_function(self):
         class Redefined(WindowSumInt):
             pass
         self.con.create_window_function("sumint", 1, Redefined)
