@@ -3,6 +3,7 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 
 import errno
 import io
@@ -171,6 +172,10 @@ HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
+
+def _expect_truncation_warning():
+    msg = 'received malformed or improperly-truncated ancillary data'
+    return warnings_helper.check_warnings((msg, RuntimeWarning))
 
 class SocketTCPTest(unittest.TestCase):
 
@@ -3726,8 +3731,9 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         # mindata and maxdata bytes when received with buffer size
         # ancbuf, and that any complete file descriptor numbers are
         # valid.
-        msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
-                                                   len(MSG), ancbuf)
+        with _expect_truncation_warning():
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG), ancbuf)
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
         self.checkFlags(flags, eor=True, checkset=socket.MSG_CTRUNC)
@@ -4069,8 +4075,10 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVHOPLIMIT, 1)
         self.misc_event.set()
-        msg, ancdata, flags, addr = self.doRecvmsg(
-            self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
+
+        with _expect_truncation_warning():
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
 
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
@@ -4173,9 +4181,10 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVTCLASS, 1)
         self.misc_event.set()
-        msg, ancdata, flags, addr = self.doRecvmsg(
-            self.serv_sock, len(MSG),
-            socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
+        with _expect_truncation_warning():
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG),
+                socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
 
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
