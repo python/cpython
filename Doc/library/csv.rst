@@ -228,19 +228,18 @@ The :mod:`csv` module defines the following classes:
    The :class:`Dialect` class is a container class whose attributes contain
    information for how to handle doublequotes, whitespace, delimiters, etc.
    Due to the lack of a strict csv specification, different applications
-   produce subtly different csv data.  :class:`Dialect` attributes are used to
-   define how specific :class:`reader` or :class:`writer` instances behave.
+   produce subtly different csv data.  :class:`Dialect` instances define how
+   :class:`reader` and :class:`writer` instances behave.
 
-   All available :class:`Dialect` names are returned by :func:`list_dialects`.
-   Register a dialect with a specific :class:`reader` or :class:`writer` with
-   the *dialect* parameter and a dialect name; for example::
+   All available :class:`Dialect` names are returned by :func:`list_dialects`,
+   and they can be registered with specific :class:`reader` and :class:`writer`
+   classes through their initializer (``__init__``) functions like this::
 
        import csv
 
        with open('students.csv', 'w', newline='') as csvfile:
            writer = csv.writer(csvfile, dialect='unix')
-           ...
-
+                                        ^^^^^^^^^^^^^^
 
 
 .. class:: excel()
