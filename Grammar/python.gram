@@ -1083,6 +1083,7 @@ invalid_expression:
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
+   | a=disjunction 'if' b=disjunction !'else' { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
 
 invalid_named_expression:
     | a=expression ':=' expression {
