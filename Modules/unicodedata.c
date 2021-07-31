@@ -2,7 +2,6 @@
 
    unicodedata -- Provides access to the Unicode database.
 
-   Data was extracted from the UnicodeData.txt file.
    The current version number is reported in the unidata_version constant.
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).

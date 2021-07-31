@@ -269,8 +269,6 @@ static void bpo20891_thread(void *lockp)
     PyGILState_Release(state);
 
     PyThread_release_lock(lock);
-
-    PyThread_exit_thread();
 }
 
 static int test_bpo20891(void)
@@ -530,6 +528,9 @@ static int test_init_from_config(void)
     putenv("PYTHONPROFILEIMPORTTIME=0");
     config.import_time = 1;
 
+    putenv("PYTHONNODEBUGRANGES=0");
+    config.no_debug_ranges = 1;
+
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
 
@@ -688,6 +689,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONMALLOC=malloc");
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
+    putenv("PYTHONNODEBUGRANGES=1");
     putenv("PYTHONMALLOCSTATS=1");
     putenv("PYTHONUTF8=1");
     putenv("PYTHONVERBOSE=1");

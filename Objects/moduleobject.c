@@ -46,8 +46,7 @@ _PyModule_IsExtension(PyObject *obj)
 PyObject*
 PyModuleDef_Init(struct PyModuleDef* def)
 {
-    if (PyType_Ready(&PyModuleDef_Type) < 0)
-         return NULL;
+    assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
         max_module_number++;
         Py_SET_REFCNT(def, 1);
@@ -740,6 +739,30 @@ _PyModuleSpec_IsInitializing(PyObject *spec)
     return 0;
 }
 
+/* Check if the submodule name is in the "_uninitialized_submodules" attribute
+   of the module spec.
+ */
+int
+_PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
+{
+    if (spec == NULL) {
+         return 0;
+    }
+
+    _Py_IDENTIFIER(_uninitialized_submodules);
+    PyObject *value = _PyObject_GetAttrId(spec, &PyId__uninitialized_submodules);
+    if (value == NULL) {
+        return 0;
+    }
+
+    int is_uninitialized = PySequence_Contains(value, name);
+    Py_DECREF(value);
+    if (is_uninitialized == -1) {
+        return 0;
+    }
+    return is_uninitialized;
+}
+
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
@@ -773,6 +796,12 @@ module_getattro(PyModuleObject *m, PyObject *name)
                             "module '%U' has no attribute '%U' "
                             "(most likely due to a circular import)",
                             mod_name, name);
+        }
+        else if (_PyModuleSpec_IsUninitializedSubmodule(spec, name)) {
+            PyErr_Format(PyExc_AttributeError,
+                            "cannot access submodule '%U' of module '%U' "
+                            "(most likely due to a circular import)",
+                            name, mod_name);
         }
         else {
             PyErr_Format(PyExc_AttributeError,

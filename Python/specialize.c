@@ -7,6 +7,10 @@
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
+/* For guidance on adding or extending families of instructions see
+ * ./adaptive.md
+ */
+
 
 /* We layout the quickened data as a bi-directional array:
  * Instructions upwards, cache entries downwards.
@@ -35,6 +39,83 @@
 Py_ssize_t _Py_QuickenedCount = 0;
 #if SPECIALIZATION_STATS
 SpecializationStats _specialization_stats[256] = { 0 };
+
+#define ADD_STAT_TO_DICT(res, field) \
+    do { \
+        PyObject *val = PyLong_FromUnsignedLongLong(stats->field); \
+        if (val == NULL) { \
+            Py_DECREF(res); \
+            return NULL; \
+        } \
+        if (PyDict_SetItemString(res, #field, val) == -1) { \
+            Py_DECREF(res); \
+            Py_DECREF(val); \
+            return NULL; \
+        } \
+        Py_DECREF(val); \
+    } while(0);
+
+static PyObject*
+stats_to_dict(SpecializationStats *stats)
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    ADD_STAT_TO_DICT(res, specialization_success);
+    ADD_STAT_TO_DICT(res, specialization_failure);
+    ADD_STAT_TO_DICT(res, hit);
+    ADD_STAT_TO_DICT(res, deferred);
+    ADD_STAT_TO_DICT(res, miss);
+    ADD_STAT_TO_DICT(res, deopt);
+    ADD_STAT_TO_DICT(res, unquickened);
+#if SPECIALIZATION_STATS_DETAILED
+    if (stats->miss_types != NULL) {
+        if (PyDict_SetItemString(res, "fails", stats->miss_types) == -1) {
+            Py_DECREF(res);
+            return NULL;
+        }
+    }
+#endif
+    return res;
+}
+#undef ADD_STAT_TO_DICT
+
+static int
+add_stat_dict(
+    PyObject *res,
+    int opcode,
+    const char *name) {
+
+    SpecializationStats *stats = &_specialization_stats[opcode];
+    PyObject *d = stats_to_dict(stats);
+    if (d == NULL) {
+        return -1;
+    }
+    int err = PyDict_SetItemString(res, name, d);
+    Py_DECREF(d);
+    return err;
+}
+
+#if SPECIALIZATION_STATS
+PyObject*
+_Py_GetSpecializationStats(void) {
+    PyObject *stats = PyDict_New();
+    if (stats == NULL) {
+        return NULL;
+    }
+    int err = 0;
+    err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
+    err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
+    err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
+    if (err < 0) {
+        Py_DECREF(stats);
+        return NULL;
+    }
+    return stats;
+}
+#endif
+
 
 #define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
 
@@ -67,6 +148,7 @@ print_stats(SpecializationStats *stats, const char *name)
     }
 #endif
 }
+#undef PRINT_STAT
 
 void
 _Py_PrintSpecializationStats(void)
@@ -74,6 +156,7 @@ _Py_PrintSpecializationStats(void)
     printf("Specialization stats:\n");
     print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(&_specialization_stats[BINARY_SUBSCR], "binary_subscr");
 }
 
 #if SPECIALIZATION_STATS_DETAILED
@@ -120,7 +203,8 @@ done:
     Py_XDECREF(key);
 }
 
-#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) _Py_IncrementTypeCounter(opcode, (PyObject *)(type), attribute, kind)
+#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) _Py_IncrementTypeCounter(opcode, (PyObject *)(type), (PyObject *)(attribute), kind)
+
 
 #endif
 #endif
@@ -158,12 +242,14 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+    [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
+    [BINARY_SUBSCR] = 0,
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -247,7 +333,6 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 previous_opcode = opcode;
                 continue;
             }
-            instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
             previous_opcode = adaptive_opcode;
             int entries_needed = cache_requirements[opcode];
             if (entries_needed) {
@@ -257,7 +342,11 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                     _GetSpecializedCacheEntry(instructions, cache0_offset);
                 cache->adaptive.original_oparg = oparg;
                 cache->adaptive.counter = 0;
+            } else {
+                // oparg is the adaptive cache counter
+                new_oparg = 0;
             }
+            instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
         }
         else {
             /* Super instructions don't use the cache,
@@ -633,3 +722,45 @@ success:
     cache0->counter = saturating_start();
     return 0;
 }
+
+
+int
+_Py_Specialize_BinarySubscr(
+     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *container_type = Py_TYPE(container);
+    if (container_type == &PyList_Type) {
+        if (PyLong_CheckExact(sub)) {
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
+            goto success;
+        } else {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "list; non-integer subscr");
+            goto fail;
+        }
+    }
+    if (container_type == &PyTuple_Type) {
+        if (PyLong_CheckExact(sub)) {
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
+            goto success;
+        } else {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "tuple; non-integer subscr");
+            goto fail;
+        }
+    }
+    if (container_type == &PyDict_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
+        goto success;
+    }
+    SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "not list|tuple|dict");
+    goto fail;
+fail:
+    STAT_INC(BINARY_SUBSCR, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(BINARY_SUBSCR, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}
+

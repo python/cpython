@@ -604,7 +604,7 @@ def _tokenize(readline, encoding):
                 pos += 1
 
     # Add an implicit NEWLINE if the input doesn't end in one
-    if last_line and last_line[-1] not in '\r\n':
+    if last_line and last_line[-1] not in '\r\n' and not last_line.strip().startswith("#"):
         yield TokenInfo(NEWLINE, '', (lnum - 1, len(last_line)), (lnum - 1, len(last_line) + 1), '')
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')

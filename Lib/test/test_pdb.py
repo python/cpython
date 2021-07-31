@@ -260,6 +260,9 @@ def test_pdb_breakpoint_commands():
     ...     'tbreak 5',
     ...     'continue',  # will stop at temporary breakpoint
     ...     'break',     # make sure breakpoint is gone
+    ...     'commands 10',  # out of range
+    ...     'commands a',   # display help
+    ...     'commands 4',   # already deleted
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -319,6 +322,14 @@ def test_pdb_breakpoint_commands():
     > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(5)test_function()
     -> print(3)
     (Pdb) break
+    (Pdb) commands 10
+    *** cannot set commands: Breakpoint number 10 out of range
+    (Pdb) commands a
+    *** Usage: commands [bnum]
+            ...
+            end
+    (Pdb) commands 4
+    *** cannot set commands: Breakpoint 4 already deleted
     (Pdb) continue
     3
     4
@@ -362,7 +373,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:94
+    Breakpoint 3 at ...pdb.py:97
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -1627,6 +1638,40 @@ def bœr():
                 if save_home is not None:
                     os.environ["HOME"] = save_home
 
+    def test_read_pdbrc_with_ascii_encoding(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+            print('hello')
+        """)
+        save_home = os.environ.pop('HOME', None)
+        try:
+            with os_helper.temp_cwd():
+                with open('.pdbrc', 'w', encoding='utf-8') as f:
+                    f.write("Fran\u00E7ais")
+
+                with open('main.py', 'w', encoding='utf-8') as f:
+                    f.write(script)
+
+                cmd = [sys.executable, 'main.py']
+                env = {'PYTHONIOENCODING': 'ascii'}
+                if sys.platform == 'win32':
+                    env['PYTHONLEGACYWINDOWSSTDIO'] = 'non-empty-string'
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, **env}
+                )
+                with proc:
+                    stdout, stderr = proc.communicate(b'c\n')
+                    self.assertIn(b"UnicodeEncodeError: \'ascii\' codec can\'t encode character "
+                                  b"\'\\xe7\' in position 21: ordinal not in range(128)", stderr)
+
+        finally:
+            if save_home is not None:
+                os.environ['HOME'] = save_home
+
     def test_header(self):
         stdout = StringIO()
         header = 'Nobody expects... blah, blah, blah'
@@ -1694,6 +1739,20 @@ def bœr():
         stdout, stderr = self._run_pdb(['-m', module_name], "")
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
+
+    def test_package_without_a_main(self):
+        pkg_name = 't_pkg'
+        module_name = 't_main'
+        os_helper.rmtree(pkg_name)
+        modpath = pkg_name + '/' + module_name
+        os.makedirs(modpath)
+        with open(modpath + '/__init__.py', 'w') as f:
+            pass
+        self.addCleanup(os_helper.rmtree, pkg_name)
+        stdout, stderr = self._run_pdb(['-m', modpath.replace('/', '.')], "")
+        self.assertIn(
+            "'t_pkg.t_main' is a package and cannot be directly executed",
+            stdout)
 
     def test_blocks_at_first_code_line(self):
         script = """
@@ -1800,6 +1859,21 @@ def bœr():
             '(Pdb) ',
         ])
 
+    def test_issue34266(self):
+        '''do_run handles exceptions from parsing its arg'''
+        def check(bad_arg, msg):
+            commands = "\n".join([
+                f'run {bad_arg}',
+                'q',
+            ])
+            stdout, _ = self.run_pdb_script('pass', commands + '\n')
+            self.assertEqual(stdout.splitlines()[1:], [
+                '-> pass',
+                f'(Pdb) *** Cannot run {bad_arg}: {msg}',
+                '(Pdb) ',
+            ])
+        check('\\', 'No escaped character')
+        check('"', 'No closing quotation')
 
     def test_issue42384(self):
         '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''

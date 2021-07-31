@@ -36,6 +36,7 @@ typedef struct
 {
     PyObject_HEAD
     sqlite3* db;
+    pysqlite_state *state;
 
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
@@ -81,9 +82,6 @@ typedef struct
     PyObject* function_pinboard_trace_callback;
     PyObject* function_pinboard_progress_handler;
     PyObject* function_pinboard_authorizer_cb;
-
-    /* a dictionary of registered collation name => collation callable mappings */
-    PyObject* collations;
 
     /* Exception objects: borrowed refs. */
     PyObject* Warning;

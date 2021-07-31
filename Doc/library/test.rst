@@ -267,10 +267,10 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: INTERNET_TIMEOUT
 
-   Timeout in seconds for network requests going to the Internet.
+   Timeout in seconds for network requests going to the internet.
 
    The timeout is short enough to prevent a test to wait for too long if the
-   Internet request is blocked for whatever reason.
+   internet request is blocked for whatever reason.
 
    Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
    failed, but skip the test instead: see
@@ -932,7 +932,7 @@ The :mod:`test.support` module defines the following functions:
 
    Assert that type *tp* cannot be instantiated using *args* and *kwds*.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.10
 
 
 The :mod:`test.support` module defines the following classes:

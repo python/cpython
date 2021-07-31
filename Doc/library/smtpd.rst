@@ -13,11 +13,10 @@
 
 This module offers several classes to implement SMTP (email) servers.
 
-.. seealso::
-
-    The `aiosmtpd <http://aiosmtpd.readthedocs.io/>`_ package is a recommended
-    replacement for this module.  It is based on :mod:`asyncio` and provides a
-    more straightforward API.  :mod:`smtpd` should be considered deprecated.
+.. deprecated:: 3.6
+   The `aiosmtpd <https://aiosmtpd.readthedocs.io/>`_ package is a recommended
+   replacement for this module.  It is based on :mod:`asyncio` and provides a
+   more straightforward API.
 
 Several server implementations are present; one is a generic
 do-nothing implementation, which can be overridden, while the other two offer

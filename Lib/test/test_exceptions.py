@@ -168,15 +168,19 @@ class ExceptionTests(unittest.TestCase):
                 self.fail("failed to get expected SyntaxError")
 
         s = '''print "old style"'''
-        ckmsg(s, "Missing parentheses in call to 'print'. "
-                 "Did you mean print(\"old style\")?")
+        ckmsg(s, "Missing parentheses in call to 'print'. Did you mean print(...)?")
 
         s = '''print "old style",'''
-        ckmsg(s, "Missing parentheses in call to 'print'. "
-                 "Did you mean print(\"old style\", end=\" \")?")
+        ckmsg(s, "Missing parentheses in call to 'print'. Did you mean print(...)?")
+
+        s = 'print f(a+b,c)'
+        ckmsg(s, "Missing parentheses in call to 'print'. Did you mean print(...)?")
 
         s = '''exec "old style"'''
-        ckmsg(s, "Missing parentheses in call to 'exec'")
+        ckmsg(s, "Missing parentheses in call to 'exec'. Did you mean exec(...)?")
+
+        s = 'exec f(a+b,c)'
+        ckmsg(s, "Missing parentheses in call to 'exec'. Did you mean exec(...)?")
 
         # should not apply to subclasses, see issue #31161
         s = '''if True:\nprint "No indent"'''
@@ -209,7 +213,7 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
-        check('f{a + b + c}', 1, 2)
+        check('f{a + b + c}', 1, 1)
         check('[file for str(file) in []\n])', 2, 2)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
@@ -226,9 +230,9 @@ class ExceptionTests(unittest.TestCase):
         # Errors thrown by tokenizer.c
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
-        check('0010 + 2', 1, 4)
+        check('0010 + 2', 1, 1)
         check('x = 32e-+4', 1, 8)
-        check('x = 0o9', 1, 6)
+        check('x = 0o9', 1, 7)
         check('\u03b1 = 0xI', 1, 6)
         check(b'\xce\xb1 = 0xI', 1, 6)
         check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
@@ -1916,6 +1920,18 @@ class AttributeErrorTests(unittest.TestCase):
 
             self.assertIn("blech", err.getvalue())
 
+    def test_getattr_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        try:
+            A().blech
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("Did you mean", err.getvalue())
+
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
@@ -2160,18 +2176,23 @@ class SyntaxErrorTests(unittest.TestCase):
 
 class PEP626Tests(unittest.TestCase):
 
-    def lineno_after_raise(self, f, line):
+    def lineno_after_raise(self, f, *expected):
         try:
             f()
         except Exception as ex:
             t = ex.__traceback__
-            while t.tb_next:
-                t = t.tb_next
+        else:
+            self.fail("No exception raised")
+        lines = []
+        t = t.tb_next # Skip this function
+        while t:
             frame = t.tb_frame
-            if line is None:
-                self.assertEqual(frame.f_lineno, line)
-            else:
-                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+            lines.append(
+                None if frame.f_lineno is None else
+                frame.f_lineno-frame.f_code.co_firstlineno
+            )
+            t = t.tb_next
+        self.assertEqual(tuple(lines), expected)
 
     def test_lineno_after_raise_simple(self):
         def simple():
@@ -2249,6 +2270,18 @@ class PEP626Tests(unittest.TestCase):
         self.lineno_after_raise(f, 1)
         f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
         self.lineno_after_raise(f, None)
+
+    def test_lineno_after_raise_in_with_exit(self):
+        class ExitFails:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                raise ValueError
+
+        def after_with():
+            with ExitFails():
+                1/0
+        self.lineno_after_raise(after_with, 1, 1)
 
 if __name__ == '__main__':
     unittest.main()

@@ -26,9 +26,8 @@ import sys
 import threading
 import unittest
 
-from test.support import check_disallow_instantiation
+from test.support import check_disallow_instantiation, threading_helper
 from test.support.os_helper import TESTFN, unlink
-from test.support import threading_helper
 
 
 # Helper for tests using TESTFN
@@ -109,6 +108,10 @@ class ModuleTests(unittest.TestCase):
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
         check_disallow_instantiation(self, type(cx("select 1")))
+
+    def test_complete_statement(self):
+        self.assertFalse(sqlite.complete_statement("select t"))
+        self.assertTrue(sqlite.complete_statement("create table t(t);"))
 
 
 class ConnectionTests(unittest.TestCase):
@@ -224,6 +227,40 @@ class ConnectionTests(unittest.TestCase):
             with self.subTest(exc=exc):
                 self.assertTrue(hasattr(self.cx, exc))
                 self.assertIs(getattr(sqlite, exc), getattr(self.cx, exc))
+
+    def test_interrupt_on_closed_db(self):
+        cx = sqlite.connect(":memory:")
+        cx.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            cx.interrupt()
+
+    def test_interrupt(self):
+        self.assertIsNone(self.cx.interrupt())
+
+    def test_drop_unused_refs(self):
+        for n in range(500):
+            cu = self.cx.execute(f"select {n}")
+            self.assertEqual(cu.fetchone()[0], n)
+
+
+class UninitialisedConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.cx = sqlite.Connection.__new__(sqlite.Connection)
+
+    def test_uninit_operations(self):
+        funcs = (
+            lambda: self.cx.isolation_level,
+            lambda: self.cx.total_changes,
+            lambda: self.cx.in_transaction,
+            lambda: self.cx.iterdump(),
+            lambda: self.cx.cursor(),
+            lambda: self.cx.close(),
+        )
+        for func in funcs:
+            with self.subTest(func=func):
+                self.assertRaisesRegex(sqlite.ProgrammingError,
+                                       "Base Connection.__init__ not called",
+                                       func)
 
 
 class OpenTests(unittest.TestCase):
@@ -594,6 +631,11 @@ class CursorTests(unittest.TestCase):
         new_count = len(res.description)
         self.assertEqual(new_count - old_count, 1)
 
+    def test_same_query_in_multiple_cursors(self):
+        cursors = [self.cx.execute("select 1") for _ in range(3)]
+        for cu in cursors:
+            self.assertEqual(cu.fetchall(), [(1,)])
+
 
 class ThreadTests(unittest.TestCase):
     def setUp(self):
@@ -630,6 +672,7 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.rollback(),
             lambda: self.con.close(),
             lambda: self.con.set_trace_callback(None),
+            lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
         ]
         for fn in fns:
@@ -928,6 +971,7 @@ def suite():
         ModuleTests,
         SqliteOnConflictTests,
         ThreadTests,
+        UninitialisedConnectionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
