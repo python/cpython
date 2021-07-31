@@ -228,10 +228,8 @@ The :mod:`csv` module defines the following classes:
    The :class:`Dialect` class is a container class whose attributes contain
    information for how to handle doublequotes, whitespace, delimiters, etc.
    Due to the lack of a strict csv specification, different applications
-   produce subtly different csv data.  :class:`Dialect` attributes
-   are used to define the parameters for a specific :class:`reader` or
-   :class:`writer` instance.
-
+   produce subtly different csv data.  :class:`Dialect` attributes are used to
+   define how specific :class:`reader` or :class:`writer` instances behave.
 
    All available :class:`Dialect` names are returned by :func:`list_dialects`.
    Register a dialect with a specific :class:`reader` or :class:`writer` with
@@ -268,8 +266,9 @@ The :mod:`csv` module defines the following classes:
 
 .. class:: Sniffer()
 
-   The :class:`Sniffer` class is used to deduce the format of a CSV file.  It
-   provides two methods:
+   The :class:`Sniffer` class is used to deduce the format of a CSV file.
+
+   The :class:`Sniffer` class provides two methods:
 
    .. method:: sniff(sample, delimiters=None)
 
