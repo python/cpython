@@ -271,7 +271,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     Py_ssize_t nparams = PyTuple_GET_SIZE(parameters);
     if (nparams == 0) {
         return PyErr_Format(PyExc_TypeError,
-                            "There are no type variables left in %R",
+                            "%R is not a generic class",
                             self);
     }
     int is_tuple = PyTuple_Check(item);

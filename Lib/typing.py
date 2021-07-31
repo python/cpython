@@ -1017,8 +1017,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         self.__args__ = tuple(... if a is _TypingEllipsis else
                               () if a is _TypingEmpty else
                               a for a in params)
-        self._paramspec_tvars = _paramspec_tvars
         self.__parameters__ = _collect_parameters(params)
+        self._paramspec_tvars = _paramspec_tvars
         if not name:
             self.__module__ = origin.__module__
 
