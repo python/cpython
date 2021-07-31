@@ -404,9 +404,7 @@ Connection Objects
 
       If *deterministic* is :const:`True`, the created function is marked as
       `deterministic <https://sqlite.org/deterministic.html>`_, which
-      allows SQLite to perform additional optimizations.  This flag is
-      supported by SQLite 3.8.3 or higher. :exc:`NotSupportedError` will
-      be raised if used with older versions.
+      allows SQLite to perform additional optimizations.
 
       If *innocuous* is :const:`True`, the created function is marked as
       `innocuous <https://sqlite.org/deterministic.html>`_, which
@@ -423,7 +421,7 @@ Connection Objects
       3.30.0 or higher.  :exc:`NotSupportedError` will be raised if used
       with older versions.
 
-      .. versionadded:: 3.10
+      .. versionadded:: 3.11
 
       Example:
 

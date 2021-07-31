@@ -19,7 +19,7 @@ class WindowSumInt:
         self.count -= value
 
     def finalize(self):
-        """This method is invoked to return the current value of the aggregate.
+        """This method is invoked to return the final value of the aggregate.
 
         Any clean-up actions should be placed here.
         """
