@@ -1,0 +1,1 @@
+handle StopIteration subclass raised from @contextlib.contextmanager generator

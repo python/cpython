@@ -220,6 +220,10 @@ def_op('CALL_METHOD_KW', 166)
 del def_op, name_op, jrel_op, jabs_op
 
 _specialized_instructions = [
+    "BINARY_SUBSCR_ADAPTIVE",
+    "BINARY_SUBSCR_LIST_INT",
+    "BINARY_SUBSCR_TUPLE_INT",
+    "BINARY_SUBSCR_DICT",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_SPLIT_KEYS",
@@ -229,4 +233,14 @@ _specialized_instructions = [
     "LOAD_GLOBAL_ADAPTIVE",
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
+]
+
+_specialization_stats = [
+    "specialization_success",
+    "specialization_failure",
+    "hit",
+    "deferred",
+    "miss",
+    "deopt",
+    "unquickened",
 ]

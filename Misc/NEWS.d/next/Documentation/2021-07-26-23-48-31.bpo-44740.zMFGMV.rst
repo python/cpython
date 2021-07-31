@@ -1,0 +1,2 @@
+Replaced occurences of uppercase "Web" and "Internet" with lowercase
+versions per the 2016 revised Associated Press Style Book.

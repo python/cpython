@@ -4,6 +4,7 @@ import collections
 import itertools
 import linecache
 import sys
+from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -69,7 +70,8 @@ def extract_tb(tb, limit=None):
     trace.  The line is a string with leading and trailing
     whitespace stripped; if the source is not available it is None.
     """
-    return StackSummary.extract(walk_tb(tb), limit=limit)
+    return StackSummary._extract_from_extended_frame_gen(
+        _walk_tb_with_full_positions(tb), limit=limit)
 
 #
 # Exception formatting and output.
@@ -251,10 +253,12 @@ class FrameSummary:
       mapping the name to the repr() of the variable.
     """
 
-    __slots__ = ('filename', 'lineno', 'name', '_line', 'locals')
+    __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
+                 'name', '_line', 'locals')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
-            locals=None, line=None):
+            locals=None, line=None,
+            end_lineno=None, colno=None, end_colno=None):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -271,6 +275,9 @@ class FrameSummary:
         if lookup_line:
             self.line
         self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+        self.end_lineno = end_lineno
+        self.colno = colno
+        self.end_colno = end_colno
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
@@ -296,10 +303,18 @@ class FrameSummary:
         return 4
 
     @property
+    def _original_line(self):
+        # Returns the line as-is from the source, without modifying whitespace.
+        self.line
+        return self._line
+
+    @property
     def line(self):
         if self._line is None:
-            self._line = linecache.getline(self.filename, self.lineno).strip()
-        return self._line
+            if self.lineno is None:
+                return None
+            self._line = linecache.getline(self.filename, self.lineno)
+        return self._line.strip()
 
 
 def walk_stack(f):
@@ -309,7 +324,7 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back
+        f = sys._getframe().f_back.f_back.f_back.f_back
     while f is not None:
         yield f, f.f_lineno
         f = f.f_back
@@ -324,6 +339,27 @@ def walk_tb(tb):
     while tb is not None:
         yield tb.tb_frame, tb.tb_lineno
         tb = tb.tb_next
+
+
+def _walk_tb_with_full_positions(tb):
+    # Internal version of walk_tb that yields full code positions including
+    # end line and column information.
+    while tb is not None:
+        positions = _get_code_position(tb.tb_frame.f_code, tb.tb_lasti)
+        # Yield tb_lineno when co_positions does not have a line number to
+        # maintain behavior with walk_tb.
+        if positions[0] is None:
+            yield tb.tb_frame, (tb.tb_lineno, ) + positions[1:]
+        else:
+            yield tb.tb_frame, positions
+        tb = tb.tb_next
+
+
+def _get_code_position(code, instruction_index):
+    if instruction_index < 0:
+        return (None, None, None, None)
+    positions_gen = code.co_positions()
+    return next(itertools.islice(positions_gen, instruction_index // 2, None))
 
 
 _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
@@ -345,6 +381,21 @@ class StackSummary(list):
         :param capture_locals: If True, the local variables from each frame will
             be captured as object representations into the FrameSummary.
         """
+        def extended_frame_gen():
+            for f, lineno in frame_gen:
+                yield f, (lineno, None, None, None)
+
+        return klass._extract_from_extended_frame_gen(
+            extended_frame_gen(), limit=limit, lookup_lines=lookup_lines,
+            capture_locals=capture_locals)
+
+    @classmethod
+    def _extract_from_extended_frame_gen(klass, frame_gen, *, limit=None,
+            lookup_lines=True, capture_locals=False):
+        # Same as extract but operates on a frame generator that yields
+        # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
+        # Only lineno is required, the remaining fields can be empty if the
+        # information is not available.
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit is not None and limit < 0:
@@ -357,7 +408,7 @@ class StackSummary(list):
 
         result = klass()
         fnames = set()
-        for f, lineno in frame_gen:
+        for f, (lineno, end_lineno, colno, end_colno) in frame_gen:
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
@@ -370,7 +421,8 @@ class StackSummary(list):
             else:
                 f_locals = None
             result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals))
+                filename, lineno, name, lookup_line=False, locals=f_locals,
+                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
         for filename in fnames:
             linecache.checkcache(filename)
         # If immediate lookup was desired, trigger lookups now.
@@ -397,6 +449,53 @@ class StackSummary(list):
                 filename, lineno, name, line = frame
                 result.append(FrameSummary(filename, lineno, name, line=line))
         return result
+
+    def format_frame(self, frame):
+        """Format the lines for a single frame.
+
+        Returns a string representing one frame involved in the stack. This
+        gets called for every frame to be printed in the stack summary.
+        """
+        row = []
+        row.append('  File "{}", line {}, in {}\n'.format(
+            frame.filename, frame.lineno, frame.name))
+        if frame.line:
+            row.append('    {}\n'.format(frame.line.strip()))
+
+            stripped_characters = len(frame._original_line) - len(frame.line.lstrip())
+            if (
+                frame.colno is not None
+                and frame.end_colno is not None
+            ):
+                colno = _byte_offset_to_character_offset(frame._original_line, frame.colno)
+                end_colno = _byte_offset_to_character_offset(frame._original_line, frame.end_colno)
+
+                anchors = None
+                if frame.lineno == frame.end_lineno:
+                    with suppress(Exception):
+                        anchors = _extract_caret_anchors_from_line_segment(
+                            frame._original_line[colno - 1:end_colno - 1]
+                        )
+                else:
+                    end_colno = stripped_characters + len(frame.line.strip())
+
+                row.append('    ')
+                row.append(' ' * (colno - stripped_characters))
+
+                if anchors:
+                    row.append(anchors.primary_char * (anchors.left_end_offset))
+                    row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
+                    row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
+                else:
+                    row.append('^' * (end_colno - colno))
+
+                row.append('\n')
+
+        if frame.locals:
+            for name, value in sorted(frame.locals.items()):
+                row.append('    {name} = {value}\n'.format(name=name, value=value))
+
+        return ''.join(row)
 
     def format(self):
         """Format the stack ready for printing.
@@ -432,15 +531,8 @@ class StackSummary(list):
             count += 1
             if count > _RECURSIVE_CUTOFF:
                 continue
-            row = []
-            row.append('  File "{}", line {}, in {}\n'.format(
-                frame.filename, frame.lineno, frame.name))
-            if frame.line:
-                row.append('    {}\n'.format(frame.line.strip()))
-            if frame.locals:
-                for name, value in sorted(frame.locals.items()):
-                    row.append('    {name} = {value}\n'.format(name=name, value=value))
-            result.append(''.join(row))
+            result.append(self.format_frame(frame))
+
         if count > _RECURSIVE_CUTOFF:
             count -= _RECURSIVE_CUTOFF
             result.append(
@@ -448,6 +540,58 @@ class StackSummary(list):
                 f'time{"s" if count > 1 else ""}]\n'
             )
         return result
+
+
+def _byte_offset_to_character_offset(str, offset):
+    as_utf8 = str.encode('utf-8')
+    if offset > len(as_utf8):
+        offset = len(as_utf8)
+
+    return len(as_utf8[:offset + 1].decode("utf-8"))
+
+
+_Anchors = collections.namedtuple(
+    "_Anchors",
+    [
+        "left_end_offset",
+        "right_start_offset",
+        "primary_char",
+        "secondary_char",
+    ],
+    defaults=["~", "^"]
+)
+
+def _extract_caret_anchors_from_line_segment(segment):
+    import ast
+
+    try:
+        tree = ast.parse(segment)
+    except SyntaxError:
+        return None
+
+    if len(tree.body) != 1:
+        return None
+
+    statement = tree.body[0]
+    match statement:
+        case ast.Expr(expr):
+            match expr:
+                case ast.BinOp():
+                    operator_str = segment[expr.left.end_col_offset:expr.right.col_offset]
+                    operator_offset = len(operator_str) - len(operator_str.lstrip())
+
+                    left_anchor = expr.left.end_col_offset + operator_offset
+                    right_anchor = left_anchor + 1
+                    if (
+                        operator_offset + 1 < len(operator_str)
+                        and not operator_str[operator_offset + 1].isspace()
+                    ):
+                        right_anchor += 1
+                    return _Anchors(left_anchor, right_anchor)
+                case ast.Subscript():
+                    return _Anchors(expr.value.end_col_offset, expr.slice.end_col_offset + 1)
+
+    return None
 
 
 class TracebackException:
@@ -491,8 +635,9 @@ class TracebackException:
         _seen.add(id(exc_value))
 
         # TODO: locals.
-        self.stack = StackSummary.extract(
-            walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
+        self.stack = StackSummary._extract_from_extended_frame_gen(
+            _walk_tb_with_full_positions(exc_traceback),
+            limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the

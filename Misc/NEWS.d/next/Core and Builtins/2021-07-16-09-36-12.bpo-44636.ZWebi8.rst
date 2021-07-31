@@ -1,0 +1,1 @@
+Collapse union of equal types. E.g. the result of ``int | int`` is now ``int``. Fix comparison of the union type with non-hashable objects. E.g. ``int | str == {}`` no longer raises a TypeError.
