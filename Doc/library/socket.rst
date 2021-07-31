@@ -204,6 +204,8 @@ created.  Socket addresses are represented as follows:
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
 
+   .. availability:: Linux >= 4.7.
+
   .. versionadded:: 3.8
 
 - :const:`IPPROTO_UDPLITE` is a variant of UDP which allows you to specify
