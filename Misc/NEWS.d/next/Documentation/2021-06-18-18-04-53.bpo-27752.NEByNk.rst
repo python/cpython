@@ -1,1 +1,1 @@
-Improved documentation of csv.Dialect.
+Documentation of csv.Dialect is more descriptive.
