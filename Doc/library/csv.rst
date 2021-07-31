@@ -65,8 +65,8 @@ The :mod:`csv` module defines the following functions:
    the :class:`Dialect` class or one of the strings returned by the
    :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
-   dialect.  For full details about dialects and formatting parameters, see
-   the :ref:`csv-fmt-params` section.
+   dialect.  For full details about the dialect and formatting parameters, see
+   section :ref:`csv-fmt-params`.
 
    Each row read from the csv file is returned as a list of strings.  No
    automatic data type conversion is performed unless the ``QUOTE_NONNUMERIC`` format
@@ -247,8 +247,8 @@ The :mod:`csv` module defines the following classes:
 
 .. class:: excel()
 
-   The :class:`excel` class defines the usual properties of an Excel-generated
-   CSV file.  It is registered with the dialect name ``'excel'``.
+   The :class:`excel` class defines the usual properties of an Excel-generated CSV
+   file.  It is registered with the dialect name ``'excel'``.
 
 
 .. class:: excel_tab()
@@ -298,7 +298,7 @@ The :mod:`csv` module defines the following classes:
       This method is a rough heuristic and may produce both false positives and
       negatives.
 
-An example of :class:`Sniffer` usage::
+An example for :class:`Sniffer` use::
 
    with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
@@ -346,22 +346,18 @@ The :mod:`csv` module defines the following exception:
 
 .. _csv-fmt-params:
 
-Custom Dialects
+Dialects and Formatting Parameters
 ----------------------------------
 
-There are two options for customizing csv parsing and generating behavior.
-First, keyword arguments whose names are the same as the attribute names below
-can be passed to the initializer of a :class:`reader` or :class:`writer` object
-directly (see :ref:`csv-examples`). Alternatively, users can subclass
-:class:`Dialect` to neatly describe whatever unique csv formats one might
-encounter.  Instances of :class:`Dialect` subclasses may be passed to a new
-:class:`reader` or :class:`writer` via the *dialect* parameter.
-
-.. note::
-
-   :class:`Dialect` is an abstract class; subclass it instead of initializing
-   it directly.
-
+To make it easier to specify the format of input and output records, specific
+formatting parameters are grouped together into dialects.  A dialect is a
+subclass of the :class:`Dialect` class having a set of specific methods and a
+single :meth:`validate` method.  When creating :class:`reader` or
+:class:`writer` objects, the programmer can specify a string or a subclass of
+the :class:`Dialect` class as the dialect parameter.  In addition to, or instead
+of, the *dialect* parameter, the programmer can also specify individual
+formatting parameters, which have the same names as the attributes defined below
+for the :class:`Dialect` class.
 
 Dialects support the following attributes:
 
