@@ -626,8 +626,6 @@ class TypingCallableTests(BaseCallableTests, BaseTestCase):
         self.assertEqual(c1.__args__, c2.__args__)
         self.assertEqual(hash(c1.__args__), hash(c2.__args__))
 
-    test_errors = skip("known bug #44793")(BaseCallableTests.test_errors)
-
 
 class CollectionsCallableTests(BaseCallableTests, BaseTestCase):
     Callable = collections.abc.Callable
@@ -4588,6 +4586,10 @@ class ParamSpecTests(BaseTestCase):
         G1 = X[int, P_2]
         self.assertEqual(G1.__args__, (int, P_2))
         self.assertEqual(G1.__parameters__, (P_2,))
+        with self.assertRaisesRegex(TypeError, "few arguments for"):
+            X[int]
+        with self.assertRaisesRegex(TypeError, "many arguments for"):
+            X[int, P_2, str]
 
         G2 = X[int, Concatenate[int, P_2]]
         self.assertEqual(G2.__args__, (int, Concatenate[int, P_2]))
