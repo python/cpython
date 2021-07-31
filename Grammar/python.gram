@@ -33,9 +33,9 @@ _PyPegen_parse(Parser *p)
 #
 # * Strings with double quotes (") denote SOFT KEYWORDS
 # * Strings with single quotes (') denote KEYWORDS
-# * Upper case names (NAME) denote tokens in the Grammat/Tokens file
+# * Upper case names (NAME) denote tokens in the Grammar/Tokens file
 # * Rule names starting with "invalid_" are used for specialized syntax errors
-#     - These rules are NOT used in the first pass of the parser
+#     - These rules are NOT used in the first pass of the parser.
 #     - Only if the first pass fails to parse, a second pass including the invalid
 #       rules will be executed.
 #     - If the parser fails in the second phase with a generic syntax error, the
