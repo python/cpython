@@ -218,6 +218,11 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
+* Add :meth:`~sqlite3.Connection.serialize` and
+  :meth:`~sqlite3.Connection.deserialize` to :class:`sqlite3.Connection` for
+  serializing and deserializing databases.
+  (Contributed by Erlend E. Aasland in :issue:`41930`.)
+
 
 Removed
 =======
