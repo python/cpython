@@ -457,7 +457,7 @@ class WindowFunctionTests(unittest.TestCase):
             def value(self): return 42
             def inverse(self, x): pass
 
-        # Fixme: step, value and finalize does not raise correct exceptions
+        # Fixme: finalize does not raise correct exception
         dataset = (
             ("step", MissingStep, "not defined"),
             ("value", MissingValue, "raised error"),
