@@ -688,7 +688,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
    is currently only valid when used as the first argument to a :data:`Callable`.
-   The last parameter to ``Concatenate`` must be a :class:`ParamSpec`.
+   The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
+   ellipsis (``...``).
 
    For example, to annotate a decorator ``with_lock`` which provides a
    :class:`threading.Lock` to the decorated function,  ``Concatenate`` can be
