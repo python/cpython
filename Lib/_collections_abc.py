@@ -478,8 +478,7 @@ class _CallableGenericAlias(GenericAlias):
         # then X[int, str] == X[[int, str]].
         param_len = len(self.__parameters__)
         if param_len == 0:
-            raise TypeError(f'There are no type or parameter specification'
-                            f'variables left in {self}')
+            raise TypeError(f'{self} is not a generic class')
         if (param_len == 1
                 and isinstance(item, (tuple, list))
                 and len(item) > 1) or not isinstance(item, tuple):
