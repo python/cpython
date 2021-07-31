@@ -456,9 +456,10 @@ class WindowFunctionTests(unittest.TestCase):
             def step(self, x): pass
             def value(self): return 42
             def inverse(self, x): pass
+
         # Fixme: step, value and finalize does not raise correct exceptions
         dataset = (
-            #("step", MissingStep),
+            ("step", MissingStep),
             #("value", MissingValue),
             ("inverse", MissingInverse),
             #("finalize", MissingFinalize),
@@ -521,9 +522,9 @@ class AggregateTests(unittest.TestCase):
 
     def test_aggr_no_step(self):
         cur = self.con.cursor()
-        with self.assertRaises(AttributeError) as cm:
-            cur.execute("select nostep(t) from test")
-        self.assertEqual(str(cm.exception), "'AggrNoStep' object has no attribute 'step'")
+        self.assertRaisesRegex(sqlite.OperationalError,
+                               "'step' method not defined", cur.execute,
+                               "select nostep(t) from test")
 
     def test_aggr_no_finalize(self):
         cur = self.con.cursor()
