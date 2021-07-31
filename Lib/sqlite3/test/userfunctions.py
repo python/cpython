@@ -459,17 +459,17 @@ class WindowFunctionTests(unittest.TestCase):
 
         # Fixme: step, value and finalize does not raise correct exceptions
         dataset = (
-            ("step", MissingStep),
-            #("value", MissingValue),
-            ("inverse", MissingInverse),
+            ("step", MissingStep, "not defined"),
+            ("value", MissingValue, "raised error"),
+            ("inverse", MissingInverse, "not defined"),
             #("finalize", MissingFinalize),
         )
-        for meth, cls in dataset:
-            with self.subTest(meth=meth, cls=cls):
+        for meth, cls, err in dataset:
+            with self.subTest(meth=meth, cls=cls, err=err):
                 self.con.create_window_function(meth, 1, cls)
                 self.addCleanup(self.con.create_window_function, meth, 1, None)
                 with self.assertRaisesRegex(sqlite.OperationalError,
-                                            f"'{meth}' method not defined"):
+                                            f"'{meth}' method {err}"):
                     self.cur.execute(self.query % meth)
                     self.cur.fetchall()
 
