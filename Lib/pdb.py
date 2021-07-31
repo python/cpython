@@ -87,6 +87,14 @@ import linecache
 from typing import Union
 
 
+try:  # Try to load readline if it exists
+    import readline
+    # remove some common file name delimiters
+    readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
+except ImportError:
+    pass
+
+
 class Restart(Exception):
     """Causes a debugger to be restarted for the debugged python program."""
     pass
@@ -230,13 +238,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
-        # Try to load readline if it exists
-        try:
-            import readline
-            # remove some common file name delimiters
-            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
-        except ImportError:
-            pass
         self.allow_kbdint = False
         self.nosigint = nosigint
 

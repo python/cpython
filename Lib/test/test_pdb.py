@@ -373,7 +373,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:97
+    Breakpoint 3 at ...pdb.py:98
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -1367,9 +1367,7 @@ class PdbTestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
 
-    def _run_pdb(self, pdb_args, commands):
-        self.addCleanup(os_helper.rmtree, '__pycache__')
-        cmd = [sys.executable, '-m', 'pdb'] + pdb_args
+    def _run(self, cmd, commands):
         with subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -1382,12 +1380,25 @@ class PdbTestCase(unittest.TestCase):
         stderr = stderr and bytes.decode(stderr)
         return stdout, stderr
 
-    def run_pdb_script(self, script, commands):
-        """Run 'script' lines with pdb and the pdb 'commands'."""
-        filename = 'main.py'
+    def _write_script(self, script, filename):
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.unlink, filename)
+
+    def _run_script(self, script, commands):
+        filename = "main.py"
+        self._write_script(script, filename)
+        return self._run([sys.executable, filename], commands)
+
+    def _run_pdb(self, pdb_args, commands):
+        self.addCleanup(os_helper.rmtree, '__pycache__')
+        cmd = [sys.executable, '-m', 'pdb'] + pdb_args
+        return self._run(cmd, commands)
+
+    def run_pdb_script(self, script, commands):
+        """Run 'script' lines with pdb and the pdb 'commands'."""
+        filename = 'main.py'
+        self._write_script(script, filename)
         return self._run_pdb([filename], commands)
 
     def run_pdb_module(self, script, commands):
@@ -1592,6 +1603,21 @@ def bœr():
         res = '\n'.join([x.strip() for x in stdout.splitlines()])
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
+
+    def test_issue20703(self):
+        # breakpoint doesn't modify sys.modules
+        script = textwrap.dedent("""
+            import sys, pdb
+            for m in sys.modules:
+                if m == 'sys':
+                    pdb.set_trace()
+        """)
+        commands = """
+            continue
+            quit
+        """
+        stdout, stderr = self._run_script(script, commands)
+        self.assertNotIn('RuntimeError', stdout)
 
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
