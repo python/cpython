@@ -2321,7 +2321,8 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(str(OkayEnum.one), 'one')
         with self.assertWarns(DeprecationWarning):
             self.assertEqual('{}'.format(OkayEnum.one), '1')
-        self.assertEqual(OkayEnum.one, '{}'.format(OkayEnum.one))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(OkayEnum.one, '{}'.format(OkayEnum.one))
         self.assertEqual(repr(OkayEnum.one), 'OkayEnum.one')
         #
         class DumbMixin:
