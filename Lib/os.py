@@ -461,7 +461,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
-        if not isinstance(top, int) or not hasattr(top, '__index__'):
+        if not isinstance(top, int) and not hasattr(top, '__index__'):
             top = fspath(top)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
