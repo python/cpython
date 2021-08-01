@@ -182,6 +182,15 @@ class ExceptionTests(unittest.TestCase):
         s = 'exec f(a+b,c)'
         ckmsg(s, "Missing parentheses in call to 'exec'. Did you mean exec(...)?")
 
+        # Check that we don't incorrectly identify '(...)' as an expression to the right
+        # of 'print'
+
+        s = 'print (a+b,c) $ 42'
+        ckmsg(s, "invalid syntax")
+
+        s = 'exec (a+b,c) $ 42'
+        ckmsg(s, "invalid syntax")
+
         # should not apply to subclasses, see issue #31161
         s = '''if True:\nprint "No indent"'''
         ckmsg(s, "expected an indented block after 'if' statement on line 1", IndentationError)

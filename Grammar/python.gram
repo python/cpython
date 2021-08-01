@@ -849,7 +849,7 @@ expression_without_invalid[expr_ty]:
     | disjunction
     | lambdef
 invalid_legacy_expression:
-    | a=NAME b=star_expressions {
+    | a=NAME !'(' b=star_expressions {
         _PyPegen_check_legacy_stmt(p, a) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b,
             "Missing parentheses in call to '%U'. Did you mean %U(...)?", a->v.Name.id, a->v.Name.id) : NULL}
 
