@@ -17,6 +17,8 @@ users interact with them and how they interact with each other. See
 section :ref:`tut-modules`.
 
 
+.. _name_is_main:
+
 ``__name__ == '__main__'``
 ---------------------------
 
@@ -106,9 +108,45 @@ convention::
         print(shlex.join(sys.argv))
         return 0
 
-    if __name__ == '__main__':
-        # now, the integer returned from main is passed through to sys.exit
-        sys.exit(main())
+
+``import __main__``
+-------------------
+
+All the values in the ``__main__`` namespace can be imported elsewhere in
+Python packages. See section :ref:`name_is_main` for a list of where the
+``__main__`` package is in different Python execution scenarios.
+
+Here is an example package that consumes the ``__main__`` namespace::
+
+    # namely.py
+
+    import __main__
+
+    def did_user_define_their_name():
+        return 'my_name' in dir(__main__)
+
+    def print_user_name():
+        if did_user_define_their_name():
+            print(__main__.my_name)
+        else:
+            print('Tell us your name by defining the variable `my_name`!')
+
+The Python REPL is one example of a "top-level environment", so anything
+defined in the REPL becomes part of the ``__main__`` package::
+
+    >>> import namely
+    >>> namely.did_user_define_their_name()
+    False
+    >>> namely.print_user_name()
+    Tell us your name by defining the variable `my_name`!
+    >>> my_name = 'David'
+    >>> namely.did_user_define_their_name()
+    True
+    >>> namely.print_user_name()
+    David
+
+The ``__main__`` package is used in the implementation of :mod:`pdb` and
+:mod:`rlcompleter`.
 
 
 ``__main__.py`` in Python Packages
