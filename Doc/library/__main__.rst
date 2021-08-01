@@ -12,9 +12,8 @@ is part of two quite different constructs:
 1. The ``__name__ == '__main__'`` statement
 2. The ``__main__.py`` file in Python packages
 
-Each of these mechanisms are related to Python modules; how
-users interact with them and how they interact with each other. See
-section :ref:`tut-modules`.
+Each of these mechanisms are related to Python modules; how users interact with
+them and how they interact with each other. See section :ref:`tut-modules`.
 
 
 .. _name_is_main:
@@ -42,48 +41,45 @@ an import statement::
         # Execute when the module is not initialized from an import statement.
         ...
 
+
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
 Putting as few statements as possible in the block below ``if __name___ ==
 '__main__'`` can improve code clarity. Most often, a function named *main*
-encapsulates the program's primary behavior, creating this pattern::
+encapsulates the program's primary behavior::
 
     # echo.py
 
     import shlex
     import sys
 
+
     def echo(phrase: str):
-       # you can imagine that this dummy wrapper around print might be
-       # different and truly worth re-using in a real program.
+       """A dummy wrapper around print."""
+       # for demonstration purposes, you can imagine that there is some
+       # valuable and reusable logic inside this function
        print(phrase)
 
+
     def main():
-        "Echo the sys.argv to standard output"
+        """Echo the input arguments to standard output"""
         echo(shlex.join(sys.argv))
 
+
     if __name__ == '__main__':
-        main()
+        sys.exit(main())  # next section explains the use of sys.exit
 
 This has the added benefit of the *echo* function itself being isolated and
-importable elsewhere::
-
-    # elsewhere.py
-
-    import sys
-
-    from echo import echo
-
-    def echo_platform():
-        echo(sys.platform)
+importable elsewhere. None of the code in ``echo.py`` will execute at
+import-time.
 
 
-Packaging Considerations (``console_scripts``)
+Packaging Considerations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For detailed documentation on Python packaging, see the
-`Python Packaging User Guide. <https://packaging.python.org/>`__
+`Python Packaging User Guide. <https://packaging.python.org/>`_
 
 *main* functions are often used to create command line tools by specifying them
 as entry points for console scripts.  When this is done, pip inserts the
@@ -99,14 +95,9 @@ returned if your function does not have a return statement).
 
 By proactively following this convention ourselves, our module will have the
 same behavior when run directly (``python3 echo.py``) as it will have if we
-later package it as an console script entry-point in a pip-installable package.
-We can revise the :file:`echo.py` example from earlier to follow this
-convention::
-
-    def main() -> int:  # now, main returns an integer
-        "Echo the input to standard output"
-        print(shlex.join(sys.argv))
-        return 0
+later package it as a console script entry-point in a pip-installable package.
+That is why the ``echo.py`` example from earlier used the ``sys.exit(main())``
+convention.
 
 
 ``import __main__``
