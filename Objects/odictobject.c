@@ -1097,39 +1097,10 @@ OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value)
 /*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
 {
-    PyObject *od = (PyObject *)self;
-    if (PyODict_CheckExact(od)) {
-        Py_hash_t hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
-        return _odict_popkey_hash(od, key, default_value, hash);
-    }
-
-    PyObject *value = NULL;
-    int exists = PySequence_Contains(od, key);
-    if (exists < 0)
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1)
         return NULL;
-    if (exists) {
-        value = PyObject_GetItem(od, key);
-        if (value != NULL) {
-            if (PyObject_DelItem(od, key) == -1) {
-                Py_CLEAR(value);
-            }
-        }
-    }
-
-    /* Apply the fallback value, if necessary. */
-    if (value == NULL && !PyErr_Occurred()) {
-        if (default_value) {
-            value = default_value;
-            Py_INCREF(default_value);
-        }
-        else {
-            PyErr_SetObject(PyExc_KeyError, key);
-        }
-    }
-
-    return value;
+    return _odict_popkey_hash((PyObject *)self, key, default_value, hash);
 }
 
 

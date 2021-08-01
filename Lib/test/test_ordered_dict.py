@@ -946,11 +946,11 @@ class SimpleLRUCacheTests:
             c[i] = i
         self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
         self.assertEqual(c.pop(2), 2)
-        self.assertEqual(c.counts, {'get': 1, 'set': 3, 'del': 1})
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
         self.assertEqual(c.pop(4, 0), 0)
-        self.assertEqual(c.counts, {'get': 1, 'set': 3, 'del': 1})
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
         self.assertRaises(KeyError, c.pop, 4)
-        self.assertEqual(c.counts, {'get': 1, 'set': 3, 'del': 1})
+        self.assertEqual(c.counts, {'get': 0, 'set': 3, 'del': 0})
 
     def test_change_order_on_get(self):
         c = self.type2test(3)

@@ -1,3 +1,3 @@
-Make the C implementation of :meth:`collections.OrderedDict.popitem` in
-conform with the pure Python implementation. It no longer calls
-``__getitem__`` and ``__delitem__`` methods of the OrderedDict subclasses.
+:meth:`collections.OrderedDict.popitem` and :meth:`collections.OrderedDict.pop`
+no longer call ``__getitem__`` and ``__delitem__`` methods of the OrderedDict
+subclasses.
