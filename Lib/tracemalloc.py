@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections.abc import Sequence, Iterable
 from functools import total_ordering
 import fnmatch
@@ -342,10 +343,11 @@ def _normalize_filename(filename):
     return filename
 
 
-class BaseFilter:
+class BaseFilter(ABC):
     def __init__(self, inclusive):
         self.inclusive = inclusive
 
+    @abstractmethod
     def _match(self, trace):
         raise NotImplementedError
 
@@ -354,7 +356,6 @@ class Filter(BaseFilter):
     def __init__(self, inclusive, filename_pattern,
                  lineno=None, all_frames=False, domain=None):
         super().__init__(inclusive)
-        self.inclusive = inclusive
         self._filename_pattern = _normalize_filename(filename_pattern)
         self.lineno = lineno
         self.all_frames = all_frames
