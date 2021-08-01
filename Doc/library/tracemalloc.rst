@@ -740,7 +740,7 @@ Traceback
 
    .. method:: format(limit=None, most_recent_first=False)
 
-      Format the traceback as a list of lines with newlines. Use the
+      Format the traceback as a list of lines. Use the
       :mod:`linecache` module to retrieve lines from the source code.
       If *limit* is set, format the *limit* most recent frames if *limit*
       is positive. Otherwise, format the ``abs(limit)`` oldest frames.
