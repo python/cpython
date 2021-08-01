@@ -163,8 +163,7 @@ directly from the command line using the :option:`-m` flag. For example::
 This command will cause ``__main__.py`` to run. For more details about the
 :option:`-m` flag, see :mod:`runpy`. How you utilize this mechanism will depend
 on the nature of the package you are writing, but in this hypothetical case, it
-might make sense to allow the teacher to search for students using
-:mod:`argparse`::
+might make sense to allow the teacher to search for students::
 
     # bandclass/__main__.py
 
@@ -172,7 +171,7 @@ might make sense to allow the teacher to search for students using
     from .student import search_students
 
     student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
-    print('Found student: {search_students(student_name)}')
+    print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
 import.  This import style must be used when referencing modules within a
