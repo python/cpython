@@ -861,7 +861,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
-            self._frame = PyFramePtr(self.field('f_frame'))
+            self._frame = PyExecFramePtr(self.field('f_xframe'))
 
     def iter_locals(self):
         '''
@@ -932,17 +932,17 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
         return self._frame.print_traceback()
 
-class PyFramePtr:
+class PyExecFramePtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
 
         if not self.is_optimized_out():
-            self.co = self._f_code()
+            self.co = self._xf_code()
             self.co_name = self.co.pyop_field('co_name')
             self.co_filename = self.co.pyop_field('co_filename')
 
-            self.f_lasti = self._f_lasti()
+            self.xf_lasti = self._xf_lasti()
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
             pnames = self.co.field('co_localsplusnames')
             self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
@@ -960,7 +960,7 @@ class PyFramePtr:
 
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
         base = self._gdbval.cast(obj_ptr_ptr)
-        localsplus = base - self._f_nlocalsplus()
+        localsplus = base - self._xf_nlocalsplus()
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
             if pyop_value.is_null():
@@ -968,23 +968,23 @@ class PyFramePtr:
             pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
             yield (pyop_name, pyop_value)
 
-    def _f_special(self, name, convert=PyObjectPtr.from_pyobject_ptr):
+    def _xf_special(self, name, convert=PyObjectPtr.from_pyobject_ptr):
         return convert(self._gdbval[name])
 
-    def _f_globals(self):
-        return self._f_special("f_globals")
+    def _xf_globals(self):
+        return self._xf_special("xf_globals")
 
-    def _f_builtins(self):
-        return self._f_special("f_builtins")
+    def _xf_builtins(self):
+        return self._xf_special("xf_builtins")
 
-    def _f_code(self):
-        return self._f_special("f_code", PyCodeObjectPtr.from_pyobject_ptr)
+    def _xf_code(self):
+        return self._xf_special("xf_code", PyCodeObjectPtr.from_pyobject_ptr)
 
-    def _f_nlocalsplus(self):
-        return self._f_special("nlocalsplus", int_from_int)
+    def _xf_nlocalsplus(self):
+        return self._xf_special("xf_nlocalsplus", int_from_int)
 
-    def _f_lasti(self):
-        return self._f_special("f_lasti", int_from_int)
+    def _xf_lasti(self):
+        return self._xf_special("xf_lasti", int_from_int)
 
 
     def iter_globals(self):
@@ -995,7 +995,7 @@ class PyFramePtr:
         if self.is_optimized_out():
             return ()
 
-        pyop_globals = self._f_globals()
+        pyop_globals = self._xf_globals()
         return pyop_globals.iteritems()
 
     def iter_builtins(self):
@@ -1006,7 +1006,7 @@ class PyFramePtr:
         if self.is_optimized_out():
             return ()
 
-        pyop_builtins = self._f_builtins()
+        pyop_builtins = self._xf_builtins()
         return pyop_builtins.iteritems()
 
     def get_var_by_name(self, name):
@@ -1043,7 +1043,7 @@ class PyFramePtr:
         if self.is_optimized_out():
             return None
         try:
-            return self.co.addr2line(self.f_lasti*2)
+            return self.co.addr2line(self.xf_lasti*2)
         except Exception:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if
@@ -1733,21 +1733,21 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            frame = self._gdbframe.read_var('frame')
-            frame = PyFramePtr(frame)
-            if not frame.is_optimized_out():
-                return frame
-            # gdb is unable to get the "frame" argument of PyEval_EvalFrameEx()
-            # because it was "optimized out". Try to get "frame" from the frame
+            xframe = self._gdbframe.read_var('xframe')
+            xframe = PyExecFramePtr(xframe)
+            if not xframe.is_optimized_out():
+                return xframe
+            # gdb is unable to get the "xframe" argument of PyEval_EvalFrameEx()
+            # because it was "optimized out". Try to get "xframe" from the frame
             # of the caller, _PyEval_Vector().
-            orig_frame = frame
+            orig_xframe = xframe
             caller = self._gdbframe.older()
             if caller:
-                frame = caller.read_var('frame')
-                frame = PyFramePtr(frame)
-                if not frame.is_optimized_out():
-                    return frame
-            return orig_frame
+                xframe = caller.read_var('xframe')
+                xframe = PyExecFramePtr(xframe)
+                if not xframe.is_optimized_out():
+                    return xframe
+            return orig_xframe
         except ValueError:
             return None
 

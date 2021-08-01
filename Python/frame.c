@@ -1,36 +1,36 @@
 
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_frame.h"
+#include "pycore_xframe.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
 int
-_PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
+_PyExecFrame_Traverse(_PyExecFrame *xframe, visitproc visit, void *arg)
 {
-    Py_VISIT(frame->frame_obj);
-    Py_VISIT(frame->f_globals);
-    Py_VISIT(frame->f_builtins);
-    Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_code);
+    Py_VISIT(xframe->xf_frame_obj);
+    Py_VISIT(xframe->xf_globals);
+    Py_VISIT(xframe->xf_builtins);
+    Py_VISIT(xframe->xf_locals);
+    Py_VISIT(xframe->xf_code);
    /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
-    for (int i = 0; i < frame->nlocalsplus; i++) {
+    PyObject **locals = _PyExecFrame_GetLocalsArray(xframe);
+    for (int i = 0; i < xframe->xf_nlocalsplus; i++) {
         Py_VISIT(locals[i]);
     }
     /* stack */
-    for (int i = 0; i <frame->stackdepth; i++) {
-        Py_VISIT(frame->stack[i]);
+    for (int i = 0; i <xframe->xf_stackdepth; i++) {
+        Py_VISIT(xframe->xf_stack[i]);
     }
     return 0;
 }
 
 PyFrameObject *
-_PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
+_PyExecFrame_MakeAndSetFrameObject(_PyExecFrame *xframe)
 {
-    assert(frame->frame_obj == NULL);
+    assert(xframe->xf_frame_obj == NULL);
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame, 0);
+    PyFrameObject *f = _PyFrame_New_NoTrack(xframe, 0);
     if (f == NULL) {
         Py_XDECREF(error_type);
         Py_XDECREF(error_value);
@@ -39,50 +39,50 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
     else {
         PyErr_Restore(error_type, error_value, error_traceback);
     }
-    frame->frame_obj = f;
+    xframe->xf_frame_obj = f;
     return f;
 }
 
 
-static InterpreterFrame *
-copy_frame_to_heap(InterpreterFrame *frame)
+static _PyExecFrame *
+copy_frame_to_heap(_PyExecFrame *xframe)
 {
 
-    Py_ssize_t size = ((char*)&frame->stack[frame->stackdepth]) - (char *)_PyFrame_GetLocalsArray(frame);
+    PyObject **locals = _PyExecFrame_GetLocalsArray(xframe);
+    Py_ssize_t size = ((char*)&xframe->xf_stack[xframe->xf_stackdepth]) - (char *)locals;
     PyObject **copy = PyMem_Malloc(size);
     if (copy == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
     memcpy(copy, locals, size);
-    InterpreterFrame *res = (InterpreterFrame *)(copy + frame->nlocalsplus);
+    _PyExecFrame *res = (_PyExecFrame *)(copy + xframe->xf_nlocalsplus);
     return res;
 }
 
 static inline void
-clear_specials(InterpreterFrame *frame)
+clear_specials(_PyExecFrame *xframe)
 {
-    frame->generator = NULL;
-    Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_globals);
-    Py_DECREF(frame->f_builtins);
-    Py_DECREF(frame->f_code);
+    xframe->xf_generator = NULL;
+    Py_XDECREF(xframe->xf_frame_obj);
+    Py_XDECREF(xframe->xf_locals);
+    Py_DECREF(xframe->xf_globals);
+    Py_DECREF(xframe->xf_builtins);
+    Py_DECREF(xframe->xf_code);
 }
 
 static void
-take_ownership(PyFrameObject *f, InterpreterFrame *frame)
+take_ownership(PyFrameObject *f, _PyExecFrame *xframe)
 {
     assert(f->f_own_locals_memory == 0);
-    assert(frame->frame_obj == NULL);
+    assert(xframe->xf_frame_obj == NULL);
 
     f->f_own_locals_memory = 1;
-    f->f_frame = frame;
+    f->f_xframe = xframe;
     assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
-        /* Link PyFrameObjects.f_back and remove link through InterpreterFrame.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+    if (xframe->xf_previous != NULL) {
+        /* Link introspection frame's f_back and remove link through execution frame's xf_previous */
+        PyFrameObject *back = _PyExecFrame_GetFrameObject(xframe->xf_previous);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
@@ -93,7 +93,7 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
-        frame->previous = NULL;
+        xframe->xf_previous = NULL;
     }
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
@@ -101,35 +101,35 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 }
 
 int
-_PyFrame_Clear(InterpreterFrame * frame, int take)
+_PyExecFrame_Clear(_PyExecFrame * xframe, int take)
 {
-    PyObject **localsarray = ((PyObject **)frame)-frame->nlocalsplus;
-    if (frame->frame_obj) {
-        PyFrameObject *f = frame->frame_obj;
-        frame->frame_obj = NULL;
+    PyObject **localsarray = ((PyObject **)xframe)-xframe->xf_nlocalsplus;
+    if (xframe->xf_frame_obj) {
+        PyFrameObject *f = xframe->xf_frame_obj;
+        xframe->xf_frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
             if (!take) {
-                frame = copy_frame_to_heap(frame);
-                if (frame == NULL) {
+                xframe = copy_frame_to_heap(xframe);
+                if (xframe == NULL) {
                     return -1;
                 }
             }
-            take_ownership(f, frame);
+            take_ownership(f, xframe);
             Py_DECREF(f);
             return 0;
         }
         Py_DECREF(f);
     }
-    for (int i = 0; i < frame->nlocalsplus; i++) {
+    for (int i = 0; i < xframe->xf_nlocalsplus; i++) {
         Py_XDECREF(localsarray[i]);
     }
-    assert(frame->stackdepth >= 0);
-    for (int i = 0; i < frame->stackdepth; i++) {
-        Py_DECREF(frame->stack[i]);
+    assert(xframe->xf_stackdepth >= 0);
+    for (int i = 0; i < xframe->xf_stackdepth; i++) {
+        Py_DECREF(xframe->xf_stack[i]);
     }
-    clear_specials(frame);
+    clear_specials(xframe);
     if (take) {
-        PyMem_Free(_PyFrame_GetLocalsArray(frame));
+        PyMem_Free(_PyExecFrame_GetLocalsArray(xframe));
     }
     return 0;
 }

@@ -37,14 +37,14 @@ end
 
 define pylocals
     set $_i = 0
-    while $_i < f->f_code->co_nlocals
-	if f->f_localsplus + $_i != 0
-	    set $_names = f->f_code->co_varnames
-	    set $_name = PyUnicode_AsUTF8(PyTuple_GetItem($_names, $_i))
-	    printf "%s:\n", $_name
-            pyo f->f_localsplus[$_i]
-	end
-        set $_i = $_i + 1
+    while $_i < f->f_xframe->xf_code->co_nlocals
+      if _PyExecFrame_GetLocalsArray(f->f_xframe) + $_i != 0
+        set $_names = f->f_xframe->xf_code->co_varnames
+        set $_name = PyUnicode_AsUTF8(PyTuple_GetItem($_names, $_i))
+        printf "%s:\n", $_name
+        pyo _PyExecFrame_GetLocalsArray(f->f_xframe)[$_i]
+      end
+      set $_i = $_i + 1
     end
 end
 document pylocals
@@ -55,8 +55,8 @@ end
 # command language
 define lineno
     set $__continue = 1
-    set $__co = f->f_code
-    set $__lasti = f->f_lasti
+    set $__co = f->f_xframe->xf_code
+    set $__lasti = f->f_xframe->xf_lasti
     set $__sz = ((PyVarObject *)$__co->co_lnotab)->ob_size/2
     set $__p = (unsigned char *)((PyBytesObject *)$__co->co_lnotab)->ob_sval
     set $__li = $__co->co_firstlineno
@@ -66,7 +66,7 @@ define lineno
       set $__ad = $__ad + *$__p
       set $__p = $__p + 1
       if ($__ad > $__lasti)
-	set $__continue = 0
+    set $__continue = 0
       else
         set $__li = $__li + *$__p
         set $__p = $__p + 1
@@ -84,8 +84,8 @@ document pyframev
 end
 
 define pyframe
-    set $__fn = PyUnicode_AsUTF8(f->f_code->co_filename)
-    set $__n = PyUnicode_AsUTF8(f->f_code->co_name)
+    set $__fn = PyUnicode_AsUTF8(f->f_xframe->xf_code->co_filename)
+    set $__n = PyUnicode_AsUTF8(f->f_xframe->xf_code->co_name)
     printf "%s (", $__fn
     lineno
     printf "): %s\n", $__n
@@ -133,6 +133,10 @@ end
 # version of Python.  If you try using it with older or newer versions of
 # the interpreter you may will have to change the functions you compare with
 # $pc.
+
+# Python 3.11 TODO: once all the interpreter optimisation changes settle down,
+# revisit the checks in these example hooks, as the correct symbols to look for
+# are likely to have changed.
 
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv

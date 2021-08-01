@@ -1,0 +1,4 @@
+Refactored internal APIs for the new lazy introspection frame creation to
+consistently distinguish between the classic introspection frames (full
+Python objects) and the new lighter weight internal execution frames (C
+structs with no intrinsic instance lifecycle management)

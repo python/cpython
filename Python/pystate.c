@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
-#include "pycore_frame.h"
+#include "pycore_xframe.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
 #include "pycore_pyerrors.h"
@@ -636,7 +636,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->interp = interp;
 
-    tstate->frame = NULL;
+    tstate->xframe = NULL;
     tstate->recursion_depth = 0;
     tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
@@ -686,7 +686,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         PyMem_RawFree(tstate);
         return NULL;
     }
-    /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
+    /* If top points to entry 0, then _PyThreadState_PopExecFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
     /* Mark trace_info as uninitialized */
@@ -861,11 +861,11 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->frame != NULL) {
+    if (verbose && tstate->xframe != NULL) {
         /* bpo-20526: After the main thread calls
            _PyRuntimeState_SetFinalizing() in Py_FinalizeEx(), threads must
            exit when trying to take the GIL. If a thread exit in the middle of
-           _PyEval_EvalFrameDefault(), tstate->frame is not reset to its
+           _PyEval_EvalFrameDefault(), tstate->xframe is not reset to its
            previous value. It is more likely with daemon threads, but it can
            happen with regular threads if threading._shutdown() fails
            (ex: interrupted by CTRL+C). */
@@ -1134,10 +1134,10 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    if (tstate->frame == NULL) {
+    if (tstate->xframe == NULL) {
         return NULL;
     }
-    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->frame);
+    PyFrameObject *frame = _PyExecFrame_GetFrameObject(tstate->xframe);
     if (frame == NULL) {
         PyErr_Clear();
     }
@@ -1261,15 +1261,15 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            InterpreterFrame *frame = t->frame;
-            if (frame == NULL) {
+            _PyExecFrame *xframe = t->xframe;
+            if (xframe == NULL) {
                 continue;
             }
             PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
+            int stat = PyDict_SetItem(result, id, (PyObject *)_PyExecFrame_GetFrameObject(xframe));
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;
@@ -2037,8 +2037,8 @@ push_chunk(PyThreadState *tstate, int size)
     return res;
 }
 
-InterpreterFrame *
-_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+_PyExecFrame *
+_PyThreadState_PushExecFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int nlocalsplus = code->co_nlocalsplus;
@@ -2056,18 +2056,18 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     else {
         tstate->datastack_top = top;
     }
-    InterpreterFrame * frame = (InterpreterFrame *)(localsarray + nlocalsplus);
-    _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
+    _PyExecFrame * xframe = (_PyExecFrame *)(localsarray + nlocalsplus);
+    _PyExecFrame_InitializeSpecials(xframe, con, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
         localsarray[i] = NULL;
     }
-    return frame;
+    return xframe;
 }
 
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
+_PyThreadState_PopExecFrame(PyThreadState *tstate, _PyExecFrame * xframe)
 {
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    PyObject **locals = _PyExecFrame_GetLocalsArray(xframe);
     if (locals == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
