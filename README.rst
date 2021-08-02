@@ -1,5 +1,5 @@
-This is Python version 3.10.0 beta 4
-====================================
+This is Python version 3.10.0 rc1
+=================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI

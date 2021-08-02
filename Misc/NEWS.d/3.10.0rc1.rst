@@ -1,0 +1,645 @@
+.. bpo: 44600
+.. date: 2021-07-25-20-04-54
+.. nonce: 0WMldg
+.. release date: 2021-08-02
+.. section: Security
+
+Fix incorrect line numbers while tracing some failed patterns in :ref:`match
+<match>` statements. Patch by Charles Burkland.
+
+..
+
+.. bpo: 44792
+.. date: 2021-07-31-12-12-57
+.. nonce: mOReTW
+.. section: Core and Builtins
+
+Improve syntax errors for if expressions. Patch by Miguel Brito
+
+..
+
+.. bpo: 34013
+.. date: 2021-07-27-11-14-22
+.. nonce: SjLFe-
+.. section: Core and Builtins
+
+Generalize the invalid legacy statement custom error message (like the one
+generated when "print" is called without parentheses) to include more
+generic expressions. Patch by Pablo Galindo
+
+..
+
+.. bpo: 44732
+.. date: 2021-07-26-15-27-03
+.. nonce: IxObt3
+.. section: Core and Builtins
+
+Rename ``types.Union`` to ``types.UnionType``.
+
+..
+
+.. bpo: 44698
+.. date: 2021-07-21-15-26-56
+.. nonce: DA4_0o
+.. section: Core and Builtins
+
+Fix undefined behaviour in complex object exponentiation.
+
+..
+
+.. bpo: 44653
+.. date: 2021-07-19-20-49-06
+.. nonce: WcqGyI
+.. section: Core and Builtins
+
+Support :mod:`typing` types in parameter substitution in the union type.
+
+..
+
+.. bpo: 44676
+.. date: 2021-07-19-19-53-46
+.. nonce: WgIMvh
+.. section: Core and Builtins
+
+Add ability to serialise ``types.Union`` objects. Patch provided by Yurii
+Karabas.
+
+..
+
+.. bpo: 44633
+.. date: 2021-07-17-21-04-04
+.. nonce: 5-zKeI
+.. section: Core and Builtins
+
+Parameter substitution of the union type with wrong types now raises
+``TypeError`` instead of returning ``NotImplemented``.
+
+..
+
+.. bpo: 44662
+.. date: 2021-07-17-13-41-58
+.. nonce: q22kWR
+.. section: Core and Builtins
+
+Add ``__module__`` to ``types.Union``. This also fixes ``types.Union``
+issues with ``typing.Annotated``. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 44655
+.. date: 2021-07-16-21-35-14
+.. nonce: 95I7M6
+.. section: Core and Builtins
+
+Include the name of the type in unset __slots__ attribute errors. Patch by
+Pablo Galindo
+
+..
+
+.. bpo: 44655
+.. date: 2021-07-16-20-25-37
+.. nonce: I3wRjL
+.. section: Core and Builtins
+
+Don't include a missing attribute with the same name as the failing one when
+offering suggestions for missing attributes. Patch by Pablo Galindo
+
+..
+
+.. bpo: 44646
+.. date: 2021-07-16-09-59-13
+.. nonce: Yb6s05
+.. section: Core and Builtins
+
+Fix the hash of the union type: it no longer depends on the order of
+arguments.
+
+..
+
+.. bpo: 44636
+.. date: 2021-07-16-09-36-12
+.. nonce: ZWebi8
+.. section: Core and Builtins
+
+Collapse union of equal types. E.g. the result of ``int | int`` is now
+``int``. Fix comparison of the union type with non-hashable objects. E.g.
+``int | str == {}`` no longer raises a TypeError.
+
+..
+
+.. bpo: 44635
+.. date: 2021-07-14-13-54-07
+.. nonce: 7ZMAdB
+.. section: Core and Builtins
+
+Convert ``None`` to ``type(None)`` in the union type constructor.
+
+..
+
+.. bpo: 44589
+.. date: 2021-07-13-23-19-41
+.. nonce: 59OH8T
+.. section: Core and Builtins
+
+Mapping patterns in ``match`` statements with two or more equal literal keys
+will now raise a :exc:`SyntaxError` at compile-time.
+
+..
+
+.. bpo: 44606
+.. date: 2021-07-13-20-22-12
+.. nonce: S3Bv2w
+.. section: Core and Builtins
+
+Fix ``__instancecheck__`` and ``__subclasscheck__`` for the union type.
+
+..
+
+.. bpo: 42073
+.. date: 2021-07-13-17-47-32
+.. nonce: 9wopiC
+.. section: Core and Builtins
+
+The ``@classmethod`` decorator can now wrap other classmethod-like
+descriptors.
+
+..
+
+.. bpo: 44490
+.. date: 2021-07-06-22-22-15
+.. nonce: BJxPbZ
+.. section: Core and Builtins
+
+:mod:`typing` now searches for type parameters in ``types.Union`` objects.
+``get_type_hints`` will also properly resolve annotations with nested
+``types.Union`` objects. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 44490
+.. date: 2021-07-01-11-59-34
+.. nonce: xY80VR
+.. section: Core and Builtins
+
+Add ``__parameters__`` attribute and ``__getitem__`` operator to
+``types.Union``. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 44472
+.. date: 2021-06-21-11-19-54
+.. nonce: Vvm1yn
+.. section: Core and Builtins
+
+Fix ltrace functionality when exceptions are raised. Patch by Pablo Galindo
+
+..
+
+.. bpo: 44806
+.. date: 2021-08-02-14-37-32
+.. nonce: wOW_Qn
+.. section: Library
+
+Non-protocol subclasses of :class:`typing.Protocol` ignore now the
+``__init__`` method inherited from protocol base classes.
+
+..
+
+.. bpo: 44793
+.. date: 2021-07-31-20-28-20
+.. nonce: woaQSg
+.. section: Library
+
+Fix checking the number of arguments when subscribe a generic type with
+``ParamSpec`` parameter.
+
+..
+
+.. bpo: 44784
+.. date: 2021-07-31-08-45-31
+.. nonce: fIMIDS
+.. section: Library
+
+In importlib.metadata tests, override warnings behavior under expected
+DeprecationWarnings (importlib_metadata 4.6.3).
+
+..
+
+.. bpo: 44667
+.. date: 2021-07-30-23-27-30
+.. nonce: tu0Xrv
+.. section: Library
+
+The :func:`tokenize.tokenize` doesn't incorrectly generate a ``NEWLINE``
+token if the source doesn't end with a new line character but the last line
+is a comment, as the function is already generating a ``NL`` token. Patch by
+Pablo Galindo
+
+..
+
+.. bpo: 44752
+.. date: 2021-07-27-22-11-29
+.. nonce: _bvbrZ
+.. section: Library
+
+:mod:`rcompleter` does not call :func:`getattr` on :class:`property` objects
+to avoid the side-effect of  evaluating the corresponding method.
+
+..
+
+.. bpo: 44720
+.. date: 2021-07-24-02-17-59
+.. nonce: shU5Qm
+.. section: Library
+
+``weakref.proxy`` objects referencing non-iterators now raise ``TypeError``
+rather than dereferencing the null ``tp_iternext`` slot and crashing.
+
+..
+
+.. bpo: 44704
+.. date: 2021-07-21-23-16-30
+.. nonce: iqHLxQ
+.. section: Library
+
+The implementation of ``collections.abc.Set._hash()`` now matches that of
+``frozenset.__hash__()``.
+
+..
+
+.. bpo: 44666
+.. date: 2021-07-21-10-43-22
+.. nonce: CEThkv
+.. section: Library
+
+Fixed issue in :func:`compileall.compile_file` when ``sys.stdout`` is
+redirected. Patch by Stefan Hölzl.
+
+..
+
+.. bpo: 42854
+.. date: 2021-07-20-21-51-35
+.. nonce: ThuDMI
+.. section: Library
+
+Fixed a bug in the :mod:`_ssl` module that was throwing :exc:`OverflowError`
+when using :meth:`_ssl._SSLSocket.write` and :meth:`_ssl._SSLSocket.read`
+for a big value of the ``len`` parameter. Patch by Pablo Galindo
+
+..
+
+.. bpo: 44353
+.. date: 2021-07-19-22-43-15
+.. nonce: HF81_Q
+.. section: Library
+
+Refactor ``typing.NewType`` from function into callable class. Patch
+provided by Yurii Karabas.
+
+..
+
+.. bpo: 44524
+.. date: 2021-07-19-14-04-42
+.. nonce: Nbf2JC
+.. section: Library
+
+Add missing ``__name__`` and ``__qualname__`` attributes to ``typing``
+module classes. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 40897
+.. date: 2021-07-16-13-40-31
+.. nonce: aveAre
+.. section: Library
+
+Give priority to using the current class constructor in
+:func:`inspect.signature`. Patch by Weipeng Hong.
+
+..
+
+.. bpo: 44648
+.. date: 2021-07-15-16-51-32
+.. nonce: 2o49TB
+.. section: Library
+
+Fixed wrong error being thrown by :func:`inspect.getsource` when examining a
+class in the interactive session. Instead of :exc:`TypeError`, it should be
+:exc:`OSError` with appropriate error message.
+
+..
+
+.. bpo: 44608
+.. date: 2021-07-13-09-01-33
+.. nonce: R3IcM1
+.. section: Library
+
+Fix memory leak in :func:`_tkinter._flatten` if it is called with a sequence
+or set, but not list or tuple.
+
+..
+
+.. bpo: 44559
+.. date: 2021-07-12-10-43-31
+.. nonce: YunVKY
+.. section: Library
+
+[Enum] module reverted to 3.9; 3.10 changes pushed until 3.11
+
+..
+
+.. bpo: 41928
+.. date: 2021-07-09-07-14-37
+.. nonce: Q1jMrr
+.. section: Library
+
+Update :func:`shutil.copyfile` to raise :exc:`FileNotFoundError` instead of
+confusing :exc:`IsADirectoryError` when a path ending with a
+:const:`os.path.sep` does not exist; :func:`shutil.copy` and
+:func:`shutil.copy2` are also affected.
+
+..
+
+.. bpo: 44566
+.. date: 2021-07-05-18-13-25
+.. nonce: o51Bd1
+.. section: Library
+
+handle StopIteration subclass raised from @contextlib.contextmanager
+generator
+
+..
+
+.. bpo: 41249
+.. date: 2021-07-04-11-33-34
+.. nonce: sHdwBE
+.. section: Library
+
+Fixes ``TypedDict`` to work with ``typing.get_type_hints()`` and postponed
+evaluation of annotations across modules.
+
+..
+
+.. bpo: 44461
+.. date: 2021-06-29-21-17-17
+.. nonce: acqRnV
+.. section: Library
+
+Fix bug with :mod:`pdb`'s handling of import error due to a package which
+does not have a ``__main__`` module
+
+..
+
+.. bpo: 43625
+.. date: 2021-06-29-07-27-08
+.. nonce: ZlAxhp
+.. section: Library
+
+Fix a bug in the detection of CSV file headers by
+:meth:`csv.Sniffer.has_header` and improve documentation of same.
+
+..
+
+.. bpo: 42892
+.. date: 2021-06-24-19-16-20
+.. nonce: qvRNhI
+.. section: Library
+
+Fixed an exception thrown while parsing a malformed multipart email by
+:class:`email.message.EmailMessage`.
+
+..
+
+.. bpo: 27827
+.. date: 2021-06-12-21-25-35
+.. nonce: TMWh1i
+.. section: Library
+
+:meth:`pathlib.PureWindowsPath.is_reserved` now identifies a greater range
+of reserved filenames, including those with trailing spaces or colons.
+
+..
+
+.. bpo: 38741
+.. date: 2019-11-12-18-59-33
+.. nonce: W7IYkq
+.. section: Library
+
+:mod:`configparser`: using ']' inside a section header will no longer cut
+the section name short at the ']'
+
+..
+
+.. bpo: 27513
+.. date: 2019-06-03-23-53-25
+.. nonce: qITN7d
+.. section: Library
+
+:func:`email.utils.getaddresses` now accepts :class:`email.header.Header`
+objects along with string values. Patch by Zackery Spytz.
+
+..
+
+.. bpo: 29298
+.. date: 2017-09-20-14-43-03
+.. nonce: _78CSN
+.. section: Library
+
+Fix ``TypeError`` when required subparsers without ``dest`` do not receive
+arguments. Patch by Anthony Sottile.
+
+..
+
+.. bpo: 44740
+.. date: 2021-07-26-23-48-31
+.. nonce: zMFGMV
+.. section: Documentation
+
+Replaced occurences of uppercase "Web" and "Internet" with lowercase
+versions per the 2016 revised Associated Press Style Book.
+
+..
+
+.. bpo: 44693
+.. date: 2021-07-25-23-04-15
+.. nonce: JuCbNq
+.. section: Documentation
+
+Update the definition of __future__ in the glossary by replacing the
+confusing word "pseudo-module" with a more accurate description.
+
+..
+
+.. bpo: 35183
+.. date: 2021-07-22-08-28-03
+.. nonce: p9BWTB
+.. section: Documentation
+
+Add typical examples to os.path.splitext docs
+
+..
+
+.. bpo: 30511
+.. date: 2021-07-20-21-03-18
+.. nonce: eMFkRi
+.. section: Documentation
+
+Clarify that :func:`shutil.make_archive` is not thread-safe due to reliance
+on changing the current working directory.
+
+..
+
+.. bpo: 44561
+.. date: 2021-07-18-22-43-14
+.. nonce: T7HpWm
+.. section: Documentation
+
+Update of three expired hyperlinks in Doc/distributing/index.rst: "Project
+structure", "Building and packaging the project", and "Uploading the project
+to the Python Packaging Index".
+
+..
+
+.. bpo: 44613
+.. date: 2021-07-12-11-39-20
+.. nonce: DIXNzc
+.. section: Documentation
+
+importlib.metadata is no longer provisional.
+
+..
+
+.. bpo: 44544
+.. date: 2021-07-02-14-02-29
+.. nonce: _5_aCz
+.. section: Documentation
+
+List all kwargs for :func:`textwrap.wrap`, :func:`textwrap.fill`, and
+:func:`textwrap.shorten`. Now, there are nav links to attributes of
+:class:`TextWrap`, which makes navigation much easier while minimizing
+duplication in the documentation.
+
+..
+
+.. bpo: 44453
+.. date: 2021-06-18-06-44-45
+.. nonce: 3PIkj2
+.. section: Documentation
+
+Fix documentation for the return type of :func:`sysconfig.get_path`.
+
+..
+
+.. bpo: 44734
+.. date: 2021-07-24-20-09-15
+.. nonce: KKsNOV
+.. section: Tests
+
+Fixed floating point precision issue in turtle tests.
+
+..
+
+.. bpo: 44708
+.. date: 2021-07-22-16-38-39
+.. nonce: SYNaac
+.. section: Tests
+
+Regression tests, when run with -w, are now re-running only the affected
+test methods instead of re-running the entire test file.
+
+..
+
+.. bpo: 44647
+.. date: 2021-07-16-14-02-33
+.. nonce: 5LzqIy
+.. section: Tests
+
+Added a permanent Unicode-valued environment variable to regression tests to
+ensure they handle this use case in the future. If your test environment
+breaks because of that, report a bug to us, and temporarily set
+PYTHONREGRTEST_UNICODE_GUARD=0 in your test environment.
+
+..
+
+.. bpo: 44515
+.. date: 2021-06-26-18-37-36
+.. nonce: e9fO6f
+.. section: Tests
+
+Adjust recently added contextlib tests to avoid assuming the use of a
+refcounted GC
+
+..
+
+.. bpo: 44572
+.. date: 2021-07-13-15-32-49
+.. nonce: gXvhDc
+.. section: Windows
+
+Avoid consuming standard input in the :mod:`platform` module
+
+..
+
+.. bpo: 40263
+.. date: 2020-04-13-15-20-28
+.. nonce: 1KKEbu
+.. section: Windows
+
+This is a follow-on bug from https://bugs.python.org/issue26903. Once that
+is applied we run into an off-by-one assertion problem. The assert was not
+correct.
+
+..
+
+.. bpo: 41972
+.. date: 2021-07-12-15-42-02
+.. nonce: yUjE8j
+.. section: macOS
+
+The framework build's user header path in sysconfig is changed to add a
+'pythonX.Y' component to match distutils's behavior.
+
+..
+
+.. bpo: 34932
+.. date: 2021-03-29-21-11-23
+.. nonce: f3Hdyd
+.. section: macOS
+
+Add socket.TCP_KEEPALIVE support for macOS. Patch by Shane Harvey.
+
+..
+
+.. bpo: 44756
+.. date: 2021-07-28-00-51-55
+.. nonce: pvAajB
+.. section: Tools/Demos
+
+In the Makefile for documentation (:file:`Doc/Makefile`), the ``build`` rule
+is dependent on the ``venv`` rule. Therefore, ``html``, ``latex``, and other
+build-dependent rules are also now dependent on ``venv``. The ``venv`` rule
+only performs an action if ``$(VENVDIR)`` does not exist.
+:file:`Doc/README.rst` was updated; most users now only need to type ``make
+html``.
+
+..
+
+.. bpo: 41103
+.. date: 2021-07-29-16-04-28
+.. nonce: hiKKcF
+.. section: C API
+
+Reverts removal of the old buffer protocol because they are part of stable
+ABI.
+
+..
+
+.. bpo: 42747
+.. date: 2021-07-20-16-21-06
+.. nonce: rRxjUY
+.. section: C API
+
+The ``Py_TPFLAGS_HAVE_VERSION_TAG`` type flag now does nothing. The
+``Py_TPFLAGS_HAVE_AM_SEND`` flag (which was added in 3.10) is removed. Both
+were unnecessary because it is not possible to have type objects with the
+relevant fields missing.
