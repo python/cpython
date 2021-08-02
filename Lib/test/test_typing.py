@@ -1558,6 +1558,24 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
 
+    def test_protocol_init_method(self):  # see bpo-44806
+        class P(Protocol):
+            x: int
+
+        class D1(P):
+            pass
+
+        class D2(P):
+            def __init__(self, x):
+                self.x = x
+
+        with self.assertRaisesRegex(TypeError, r"D1\(\) takes no arguments"):
+            D1(x=1)
+
+        d2 = D2(x=1)
+
+        self.assertIsInstance(d2, D2)
+        self.assertEqual(d2.x, 1)
 
 class GenericTests(BaseTestCase):
 
