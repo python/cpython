@@ -758,12 +758,12 @@ exit:
 #if defined(HAVE_SERIALIZE_API)
 
 PyDoc_STRVAR(serialize__doc__,
-"serialize($self, /, *, schema=\'main\')\n"
+"serialize($self, /, *, name=\'main\')\n"
 "--\n"
 "\n"
 "Serialize a database into a byte string. Non-standard.\n"
 "\n"
-"  schema\n"
+"  name\n"
 "    Which database to serialize.\n"
 "\n"
 "For an ordinary on-disk database file, the serialization is just a copy of the\n"
@@ -775,17 +775,17 @@ PyDoc_STRVAR(serialize__doc__,
     {"serialize", (PyCFunction)(void(*)(void))serialize, METH_FASTCALL|METH_KEYWORDS, serialize__doc__},
 
 static PyObject *
-serialize_impl(pysqlite_Connection *self, const char *schema);
+serialize_impl(pysqlite_Connection *self, const char *name);
 
 static PyObject *
 serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"schema", NULL};
+    static const char * const _keywords[] = {"name", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "serialize", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    const char *schema = "main";
+    const char *name = "main";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
     if (!args) {
@@ -795,20 +795,20 @@ serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_kwonly;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("serialize", "argument 'schema'", "str", args[0]);
+        _PyArg_BadArgument("serialize", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t schema_length;
-    schema = PyUnicode_AsUTF8AndSize(args[0], &schema_length);
-    if (schema == NULL) {
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
         goto exit;
     }
-    if (strlen(schema) != (size_t)schema_length) {
+    if (strlen(name) != (size_t)name_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = serialize_impl(self, schema);
+    return_value = serialize_impl(self, name);
 
 exit:
     return return_value;
@@ -819,14 +819,14 @@ exit:
 #if defined(HAVE_SERIALIZE_API)
 
 PyDoc_STRVAR(deserialize__doc__,
-"deserialize($self, data, /, *, schema=\'main\')\n"
+"deserialize($self, data, /, *, name=\'main\')\n"
 "--\n"
 "\n"
 "Load a serialized database. Non-standard.\n"
 "\n"
 "  data\n"
 "    The serialized database content\n"
-"  schema\n"
+"  name\n"
 "    Which database to reopen with the deserialization.\n"
 "\n"
 "The deserialize interface causes the database connection to disconnect from the\n"
@@ -841,18 +841,18 @@ PyDoc_STRVAR(deserialize__doc__,
 
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
-                 const char *schema);
+                 const char *name);
 
 static PyObject *
 deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "schema", NULL};
+    static const char * const _keywords[] = {"", "name", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "deserialize", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
-    const char *schema = "main";
+    const char *name = "main";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -879,20 +879,20 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_kwonly;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("deserialize", "argument 'schema'", "str", args[1]);
+        _PyArg_BadArgument("deserialize", "argument 'name'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t schema_length;
-    schema = PyUnicode_AsUTF8AndSize(args[1], &schema_length);
-    if (schema == NULL) {
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
+    if (name == NULL) {
         goto exit;
     }
-    if (strlen(schema) != (size_t)schema_length) {
+    if (strlen(name) != (size_t)name_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = deserialize_impl(self, &data, schema);
+    return_value = deserialize_impl(self, &data, name);
 
 exit:
     /* Cleanup for data */
@@ -975,4 +975,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=246bf62d1e58e291 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0cd7297d88c73eb input=a9049054013a1b77]*/

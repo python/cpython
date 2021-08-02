@@ -1796,7 +1796,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
 _sqlite3.Connection.serialize as serialize
 
     *
-    schema: str = "main"
+    name: str = "main"
         Which database to serialize.
 
 Serialize a database into a byte string. Non-standard.
@@ -1808,8 +1808,8 @@ where backed up to disk.
 [clinic start generated code]*/
 
 static PyObject *
-serialize_impl(pysqlite_Connection *self, const char *schema)
-/*[clinic end generated code: output=b246381f2b3f1d84 input=618605a185793d6b]*/
+serialize_impl(pysqlite_Connection *self, const char *name)
+/*[clinic end generated code: output=97342b0e55239dd3 input=4b6efe5a4d524470]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1817,11 +1817,11 @@ serialize_impl(pysqlite_Connection *self, const char *schema)
 
     sqlite3_int64 size;
     const unsigned int flags = 0;
-    const char *data = (const char *)sqlite3_serialize(self->db, schema, &size,
+    const char *data = (const char *)sqlite3_serialize(self->db, name, &size,
                                                        flags);
     if (data == NULL) {
         PyErr_Format(self->OperationalError, "unable to serialize '%s'",
-                     schema);
+                     name);
         return NULL;
     }
     PyObject *res = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
@@ -1836,7 +1836,7 @@ _sqlite3.Connection.deserialize as deserialize
         The serialized database content
     /
     *
-    schema: str = "main"
+    name: str = "main"
         Which database to reopen with the deserialization.
 
 Load a serialized database. Non-standard.
@@ -1851,8 +1851,8 @@ currently in a read transaction or is involved in a backup operation.
 
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
-                 const char *schema)
-/*[clinic end generated code: output=96b8470aaebf1b25 input=dfe957b21dc48572]*/
+                 const char *name)
+/*[clinic end generated code: output=e394c798b98bad89 input=648327de6cdc107e]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1881,7 +1881,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                                SQLITE_DESERIALIZE_RESIZEABLE;
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_deserialize(self->db, schema, buf, size, size, flags);
+    rc = sqlite3_deserialize(self->db, name, buf, size, size, flags);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {

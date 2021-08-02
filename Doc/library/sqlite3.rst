@@ -616,7 +616,7 @@ Connection Objects
       .. versionadded:: 3.7
 
 
-   .. method:: serialize(*, schema="main")
+   .. method:: serialize(*, name="main")
 
       This method serializes a database into a :class:`bytes` sequence.  For an
       ordinary on-disk database file, the serialization is just a copy of the
@@ -624,16 +624,16 @@ Connection Objects
       serialization is the same sequence of bytes which would be written to
       disk if that database where backed up to disk.
 
-      *schema* is the database to be serialized, and defaults to the main
+      *name* is the database to be serialized, and defaults to the main
       database.
 
       .. versionadded:: 3.11
 
 
-   .. method:: deserialize(data, /, *, schema="main")
+   .. method:: deserialize(data, /, *, name="main")
 
       This method causes the database connection to disconnect from database
-      *schema*, and reopen *schema* as an in-memory database based on the
+      *name*, and reopen *name* as an in-memory database based on the
       serialization contained in *data*.  Deserialization will fail with
       ``SQLITE_BUSY`` if the database is currently in a read transaction or is
       involved in a backup operation.
