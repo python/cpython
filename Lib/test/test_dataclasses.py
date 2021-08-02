@@ -3831,5 +3831,19 @@ class TestKeywordArgs(unittest.TestCase):
                 c: int = 1
                 d: int
 
+    def test_lazy_init_var_get_type_hints(self):
+        @dataclass
+        class Foo:
+            a: "InitVar[int]"
+
+        hints = get_type_hints(Foo)
+
+        self.assertIsInstance(hints.get("a"), InitVar)
+        self.assertEqual(hints.get("a").type, int)
+
+    def test_init_var_is_not_callable(self):
+        with self.assertRaisesRegex(TypeError, r"InitVar object is not callable"):
+            InitVar[int]()
+
 if __name__ == '__main__':
     unittest.main()

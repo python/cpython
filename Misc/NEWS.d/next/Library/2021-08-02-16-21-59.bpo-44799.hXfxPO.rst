@@ -1,0 +1,2 @@
+Fix issue when ``dataclass.InitVar`` can not be evaluated using
+``typing.get_type_hints``. Patch provided by Yurii Karabas.

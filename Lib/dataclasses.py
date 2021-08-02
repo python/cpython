@@ -228,6 +228,9 @@ class InitVar:
     def __init__(self, type):
         self.type = type
 
+    def __call__(self, *args, **kwargs):  # required by typing.get_type_hints, see bpo-44799
+        raise TypeError("InitVar object is not callable")
+
     def __repr__(self):
         if isinstance(self.type, type):
             type_name = self.type.__name__
