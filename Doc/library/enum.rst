@@ -22,7 +22,7 @@
    * :ref:`Advanced Tutorial <enum-advanced-tutorial>`
    * :ref:`Enum Cookbook <enum-cookbook>`
 
-----------------
+---------------
 
 An enumeration:
 
@@ -58,6 +58,7 @@ are not normal Python classes.  See
      :attr:`Color.RED` is ``RED``, the value of :attr:`Color.BLUE` is
      ``3``, etc.)
 
+---------------
 
 Module Contents
 ---------------
@@ -73,12 +74,12 @@ Module Contents
    :class:`IntEnum`
 
       Base class for creating enumerated constants that are also
-      subclasses of :class:`int`.
+      subclasses of :class:`int`. (`Notes`_)
 
    :class:`StrEnum`
 
       Base class for creating enumerated constants that are also
-      subclasses of :class:`str`.
+      subclasses of :class:`str`. (`Notes`_)
 
    :class:`Flag`
 
@@ -89,7 +90,7 @@ Module Contents
 
       Base class for creating enumerated constants that can be combined using
       the bitwise operators without losing their :class:`IntFlag` membership.
-      :class:`IntFlag` members are also subclasses of :class:`int`.
+      :class:`IntFlag` members are also subclasses of :class:`int`. (`Notes`_)
 
    :class:`EnumCheck`
 
@@ -130,8 +131,9 @@ Module Contents
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.10  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``
 
+---------------
 
 Data Types
 ----------
@@ -271,7 +273,7 @@ Data Types
          ...     SUNDAY = 7
          ...     @classmethod
          ...     def today(cls):
-         ...         print('today is %s' % cls(date.today.isoweekday).naem)
+         ...         print('today is %s' % cls(date.today().isoweekday()).name)
          >>> dir(Weekday.SATURDAY)
          ['__class__', '__doc__', '__module__', 'name', 'today', 'value']
 
@@ -582,7 +584,7 @@ Data Types
 
    CONTINUOUS and NAMED_FLAGS are designed to work with integer-valued members.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. class:: FlagBoundary
 
@@ -645,8 +647,9 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          KeepFlag.BLUE|0x10
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
+---------------
 
 Utilites and Decorators
 -----------------------
@@ -670,7 +673,7 @@ Utilites and Decorators
    also injects the members, and their aliases, into the global namespace they
    were defined in.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. decorator:: property
 
@@ -683,7 +686,7 @@ Utilites and Decorators
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
 
 .. decorator:: unique
 
@@ -709,4 +712,26 @@ Utilites and Decorators
    :class:`EnumCheck` are used to specify which constraints should be checked
    on the decorated enumeration.
 
-.. versionadded:: 3.10
+.. versionadded:: 3.11
+
+---------------
+
+Notes
+-----
+
+:class:`IntEnum`, :class:`StrEnum`, and :class:`IntFlag`
+
+    These three enum types are designed to be drop-in replacements for existing
+    integer- and string-based values; as such, they have extra limitations:
+
+    - ``format()`` will use the value of the enum member, unless ``__str__``
+      has been overridden
+
+    - ``StrEnum.__str__`` uses the value and not the name of the enum member
+
+    If you do not need/want those limitations, you can create your own base
+    class by mixing in the ``int`` or ``str`` type yourself::
+
+        >>> from enum import Enum
+        >>> class MyIntEnum(int, Enum):
+        ...     pass

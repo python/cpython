@@ -1,0 +1,2 @@
+Fix very unlikely resource leak in :mod:`glob` in alternate Python
+implementations.

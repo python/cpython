@@ -27,7 +27,7 @@ Introduction
     Pynche must find a text database of colors names in order to
     provide `nearest' color matching.  Pynche is distributed with an
     rgb.txt file from the X11R6.4 distribution for this reason, along
-    with other "Web related" database (see below).  You can use a
+    with other "web related" database (see below).  You can use a
     different file with the -d option.  The file xlicense.txt contains
     the license only for rgb.txt and both files are in the X/
     subdirectory.
@@ -356,7 +356,7 @@ Color Name Database Files
 
     html40colors.txt -- the HTML 4.0 guaranteed color names
 
-    websafe.txt -- the 216 "Web-safe" colors that Netscape and MSIE
+    websafe.txt -- the 216 "web-safe" colors that Netscape and MSIE
     guarantee will not be dithered.  These are specified in #rrggbb
     format for both values and names
 

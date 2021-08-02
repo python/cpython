@@ -2,6 +2,107 @@
 preserve
 [clinic start generated code]*/
 
+static int
+pysqlite_connection_init_impl(pysqlite_Connection *self,
+                              PyObject *database_obj, double timeout,
+                              int detect_types, PyObject *isolation_level,
+                              int check_same_thread, PyObject *factory,
+                              int cached_statements, int uri);
+
+static int
+pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Connection", 0};
+    PyObject *argsbuf[8];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *database_obj;
+    double timeout = 5.0;
+    int detect_types = 0;
+    PyObject *isolation_level = NULL;
+    int check_same_thread = 1;
+    PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
+    int cached_statements = 128;
+    int uri = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(fastargs[0], &database_obj)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        if (PyFloat_CheckExact(fastargs[1])) {
+            timeout = PyFloat_AS_DOUBLE(fastargs[1]);
+        }
+        else
+        {
+            timeout = PyFloat_AsDouble(fastargs[1]);
+            if (timeout == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[2]) {
+        detect_types = _PyLong_AsInt(fastargs[2]);
+        if (detect_types == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[3]) {
+        isolation_level = fastargs[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[4]) {
+        check_same_thread = _PyLong_AsInt(fastargs[4]);
+        if (check_same_thread == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[5]) {
+        factory = fastargs[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[6]) {
+        cached_statements = _PyLong_AsInt(fastargs[6]);
+        if (cached_statements == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    uri = PyObject_IsTrue(fastargs[7]);
+    if (uri < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database_obj, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(pysqlite_connection_cursor__doc__,
 "cursor($self, /, factory=<unrepresentable>)\n"
 "--\n"
@@ -475,7 +576,7 @@ PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
 "\n"
-"Executes a multiple SQL statements at once. Non-standard.");
+"Executes multiple SQL statements at once. Non-standard.");
 
 #define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
@@ -621,13 +722,14 @@ PyDoc_STRVAR(pysqlite_connection_create_collation__doc__,
 
 static PyObject *
 pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
-                                          PyObject *name, PyObject *callable);
+                                          const char *name,
+                                          PyObject *callable);
 
 static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *name;
+    const char *name;
     PyObject *callable;
 
     if (!_PyArg_CheckPositional("create_collation", nargs, 2, 2)) {
@@ -637,10 +739,15 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyObject *const 
         _PyArg_BadArgument("create_collation", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
         goto exit;
     }
-    name = args[0];
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
     callable = args[1];
     return_value = pysqlite_connection_create_collation_impl(self, name, callable);
 
@@ -710,4 +817,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=1ee2f6173f4acec3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7a899c4e41381ac input=a9049054013a1b77]*/

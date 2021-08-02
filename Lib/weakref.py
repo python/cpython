@@ -2,7 +2,7 @@
 
 This module is an implementation of PEP 205:
 
-http://www.python.org/dev/peps/pep-0205/
+https://www.python.org/dev/peps/pep-0205/
 """
 
 # Naming convention: Variables named "wr" are weak reference objects;

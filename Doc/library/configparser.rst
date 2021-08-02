@@ -46,6 +46,11 @@ can be customized by end users easily.
 
    import configparser
 
+.. testcleanup::
+
+   import os
+   os.remove("example.ini")
+
 
 Quick Start
 -----------

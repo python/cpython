@@ -635,11 +635,11 @@ class TestPendingCalls(unittest.TestCase):
             #unsuccessful.
             while True:
                 if _testcapi._pending_threadfunc(callback):
-                    break;
+                    break
 
     def pendingcalls_wait(self, l, n, context = None):
         #now, stick around until l[0] has grown to 10
-        count = 0;
+        count = 0
         while len(l) != n:
             #this busy loop is where we expect to be interrupted to
             #run our callbacks.  Note that callbacks are only run on the

@@ -428,10 +428,9 @@ def compiler_fixup(compiler_so, cc_args):
             break
 
     if sysroot and not os.path.isdir(sysroot):
-        from distutils import log
-        log.warn("Compiling with an SDK that doesn't seem to exist: %s",
-                sysroot)
-        log.warn("Please check your Xcode installation")
+        sys.stderr.write(f"Compiling with an SDK that doesn't seem to exist: {sysroot}\n")
+        sys.stderr.write("Please check your Xcode installation\n")
+        sys.stderr.flush()
 
     return compiler_so
 
