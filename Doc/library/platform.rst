@@ -42,7 +42,7 @@ Cross Platform
 
    .. note::
 
-      On Mac OS X (and perhaps other platforms), executable files may be
+      On macOS (and perhaps other platforms), executable files may be
       universal files containing multiple architectures.
 
       To get at the "64-bitness" of the current interpreter, it is more
