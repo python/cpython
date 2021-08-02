@@ -1,0 +1,1 @@
+Fix bug where :func:`pdb.run` fails due to locals not being a valid mapping.
