@@ -1,3 +1,3 @@
 Fix issue when ``typing.Protocol`` delivered class get ``__init__`` method
-that can accepts unlimited *args and **kwargs. Patch provided by Yurii
+that can accepts unlimited `*args` and `**kwargs`. Patch provided by Yurii
 Karabas.
