@@ -1,0 +1,1 @@
+Expose the OpenSSL function SSL_CTX_set1_sigalgs_list to allow the user to modify the supported signature algorithms for a given SSL Context.
