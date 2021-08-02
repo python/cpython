@@ -369,7 +369,8 @@ def getmodule(module):
     except KeyError:
         try:
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
+                action = 'always' if support.verbose else 'ignore'
+                warnings.simplefilter(action, DeprecationWarning)
                 __import__(module)
         except AttributeError as exc:
             if support.verbose:
