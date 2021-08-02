@@ -227,7 +227,7 @@ The :mod:`csv` module defines the following classes:
 
    The :class:`Dialect` class is a container class whose attributes contain
    information for how to handle doublequotes, whitespace, delimiters, etc.
-   Due to the lack of a strict csv specification, different applications
+   Due to the lack of a strict CSV specification, different applications
    produce subtly different csv data.  :class:`Dialect` instances define how
    :class:`reader` and :class:`writer` instances behave.
 
