@@ -31,6 +31,9 @@ def url2pathname(url):
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
+    if len(comp[0]) > 1 and comp[0][-2] not in {"/", "\\"}:
+        error = 'Bad URL (too many drive letters [before the first | ]): ' + url
+        raise OSError(error)
     drive = comp[0][-1].upper()
     components = comp[1].split('/')
     path = drive + ':'
