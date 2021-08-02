@@ -46,7 +46,7 @@ import threading
 
 
 if sys.platform == 'darwin':
-    darwin_malloc_err_warning()
+    darwin_malloc_err_warning('test_decimal')
 
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
