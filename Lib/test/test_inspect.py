@@ -587,11 +587,12 @@ class TestRetrievingSourceCode(GetSourceBase):
 
 class TestGetsourceInteractive(unittest.TestCase):
     def tearDown(self):
-        mod.ParrotDroppings.__module__ = mod
+        mod.ParrotDroppings.__module__ = self.mod
         sys.modules['__main__'] = self.main
 
     def test_getclasses_interactive(self):
         self.main = sys.modules['__main__']
+        self.mod = mod.ParrotDroppings.__module__
         class MockModule:
             __file__ = None
         sys.modules['__main__'] = MockModule
