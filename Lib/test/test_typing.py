@@ -1569,13 +1569,23 @@ class ProtocolTests(BaseTestCase):
             def __init__(self, x):
                 self.x = x
 
-        with self.assertRaisesRegex(TypeError, r"D1\(\) takes no arguments"):
-            D1(x=1)
+        class B:
+            def __init__(self, x):
+                self.x = x
 
-        d2 = D2(x=1)
+        class D3(P, B):
+            pass
 
-        self.assertIsInstance(d2, D2)
-        self.assertEqual(d2.x, 1)
+        with self.subTest(cls=D1):
+            with self.assertRaisesRegex(TypeError, r"D1\(\) takes no arguments"):
+                D1(x=1)
+
+        for cls in (D2, D3):
+            with self.subTest(cls=cls):
+                d = cls(x=1)
+
+                self.assertIsInstance(d, cls)
+                self.assertEqual(d.x, 1)
 
 class GenericTests(BaseTestCase):
 

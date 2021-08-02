@@ -1523,8 +1523,11 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
             if '__init__' not in cls.__dict__:
-                # bpo-44806: reset __init__ method to default one
-                cls.__init__ = object.__init__
+                # bpo-44806: reset __init__ method to correct one
+                cls.__init__ = next(
+                    (b.__init__ for b in cls.__bases__ if b.__init__ is not _no_init),
+                    object.__init__,
+                )
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.
