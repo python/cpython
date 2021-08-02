@@ -478,6 +478,43 @@ _ssl__SSLContext_get_ciphers(PySSLContext *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLContext_get_ciphers_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_set_sigalgs__doc__,
+"set_sigalgs($self, sigalgslist, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_SIGALGS_METHODDEF    \
+    {"set_sigalgs", (PyCFunction)_ssl__SSLContext_set_sigalgs, METH_O, _ssl__SSLContext_set_sigalgs__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_sigalgs_impl(PySSLContext *self,
+                                  const char *sigalgslist);
+
+static PyObject *
+_ssl__SSLContext_set_sigalgs(PySSLContext *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *sigalgslist;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_sigalgs", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t sigalgslist_length;
+    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    if (sigalgslist == NULL) {
+        goto exit;
+    }
+    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = _ssl__SSLContext_set_sigalgs_impl(self, sigalgslist);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLContext__set_alpn_protocols__doc__,
 "_set_alpn_protocols($self, protos, /)\n"
 "--\n"
@@ -1358,4 +1395,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=5a7d7bf5cf8ee092 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dc8dd31a56fe1181 input=a9049054013a1b77]*/
