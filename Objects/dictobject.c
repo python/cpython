@@ -1798,6 +1798,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
     assert(old_value != NULL);
     mp->ma_used--;
     mp->ma_version_tag = DICT_NEXT_VERSION();
+    mp->ma_keys->dk_version = 0;
     dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
     ep = &DK_ENTRIES(mp->ma_keys)[ix];
     mp->ma_keys->dk_version = 0;
