@@ -31,7 +31,6 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
 
-#define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"               // EXTENDED_ARG
 #include "wordcode_helpers.h"     // instrsize()
 
