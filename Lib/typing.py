@@ -1417,7 +1417,7 @@ _PROTO_ALLOWLIST = {
 
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
-    # the lack of __instancehook__.
+    # the lack of __subclasshook__.
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
