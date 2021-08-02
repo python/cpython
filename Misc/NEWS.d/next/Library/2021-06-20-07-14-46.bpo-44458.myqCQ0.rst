@@ -1,0 +1,1 @@
+``BUFFER_BLOCK_SIZE`` is now declared static, to avoid linking collisions when bz2, lmza or zlib are statically linked.

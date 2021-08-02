@@ -1086,7 +1086,7 @@ class GetSourcefileTests(unittest.TestCase):
         # Given a valid bytecode path, return the path to the corresponding
         # source file if it exists.
         with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
-            _path_isfile.return_value = True;
+            _path_isfile.return_value = True
             path = TESTFN + '.pyc'
             expect = TESTFN + '.py'
             self.assertEqual(_get_sourcefile(path), expect)
@@ -1095,7 +1095,7 @@ class GetSourcefileTests(unittest.TestCase):
         # Given a valid bytecode path without a corresponding source path,
         # return the original bytecode path.
         with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
-            _path_isfile.return_value = False;
+            _path_isfile.return_value = False
             path = TESTFN + '.pyc'
             self.assertEqual(_get_sourcefile(path), path)
 
@@ -1346,6 +1346,16 @@ class CircularImportTests(unittest.TestCase):
         self.assertIn(
             "cannot import name 'b' from partially initialized module "
             "'test.test_import.data.circular_imports.from_cycle1' "
+            "(most likely due to a circular import)",
+            str(cm.exception),
+        )
+
+    def test_absolute_circular_submodule(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.subpkg2.parent
+        self.assertIn(
+            "cannot access submodule 'parent' of module "
+            "'test.test_import.data.circular_imports.subpkg2' "
             "(most likely due to a circular import)",
             str(cm.exception),
         )

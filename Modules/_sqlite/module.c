@@ -41,69 +41,51 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-/* static objects at module-level */
-
-PyObject *pysqlite_Error = NULL;
-PyObject *pysqlite_Warning = NULL;
-PyObject *pysqlite_InterfaceError = NULL;
-PyObject *pysqlite_DatabaseError = NULL;
-PyObject *pysqlite_InternalError = NULL;
-PyObject *pysqlite_OperationalError = NULL;
-PyObject *pysqlite_ProgrammingError = NULL;
-PyObject *pysqlite_IntegrityError = NULL;
-PyObject *pysqlite_DataError = NULL;
-PyObject *pysqlite_NotSupportedError = NULL;
-
-PyObject* _pysqlite_converters = NULL;
-int _pysqlite_enable_callback_tracebacks = 0;
-int pysqlite_BaseTypeAdapted = 0;
-
 pysqlite_state pysqlite_global_state;
 
-static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
-        kwargs)
+// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
+/*[clinic input]
+_sqlite3.connect as pysqlite_connect
+
+    database: object(converter='PyUnicode_FSConverter')
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: bool(accept={int}) = True
+    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
+    cached_statements: int = 128
+    uri: bool = False
+
+Opens a connection to the SQLite database file database.
+
+You can use ":memory:" to open a database connection to a database that resides
+in RAM instead of on disk.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
+                      int detect_types, PyObject *isolation_level,
+                      int check_same_thread, PyObject *factory,
+                      int cached_statements, int uri)
+/*[clinic end generated code: output=450ac9078b4868bb input=ea6355ba55a78e12]*/
 {
-    /* Python seems to have no way of extracting a single keyword-arg at
-     * C-level, so this code is redundant with the one in connection_init in
-     * connection.c and must always be copied from there ... */
-
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-    PyObject* database;
-    int detect_types = 0;
-    PyObject* isolation_level;
-    PyObject* factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements;
-    int uri = 0;
-    double timeout = 5.0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return NULL;
+    if (isolation_level == NULL) {
+        isolation_level = PyUnicode_FromString("");
+        if (isolation_level == NULL) {
+            return NULL;
+        }
     }
-
-    if (factory == NULL) {
-        pysqlite_state *state = pysqlite_get_state(self);
-        factory = (PyObject *)state->ConnectionType;
+    else {
+        Py_INCREF(isolation_level);
     }
-
-    return PyObject_Call(factory, args, kwargs);
+    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
+                                          timeout, detect_types,
+                                          isolation_level, check_same_thread,
+                                          factory, cached_statements, uri);
+    Py_DECREF(database);  // needed bco. the AC FSConverter
+    Py_DECREF(isolation_level);
+    return res;
 }
-
-PyDoc_STRVAR(module_connect_doc,
-"connect(database[, timeout, detect_types, isolation_level,\n\
-        check_same_thread, factory, cached_statements, uri])\n\
-\n\
-Opens a connection to the SQLite database file *database*. You can use\n\
-\":memory:\" to open a database connection to a database that resides in\n\
-RAM instead of on disk.");
 
 /*[clinic input]
 _sqlite3.complete_statement as pysqlite_complete_statement
@@ -143,7 +125,8 @@ pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
     rc = sqlite3_enable_shared_cache(do_enable);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
+        pysqlite_state *state = pysqlite_get_state(module);
+        PyErr_SetString(state->OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -171,10 +154,11 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
             || type == &PyUnicode_Type || type == &PyByteArray_Type) {
-        pysqlite_BaseTypeAdapted = 1;
+        pysqlite_state *state = pysqlite_get_state(module);
+        state->BaseTypeAdapted = 1;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
+    pysqlite_state *state = pysqlite_get_state(module);
     PyObject *protocol = (PyObject *)state->PrepareProtocolType;
     rc = pysqlite_microprotocols_add(type, protocol, caster);
     if (rc == -1) {
@@ -209,7 +193,8 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
         goto error;
     }
 
-    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    if (PyDict_SetItem(state->converters, name, callable) != 0) {
         goto error;
     }
 
@@ -232,7 +217,8 @@ static PyObject *
 pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
 /*[clinic end generated code: output=4ff1d051c698f194 input=cb79d3581eb77c40]*/
 {
-    _pysqlite_enable_callback_tracebacks = enable;
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->enable_callback_tracebacks = enable;
 
     Py_RETURN_NONE;
 }
@@ -253,20 +239,19 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
 /*[clinic end generated code: output=0c3927c5fcd23dd9 input=c8995aeb25d0e542]*/
 {
-    return pysqlite_microprotocols_adapt(obj, proto, alt);
+    pysqlite_state *state = pysqlite_get_state(module);
+    return pysqlite_microprotocols_adapt(state, obj, proto, alt);
 }
 
 static int converters_init(PyObject* module)
 {
-    _pysqlite_converters = PyDict_New();
-    if (!_pysqlite_converters) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->converters = PyDict_New();
+    if (state->converters == NULL) {
         return -1;
     }
 
-    int res = PyModule_AddObjectRef(module, "converters", _pysqlite_converters);
-    Py_DECREF(_pysqlite_converters);
-
-    return res;
+    return PyModule_AddObjectRef(module, "converters", state->converters);
 }
 
 static int
@@ -287,10 +272,9 @@ load_functools_lru_cache(PyObject *module)
 }
 
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)(void(*)(void))module_connect,
-     METH_VARARGS | METH_KEYWORDS, module_connect_doc},
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
+    PYSQLITE_CONNECT_METHODDEF
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
@@ -364,17 +348,13 @@ do {                                           \
     }                                          \
 } while (0)
 
-#define ADD_EXCEPTION(module, name, exc, base)                  \
-do {                                                            \
-    exc = PyErr_NewException(MODULE_NAME "." name, base, NULL); \
-    if (!exc) {                                                 \
-        goto error;                                             \
-    }                                                           \
-    int res = PyModule_AddObjectRef(module, name, exc);         \
-    Py_DECREF(exc);                                             \
-    if (res < 0) {                                              \
-        goto error;                                             \
-    }                                                           \
+#define ADD_EXCEPTION(module, state, exc, base)                        \
+do {                                                                   \
+    state->exc = PyErr_NewException(MODULE_NAME "." #exc, base, NULL); \
+    if (state->exc == NULL) {                                          \
+        goto error;                                                    \
+    }                                                                  \
+    ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
 } while (0)
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
@@ -411,20 +391,20 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-    ADD_EXCEPTION(module, "Error", pysqlite_Error, PyExc_Exception);
-    ADD_EXCEPTION(module, "Warning", pysqlite_Warning, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Error, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Warning, PyExc_Exception);
 
     /* Error subclasses */
-    ADD_EXCEPTION(module, "InterfaceError", pysqlite_InterfaceError, pysqlite_Error);
-    ADD_EXCEPTION(module, "DatabaseError", pysqlite_DatabaseError, pysqlite_Error);
+    ADD_EXCEPTION(module, state, InterfaceError, state->Error);
+    ADD_EXCEPTION(module, state, DatabaseError, state->Error);
 
-    /* pysqlite_DatabaseError subclasses */
-    ADD_EXCEPTION(module, "InternalError", pysqlite_InternalError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
+    /* DatabaseError subclasses */
+    ADD_EXCEPTION(module, state, InternalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, OperationalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, ProgrammingError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, IntegrityError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, DataError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {
