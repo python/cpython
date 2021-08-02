@@ -1,0 +1,2 @@
+Forbid to define ``__init__`` method in ``Protocol`` classes. Patch provided
+by Yurii Karabas.

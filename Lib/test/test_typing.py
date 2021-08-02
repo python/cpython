@@ -1558,6 +1558,13 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
 
+    def test_protocol_init_is_forbidden(self): # see bpo-44807
+        with self.assertRaisesRegex(TypeError, 'Protocols can not have __init__ method'):
+            class P(Protocol):
+                x: int
+
+                def __init__(self, x: int):
+                    self.x = x
 
 class GenericTests(BaseTestCase):
 

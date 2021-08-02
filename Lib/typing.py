@@ -1532,6 +1532,10 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
+
+        if '__init__' in cls.__dict__:
+            raise TypeError('Protocols can not have __init__ method')
+
         cls.__init__ = _no_init
 
 
