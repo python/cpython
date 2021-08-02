@@ -875,6 +875,9 @@ class ProtocolTests(BaseTestCase):
         class C(P): pass
 
         self.assertIsInstance(C(), C)
+        with self.assertRaises(TypeError):
+            C(42)
+
         T = TypeVar('T')
 
         class PG(Protocol[T]): pass
@@ -889,6 +892,8 @@ class ProtocolTests(BaseTestCase):
         class CG(PG[T]): pass
 
         self.assertIsInstance(CG[int](), CG)
+        with self.assertRaises(TypeError):
+            CG[int](42)
 
     def test_cannot_instantiate_abstract(self):
         @runtime_checkable
@@ -1315,6 +1320,37 @@ class ProtocolTests(BaseTestCase):
                 self.test = 'OK'
 
         self.assertEqual(C[int]().test, 'OK')
+
+        class B:
+            def __init__(self):
+                self.test = 'OK'
+
+        class D1(B, P[T]):
+            pass
+
+        self.assertEqual(D1[int]().test, 'OK')
+
+        class D2(P[T], B):
+            pass
+
+        self.assertEqual(D2[int]().test, 'OK')
+
+    def test_new_called(self):
+        T = TypeVar('T')
+
+        class P(Protocol[T]): pass
+
+        class C(P[T]):
+            def __new__(cls, *args):
+                self = super().__new__(cls, *args)
+                self.test = 'OK'
+                return self
+
+        self.assertEqual(C[int]().test, 'OK')
+        with self.assertRaises(TypeError):
+            C[int](42)
+        with self.assertRaises(TypeError):
+            C[int](a=42)
 
     def test_protocols_bad_subscripts(self):
         T = TypeVar('T')
