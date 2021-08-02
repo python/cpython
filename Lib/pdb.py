@@ -87,10 +87,8 @@ import linecache
 from typing import Union
 
 
-try:  # Try to load readline if it exists
+try:  # load readline if it exists
     import readline
-    # remove some common file name delimiters
-    readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
 except ImportError:
     pass
 
@@ -238,6 +236,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        if 'readline' in sys.modules:
+            # remove some common file name delimiters
+            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
         self.allow_kbdint = False
         self.nosigint = nosigint
 
