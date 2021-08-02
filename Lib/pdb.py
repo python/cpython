@@ -84,6 +84,8 @@ import functools
 import traceback
 import linecache
 
+import collections.abc
+
 from typing import Union
 
 
@@ -367,7 +369,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """This function is called when a return trap is set here."""
         if self._wait_for_mainpyfile:
             return
-        frame.f_locals['__return__'] = return_value
+        if isinstance(frame.f_locals, collections.abc.Mapping):
+            frame.f_locals['__return__'] = return_value
         self.message('--Return--')
         self.interaction(frame, None)
 

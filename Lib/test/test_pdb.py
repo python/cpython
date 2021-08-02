@@ -373,7 +373,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:97
+    Breakpoint 3 at ...pdb.py:99
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -1592,6 +1592,21 @@ def bœr():
         res = '\n'.join([x.strip() for x in stdout.splitlines()])
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
+
+    def test_pdb_issue_34782(self):
+        """ Do not fail due to locals of invalid type
+
+        >>> reset_Breakpoint()
+        >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ...    'continue',
+        ... ]):
+        ...    class FakeContainer:
+        ...        def __getitem__(self, key):
+        ...            raise KeyError(key)
+        ...    pdb.run('pass', {}, locals=FakeContainer())
+        > <string>(1)<module>()...
+        (Pdb) continue
+        """
 
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""

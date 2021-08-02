@@ -1,5 +1,6 @@
 """Debugger basics"""
 
+import collections.abc
 import fnmatch
 import sys
 import os
@@ -566,10 +567,11 @@ class Bdb:
         else:
             s += "<lambda>"
         s += '()'
-        if '__return__' in frame.f_locals:
-            rv = frame.f_locals['__return__']
-            s += '->'
-            s += reprlib.repr(rv)
+        if isinstance(frame.f_locals, collections.abc.Container):
+            if '__return__' in frame.f_locals:
+                rv = frame.f_locals['__return__']
+                s += '->'
+                s += reprlib.repr(rv)
         line = linecache.getline(filename, lineno, frame.f_globals)
         if line:
             s += lprefix + line.strip()
