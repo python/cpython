@@ -586,18 +586,14 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
 class TestGetsourceInteractive(unittest.TestCase):
-    def tearDown(self):
-        mod.ParrotDroppings.__module__ = mod
-        sys.modules['__main__'] = self.main
-
     def test_getclasses_interactive(self):
-        self.main = sys.modules['__main__']
-        class MockModule:
-            __file__ = None
-        sys.modules['__main__'] = MockModule
-        mod.ParrotDroppings.__module__ = '__main__'
-        with self.assertRaisesRegex(OSError, 'source code not available') as e:
-            inspect.getsource(mod.ParrotDroppings)
+        code = ("import sys, inspect; \
+                 sys.modules['__main__'].__file__ = None; \
+                 A = type('A', (), {}); \
+                 inspect.getsource(A)"
+               )
+        _, _, stderr = assert_python_failure("-c", code, __isolated=True)
+        self.assertIn(b'OSError: source code not available', stderr)
 
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
     fodderModule = mod
