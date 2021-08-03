@@ -1,2 +1,1 @@
-Type check the result of constructing the new exception instance in
-`_PyErr_CreateException`. Patch by Noah Oxer
+Fix crash when using passing a non-exception to a generator's ``throw()`` method. Patch by Noah Oxer
