@@ -180,6 +180,9 @@ extern int _Py_CheckSlotResult(
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
+int
+_PyObject_InitializeDict(PyObject *obj);
+
 #ifdef __cplusplus
 }
 #endif

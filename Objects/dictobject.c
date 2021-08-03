@@ -4866,6 +4866,28 @@ _PyDict_NewKeysForClass(void)
 
 #define CACHED_KEYS(tp) (((PyHeapTypeObject*)tp)->ht_cached_keys)
 
+int
+_PyObject_InitializeDict(PyObject *obj)
+{
+    PyObject *dict, **dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr == NULL) {
+        return 0;
+    }
+    dict = *dictptr;
+    if (dict == NULL) {
+        PyTypeObject *tp = Py_TYPE(obj);
+        if ((tp->tp_flags & Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
+            dictkeys_incref(CACHED_KEYS(tp));
+            *dictptr = dict = new_dict_with_shared_keys(CACHED_KEYS(tp));
+        }
+        else {
+            *dictptr = dict = PyDict_New();
+        }
+    }
+    return dict == NULL ? -1 : 0;
+}
+
+
 PyObject *
 PyObject_GenericGetDict(PyObject *obj, void *context)
 {
