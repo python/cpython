@@ -635,9 +635,7 @@ def __sleep0():
 
 async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
-    if loop is None:
-        loop = events.get_running_loop()
-    else:
+    if loop is not None:
         warnings.warn("The loop argument is deprecated since Python 3.8, "
                       "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
@@ -645,6 +643,9 @@ async def sleep(delay, result=None, *, loop=None):
     if delay <= 0:
         await __sleep0()
         return result
+
+    if loop is None:
+        loop = events.get_running_loop()
 
     future = loop.create_future()
     h = loop.call_later(delay,
