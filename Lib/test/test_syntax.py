@@ -140,6 +140,18 @@ SyntaxError: cannot assign to expression
 Traceback (most recent call last):
 SyntaxError: cannot assign to conditional expression
 
+>>> a = 42 if True
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> a = (42 if True)
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> a = [1, 42 if True, 4]
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
 >>> True = True = 3
 Traceback (most recent call last):
 SyntaxError: cannot assign to True
@@ -1305,7 +1317,7 @@ class SyntaxTestCase(unittest.TestCase):
         )
 
     def test_curly_brace_after_primary_raises_immediately(self):
-        self._check_error("f{", "invalid syntax", mode="single")
+        self._check_error("f{}", "invalid syntax", mode="single")
 
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")

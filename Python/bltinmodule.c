@@ -1952,24 +1952,31 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
     return PyNumber_Power(base, exp, mod);
 }
 
+/*[clinic input]
+print as builtin_print
 
-/* AC: cannot convert yet, waiting for *args support */
+    *args: object
+    sep: object(c_default="Py_None") = ' '
+        string inserted between values, default a space.
+    end: object(c_default="Py_None") = '\n'
+        string appended after the last value, default a newline.
+    file: object = None
+        a file-like object (stream); defaults to the current sys.stdout.
+    flush: bool = False
+        whether to forcibly flush the stream.
+
+Prints the values to a stream, or to sys.stdout by default.
+
+[clinic start generated code]*/
+
 static PyObject *
-builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
+                   PyObject *end, PyObject *file, int flush)
+/*[clinic end generated code: output=3cfc0940f5bc237b input=c143c575d24fe665]*/
 {
-    static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
-    static struct _PyArg_Parser _parser = {"|OOOp:print", _keywords, 0};
-    PyObject *sep = NULL, *end = NULL, *file = NULL;
-    int flush = 0;
     int i, err;
 
-    if (kwnames != NULL &&
-            !_PyArg_ParseStackAndKeywords(args + nargs, 0, kwnames, &_parser,
-                                          &sep, &end, &file, &flush)) {
-        return NULL;
-    }
-
-    if (file == NULL || file == Py_None) {
+    if (file == Py_None) {
         file = _PySys_GetObjectId(&PyId_stdout);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
@@ -1977,8 +1984,9 @@ builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         }
 
         /* sys.stdout may be None when FILE* stdout isn't connected */
-        if (file == Py_None)
+        if (file == Py_None) {
             Py_RETURN_NONE;
+        }
     }
 
     if (sep == Py_None) {
@@ -2000,47 +2008,44 @@ builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         return NULL;
     }
 
-    for (i = 0; i < nargs; i++) {
+    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
         if (i > 0) {
-            if (sep == NULL)
+            if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
-            else
-                err = PyFile_WriteObject(sep, file,
-                                         Py_PRINT_RAW);
-            if (err)
+            }
+            else {
+                err = PyFile_WriteObject(sep, file, Py_PRINT_RAW);
+            }
+            if (err) {
                 return NULL;
+            }
         }
-        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
-        if (err)
+        err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
+        if (err) {
             return NULL;
+        }
     }
 
-    if (end == NULL)
+    if (end == NULL) {
         err = PyFile_WriteString("\n", file);
-    else
+    }
+    else {
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
-    if (err)
+    }
+    if (err) {
         return NULL;
+    }
 
     if (flush) {
         PyObject *tmp = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
-        if (tmp == NULL)
+        if (tmp == NULL) {
             return NULL;
+        }
         Py_DECREF(tmp);
     }
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(print_doc,
-"print(value, ..., sep=' ', end='\\n', file=sys.stdout, flush=False)\n\
-\n\
-Prints the values to a stream, or to sys.stdout by default.\n\
-Optional keyword arguments:\n\
-file:  a file-like object (stream); defaults to the current sys.stdout.\n\
-sep:   string inserted between values, default a space.\n\
-end:   string appended after the last value, default a newline.\n\
-flush: whether to forcibly flush the stream.");
 
 
 /*[clinic input]
@@ -2644,7 +2649,6 @@ builtin_issubclass_impl(PyObject *module, PyObject *cls,
     return PyBool_FromLong(retval);
 }
 
-
 typedef struct {
     PyObject_HEAD
     Py_ssize_t tuplesize;
@@ -2955,7 +2959,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
-    {"print",           (PyCFunction)(void(*)(void))builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
+    BUILTIN_PRINT_METHODDEF
     BUILTIN_REPR_METHODDEF
     BUILTIN_ROUND_METHODDEF
     BUILTIN_SETATTR_METHODDEF

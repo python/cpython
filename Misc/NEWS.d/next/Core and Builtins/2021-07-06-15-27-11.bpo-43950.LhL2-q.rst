@@ -1,0 +1,6 @@
+Code objects can now provide the column information for instructions when
+available. This is levaraged during traceback printing to show the
+expressions responsible for errors.
+
+Contributed by Pablo Galindo, Batuhan Taskaya and Ammar Askar as part of
+:pep:`657`.

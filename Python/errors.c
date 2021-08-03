@@ -85,17 +85,29 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
 }
 
 static PyObject*
-_PyErr_CreateException(PyObject *exception, PyObject *value)
+_PyErr_CreateException(PyObject *exception_type, PyObject *value)
 {
+    PyObject *exc;
+
     if (value == NULL || value == Py_None) {
-        return _PyObject_CallNoArg(exception);
+        exc = _PyObject_CallNoArg(exception_type);
     }
     else if (PyTuple_Check(value)) {
-        return PyObject_Call(exception, value, NULL);
+        exc = PyObject_Call(exception_type, value, NULL);
     }
     else {
-        return PyObject_CallOneArg(exception, value);
+        exc = PyObject_CallOneArg(exception_type, value);
     }
+
+    if (exc != NULL && !PyExceptionInstance_Check(exc)) {
+        PyErr_Format(PyExc_TypeError,
+                     "calling %R should have returned an instance of "
+                     "BaseException, not %s",
+                     exception_type, Py_TYPE(exc)->tp_name);
+        Py_CLEAR(exc);
+    }
+
+    return exc;
 }
 
 void
@@ -1406,12 +1418,13 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
     }
 
     if (exc_tb == NULL) {
-        PyFrameObject *frame = tstate->frame;
+        PyFrameObject *frame = PyThreadState_GetFrame(tstate);
         if (frame != NULL) {
             exc_tb = _PyTraceBack_FromFrame(NULL, frame);
             if (exc_tb == NULL) {
                 _PyErr_Clear(tstate);
             }
+            Py_DECREF(frame);
         }
     }
 

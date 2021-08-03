@@ -3,7 +3,7 @@
 Other Graphical User Interface Packages
 =======================================
 
-Major cross-platform (Windows, Mac OS X, Unix-like) GUI toolkits are
+Major cross-platform (Windows, macOS, Unix-like) GUI toolkits are
 available for Python:
 
 .. seealso::
@@ -26,7 +26,7 @@ available for Python:
    `PyQt <https://riverbankcomputing.com/software/pyqt/intro>`_
       PyQt is a :program:`sip`\ -wrapped binding to the Qt toolkit.  Qt is an
       extensive C++ GUI application development framework that is
-      available for Unix, Windows and Mac OS X. :program:`sip` is a tool
+      available for Unix, Windows and macOS. :program:`sip` is a tool
       for generating bindings for C++ libraries as Python classes, and
       is specifically designed for Python.
 
@@ -40,7 +40,7 @@ available for Python:
       wxPython is a cross-platform GUI toolkit for Python that is built around
       the popular `wxWidgets <https://www.wxwidgets.org/>`_ (formerly wxWindows)
       C++ toolkit.  It provides a native look and feel for applications on
-      Windows, Mac OS X, and Unix systems by using each platform's native
+      Windows, macOS, and Unix systems by using each platform's native
       widgets where ever possible, (GTK+ on Unix-like systems).  In addition to
       an extensive set of widgets, wxPython provides classes for online
       documentation and context sensitive help, printing, HTML viewing,

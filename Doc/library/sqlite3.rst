@@ -165,7 +165,7 @@ Module functions and constants
    does not include the type, i. e. if you use something like
    ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
    everything until the first ``'['`` for the column name and strip
-   the preceeding space: the column name would simply be "Expiration date".
+   the preceding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
@@ -401,6 +401,10 @@ Connection Objects
       To remove a collation, call ``create_collation`` with ``None`` as callable::
 
          con.create_collation("reverse", None)
+
+      .. versionchanged:: 3.11
+         The collation name can contain any Unicode character.  Earlier, only
+         ASCII characters were allowed.
 
 
    .. method:: interrupt()
@@ -654,7 +658,7 @@ Cursor Objects
       This is a nonstandard convenience method for executing multiple SQL statements
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
       gets as a parameter.  This method disregards :attr:`isolation_level`; any
-      transation control must be added to *sql_script*.
+      transaction control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 
