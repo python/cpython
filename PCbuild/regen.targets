@@ -110,7 +110,5 @@
     <Message Text="Wrote $(OutDir)LICENSE.txt" Importance="high" />
   </Target>
 
-  <Target Name="PostBuildRegen"
-          Condition="$(Configuration) != 'PGInstrument' and $(Configuration) != 'PGUpdate'"
-          DependsOnTargets="_RegenLicense" />
+  <Target Name="PostBuildRegen" DependsOnTargets="_RegenLicense" />
 </Project>
