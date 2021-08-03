@@ -13,16 +13,16 @@ else:
 
 TOTAL = "deferred", "hit", "miss", "unquickened"
 
-def print_stats(name, stats):
-    total = sum(stats[kind] for kind in TOTAL)
+def print_stats(name, family_stats):
+    total = sum(family_stats[kind] for kind in TOTAL)
     if total == 0:
         return
     print(name+":")
-    for key in sorted(stats):
+    for key in sorted(family_stats):
         if not key.startswith("specialization"):
-            print(f"{key:>12}:{stats[key]:>12} {100*stats[key]/total:0.1f}%")
+            print(f"{key:>12}:{family_stats[key]:>12} {100*family_stats[key]/total:0.1f}%")
     for key in ("specialization_success",  "specialization_failure"):
-        print(f"  {key}:{stats[key]:>12}")
+        print(f"  {key}:{family_stats[key]:>12}")
 
 def main():
     stats = collections.defaultdict(collections.Counter)
