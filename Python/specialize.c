@@ -170,7 +170,6 @@ _Py_PrintSpecializationStats(void)
 #else
     fprintf(out, "Specialization stats:\n");
 #endif
-    print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
