@@ -71,27 +71,35 @@ class DistutilsInternalError (DistutilsError):
 
 class DistutilsTemplateError (DistutilsError):
     """Syntax error in a file list template."""
+    pass
 
 class DistutilsByteCompileError(DistutilsError):
     """Byte compile error."""
+    pass
 
 # Exception classes used by the CCompiler implementation classes
 class CCompilerError (Exception):
     """Some compile/link operation failed."""
+    pass
 
 class PreprocessError (CCompilerError):
     """Failure to preprocess one or more C/C++ files."""
+    pass
 
 class CompileError (CCompilerError):
     """Failure to compile one or more C/C++ source files."""
+    pass
 
 class LibError (CCompilerError):
     """Failure to create a static library from one or more C/C++ object
     files."""
+    pass
 
 class LinkError (CCompilerError):
     """Failure to link one or more C/C++ object files into an executable
     or shared library file."""
+    pass
 
 class UnknownFileError (CCompilerError):
     """Attempt to process an unknown file type."""
+    pass
