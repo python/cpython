@@ -587,8 +587,10 @@ class TestRetrievingSourceCode(GetSourceBase):
 
 class TestGetsourceInteractive(unittest.TestCase):
     def test_getclasses_interactive(self):
+        # bpo-44648: simulate a REPL session;
+        # there is no `__file__` in the __main__ module
         code = "import sys, inspect; \
-                sys.modules['__main__'].__file__ = None; \
+                assert not hasattr(sys.modules['__main__'], '__file__'); \
                 A = type('A', (), {}); \
                 inspect.getsource(A)"
         _, _, stderr = assert_python_failure("-c", code, __isolated=True)
