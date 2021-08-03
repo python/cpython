@@ -45,7 +45,7 @@ Module interface:
 - socket.if_nameindex() -> list of tuples (if_index, if_name)
 - socket.if_nametoindex(name) -> corresponding interface index
 - socket.if_indextoname(index) -> corresponding interface name
-- an Internet socket address is a pair (hostname, port)
+- an internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
 - where a hostname is returned, the dd.dd.dd.dd notation is used
@@ -8158,6 +8158,10 @@ PyInit__socket(void)
 #endif
 #ifdef  TCP_KEEPIDLE
     PyModule_AddIntMacro(m, TCP_KEEPIDLE);
+#endif
+    /* TCP_KEEPALIVE is OSX's TCP_KEEPIDLE equivalent */
+#if defined(__APPLE__) && defined(TCP_KEEPALIVE)
+    PyModule_AddIntMacro(m, TCP_KEEPALIVE);
 #endif
 #ifdef  TCP_KEEPINTVL
     PyModule_AddIntMacro(m, TCP_KEEPINTVL);

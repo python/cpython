@@ -986,14 +986,29 @@ class TraceTestCase(unittest.TestCase):
             except Exception:
                 pass
 
-        # This doesn't conform to PEP 626
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
              (2, 'line'),
              (3, 'line'),
-             (5, 'line'),
-             (5, 'return')])
+             (3, 'return')])
+
+    def test_if_in_if_in_if(self):
+        def func(a=0, p=1, z=1):
+            if p:
+                if a:
+                    if z:
+                        pass
+                    else:
+                        pass
+            else:
+                pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'return')])
 
     def test_early_exit_with(self):
 
@@ -1076,6 +1091,29 @@ class TraceTestCase(unittest.TestCase):
              (-2, 'return'),
              (1, 'line'),
              (1, 'return')])
+
+    def test_no_tracing_of_named_except_cleanup(self):
+
+        def func():
+            x = 0
+            try:
+                1/x
+            except ZeroDivisionError as error:
+                if x:
+                    raise
+            return "done"
+
+        self.run_and_compare(func,
+        [(0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (3, 'line'),
+            (3, 'exception'),
+            (4, 'line'),
+            (5, 'line'),
+            (7, 'line'),
+            (7, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""

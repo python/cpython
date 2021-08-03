@@ -306,11 +306,15 @@ class Symbol:
     def get_namespace(self):
         """Return the single namespace bound to this name.
 
-        Raises ValueError if the name is bound to multiple namespaces.
+        Raises ValueError if the name is bound to multiple namespaces
+        or no namespace.
         """
-        if len(self.__namespaces) != 1:
+        if len(self.__namespaces) == 0:
+            raise ValueError("name is not bound to any namespaces")
+        elif len(self.__namespaces) > 1:
             raise ValueError("name is bound to multiple namespaces")
-        return self.__namespaces[0]
+        else:
+            return self.__namespaces[0]
 
 if __name__ == "__main__":
     import os, sys

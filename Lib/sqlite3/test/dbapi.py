@@ -243,6 +243,26 @@ class ConnectionTests(unittest.TestCase):
             self.assertEqual(cu.fetchone()[0], n)
 
 
+class UninitialisedConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.cx = sqlite.Connection.__new__(sqlite.Connection)
+
+    def test_uninit_operations(self):
+        funcs = (
+            lambda: self.cx.isolation_level,
+            lambda: self.cx.total_changes,
+            lambda: self.cx.in_transaction,
+            lambda: self.cx.iterdump(),
+            lambda: self.cx.cursor(),
+            lambda: self.cx.close(),
+        )
+        for func in funcs:
+            with self.subTest(func=func):
+                self.assertRaisesRegex(sqlite.ProgrammingError,
+                                       "Base Connection.__init__ not called",
+                                       func)
+
+
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
@@ -951,6 +971,7 @@ def suite():
         ModuleTests,
         SqliteOnConflictTests,
         ThreadTests,
+        UninitialisedConnectionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]

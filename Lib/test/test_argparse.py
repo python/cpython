@@ -745,6 +745,25 @@ class TestOptionalsActionAppendWithDefault(ParserTestCase):
     ]
 
 
+class TestConstActionsMissingConstKwarg(ParserTestCase):
+    """Tests that const gets default value of None when not provided"""
+
+    argument_signatures = [
+        Sig('-f', action='append_const'),
+        Sig('--foo', action='append_const'),
+        Sig('-b', action='store_const'),
+        Sig('--bar', action='store_const')
+    ]
+    failures = ['-f v', '--foo=bar', '--foo bar']
+    successes = [
+        ('', NS(f=None, foo=None, b=None, bar=None)),
+        ('-f', NS(f=[None], foo=None, b=None, bar=None)),
+        ('--foo', NS(f=None, foo=[None], b=None, bar=None)),
+        ('-b', NS(f=None, foo=None, b=None, bar=None)),
+        ('--bar', NS(f=None, foo=None, b=None, bar=None)),
+    ]
+
+
 class TestOptionalsActionAppendConst(ParserTestCase):
     """Tests the append_const action for an Optional"""
 
@@ -2059,6 +2078,30 @@ class TestAddSubparsers(TestCase):
         # No error here
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
+
+    def test_required_subparsers_no_destination_error(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(())
+        self.assertRegex(
+            excinfo.exception.stderr,
+            'error: the following arguments are required: {foo,bar}\n$'
+        )
+
+    def test_wrong_argument_subparsers_no_destination_error(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('baz',))
+        self.assertRegex(
+            excinfo.exception.stderr,
+            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+        )
 
     def test_optional_subparsers(self):
         parser = ErrorRaisingArgumentParser()

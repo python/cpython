@@ -74,8 +74,8 @@ if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
 elif sys.platform == 'vxworks':
     LOOPBACK_TIMEOUT = 10
 
-# Timeout in seconds for network requests going to the Internet. The timeout is
-# short enough to prevent a test to wait for too long if the Internet request
+# Timeout in seconds for network requests going to the internet. The timeout is
+# short enough to prevent a test to wait for too long if the internet request
 # is blocked for whatever reason.
 #
 # Usually, a timeout using INTERNET_TIMEOUT should not mark a test as failed,
@@ -104,6 +104,17 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures):
+        self.msg = msg
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures)
+
+    def __str__(self):
+        return self.msg
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -980,7 +991,9 @@ def _run_suite(suite):
         else:
             err = "multiple errors occurred"
             if not verbose: err += "; run in verbose mode for details"
-        raise TestFailed(err)
+        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
+        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
+        raise TestFailedWithDetails(err, errors, failures)
 
 
 # By default, don't filter tests

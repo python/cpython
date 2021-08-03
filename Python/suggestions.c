@@ -151,6 +151,9 @@ calculate_suggestions(PyObject *dir,
         if (item_str == NULL) {
             return NULL;
         }
+        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
+            continue;
+        }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
         // Don't take matches we've already beaten.
@@ -229,7 +232,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(_PyFrame_GetGlobals(frame));
+    dir = PySequence_List(frame->f_frame->f_globals);
     if (dir == NULL) {
         return NULL;
     }
@@ -239,7 +242,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(_PyFrame_GetBuiltins(frame));
+    dir = PySequence_List(frame->f_frame->f_builtins);
     if (dir == NULL) {
         return NULL;
     }

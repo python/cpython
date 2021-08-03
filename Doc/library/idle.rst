@@ -869,7 +869,7 @@ Running without a subprocess
 
 By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
-externally visible and no data is sent to or received from the Internet.
+externally visible and no data is sent to or received from the internet.
 If firewall software complains anyway, you can ignore it.
 
 If the attempt to make the socket connection fails, Idle will notify you.
