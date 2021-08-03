@@ -1282,19 +1282,35 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(False, P('').is_reserved())
         self.assertIs(False, P('/').is_reserved())
         self.assertIs(False, P('/foo/bar').is_reserved())
-        self.assertIs(True, P('con').is_reserved())
-        self.assertIs(True, P('NUL').is_reserved())
-        self.assertIs(True, P('NUL.txt').is_reserved())
-        self.assertIs(True, P('com1').is_reserved())
-        self.assertIs(True, P('com9.bar').is_reserved())
-        self.assertIs(False, P('bar.com9').is_reserved())
-        self.assertIs(True, P('lpt1').is_reserved())
-        self.assertIs(True, P('lpt9.bar').is_reserved())
-        self.assertIs(False, P('bar.lpt9').is_reserved())
-        # Only the last component matters.
-        self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
+        # Case-insenstive DOS-device names are reserved.
+        self.assertIs(True, P('nul').is_reserved())
+        self.assertIs(True, P('aux').is_reserved())
+        self.assertIs(True, P('prn').is_reserved())
+        self.assertIs(True, P('con').is_reserved())
+        self.assertIs(True, P('conin$').is_reserved())
+        self.assertIs(True, P('conout$').is_reserved())
+        # COM/LPT + 1-9 or + superscript 1-3 are reserved.
+        self.assertIs(True, P('COM1').is_reserved())
+        self.assertIs(True, P('LPT9').is_reserved())
+        self.assertIs(True, P('com\xb9').is_reserved())
+        self.assertIs(True, P('com\xb2').is_reserved())
+        self.assertIs(True, P('lpt\xb3').is_reserved())
+        # DOS-device name mataching ignores characters after a dot or
+        # a colon and also ignores trailing spaces.
+        self.assertIs(True, P('NUL.txt').is_reserved())
+        self.assertIs(True, P('PRN  ').is_reserved())
+        self.assertIs(True, P('AUX  .txt').is_reserved())
+        self.assertIs(True, P('COM1:bar').is_reserved())
+        self.assertIs(True, P('LPT9   :bar').is_reserved())
+        # DOS-device names are only matched at the beginning
+        # of a path component.
+        self.assertIs(False, P('bar.com9').is_reserved())
+        self.assertIs(False, P('bar.lpt9').is_reserved())
+        # Only the last path component matters.
+        self.assertIs(True, P('c:/baz/con/NUL').is_reserved())
+        self.assertIs(False, P('c:/NUL/con/baz').is_reserved())
 
 class PurePathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePath

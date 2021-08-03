@@ -55,7 +55,7 @@ an event loop:
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if there is no running event loop.
-      If future Python releases this function will be an alias of
+      In future Python releases, this function will be an alias of
       :func:`get_running_loop`.
 
 .. function:: set_event_loop(loop)

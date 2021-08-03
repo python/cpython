@@ -278,7 +278,7 @@ class RegressionTests(unittest.TestCase):
     def test_collation(self):
         def collation_cb(a, b):
             return 1
-        self.assertRaises(sqlite.ProgrammingError, self.con.create_collation,
+        self.assertRaises(UnicodeEncodeError, self.con.create_collation,
             # Lone surrogate cannot be encoded to the default encoding (utf8)
             "\uDC80", collation_cb)
 
