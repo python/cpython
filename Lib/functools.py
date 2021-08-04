@@ -931,6 +931,7 @@ class singledispatchmethod:
 _NOT_FOUND = object()
 
 class cached_property:
+
     def __init__(self, func):
         self.func = func
         self.attrname = None
@@ -938,7 +939,6 @@ class cached_property:
         self.updater_lock = RLock()
         self.cv = Condition(RLock())
         self.updater = {}
-        self.writeable = True  # Assume attrname is writeable until shown otherwise
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
