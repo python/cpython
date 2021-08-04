@@ -971,7 +971,13 @@ class cached_property:
         key = id(self)
         this_thread = get_ident()
         with self.updater_lock:
-            wait = self.updater.setdefault(key, this_thread) != this_thread
+            if self.updater.get(key) == this_thread:
+                raise RuntimeError('reentrant')
+            if self.updater.get(key) is None:
+                self.updater[key] = this_thread
+                wait = False
+            else:
+                wait = True
 
         # ONLY if this instance currently being updated, block and wait
         # for the main thread to finish. Other instances won't have to wait.
@@ -983,24 +989,30 @@ class cached_property:
         # If a value has already been stored, use it
         val = cache.get(self.attrname, _NOT_FOUND)
         if val is not _NOT_FOUND:
-            self.updater.pop(key, None)
-            self.cv.notify_all()
+            with self.updater_lock:
+                self.updater.pop(key, None)
+            with self.cv:
+                self.cv.notify_all()
             return val
 
         # Call the underlying function to compute the value.
         try:
             val = self.func(instance)
         except Exception:
-            self.updater.pop(key, None)
-            self.cv.notify_all()
+            with self.updater_lock:
+                self.updater.pop(key, None)
+            with self.cv:
+                self.cv.notify_all()
             raise
 
         # Attempt to store the value
         try:
             cache[self.attrname] = val
         except TypeError:
-            self.updater.pop(key, None)
-            self.cv.notifyall()
+            with self.updater_lock:
+                self.updater.pop(key, None)
+            with self.cv:
+                self.cv.notify_all()
             msg = (
                 f"The '__dict__' attribute on {type(instance).__name__!r} instance "
                 f"does not support item assignment for caching {self.attrname!r} property."
@@ -1008,8 +1020,10 @@ class cached_property:
             raise TypeError(msg) from None
 
         # Value has been computed and cached.  Now return it.
-        self.updater.pop(key, None)
-        self.cv.notify_all()
+        with self.updater_lock:
+            self.updater.pop(key, None)
+        with self.cv:
+            self.cv.notify_all()
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
