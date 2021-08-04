@@ -78,10 +78,6 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
-   Note that a leading slash in the filename may lead to the archive being impossible
-   to open in some zip programs on Windows systems.
-
-
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -409,7 +405,7 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
 
-   .. warning::
+   .. note::
 
       A leading slash in the filename may lead to the archive being impossible to
       open in some zip programs on Windows systems.
@@ -435,9 +431,6 @@ ZipFile Objects
    parameter to the constructor for the new entry, or in the *zinfo_or_arcname*
    (if that is a :class:`ZipInfo` instance). Similarly, *compresslevel* will
    override the constructor if given.
-
-   Note that a leading slash in the filename may lead to the archive being impossible
-   to open in some zip programs on Windows systems.
 
    .. note::
 
