@@ -18,7 +18,7 @@ from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
-from _thread import RLock
+from threading import RLock, Condition, get_ident
 from types import GenericAlias
 
 
@@ -929,14 +929,16 @@ class singledispatchmethod:
 ################################################################################
 
 _NOT_FOUND = object()
-
+_EXCEPTION_RAISED = object()
 
 class cached_property:
     def __init__(self, func):
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
-        self.lock = RLock()
+        self.updater_lock = RLock()
+        self.cv = Condition(RLock())
+        self.updater = {}
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -961,21 +963,62 @@ class cached_property:
                 f"instance to cache {self.attrname!r} property."
             )
             raise TypeError(msg) from None
-        val = cache.get(self.attrname, _NOT_FOUND)
-        if val is _NOT_FOUND:
-            with self.lock:
-                # check if another thread filled cache while we awaited lock
-                val = cache.get(self.attrname, _NOT_FOUND)
-                if val is _NOT_FOUND:
-                    val = self.func(instance)
-                    try:
-                        cache[self.attrname] = val
-                    except TypeError:
-                        msg = (
-                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
-                            f"does not support item assignment for caching {self.attrname!r} property."
-                        )
-                        raise TypeError(msg) from None
+
+        # Quickly and atomically determine which thread is reponsible
+        # for doing the update, so other threads can wait for that
+        # update to complete.  If the update is already done, don't
+        # wait.  If the updating thread is reentrant, don't wait.
+        key = id(self)
+        this_thread = get_ident()
+        with self.updater_lock:
+            val = cache.get(self.attrname, _NOT_FOUND)
+            if val is not _NOT_FOUND:
+                return val
+            wait = self.updater.setdefault(key, this_thread) != this_thread
+
+        # ONLY if this instance currently being updated, block and wait
+        # for the computed result. Other instances won't have to wait.
+        # If an exception occurred, stop waiting.
+        if wait:
+            with self.cv:
+                while cache.get(self.attrname, _NOT_FOUND) is _NOT_FOUND:
+                    self.cv.wait()
+                val = cache[self.attrname]
+                if val is not _EXCEPTION_RAISED:
+                    return val
+
+        # Call the underlying function to compute the value.
+        try:
+            val = self.func(instance)
+        except Exception:
+            val = _EXCEPTION_RAISED
+
+        # Attempt to store the value
+        try:
+            cache[self.attrname] = val
+        except TypeError:
+            # Note: we have no way to communicate this exception to
+            # threads waiting on the condition variable.  However, the
+            # inability to store an attribute is a programming problem
+            # rather than a runtime problem -- this exception would
+            # likely occur early in testing rather than being runtime
+            # event triggered by specific data.
+            msg = (
+                f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                f"does not support item assignment for caching {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None
+
+        # Now that the value is stored, threads waiting on the condition
+        # variable can be awakened and the updater dictionary can be
+        # cleaned up.
+        with self.updater_lock:
+            self.updater.pop(key, None)
+            cache[self.attrname] = _EXCEPTION_RAISED
+            self.cv.notify_all()
+
+        if val is _EXCEPTION_RAISED:
+            raise
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
