@@ -1,0 +1,3 @@
+:mod:`sqlite3` now raises :exc:`OverflowError` if an user-defined function
+returns a :class:`str` larger than ``INT_MAX`` bytes. Patch by Erlend E.
+Aasland.
