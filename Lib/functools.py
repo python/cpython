@@ -986,6 +986,7 @@ class cached_property:
                 while (self.writeable
                        and cache.get(self.attrname, _NOT_FOUND) is _NOT_FOUND):
                     self.cv.wait()
+                
                 val = cache[self.attrname]
                 if val is not _EXCEPTION_RAISED:
                     return val
