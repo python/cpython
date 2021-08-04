@@ -174,6 +174,11 @@ def _type_check(arg, msg, is_argument=True, module=None):
     return arg
 
 
+def _is_param_expr(arg):
+    return arg is ... or isinstance(arg,
+            (tuple, list, ParamSpec, _ConcatenateGenericAlias))
+
+
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).
 
@@ -228,7 +233,9 @@ def _prepare_paramspec_params(cls, params):
     variables (internal helper).
     """
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
-    if len(cls.__parameters__) == 1 and len(params) > 1:
+    if (len(cls.__parameters__) == 1
+            and params and not _is_param_expr(params[0])):
+        assert isinstance(cls.__parameters__[0], ParamSpec)
         return (params,)
     else:
         _check_generic(cls, params, len(cls.__parameters__))
@@ -1031,7 +1038,13 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         new_args = []
         for arg in self.__args__:
             if isinstance(arg, self._typevar_types):
-                arg = subst[arg]
+                if isinstance(arg, ParamSpec):
+                    arg = subst[arg]
+                    if not _is_param_expr(arg):
+                        raise TypeError(f"Expected a list of types, an ellipsis, "
+                                        f"ParamSpec, or Concatenate. Got {arg}")
+                else:
+                    arg = subst[arg]
             elif isinstance(arg, (_GenericAlias, GenericAlias, types.UnionType)):
                 subparams = arg.__parameters__
                 if subparams:
@@ -1129,8 +1142,7 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
         args = self.__args__
-        if len(args) == 2 and (args[0] is Ellipsis
-                               or isinstance(args[0], (ParamSpec, _ConcatenateGenericAlias))):
+        if len(args) == 2 and _is_param_expr(args[0]):
             return super().__repr__()
         return (f'typing.Callable'
                 f'[[{", ".join([_type_repr(a) for a in args[:-1]])}], '
@@ -1138,8 +1150,7 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and (args[0] is Ellipsis
-                                    or isinstance(args[0], (ParamSpec, _ConcatenateGenericAlias)))):
+        if not (len(args) == 2 and _is_param_expr(args[0])):
             args = list(args[:-1]), args[-1]
         return operator.getitem, (Callable, args)
 
@@ -1865,8 +1876,7 @@ def get_args(tp):
     if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
         if (tp.__origin__ is collections.abc.Callable
-                and not (res[0] is Ellipsis
-                         or isinstance(res[0], (ParamSpec, _ConcatenateGenericAlias)))):
+                and not (len(res) == 2 and _is_param_expr(res[0]))):
             res = (list(res[:-1]), res[-1])
         return res
     if isinstance(tp, types.UnionType):
