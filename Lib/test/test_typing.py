@@ -4681,6 +4681,20 @@ class ParamSpecTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "many arguments for"):
             Z[P_2, bool]
 
+    def test_multiple_paramspecs_in_user_generics(self):
+        P = ParamSpec("P")
+        P2 = ParamSpec("P2")
+
+        class X(Generic[P, P2]):
+            f: Callable[P, int]
+            g: Callable[P2, str]
+
+        G1 = X[[int, str], [bytes]]
+        G2 = X[[int], [str, bytes]]
+        self.assertNotEqual(G1, G2)
+        self.assertEqual(G1.__args__, ((int, str), (bytes,)))
+        self.assertEqual(G2.__args__, ((int,), (str, bytes)))
+
     def test_no_paramspec_in__parameters__(self):
         # ParamSpec should not be found in __parameters__
         # of generics. Usages outside Callable, Concatenate
