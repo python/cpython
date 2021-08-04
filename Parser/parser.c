@@ -18158,7 +18158,7 @@ expression_without_invalid_rule(Parser *p)
     return _res;
 }
 
-// invalid_legacy_expression: NAME star_expressions
+// invalid_legacy_expression: NAME !'(' star_expressions
 static void *
 invalid_legacy_expression_rule(Parser *p)
 {
@@ -18169,21 +18169,23 @@ invalid_legacy_expression_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // NAME star_expressions
+    { // NAME !'(' star_expressions
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_legacy_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME star_expressions"));
+        D(fprintf(stderr, "%*c> invalid_legacy_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME !'(' star_expressions"));
         expr_ty a;
         expr_ty b;
         if (
             (a = _PyPegen_name_token(p))  // NAME
             &&
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 7)  // token='('
+            &&
             (b = star_expressions_rule(p))  // star_expressions
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_legacy_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME star_expressions"));
+            D(fprintf(stderr, "%*c+ invalid_legacy_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME !'(' star_expressions"));
             _res = _PyPegen_check_legacy_stmt ( p , a ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "Missing parentheses in call to '%U'. Did you mean %U(...)?" , a -> v . Name . id , a -> v . Name . id ) : NULL;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -18194,7 +18196,7 @@ invalid_legacy_expression_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_legacy_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME star_expressions"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME !'(' star_expressions"));
     }
     _res = NULL;
   done:
@@ -18205,6 +18207,7 @@ invalid_legacy_expression_rule(Parser *p)
 // invalid_expression:
 //     | invalid_legacy_expression
 //     | !(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid
+//     | disjunction 'if' disjunction !'else'
 static void *
 invalid_expression_rule(Parser *p)
 {
@@ -18262,6 +18265,38 @@ invalid_expression_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "!(NAME STRING | SOFT_KEYWORD) disjunction expression_without_invalid"));
+    }
+    { // disjunction 'if' disjunction !'else'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction !'else'"));
+        Token * _keyword;
+        expr_ty a;
+        expr_ty b;
+        if (
+            (a = disjunction_rule(p))  // disjunction
+            &&
+            (_keyword = _PyPegen_expect_token(p, 510))  // token='if'
+            &&
+            (b = disjunction_rule(p))  // disjunction
+            &&
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 518)  // token='else'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "disjunction 'if' disjunction !'else'"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "expected 'else' after 'if' expression" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "disjunction 'if' disjunction !'else'"));
     }
     _res = NULL;
   done:
