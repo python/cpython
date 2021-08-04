@@ -929,7 +929,6 @@ class singledispatchmethod:
 ################################################################################
 
 _NOT_FOUND = object()
-_EXCEPTION_RAISED = object()
 
 class cached_property:
     def __init__(self, func):
@@ -967,41 +966,40 @@ class cached_property:
 
         # Quickly and atomically determine which thread is reponsible
         # for doing the update, so other threads can wait for that
-        # update to complete.  If the update is already done, don't
-        # wait.  If the updating thread is reentrant, don't wait.
+        # update to complete. XXX If the current thread is already running,
+        # allow the reentrant thread to proceed rather than waiting.
         key = id(self)
         this_thread = get_ident()
         with self.updater_lock:
-            val = cache.get(self.attrname, _NOT_FOUND)
-            if val is not _NOT_FOUND:
-                return val
             wait = self.updater.setdefault(key, this_thread) != this_thread
 
         # ONLY if this instance currently being updated, block and wait
-        # for the computed result. Other instances won't have to wait.
-        # If an exception occurred, stop waiting.  If attrname turns
-        # out not to be writeable, don't wait.  Just recompute.
+        # for the main thread to finish. Other instances won't have to wait.
         if wait:
             with self.cv:
-                while (self.writeable
-                       and cache.get(self.attrname, _NOT_FOUND) is _NOT_FOUND):
+                while key in self.updater:
                     self.cv.wait()
-                
-                val = cache[self.attrname]
-                if val is not _EXCEPTION_RAISED:
-                    return val
+
+        # If a value has already been stored, use it
+        val = cache.get(self.attrname, _NOT_FOUND)
+        if val is not _NOT_FOUND:
+            self.updater.pop(key, None)
+            self.cv.notify_all()
+            return val
 
         # Call the underlying function to compute the value.
         try:
             val = self.func(instance)
         except Exception:
-            val = _EXCEPTION_RAISED
+            self.updater.pop(key, None)
+            self.cv.notify_all()
+            raise
 
         # Attempt to store the value
         try:
             cache[self.attrname] = val
         except TypeError:
-            self.writeable = False
+            self.updater.pop(key, None)
             self.cv.notifyall()
             msg = (
                 f"The '__dict__' attribute on {type(instance).__name__!r} instance "
@@ -1009,16 +1007,9 @@ class cached_property:
             )
             raise TypeError(msg) from None
 
-        # Now that the value is stored, threads waiting on the condition
-        # variable can be awakened and the updater dictionary can be
-        # cleaned up.
-        with self.updater_lock:
-            self.updater.pop(key, None)
-            cache[self.attrname] = _EXCEPTION_RAISED
-            self.cv.notify_all()
-
-        if val is _EXCEPTION_RAISED:
-            raise
+        # Value has been computed and cached.  Now return it.
+        self.updater.pop(key, None)
+        self.cv.notify_all()
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
