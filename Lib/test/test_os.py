@@ -1537,8 +1537,6 @@ class FwalkTests(WalkTests):
             def __fspath__(self):
                 return str(self.val)
 
-        # Not isinstance of int and not has __index__ method
-        # Without __fspath__ method it must raise TypeError.
         top = CustomBaseClass('.')
         with self.assertRaisesRegex(TypeError, f'open: path should be string, bytes or os.PathLike'):
             next(os.fwalk(top=top, follow_symlinks=True))
