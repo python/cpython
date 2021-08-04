@@ -1527,6 +1527,27 @@ class FwalkTests(WalkTests):
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
 
+    def test_fwalk(self):
+        class CustomBaseClass():
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return os.open(self.val, os.O_RDONLY)
+        class CustomStrClass(CustomBaseClass):
+            def __fspath__(self):
+                return str(self.val)
+
+        # Not isinstance of int and not has __index__ method
+        # Without __fspath__ method it must raise TypeError.
+        top = CustomBaseClass('.')
+        with self.assertRaisesRegex(TypeError, f'open: path should be string, bytes or os.PathLike'):
+            next(os.fwalk(top=top, follow_symlinks=True))
+
+        top = CustomStrClass('.')
+        root, dirs, files, rootfd  = next(os.fwalk(top=top, follow_symlinks=True))
+        self.assertIsInstance(root, CustomStrClass)
+        self.assertNotIsInstance(root, str)
+
     # fwalk() keeps file descriptors open
     test_walk_many_open_files = None
 
