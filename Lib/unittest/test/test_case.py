@@ -5,6 +5,7 @@ import pickle
 import re
 import sys
 import logging
+from typing import Tuple
 import warnings
 import weakref
 import inspect
@@ -53,6 +54,126 @@ class Test(object):
 
         def tearDown(self):
             self.events.append('tearDown')
+
+
+class Test_HeuristicDiff(unittest.TestCase):
+
+    N = 50_000
+
+    def check(self, a, b, expect: Tuple[str, ...]):
+        """That _heuristic_diff(a, b) == expect"""
+
+        # calls to _heuristic_diff are annotated with "# type: ignore"
+        # throughout. It is not a member of unittest.case.__all__, so the
+        # comment silences complaining type checkers.
+
+        diff_iterable = unittest.case._heuristic_diff(a, b)  # type: ignore
+        diff = tuple(diff_iterable)
+
+        # just check equality because if this is broken, the diff message from
+        # assertEqual is probably useless!
+        self.assertTrue(diff == expect)
+
+
+    ###########################################################################
+
+    # @ambv: I feel that the tests between the lines here are redundant, given
+    # the other tests below. Removing them shaves ~1s of runtime off.
+    # what do you think?
+
+    def test_ndiff_is_used_with_small_inputs(self):
+        a = ('foo',)
+        b = ('bar',)
+        expect = ('- foo', '+ bar')
+        self.check(a, b, expect)
+
+    def test_unified_diff_is_used_with_large_inputs(self):
+        """One long line, as well as many single-character lines."""
+
+        # one long line
+        a = ('foo' * self.N,)
+        b = ('bar' * self.N,)
+        expect = ('--- expected\n', '+++ got\n', '@@ -1 +1 @@\n',
+                  '-' + 'foo' * self.N,
+                  '+' + 'bar' * self.N)
+        self.check(a, b, expect)
+
+        # many lines
+        a = ('1\n' * self.N).splitlines()
+        b = ('2\n' * self.N).splitlines()
+        expect = ('--- expected\n', '+++ got\n', f'@@ -1,{self.N} +1,{self.N} @@\n',
+                  *(['-1'] * self.N),
+                  *(['+2'] * self.N))
+        self.check(a, b, expect)
+
+    ###########################################################################
+
+    def test_ndiff_to_unified_diff_breaking_point_long_line(self):
+        """This is the approximate single line length at which the heuristic
+        will switch from ndiff to unified_diff."""
+        expect_switch_at = 125_000
+        a = ''
+        b = ''
+        n = expect_switch_at // 2
+        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
+            n *= 1.3
+            a = ('a' * int(n),)
+            b = ('b' * int(n),)
+
+        self.assertGreater(n, expect_switch_at * 0.8)
+        self.assertLess(n, expect_switch_at * 1.1)
+
+    def test_ndiff_to_unified_diff_breaking_point_many_lines(self):
+        """For lines just one character long, the heuristic will switch from
+        ndiff to unified_diff around 70,000 differing lines."""
+        expect_switch_at = 70_000
+        a = ''
+        b = ''
+        n = expect_switch_at // 2
+        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
+            n *= 1.3
+            a = ('a\n' * int(n),)
+            b = ('b\n' * int(n),)
+
+        self.assertGreater(n, expect_switch_at * 0.8)
+        self.assertLess(n, expect_switch_at * 1.1)
+
+    def test_ndiff_to_unified_diff_breaking_point_varied_inputs(self):
+        """Specify how the heuristic behaves with varied inputs and edge cases."""
+        # @ambv: I just have this one scaffoleded out in comments. I'd like to
+        # know your thoughts in general before I keep going.
+
+        # scale line length and width at different rates to see what happens
+
+        # for n in range(??):
+        #     line_length = n
+        #     line_width = n * 2
+        #     ... test heuristic
+
+        #     line_length = n * 2
+        #     line_width = n
+        #     ... test heuristic
+
+        #     line_length = n * 3
+        #     line_width = n
+        #     ... test heuristic
+
+        #     line_length = n
+        #     line_width = n * 3
+        #     ... test heuristic
+
+    def test_ndiff_is_always_used_for_similar_sequences(self):
+        """ndiff is perfectly efficient at showing small diffs. As long as
+        the difference  between `a` and `b` are small, the size of `a` and `b`
+        should not disqualify the use of ndiff."""
+        a = ('foo ' * 5 + '\n') * 10_000
+        b = ('foo ' * 5 + '\n') *  9_999 + ('bar ' * 5 + '\n')
+
+        diff = ''.join(unittest.case._heuristic_diff(a, b))  # type: ignore
+
+        # checking for '@' is an easy way to see if unified_diff was used,
+        # because it always has the "@@ ... @@" line.
+        self.assertNotIn('@', diff)
 
 
 class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
@@ -800,10 +921,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertEqual(self.maxDiff, 80*8)
         seq1 = 'a' + 'x' * 80**2
         seq2 = 'b' + 'x' * 80**2
-        diff = difflib.unified_diff(pprint.pformat(seq1).splitlines(),
-                                    pprint.pformat(seq2).splitlines(),
-                                    fromfile='expected', tofile='got',
-                                    lineterm='')
+        diff = unittest.case._heuristic_diff(pprint.pformat(seq1).splitlines(),  # type: ignore
+                                             pprint.pformat(seq2).splitlines())
         diff = '\n'.join(diff)
         # the +1 is the leading \n added by assertSequenceEqual
         omitted = unittest.case.DIFF_OMITTED % (len(diff) + 1,)
@@ -838,36 +957,6 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             self.fail('assertSequenceEqual did not fail.')
         self.assertGreater(len(msg), len(diff))
         self.assertNotIn(omitted, msg)
-
-    def testAssertEqualModeratelyLongSequencePerformance(self):
-        """Before fixing bpo-19217, assertTrue on different sequences of the
-        same length would never finish in circumstances like the ones below."""
-
-        TIME_LIMIT = 1
-
-        # test comparison of strings
-        arr1 = 'a' * 10000
-        arr2 = 'a' * 9999 + 'b'
-        start = time.time()
-        try:
-            self.assertEqual(arr1, arr2)
-        except self.failureException:
-            pass
-        finish = time.time()
-        if finish - start > TIME_LIMIT:
-            self.fail('String comparison took longer than one second')
-
-        # test comparison of lists
-        arr1 =  [1] * 10000
-        arr2 = ([1] * 9999) + [2]
-        start = time.time()
-        try:
-            self.assertEqual(arr1, arr2)
-        except self.failureException:
-            pass
-        finish = time.time()
-        if finish - start > TIME_LIMIT:
-            self.fail('List comparison took longer than one second')
 
     def testTruncateMessage(self):
         self.maxDiff = 1
