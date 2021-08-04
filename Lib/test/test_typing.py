@@ -550,38 +550,6 @@ class BaseCallableTests:
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
 
-    def test_subscript(self):
-        T = TypeVar("T")
-        T2 = TypeVar('T2')
-
-        C = Callable[[T], T2]
-        self.assertEqual(C[int, str], Callable[[int], str])
-        self.assertEqual(C[int, NoReturn], Callable[[int], NoReturn])
-        self.assertEqual(C[None, None], Callable[[type(None)], type(None)])
-
-        C = Callable[..., T]
-        self.assertEqual(C[str], Callable[..., str])
-
-        P = ParamSpec("P")
-        C = Callable[P, T]
-        self.assertEqual(C[int, str], Callable[[int], str])
-        self.assertEqual(C[[int, str], float], Callable[[int, str], float])
-        self.assertEqual(C[..., float], Callable[..., float])
-        self.assertEqual(C[P, float], Callable[P, float])
-        self.assertEqual(C[Concatenate[int, P], float],
-                         Callable[Concatenate[int, P], float])
-
-        C = Callable[P, str]
-        self.assertEqual(C[int], Callable[[int], str])
-        self.assertEqual(C[int, dict], Callable[[int, dict], str])
-        self.assertEqual(C[...], Callable[..., str])
-        self.assertEqual(C[P], Callable[P, str])
-        self.assertEqual(C[Concatenate[int, P]],
-                         Callable[Concatenate[int, P], str])
-
-        # TODO: C = Callable[Concatenate[str, P], float]
-
-
     def test_basic(self):
         Callable = self.Callable
         alias = Callable[[int, str], float]
@@ -613,8 +581,10 @@ class BaseCallableTests:
         C2 = Callable[[KT, T], VT]
         C3 = Callable[..., T]
         self.assertEqual(C1[str], Callable[[int, str], str])
+        self.assertEqual(C1[None], Callable[[int, type(None)], type(None)])
         self.assertEqual(C2[int, float, str], Callable[[int, float], str])
         self.assertEqual(C3[int], Callable[..., int])
+        self.assertEqual(C3[NoReturn], Callable[..., NoReturn])
 
         # multi chaining
         C4 = C2[int, VT, str]
@@ -641,17 +611,33 @@ class BaseCallableTests:
         Callable = self.Callable
         fullname = f"{Callable.__module__}.Callable"
         P = ParamSpec('P')
+        P2 = ParamSpec('P2')
         C1 = Callable[P, T]
         # substitution
-        self.assertEqual(C1[int, str], Callable[[int], str])
+        self.assertEqual(C1[[int], str], Callable[[int], str])
         self.assertEqual(C1[[int, str], str], Callable[[int, str], str])
+        self.assertEqual(C1[[], str], Callable[[], str])
+        self.assertEqual(C1[..., str], Callable[..., str])
+        self.assertEqual(C1[P2, str], Callable[P2, str])
+        self.assertEqual(C1[Concatenate[int, P2], str],
+                         Callable[Concatenate[int, P2], str])
         self.assertEqual(repr(C1), f"{fullname}[~P, ~T]")
-        self.assertEqual(repr(C1[int, str]), f"{fullname}[[int], str]")
+        self.assertEqual(repr(C1[[int, str], str]), f"{fullname}[[int, str], str]")
+        with self.assertRaises(TypeError):
+            C1[int, str]
 
         C2 = Callable[P, int]
+        self.assertEqual(C2[[int]], Callable[[int], int])
+        self.assertEqual(C2[[int, str]], Callable[[int, str], int])
+        self.assertEqual(C2[[]], Callable[[], int])
+        self.assertEqual(C2[...], Callable[..., int])
+        self.assertEqual(C2[P2], Callable[P2, int])
+        self.assertEqual(C2[Concatenate[int, P2]],
+                         Callable[Concatenate[int, P2], int])
         # special case in PEP 612 where
         # X[int, str, float] == X[[int, str, float]]
-        self.assertEqual(C2[int, str, float], C2[[int, str, float]])
+        self.assertEqual(C2[int], Callable[[int], int])
+        self.assertEqual(C2[int, str], Callable[[int, str], int])
         self.assertEqual(repr(C2), f"{fullname}[~P, int]")
         self.assertEqual(repr(C2[int, str]), f"{fullname}[[int, str], int]")
 
@@ -941,6 +927,9 @@ class ProtocolTests(BaseTestCase):
         class C(P): pass
 
         self.assertIsInstance(C(), C)
+        with self.assertRaises(TypeError):
+            C(42)
+
         T = TypeVar('T')
 
         class PG(Protocol[T]): pass
@@ -955,6 +944,8 @@ class ProtocolTests(BaseTestCase):
         class CG(PG[T]): pass
 
         self.assertIsInstance(CG[int](), CG)
+        with self.assertRaises(TypeError):
+            CG[int](42)
 
     def test_cannot_instantiate_abstract(self):
         @runtime_checkable
@@ -1381,6 +1372,37 @@ class ProtocolTests(BaseTestCase):
                 self.test = 'OK'
 
         self.assertEqual(C[int]().test, 'OK')
+
+        class B:
+            def __init__(self):
+                self.test = 'OK'
+
+        class D1(B, P[T]):
+            pass
+
+        self.assertEqual(D1[int]().test, 'OK')
+
+        class D2(P[T], B):
+            pass
+
+        self.assertEqual(D2[int]().test, 'OK')
+
+    def test_new_called(self):
+        T = TypeVar('T')
+
+        class P(Protocol[T]): pass
+
+        class C(P[T]):
+            def __new__(cls, *args):
+                self = super().__new__(cls, *args)
+                self.test = 'OK'
+                return self
+
+        self.assertEqual(C[int]().test, 'OK')
+        with self.assertRaises(TypeError):
+            C[int](42)
+        with self.assertRaises(TypeError):
+            C[int](a=42)
 
     def test_protocols_bad_subscripts(self):
         T = TypeVar('T')
@@ -4683,15 +4705,38 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G5.__parameters__, G6.__parameters__)
         self.assertEqual(G5, G6)
 
+        G7 = Z[int]
+        self.assertEqual(G7.__args__, ((int,),))
+        self.assertEqual(G7.__parameters__, ())
+
+        with self.assertRaisesRegex(TypeError, "many arguments for"):
+            Z[[int, str], bool]
+        with self.assertRaisesRegex(TypeError, "many arguments for"):
+            Z[P_2, bool]
+
+    def test_multiple_paramspecs_in_user_generics(self):
+        P = ParamSpec("P")
+        P2 = ParamSpec("P2")
+
+        class X(Generic[P, P2]):
+            f: Callable[P, int]
+            g: Callable[P2, str]
+
+        G1 = X[[int, str], [bytes]]
+        G2 = X[[int], [str, bytes]]
+        self.assertNotEqual(G1, G2)
+        self.assertEqual(G1.__args__, ((int, str), (bytes,)))
+        self.assertEqual(G2.__args__, ((int,), (str, bytes)))
+
     def test_subscript(self):
         T = TypeVar("T")
         P = ParamSpec("P")
         self.assertEqual(P.__parameters__, (P,))
         self.assertIs(P.__parameters__[0], P)
-        self.assertEqual(P[int], (int,))
+        #self.assertEqual(P[int], (int,))
         self.assertEqual(P[int, str], (int, str))
         self.assertEqual(P[[int, str]], (int, str))
-        self.assertEqual(P[None], (type(None),))
+        #self.assertEqual(P[None], (type(None),))
         self.assertIs(P[...], ...)
         self.assertIs(P[P], P)
         self.assertEqual(P[Concatenate[int, P]], Concatenate[int, P])

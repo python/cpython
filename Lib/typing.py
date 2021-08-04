@@ -182,8 +182,9 @@ def _type_check(arg, msg, is_argument=True, module=None):
     return arg
 
 
-def _is_param_spec(arg):
-    return arg is ... or isinstance(arg, (ParamSpec, _ConcatenateGenericAlias))
+def _is_param_expr(arg):
+    return arg is ... or isinstance(arg,
+            (tuple, list, ParamSpec, _ConcatenateGenericAlias))
 
 
 def _type_repr(obj):
@@ -237,7 +238,9 @@ def _prepare_paramspec_params(cls, params):
     variables (internal helper).
     """
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
-    if len(cls.__parameters__) == 1 and len(params) > 1:
+    if (len(cls.__parameters__) == 1
+            and params and not _is_param_expr(params[0])):
+        assert isinstance(cls.__parameters__[0], ParamSpec)
         return (params,)
     else:
         _check_generic(cls, params, len(cls.__parameters__))
@@ -921,14 +924,11 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     def __getitem__(self, arg):
         if isinstance(arg, tuple) and len(arg) == 1:
             arg, = arg
-        if _is_param_spec(arg):
-            pass
-        elif isinstance(arg, (list, tuple)):
+        if isinstance(arg, (list, tuple)):
             arg = tuple(_type_check(a, "Expected a type.") for a in arg)
-        else:
-            msg = "Expected a list of types, ellipsis, ParamSpec, or Concatenate."
-            arg = _type_check(arg, msg)
-            arg = (arg,)
+        elif not _is_param_expr(arg):
+            raise TypeError(f"Expected a list of types, an ellipsis, "
+                            f"ParamSpec, or Concatenate. Got {arg}")
         return arg
 
 
@@ -1151,7 +1151,7 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
         args = self.__args__
-        if len(args) == 2 and _is_param_spec(args[0]):
+        if len(args) == 2 and _is_param_expr(args[0]):
             return super().__repr__()
         return (f'typing.Callable'
                 f'[[{", ".join([_type_repr(a) for a in args[:-1]])}], '
@@ -1159,7 +1159,7 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and _is_param_spec(args[0])):
+        if not (len(args) == 2 and _is_param_expr(args[0])):
             args = list(args[:-1]), args[-1]
         return operator.getitem, (Callable, args)
 
@@ -1396,8 +1396,7 @@ def _is_callable_members_only(cls):
 
 
 def _no_init(self, *args, **kwargs):
-    if type(self)._is_protocol:
-        raise TypeError('Protocols cannot be instantiated')
+    raise TypeError('Protocols cannot be instantiated')
 
 def _caller(depth=1, default='__main__'):
     try:
@@ -1537,6 +1536,15 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
+            if cls.__init__ == _no_init:
+                for base in cls.__mro__:
+                    init = base.__dict__.get('__init__', _no_init)
+                    if init != _no_init:
+                        cls.__init__ = init
+                        break
+                else:
+                    # should not happen
+                    cls.__init__ = object.__init__
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.
@@ -1871,7 +1879,7 @@ def get_args(tp):
     if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
         if (tp.__origin__ is collections.abc.Callable
-                and not _is_param_spec(res[0])):
+                and not (len(res) == 2 and _is_param_expr(res[0]))):
             res = (list(res[:-1]), res[-1])
         return res
     if isinstance(tp, types.UnionType):

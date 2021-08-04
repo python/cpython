@@ -117,10 +117,10 @@ _Py_GetSpecializationStats(void) {
 #endif
 
 
-#define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
+#define PRINT_STAT(name, field) fprintf(out, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
 
 static void
-print_stats(SpecializationStats *stats, const char *name)
+print_stats(FILE *out, SpecializationStats *stats, const char *name)
 {
     PRINT_STAT(name, specialization_success);
     PRINT_STAT(name, specialization_failure);
@@ -133,18 +133,18 @@ print_stats(SpecializationStats *stats, const char *name)
     if (stats->miss_types == NULL) {
         return;
     }
-    fprintf(stderr, "    %s.fails:\n", name);
+    fprintf(out, "    %s.fails:\n", name);
     PyObject *key, *count;
     Py_ssize_t pos = 0;
     while (PyDict_Next(stats->miss_types, &pos, &key, &count)) {
         PyObject *type = PyTuple_GetItem(key, 0);
         PyObject *name = PyTuple_GetItem(key, 1);
         PyObject *kind = PyTuple_GetItem(key, 2);
-        fprintf(stderr, "        %s.", ((PyTypeObject *)type)->tp_name);
-        PyObject_Print(name, stderr, Py_PRINT_RAW);
-        fprintf(stderr, " (");
-        PyObject_Print(kind, stderr, Py_PRINT_RAW);
-        fprintf(stderr, "): %ld\n", PyLong_AsLong(count));
+        fprintf(out, "        %s.", ((PyTypeObject *)type)->tp_name);
+        PyObject_Print(name, out, Py_PRINT_RAW);
+        fprintf(out, " (");
+        PyObject_Print(kind, out, Py_PRINT_RAW);
+        fprintf(out, "): %ld\n", PyLong_AsLong(count));
     }
 #endif
 }
@@ -153,10 +153,29 @@ print_stats(SpecializationStats *stats, const char *name)
 void
 _Py_PrintSpecializationStats(void)
 {
-    printf("Specialization stats:\n");
-    print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
-    print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
-    print_stats(&_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    FILE *out = stderr;
+#if SPECIALIZATION_STATS_TO_FILE
+    /* Write to a file instead of stderr. */
+# ifdef MS_WINDOWS
+    const char *dirname = "c:\\temp\\py_stats\\";
+# else
+    const char *dirname = "/tmp/py_stats/";
+# endif
+    char buf[48];
+    sprintf(buf, "%s%u_%u.txt", dirname, (unsigned)clock(), (unsigned)rand());
+    FILE *fout = fopen(buf, "w");
+    if (fout) {
+        out = fout;
+    }
+#else
+    fprintf(out, "Specialization stats:\n");
+#endif
+    print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
+    print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    if (out != stderr) {
+        fclose(out);
+    }
 }
 
 #if SPECIALIZATION_STATS_DETAILED
