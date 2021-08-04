@@ -1380,6 +1380,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    so that *self* knows the contained object can no longer be used.  The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
 
+   Note that :c:member:`~PyTypeObject.tp_clear` is not *always* called
+   before an instance is deallocated. For example, when reference counting
+   is enough to determine that an object is no longer used, the cyclic garbage
+   collector is not involved and :c:member:`~PyTypeObject.tp_dealloc` is
+   called directly.
+
    Because the goal of :c:member:`~PyTypeObject.tp_clear` functions is to break reference cycles,
    it's not necessary to clear contained objects like Python strings or Python
    integers, which can't participate in reference cycles. On the other hand, it may
