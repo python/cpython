@@ -20,7 +20,7 @@ Porting Python 2 Code to Python 3
    came into existence, you can read Nick Coghlan's `Python 3 Q & A`_ or
    Brett Cannon's `Why Python 3 exists`_.
 
-   
+
    For help with porting, you can view the archived python-porting_ mailing list.
 
 The Short Explanation
