@@ -1,5 +1,4 @@
 import contextlib
-import difflib
 import pprint
 import pickle
 import re
@@ -9,7 +8,6 @@ from typing import Tuple
 import warnings
 import weakref
 import inspect
-import time
 import types
 
 from copy import deepcopy
