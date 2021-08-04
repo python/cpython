@@ -939,6 +939,7 @@ class cached_property:
         self.updater_lock = RLock()
         self.cv = Condition(RLock())
         self.updater = {}
+        self.writeable = True  # Assume attrname is writeable until shown otherwise
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -978,10 +979,12 @@ class cached_property:
 
         # ONLY if this instance currently being updated, block and wait
         # for the computed result. Other instances won't have to wait.
-        # If an exception occurred, stop waiting.
+        # If an exception occurred, stop waiting.  If attrname turns
+        # out not to be writeable, don't wait.  Just recompute.
         if wait:
             with self.cv:
-                while cache.get(self.attrname, _NOT_FOUND) is _NOT_FOUND:
+                while (self.writeable
+                       and cache.get(self.attrname, _NOT_FOUND) is _NOT_FOUND):
                     self.cv.wait()
                 val = cache[self.attrname]
                 if val is not _EXCEPTION_RAISED:
@@ -997,12 +1000,8 @@ class cached_property:
         try:
             cache[self.attrname] = val
         except TypeError:
-            # Note: we have no way to communicate this exception to
-            # threads waiting on the condition variable.  However, the
-            # inability to store an attribute is a programming problem
-            # rather than a runtime problem -- this exception would
-            # likely occur early in testing rather than being runtime
-            # event triggered by specific data.
+            self.writeable = False
+            self.cv.notifyall()
             msg = (
                 f"The '__dict__' attribute on {type(instance).__name__!r} instance "
                 f"does not support item assignment for caching {self.attrname!r} property."
