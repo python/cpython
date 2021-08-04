@@ -976,14 +976,14 @@ class cached_property:
                 reentrant = True
             wait = self.updater.setdefault(key, this_thread) != this_thread
 
-        # ONLY if this instance currently being updated, block and wait
-        # for the main thread to finish. Other instances won't have to wait.
+        # Only if this particular instance is currently being updated, block and wait
+        # for the updating thread to finish. Other instances won't have to wait.
         if wait:
             with self.cv:
                 while key in self.updater:
                     self.cv.wait()
 
-        # If a value has already been stored, use it
+        # If a value has already been stored, use it.
         val = cache.get(self.attrname, _NOT_FOUND)
         if val is not _NOT_FOUND:
             if not reentrant:
