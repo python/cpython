@@ -526,7 +526,7 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         }
         if (sz > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "String is longer than INT_MAX bytes");
+                            "string is longer than INT_MAX bytes");
             return -1;
         }
         sqlite3_result_text(context, str, (int)sz, SQLITE_TRANSIENT);
