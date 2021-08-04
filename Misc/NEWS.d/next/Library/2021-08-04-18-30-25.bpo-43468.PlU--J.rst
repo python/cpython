@@ -1,0 +1,3 @@
+Fixed locking for functools.cached_property() to have instance specific
+locking.  Formerly, it blocked all instances of the same class, making it
+suitable for parallel I/O bound computations (which were a key use case).
