@@ -165,6 +165,15 @@ class AggrSum:
     def finalize(self):
         return self.val
 
+class AggrText:
+    def __init__(self):
+        self.txt = ""
+    def step(self, txt):
+        self.txt = self.txt + txt
+    def finalize(self):
+        return self.txt
+
+
 class FunctionTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -399,6 +408,7 @@ class AggregateTests(unittest.TestCase):
         self.con.create_aggregate("checkType", 2, AggrCheckType)
         self.con.create_aggregate("checkTypes", -1, AggrCheckTypes)
         self.con.create_aggregate("mysum", 1, AggrSum)
+        self.con.create_aggregate("aggtxt", 1, AggrText)
 
     def tearDown(self):
         #self.cur.close()
@@ -494,6 +504,15 @@ class AggregateTests(unittest.TestCase):
         cur = self.con.execute("select mysum(i) from (select 1 as i) where i == 0")
         val = cur.fetchone()[0]
         self.assertIsNone(val)
+
+    def test_aggr_text(self):
+        cur = self.con.cursor()
+        for txt in ["foo", "1\x002"]:
+            with self.subTest(txt=txt):
+                cur.execute("select aggtxt(?) from test", (txt,))
+                val = cur.fetchone()[0]
+                self.assertEqual(val, txt)
+
 
 class AuthorizerTests(unittest.TestCase):
     @staticmethod
