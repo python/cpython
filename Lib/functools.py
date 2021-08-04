@@ -974,12 +974,7 @@ class cached_property:
         with self.updater_lock:
             if self.updater.get(key) == this_thread:
                 reentrant = True
-                wait = False
-            if self.updater.get(key) is None:
-                self.updater[key] = this_thread
-                wait = False
-            else:
-                wait = True
+            wait = self.updater.setdefault(key, this_thread) != this_thread
 
         # ONLY if this instance currently being updated, block and wait
         # for the main thread to finish. Other instances won't have to wait.
