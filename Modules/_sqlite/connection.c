@@ -525,7 +525,9 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
             return -1;
         }
         if (sz > INT_MAX) {
-            sz = -1;  // Let SQLite compute string length
+            PyErr_SetString(PyExc_OverflowError,
+                            "String is longer than INT_MAX bytes");
+            return -1;
         }
         sqlite3_result_text(context, str, (int)sz, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
