@@ -1,0 +1,2 @@
+fixed incorrect boolean test for non-fd arguments in os.fwalk.
+Added test with custom class and __index__ method
