@@ -6,6 +6,7 @@ import io
 import collections
 import struct
 import sys
+import warnings
 import weakref
 
 import unittest
@@ -367,7 +368,10 @@ def getmodule(module):
         return sys.modules[module]
     except KeyError:
         try:
-            __import__(module)
+            with warnings.catch_warnings():
+                action = 'always' if support.verbose else 'ignore'
+                warnings.simplefilter(action, DeprecationWarning)
+                __import__(module)
         except AttributeError as exc:
             if support.verbose:
                 print("Can't import module %r: %s" % (module, exc))

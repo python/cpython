@@ -228,7 +228,7 @@ def _check_generic(cls, parameters, elen):
         raise TypeError(f"{cls} is not a generic class")
     alen = len(parameters)
     if alen != elen:
-        raise TypeError(f"Too {'many' if alen > elen else 'few'} parameters for {cls};"
+        raise TypeError(f"Too {'many' if alen > elen else 'few'} arguments for {cls};"
                         f" actual {alen}, expected {elen}")
 
 def _prepare_paramspec_params(cls, params):
@@ -239,6 +239,7 @@ def _prepare_paramspec_params(cls, params):
     if len(cls.__parameters__) == 1 and len(params) > 1:
         return (params,)
     else:
+        _check_generic(cls, params, len(cls.__parameters__))
         _params = []
         # Convert lists to tuples to help other libraries cache the results.
         for p, tvar in zip(params, cls.__parameters__):
@@ -1022,10 +1023,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         if not isinstance(params, tuple):
             params = (params,)
         params = tuple(_type_convert(p) for p in params)
-        if self._paramspec_tvars:
-            if any(isinstance(t, ParamSpec) for t in self.__parameters__):
-                params = _prepare_paramspec_params(self, params)
-        _check_generic(self, params, len(self.__parameters__))
+        if (self._paramspec_tvars
+                and any(isinstance(t, ParamSpec) for t in self.__parameters__)):
+            params = _prepare_paramspec_params(self, params)
+        else:
+            _check_generic(self, params, len(self.__parameters__))
 
         subst = dict(zip(self.__parameters__, params))
         new_args = []
@@ -1292,7 +1294,8 @@ class Generic:
             # Subscripting a regular Generic subclass.
             if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
                 params = _prepare_paramspec_params(cls, params)
-            _check_generic(cls, params, len(cls.__parameters__))
+            else:
+                _check_generic(cls, params, len(cls.__parameters__))
         return _GenericAlias(cls, params,
                              _typevar_types=(TypeVar, ParamSpec),
                              _paramspec_tvars=True)
@@ -1378,8 +1381,7 @@ def _is_callable_members_only(cls):
 
 
 def _no_init(self, *args, **kwargs):
-    if type(self)._is_protocol:
-        raise TypeError('Protocols cannot be instantiated')
+    raise TypeError('Protocols cannot be instantiated')
 
 def _caller(depth=1, default='__main__'):
     try:
@@ -1519,6 +1521,15 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
+            if cls.__init__ == _no_init:
+                for base in cls.__mro__:
+                    init = base.__dict__.get('__init__', _no_init)
+                    if init != _no_init:
+                        cls.__init__ = init
+                        break
+                else:
+                    # should not happen
+                    cls.__init__ = object.__init__
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.

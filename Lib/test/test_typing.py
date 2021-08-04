@@ -626,8 +626,6 @@ class TypingCallableTests(BaseCallableTests, BaseTestCase):
         self.assertEqual(c1.__args__, c2.__args__)
         self.assertEqual(hash(c1.__args__), hash(c2.__args__))
 
-    test_errors = skip("known bug #44793")(BaseCallableTests.test_errors)
-
 
 class CollectionsCallableTests(BaseCallableTests, BaseTestCase):
     Callable = collections.abc.Callable
@@ -883,6 +881,9 @@ class ProtocolTests(BaseTestCase):
         class C(P): pass
 
         self.assertIsInstance(C(), C)
+        with self.assertRaises(TypeError):
+            C(42)
+
         T = TypeVar('T')
 
         class PG(Protocol[T]): pass
@@ -897,6 +898,8 @@ class ProtocolTests(BaseTestCase):
         class CG(PG[T]): pass
 
         self.assertIsInstance(CG[int](), CG)
+        with self.assertRaises(TypeError):
+            CG[int](42)
 
     def test_cannot_instantiate_abstract(self):
         @runtime_checkable
@@ -1323,6 +1326,37 @@ class ProtocolTests(BaseTestCase):
                 self.test = 'OK'
 
         self.assertEqual(C[int]().test, 'OK')
+
+        class B:
+            def __init__(self):
+                self.test = 'OK'
+
+        class D1(B, P[T]):
+            pass
+
+        self.assertEqual(D1[int]().test, 'OK')
+
+        class D2(P[T], B):
+            pass
+
+        self.assertEqual(D2[int]().test, 'OK')
+
+    def test_new_called(self):
+        T = TypeVar('T')
+
+        class P(Protocol[T]): pass
+
+        class C(P[T]):
+            def __new__(cls, *args):
+                self = super().__new__(cls, *args)
+                self.test = 'OK'
+                return self
+
+        self.assertEqual(C[int]().test, 'OK')
+        with self.assertRaises(TypeError):
+            C[int](42)
+        with self.assertRaises(TypeError):
+            C[int](a=42)
 
     def test_protocols_bad_subscripts(self):
         T = TypeVar('T')
@@ -4588,6 +4622,10 @@ class ParamSpecTests(BaseTestCase):
         G1 = X[int, P_2]
         self.assertEqual(G1.__args__, (int, P_2))
         self.assertEqual(G1.__parameters__, (P_2,))
+        with self.assertRaisesRegex(TypeError, "few arguments for"):
+            X[int]
+        with self.assertRaisesRegex(TypeError, "many arguments for"):
+            X[int, P_2, str]
 
         G2 = X[int, Concatenate[int, P_2]]
         self.assertEqual(G2.__args__, (int, Concatenate[int, P_2]))
