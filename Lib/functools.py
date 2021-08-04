@@ -966,13 +966,15 @@ class cached_property:
 
         # Quickly and atomically determine which thread is reponsible
         # for doing the update, so other threads can wait for that
-        # update to complete. XXX If the current thread is already running,
+        # update to complete. If the current thread is already running,
         # allow the reentrant thread to proceed rather than waiting.
         key = id(self)
         this_thread = get_ident()
+        reentrant = False
         with self.updater_lock:
             if self.updater.get(key) == this_thread:
-                raise RuntimeError('reentrant')
+                reentrant = True
+                wait = False
             if self.updater.get(key) is None:
                 self.updater[key] = this_thread
                 wait = False
@@ -989,10 +991,11 @@ class cached_property:
         # If a value has already been stored, use it
         val = cache.get(self.attrname, _NOT_FOUND)
         if val is not _NOT_FOUND:
-            with self.updater_lock:
-                self.updater.pop(key, None)
-            with self.cv:
-                self.cv.notify_all()
+            if not reentrant:
+                with self.updater_lock:
+                    self.updater.pop(key, None)
+                with self.cv:
+                    self.cv.notify_all()
             return val
 
         # Call the underlying function to compute the value.
@@ -1020,10 +1023,11 @@ class cached_property:
             raise TypeError(msg) from None
 
         # Value has been computed and cached.  Now return it.
-        with self.updater_lock:
-            self.updater.pop(key, None)
-        with self.cv:
-            self.cv.notify_all()
+        if not reentrant:
+            with self.updater_lock:
+                self.updater.pop(key, None)
+            with self.cv:
+                self.cv.notify_all()
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
