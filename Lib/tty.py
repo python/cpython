@@ -18,11 +18,11 @@ CC = 6
 def setraw(fd, when=TCSAFLUSH):
     """Put terminal into a raw mode."""
     mode = tcgetattr(fd)
-    mode[IFLAG] = mode[IFLAG] & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
+    mode[IFLAG] = mode[IFLAG] & ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON)
     mode[OFLAG] = mode[OFLAG] & ~(OPOST)
     mode[CFLAG] = mode[CFLAG] & ~(CSIZE | PARENB)
     mode[CFLAG] = mode[CFLAG] | CS8
-    mode[LFLAG] = mode[LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
+    mode[LFLAG] = mode[LFLAG] & ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN)
     mode[CC][VMIN] = 1
     mode[CC][VTIME] = 0
     tcsetattr(fd, when, mode)
