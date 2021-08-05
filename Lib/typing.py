@@ -1244,9 +1244,7 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
 
     def __reduce__(self):
         func, (origin, args) = super().__reduce__()
-        if self._name == "Optional":
-            args = args[1] if args[0] is type(None) else args[0]
-        return func, (origin, args)
+        return func, (Union, args)
 
 
 def _value_and_type_iter(parameters):
