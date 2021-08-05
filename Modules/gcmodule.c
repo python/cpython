@@ -2232,8 +2232,8 @@ PyObject_IS_GC(PyObject *obj)
     return _PyObject_IS_GC(obj);
 }
 
-static PyObject *
-_PyObject_GC_Alloc(int use_calloc, size_t basicsize)
+PyObject *
+_PyObject_GC_Malloc(size_t basicsize)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
@@ -2242,13 +2242,7 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
     }
     size_t size = sizeof(PyGC_Head) + basicsize;
 
-    PyGC_Head *g;
-    if (use_calloc) {
-        g = (PyGC_Head *)PyObject_Calloc(1, size);
-    }
-    else {
-        g = (PyGC_Head *)PyObject_Malloc(size);
-    }
+    PyGC_Head *g = (PyGC_Head *)PyObject_Malloc(size);
     if (g == NULL) {
         return _PyErr_NoMemory(tstate);
     }
@@ -2271,17 +2265,6 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
     return op;
 }
 
-PyObject *
-_PyObject_GC_Malloc(size_t basicsize)
-{
-    return _PyObject_GC_Alloc(0, basicsize);
-}
-
-PyObject *
-_PyObject_GC_Calloc(size_t basicsize)
-{
-    return _PyObject_GC_Alloc(1, basicsize);
-}
 
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)

@@ -91,7 +91,6 @@ PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 #endif
 
 PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t size);
-PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 
 
 /* Test if a type supports weak references */
