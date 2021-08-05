@@ -1238,6 +1238,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_retval(self, arg):
         """retval
         Print the return value for the last return of a function.
+        Alternatively, the return value can be accessed with the local
+        variable ``__return__``
         """
         if '__return__' in self.curframe_locals:
             self.message(repr(self.curframe_locals['__return__']))

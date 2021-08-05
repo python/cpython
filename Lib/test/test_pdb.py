@@ -107,6 +107,7 @@ def test_pdb_basic_commands():
     ...     'jump 8',     # jump over second for loop
     ...     'return',     # return out of function
     ...     'retval',     # display return value
+    ...     '__return__', # access the return value
     ...     'next',       # step to test_function3()
     ...     'step',       # stepping into test_function3()
     ...     'args',       # display function args
@@ -140,7 +141,7 @@ def test_pdb_basic_commands():
     [EOF]
     (Pdb) bt
     ...
-      <doctest test.test_pdb.test_pdb_basic_commands[4]>(25)<module>()
+      <doctest test.test_pdb.test_pdb_basic_commands[4]>(26)<module>()
     -> test_function()
       <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
@@ -184,6 +185,8 @@ def test_pdb_basic_commands():
     > <doctest test.test_pdb.test_pdb_basic_commands[0]>(10)test_function_2()->'BAZ'
     -> return foo.upper()
     (Pdb) retval
+    'BAZ'
+    (Pdb) __return__
     'BAZ'
     (Pdb) next
     > <doctest test.test_pdb.test_pdb_basic_commands[3]>(4)test_function()
