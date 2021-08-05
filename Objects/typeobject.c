@@ -1160,17 +1160,16 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
     /* note that we need to add one, for the sentinel */
 
-    if (_PyType_IS_GC(type)) {
-        obj = _PyObject_GC_Malloc(size);
-    }
-    else {
-        obj = (PyObject *)PyObject_Malloc(size);
-    }
-
-    if (obj == NULL) {
+    const size_t presize = _PyType_PreHeaderSize(type);
+    char *alloc = PyObject_Malloc(size + presize);
+    if (alloc  == NULL) {
         return PyErr_NoMemory();
     }
-
+    obj = (PyObject *)(alloc + presize);
+    if (presize) {
+        ((PyObject **)alloc)[0] = NULL;
+        _PyObject_GC_Link(obj);
+    }
     memset(obj, '\0', size);
 
     if (type->tp_itemsize == 0) {
@@ -1362,6 +1361,8 @@ subtype_dealloc(PyObject *self)
         // can deallocate the type and free its memory.
         int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
                                  && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
+        assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
 
         /* Call the base tp_dealloc() */
         assert(basedealloc);
@@ -2979,13 +2980,8 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     }
 
     if (ctx->add_dict) {
-        if (ctx->base->tp_itemsize) {
-            type->tp_dictoffset = -(long)sizeof(PyObject *);
-        }
-        else {
-            type->tp_dictoffset = slotoffset;
-        }
-        slotoffset += sizeof(PyObject *);
+        type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
+        type->tp_dictoffset = -(long)sizeof(PyObject *)*3;
     }
 
     if (ctx->add_weak) {
@@ -3584,6 +3580,10 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
             goto fail;
     }
     if (dictoffset) {
+        if (dictoffset < 0) {
+            PyErr_SetString(PyExc_TypeError, "Negative __dictoffset__");
+            goto fail;
+        }
         type->tp_dictoffset = dictoffset;
         if (PyDict_DelItemString((PyObject *)type->tp_dict, "__dictoffset__") < 0)
             goto fail;
@@ -4694,16 +4694,22 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
     if (newbase != oldbase &&
         (newbase->tp_base != oldbase->tp_base ||
          !same_slots_added(newbase, oldbase))) {
-        PyErr_Format(PyExc_TypeError,
-                     "%s assignment: "
-                     "'%s' object layout differs from '%s'",
-                     attr,
-                     newto->tp_name,
-                     oldto->tp_name);
-        return 0;
+        goto differs;
     }
-
-    return 1;
+    /* The above does not check for managed __dicts__ */
+    if ((oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT) ==
+        ((newto->tp_flags & Py_TPFLAGS_MANAGED_DICT)))
+    {
+        return 1;
+    }
+differs:
+    PyErr_Format(PyExc_TypeError,
+                    "%s assignment: "
+                    "'%s' object layout differs from '%s'",
+                    attr,
+                    newto->tp_name,
+                    oldto->tp_name);
+    return 0;
 }
 
 static int
@@ -5704,6 +5710,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         if (type->tp_clear == NULL)
             type->tp_clear = base->tp_clear;
     }
+    type->tp_flags |= (base->tp_flags & Py_TPFLAGS_MANAGED_DICT);
 
     if (type->tp_basicsize == 0)
         type->tp_basicsize = base->tp_basicsize;

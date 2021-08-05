@@ -69,10 +69,10 @@ module gc
 #define NEXT_MASK_UNREACHABLE  (1)
 
 /* Get an object's GC head */
-#define AS_GC(o) ((PyGC_Head *)(o)-1)
+#define AS_GC(o) ((PyGC_Head *)(((char *)(o))-sizeof(PyGC_Head)))
 
 /* Get the object given the GC head */
-#define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
+#define FROM_GC(g) ((PyObject *)(((char *)(g))+sizeof(PyGC_Head)))
 
 static inline int
 gc_is_collecting(PyGC_Head *g)
@@ -2232,6 +2232,31 @@ PyObject_IS_GC(PyObject *obj)
     return _PyObject_IS_GC(obj);
 }
 
+void
+_PyObject_GC_Link(PyObject *op)
+{
+    PyGC_Head *g = AS_GC(op);
+    assert(((uintptr_t)g & (sizeof(uintptr_t)-1)) == 0);  // g must be correctly aligned
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    GCState *gcstate = &tstate->interp->gc;
+    g->_gc_next = 0;
+    g->_gc_prev = 0;
+    gcstate->generations[0].count++; /* number of allocated GC objects */
+    if (gcstate->generations[0].count > gcstate->generations[0].threshold &&
+        gcstate->enabled &&
+        gcstate->generations[0].threshold &&
+        !gcstate->collecting &&
+        !_PyErr_Occurred(tstate))
+    {
+        gcstate->collecting = 1;
+        gc_collect_generations(tstate);
+        gcstate->collecting = 0;
+    }
+}
+
+
+
 PyObject *
 _PyObject_GC_Malloc(size_t basicsize)
 {
@@ -2246,7 +2271,7 @@ _PyObject_GC_Malloc(size_t basicsize)
     if (g == NULL) {
         return _PyErr_NoMemory(tstate);
     }
-    assert(((uintptr_t)g & 3) == 0);  // g must be aligned 4bytes boundary
+    assert(((uintptr_t)g & sizeof(uintptr_t)) == 0);  // g must be correctly aligned
 
     g->_gc_next = 0;
     g->_gc_prev = 0;
@@ -2317,6 +2342,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 void
 PyObject_GC_Del(void *op)
 {
+    size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
@@ -2325,7 +2351,7 @@ PyObject_GC_Del(void *op)
     if (gcstate->generations[0].count > 0) {
         gcstate->generations[0].count--;
     }
-    PyObject_Free(g);
+    PyObject_Free(((char *)op)-presize);
 }
 
 int

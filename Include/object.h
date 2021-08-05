@@ -326,6 +326,9 @@ given type object has a specified feature.
 */
 
 #ifndef Py_LIMITED_API
+
+#define Py_TPFLAGS_MANAGED_DICT (1 << 4)
+
 /* Set if instances of the type object are treated as sequences for pattern matching */
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
