@@ -257,13 +257,13 @@ class TypeVarTests(BaseTestCase):
         T = TypeVar('T')
         self.assertEqual(T.__parameters__, (T,))
         self.assertIs(T.__parameters__[0], T)
-        self.assertIs(T[int], int)
-        self.assertEqual(T[list[int]], list[int])
-        self.assertEqual(T[List[int]], List[int])
-        self.assertEqual(T[List], List)
-        self.assertIs(T[Any], Any)
-        self.assertIs(T[None], type(None))
-        self.assertIs(T[T], T)
+        self.assertIs(T[int,], int)
+        self.assertEqual(T[list[int],], list[int])
+        self.assertEqual(T[List[int],], List[int])
+        self.assertEqual(T[List,], List)
+        self.assertIs(T[Any,], Any)
+        self.assertIs(T[None,], type(None))
+        self.assertIs(T[T,], T)
         self.assertIs(T[(int,)], int)
 
     def test_bad_subscript(self):
@@ -276,7 +276,7 @@ class TypeVarTests(BaseTestCase):
         for arg in bad_args:
             with self.subTest(arg=arg):
                 with self.assertRaises(TypeError):
-                    T[arg]
+                    T[arg,]
                 with self.assertRaises(TypeError):
                     List[T][arg]
                 with self.assertRaises(TypeError):
@@ -4733,13 +4733,25 @@ class ParamSpecTests(BaseTestCase):
         P = ParamSpec("P")
         self.assertEqual(P.__parameters__, (P,))
         self.assertIs(P.__parameters__[0], P)
-        #self.assertEqual(P[int], (int,))
-        self.assertEqual(P[int, str], (int, str))
-        self.assertEqual(P[[int, str]], (int, str))
-        #self.assertEqual(P[None], (type(None),))
-        self.assertIs(P[...], ...)
-        self.assertIs(P[P], P)
-        self.assertEqual(P[Concatenate[int, P]], Concatenate[int, P])
+        self.assertEqual(P[(int, str),], (int, str))
+        self.assertEqual(P[[int, str],], (int, str))
+        self.assertEqual(P[[None],], (type(None),))
+        self.assertIs(P[...,], ...)
+        self.assertIs(P[P,], P)
+        self.assertEqual(P[Concatenate[int, P],], Concatenate[int, P])
+
+    def test_bad_subscript(self):
+        T = TypeVar('T')
+        P = ParamSpec('P')
+        bad_args = (42, int, None, T)
+        for arg in bad_args:
+            with self.subTest(arg=arg):
+                with self.assertRaises(TypeError):
+                    P[arg,]
+                with self.assertRaises(TypeError):
+                    typing.Callable[P, T][arg, str]
+                with self.assertRaises(TypeError):
+                    collections.abc.Callable[P, T][arg, str]
 
     def test_paramspec_in_nested_generics(self):
         # Although ParamSpec should not be found in __parameters__ of most
