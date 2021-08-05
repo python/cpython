@@ -472,12 +472,14 @@ def darwin_malloc_err_warning(test_name):
     expected."""
     if sys.platform != 'darwin':
         return
+
+    import shutil
     msg = ' NOTICE '
     detail = (f'{test_name} may generate "malloc can\'t allocate region"\n'
-              'warnings on OS X systems. This behavior is expected. Do not\n'
-              'report a bug unless tests are also failing.')
+              'warnings on macOS systems. This behavior is known. Do not\n'
+              'report a bug unless tests are also failing. See bpo-40928.')
 
-    padding = 80
+    padding, _ = shutil.get_terminal_size()
     print(msg.center(padding, '-'))
     print(detail)
     print('-' * padding)
