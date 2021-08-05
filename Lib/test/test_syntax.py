@@ -152,6 +152,14 @@ SyntaxError: expected 'else' after 'if' expression
 Traceback (most recent call last):
 SyntaxError: expected 'else' after 'if' expression
 
+>>> if True:
+...     print("Hello"
+...
+... if 2:
+...    print(123))
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 >>> True = True = 3
 Traceback (most recent call last):
 SyntaxError: cannot assign to True
