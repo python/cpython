@@ -282,15 +282,11 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-struct _IntConstantPair {
-    const char *constant_name;
-    int constant_value;
-};
-
-typedef struct _IntConstantPair IntConstantPair;
-
-/* sqlite API error codes */
-static const IntConstantPair _error_codes[] = {
+/* SQLite API error codes */
+static const struct {
+    const char *name;
+    long value;
+} error_codes[] = {
     {"SQLITE_ABORT", SQLITE_ABORT},
     {"SQLITE_AUTH", SQLITE_AUTH},
     {"SQLITE_BUSY", SQLITE_BUSY},
@@ -323,12 +319,25 @@ static const IntConstantPair _error_codes[] = {
     {NULL, 0},
 };
 
+static int
+add_error_constants(PyObject *module)
+{
+    for (int i = 0; error_codes[i].name != 0; i++) {
+        const char *name = error_codes[i].name;
+        const long value = error_codes[i].value;
+        if (PyModule_AddIntConstant(module, name, value) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 const char *
 pysqlite_error_name(int rc)
 {
-    for (int i = 0; _error_codes[i].constant_name != 0; i++) {
-        if (_error_codes[i].constant_value == rc) {
-            return _error_codes[i].constant_name;
+    for (int i = 0; error_codes[i].name != 0; i++) {
+        if (error_codes[i].value == rc) {
+            return error_codes[i].name;
         }
     }
     // No error code matched.
@@ -379,36 +388,6 @@ static int add_integer_constants(PyObject *module) {
     ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
 #endif
     return ret;
-}
-
-static int
-add_error_constant(PyObject *module, const char *name, int constant)
-{
-    PyObject *value = PyLong_FromLong(constant);
-    if (value == NULL) {
-        Py_DECREF(value);
-        return 1;
-    }
-
-    int rc = PyModule_AddObjectRef(module, name, value);
-    Py_DECREF(value);
-    if (rc < 0) {
-        return 1;
-    }
-    return 0;
-}
-
-static int
-add_error_constants(PyObject *module)
-{
-    for (int i = 0; _error_codes[i].constant_name != 0; i++) {
-        if (add_error_constant(module, _error_codes[i].constant_name,
-                               _error_codes[i].constant_value) < 0)
-        {
-            return -1;
-        }
-    }
-    return 0;
 }
 
 static struct PyModuleDef _sqlite3module = {
