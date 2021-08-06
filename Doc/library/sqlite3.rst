@@ -829,27 +829,30 @@ Exceptions
 
 .. exception:: Warning
 
-   A subclass of :exc:`Exception`.
+   Exception raised for important warnings like data truncations while
+   inserting, etc.  It is a subclass of :exc:`Exception`.
 
 .. exception:: Error
 
-   The base class of the other exceptions in this module.  It is a subclass
-   of :exc:`Exception`.
+   The base class of the other error exceptions in this module.  Use this to
+   catch all errors with one single except statement.  :exc:`Error` is a
+   subclass of :exc:`Exception`.
+
+.. exception:: InterfaceError
+
+   Exception raised for errors that are related to the database interface
+   rather than the database itself.  It is a subclass of :exc:`Error`.
 
 .. exception:: DatabaseError
 
-   Exception raised for errors that are related to the database.
+   Exception raised for errors that are related to the database.  It is a
+   subclass of :exc:`Error`.
 
-.. exception:: IntegrityError
+.. exception:: DataError
 
-   Exception raised when the relational integrity of the database is affected,
-   e.g. a foreign key check fails.  It is a subclass of :exc:`DatabaseError`.
-
-.. exception:: ProgrammingError
-
-   Exception raised for programming errors, e.g. table not found or already
-   exists, syntax error in the SQL statement, wrong number of parameters
-   specified, etc.  It is a subclass of :exc:`DatabaseError`.
+   Exception raised for errors that are due to problems with the processed data
+   like division by zero, numeric value out of range, etc.  It is a subclass of
+   :exc:`DatabaseError`.
 
 .. exception:: OperationalError
 
@@ -857,6 +860,23 @@ Exceptions
    and not necessarily under the control of the programmer, e.g. an unexpected
    disconnect occurs, the data source name is not found, a transaction could
    not be processed, etc.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: IntegrityError
+
+   Exception raised when the relational integrity of the database is affected,
+   e.g. a foreign key check fails.  It is a subclass of :exc:`DatabaseError`.
+
+.. exception:: InternalError
+
+   Exception raised when the database encounters an internal error, e.g. the
+   cursor is not valid anymore, the transaction is out of sync, etc.  It is a
+   subclass of :exc:`DatabaseError`.
+
+.. exception:: ProgrammingError
+
+   Exception raised for programming errors, e.g. table not found or already
+   exists, syntax error in the SQL statement, wrong number of parameters
+   specified, etc.  It is a subclass of :exc:`DatabaseError`.
 
 .. exception:: NotSupportedError
 
