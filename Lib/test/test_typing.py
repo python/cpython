@@ -4791,9 +4791,13 @@ class TypeGuardTests(BaseTestCase):
             issubclass(int, TypeGuard)
 
 
+SpecialAttrsP = typing.ParamSpec('SpecialAttrsP')
+SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
+
+
 class SpecialAttrsTests(BaseTestCase):
+
     def test_special_attrs(self):
-        P = typing.ParamSpec('P')
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -4873,33 +4877,99 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Type[Any]: 'Type',
             typing.ValuesView[Any]: 'ValuesView',
             # Special Forms
+            typing.Annotated: 'Annotated',
             typing.Any: 'Any',
-            typing.NoReturn: 'NoReturn',
             typing.ClassVar: 'ClassVar',
-            typing.Final: 'Final',
-            typing.Union: 'Union',
-            typing.Optional: 'Optional',
-            typing.Literal: 'Literal',
-            typing.TypeAlias: 'TypeAlias',
             typing.Concatenate: 'Concatenate',
+            typing.Final: 'Final',
+            typing.ForwardRef: 'ForwardRef',
+            typing.Literal: 'Literal',
+            typing.NewType: 'NewType',
+            typing.NoReturn: 'NoReturn',
+            typing.Optional: 'Optional',
+            typing.TypeAlias: 'TypeAlias',
             typing.TypeGuard: 'TypeGuard',
+            typing.TypeVar: 'TypeVar',
+            typing.Union: 'Union',
             # Subscribed special forms
+            typing.Annotated[Any, "Annotation"]: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
+            typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',
+            typing.Literal[Any]: 'Literal',
+            typing.Optional[Any]: 'Optional',
+            typing.TypeGuard[Any]: 'TypeGuard',
             typing.Union[Any]: 'Any',
             typing.Union[int, float]: 'Union',
-            typing.Optional[Any]: 'Optional',
-            typing.Literal[Any]: 'Literal',
-            typing.Concatenate[Any, P]: 'Concatenate',
-            typing.TypeGuard[Any]: 'TypeGuard',
+            # Incompatible special forms (tested in test_special_attrs2)
+            # - typing.ForwardRef('set[Any]')
+            # - typing.NewType('TypeName', Any)
+            # - typing.ParamSpec('SpecialAttrsP')
+            # - typing.TypeVar('T')
         }
 
         for cls, name in cls_to_check.items():
             with self.subTest(cls=cls):
-                self.assertEqual(name, cls._name)
-                self.assertEqual(cls.__name__, cls._name)
-                self.assertEqual(cls.__qualname__, cls._name)
-                self.assertEqual(cls.__module__, 'typing')
+                self.assertEqual(cls.__name__, name, str(cls))
+                self.assertEqual(cls.__qualname__, name, str(cls))
+                self.assertEqual(cls.__module__, 'typing', str(cls))
+                self.assertEqual(getattr(cls, '_name', name), name, str(cls))
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(cls, proto)
+                    loaded = pickle.loads(s)
+                    self.assertIs(cls, loaded)
+
+    TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
+
+    def test_special_attrs2(self):
+        # Forward refs provide a different introspection API. __name__ and
+        # __qualname__ make little sense for forward refs as they can store
+        # complex typing expressions.
+        fr = typing.ForwardRef('set[Any]')
+        self.assertFalse(hasattr(fr, '__name__'))
+        self.assertFalse(hasattr(fr, '__qualname__'))
+        self.assertEqual(fr.__module__, 'typing')
+        # Forward refs are currently unpicklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(TypeError) as exc:
+                pickle.dumps(fr, proto)
+
+        self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')
+        self.assertEqual(
+            SpecialAttrsTests.TypeName.__qualname__,
+            'SpecialAttrsTests.TypeName',
+        )
+        self.assertEqual(
+            SpecialAttrsTests.TypeName.__module__,
+            'test.test_typing',
+        )
+        # NewTypes are picklable assuming correct qualname information.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsTests.TypeName, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsTests.TypeName, loaded)
+
+        # Type variables don't support non-global instantiation per PEP 484
+        # restriction that "The argument to TypeVar() must be a string equal
+        # to the variable name to which it is assigned".  Thus, providing
+        # __qualname__ is unnecessary.
+        self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
+        self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
+        self.assertEqual(SpecialAttrsT.__module__, 'test.test_typing')
+        # Module-level type variables are picklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsT, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsT, loaded)
+
+        self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
+        self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
+        self.assertEqual(SpecialAttrsP.__module__, 'test.test_typing')
+        # Module-level ParamSpecs are picklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsP, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsP, loaded)
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""
