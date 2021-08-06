@@ -351,6 +351,13 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.execute("select isblob(x'')")
         self.assertTrue(cur.fetchone()[0])
 
+    def test_set_and_get(self):
+        self.con.create_function("returnit", 1, lambda x: x)
+        for val in 1, 2.5, "text", "1\x002", "", b"data", None:
+            with self.subTest(val=val):
+                cur = self.con.execute("select returnit(?)", (val,))
+                self.assertEqual(val, cur.fetchone()[0])
+
     # Regarding deterministic functions:
     #
     # Between 3.8.3 and 3.15.0, deterministic functions were only used to
