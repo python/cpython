@@ -4069,10 +4069,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         }
 
         case TARGET(LOAD_METHOD): {
+            PREDICTED(LOAD_METHOD);
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
+            STAT_INC(LOAD_ATTR, unquickened);
 
             int meth_found = _PyObject_GetMethod(obj, name, &meth);
 
@@ -4102,6 +4104,86 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
                 Py_DECREF(obj);
                 PUSH(meth);
             }
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_METHOD_ADAPTIVE): {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *owner = TOP();
+                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+                next_instr--;
+                if (_Py_Specialize_LoadMethod(owner, next_instr, name, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(LOAD_METHOD, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                STAT_DEC(LOAD_METHOD, unquickened);
+                JUMP_TO_INSTRUCTION(LOAD_METHOD);
+            }            
+        }
+
+        //case TARGET(LOAD_METHOD_SPLIT_KEYS): {
+        //    assert(cframe.use_tracing == 0);
+        //    PyObject *owner = TOP();
+        //    PyObject *res;
+        //    PyTypeObject *tp = Py_TYPE(owner);
+        //    SpecializedCacheEntry *caches = GET_CACHE();
+        //    _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+        //    _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+        //    assert(cache1->tp_version != 0);
+        //    DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+        //    assert(tp->tp_dictoffset > 0);
+        //    PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+        //    DEOPT_IF(dict == NULL, LOAD_METHOD);
+        //    assert(PyDict_CheckExact((PyObject *)dict));
+        //    DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+        //    res = dict->ma_values[cache0->index];
+        //    DEOPT_IF(res == NULL, LOAD_METHOD);
+        //    STAT_INC(LOAD_METHOD, hit);
+        //    record_cache_hit(cache0);
+        //    Py_INCREF(res);
+        //    SET_TOP(res);
+        //    Py_DECREF(owner);
+        //    DISPATCH();
+        //}
+
+        case TARGET(LOAD_METHOD_WITH_HINT): {
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyObject *owner = (PyObject *)Py_TYPE(self);
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, LOAD_METHOD);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            PyObject *name = GETITEM(names, cache0->original_oparg);
+            uint32_t hint = cache1->dk_version_or_hint;
+            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_METHOD);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+            DEOPT_IF(ep->me_key != name, LOAD_METHOD);
+            res = ep->me_value;
+            DEOPT_IF(
+                res == NULL ||
+                Py_TYPE(res)->tp_descr_get == NULL ||
+                !_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR),
+                LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
             DISPATCH();
         }
 
@@ -4430,6 +4512,7 @@ opname ## _miss: \
 
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
+MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 
 binary_subscr_dict_error:

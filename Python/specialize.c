@@ -261,6 +261,7 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+    [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
 };
 
@@ -268,6 +269,7 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
+    [LOAD_METHOD] = 2,
     [BINARY_SUBSCR] = 0,
 };
 
@@ -675,6 +677,78 @@ success:
     return 0;
 }
 
+int
+_Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    PyTypeObject *type = Py_TYPE(owner);
+    if (PyModule_CheckExact(owner)) {
+        // rare - LOAD_ATTR is usually emitted for modules imported
+        // at global level, not LOAD_METHOD
+        SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "module method");
+        goto fail;
+    }
+    if (type->tp_dict == NULL) {
+        if (PyType_Ready(type) < 0) {
+            return -1;
+        }
+    }
+    PyObject *descr = NULL;
+    DesciptorClassification kind = analyze_descriptor(type, name, &descr);
+    if (kind != METHOD || descr == NULL) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "not a method");
+        goto fail;
+    }
+    if (type->tp_dictoffset > 0) {
+        LookupAttrStatus status = lookup_attr_dict(
+            Py_TYPE(type), (PyObject *)type, name,
+            &cache1->dk_version_or_hint, &cache1->tp_version, &cache0->index);
+
+        switch (status) {
+            case ATTR_HINT:
+                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
+                goto success;
+            case BAIL:
+                return -1;
+            case ATTR_SPLIT_KEYS:
+                // Rare -- usually only when meth is in o.__dict__
+                // rather than type(o).__dict__. Requires more profiling
+                // to decide if it's worth it.
+                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "split keys");
+                break;
+        #if SPECIALIZATION_STATS
+            case ERR_NOT_DICT:
+                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "no dict or not a dict");
+                break;
+            case ERR_NOT_FOUND:
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "attribute not in dict");
+                break;
+            case ERR_INDEX_OUT_OF_RANGE:
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "index out of range");
+                break;
+            case ERR_OUT_OF_KEY_VERSIONS:
+            case ERR_OUT_OF_TYPE_VERSIONS
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no more key versions")
+                    break;
+            case ERR_HINT_OUT_OF_RANGE:
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "hint out of range")
+                    break;
+        #endif
+        }
+            goto fail;
+    }
+fail:
+    STAT_INC(LOAD_METHOD, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(LOAD_METHOD, specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,

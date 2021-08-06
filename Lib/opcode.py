@@ -233,6 +233,9 @@ _specialized_instructions = [
     "LOAD_GLOBAL_ADAPTIVE",
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
+    "LOAD_METHOD_ADAPTIVE",
+    "LOAD_METHOD_SPLIT_KEYS",
+    "LOAD_METHOD_WITH_HINT",
 ]
 
 _specialization_stats = [
