@@ -461,7 +461,7 @@ def ClassVar(self, parameters):
     be used with isinstance() or issubclass().
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,))
+    return _GenericAlias(self, (item,), name="ClassVar")
 
 @_SpecialForm
 def Final(self, parameters):
@@ -482,7 +482,7 @@ def Final(self, parameters):
     There is no runtime checking of these properties.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,))
+    return _GenericAlias(self, (item,), name="Final")
 
 @_SpecialForm
 def Union(self, parameters):
@@ -520,7 +520,12 @@ def Union(self, parameters):
     parameters = _remove_dups_flatten(parameters)
     if len(parameters) == 1:
         return parameters[0]
-    return _UnionGenericAlias(self, parameters)
+
+    if len(parameters) == 2 and type(None) in parameters:
+        name = "Optional"
+    else:
+        name = "Union"
+    return _UnionGenericAlias(self, parameters, name=name)
 
 @_SpecialForm
 def Optional(self, parameters):
@@ -565,7 +570,7 @@ def Literal(self, parameters):
     except TypeError:  # unhashable parameters
         pass
 
-    return _LiteralGenericAlias(self, parameters)
+    return _LiteralGenericAlias(self, parameters, name="Literal")
 
 
 @_SpecialForm
@@ -604,7 +609,7 @@ def Concatenate(self, parameters):
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = tuple(_type_check(p, msg) for p in parameters)
-    return _ConcatenateGenericAlias(self, parameters)
+    return _ConcatenateGenericAlias(self, parameters, name="Concatenate")
 
 
 @_SpecialForm
@@ -652,7 +657,7 @@ def TypeGuard(self, parameters):
     PEP 647 (User-Defined Type Guards).
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,))
+    return _GenericAlias(self, (item,), name="TypeGuard")
 
 
 class ForwardRef(_Final, _root=True):
@@ -1237,6 +1242,10 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
             if issubclass(cls, arg):
                 return True
 
+    def __reduce__(self):
+        func, (origin, args) = super().__reduce__()
+        return func, (Union, args)
+
 
 def _value_and_type_iter(parameters):
     return ((p, type(p)) for p in parameters)
@@ -1566,7 +1575,7 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
             origin = origin.__origin__
-        super().__init__(origin, origin)
+        super().__init__(origin, origin, name="Annotated")
         self.__metadata__ = metadata
 
     def copy_with(self, params):
