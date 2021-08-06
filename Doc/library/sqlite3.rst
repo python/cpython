@@ -835,8 +835,8 @@ Exceptions
 .. exception:: Error
 
    The base class of the other error exceptions in this module.  Use this to
-   catch all errors with one single except statement.  :exc:`Error` is a
-   subclass of :exc:`Exception`.
+   catch all errors with one single :keyword:`except` statement.  :exc:`Error`
+   is a subclass of :exc:`Exception`.
 
 .. exception:: InterfaceError
 
