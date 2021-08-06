@@ -78,7 +78,6 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
-
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -405,6 +404,11 @@ ZipFile Objects
 
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
+
+   .. note::
+
+      A leading slash in the filename may lead to the archive being impossible to
+      open in some zip programs on Windows systems.
 
    .. versionchanged:: 3.6
       Calling :meth:`write` on a ZipFile created with mode ``'r'`` or

@@ -40,10 +40,87 @@ Py_ssize_t _Py_QuickenedCount = 0;
 #if SPECIALIZATION_STATS
 SpecializationStats _specialization_stats[256] = { 0 };
 
-#define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
+#define ADD_STAT_TO_DICT(res, field) \
+    do { \
+        PyObject *val = PyLong_FromUnsignedLongLong(stats->field); \
+        if (val == NULL) { \
+            Py_DECREF(res); \
+            return NULL; \
+        } \
+        if (PyDict_SetItemString(res, #field, val) == -1) { \
+            Py_DECREF(res); \
+            Py_DECREF(val); \
+            return NULL; \
+        } \
+        Py_DECREF(val); \
+    } while(0);
+
+static PyObject*
+stats_to_dict(SpecializationStats *stats)
+{
+    PyObject *res = PyDict_New();
+    if (res == NULL) {
+        return NULL;
+    }
+    ADD_STAT_TO_DICT(res, specialization_success);
+    ADD_STAT_TO_DICT(res, specialization_failure);
+    ADD_STAT_TO_DICT(res, hit);
+    ADD_STAT_TO_DICT(res, deferred);
+    ADD_STAT_TO_DICT(res, miss);
+    ADD_STAT_TO_DICT(res, deopt);
+    ADD_STAT_TO_DICT(res, unquickened);
+#if SPECIALIZATION_STATS_DETAILED
+    if (stats->miss_types != NULL) {
+        if (PyDict_SetItemString(res, "fails", stats->miss_types) == -1) {
+            Py_DECREF(res);
+            return NULL;
+        }
+    }
+#endif
+    return res;
+}
+#undef ADD_STAT_TO_DICT
+
+static int
+add_stat_dict(
+    PyObject *res,
+    int opcode,
+    const char *name) {
+
+    SpecializationStats *stats = &_specialization_stats[opcode];
+    PyObject *d = stats_to_dict(stats);
+    if (d == NULL) {
+        return -1;
+    }
+    int err = PyDict_SetItemString(res, name, d);
+    Py_DECREF(d);
+    return err;
+}
+
+#if SPECIALIZATION_STATS
+PyObject*
+_Py_GetSpecializationStats(void) {
+    PyObject *stats = PyDict_New();
+    if (stats == NULL) {
+        return NULL;
+    }
+    int err = 0;
+    err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
+    err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
+    err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
+    if (err < 0) {
+        Py_DECREF(stats);
+        return NULL;
+    }
+    return stats;
+}
+#endif
+
+
+#define PRINT_STAT(name, field) fprintf(out, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
 
 static void
-print_stats(SpecializationStats *stats, const char *name)
+print_stats(FILE *out, SpecializationStats *stats, const char *name)
 {
     PRINT_STAT(name, specialization_success);
     PRINT_STAT(name, specialization_failure);
@@ -56,29 +133,49 @@ print_stats(SpecializationStats *stats, const char *name)
     if (stats->miss_types == NULL) {
         return;
     }
-    fprintf(stderr, "    %s.fails:\n", name);
+    fprintf(out, "    %s.fails:\n", name);
     PyObject *key, *count;
     Py_ssize_t pos = 0;
     while (PyDict_Next(stats->miss_types, &pos, &key, &count)) {
         PyObject *type = PyTuple_GetItem(key, 0);
         PyObject *name = PyTuple_GetItem(key, 1);
         PyObject *kind = PyTuple_GetItem(key, 2);
-        fprintf(stderr, "        %s.", ((PyTypeObject *)type)->tp_name);
-        PyObject_Print(name, stderr, Py_PRINT_RAW);
-        fprintf(stderr, " (");
-        PyObject_Print(kind, stderr, Py_PRINT_RAW);
-        fprintf(stderr, "): %ld\n", PyLong_AsLong(count));
+        fprintf(out, "        %s.", ((PyTypeObject *)type)->tp_name);
+        PyObject_Print(name, out, Py_PRINT_RAW);
+        fprintf(out, " (");
+        PyObject_Print(kind, out, Py_PRINT_RAW);
+        fprintf(out, "): %ld\n", PyLong_AsLong(count));
     }
 #endif
 }
+#undef PRINT_STAT
 
 void
 _Py_PrintSpecializationStats(void)
 {
-    printf("Specialization stats:\n");
-    print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
-    print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
-    print_stats(&_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    FILE *out = stderr;
+#if SPECIALIZATION_STATS_TO_FILE
+    /* Write to a file instead of stderr. */
+# ifdef MS_WINDOWS
+    const char *dirname = "c:\\temp\\py_stats\\";
+# else
+    const char *dirname = "/tmp/py_stats/";
+# endif
+    char buf[48];
+    sprintf(buf, "%s%u_%u.txt", dirname, (unsigned)clock(), (unsigned)rand());
+    FILE *fout = fopen(buf, "w");
+    if (fout) {
+        out = fout;
+    }
+#else
+    fprintf(out, "Specialization stats:\n");
+#endif
+    print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
+    print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    if (out != stderr) {
+        fclose(out);
+    }
 }
 
 #if SPECIALIZATION_STATS_DETAILED
@@ -125,7 +222,8 @@ done:
     Py_XDECREF(key);
 }
 
-#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) _Py_IncrementTypeCounter(opcode, (PyObject *)(type), attribute, kind)
+#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) _Py_IncrementTypeCounter(opcode, (PyObject *)(type), (PyObject *)(attribute), kind)
+
 
 #endif
 #endif
@@ -644,6 +742,7 @@ success:
     return 0;
 }
 
+
 int
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
@@ -654,7 +753,8 @@ _Py_Specialize_BinarySubscr(
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
             goto success;
         } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "list; non-integer subscr");
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "list; non-integer subscr");
+            goto fail;
         }
     }
     if (container_type == &PyTuple_Type) {
@@ -662,15 +762,15 @@ _Py_Specialize_BinarySubscr(
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
             goto success;
         } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "tuple; non-integer subscr");
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "tuple; non-integer subscr");
+            goto fail;
         }
     }
     if (container_type == &PyDict_Type) {
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
         goto success;
     }
-
-    SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), sub, "not list|tuple|dict");
+    SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "not list|tuple|dict");
     goto fail;
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);

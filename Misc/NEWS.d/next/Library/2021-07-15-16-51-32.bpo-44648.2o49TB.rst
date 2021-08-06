@@ -1,0 +1,3 @@
+Fixed wrong error being thrown by :func:`inspect.getsource` when examining a
+class in the interactive session. Instead of :exc:`TypeError`, it should be
+:exc:`OSError` with appropriate error message.
