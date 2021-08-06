@@ -93,7 +93,7 @@ Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"<>", r"!=",
                  r"~")
 
 Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'[:;.,`@]')
+Special = group(r'\r?\n', r':=', r'[:;.,`@]')
 Funny = group(Operator, Bracket, Special)
 
 PlainToken = group(Number, Funny, String, Name)
@@ -346,7 +346,7 @@ def generate_tokens(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found. The line passed is the
-    logical line; continuation lines are included.
+    physical line.
     """
     lnum = parenlev = continued = 0
     contstr, needcont = '', 0

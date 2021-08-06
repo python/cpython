@@ -16,7 +16,7 @@ PyAPI_DATA(PyTypeObject) PyDict_Type;
 
 #define PyDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
-#define PyDict_CheckExact(op) (Py_TYPE(op) == &PyDict_Type)
+#define PyDict_CheckExact(op) Py_IS_TYPE(op, &PyDict_Type)
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);
 PyAPI_FUNC(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);
@@ -57,6 +57,9 @@ PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
 PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
 PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);
 PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+PyAPI_FUNC(PyObject *) PyObject_GenericGetDict(PyObject *, void *);
+#endif
 
 /* Dictionary (keys, values, items) views */
 

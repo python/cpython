@@ -1,0 +1,4 @@
+Added the ``co_qualname`` to the ``PyCodeObject`` structure to propagate the
+qualified name from the compiler to code objects.
+
+Patch by Gabriele N. Tornetta

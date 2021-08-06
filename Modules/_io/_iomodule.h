@@ -2,6 +2,8 @@
  * Declarations shared between the different parts of the io module
  */
 
+#include "exports.h"
+
 /* ABCs */
 extern PyTypeObject PyIOBase_Type;
 extern PyTypeObject PyRawIOBase_Type;
@@ -148,7 +150,6 @@ typedef struct {
 #define IO_STATE() _PyIO_get_module_state()
 
 extern _PyIO_State *_PyIO_get_module_state(void);
-extern PyObject *_PyIO_get_locale_module(_PyIO_State *);
 
 #ifdef MS_WINDOWS
 extern char _PyIO_get_console_type(PyObject *);
@@ -183,4 +184,4 @@ extern PyObject *_PyIO_str_write;
 extern PyObject *_PyIO_empty_str;
 extern PyObject *_PyIO_empty_bytes;
 
-extern PyTypeObject _PyBytesIOBuffer_Type;
+extern Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type;

@@ -213,7 +213,7 @@ class TestTextIOSignalInterrupt(TestFileIOSignalInterrupt):
     def _generate_infile_setup_code(self):
         """Returns the infile = ... line of code to make a TextIOWrapper."""
         return ('import %s as io ;'
-                'infile = io.open(sys.stdin.fileno(), "rt", newline=None) ;'
+                'infile = io.open(sys.stdin.fileno(), encoding="utf-8", newline=None) ;'
                 'assert isinstance(infile, io.TextIOWrapper)' %
                 self.modname)
 

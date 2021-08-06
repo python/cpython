@@ -1,0 +1,2 @@
+The :class:`random.Random` constructor no longer reads system entropy
+without need.

@@ -24,14 +24,9 @@ list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -128,14 +123,9 @@ list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -156,7 +146,15 @@ PyDoc_STRVAR(list_sort__doc__,
 "sort($self, /, *, key=None, reverse=False)\n"
 "--\n"
 "\n"
-"Stable sort *IN PLACE*.");
+"Sort the list in ascending order and return None.\n"
+"\n"
+"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
+"order of two equal elements is maintained).\n"
+"\n"
+"If a key function is given, apply it once to each list item and sort them,\n"
+"ascending or descending, according to their function values.\n"
+"\n"
+"The reverse flag can be set to sort in descending order.");
 
 #define LIST_SORT_METHODDEF    \
     {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
@@ -187,11 +185,6 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     reverse = _PyLong_AsInt(args[1]);
     if (reverse == -1 && PyErr_Occurred()) {
@@ -306,7 +299,7 @@ list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     PyObject *iterable = NULL;
 
-    if ((Py_TYPE(self) == &PyList_Type) &&
+    if (Py_IS_TYPE(self, &PyList_Type) &&
         !_PyArg_NoKeywords("list", kwargs)) {
         goto exit;
     }
@@ -359,4 +352,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=d1d5078edb7d3cf4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0063aad535edf62d input=a9049054013a1b77]*/

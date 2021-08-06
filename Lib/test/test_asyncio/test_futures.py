@@ -139,9 +139,26 @@ class BaseFutureTests:
         f.cancel()
         self.assertTrue(f.cancelled())
 
-    def test_init_constructor_default_loop(self):
+    def test_constructor_without_loop(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
+                self._new_future()
+        self.assertEqual(cm.warnings[0].filename, __file__)
+
+    def test_constructor_use_running_loop(self):
+        async def test():
+            return self._new_future()
+        f = self.loop.run_until_complete(test())
+        self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
+
+    def test_constructor_use_global_loop(self):
+        # Deprecated in 3.10
         asyncio.set_event_loop(self.loop)
-        f = self._new_future()
+        self.addCleanup(asyncio.set_event_loop, None)
+        with self.assertWarns(DeprecationWarning) as cm:
+            f = self._new_future()
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -200,6 +217,27 @@ class BaseFutureTests:
         fut = self.cls.__new__(self.cls, loop=self.loop)
         self.assertFalse(fut.cancelled())
         self.assertFalse(fut.done())
+
+    def test_future_cancel_message_getter(self):
+        f = self._new_future(loop=self.loop)
+        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertEqual(f._cancel_message, None)
+
+        f.cancel('my message')
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(f)
+        self.assertEqual(f._cancel_message, 'my message')
+
+    def test_future_cancel_message_setter(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel('my message')
+        f._cancel_message = 'my new message'
+        self.assertEqual(f._cancel_message, 'my new message')
+
+        # Also check that the value is used for cancel().
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(f)
+        self.assertEqual(f._cancel_message, 'my new message')
 
     def test_cancel(self):
         f = self._new_future(loop=self.loop)
@@ -451,16 +489,41 @@ class BaseFutureTests:
         f2 = asyncio.wrap_future(f1)
         self.assertIs(f1, f2)
 
+    def test_wrap_future_without_loop(self):
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaises(RuntimeError):
+                asyncio.wrap_future(f1)
+        self.assertEqual(cm.warnings[0].filename, __file__)
+        ex.shutdown(wait=True)
+
+    def test_wrap_future_use_running_loop(self):
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        async def test():
+            return asyncio.wrap_future(f1)
+        f2 = self.loop.run_until_complete(test())
+        self.assertIs(self.loop, f2._loop)
+        ex.shutdown(wait=True)
+
     def test_wrap_future_use_global_loop(self):
-        with mock.patch('asyncio.futures.events') as events:
-            events.get_event_loop = lambda: self.loop
-            def run(arg):
-                return (arg, threading.get_ident())
-            ex = concurrent.futures.ThreadPoolExecutor(1)
-            f1 = ex.submit(run, 'oi')
+        # Deprecated in 3.10
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        with self.assertWarns(DeprecationWarning) as cm:
             f2 = asyncio.wrap_future(f1)
-            self.assertIs(self.loop, f2._loop)
-            ex.shutdown(wait=True)
+        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertIs(self.loop, f2._loop)
+        ex.shutdown(wait=True)
 
     def test_wrap_future_cancel(self):
         f1 = concurrent.futures.Future()
@@ -820,6 +883,45 @@ class PyFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
 
     def _new_future(self):
         return futures._PyFuture(loop=self.loop)
+
+
+class BaseFutureInheritanceTests:
+
+    def _get_future_cls(self):
+        raise NotImplementedError
+
+    def setUp(self):
+        super().setUp()
+        self.loop = self.new_test_loop()
+        self.addCleanup(self.loop.close)
+
+    def test_inherit_without_calling_super_init(self):
+        # See https://bugs.python.org/issue38785 for the context
+        cls = self._get_future_cls()
+
+        class MyFut(cls):
+            def __init__(self, *args, **kwargs):
+                # don't call super().__init__()
+                pass
+
+        fut = MyFut(loop=self.loop)
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Future object is not initialized."
+        ):
+            fut.get_loop()
+
+
+class PyFutureInheritanceTests(BaseFutureInheritanceTests,
+                               test_utils.TestCase):
+    def _get_future_cls(self):
+        return futures._PyFuture
+
+
+class CFutureInheritanceTests(BaseFutureInheritanceTests,
+                              test_utils.TestCase):
+    def _get_future_cls(self):
+        return futures._CFuture
 
 
 if __name__ == '__main__':

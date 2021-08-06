@@ -38,7 +38,7 @@ Functions and macros for modules that implement new object types.
    object with room for n items.  In addition to the refcount and type pointer
    fields, this also fills in the ob_size field.
 
- - PyObject_Del(op) releases the memory allocated for an object.  It does not
+ - PyObject_Free(op) releases the memory allocated for an object.  It does not
    run a destructor -- it only frees the memory.  PyObject_Free is identical.
 
  - PyObject_Init(op, typeobj) and PyObject_InitVar(op, typeobj, n) don't
@@ -48,8 +48,8 @@ Functions and macros for modules that implement new object types.
 
 Note that objects created with PyObject_{New, NewVar} are allocated using the
 specialized Python allocator (implemented in obmalloc.c), if WITH_PYMALLOC is
-enabled.  In addition, a special debugging allocator is used if PYMALLOC_DEBUG
-is also #defined.
+enabled.  In addition, a special debugging allocator is used if Py_DEBUG
+macro is also defined.
 
 In case a specific form of memory management is needed (for example, if you
 must use the platform malloc heap(s), or shared memory, or C++ local storage or
@@ -102,7 +102,9 @@ PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
 
 
-/* Macros */
+// Deprecated aliases only kept for backward compatibility.
+// PyObject_Del and PyObject_DEL are defined with no parameter to be able to
+// use them as function pointers (ex: tp_free = PyObject_Del).
 #define PyObject_MALLOC         PyObject_Malloc
 #define PyObject_REALLOC        PyObject_Realloc
 #define PyObject_FREE           PyObject_Free
@@ -118,106 +120,29 @@ PyAPI_FUNC(void) PyObject_Free(void *ptr);
 /* Functions */
 PyAPI_FUNC(PyObject *) PyObject_Init(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) PyObject_InitVar(PyVarObject *,
-                                                 PyTypeObject *, Py_ssize_t);
+                                           PyTypeObject *, Py_ssize_t);
+
+#define PyObject_INIT(op, typeobj) \
+    PyObject_Init(_PyObject_CAST(op), (typeobj))
+#define PyObject_INIT_VAR(op, typeobj, size) \
+    PyObject_InitVar(_PyVarObject_CAST(op), (typeobj), (size))
+
+
 PyAPI_FUNC(PyObject *) _PyObject_New(PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
-#define PyObject_New(type, typeobj) \
-                ( (type *) _PyObject_New(typeobj) )
+#define PyObject_New(type, typeobj) ((type *)_PyObject_New(typeobj))
+
+// Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
+// PyObject_MALLOC() with _PyObject_SIZE().
+#define PyObject_NEW(type, typeobj) PyObject_New(type, typeobj)
+
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
-/* Inline functions trading binary compatibility for speed:
-   PyObject_INIT() is the fast version of PyObject_Init(), and
-   PyObject_INIT_VAR() is the fast version of PyObject_InitVar.
-   See also pymem.h.
-
-   These inline functions expect non-NULL object pointers. */
-static inline PyObject*
-_PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
-{
-    assert(op != NULL);
-    Py_TYPE(op) = typeobj;
-    if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
-        Py_INCREF(typeobj);
-    }
-    _Py_NewReference(op);
-    return op;
-}
-
-#define PyObject_INIT(op, typeobj) \
-    _PyObject_INIT(_PyObject_CAST(op), (typeobj))
-
-static inline PyVarObject*
-_PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
-{
-    assert(op != NULL);
-    Py_SIZE(op) = size;
-    PyObject_INIT((PyObject *)op, typeobj);
-    return op;
-}
-
-#define PyObject_INIT_VAR(op, typeobj, size) \
-    _PyObject_INIT_VAR(_PyVarObject_CAST(op), (typeobj), (size))
-
-#define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
-
-/* _PyObject_VAR_SIZE returns the number of bytes (as size_t) allocated for a
-   vrbl-size object with nitems items, exclusive of gc overhead (if any).  The
-   value is rounded up to the closest multiple of sizeof(void *), in order to
-   ensure that pointer fields at the end of the object are correctly aligned
-   for the platform (this is of special importance for subclasses of, e.g.,
-   str or int, so that pointers can be stored after the embedded data).
-
-   Note that there's no memory wastage in doing this, as malloc has to
-   return (at worst) pointer-aligned memory anyway.
-*/
-#if ((SIZEOF_VOID_P - 1) & SIZEOF_VOID_P) != 0
-#   error "_PyObject_VAR_SIZE requires SIZEOF_VOID_P be a power of 2"
-#endif
-
-#define _PyObject_VAR_SIZE(typeobj, nitems)     \
-    _Py_SIZE_ROUND_UP((typeobj)->tp_basicsize + \
-        (nitems)*(typeobj)->tp_itemsize,        \
-        SIZEOF_VOID_P)
-
-#define PyObject_NEW(type, typeobj) \
-( (type *) PyObject_Init( \
-    (PyObject *) PyObject_MALLOC( _PyObject_SIZE(typeobj) ), (typeobj)) )
-
-#define PyObject_NEW_VAR(type, typeobj, n) \
-( (type *) PyObject_InitVar( \
-      (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE((typeobj),(n)) ),\
-      (typeobj), (n)) )
-
-/* This example code implements an object constructor with a custom
-   allocator, where PyObject_New is inlined, and shows the important
-   distinction between two steps (at least):
-       1) the actual allocation of the object storage;
-       2) the initialization of the Python specific fields
-      in this storage with PyObject_{Init, InitVar}.
-
-   PyObject *
-   YourObject_New(...)
-   {
-       PyObject *op;
-
-       op = (PyObject *) Your_Allocator(_PyObject_SIZE(YourTypeStruct));
-       if (op == NULL)
-       return PyErr_NoMemory();
-
-       PyObject_Init(op, &YourTypeStruct);
-
-       op->ob_field = value;
-       ...
-       return op;
-   }
-
-   Note that in C++, the use of the new operator usually implies that
-   the 1st step is performed automatically for you, so in a C++ class
-   constructor you would start directly with PyObject_Init/InitVar
-*/
-
+// Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
+// directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
 
 
 /*
@@ -225,8 +150,12 @@ _PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
  * ==========================
  */
 
-/* C equivalent of gc.collect() which ignores the state of gc.enabled. */
+/* C equivalent of gc.collect(). */
 PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);
+/* C API for controlling the state of the garbage collector */
+PyAPI_FUNC(int) PyGC_Enable(void);
+PyAPI_FUNC(int) PyGC_Disable(void);
+PyAPI_FUNC(int) PyGC_IsEnabled(void);
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
@@ -257,6 +186,8 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 #define PyObject_GC_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
 
+PyAPI_FUNC(int) PyObject_GC_IsTracked(PyObject *);
+PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 
 /* Utility macro to help write tp_traverse functions.
  * To use this macro, the tp_traverse function must name its arguments

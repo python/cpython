@@ -230,7 +230,22 @@ class TestMockOpen(unittest.TestCase):
         self.assertEqual(lines[1], 'bar\n')
         self.assertEqual(lines[2], 'baz\n')
         self.assertEqual(h.readline(), '')
+        with self.assertRaises(StopIteration):
+            next(h)
 
+    def test_next_data(self):
+        # Check that next will correctly return the next available
+        # line and plays well with the dunder_iter part.
+        mock = mock_open(read_data='foo\nbar\nbaz\n')
+        with patch('%s.open' % __name__, mock, create=True):
+            h = open('bar')
+            line1 = next(h)
+            line2 = next(h)
+            lines = [l for l in h]
+        self.assertEqual(line1, 'foo\n')
+        self.assertEqual(line2, 'bar\n')
+        self.assertEqual(lines[0], 'baz\n')
+        self.assertEqual(h.readline(), '')
 
     def test_readlines_data(self):
         # Test that emulating a file that ends in a newline character works

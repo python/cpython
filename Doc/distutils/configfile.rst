@@ -4,6 +4,8 @@
 Writing the Setup Configuration File
 ************************************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 Often, it's not possible to write down everything needed to build a distribution
 *a priori*: you may need to get some information from the user, or from the
 user's system, in order to proceed.  As long as that information is fairly

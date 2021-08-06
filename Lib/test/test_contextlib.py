@@ -7,6 +7,7 @@ import threading
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
+from test.support import os_helper
 import weakref
 
 
@@ -125,19 +126,22 @@ class ContextManagerTestCase(unittest.TestCase):
         self.assertEqual(state, [1, 42, 999])
 
     def test_contextmanager_except_stopiter(self):
-        stop_exc = StopIteration('spam')
         @contextmanager
         def woohoo():
             yield
-        try:
-            with self.assertWarnsRegex(DeprecationWarning,
-                                       "StopIteration"):
-                with woohoo():
-                    raise stop_exc
-        except Exception as ex:
-            self.assertIs(ex, stop_exc)
-        else:
-            self.fail('StopIteration was suppressed')
+
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        for stop_exc in (StopIteration('spam'), StopIterationSubclass('spam')):
+            with self.subTest(type=type(stop_exc)):
+                try:
+                    with woohoo():
+                        raise stop_exc
+                except Exception as ex:
+                    self.assertIs(ex, stop_exc)
+                else:
+                    self.fail(f'{stop_exc} was suppressed')
 
     def test_contextmanager_except_pep479(self):
         code = """\
@@ -227,6 +231,8 @@ def woohoo():
         def woohoo(a, b):
             a = weakref.ref(a)
             b = weakref.ref(b)
+            # Allow test to work with a non-refcounted GC
+            support.gc_collect()
             self.assertIsNone(a())
             self.assertIsNone(b())
             yield
@@ -315,19 +321,19 @@ class FileContextTestCase(unittest.TestCase):
         tfn = tempfile.mktemp()
         try:
             f = None
-            with open(tfn, "w") as f:
+            with open(tfn, "w", encoding="utf-8") as f:
                 self.assertFalse(f.closed)
                 f.write("Booh\n")
             self.assertTrue(f.closed)
             f = None
             with self.assertRaises(ZeroDivisionError):
-                with open(tfn, "r") as f:
+                with open(tfn, "r", encoding="utf-8") as f:
                     self.assertFalse(f.closed)
                     self.assertEqual(f.read(), "Booh\n")
                     1 / 0
             self.assertTrue(f.closed)
         finally:
-            support.unlink(tfn)
+            os_helper.unlink(tfn)
 
 class LockContextTestCase(unittest.TestCase):
 
@@ -490,7 +496,7 @@ class TestContextDecorator(unittest.TestCase):
             def __exit__(self, *exc):
                 pass
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
             with mycontext():
                 pass
 
@@ -502,7 +508,7 @@ class TestContextDecorator(unittest.TestCase):
             def __uxit__(self, *exc):
                 pass
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(TypeError, 'the context manager.*__exit__'):
             with mycontext():
                 pass
 
@@ -603,9 +609,9 @@ class TestBaseExitStack:
                 stack.callback(arg=1)
             with self.assertRaises(TypeError):
                 self.exit_stack.callback(arg=2)
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
                 stack.callback(callback=_exit, arg=3)
-        self.assertEqual(result, [((), {'arg': 3})])
+        self.assertEqual(result, [])
 
     def test_push(self):
         exc_raised = ZeroDivisionError
@@ -659,6 +665,25 @@ class TestBaseExitStack:
             self.assertIs(stack._exit_callbacks[-1][1].__self__, cm)
             result.append(2)
         self.assertEqual(result, [1, 2, 3, 4])
+
+    def test_enter_context_errors(self):
+        class LacksEnterAndExit:
+            pass
+        class LacksEnter:
+            def __exit__(self, *exc_info):
+                pass
+        class LacksExit:
+            def __enter__(self):
+                pass
+
+        with self.exit_stack() as stack:
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksEnterAndExit())
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksEnter())
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksExit())
+            self.assertFalse(stack._exit_callbacks)
 
     def test_close(self):
         result = []
@@ -885,9 +910,11 @@ class TestBaseExitStack:
     def test_instance_bypass(self):
         class Example(object): pass
         cm = Example()
+        cm.__enter__ = object()
         cm.__exit__ = object()
         stack = self.exit_stack()
-        self.assertRaises(AttributeError, stack.enter_context, cm)
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            stack.enter_context(cm)
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1][1], cm)
 

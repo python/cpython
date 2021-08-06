@@ -138,7 +138,7 @@ import struct
 import builtins
 import warnings
 
-__all__ = ["Error", "open", "openfp"]
+__all__ = ["Error", "open"]
 
 class Error(Exception):
     pass
@@ -920,10 +920,6 @@ def open(f, mode=None):
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
-def openfp(f, mode=None):
-    warnings.warn("aifc.openfp is deprecated since Python 3.7. "
-                  "Use aifc.open instead.", DeprecationWarning, stacklevel=2)
-    return open(f, mode=mode)
 
 if __name__ == '__main__':
     import sys

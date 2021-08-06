@@ -1,8 +1,8 @@
 from xmlrpc.server import DocXMLRPCServer
 import http.client
+import re
 import sys
 import threading
-from test import support
 import unittest
 
 def make_request_and_skipIf(condition, reason):
@@ -133,7 +133,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.assertIn(
             (b'<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd>'
              b'<tt>Add&nbsp;two&nbsp;instances&nbsp;together.&nbsp;This&nbsp;'
-             b'follows&nbsp;<a href="http://www.python.org/dev/peps/pep-0008/">'
+             b'follows&nbsp;<a href="https://www.python.org/dev/peps/pep-0008/">'
              b'PEP008</a>,&nbsp;but&nbsp;has&nbsp;nothing<br>\nto&nbsp;do&nbsp;'
              b'with&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1952.txt">'
              b'RFC1952</a>.&nbsp;Case&nbsp;should&nbsp;matter:&nbsp;pEp008&nbsp;'
@@ -192,6 +192,21 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
              b'<dl><dt><a name="-method_annotation"><strong>'
              b'method_annotation</strong></a>(x: bytes)</dt></dl>'),
             response.read())
+
+    def test_server_title_escape(self):
+        # bpo-38243: Ensure that the server title and documentation
+        # are escaped for HTML.
+        self.serv.set_server_title('test_title<script>')
+        self.serv.set_server_documentation('test_documentation<script>')
+        self.assertEqual('test_title<script>', self.serv.server_title)
+        self.assertEqual('test_documentation<script>',
+                self.serv.server_documentation)
+
+        generated = self.serv.generate_html_documentation()
+        title = re.search(r'<title>(.+?)</title>', generated).group()
+        documentation = re.search(r'<p><tt>(.+?)</tt></p>', generated).group()
+        self.assertEqual('<title>Python: test_title&lt;script&gt;</title>', title)
+        self.assertEqual('<p><tt>test_documentation&lt;script&gt;</tt></p>', documentation)
 
 
 if __name__ == '__main__':

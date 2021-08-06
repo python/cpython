@@ -83,7 +83,7 @@ def tkVersionWarning(root):
             return False
         return ("WARNING: The version of Tcl/Tk ({0}) in use may"
                 " be unstable.\n"
-                "Visit http://www.python.org/download/mac/tcltk/"
+                "Visit https://www.python.org/download/mac/tcltk/"
                 " for current information.".format(patchlevel))
     else:
         return False

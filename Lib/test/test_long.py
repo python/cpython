@@ -956,6 +956,14 @@ class LongTest(unittest.TestCase):
         self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
         self.assertEqual(huge >> (sys.maxsize + 1000), 0)
 
+    @support.cpython_only
+    def test_small_ints_in_huge_calculation(self):
+        a = 2 ** 100
+        b = -a + 1
+        c = a + 1
+        self.assertIs(a + b, 1)
+        self.assertIs(c - a, 1)
+
     def test_small_ints(self):
         for i in range(-5, 257):
             self.assertIs(i, i + 0)
@@ -1007,6 +1015,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual((-a).bit_length(), i+1)
             self.assertEqual((a+1).bit_length(), i+1)
             self.assertEqual((-a-1).bit_length(), i+1)
+
+    def test_bit_count(self):
+        for a in range(-1000, 1000):
+            self.assertEqual(a.bit_count(), bin(a).count("1"))
+
+        for exp in [10, 17, 63, 64, 65, 1009, 70234, 1234567]:
+            a = 2**exp
+            self.assertEqual(a.bit_count(), 1)
+            self.assertEqual((a - 1).bit_count(), exp)
+            self.assertEqual((a ^ 63).bit_count(), 7)
+            self.assertEqual(((a - 1) ^ 510).bit_count(), exp - 8)
 
     def test_round(self):
         # check round-half-even algorithm. For round to nearest ten;

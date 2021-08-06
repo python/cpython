@@ -181,6 +181,8 @@ access further features, you have to do this yourself:
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
 
+   .. audit-event:: pdb.Pdb "" pdb.Pdb
+
    .. versionadded:: 3.1
       The *skip* argument.
 
@@ -239,10 +241,14 @@ middle of a quoted string.
    triple: debugger; configuration; file
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
-directory, it is read in and executed as if it had been typed at the debugger
-prompt.  This is particularly useful for aliases.  If both files exist, the one
-in the home directory is read first and aliases defined there can be overridden
-by the local file.
+directory, it is read with ``'utf-8'`` encoding and executed as if it had been
+typed at the debugger prompt.  This is particularly useful for aliases.  If both
+files exist, the one in the home directory is read first and aliases defined there
+can be overridden by the local file.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
@@ -294,20 +300,20 @@ by the local file.
    Temporary breakpoint, which is removed automatically when it is first hit.
    The arguments are the same as for :pdbcmd:`break`.
 
-.. pdbcommand:: cl(ear) [filename:lineno | bpnumber [bpnumber ...]]
+.. pdbcommand:: cl(ear) [filename:lineno | bpnumber ...]
 
    With a *filename:lineno* argument, clear all the breakpoints at this line.
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
-.. pdbcommand:: disable [bpnumber [bpnumber ...]]
+.. pdbcommand:: disable [bpnumber ...]
 
    Disable the breakpoints given as a space separated list of breakpoint
    numbers.  Disabling a breakpoint means it cannot cause the program to stop
    execution, but unlike clearing a breakpoint, it remains in the list of
    breakpoints and can be (re-)enabled.
 
-.. pdbcommand:: enable [bpnumber [bpnumber ...]]
+.. pdbcommand:: enable [bpnumber ...]
 
    Enable the breakpoints specified.
 
@@ -529,6 +535,15 @@ by the local file.
 
    Quit from the debugger.  The program being executed is aborted.
 
+.. pdbcommand:: debug code
+
+   Enter a recursive debugger that steps through the code
+   argument (which is an arbitrary expression or statement to be
+   executed in the current environment).
+
+.. pdbcommand:: retval
+
+   Print the return value for the last return of a function.
 
 .. rubric:: Footnotes
 

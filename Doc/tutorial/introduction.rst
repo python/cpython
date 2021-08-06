@@ -73,7 +73,7 @@ operator; to calculate the remainder you can use ``%``::
    5
    >>> 17 % 3  # the % operator returns the remainder of the division
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # floored quotient * divisor + remainder
    17
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
@@ -394,7 +394,8 @@ indexed and sliced::
    [9, 16, 25]
 
 All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a new (shallow) copy of the list::
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]

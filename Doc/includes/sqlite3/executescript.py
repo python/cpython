@@ -22,3 +22,4 @@ cur.executescript("""
         1987
     );
     """)
+con.close()

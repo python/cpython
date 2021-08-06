@@ -28,8 +28,8 @@ variables:
 (There are a few more, but they are rarely useful.)
 
 The extension class must not directly bind Window Manager (e.g. X) events.
-Rather, it must define one or more virtual events, e.g. <<zoom-height>>, and
-corresponding methods, e.g. zoom_height_event().  The virtual events will be
+Rather, it must define one or more virtual events, e.g. <<z-in>>, and
+corresponding methods, e.g. z_in_event().  The virtual events will be
 bound to the corresponding methods, and Window Manager events can then be bound
 to the virtual events. (This indirection is done so that the key bindings can
 easily be changed, and so that other sources of virtual events can exist, such
@@ -54,21 +54,21 @@ Extensions are not required to define menu entries for all the events they
 implement.  (They are also not required to create keybindings, but in that
 case there must be empty bindings in cofig-extensions.def)
 
-Here is a complete example:
+Here is a partial example from zzdummy.py:
 
-class ZoomHeight:
+class ZzDummy:
 
     menudefs = [
-        ('edit', [
-            None, # Separator
-            ('_Zoom Height', '<<zoom-height>>'),
-         ])
+        ('format', [
+            ('Z in', '<<z-in>>'),
+            ('Z out', '<<z-out>>'),
+        ] )
     ]
 
     def __init__(self, editwin):
         self.editwin = editwin
 
-    def zoom_height_event(self, event):
+    def z_in_event(self, event=None):
         "...Do what you want here..."
 
 The final piece of the puzzle is the file "config-extensions.def", which is

@@ -2,23 +2,13 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
 
-/* Configure the Python memory allocators. Pass NULL to use default
-   allocators. */
-PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
-
 /* Try to get the allocators name set by _PyMem_SetupAllocators(). */
-PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
-
-PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
+PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
 /* strdup() using PyMem_RawMalloc() */
 PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
@@ -40,6 +30,19 @@ typedef enum {
     /* PyObject_Malloc(), PyObject_Realloc() and PyObject_Free() */
     PYMEM_DOMAIN_OBJ
 } PyMemAllocatorDomain;
+
+typedef enum {
+    PYMEM_ALLOCATOR_NOT_SET = 0,
+    PYMEM_ALLOCATOR_DEFAULT = 1,
+    PYMEM_ALLOCATOR_DEBUG = 2,
+    PYMEM_ALLOCATOR_MALLOC = 3,
+    PYMEM_ALLOCATOR_MALLOC_DEBUG = 4,
+#ifdef WITH_PYMALLOC
+    PYMEM_ALLOCATOR_PYMALLOC = 5,
+    PYMEM_ALLOCATOR_PYMALLOC_DEBUG = 6,
+#endif
+} PyMemAllocatorName;
+
 
 typedef struct {
     /* user context passed as the first argument to the 4 functions */
@@ -93,7 +96,3 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
 
    The function does nothing if Python is not compiled is debug mode. */
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
-
-#ifdef __cplusplus
-}
-#endif

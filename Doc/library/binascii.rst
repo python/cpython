@@ -50,10 +50,22 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string)
+.. function:: a2b_base64(string, strict_mode=False)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
+
+   If *strict_mode* is true, only valid base64 data will be converted. Invalid base64
+   data will raise :exc:`binascii.Error`.
+
+   Valid base64:
+      * Conforms to :rfc:`3548`.
+      * Contains only characters from the base64 alphabet.
+      * Contains no excess data after padding (including excess padding, newlines, etc.).
+      * Does not start with a padding.
+
+   .. versionchanged:: 3.11
+      Added the *strict_mode* parameter.
 
 
 .. function:: b2a_base64(data, *, newline=True)
@@ -92,6 +104,8 @@ The :mod:`binascii` module defines the following functions:
    The string should contain a complete number of binary bytes, or (in case of the
    last portion of the binhex4 data) have the remaining bits zero.
 
+   .. deprecated:: 3.9
+
 
 .. function:: rledecode_hqx(data)
 
@@ -104,10 +118,14 @@ The :mod:`binascii` module defines the following functions:
    .. versionchanged:: 3.2
       Accept only bytestring or bytearray objects as input.
 
+   .. deprecated:: 3.9
+
 
 .. function:: rlecode_hqx(data)
 
    Perform binhex4 style RLE-compression on *data* and return the result.
+
+   .. deprecated:: 3.9
 
 
 .. function:: b2a_hqx(data)
@@ -115,6 +133,8 @@ The :mod:`binascii` module defines the following functions:
    Perform hexbin4 binary-to-ASCII translation and return the resulting string. The
    argument should already be RLE-coded, and have a length divisible by 3 (except
    possibly the last fragment).
+
+   .. deprecated:: 3.9
 
 
 .. function:: crc_hqx(data, value)
@@ -145,8 +165,8 @@ The :mod:`binascii` module defines the following functions:
       platforms, use ``crc32(data) & 0xffffffff``.
 
 
-.. function:: b2a_hex(data)
-              hexlify(data)
+.. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
+              hexlify(data[, sep[, bytes_per_sep=1]])
 
    Return the hexadecimal representation of the binary *data*.  Every byte of
    *data* is converted into the corresponding 2-digit hex representation.  The
@@ -154,6 +174,24 @@ The :mod:`binascii` module defines the following functions:
 
    Similar functionality (but returning a text string) is also conveniently
    accessible using the :meth:`bytes.hex` method.
+
+   If *sep* is specified, it must be a single character str or bytes object.
+   It will be inserted in the output after every *bytes_per_sep* input bytes.
+   Separator placement is counted from the right end of the output by default,
+   if you wish to count from the left, supply a negative *bytes_per_sep* value.
+
+      >>> import binascii
+      >>> binascii.b2a_hex(b'\xb9\x01\xef')
+      b'b901ef'
+      >>> binascii.hexlify(b'\xb9\x01\xef', '-')
+      b'b9-01-ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b'_', 2)
+      b'b9_01ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b' ', -2)
+      b'b901 ef'
+
+   .. versionchanged:: 3.8
+      The *sep* and *bytes_per_sep* parameters were added.
 
 .. function:: a2b_hex(hexstr)
               unhexlify(hexstr)

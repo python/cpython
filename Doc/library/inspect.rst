@@ -70,6 +70,9 @@ attributes:
 |           |                   | method is bound, or       |
 |           |                   | ``None``                  |
 +-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this method was defined   |
++-----------+-------------------+---------------------------+
 | function  | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -92,11 +95,16 @@ attributes:
 |           | __globals__       | global namespace in which |
 |           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
+|           | __builtins__      | builtins namespace        |
++-----------+-------------------+---------------------------+
 |           | __annotations__   | mapping of parameters     |
 |           |                   | names to annotations;     |
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
 | traceback | tb_frame          | frame object at this      |
 |           |                   | level                     |
@@ -169,12 +177,19 @@ attributes:
 |           |                   | variables (referenced via |
 |           |                   | a function's closure)     |
 +-----------+-------------------+---------------------------+
+|           | co_posonlyargcount| number of positional only |
+|           |                   | arguments                 |
++-----------+-------------------+---------------------------+
 |           | co_kwonlyargcount | number of keyword only    |
 |           |                   | arguments (not including  |
 |           |                   | \*\* arg)                 |
 +-----------+-------------------+---------------------------+
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
++-----------+-------------------+---------------------------+
+|           | co_qualname       | fully-qualified name with |
+|           |                   | which this code object    |
+|           |                   | was defined               |
 +-----------+-------------------+---------------------------+
 |           | co_names          | tuple of names of local   |
 |           |                   | variables                 |
@@ -242,6 +257,10 @@ attributes:
 
    Add ``cr_origin`` attribute to coroutines.
 
+.. versionchanged:: 3.10
+
+   Add ``__builtins__`` attribute to functions.
+
 .. function:: getmembers(object[, predicate])
 
    Return all the members of an object in a list of ``(name, value)``
@@ -274,55 +293,55 @@ attributes:
 
 .. function:: ismodule(object)
 
-   Return true if the object is a module.
+   Return ``True`` if the object is a module.
 
 
 .. function:: isclass(object)
 
-   Return true if the object is a class, whether built-in or created in Python
+   Return ``True`` if the object is a class, whether built-in or created in Python
    code.
 
 
 .. function:: ismethod(object)
 
-   Return true if the object is a bound method written in Python.
+   Return ``True`` if the object is a bound method written in Python.
 
 
 .. function:: isfunction(object)
 
-   Return true if the object is a Python function, which includes functions
+   Return ``True`` if the object is a Python function, which includes functions
    created by a :term:`lambda` expression.
 
 
 .. function:: isgeneratorfunction(object)
 
-   Return true if the object is a Python generator function.
+   Return ``True`` if the object is a Python generator function.
 
    .. versionchanged:: 3.8
-      Functions wrapped in :func:`functools.partial` now return true if the
+      Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
 
 .. function:: isgenerator(object)
 
-   Return true if the object is a generator.
+   Return ``True`` if the object is a generator.
 
 
 .. function:: iscoroutinefunction(object)
 
-   Return true if the object is a :term:`coroutine function`
+   Return ``True`` if the object is a :term:`coroutine function`
    (a function defined with an :keyword:`async def` syntax).
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
-      Functions wrapped in :func:`functools.partial` now return true if the
+      Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
 
 
 .. function:: iscoroutine(object)
 
-   Return true if the object is a :term:`coroutine` created by an
+   Return ``True`` if the object is a :term:`coroutine` created by an
    :keyword:`async def` function.
 
    .. versionadded:: 3.5
@@ -330,7 +349,7 @@ attributes:
 
 .. function:: isawaitable(object)
 
-   Return true if the object can be used in :keyword:`await` expression.
+   Return ``True`` if the object can be used in :keyword:`await` expression.
 
    Can also be used to distinguish generator-based coroutines from regular
    generators::
@@ -349,7 +368,7 @@ attributes:
 
 .. function:: isasyncgenfunction(object)
 
-   Return true if the object is an :term:`asynchronous generator` function,
+   Return ``True`` if the object is an :term:`asynchronous generator` function,
    for example::
 
     >>> async def agen():
@@ -361,50 +380,50 @@ attributes:
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.8
-      Functions wrapped in :func:`functools.partial` now return true if the
+      Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
 
 .. function:: isasyncgen(object)
 
-   Return true if the object is an :term:`asynchronous generator iterator`
+   Return ``True`` if the object is an :term:`asynchronous generator iterator`
    created by an :term:`asynchronous generator` function.
 
    .. versionadded:: 3.6
 
 .. function:: istraceback(object)
 
-   Return true if the object is a traceback.
+   Return ``True`` if the object is a traceback.
 
 
 .. function:: isframe(object)
 
-   Return true if the object is a frame.
+   Return ``True`` if the object is a frame.
 
 
 .. function:: iscode(object)
 
-   Return true if the object is a code.
+   Return ``True`` if the object is a code.
 
 
 .. function:: isbuiltin(object)
 
-   Return true if the object is a built-in function or a bound built-in method.
+   Return ``True`` if the object is a built-in function or a bound built-in method.
 
 
 .. function:: isroutine(object)
 
-   Return true if the object is a user-defined or built-in function or method.
+   Return ``True`` if the object is a user-defined or built-in function or method.
 
 
 .. function:: isabstract(object)
 
-   Return true if the object is an abstract base class.
+   Return ``True`` if the object is an abstract base class.
 
 
 .. function:: ismethoddescriptor(object)
 
-   Return true if the object is a method descriptor, but not if
+   Return ``True`` if the object is a method descriptor, but not if
    :func:`ismethod`, :func:`isclass`, :func:`isfunction` or :func:`isbuiltin`
    are true.
 
@@ -415,16 +434,16 @@ attributes:
    sensible, and :attr:`__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
-   return false from the :func:`ismethoddescriptor` test, simply because the
+   return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
    :attr:`__func__` attribute (etc) when an object passes :func:`ismethod`.
 
 
 .. function:: isdatadescriptor(object)
 
-   Return true if the object is a data descriptor.
+   Return ``True`` if the object is a data descriptor.
 
-   Data descriptors have both a :attr:`~object.__get__` and a :attr:`~object.__set__` method.
+   Data descriptors have a :attr:`~object.__set__` or a :attr:`~object.__delete__` method.
    Examples are properties (defined in Python), getsets, and members.  The
    latter two are defined in C and there are more specific tests available for
    those types, which is robust across Python implementations.  Typically, data
@@ -435,7 +454,7 @@ attributes:
 
 .. function:: isgetsetdescriptor(object)
 
-   Return true if the object is a getset descriptor.
+   Return ``True`` if the object is a getset descriptor.
 
    .. impl-detail::
 
@@ -446,7 +465,7 @@ attributes:
 
 .. function:: ismemberdescriptor(object)
 
-   Return true if the object is a member descriptor.
+   Return ``True`` if the object is a member descriptor.
 
    .. impl-detail::
 
@@ -547,7 +566,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, \*, follow_wrapped=True)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -569,8 +588,20 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   For objects defined in modules using stringized annotations
+   (``from __future__ import annotations``), :func:`signature` will
+   attempt to automatically un-stringize the annotations using
+   :func:`inspect.get_annotations()`.  The
+   ``global``, ``locals``, and ``eval_str`` parameters are passed
+   into :func:`inspect.get_annotations()` when resolving the
+   annotations; see the documentation for :func:`inspect.get_annotations()`
+   for instructions on how to use these parameters.
+
    Raises :exc:`ValueError` if no signature can be provided, and
-   :exc:`TypeError` if that type of object is not supported.
+   :exc:`TypeError` if that type of object is not supported.  Also,
+   if the annotations are stringized, and ``eval_str`` is not false,
+   the ``eval()`` call(s) to un-stringize the annotations could
+   potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
@@ -581,6 +612,9 @@ function.
       ``callable`` specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
+   .. versionadded:: 3.10
+      ``globals``, ``locals``, and ``eval_str`` parameters.
+
    .. note::
 
       Some callables may not be introspectable in certain implementations of
@@ -588,7 +622,7 @@ function.
       C provide no metadata about their arguments.
 
 
-.. class:: Signature(parameters=None, \*, return_annotation=Signature.empty)
+.. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
 
    A Signature object represents the call signature of a function and its return
    annotation.  For each parameter accepted by the function it stores a
@@ -659,11 +693,12 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, \*, follow_wrapped=True)
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
        ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
-       without unwrapping its ``__wrapped__`` chain.
+       without unwrapping its ``__wrapped__`` chain. ``globalns`` and
+       ``localns`` will be used as the namespaces when resolving annotations.
 
        This method simplifies subclassing of :class:`Signature`::
 
@@ -674,8 +709,11 @@ function.
 
        .. versionadded:: 3.5
 
+       .. versionadded:: 3.10
+          ``globalns`` and ``localns`` parameters.
 
-.. class:: Parameter(name, kind, \*, default=Parameter.empty, annotation=Parameter.empty)
+
+.. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
    you can use :meth:`Parameter.replace` to create a modified copy.
@@ -724,13 +762,9 @@ function.
       |    Name                | Meaning                                      |
       +========================+==============================================+
       | *POSITIONAL_ONLY*      | Value must be supplied as a positional       |
-      |                        | argument.                                    |
-      |                        |                                              |
-      |                        | Python has no explicit syntax for defining   |
-      |                        | positional-only parameters, but many built-in|
-      |                        | and extension module functions (especially   |
-      |                        | those that accept only one or two parameters)|
-      |                        | accept them.                                 |
+      |                        | argument. Positional only parameters are     |
+      |                        | those which appear before a ``/`` entry (if  |
+      |                        | present) in a Python function definition.    |
       +------------------------+----------------------------------------------+
       | *POSITIONAL_OR_KEYWORD*| Value may be supplied as either a keyword or |
       |                        | positional argument (this is the standard    |
@@ -804,10 +838,10 @@ function.
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
 
-    .. versionchanged:: 3.4
-        In Python 3.3 Parameter objects were allowed to have ``name`` set
-        to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
-        This is no longer permitted.
+   .. versionchanged:: 3.4
+      In Python 3.3 Parameter objects were allowed to have ``name`` set
+      to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
+      This is no longer permitted.
 
 .. class:: BoundArguments
 
@@ -816,10 +850,9 @@ function.
 
    .. attribute:: BoundArguments.arguments
 
-      An ordered, mutable mapping (:class:`collections.OrderedDict`) of
-      parameters' names to arguments' values.  Contains only explicitly bound
-      arguments.  Changes in :attr:`arguments` will reflect in :attr:`args` and
-      :attr:`kwargs`.
+      A mutable mapping of parameters' names to arguments' values.
+      Contains only explicitly bound arguments.  Changes in :attr:`arguments`
+      will reflect in :attr:`args` and :attr:`kwargs`.
 
       Should be used in conjunction with :attr:`Signature.parameters` for any
       argument processing purposes.
@@ -830,6 +863,10 @@ function.
          :meth:`Signature.bind_partial` relied on a default value are skipped.
          However, if needed, use :meth:`BoundArguments.apply_defaults` to add
          them.
+
+      .. versionchanged:: 3.9
+         :attr:`arguments` is now of type :class:`dict`. Formerly, it was of
+         type :class:`collections.OrderedDict`.
 
    .. attribute:: BoundArguments.args
 
@@ -861,7 +898,7 @@ function.
         >>> ba = inspect.signature(foo).bind('spam')
         >>> ba.apply_defaults()
         >>> ba.arguments
-        OrderedDict([('a', 'spam'), ('b', 'ham'), ('args', ())])
+        {'a': 'spam', 'b': 'ham', 'args': ()}
 
       .. versionadded:: 3.5
 
@@ -948,11 +985,6 @@ Classes and functions
    APIs. This function is retained primarily for use in code that needs to
    maintain compatibility with the Python 2 ``inspect`` module API.
 
-   .. deprecated:: 3.8
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
-
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
@@ -1028,7 +1060,7 @@ Classes and functions
    metatype is in use, cls will be the first element of the tuple.
 
 
-.. function:: getcallargs(func, *args, **kwds)
+.. function:: getcallargs(func, /, *args, **kwds)
 
    Bind the *args* and *kwds* to the argument names of the Python function or
    method *func*, as if it was called with them. For bound methods, bind also the
@@ -1088,6 +1120,62 @@ Classes and functions
    :exc:`ValueError` is raised if a cycle is encountered.
 
    .. versionadded:: 3.4
+
+
+.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False)
+
+   Compute the annotations dict for an object.
+
+   ``obj`` may be a callable, class, or module.
+   Passing in an object of any other type raises :exc:`TypeError`.
+
+   Returns a dict.  ``get_annotations()`` returns a new dict every time
+   it's called; calling it twice on the same object will return two
+   different but equivalent dicts.
+
+   This function handles several details for you:
+
+   * If ``eval_str`` is true, values of type ``str`` will
+     be un-stringized using :func:`eval()`.  This is intended
+     for use with stringized annotations
+     (``from __future__ import annotations``).
+   * If ``obj`` doesn't have an annotations dict, returns an
+     empty dict.  (Functions and methods always have an
+     annotations dict; classes, modules, and other types of
+     callables may not.)
+   * Ignores inherited annotations on classes.  If a class
+     doesn't have its own annotations dict, returns an empty dict.
+   * All accesses to object members and dict values are done
+     using ``getattr()`` and ``dict.get()`` for safety.
+   * Always, always, always returns a freshly-created dict.
+
+   ``eval_str`` controls whether or not values of type ``str`` are replaced
+   with the result of calling :func:`eval()` on those values:
+
+   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
+     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
+     raises an exception, it will unwind the stack past the ``get_annotations``
+     call.)
+   * If eval_str is false (the default), values of type ``str`` are unchanged.
+
+   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
+   for :func:`eval()` for more information.  If ``globals`` or ``locals``
+   is ``None``, this function may replace that value with a context-specific
+   default, contingent on ``type(obj)``:
+
+   * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
+   * If ``obj`` is a class, ``globals`` defaults to
+     ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
+     to the ``obj`` class namespace.
+   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+     although if ``obj`` is a wrapped function (using
+     ``functools.update_wrapper()``) it is first unwrapped.
+
+   Calling ``get_annotations`` is best practice for accessing the
+   annotations dict of any object.  See :ref:`annotations-howto` for
+   more information on annotations best practices.
+
+   .. versionadded:: 3.10
 
 
 .. _inspect-stack:
@@ -1365,10 +1453,6 @@ the following flags:
 
    The flag is set when the code object is a generator function, i.e.
    a generator object is returned when the code object is executed.
-
-.. data:: CO_NOFREE
-
-   The flag is set if there are no free or cell variables.
 
 .. data:: CO_COROUTINE
 

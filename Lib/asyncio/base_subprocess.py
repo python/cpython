@@ -182,7 +182,9 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             for callback, data in self._pending_calls:
                 loop.call_soon(callback, *data)
             self._pending_calls = None
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             if waiter is not None and not waiter.cancelled():
                 waiter.set_exception(exc)
         else:

@@ -5,19 +5,16 @@ __all__ = ('CancelledError', 'InvalidStateError', 'TimeoutError',
            'IncompleteReadError', 'LimitOverrunError',
            'SendfileNotAvailableError')
 
-import concurrent.futures
-from . import base_futures
 
-
-class CancelledError(concurrent.futures.CancelledError):
+class CancelledError(BaseException):
     """The Future or Task was cancelled."""
 
 
-class TimeoutError(concurrent.futures.TimeoutError):
+class TimeoutError(Exception):
     """The operation exceeded the given deadline."""
 
 
-class InvalidStateError(concurrent.futures.InvalidStateError):
+class InvalidStateError(Exception):
     """The operation is not allowed in this state."""
 
 
@@ -37,8 +34,9 @@ class IncompleteReadError(EOFError):
     - expected: total number of expected bytes (or None if unknown)
     """
     def __init__(self, partial, expected):
+        r_expected = 'undefined' if expected is None else repr(expected)
         super().__init__(f'{len(partial)} bytes read on a total of '
-                         f'{expected!r} expected bytes')
+                         f'{r_expected} expected bytes')
         self.partial = partial
         self.expected = expected
 

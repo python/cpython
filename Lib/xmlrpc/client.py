@@ -313,31 +313,38 @@ class DateTime:
             s = self.timetuple()
             o = other.timetuple()
         else:
-            otype = (hasattr(other, "__class__")
-                     and other.__class__.__name__
-                     or type(other))
-            raise TypeError("Can't compare %s and %s" %
-                            (self.__class__.__name__, otype))
+            s = self
+            o = NotImplemented
         return s, o
 
     def __lt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s < o
 
     def __le__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s <= o
 
     def __gt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s > o
 
     def __ge__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s >= o
 
     def __eq__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s == o
 
     def timetuple(self):
@@ -435,7 +442,7 @@ class ExpatParser:
         target.xml(encoding, None)
 
     def feed(self, data):
-        self._parser.Parse(data, 0)
+        self._parser.Parse(data, False)
 
     def close(self):
         try:
@@ -1414,15 +1421,16 @@ class ServerProxy:
         # establish a "logical" server connection
 
         # get the url
-        type, uri = urllib.parse._splittype(uri)
-        if type not in ("http", "https"):
+        p = urllib.parse.urlsplit(uri)
+        if p.scheme not in ("http", "https"):
             raise OSError("unsupported XML-RPC protocol")
-        self.__host, self.__handler = urllib.parse._splithost(uri)
+        self.__host = p.netloc
+        self.__handler = urllib.parse.urlunsplit(["", "", *p[2:]])
         if not self.__handler:
             self.__handler = "/RPC2"
 
         if transport is None:
-            if type == "https":
+            if p.scheme == "https":
                 handler = SafeTransport
                 extra_kwargs = {"context": context}
             else:

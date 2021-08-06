@@ -1,8 +1,10 @@
 from test import support
+from test.support import import_helper
 import unittest
 
+
 # Skip test if nis module does not exist.
-nis = support.import_module('nis')
+nis = import_helper.import_module('nis')
 
 
 class NisTests(unittest.TestCase):

@@ -57,6 +57,13 @@ from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, EINVAL, \
      ENOTCONN, ESHUTDOWN, EISCONN, EBADF, ECONNABORTED, EPIPE, EAGAIN, \
      errorcode
 
+warnings.warn(
+    'The asyncore module is deprecated. '
+    'The recommended replacement is asyncio',
+    DeprecationWarning,
+    stacklevel=2)
+
+
 _DISCONNECTED = frozenset({ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED, EPIPE,
                            EBADF})
 
@@ -113,7 +120,7 @@ def readwrite(obj, flags):
         if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
             obj.handle_close()
     except OSError as e:
-        if e.args[0] not in _DISCONNECTED:
+        if e.errno not in _DISCONNECTED:
             obj.handle_error()
         else:
             obj.handle_close()
@@ -228,7 +235,7 @@ class dispatcher:
         if sock:
             # Set to nonblocking just to make sure for cases where we
             # get a socket from a blocking source.
-            sock.setblocking(0)
+            sock.setblocking(False)
             self.set_socket(sock, map)
             self.connected = True
             # The constructor no longer requires that the socket
@@ -236,7 +243,7 @@ class dispatcher:
             try:
                 self.addr = sock.getpeername()
             except OSError as err:
-                if err.args[0] in (ENOTCONN, EINVAL):
+                if err.errno in (ENOTCONN, EINVAL):
                     # To handle the case where we got an unconnected
                     # socket.
                     self.connected = False
@@ -280,7 +287,7 @@ class dispatcher:
     def create_socket(self, family=socket.AF_INET, type=socket.SOCK_STREAM):
         self.family_and_type = family, type
         sock = socket.socket(family, type)
-        sock.setblocking(0)
+        sock.setblocking(False)
         self.set_socket(sock)
 
     def set_socket(self, sock, map=None):
@@ -346,7 +353,7 @@ class dispatcher:
         except TypeError:
             return None
         except OSError as why:
-            if why.args[0] in (EWOULDBLOCK, ECONNABORTED, EAGAIN):
+            if why.errno in (EWOULDBLOCK, ECONNABORTED, EAGAIN):
                 return None
             else:
                 raise
@@ -358,9 +365,9 @@ class dispatcher:
             result = self.socket.send(data)
             return result
         except OSError as why:
-            if why.args[0] == EWOULDBLOCK:
+            if why.errno == EWOULDBLOCK:
                 return 0
-            elif why.args[0] in _DISCONNECTED:
+            elif why.errno in _DISCONNECTED:
                 self.handle_close()
                 return 0
             else:
@@ -378,7 +385,7 @@ class dispatcher:
                 return data
         except OSError as why:
             # winsock sometimes raises ENOTCONN
-            if why.args[0] in _DISCONNECTED:
+            if why.errno in _DISCONNECTED:
                 self.handle_close()
                 return b''
             else:
@@ -393,7 +400,7 @@ class dispatcher:
             try:
                 self.socket.close()
             except OSError as why:
-                if why.args[0] not in (ENOTCONN, EBADF):
+                if why.errno not in (ENOTCONN, EBADF):
                     raise
 
     # log and log_info may be overridden to provide more sophisticated
@@ -557,7 +564,7 @@ def close_all(map=None, ignore_all=False):
         try:
             x.close()
         except OSError as x:
-            if x.args[0] == EBADF:
+            if x.errno == EBADF:
                 pass
             elif not ignore_all:
                 raise

@@ -5,9 +5,8 @@ import importlib._bootstrap_external
 import importlib.machinery
 import marshal
 import os
+import io
 import sys
-import types
-import warnings
 
 
 LOAD_CONST = dis.opmap['LOAD_CONST']
@@ -80,23 +79,20 @@ def _find_module(name, path=None):
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
-        mode = "r"
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         kind = _C_EXTENSION
-        mode = "rb"
 
     elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
         kind = _PY_COMPILED
-        mode = "rb"
 
     else:  # Should never happen.
         return None, None, ("", "", _SEARCH_ERROR)
 
-    file = open(file_path, mode)
+    file = io.open_code(file_path)
     suffix = os.path.splitext(file_path)[-1]
 
-    return file, file_path, (suffix, mode, kind)
+    return file, file_path, (suffix, "rb", kind)
 
 
 class Module:
@@ -160,15 +156,15 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with open(pathname) as fp:
-            stuff = ("", "r", _PY_SOURCE)
+        with io.open_code(pathname) as fp:
+            stuff = ("", "rb", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with open(pathname) as fp:
-            stuff = (ext, "r", _PY_SOURCE)
+        with io.open_code(pathname) as fp:
+            stuff = (ext, "rb", _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
@@ -322,6 +318,7 @@ class ModuleFinder:
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
+
         try:
             m = self.load_module(fqname, fp, pathname, stuff)
         finally:
@@ -340,7 +337,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read()+'\n', pathname, 'exec')
+            co = compile(fp.read(), pathname, 'exec')
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
@@ -619,13 +616,7 @@ class ModuleFinder:
             if isinstance(consts[i], type(co)):
                 consts[i] = self.replace_paths_in_code(consts[i])
 
-        return types.CodeType(co.co_argcount, co.co_posonlyargcount,
-                              co.co_kwonlyargcount, co.co_nlocals,
-                              co.co_stacksize, co.co_flags,
-                              co.co_code, tuple(consts), co.co_names,
-                              co.co_varnames, new_filename, co.co_name,
-                              co.co_firstlineno, co.co_lnotab, co.co_freevars,
-                              co.co_cellvars)
+        return co.replace(co_consts=tuple(consts), co_filename=new_filename)
 
 
 def test():

@@ -66,28 +66,9 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), [7, 8, 9])
         d = deque(range(200), maxlen=10)
         d.append(d)
-        support.unlink(support.TESTFN)
-        fo = open(support.TESTFN, "w")
-        try:
-            fo.write(str(d))
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(d))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
-
+        self.assertEqual(repr(d)[-30:], ', 198, 199, [...]], maxlen=10)')
         d = deque(range(10), maxlen=None)
         self.assertEqual(repr(d), 'deque([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])')
-        fo = open(support.TESTFN, "w")
-        try:
-            fo.write(str(d))
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(d))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
 
     def test_maxlen_zero(self):
         it = iter(range(100))
@@ -148,7 +129,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(d.count(None), 16)
 
     def test_comparisons(self):
-        d = deque('xabc'); d.popleft()
+        d = deque('xabc')
+        d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:
             self.assertEqual(d==e, type(d)==type(e) and list(d)==list(e))
             self.assertEqual(d!=e, not(type(d)==type(e) and list(d)==list(e)))
@@ -182,6 +164,18 @@ class TestBasic(unittest.TestCase):
         d[n//2] = BadCmp()
         with self.assertRaises(RuntimeError):
             n in d
+
+    def test_contains_count_stop_crashes(self):
+        class A:
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+        d = deque([A(), A()])
+        with self.assertRaises(RuntimeError):
+            _ = 3 in d
+        d = deque([A(), A()])
+        with self.assertRaises(RuntimeError):
+            _ = d.count(3)
 
     def test_extend(self):
         d = deque('a')
@@ -533,25 +527,11 @@ class TestBasic(unittest.TestCase):
         e = eval(repr(d))
         self.assertEqual(list(d), list(e))
         d.append(d)
-        self.assertIn('...', repr(d))
-
-    def test_print(self):
-        d = deque(range(200))
-        d.append(d)
-        try:
-            support.unlink(support.TESTFN)
-            fo = open(support.TESTFN, "w")
-            print(d, file=fo, end='')
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(d))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
+        self.assertEqual(repr(d)[-20:], '7, 198, 199, [...]])')
 
     def test_init(self):
-        self.assertRaises(TypeError, deque, 'abc', 2, 3);
-        self.assertRaises(TypeError, deque, 1);
+        self.assertRaises(TypeError, deque, 'abc', 2, 3)
+        self.assertRaises(TypeError, deque, 1)
 
     def test_hash(self):
         self.assertRaises(TypeError, hash, deque('abc'))
@@ -761,8 +741,9 @@ class TestBasic(unittest.TestCase):
 
     @support.cpython_only
     def test_sizeof(self):
+        MAXFREEBLOCKS = 16
         BLOCKLEN = 64
-        basesize = support.calcvobjsize('2P4nP')
+        basesize = support.calcvobjsize('2P5n%dPP' % MAXFREEBLOCKS)
         blocksize = struct.calcsize('P%dPP' % BLOCKLEN)
         self.assertEqual(object.__sizeof__(deque()), basesize)
         check = self.check_sizeof

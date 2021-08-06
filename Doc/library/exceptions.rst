@@ -42,12 +42,12 @@ include the originating exception(s) and the final exception.
 
 When raising a new exception (rather than using a bare ``raise`` to re-raise
 the exception currently being handled), the implicit exception context can be
-supplemented with an explicit cause by using :keyword:`from` with
+supplemented with an explicit cause by using :keyword:`from<raise>` with
 :keyword:`raise`::
 
    raise new_exc from original_exc
 
-The expression following :keyword:`from` must be an exception or ``None``. It
+The expression following :keyword:`from<raise>` must be an exception or ``None``. It
 will be set as :attr:`__cause__` on the raised exception. Setting
 :attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
 attribute to ``True``, so that using ``raise new_exc from None``
@@ -90,8 +90,13 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. method:: with_traceback(tb)
 
       This method sets *tb* as the new traceback for the exception and returns
-      the exception object.  It is usually used in exception handling code like
-      this::
+      the exception object.  It was more commonly used before the exception
+      chaining features of :pep:`3134` became available.  The following example
+      shows how we can convert an instance of ``SomeException`` into an
+      instance of ``OtherException`` while preserving the traceback.  Once
+      raised, the current frame is pushed onto the traceback of the
+      ``OtherException``, as would have happened to the traceback of the
+      original ``SomeException`` had we allowed it to propagate to the caller. ::
 
          try:
              ...
@@ -144,6 +149,13 @@ The following exceptions are the exceptions that are usually raised.
    assignment fails.  (When an object does not support attribute references or
    attribute assignments at all, :exc:`TypeError` is raised.)
 
+   The :attr:`name` and :attr:`obj` attributes can be set using keyword-only
+   arguments to the constructor. When set they represent the name of the attribute
+   that was attempted to be accessed and the object that was accessed for said
+   attribute, respectively.
+
+   .. versionchanged:: 3.10
+      Added the :attr:`name` and :attr:`obj` attributes.
 
 .. exception:: EOFError
 
@@ -230,6 +242,13 @@ The following exceptions are the exceptions that are usually raised.
    unqualified names.  The associated value is an error message that includes the
    name that could not be found.
 
+   The :attr:`name` attribute can be set using a keyword-only argument to the
+   constructor. When set it represent the name of the variable that was attempted
+   to be accessed.
+
+   .. versionchanged:: 3.10
+      Added the :attr:`name` attribute.
+
 
 .. exception:: NotImplementedError
 
@@ -313,8 +332,8 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.4
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
-      filesystem encoding.  Also, the *filename2* constructor argument and
-      attribute was added.
+      :term:`filesystem encoding and error handler`. Also, the *filename2*
+      constructor argument and attribute was added.
 
 
 .. exception:: OverflowError
@@ -390,17 +409,52 @@ The following exceptions are the exceptions that are usually raised.
 
    .. versionadded:: 3.5
 
-.. exception:: SyntaxError
+.. exception:: SyntaxError(message, details)
 
    Raised when the parser encounters a syntax error.  This may occur in an
-   :keyword:`import` statement, in a call to the built-in functions :func:`exec`
+   :keyword:`import` statement, in a call to the built-in functions
+   :func:`compile`, :func:`exec`,
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
-   Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
-   :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
-   of the exception instance returns only the message.
+   The :func:`str` of the exception instance returns only the error message.
+   Details is a tuple whose members are also available as separate attributes.
 
+   .. attribute:: filename
+
+      The name of the file the syntax error occurred in.
+
+   .. attribute:: lineno
+
+      Which line number in the file the error occurred in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
+
+   .. attribute:: offset
+
+      The column in the line where the error occurred. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
+
+   .. attribute:: text
+
+      The source code text involved in the error.
+
+   .. attribute:: end_lineno
+
+      Which line number in the file the error occurred ends in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
+
+   .. attribute:: end_offset
+
+      The column in the end line where the error occurred finishes. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
+
+   For errors in f-string fields, the message is prefixed by "f-string: "
+   and the offsets are offsets in a text constructed from the replacement
+   expression.  For example, compiling f'Bad {a b} field' results in this
+   args attribute: ('f-string: ...', ('', 1, 2, '(a b)\n', 1, 5)).
+
+   .. versionchanged:: 3.10
+      Added the :attr:`end_lineno` and :attr:`end_offset` attributes.
 
 .. exception:: IndentationError
 
@@ -636,8 +690,10 @@ depending on the system error code.
 
 .. exception:: NotADirectoryError
 
-   Raised when a directory operation (such as :func:`os.listdir`) is requested
-   on something which is not a directory.
+   Raised when a directory operation (such as :func:`os.listdir`) is requested on
+   something which is not a directory.  On most POSIX platforms, it may also be
+   raised if an operation attempts to open or traverse a non-directory file as if
+   it were a directory.
    Corresponds to :c:data:`errno` ``ENOTDIR``.
 
 .. exception:: PermissionError
@@ -688,6 +744,10 @@ The following exceptions are used as warning categories; see the
    Base class for warnings about deprecated features when those warnings are
    intended for other Python developers.
 
+   Ignored by the default warning filters, except in the ``__main__`` module
+   (:pep:`565`). Enabling the :ref:`Python Development Mode <devmode>` shows
+   this warning.
+
 
 .. exception:: PendingDeprecationWarning
 
@@ -698,6 +758,9 @@ The following exceptions are used as warning categories; see the
    This class is rarely used as emitting a warning about a possible
    upcoming deprecation is unusual, and :exc:`DeprecationWarning`
    is preferred for already active deprecations.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
 
 .. exception:: SyntaxWarning
@@ -720,10 +783,22 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about probable mistakes in module imports.
 
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
+
 
 .. exception:: UnicodeWarning
 
    Base class for warnings related to Unicode.
+
+
+.. exception:: EncodingWarning
+
+   Base class for warnings related to encodings.
+
+   See :ref:`io-encoding-warning` for details.
+
+   .. versionadded:: 3.10
 
 
 .. exception:: BytesWarning
@@ -733,8 +808,10 @@ The following exceptions are used as warning categories; see the
 
 .. exception:: ResourceWarning
 
-   Base class for warnings related to resource usage. Ignored by the default
-   warning filters.
+   Base class for warnings related to resource usage.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
    .. versionadded:: 3.2
 
@@ -746,3 +823,4 @@ Exception hierarchy
 The class hierarchy for built-in exceptions is:
 
 .. literalinclude:: ../../Lib/test/exception_hierarchy.txt
+  :language: text

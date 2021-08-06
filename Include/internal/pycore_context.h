@@ -5,7 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hamt.h"
+#include "pycore_hamt.h"   /* PyHamtObject */
 
 struct _pycontextobject {
     PyObject_HEAD
@@ -37,6 +37,6 @@ struct _pycontexttokenobject {
 
 
 int _PyContext_Init(void);
-void _PyContext_Fini(void);
+void _PyContext_Fini(PyInterpreterState *interp);
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

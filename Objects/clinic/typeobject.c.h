@@ -166,11 +166,6 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     protocol = _PyLong_AsInt(arg);
     if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
@@ -200,7 +195,7 @@ object___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", 0, "str", arg);
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -248,4 +243,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=ea5734413064fa7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4fb62939b08baf9 input=a9049054013a1b77]*/

@@ -78,7 +78,7 @@ class EiffelDescriptor:
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         return EiffelMethodWrapper(obj, self)
 
     def callmethod(self, inst, args, kwargs):

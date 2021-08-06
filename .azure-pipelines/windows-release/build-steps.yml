@@ -1,0 +1,84 @@
+parameters:
+  ShouldPGO: false
+
+steps:
+- template: ./checkout.yml
+
+- powershell: |
+    $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+    Write-Host "##vso[task.setvariable variable=VersionText]$($d.PythonVersion)"
+    Write-Host "##vso[task.setvariable variable=VersionNumber]$($d.PythonVersionNumber)"
+    Write-Host "##vso[task.setvariable variable=VersionHex]$($d.PythonVersionHex)"
+    Write-Host "##vso[task.setvariable variable=VersionUnique]$($d.PythonVersionUnique)"
+    Write-Host "##vso[build.addbuildtag]$($d.PythonVersion)"
+    Write-Host "##vso[build.addbuildtag]$($d.PythonVersion)-$(Name)"
+  displayName: 'Extract version numbers'
+
+- ${{ if eq(parameters.ShouldPGO, 'false') }}:
+  - powershell: |
+      $env:SigningCertificate = $null
+      .\PCbuild\build.bat -v -p $(Platform) -c $(Configuration)
+    displayName: 'Run build'
+    env:
+      IncludeUwp: true
+      Py_OutDir: '$(Build.BinariesDirectory)\bin'
+
+- ${{ if eq(parameters.ShouldPGO, 'true') }}:
+  - powershell: |
+      $env:SigningCertificate = $null
+      .\PCbuild\build.bat -v -p $(Platform) --pgo
+    displayName: 'Run build with PGO'
+    env:
+      IncludeUwp: true
+      Py_OutDir: '$(Build.BinariesDirectory)\bin'
+
+- powershell: |
+    $kitroot = (gp 'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots\').KitsRoot10
+    $tool = (gci -r "$kitroot\Bin\*\x64\signtool.exe" | sort FullName -Desc | select -First 1)
+    if (-not $tool) {
+      throw "SDK is not available"
+    }
+    Write-Host "##vso[task.prependpath]$($tool.Directory)"
+  displayName: 'Add WinSDK tools to path'
+
+- powershell: |
+    $env:SigningCertificate = $null
+    $(_HostPython) PC\layout -vv -b "$(Build.BinariesDirectory)\bin" -t "$(Build.BinariesDirectory)\catalog" --catalog "${env:CAT}.cdf" --preset-default --arch $(Arch)
+    makecat "${env:CAT}.cdf"
+    del "${env:CAT}.cdf"
+    if (-not (Test-Path "${env:CAT}.cat")) {
+      throw "Failed to build catalog file"
+    }
+  displayName: 'Generate catalog'
+  env:
+    CAT: $(Build.BinariesDirectory)\bin\$(Arch)\python
+    PYTHON_HEXVERSION: $(VersionHex)
+
+- task: PublishPipelineArtifact@0
+  displayName: 'Publish binaries'
+  condition: and(succeeded(), not(and(eq(variables['Configuration'], 'Release'), variables['SigningCertificate'])))
+  inputs:
+    targetPath: '$(Build.BinariesDirectory)\bin\$(Arch)'
+    artifactName: bin_$(Name)
+
+- task: PublishPipelineArtifact@0
+  displayName: 'Publish binaries for signing'
+  condition: and(succeeded(), and(eq(variables['Configuration'], 'Release'), variables['SigningCertificate']))
+  inputs:
+    targetPath: '$(Build.BinariesDirectory)\bin\$(Arch)'
+    artifactName: unsigned_bin_$(Name)
+
+- task: CopyFiles@2
+  displayName: 'Layout Artifact: symbols'
+  inputs:
+    sourceFolder: $(Build.BinariesDirectory)\bin\$(Arch)
+    targetFolder: $(Build.ArtifactStagingDirectory)\symbols\$(Name)
+    flatten: true
+    contents: |
+      **\*.pdb
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: symbols'
+  inputs:
+    PathToPublish: '$(Build.ArtifactStagingDirectory)\symbols'
+    ArtifactName: symbols

@@ -1,6 +1,7 @@
 """Tests for the asdl parser in Parser/asdl.py"""
 
 import importlib.machinery
+import importlib.util
 import os
 from os.path import dirname
 import sys
@@ -26,7 +27,10 @@ class TestAsdlParser(unittest.TestCase):
         sys.path.insert(0, parser_dir)
         loader = importlib.machinery.SourceFileLoader(
                 'asdl', os.path.join(parser_dir, 'asdl.py'))
-        cls.asdl = loader.load_module()
+        spec = importlib.util.spec_from_loader('asdl', loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        cls.asdl = module
         cls.mod = cls.asdl.parse(os.path.join(parser_dir, 'Python.asdl'))
         cls.assertTrue(cls.asdl.check(cls.mod), 'Module validation failed')
 
@@ -58,15 +62,17 @@ class TestAsdlParser(unittest.TestCase):
         alias = self.types['alias']
         self.assertEqual(
             str(alias),
-            'Product([Field(identifier, name), Field(identifier, asname, opt=True)])')
+            'Product([Field(identifier, name), Field(identifier, asname, opt=True)], '
+            '[Field(int, lineno), Field(int, col_offset), '
+            'Field(int, end_lineno, opt=True), Field(int, end_col_offset, opt=True)])')
 
     def test_attributes(self):
         stmt = self.types['stmt']
         self.assertEqual(len(stmt.attributes), 4)
-        self.assertEqual(str(stmt.attributes[0]), 'Field(int, lineno)')
-        self.assertEqual(str(stmt.attributes[1]), 'Field(int, col_offset)')
-        self.assertEqual(str(stmt.attributes[2]), 'Field(int, end_lineno, opt=True)')
-        self.assertEqual(str(stmt.attributes[3]), 'Field(int, end_col_offset, opt=True)')
+        self.assertEqual(repr(stmt.attributes[0]), 'Field(int, lineno)')
+        self.assertEqual(repr(stmt.attributes[1]), 'Field(int, col_offset)')
+        self.assertEqual(repr(stmt.attributes[2]), 'Field(int, end_lineno, opt=True)')
+        self.assertEqual(repr(stmt.attributes[3]), 'Field(int, end_col_offset, opt=True)')
 
     def test_constructor_fields(self):
         ehandler = self.types['excepthandler']
@@ -118,7 +124,7 @@ class TestAsdlParser(unittest.TestCase):
         v = CustomVisitor()
         v.visit(self.types['mod'])
         self.assertEqual(v.names_with_seq,
-                         ['Module', 'Module', 'Interactive', 'FunctionType', 'Suite'])
+                         ['Module', 'Module', 'Interactive', 'FunctionType'])
 
 
 if __name__ == '__main__':

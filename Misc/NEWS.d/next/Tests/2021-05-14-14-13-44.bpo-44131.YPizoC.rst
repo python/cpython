@@ -1,0 +1,2 @@
+Add test_frozenmain to test_embed to test the :c:func:`Py_FrozenMain` C
+function. Patch by Victor Stinner.
