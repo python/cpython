@@ -92,50 +92,51 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
     }
 
     /* Create and set the exception. */
-    {
-        const char *error_msg;
-        const char *error_name;
-        PyObject *exc = NULL;
-        PyObject *args = NULL;
-        PyObject *py_code = NULL;
-        PyObject *py_name = NULL;
+    const char *error_msg;
+    const char *error_name;
+    PyObject *exc = NULL;
+    PyObject *args = NULL;
+    PyObject *py_code = NULL;
+    PyObject *py_name = NULL;
 
-        error_name = sqlite3ErrName(errorcode);
+    error_name = sqlite3ErrName(errorcode);
+    error_msg = sqlite3_errmsg(db);
 
-        error_msg = sqlite3_errmsg(db);
-
-        args = Py_BuildValue("(s)", error_msg);
-        if (!args)
-            goto error;
-
-        exc = PyObject_Call(exc_class, args, NULL);
-        if (!exc)
-            goto error;
-
-        py_code = Py_BuildValue("i", errorcode);
-        if (!py_code)
-            goto error;
-
-        if (PyObject_SetAttrString(exc, "sqlite_errorcode", py_code) < 0)
-            goto error;
-
-        py_name = Py_BuildValue("s", error_name);
-        if (!py_name)
-            goto error;
-
-        if (PyObject_SetAttrString(exc, "sqlite_errorname", py_name) < 0)
-            goto error;
-
-        PyErr_SetObject((PyObject *) Py_TYPE(exc), exc);
-
-    error:
-        Py_XDECREF(py_code);
-        Py_XDECREF(py_name);
-        Py_XDECREF(args);
-        Py_XDECREF(exc);
+    args = Py_BuildValue("(s)", error_msg);
+    if (args == NULL) {
+        goto error;
     }
 
+    exc = PyObject_Call(exc_class, args, NULL);
+    if (exc == NULL) {
+        goto error;
+    }
 
+    py_code = Py_BuildValue("i", errorcode);
+    if (py_code == NULL) {
+        goto error;
+    }
+
+    if (PyObject_SetAttrString(exc, "sqlite_errorcode", py_code) < 0) {
+        goto error;
+    }
+
+    py_name = Py_BuildValue("s", error_name);
+    if (py_name == NULL) {
+        goto error;
+    }
+
+    if (PyObject_SetAttrString(exc, "sqlite_errorname", py_name) < 0) {
+        goto error;
+    }
+
+    PyErr_SetObject((PyObject *) Py_TYPE(exc), exc);
+
+error:
+    Py_XDECREF(py_code);
+    Py_XDECREF(py_name);
+    Py_XDECREF(args);
+    Py_XDECREF(exc);
     return errorcode;
 }
 
