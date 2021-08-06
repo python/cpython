@@ -94,8 +94,8 @@ The :mod:`csv` module defines the following functions:
    :class:`Dialect` class or one of the strings returned by the
    :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
-   dialect.  For full details about the dialect and formatting parameters, see
-   section :ref:`csv-fmt-params`. To make it
+   dialect.  For full details about dialects and formatting parameters, see
+   the :ref:`csv-fmt-params` section. To make it
    as easy as possible to interface with modules which implement the DB API, the
    value :const:`None` is written as the empty string.  While this isn't a
    reversible transformation, it makes it easier to dump SQL NULL data values to
@@ -117,7 +117,7 @@ The :mod:`csv` module defines the following functions:
    Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
    by *fmtparams* keyword arguments, or both, with keyword arguments overriding
-   parameters of the dialect. For full details about the dialect and formatting
+   parameters of the dialect. For full details about dialects and formatting
    parameters, see section :ref:`csv-fmt-params`.
 
 
@@ -225,9 +225,21 @@ The :mod:`csv` module defines the following classes:
 
 .. class:: Dialect
 
-   The :class:`Dialect` class is a container class relied on primarily for its
-   attributes, which are used to define the parameters for a specific
-   :class:`reader` or :class:`writer` instance.
+   The :class:`Dialect` class is a container class whose attributes contain
+   information for how to handle doublequotes, whitespace, delimiters, etc.
+   Due to the lack of a strict CSV specification, different applications
+   produce subtly different CSV data.  :class:`Dialect` instances define how
+   :class:`reader` and :class:`writer` instances behave.
+
+   All available :class:`Dialect` names are returned by :func:`list_dialects`,
+   and they can be registered with specific :class:`reader` and :class:`writer`
+   classes through their initializer (``__init__``) functions like this::
+
+       import csv
+
+       with open('students.csv', 'w', newline='') as csvfile:
+           writer = csv.writer(csvfile, dialect='unix')
+                                        ^^^^^^^^^^^^^^
 
 
 .. class:: excel()
@@ -419,8 +431,8 @@ Reader objects (:class:`DictReader` instances and objects returned by the
 
    Return the next row of the reader's iterable object as a list (if the object
    was returned from :func:`reader`) or a dict (if it is a :class:`DictReader`
-   instance), parsed according to the current dialect.  Usually you should call
-   this as ``next(reader)``.
+   instance), parsed according to the current :class:`Dialect`.  Usually you
+   should call this as ``next(reader)``.
 
 
 Reader objects have the following public attributes:
@@ -460,9 +472,9 @@ read CSV files (assuming they support complex numbers at all).
 
 .. method:: csvwriter.writerow(row)
 
-   Write the *row* parameter to the writer's file object, formatted according to
-   the current dialect. Return the return value of the call to the *write* method
-   of the underlying file object.
+   Write the *row* parameter to the writer's file object, formatted according
+   to the current :class:`Dialect`. Return the return value of the call to the
+   *write* method of the underlying file object.
 
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
