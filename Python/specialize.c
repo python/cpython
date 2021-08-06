@@ -701,42 +701,55 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         goto fail;
     }
     if (type->tp_dictoffset > 0) {
-        LookupAttrStatus status = lookup_attr_dict(
-            Py_TYPE(type), (PyObject *)type, name,
-            &cache1->dk_version_or_hint, &cache1->tp_version, &cache0->index);
-
-        switch (status) {
-            case ATTR_HINT:
-                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
-                goto success;
-            case BAIL:
-                return -1;
-            case ATTR_SPLIT_KEYS:
-                // Rare -- usually only when meth is in o.__dict__
-                // rather than type(o).__dict__. Requires more profiling
-                // to decide if it's worth it.
-                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "split keys");
-                break;
-        #if SPECIALIZATION_STATS
-            case ERR_NOT_DICT:
-                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "no dict or not a dict");
-                break;
-            case ERR_NOT_FOUND:
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "attribute not in dict");
-                break;
-            case ERR_INDEX_OUT_OF_RANGE:
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "index out of range");
-                break;
-            case ERR_OUT_OF_KEY_VERSIONS:
-            case ERR_OUT_OF_TYPE_VERSIONS
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no more key versions")
-                    break;
-            case ERR_HINT_OUT_OF_RANGE:
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "hint out of range")
-                    break;
-        #endif
-        }
+        PyObject **dictptr = _PyObject_GetDictPtr((PyObject *)type);
+        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+            // possibly a builtin type
+            SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "no dict or not a dict");
             goto fail;
+        }
+        // We found a type with a __dict__.
+        PyDictObject *dict = (PyDictObject *)*dictptr;
+        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys) {
+            // Keys are shared. Rare for LOAD_METHOD. Needs more profiling to
+            // determine if this is worth it. Usually it applies to methods in
+            // o.__dict__ rather than the common type(o).__dict__.
+            SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "shared keys");
+            goto fail;
+        }
+        else {
+            PyObject *value = NULL;
+            Py_ssize_t hint =
+                _PyDict_GetItemHint(dict, name, -1, &value);
+            if (hint != (uint16_t)hint) {
+                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "hint out of range");
+                goto fail;
+            }
+            uint32_t keys_version = 0;
+            // if o.__dict__ changes, the method might be found in o.__dict__
+            // instead of type lookup.
+            PyObject **odictptr = _PyObject_GetDictPtr(owner);
+            if (*odictptr != NULL && PyDict_CheckExact(*odictptr)) {
+                PyDictObject *dict = (PyDictObject *)*odictptr;
+                keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+                if (keys_version == 0) {
+                    SPECIALIZATION_FAIL(LOAD_ATTR, type, name,
+                        "no more key versions");
+                    goto fail;
+                }
+            }
+            // else object has no dict -- probably a builtin type
+            else {
+                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "builtin's method");
+                goto fail;
+            }
+            // printf("owner is %p with %ld\n", owner, keys_version);
+            cache0->index = (uint16_t)hint;
+            cache1->dk_version_or_hint = keys_version;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
+            goto success;
+        }
     }
 fail:
     STAT_INC(LOAD_METHOD, specialization_failure);

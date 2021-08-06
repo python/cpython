@@ -4156,20 +4156,33 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         case TARGET(LOAD_METHOD_WITH_HINT): {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
-            PyObject *owner = (PyObject *)Py_TYPE(self);
+            PyTypeObject *self_cls = Py_TYPE(self);
             PyObject *res;
-            PyTypeObject *tp = Py_TYPE(owner);
+            PyTypeObject *tp = Py_TYPE(self_cls);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            
+            assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
-            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-            assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
-            DEOPT_IF(dict == NULL, LOAD_METHOD);
-            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(self_cls->tp_dictoffset > 0);
+
+            // ensure self.__dict__ didn't modify keys
+            PyObject **dictptr = _PyObject_GetDictPtr(self);
+            DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
+            PyDictObject *dict = (PyDictObject *)*dictptr;
+            assert(PyDict_CheckExact(dict));
+            // printf("%p: %ld  %ld\n", self, dict->ma_keys->dk_version, cache1->dk_version_or_hint);
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
             PyObject *name = GETITEM(names, cache0->original_oparg);
-            uint32_t hint = cache1->dk_version_or_hint;
+
+            // validate against self_cls.__dict__
+            uint32_t hint = cache0->index;
+            dictptr = _PyObject_GetDictPtr((PyObject *)self_cls);
+            DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
+            dict = (PyDictObject *)*dictptr;
+            assert(PyDict_CheckExact((PyObject *)*dictptr));
             DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_METHOD);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name, LOAD_METHOD);
