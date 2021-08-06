@@ -78,18 +78,8 @@ def func_memoryerror():
 def func_overflowerror():
     raise OverflowError
 
-def func_isstring(v):
-    return type(v) is str
-def func_isint(v):
-    return type(v) is int
-def func_isfloat(v):
-    return type(v) is float
-def func_isnone(v):
-    return type(v) is type(None)
 def func_isblob(v):
     return isinstance(v, (bytes, memoryview))
-def func_islonglong(v):
-    return isinstance(v, int) and v >= 1<<31
 
 def func(*args):
     return len(args)
@@ -198,12 +188,7 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("memoryerror", 0, func_memoryerror)
         self.con.create_function("overflowerror", 0, func_overflowerror)
 
-        self.con.create_function("isstring", 1, func_isstring)
-        self.con.create_function("isint", 1, func_isint)
-        self.con.create_function("isfloat", 1, func_isfloat)
-        self.con.create_function("isnone", 1, func_isnone)
         self.con.create_function("isblob", 1, func_isblob)
-        self.con.create_function("islonglong", 1, func_islonglong)
         self.con.create_function("spam", -1, func)
         self.con.execute("create table test(t text)")
 
@@ -303,44 +288,6 @@ class FunctionTests(unittest.TestCase):
             cur.execute("select overflowerror()")
             cur.fetchone()
 
-    def test_param_string(self):
-        cur = self.con.cursor()
-        for text in ["foo", str()]:
-            with self.subTest(text=text):
-                cur.execute("select isstring(?)", (text,))
-                val = cur.fetchone()[0]
-                self.assertEqual(val, 1)
-
-    def test_param_int(self):
-        cur = self.con.cursor()
-        cur.execute("select isint(?)", (42,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_float(self):
-        cur = self.con.cursor()
-        cur.execute("select isfloat(?)", (3.14,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_none(self):
-        cur = self.con.cursor()
-        cur.execute("select isnone(?)", (None,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_blob(self):
-        cur = self.con.cursor()
-        cur.execute("select isblob(?)", (memoryview(b"blob"),))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
-    def test_param_long_long(self):
-        cur = self.con.cursor()
-        cur.execute("select islonglong(?)", (1<<42,))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
-
     def test_any_arguments(self):
         cur = self.con.cursor()
         cur.execute("select spam(?, ?)", (1, 2))
@@ -351,12 +298,23 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.execute("select isblob(x'')")
         self.assertTrue(cur.fetchone()[0])
 
-    def test_set_and_get(self):
-        self.con.create_function("returnit", 1, lambda x: x)
-        for val in 1, 2.5, "text", "1\x002", "", b"data", None:
-            with self.subTest(val=val):
-                cur = self.con.execute("select returnit(?)", (val,))
-                self.assertEqual(val, cur.fetchone()[0])
+    def test_func_params(self):
+        self.con.create_function("boomerang", 1, lambda x: x)
+        dataset = (
+            (42, int),
+            (1<<42, int),  # long long
+            (3.14, float),
+            ("text", str),
+            ("1\x002", str),
+            (b"blob", bytes),
+            (None, type(None)),
+        )
+        for val, tp in dataset:
+            with self.subTest(val=val, tp=tp):
+                cur = self.con.execute("select boomerang(?)", (val,))
+                retval = cur.fetchone()[0]
+                self.assertEqual(type(retval), tp)
+                self.assertEqual(retval, val)
 
     # Regarding deterministic functions:
     #
