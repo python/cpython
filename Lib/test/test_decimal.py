@@ -36,12 +36,17 @@ from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
                           requires_legacy_unicode_capi)
 from test.support import (TestFailed,
-                          run_with_locale, cpython_only)
+                          run_with_locale, cpython_only,
+                          darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
 from test.support import warnings_helper
 import random
 import inspect
 import threading
+
+
+if sys.platform == 'darwin':
+    darwin_malloc_err_warning('test_decimal')
 
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
