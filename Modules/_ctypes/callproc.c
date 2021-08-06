@@ -66,6 +66,10 @@
 #include "ctypes_dlfcn.h"
 #endif
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
 #ifdef MS_WIN32
 #include <malloc.h>
 #endif
@@ -1438,59 +1442,64 @@ copy_com_pointer(PyObject *self, PyObject *args)
     return r;
 }
 #else
-
 #ifdef __APPLE__
-static void* libsystem_b_handle;
-typedef bool (*_dyld_shared_cache_contains_path_f)(const char* path);
-static _dyld_shared_cache_contains_path_f _dyld_shared_cache_contains_path;
-static bool _dyld_shared_cache_contains_path_fallback(const char* path) {
-    return false;
-}
+#ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+    __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#else
+// Support the deprecated case of compiling on an older MacOS version
+static void *libsystem_b_handle;
+static bool (*_dyld_shared_cache_contains_path)(const char *path);
 
-__attribute__((constructor)) void load_libsystemb(void) {
+__attribute__((constructor)) void load_dyld_shared_cache_contains_path(void) {
     libsystem_b_handle = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY);
     if (libsystem_b_handle != NULL) {
         _dyld_shared_cache_contains_path = dlsym(libsystem_b_handle, "_dyld_shared_cache_contains_path");
     }
-
-    if (_dyld_shared_cache_contains_path == NULL) {
-        _dyld_shared_cache_contains_path = _dyld_shared_cache_contains_path_fallback;
-    }
 }
 
-__attribute__((destructor)) void unload_libsystemb(void) {
+__attribute__((destructor)) void unload_dyld_shared_cache_contains_path(void) {
     if (libsystem_b_handle != NULL) {
         dlclose(libsystem_b_handle);
     }
 }
+#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+    _dyld_shared_cache_contains_path != NULL
+#endif
 
-static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args) {
-    PyObject *name, *name2;
+static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args)
+{
+     PyObject *name, *name2;
+     char *name_str;
 
-    if (!PyArg_ParseTuple(args, "O", &name)) {
-        return NULL;
-    }
+     if (HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME) {
+         int r;
 
-    if (name == Py_None) {
-        Py_RETURN_FALSE;
-    }
+         if (!PyArg_ParseTuple(args, "O", &name))
+             return NULL;
 
-    if (PyUnicode_FSConverter(name, &name2) == 0) {
-        return NULL;
-    }
+         if (name == Py_None)
+             Py_RETURN_FALSE;
 
-    char *name_str = PyBytes_AS_STRING(name2);
-    int r = _dyld_shared_cache_contains_path(name_str);
+         if (PyUnicode_FSConverter(name, &name2) == 0)
+             return NULL;
+         name_str = PyBytes_AS_STRING(name2);
 
-    Py_DECREF(name2);
+         r = _dyld_shared_cache_contains_path(name_str);
+         Py_DECREF(name2);
 
-    if (r) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
-}
+         if (r) {
+             Py_RETURN_TRUE;
+         } else {
+             Py_RETURN_FALSE;
+         }
+
+     } else {
+         PyErr_SetString(PyExc_NotImplementedError, "_dyld_shared_cache_contains_path symbol is missing");
+         return NULL;
+     }
+
+ }
 #endif
 
 static PyObject *py_dl_open(PyObject *self, PyObject *args)

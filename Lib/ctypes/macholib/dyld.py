@@ -130,8 +130,11 @@ def dyld_find(name, executable_path=None, env=None):
 
         if os.path.isfile(path):
             return path
-        if _dyld_shared_cache_contains_path(path):
-            return path
+        try:
+            if _dyld_shared_cache_contains_path(path):
+                return path
+        except NotImplementedError:
+            pass
 
     raise ValueError("dylib %s could not be found" % (name,))
 

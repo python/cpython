@@ -1,3 +1,2 @@
-You no longer need to compile Python on the same version of macOS that you
-will be running it on (Catalina vs Big Sur) in order for
-:meth:`ctypes.util.find_library` to work.
+You can now compile Python on MacOS < 11.0 and
+:meth:`ctypes.util.find_library` will still work on MacOS >= 11.0.
