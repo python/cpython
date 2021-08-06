@@ -92,50 +92,45 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
     }
 
     /* Create and set the exception. */
-    const char *error_msg;
-    const char *error_name;
     PyObject *exc = NULL;
-    PyObject *args = NULL;
-    PyObject *py_code = NULL;
-    PyObject *py_name = NULL;
-
-    error_name = pysqlite_error_name(errorcode);
-    error_msg = sqlite3_errmsg(db);
-
-    args = Py_BuildValue("(s)", error_msg);
+    const char *error_msg = sqlite3_errmsg(db);
+    PyObject *args = Py_BuildValue("(s)", error_msg);
     if (args == NULL) {
-        goto error;
+        goto exit;
     }
 
     exc = PyObject_Call(exc_class, args, NULL);
+    Py_DECREF(args);
     if (exc == NULL) {
-        goto error;
+        goto exit;
     }
 
-    py_code = Py_BuildValue("i", errorcode);
-    if (py_code == NULL) {
-        goto error;
+    PyObject *code = Py_BuildValue("i", errorcode);
+    if (code == NULL) {
+        goto exit;
     }
 
-    if (PyObject_SetAttrString(exc, "sqlite_errorcode", py_code) < 0) {
-        goto error;
+    int rc = PyObject_SetAttrString(exc, "sqlite_errorcode", code);
+    Py_DECREF(code);
+    if (rc < 0) {
+        goto exit;
     }
 
-    py_name = Py_BuildValue("s", error_name ? error_name : "SQLITE_UNKNOWN");
-    if (py_name == NULL) {
-        goto error;
+    const char *error_name = pysqlite_error_name(errorcode);
+    PyObject *name = Py_BuildValue("s", error_name ? error_name : "SQLITE_UNKNOWN");
+    if (name == NULL) {
+        goto exit;
     }
 
-    if (PyObject_SetAttrString(exc, "sqlite_errorname", py_name) < 0) {
-        goto error;
+    rc = PyObject_SetAttrString(exc, "sqlite_errorname", name);
+    Py_DECREF(name);
+    if (rc < 0) {
+        goto exit;
     }
 
-    PyErr_SetObject((PyObject *) Py_TYPE(exc), exc);
+    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
 
-error:
-    Py_XDECREF(py_code);
-    Py_XDECREF(py_name);
-    Py_XDECREF(args);
+exit:
     Py_XDECREF(exc);
     return errorcode;
 }
