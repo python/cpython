@@ -321,20 +321,18 @@ static const IntConstantPair _error_codes[] = {
     {"SQLITE_SCHEMA", SQLITE_SCHEMA},
     {"SQLITE_TOOBIG", SQLITE_TOOBIG},
     {NULL, 0},
-    {"SQLITE_UNKNOWN", -1}
 };
 
 const char *
-sqlite3ErrName(int rc)
+pysqlite_error_name(int rc)
 {
-    int i;
-    for (i = 0; _error_codes[i].constant_name != 0; i++) {
+    for (int i = 0; _error_codes[i].constant_name != 0; i++) {
         if (_error_codes[i].constant_value == rc) {
             return _error_codes[i].constant_name;
         }
     }
     // No error code matched.
-    return _error_codes[i+1].constant_name;
+    return NULL;
 }
 
 static int add_integer_constants(PyObject *module) {

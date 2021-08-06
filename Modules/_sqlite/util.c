@@ -99,7 +99,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
     PyObject *py_code = NULL;
     PyObject *py_name = NULL;
 
-    error_name = sqlite3ErrName(errorcode);
+    error_name = pysqlite_error_name(errorcode);
     error_msg = sqlite3_errmsg(db);
 
     args = Py_BuildValue("(s)", error_msg);
@@ -121,7 +121,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
         goto error;
     }
 
-    py_name = Py_BuildValue("s", error_name);
+    py_name = Py_BuildValue("s", error_name ? error_name : "SQLITE_UNKNOWN");
     if (py_name == NULL) {
         goto error;
     }
