@@ -1,0 +1,17 @@
+root = true
+
+[*]
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.py]
+indent_size = 4
+indent_style = space
+
+[*.yml]
+indent_size = 2
+indent_style = space
+
+[*.{c,cpp,h}]
+indent_size = 4
+indent_style = space
