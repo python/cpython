@@ -953,6 +953,24 @@ class ExceptionTests(unittest.TestCase):
             pass
         self.assertEqual(e, (None, None, None))
 
+    def test_no_hang_on_context_chain_cycle(self):
+        # See issue 25782.
+
+        def cycle():
+            try:
+                raise ValueError(1)
+            except ValueError as ex:
+                ex.__context__ = ex
+                raise TypeError(2)
+
+        try:
+            cycle()
+        except Exception as e:
+            exc = e
+
+        self.assertIsInstance(exc, TypeError)
+        self.assertIsInstance(exc.__context__, ValueError)
+
     def test_unicode_change_attributes(self):
         # See issue 7309. This was a crasher.
 
