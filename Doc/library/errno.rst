@@ -640,3 +640,5 @@ defined by the module.  The specific list of defined symbols is available as
 .. data:: EQFULL
 
    Interface output queue is full
+   
+   .. versionadded:: 3.11
