@@ -1,0 +1,4 @@
+:class:`MemoryError` raised in user-defined functions will now produce a
+``MemoryError`` in :mod:`sqlite3`. :class:`OverflowError` will now be converted
+to :class:`~sqlite3.DataError`. Previously
+:class:`~sqlite3.OperationalError` was produced in these cases.

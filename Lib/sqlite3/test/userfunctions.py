@@ -23,11 +23,15 @@
 
 import contextlib
 import functools
+import gc
 import io
+import sys
 import unittest
 import unittest.mock
-import gc
 import sqlite3 as sqlite
+
+from test.support import bigmemtest
+
 
 def with_tracebacks(strings):
     """Convenience decorator for testing callback tracebacks."""
@@ -69,6 +73,10 @@ def func_returnlonglong():
     return 1<<31
 def func_raiseexception():
     5/0
+def func_memoryerror():
+    raise MemoryError
+def func_overflowerror():
+    raise OverflowError
 
 def func_isstring(v):
     return type(v) is str
@@ -187,6 +195,8 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnblob", 0, func_returnblob)
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("raiseexception", 0, func_raiseexception)
+        self.con.create_function("memoryerror", 0, func_memoryerror)
+        self.con.create_function("overflowerror", 0, func_overflowerror)
 
         self.con.create_function("isstring", 1, func_isstring)
         self.con.create_function("isint", 1, func_isint)
@@ -278,6 +288,20 @@ class FunctionTests(unittest.TestCase):
             cur.execute("select raiseexception()")
             cur.fetchone()
         self.assertEqual(str(cm.exception), 'user-defined function raised exception')
+
+    @with_tracebacks(['func_memoryerror', 'MemoryError'])
+    def test_func_memory_error(self):
+        cur = self.con.cursor()
+        with self.assertRaises(MemoryError):
+            cur.execute("select memoryerror()")
+            cur.fetchone()
+
+    @with_tracebacks(['func_overflowerror', 'OverflowError'])
+    def test_func_overflow_error(self):
+        cur = self.con.cursor()
+        with self.assertRaises(sqlite.DataError):
+            cur.execute("select overflowerror()")
+            cur.fetchone()
 
     def test_param_string(self):
         cur = self.con.cursor()
@@ -383,6 +407,25 @@ class FunctionTests(unittest.TestCase):
 
         del x,y
         gc.collect()
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_large_text(self, size):
+        cur = self.con.cursor()
+        for size in 2**31-1, 2**31:
+            self.con.create_function("largetext", 0, lambda size=size: "b" * size)
+            with self.assertRaises(sqlite.DataError):
+                cur.execute("select largetext()")
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=2, dry_run=False)
+    def test_large_blob(self, size):
+        cur = self.con.cursor()
+        for size in 2**31-1, 2**31:
+            self.con.create_function("largeblob", 0, lambda size=size: b"b" * size)
+            with self.assertRaises(sqlite.DataError):
+                cur.execute("select largeblob()")
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
