@@ -276,26 +276,6 @@ Module functions and constants
    disable the feature again.
 
 
-.. exception:: Error
-
-   Raised to signal an error from the underlying SQLite library.
-
-   .. attribute:: sqlite_errorcode
-
-      The numeric error code from the `SQLite API
-      <http://www.sqlite.org/c3ref/c_abort.html>`_.
-
-      .. versionadded:: 3.8
-
-   .. attribute:: sqlite_errorname
-
-      The symbolic name of the numeric error code
-      from the `SQLite API
-      <http://www.sqlite.org/c3ref/c_abort.html>`_.
-
-      .. versionadded:: 3.8
-
-
 .. _sqlite3-connection-objects:
 
 Connection Objects
@@ -855,6 +835,20 @@ Exceptions
 
    The base class of the other exceptions in this module.  It is a subclass
    of :exc:`Exception`.
+
+   .. attribute:: sqlite_errorcode
+
+      The numeric error code from the
+      `SQLite API <http://www.sqlite.org/c3ref/c_abort.html>`_.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: sqlite_errorname
+
+      The symbolic name of the numeric error code
+      from the `SQLite API <http://www.sqlite.org/c3ref/c_abort.html>`_.
+
+      .. versionadded:: 3.11
 
 .. exception:: DatabaseError
 
