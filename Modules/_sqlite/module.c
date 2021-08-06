@@ -390,25 +390,20 @@ static int add_integer_constants(PyObject *module) {
     return ret;
 }
 
-static int add_to_dict(PyObject *dict, const char *key, int value)
+static int
+add_error_constant(PyObject *module, const char *name, int constant)
 {
-    int sawerror;
-    PyObject *value_obj = PyLong_FromLong(value);
-    PyObject *name = PyUnicode_FromString(key);
-
-    if (!value_obj || !name) {
-        Py_XDECREF(name);
-        Py_XDECREF(value_obj);
+    PyObject *value = PyLong_FromLong(constant);
+    if (value == NULL) {
+        Py_DECREF(value);
         return 1;
     }
 
-    sawerror = PyDict_SetItem(dict, name, value_obj) < 0;
-
-    Py_DECREF(value_obj);
-    Py_DECREF(name);
-
-    if (sawerror)
+    int rc = PyModule_AddObjectRef(module, name, value);
+    Py_DECREF(value);
+    if (rc < 0) {
         return 1;
+    }
     return 0;
 }
 
@@ -490,14 +485,11 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
 
     /* Set error constants */
-    PyObject *dict = PyModule_GetDict(module);
-    if (dict == NULL) {
-        goto error;
-    }
     for (int i = 0; _error_codes[i].constant_name != 0; i++) {
-        if (add_to_dict(dict, _error_codes[i].constant_name,
-                        _error_codes[i].constant_value) != 0)
+        if (add_error_constant(module, _error_codes[i].constant_name,
+                               _error_codes[i].constant_value) < 0) {
             goto error;
+        }
     }
 
     /* Set integer constants */
