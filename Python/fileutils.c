@@ -1374,10 +1374,11 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             return 0;
         }
 
-#ifdef __linux__
+#ifdef O_PATH
         if (errno == EBADF) {
-            // On Linux, ioctl(FIOCLEX) will fail with EBADF for O_PATH file descriptors
-            // Fall through to the fcntl() path
+            // bpo-44849: On Linux and FreeBSD, ioctl(FIOCLEX) fails with EBADF
+            // on O_PATH file descriptors. Fall through to the fcntl()
+            // implementation.
         }
         else
 #endif
