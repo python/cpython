@@ -407,6 +407,19 @@ add_error_constant(PyObject *module, const char *name, int constant)
     return 0;
 }
 
+static int
+add_error_constants(PyObject *module)
+{
+    for (int i = 0; _error_codes[i].constant_name != 0; i++) {
+        if (add_error_constant(module, _error_codes[i].constant_name,
+                               _error_codes[i].constant_value) < 0)
+        {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static struct PyModuleDef _sqlite3module = {
         PyModuleDef_HEAD_INIT,
         "_sqlite3",
@@ -485,11 +498,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
 
     /* Set error constants */
-    for (int i = 0; _error_codes[i].constant_name != 0; i++) {
-        if (add_error_constant(module, _error_codes[i].constant_name,
-                               _error_codes[i].constant_value) < 0) {
-            goto error;
-        }
+    if (add_error_constants(module) < 0) {
+        goto error;
     }
 
     /* Set integer constants */
