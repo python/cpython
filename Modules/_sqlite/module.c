@@ -288,6 +288,7 @@ static const struct {
     long value;
 } error_codes[] = {
 #define DECLARE_ERROR_CODE(code) {#code, code}
+    // Primary result code list
     DECLARE_ERROR_CODE(SQLITE_ABORT),
     DECLARE_ERROR_CODE(SQLITE_AUTH),
     DECLARE_ERROR_CODE(SQLITE_BUSY),
