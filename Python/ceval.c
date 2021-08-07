@@ -4143,6 +4143,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             
+            PyObject *name = GETITEM(names, cache0->original_oparg);
             // inline version of _PyObject_GetDictPtr for offset >= 0
             PyObject **dictptr = self_cls->tp_dictoffset != 0 ?
                 (PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
@@ -4154,10 +4155,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
                 assert(PyDict_CheckExact(dict));
                 // printf("%p: %ld  %ld\n", self, dict->ma_keys->dk_version, cache1->dk_version_or_hint);
                 DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+                int is_attr = PyDict_Contains((PyObject *)dict, name);
+                if (is_attr < 0) {
+                    goto error;
+                }
+                DEOPT_IF(is_attr, LOAD_METHOD);
             } // don't care if owner has no dict, could be builtin or __slots__
 
             // look in self_cls.__dict__, avoiding _PyType_Lookup
-            PyObject *name = GETITEM(names, cache0->original_oparg);
             uint32_t hint = cache0->index;
             dictptr = (PyObject **)((char *)self_cls + Py_TYPE(self_cls)->tp_dictoffset);
             DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
