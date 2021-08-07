@@ -894,6 +894,30 @@ class TraceTestCase(unittest.TestCase):
              (4, 'line'),
              (4, 'return')])
 
+    def test_nested_ifs_with_and(self):
+
+        def func():
+            if A:
+                if B:
+                    if C:
+                        if D:
+                            return False
+                else:
+                    return False
+            elif E and F:
+                return True
+
+        A = B = True
+        C = False
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
     def test_nested_try_if(self):
 
         def func():
