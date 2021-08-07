@@ -915,8 +915,7 @@ class TraceTestCase(unittest.TestCase):
              (1, 'line'),
              (2, 'line'),
              (3, 'line'),
-             (7, 'line'),
-             (7, 'return')])
+             (3, 'return')])
 
     def test_nested_try_if(self):
 
