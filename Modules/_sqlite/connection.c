@@ -999,7 +999,8 @@ static int _progress_handler(void* user_arg)
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;
-    } else {
+    }
+    else {
         rc = PyObject_IsTrue(ret);
         Py_DECREF(ret);
     }
