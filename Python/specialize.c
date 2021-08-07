@@ -725,14 +725,21 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         uint32_t keys_version = UINT32_MAX;
         if (owner_has_dict) {
             // check if its an attr
-            int is_attr = PyDict_Contains((PyObject *)owner_dict, name);
-            if (is_attr < 0) {
-                return -1;
-            }
-            if (is_attr) {
+            PyObject *attr = _PyObject_GenericGetAttrWithDict(owner, name, (PyObject *)owner_dict, 1);
+            if (attr != descr) {
+                Py_DECREF(attr);
                 SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "is attr");
                 goto fail;
             }
+            Py_DECREF(attr);
+            //int is_attr = PyDict_Contains((PyObject *)owner_dict, name);
+            //if (is_attr < 0) {
+            //    return -1;
+            //}
+            //if (is_attr) {
+            //    SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "is attr");
+            //    goto fail;
+            //}
             keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
             if (keys_version == 0) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, owner_cls, name,
