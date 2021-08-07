@@ -4074,7 +4074,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
-            STAT_INC(LOAD_ATTR, unquickened);
+            STAT_INC(LOAD_METHOD, unquickened);
 
             int meth_found = _PyObject_GetMethod(obj, name, &meth);
 
@@ -4158,7 +4158,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             PyObject *res;
-            PyTypeObject *tp = Py_TYPE(self_cls);
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
@@ -4170,14 +4169,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
             // ensure self.__dict__ didn't modify keys
             PyObject **dictptr = _PyObject_GetDictPtr(self);
-            DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
-            PyDictObject *dict = (PyDictObject *)*dictptr;
-            assert(PyDict_CheckExact(dict));
-            // printf("%p: %ld  %ld\n", self, dict->ma_keys->dk_version, cache1->dk_version_or_hint);
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
-            PyObject *name = GETITEM(names, cache0->original_oparg);
+            PyDictObject *dict = NULL;
+            // DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
+            
+            if (dictptr != NULL && *dictptr != NULL) {
+                dict = (PyDictObject *)*dictptr;
+                assert(PyDict_CheckExact(dict));
+                // printf("%p: %ld  %ld\n", self, dict->ma_keys->dk_version, cache1->dk_version_or_hint);
+                DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+            } // don't care if owner has no dict, could be builtin or __slots__
 
-            // validate against self_cls.__dict__
+            // look in self_cls.__dict__, avoiding _PyType_Lookup
+            PyObject *name = GETITEM(names, cache0->original_oparg);
             uint32_t hint = cache0->index;
             dictptr = _PyObject_GetDictPtr((PyObject *)self_cls);
             DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);

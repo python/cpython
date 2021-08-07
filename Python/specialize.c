@@ -172,6 +172,7 @@ _Py_PrintSpecializationStats(void)
 #endif
     print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     if (out != stderr) {
         fclose(out);
@@ -682,75 +683,93 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
-    PyTypeObject *type = Py_TYPE(owner);
+    PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
-        // rare - LOAD_ATTR is usually emitted for modules imported
-        // at global level, not LOAD_METHOD
-        SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "module method");
+        // somewhat common -- maybe todo.
+        SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "module method");
         goto fail;
     }
-    if (type->tp_dict == NULL) {
-        if (PyType_Ready(type) < 0) {
+    if (owner_cls->tp_dict == NULL) {
+        if (PyType_Ready(owner_cls) < 0) {
             return -1;
         }
     }
     PyObject *descr = NULL;
-    DesciptorClassification kind = analyze_descriptor(type, name, &descr);
+    DesciptorClassification kind = analyze_descriptor(owner_cls, name, &descr);
     if (kind != METHOD || descr == NULL) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "not a method");
+        SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "not a method");
         goto fail;
     }
-    if (type->tp_dictoffset > 0) {
-        PyObject **dictptr = _PyObject_GetDictPtr((PyObject *)type);
-        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
-            // possibly a builtin type
-            SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "no dict or not a dict");
+    if (owner_cls->tp_dictoffset > 0) {
+        PyObject **cls_dictptr = _PyObject_GetDictPtr((PyObject *)owner_cls);
+        if (cls_dictptr == NULL || *cls_dictptr == NULL ||
+            !PyDict_CheckExact(*cls_dictptr)) {
+            // Maybe a builtin type
+            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name,
+                "cls no dict or not a dict");
             goto fail;
         }
         // We found a type with a __dict__.
-        PyDictObject *dict = (PyDictObject *)*dictptr;
-        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys) {
-            // Keys are shared. Rare for LOAD_METHOD. Needs more profiling to
-            // determine if this is worth it. Usually it applies to methods in
-            // o.__dict__ rather than the common type(o).__dict__.
-            SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "shared keys");
+        PyDictObject *cls_dict = (PyDictObject *)*cls_dictptr;
+        if ((owner_cls->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            && cls_dict->ma_keys == ((PyHeapTypeObject*)owner_cls)->ht_cached_keys) {
+            // Keys are shared. Rare for LOAD_METHOD.
+            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "shared keys");
             goto fail;
         }
-        else {
-            PyObject *value = NULL;
-            Py_ssize_t hint =
-                _PyDict_GetItemHint(dict, name, -1, &value);
-            if (hint != (uint16_t)hint) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "hint out of range");
+        
+        // if o.__dict__ changes, the method might be found in o.__dict__
+        // instead of type lookup. So record o.__dict__.
+        PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
+        uint32_t keys_version = UINT32_MAX;
+        // o.__dict__ exists
+        if (*owner_dictptr != NULL && !PyDict_CheckExact(*owner_dictptr)) {
+            PyDictObject *owner_dict = (PyDictObject *)*owner_dictptr;
+            // check if its an attr
+            int is_attr = PyDict_Contains((PyObject *)owner_dict, name);
+            if (is_attr < 0) {
+                return -1;
+            }
+            if (is_attr) {
+                SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "is attr");
                 goto fail;
             }
-            uint32_t keys_version = 0;
-            // if o.__dict__ changes, the method might be found in o.__dict__
-            // instead of type lookup.
-            PyObject **odictptr = _PyObject_GetDictPtr(owner);
-            if (*odictptr != NULL && PyDict_CheckExact(*odictptr)) {
-                PyDictObject *dict = (PyDictObject *)*odictptr;
-                keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
-                if (keys_version == 0) {
-                    SPECIALIZATION_FAIL(LOAD_ATTR, type, name,
-                        "no more key versions");
-                    goto fail;
-                }
-            }
-            // else object has no dict -- probably a builtin type
-            else {
-                SPECIALIZATION_FAIL(LOAD_METHOD, type, name, "builtin's method");
+            keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
+            if (keys_version == 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, owner_cls, name,
+                    "no more key versions");
                 goto fail;
             }
-            // printf("owner is %p with %ld\n", owner, keys_version);
-            cache0->index = (uint16_t)hint;
-            cache1->dk_version_or_hint = keys_version;
-            cache1->tp_version = type->tp_version_tag;
-            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
-            goto success;
+        } // else owner is maybe a builtin with no dict, or __slots__
+        
+        PyObject *value = NULL;
+        Py_ssize_t hint = _PyDict_GetItemHint(cls_dict, name, -1, &value);
+        if (hint != (uint16_t)hint) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "hint out of range");
+            goto fail;
         }
+        
+        // printf("owner is %p with %ld\n", owner, keys_version);
+        cache0->index = (uint16_t)hint;
+        cache1->dk_version_or_hint = keys_version;
+        cache1->tp_version = owner_cls->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
+        goto success;
+
     }
+#if SPECIALIZATION_STATS
+    else if (owner_cls->tp_dictoffset == 0) {
+        PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
+        if (owner_dictptr == NULL ||
+            *owner_dictptr == NULL ||
+            !PyDict_CheckExact(*owner_dictptr)) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "builtin no dict");
+            goto fail;
+        }
+        SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "builtin with dict");
+        goto fail;
+    }
+#endif
 fail:
     STAT_INC(LOAD_METHOD, specialization_failure);
     assert(!PyErr_Occurred());

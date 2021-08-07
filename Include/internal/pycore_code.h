@@ -301,8 +301,8 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
+#define SPECIALIZATION_STATS 1
+#define SPECIALIZATION_STATS_DETAILED 1
 #define SPECIALIZATION_STATS_TO_FILE 0
 
 #if SPECIALIZATION_STATS
