@@ -4139,15 +4139,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             
             assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
-            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             assert(self_cls->tp_dictoffset >= 0);
+            assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            
+            // inline version of _PyObject_GetDictPtr for offset >= 0
+            PyObject **dictptr = self_cls->tp_dictoffset != 0 ?
+                (PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
+            PyDictObject *dict = NULL;
 
             // ensure self.__dict__ didn't modify keys
-            PyObject **dictptr = _PyObject_GetDictPtr(self);
-            PyDictObject *dict = NULL;
-            
-            // maybe todo: don't need this branch if
-            // LOAD_METHOD_WITH_HINT_NO_DICT exists
             if (dictptr != NULL && *dictptr != NULL) {
                 dict = (PyDictObject *)*dictptr;
                 assert(PyDict_CheckExact(dict));
@@ -4158,10 +4159,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             // look in self_cls.__dict__, avoiding _PyType_Lookup
             PyObject *name = GETITEM(names, cache0->original_oparg);
             uint32_t hint = cache0->index;
-            dictptr = _PyObject_GetDictPtr((PyObject *)self_cls);
+            dictptr = (PyObject **)((char *)self_cls + Py_TYPE(self_cls)->tp_dictoffset);
             DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
             dict = (PyDictObject *)*dictptr;
-            assert(PyDict_CheckExact((PyObject *)*dictptr));
+            assert(PyDict_CheckExact(dict));
             DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_METHOD);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name, LOAD_METHOD);

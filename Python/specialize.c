@@ -685,7 +685,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
     PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
-        // somewhat common -- maybe todo.
+        // Mabe TODO: LOAD_METHOD_MODULE
         SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "module method");
         goto fail;
     }
@@ -707,7 +707,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL &&
                           *owner_dictptr != NULL &&
-                          !PyDict_CheckExact(*owner_dictptr));
+                          PyDict_CheckExact(*owner_dictptr));
     PyDictObject *cls_dict = cls_has_dict ? (PyDictObject *)*cls_dictptr : NULL;
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     if (owner_cls->tp_dictoffset >= 0 && cls_has_dict) {
@@ -743,6 +743,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         PyObject *value = NULL;
         Py_ssize_t hint = _PyDict_GetItemHint(cls_dict, name, -1, &value);
         if (hint != (uint16_t)hint) {
+            // possibly classmethod, maybe TODO: LOAD_METHOD_CLASS
             SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "hint out of range");
             goto fail;
         }
