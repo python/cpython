@@ -78,12 +78,6 @@ def func_memoryerror():
 def func_overflowerror():
     raise OverflowError
 
-def func_isblob(v):
-    return isinstance(v, (bytes, memoryview))
-
-def func(*args):
-    return len(args)
-
 class AggrNoStep:
     def __init__(self):
         pass
@@ -188,8 +182,10 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("memoryerror", 0, func_memoryerror)
         self.con.create_function("overflowerror", 0, func_overflowerror)
 
-        self.con.create_function("isblob", 1, func_isblob)
-        self.con.create_function("spam", -1, func)
+        self.con.create_function("isblob", 1,
+                                 lambda x: isinstance(x, (bytes, memoryview)))
+        self.con.create_function("spam", -1, lambda *x: len(x))
+        self.con.create_function("boomerang", 1, lambda x: x)
         self.con.execute("create table test(t text)")
 
     def tearDown(self):
@@ -298,15 +294,33 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.execute("select isblob(x'')")
         self.assertTrue(cur.fetchone()[0])
 
+    def test_nan_float(self):
+        cur = self.con.execute("select boomerang(?)", (float('nan'),))
+        # SQLite has no concept of nan; it is converted to NULL
+        self.assertIsNone(cur.fetchone()[0])
+
+    def test_too_large_int(self):
+        err = "Python int too large to convert to SQLite INTEGER"
+        self.assertRaisesRegex(OverflowError, err, self.con.execute,
+                               "select boomerang(?)", (1 << 65,))
+
+    def test_non_contiguous_blob(self):
+        err = "could not convert BLOB to buffer"
+        self.assertRaisesRegex(ValueError, err, self.con.execute,
+                               "select boomerang(?)",
+                               (memoryview(b"blob")[::2],))
+
     def test_func_params(self):
-        self.con.create_function("boomerang", 1, lambda x: x)
         dataset = (
             (42, int),
-            (1<<42, int),  # long long
+            (-1, int),
+            (1234567890123456789, int),
             (3.14, float),
+            (float('inf'), float),
             ("text", str),
             ("1\x002", str),
             (b"blob", bytes),
+            (bytearray(range(2)), bytes),
             (None, type(None)),
         )
         for val, tp in dataset:
