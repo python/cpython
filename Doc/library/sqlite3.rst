@@ -851,8 +851,8 @@ Exceptions
 .. exception:: DataError
 
    Exception raised for errors that are due to problems with the processed data
-   like division by zero, numeric value out of range, etc.  It is a subclass of
-   :exc:`DatabaseError`.
+   like numeric value out of range and too long strings, etc.  It is a subclass
+   of :exc:`DatabaseError`.
 
 .. exception:: OperationalError
 
