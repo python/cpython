@@ -953,7 +953,7 @@ class ExceptionTests(unittest.TestCase):
             pass
         self.assertEqual(e, (None, None, None))
 
-    def test_no_hang_on_context_chain_cycle(self):
+    def test_no_hang_on_context_chain_cycle1(self):
         # See issue 25782.
 
         def cycle():
@@ -970,6 +970,53 @@ class ExceptionTests(unittest.TestCase):
 
         self.assertIsInstance(exc, TypeError)
         self.assertIsInstance(exc.__context__, ValueError)
+
+    def test_no_hang_on_context_chain_cycle2(self):
+        # See issue 25782.
+
+        class A(Exception):
+            pass
+        class B(Exception):
+            pass
+        class C(Exception):
+            pass
+        class D(Exception):
+            pass
+        class E(Exception):
+            pass
+
+        # Context cycle:
+        #             +-----------+
+        #             V           |
+        # E --> D --> C --> B --> A
+        with self.assertRaises(E) as cm:
+            try:
+                raise A()
+            except A as _a:
+                a = _a
+                try:
+                    raise B()
+                except B as _b:
+                    b = _b
+                    try:
+                        raise C()
+                    except C as _c:
+                        c = _c
+                        a.__context__ = c
+                        try:
+                            raise D()
+                        except D as _d:
+                            d = _d
+                            e = E()
+                            raise e
+
+        self.assertIs(cm.exception, e)
+        # Verify the expected context chain cycle
+        self.assertIs(e.__context__, d)
+        self.assertIs(d.__context__, c)
+        self.assertIs(c.__context__, b)
+        self.assertIs(b.__context__, a)
+        self.assertIs(a.__context__, c)
 
     def test_unicode_change_attributes(self):
         # See issue 7309. This was a crasher.
