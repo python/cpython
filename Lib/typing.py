@@ -2252,7 +2252,7 @@ class _TypedDictMeta(type):
         Subclasses and instances of TypedDict return actual dictionaries.
         """
         for base in bases:
-            if type(base) is not _TypedDictMeta:
+            if not (type(base) is _TypedDictMeta or base is Generic):
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
         tp_dict = type.__new__(_TypedDictMeta, name, (dict,), ns)

@@ -2943,11 +2943,20 @@ class XRepr(NamedTuple):
 
 Label = TypedDict('Label', [('label', str)])
 
+TDG = TypeVar("TDG")
+
 class Point2D(TypedDict):
     x: int
     y: int
 
+class Point2DGeneric(Generic[TDG], TypedDict):
+    a: TDG
+    b: TDG
+
 class Bar(_typed_dict_helper.Foo, total=False):
+    b: int
+
+class BarGeneric(_typed_dict_helper.FooGeneric[TDG], total=False):
     b: int
 
 class LabelPoint2D(Point2D, Label): ...
@@ -4070,7 +4079,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(jim['id'], 1)
         self.assertEqual(Emp.__name__, 'Emp')
         self.assertEqual(Emp.__module__, __name__)
-        self.assertEqual(Emp.__bases__, (dict,))
+        self.assertIn(dict, Emp.__bases__)
         self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
         self.assertEqual(Emp.__total__, True)
 
@@ -4085,7 +4094,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(jim['id'], 1)
         self.assertEqual(Emp.__name__, 'Emp')
         self.assertEqual(Emp.__module__, __name__)
-        self.assertEqual(Emp.__bases__, (dict,))
+        self.assertIn(dict, Emp.__bases__)
         self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
         self.assertEqual(Emp.__total__, True)
 
@@ -4135,7 +4144,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(LabelPoint2D.__name__, 'LabelPoint2D')
         self.assertEqual(LabelPoint2D.__module__, __name__)
         self.assertEqual(LabelPoint2D.__annotations__, {'x': int, 'y': int, 'label': str})
-        self.assertEqual(LabelPoint2D.__bases__, (dict,))
+        self.assertIn(dict, LabelPoint2D.__bases__)
         self.assertEqual(LabelPoint2D.__total__, True)
         self.assertNotIsSubclass(LabelPoint2D, typing.Sequence)
         not_origin = Point2D(x=0, y=1)
@@ -4156,6 +4165,17 @@ class TypedDictTests(BaseTestCase):
             ZZ = pickle.dumps(EmpD, proto)
             EmpDnew = pickle.loads(ZZ)
             self.assertEqual(EmpDnew({'name': 'jane', 'id': 37}), jane)
+
+    def test_pickle_generic(self):
+        point = Point2DGeneric(a=5.0, b=3.0)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z = pickle.dumps(point, proto)
+            point2 = pickle.loads(z)
+            self.assertEqual(point2, point)
+            self.assertEqual(point2, {'a': 5.0, 'b': 3.0})
+            ZZ = pickle.dumps(Point2DGeneric, proto)
+            Point2DGenericNew = pickle.loads(ZZ)
+            self.assertEqual(Point2DGenericNew({'a': 5.0, 'b': 3.0}), point)
 
     def test_optional(self):
         EmpD = TypedDict('EmpD', name=str, id=int)
@@ -4227,6 +4247,9 @@ class TypedDictTests(BaseTestCase):
             get_type_hints(Bar),
             {'a': typing.Optional[int], 'b': int}
         )
+
+    def test_get_type_hints_generic(self):
+        assert set(get_type_hints(BarGeneric)) == {'a', 'b'}
 
 
 class IOTests(BaseTestCase):

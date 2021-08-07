@@ -10,9 +10,14 @@ look something like this:
 
 from __future__ import annotations
 
-from typing import Optional, TypedDict
+from typing import Generic, Optional, TypedDict, TypeVar
 
 OptionalIntType = Optional[int]
 
 class Foo(TypedDict):
     a: OptionalIntType
+
+OptionableT = TypeVar("OptionableT")
+
+class FooGeneric(TypedDict, Generic[OptionableT]):
+    a: Optional[OptionableT]
