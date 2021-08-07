@@ -714,7 +714,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         // We found a type with a __dict__.
         if ((owner_cls->tp_flags & Py_TPFLAGS_HEAPTYPE)
             && cls_dict->ma_keys == ((PyHeapTypeObject*)owner_cls)->ht_cached_keys) {
-            // Keys are shared. Rare for LOAD_METHOD.
+            // Keys are shared. Rare for LOAD_METHOD. Might change
+            // when new object layouts are implemented.
             SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "shared keys");
             goto fail;
         }
