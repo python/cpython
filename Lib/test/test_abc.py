@@ -459,6 +459,23 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             with self.assertRaisesRegex(Exception, exc_msg):
                 issubclass(int, S)
 
+        def test_isinstance_metaclass_with_ABCMeta_metaclass(self):
+            # issue 36881
+            class AbstractMeta(type, metaclass=abc.ABCMeta):
+                pass
+
+            class Meta1(AbstractMeta):
+                pass
+
+            class Meta2(AbstractMeta):
+                pass
+
+            class ClassA(metaclass=Meta1):
+                pass
+
+            result = isinstance(ClassA, Meta2)
+            self.assertFalse(result)
+
         def test_subclasshook(self):
             class A(metaclass=abc.ABCMeta):
                 @classmethod

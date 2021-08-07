@@ -19,6 +19,7 @@ _Py_IDENTIFIER(__abc_tpflags__);
 _Py_IDENTIFIER(__bases__);
 _Py_IDENTIFIER(_abc_impl);
 _Py_IDENTIFIER(__subclasscheck__);
+_Py_IDENTIFIER(__subclasses__);
 _Py_IDENTIFIER(__subclasshook__);
 
 typedef struct {
@@ -585,6 +586,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 /*[clinic end generated code: output=b8b5148f63b6b56f input=a4f4525679261084]*/
 {
     PyObject *subtype, *result = NULL, *subclass = NULL;
+    PyObject *checker;
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
         return NULL;
@@ -619,12 +621,20 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                              subclass);
+        checker = _PyObject_LookupSpecial(self, &PyId___subclasscheck__);
+        if (checker != NULL) {
+            result = PyObject_CallOneArg(checker, subclass);
+            Py_DECREF(checker);
+        }
+
         goto end;
     }
-    result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                          subclass);
+    checker = _PyObject_LookupSpecial(self, &PyId___subclasscheck__);
+    if (checker != NULL) {
+        result = PyObject_CallOneArg(checker, subclass);
+        Py_DECREF(checker);
+    }
+
     if (result == NULL) {
         goto end;
     }
@@ -636,8 +646,12 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
-                                              subtype);
+        checker = _PyObject_LookupSpecial(self, &PyId___subclasscheck__);
+        if (checker != NULL) {
+            result = PyObject_CallOneArg(checker, subtype);
+            Py_DECREF(checker);
+        }
+
         break;
     case 1:  // Nothing to do.
         break;
@@ -771,7 +785,11 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
-    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    PyObject *callable = _PyObject_LookupSpecial(self, &PyId___subclasses__);
+    if (callable != NULL) {
+        subclasses = PyObject_CallNoArgs(callable);
+        Py_DECREF(callable);
+    }
     if (subclasses == NULL) {
         goto end;
     }
