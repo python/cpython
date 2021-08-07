@@ -196,7 +196,7 @@ Scheduling callbacks
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule the *callback* :term:`callback` to be called with
+   Schedule the :term:`callback` to be called with
    *args* arguments at the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
