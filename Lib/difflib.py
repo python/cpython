@@ -1411,7 +1411,6 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     side difference markup.  Optional ndiff arguments may be passed to this
     function and they in turn will be passed to ndiff.
     """
-    import re
 
     # regular expression for finding intraline change indices
     change_re = re.compile(r'(\++|\-+|\^+)')
