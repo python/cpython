@@ -700,17 +700,18 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "not a method");
         goto fail;
     }
-    if (owner_cls->tp_dictoffset > 0) {
-        PyObject **cls_dictptr = _PyObject_GetDictPtr((PyObject *)owner_cls);
-        if (cls_dictptr == NULL || *cls_dictptr == NULL ||
-            !PyDict_CheckExact(*cls_dictptr)) {
-            // Maybe a builtin type
-            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name,
-                "cls no dict or not a dict");
-            goto fail;
-        }
+    PyObject **cls_dictptr = _PyObject_GetDictPtr((PyObject *)owner_cls);
+    int cls_has_dict = (cls_dictptr != NULL &&
+                        *cls_dictptr != NULL &&
+                        PyDict_CheckExact(*cls_dictptr));
+    PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
+    int owner_has_dict = (owner_dictptr != NULL &&
+                          *owner_dictptr != NULL &&
+                          !PyDict_CheckExact(*owner_dictptr));
+    PyDictObject *cls_dict = cls_has_dict ? (PyDictObject *)*cls_dictptr : NULL;
+    PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
+    if (owner_cls->tp_dictoffset >= 0 && cls_has_dict) {
         // We found a type with a __dict__.
-        PyDictObject *cls_dict = (PyDictObject *)*cls_dictptr;
         if ((owner_cls->tp_flags & Py_TPFLAGS_HEAPTYPE)
             && cls_dict->ma_keys == ((PyHeapTypeObject*)owner_cls)->ht_cached_keys) {
             // Keys are shared. Rare for LOAD_METHOD.
@@ -719,12 +720,9 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
         
         // if o.__dict__ changes, the method might be found in o.__dict__
-        // instead of type lookup. So record o.__dict__.
-        PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
+        // instead of old type lookup. So record o.__dict__.
         uint32_t keys_version = UINT32_MAX;
-        // o.__dict__ exists
-        if (*owner_dictptr != NULL && !PyDict_CheckExact(*owner_dictptr)) {
-            PyDictObject *owner_dict = (PyDictObject *)*owner_dictptr;
+        if (owner_has_dict) {
             // check if its an attr
             int is_attr = PyDict_Contains((PyObject *)owner_dict, name);
             if (is_attr < 0) {
@@ -757,19 +755,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         goto success;
 
     }
-#if SPECIALIZATION_STATS
-    else if (owner_cls->tp_dictoffset == 0) {
-        PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
-        if (owner_dictptr == NULL ||
-            *owner_dictptr == NULL ||
-            !PyDict_CheckExact(*owner_dictptr)) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "builtin no dict");
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "builtin with dict");
-        goto fail;
-    }
-#endif
 fail:
     STAT_INC(LOAD_METHOD, specialization_failure);
     assert(!PyErr_Occurred());

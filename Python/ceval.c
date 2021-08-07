@@ -4128,31 +4128,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }            
         }
 
-        //case TARGET(LOAD_METHOD_SPLIT_KEYS): {
-        //    assert(cframe.use_tracing == 0);
-        //    PyObject *owner = TOP();
-        //    PyObject *res;
-        //    PyTypeObject *tp = Py_TYPE(owner);
-        //    SpecializedCacheEntry *caches = GET_CACHE();
-        //    _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-        //    _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
-        //    assert(cache1->tp_version != 0);
-        //    DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-        //    assert(tp->tp_dictoffset > 0);
-        //    PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
-        //    DEOPT_IF(dict == NULL, LOAD_METHOD);
-        //    assert(PyDict_CheckExact((PyObject *)dict));
-        //    DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
-        //    res = dict->ma_values[cache0->index];
-        //    DEOPT_IF(res == NULL, LOAD_METHOD);
-        //    STAT_INC(LOAD_METHOD, hit);
-        //    record_cache_hit(cache0);
-        //    Py_INCREF(res);
-        //    SET_TOP(res);
-        //    Py_DECREF(owner);
-        //    DISPATCH();
-        //}
-
         case TARGET(LOAD_METHOD_WITH_HINT): {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -4165,13 +4140,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-            assert(self_cls->tp_dictoffset > 0);
+            assert(self_cls->tp_dictoffset >= 0);
 
             // ensure self.__dict__ didn't modify keys
             PyObject **dictptr = _PyObject_GetDictPtr(self);
             PyDictObject *dict = NULL;
-            // DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
             
+            // maybe todo: don't need this branch if
+            // LOAD_METHOD_WITH_HINT_NO_DICT exists
             if (dictptr != NULL && *dictptr != NULL) {
                 dict = (PyDictObject *)*dictptr;
                 assert(PyDict_CheckExact(dict));
