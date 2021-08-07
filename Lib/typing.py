@@ -2255,7 +2255,7 @@ class _TypedDictMeta(type):
             if not (type(base) is _TypedDictMeta or base is Generic):
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
-        tp_dict = type.__new__(_TypedDictMeta, name, (dict,), ns)
+        tp_dict = type.__new__(_TypedDictMeta, name, bases + (dict,), ns)
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
