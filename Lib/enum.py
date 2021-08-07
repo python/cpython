@@ -1,4 +1,5 @@
 import sys
+import warnings
 from types import MappingProxyType, DynamicClassAttribute
 from operator import or_ as _or_
 from functools import reduce
@@ -155,7 +156,6 @@ class property(DynamicClassAttribute):
             if self.fget is None:
                 # check for member
                 if self.name in ownerclass._member_map_:
-                    import warnings
                     warnings.warn(
                             "accessing one member from another is not supported, "
                             " and will be disabled in 3.12",
@@ -608,7 +608,6 @@ class EnumType(type):
 
     def __contains__(cls, member):
         if not isinstance(member, Enum):
-            import warnings
             warnings.warn(
                     "in 3.12 __contains__ will no longer raise TypeError, but will return True or\n"
                     "False depending on whether the value is a member or the value of a member",
@@ -1002,7 +1001,6 @@ class Enum(metaclass=EnumType):
         # mix-in branch
         else:
             if not format_spec or format_spec in ('{}','{:}'):
-                import warnings
                 warnings.warn(
                         "in 3.12 format() will use the enum member, not the enum member's value;\n"
                         "use a format specifier, such as :d for an integer-based Enum, to maintain "
