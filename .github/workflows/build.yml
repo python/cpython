@@ -119,6 +119,8 @@ jobs:
     runs-on: macos-latest
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    env:
+      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
     - name: Configure CPython
@@ -137,6 +139,7 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     env:
       OPENSSL_VER: 1.1.1k
+      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
     - name: Register gcc problem matcher
@@ -227,6 +230,7 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     env:
       OPENSSL_VER: 1.1.1k
+      PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v2

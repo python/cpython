@@ -1516,6 +1516,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
 		test/test_importlib/namespacedata01 \
 		test/test_importlib/partial \
+		test/test_importlib/resources \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \

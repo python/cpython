@@ -23,10 +23,13 @@
 import datetime
 import unittest
 import sqlite3 as sqlite
+import sys
 try:
     import zlib
 except ImportError:
     zlib = None
+
+from test import support
 
 
 class SqliteTypeTests(unittest.TestCase):
@@ -45,6 +48,12 @@ class SqliteTypeTests(unittest.TestCase):
         row = self.cur.fetchone()
         self.assertEqual(row[0], "Österreich")
 
+    def test_string_with_null_character(self):
+        self.cur.execute("insert into test(s) values (?)", ("a\0b",))
+        self.cur.execute("select s from test")
+        row = self.cur.fetchone()
+        self.assertEqual(row[0], "a\0b")
+
     def test_small_int(self):
         self.cur.execute("insert into test(i) values (?)", (42,))
         self.cur.execute("select i from test")
@@ -52,7 +61,7 @@ class SqliteTypeTests(unittest.TestCase):
         self.assertEqual(row[0], 42)
 
     def test_large_int(self):
-        num = 2**40
+        num = 123456789123456789
         self.cur.execute("insert into test(i) values (?)", (num,))
         self.cur.execute("select i from test")
         row = self.cur.fetchone()
@@ -77,6 +86,45 @@ class SqliteTypeTests(unittest.TestCase):
         self.cur.execute("select 'Österreich'")
         row = self.cur.fetchone()
         self.assertEqual(row[0], "Österreich")
+
+    def test_too_large_int(self):
+        for value in 2**63, -2**63-1, 2**64:
+            with self.assertRaises(OverflowError):
+                self.cur.execute("insert into test(i) values (?)", (value,))
+        self.cur.execute("select i from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
+    def test_string_with_surrogates(self):
+        for value in 0xd8ff, 0xdcff:
+            with self.assertRaises(UnicodeEncodeError):
+                self.cur.execute("insert into test(s) values (?)", (chr(value),))
+        self.cur.execute("select s from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_too_large_string(self, maxsize):
+        with self.assertRaises(sqlite.InterfaceError):
+            self.cur.execute("insert into test(s) values (?)", ('x'*(2**31-1),))
+        with self.assertRaises(OverflowError):
+            self.cur.execute("insert into test(s) values (?)", ('x'*(2**31),))
+        self.cur.execute("select 1 from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @support.bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_too_large_blob(self, maxsize):
+        with self.assertRaises(sqlite.InterfaceError):
+            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31-1),))
+        with self.assertRaises(OverflowError):
+            self.cur.execute("insert into test(s) values (?)", (b'x'*(2**31),))
+        self.cur.execute("select 1 from test")
+        row = self.cur.fetchone()
+        self.assertIsNone(row)
+
 
 class DeclTypesTests(unittest.TestCase):
     class Foo:
@@ -163,7 +211,7 @@ class DeclTypesTests(unittest.TestCase):
 
     def test_large_int(self):
         # default
-        num = 2**40
+        num = 123456789123456789
         self.cur.execute("insert into test(i) values (?)", (num,))
         self.cur.execute("select i from test")
         row = self.cur.fetchone()

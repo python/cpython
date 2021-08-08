@@ -524,10 +524,17 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyUnicode_Check(py_val)) {
-        const char *str = PyUnicode_AsUTF8(py_val);
-        if (str == NULL)
+        Py_ssize_t sz;
+        const char *str = PyUnicode_AsUTF8AndSize(py_val, &sz);
+        if (str == NULL) {
             return -1;
-        sqlite3_result_text(context, str, -1, SQLITE_TRANSIENT);
+        }
+        if (sz > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "string is longer than INT_MAX bytes");
+            return -1;
+        }
+        sqlite3_result_text(context, str, (int)sz, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
         Py_buffer view;
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
@@ -617,6 +624,29 @@ error:
     return NULL;
 }
 
+// Checks the Python exception and sets the appropriate SQLite error code.
+static void
+set_sqlite_error(sqlite3_context *context, const char *msg)
+{
+    assert(PyErr_Occurred());
+    if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+        sqlite3_result_error_nomem(context);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        sqlite3_result_error_toobig(context);
+    }
+    else {
+        sqlite3_result_error(context, msg, -1);
+    }
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    if (state->enable_callback_tracebacks) {
+        PyErr_Print();
+    }
+    else {
+        PyErr_Clear();
+    }
+}
+
 static void
 _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
@@ -643,14 +673,7 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined function raised exception", -1);
+        set_sqlite_error(context, "user-defined function raised exception");
     }
 
     PyGILState_Release(threadstate);
@@ -674,18 +697,9 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
     if (*aggregate_instance == NULL) {
         *aggregate_instance = _PyObject_CallNoArg(aggregate_class);
-
-        if (PyErr_Occurred()) {
-            *aggregate_instance = 0;
-
-            pysqlite_state *state = pysqlite_get_state(NULL);
-            if (state->enable_callback_tracebacks) {
-                PyErr_Print();
-            }
-            else {
-                PyErr_Clear();
-            }
-            sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
+        if (!*aggregate_instance) {
+            set_sqlite_error(context,
+                    "user-defined aggregate's '__init__' method raised error");
             goto error;
         }
     }
@@ -704,14 +718,8 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'step' method raised error");
     }
 
 error:
@@ -759,14 +767,8 @@ _pysqlite_final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'finalize' method raised error");
     }
 
     /* Restore the exception (if any) of the last call to step(),
@@ -1000,6 +1002,14 @@ static int _progress_handler(void* user_arg)
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
+        /* abort query if error occurred */
+        rc = -1;
+    }
+    else {
+        rc = PyObject_IsTrue(ret);
+        Py_DECREF(ret);
+    }
+    if (rc < 0) {
         pysqlite_state *state = pysqlite_get_state(NULL);
         if (state->enable_callback_tracebacks) {
             PyErr_Print();
@@ -1007,12 +1017,6 @@ static int _progress_handler(void* user_arg)
         else {
             PyErr_Clear();
         }
-
-        /* abort query if error occurred */
-        rc = 1;
-    } else {
-        rc = (int)PyObject_IsTrue(ret);
-        Py_DECREF(ret);
     }
 
     PyGILState_Release(gilstate);

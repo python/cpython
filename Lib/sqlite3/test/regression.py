@@ -21,6 +21,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import datetime
+import sys
 import unittest
 import sqlite3 as sqlite
 import weakref
@@ -273,7 +274,7 @@ class RegressionTests(unittest.TestCase):
         Call a connection with a non-string SQL request: check error handling
         of the statement constructor.
         """
-        self.assertRaises(TypeError, self.con, 1)
+        self.assertRaises(TypeError, self.con, b"select 1")
 
     def test_collation(self):
         def collation_cb(a, b):
@@ -343,6 +344,26 @@ class RegressionTests(unittest.TestCase):
         cur = con.cursor()
         self.assertRaises(ValueError, cur.execute, " \0select 2")
         self.assertRaises(ValueError, cur.execute, "select 2\0")
+
+    def test_surrogates(self):
+        con = sqlite.connect(":memory:")
+        self.assertRaises(UnicodeEncodeError, con, "select '\ud8ff'")
+        self.assertRaises(UnicodeEncodeError, con, "select '\udcff'")
+        cur = con.cursor()
+        self.assertRaises(UnicodeEncodeError, cur.execute, "select '\ud8ff'")
+        self.assertRaises(UnicodeEncodeError, cur.execute, "select '\udcff'")
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @support.bigmemtest(size=2**31, memuse=4, dry_run=False)
+    def test_large_sql(self, maxsize):
+        # Test two cases: size+1 > INT_MAX and size+1 <= INT_MAX.
+        for size in (2**31, 2**31-2):
+            con = sqlite.connect(":memory:")
+            sql = "select 1".ljust(size)
+            self.assertRaises(sqlite.DataError, con, sql)
+            cur = con.cursor()
+            self.assertRaises(sqlite.DataError, cur.execute, sql)
+            del sql
 
     def test_commit_cursor_reset(self):
         """

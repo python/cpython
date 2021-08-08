@@ -3,8 +3,11 @@ import os
 import unittest
 from test.support import run_unittest
 
-from distutils.command.bdist import bdist
-from distutils.tests import support
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    from distutils.command.bdist import bdist
+    from distutils.tests import support
 
 
 class BuildTestCase(support.TempdirManager,
