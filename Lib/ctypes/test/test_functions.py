@@ -389,7 +389,7 @@ class FunctionTestCase(unittest.TestCase):
                 (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
     def test_sf1651235(self):
-        # see http://www.python.org/sf/1651235
+        # see https://www.python.org/sf/1651235
 
         proto = CFUNCTYPE(c_int, RECT, POINT)
         def callback(*args):

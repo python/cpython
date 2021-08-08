@@ -523,10 +523,17 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyUnicode_Check(py_val)) {
-        const char *str = PyUnicode_AsUTF8(py_val);
-        if (str == NULL)
+        Py_ssize_t sz;
+        const char *str = PyUnicode_AsUTF8AndSize(py_val, &sz);
+        if (str == NULL) {
             return -1;
-        sqlite3_result_text(context, str, -1, SQLITE_TRANSIENT);
+        }
+        if (sz > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "string is longer than INT_MAX bytes");
+            return -1;
+        }
+        sqlite3_result_text(context, str, (int)sz, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
         Py_buffer view;
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
@@ -616,6 +623,29 @@ error:
     return NULL;
 }
 
+// Checks the Python exception and sets the appropriate SQLite error code.
+static void
+set_sqlite_error(sqlite3_context *context, const char *msg)
+{
+    assert(PyErr_Occurred());
+    if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+        sqlite3_result_error_nomem(context);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        sqlite3_result_error_toobig(context);
+    }
+    else {
+        sqlite3_result_error(context, msg, -1);
+    }
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    if (state->enable_callback_tracebacks) {
+        PyErr_Print();
+    }
+    else {
+        PyErr_Clear();
+    }
+}
+
 static void
 _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
@@ -642,14 +672,7 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined function raised exception", -1);
+        set_sqlite_error(context, "user-defined function raised exception");
     }
 
     PyGILState_Release(threadstate);
@@ -673,18 +696,9 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
     if (*aggregate_instance == NULL) {
         *aggregate_instance = _PyObject_CallNoArg(aggregate_class);
-
-        if (PyErr_Occurred()) {
-            *aggregate_instance = 0;
-
-            pysqlite_state *state = pysqlite_get_state(NULL);
-            if (state->enable_callback_tracebacks) {
-                PyErr_Print();
-            }
-            else {
-                PyErr_Clear();
-            }
-            sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
+        if (!*aggregate_instance) {
+            set_sqlite_error(context,
+                    "user-defined aggregate's '__init__' method raised error");
             goto error;
         }
     }
@@ -707,23 +721,11 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        sqlite3_result_error(context,
-                             "user-defined aggregate's 'step' method "
-                             "raised error",
-                             -1);
-        goto error;
+        set_sqlite_error(context,
+                "user-defined aggregate's 'step' method raised error");
     }
 
 error:
-    if (PyErr_Occurred()) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-    }
     Py_XDECREF(stepmethod);
     Py_XDECREF(function_result);
 
@@ -768,14 +770,8 @@ _pysqlite_final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'finalize' method raised error");
     }
 
     /* Restore the exception (if any) of the last call to step(),
@@ -981,52 +977,41 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
 static void
 inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
+    PyObject *method = NULL;
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     PyObject **cls = (PyObject **)sqlite3_aggregate_context(context,
                                                             sizeof(PyObject *));
     assert(cls != NULL);
     assert(*cls != NULL);
-    PyObject *method = PyObject_GetAttrString(*cls, "inverse");
+    method = PyObject_GetAttrString(*cls, "inverse");
     if (method == NULL) {
-        sqlite3_result_error(context,
-                             "user-defined aggregate's 'inverse' method"
-                             " not defined",
-                             -1);
+        set_sqlite_error(context,
+                         "user-defined aggregate's 'inverse' method "
+                         "not defined");
         goto exit;
     }
 
     PyObject *args = _pysqlite_build_py_params(context, argc, params);
     if (args == NULL) {
-        sqlite3_result_error(context,
-                             "unable to build arguments for user-defined"
-                             " aggregate's 'inverse' method",
-                             -1);
-        Py_DECREF(method);
+        set_sqlite_error(context,
+                         "unable to build arguments for user-defined "
+                         "aggregate's 'inverse' method");
         goto exit;
     }
 
     PyObject *res = PyObject_CallObject(method, args);
-    Py_DECREF(method);
     Py_DECREF(args);
     if (res == NULL) {
-        sqlite3_result_error(context,
-                             "user-defined aggregate's 'inverse' method"
-                             " raised error",
-                             -1);
+        set_sqlite_error(context,
+                         "user-defined aggregate's 'inverse' method "
+                         "raised error");
         goto exit;
     }
     Py_DECREF(res);
 
 exit:
-    if (PyErr_Occurred()) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        } else {
-            PyErr_Clear();
-        }
-    }
+    Py_XDECREF(method);
     PyGILState_Release(gilstate);
 }
 
@@ -1039,41 +1024,32 @@ exit:
 static void
 value_callback(sqlite3_context *context)
 {
+    _Py_IDENTIFIER(value);
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     PyObject **cls = NULL;  // Aggregate class instance.
     cls = (PyObject **)sqlite3_aggregate_context(context, sizeof(PyObject *));
     assert(cls != NULL);
     assert(*cls != NULL);
-    _Py_IDENTIFIER(value);
+
     PyObject *res = _PyObject_CallMethodIdNoArgs(*cls, &PyId_value);
     if (res == NULL) {
-        sqlite3_result_error(context,
-                             "user-defined aggregate's 'value' method"
-                             " raised error",
-                             -1);
+        set_sqlite_error(context,
+                         "user-defined aggregate's 'value' method "
+                         "raised error");
         goto exit;
     }
 
     int rc = _pysqlite_set_result(context, res);
     Py_DECREF(res);
     if (rc != 0) {
-        sqlite3_result_error(context,
-                             "unable to set result from user-defined"
-                             " aggregate's 'value' method",
-                             -1);
+        set_sqlite_error(context,
+                         "unable to set result from user-defined aggregate's "
+                         "'value' method");
         goto exit;
     }
 
 exit:
-    if (PyErr_Occurred()) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        } else {
-            PyErr_Clear();
-        }
-    }
     PyGILState_Release(gilstate);
 }
 
@@ -1248,6 +1224,14 @@ static int _progress_handler(void* user_arg)
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
+        /* abort query if error occurred */
+        rc = -1;
+    }
+    else {
+        rc = PyObject_IsTrue(ret);
+        Py_DECREF(ret);
+    }
+    if (rc < 0) {
         pysqlite_state *state = pysqlite_get_state(NULL);
         if (state->enable_callback_tracebacks) {
             PyErr_Print();
@@ -1255,12 +1239,6 @@ static int _progress_handler(void* user_arg)
         else {
             PyErr_Clear();
         }
-
-        /* abort query if error occurred */
-        rc = 1;
-    } else {
-        rc = (int)PyObject_IsTrue(ret);
-        Py_DECREF(ret);
     }
 
     PyGILState_Release(gilstate);
