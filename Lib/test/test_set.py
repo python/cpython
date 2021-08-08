@@ -362,8 +362,8 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertEqual(s, set(self.word))
         s.__init__(self.otherword)
         self.assertEqual(s, set(self.otherword))
-        self.assertRaises(TypeError, s.__init__, s, 2);
-        self.assertRaises(TypeError, s.__init__, 1);
+        self.assertRaises(TypeError, s.__init__, s, 2)
+        self.assertRaises(TypeError, s.__init__, 1)
 
     def test_constructor_identity(self):
         s = self.thetype(range(3))

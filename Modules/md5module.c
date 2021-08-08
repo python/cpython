@@ -333,16 +333,25 @@ md5_get_state(PyObject *module)
 static MD5object *
 newMD5object(MD5State * st)
 {
-    return (MD5object *)PyObject_New(MD5object, st->md5_type);
+    MD5object *md5 = (MD5object *)PyObject_GC_New(MD5object, st->md5_type);
+    PyObject_GC_Track(md5);
+    return md5;
 }
 
 /* Internal methods for a hash object */
+static int
+MD5_traverse(PyObject *ptr, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(ptr));
+    return 0;
+}
 
 static void
 MD5_dealloc(PyObject *ptr)
 {
     PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_Free(ptr);
+    PyObject_GC_UnTrack(ptr);
+    PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }
 
@@ -478,13 +487,15 @@ static PyType_Slot md5_type_slots[] = {
     {Py_tp_dealloc, MD5_dealloc},
     {Py_tp_methods, MD5_methods},
     {Py_tp_getset, MD5_getseters},
+    {Py_tp_traverse, MD5_traverse},
     {0,0}
 };
 
 static PyType_Spec md5_type_spec = {
     .name = "_md5.md5",
     .basicsize =  sizeof(MD5object),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = md5_type_slots
 };
 

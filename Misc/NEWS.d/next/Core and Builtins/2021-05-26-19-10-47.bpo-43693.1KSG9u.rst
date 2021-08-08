@@ -1,0 +1,5 @@
+A new opcode MAKE_CELL has been added that effectively moves some of
+the work done on function entry into the compiler and into the eval
+loop.  In addition to creating the required cell objects, the new
+opcode converts relevant arguments (and other locals) to cell
+variables on function entry.

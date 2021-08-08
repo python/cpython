@@ -1,0 +1,1 @@
+Fix reference leaks in the error paths of ``update_bases()`` and ``__build_class__``. Patch by Pablo Galindo.

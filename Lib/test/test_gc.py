@@ -1361,6 +1361,34 @@ class GCTogglingTests(unittest.TestCase):
             # empty __dict__.
             self.assertEqual(x, None)
 
+
+class PythonFinalizationTests(unittest.TestCase):
+    def test_ast_fini(self):
+        # bpo-44184: Regression test for subtype_dealloc() when deallocating
+        # an AST instance also destroy its AST type: subtype_dealloc() must
+        # not access the type memory after deallocating the instance, since
+        # the type memory can be freed as well. The test is also related to
+        # _PyAST_Fini() which clears references to AST types.
+        code = textwrap.dedent("""
+            import ast
+            import codecs
+
+            # Small AST tree to keep their AST types alive
+            tree = ast.parse("def f(x, y): return 2*x-y")
+            x = [tree]
+            x.append(x)
+
+            # Put the cycle somewhere to survive until the last GC collection.
+            # Codec search functions are only cleared at the end of
+            # interpreter_clear().
+            def search_func(encoding):
+                return None
+            search_func.a = x
+            codecs.register(search_func)
+        """)
+        assert_python_ok("-c", code)
+
+
 def test_main():
     enabled = gc.isenabled()
     gc.disable()
@@ -1370,7 +1398,11 @@ def test_main():
 
     try:
         gc.collect() # Delete 2nd generation garbage
-        run_unittest(GCTests, GCTogglingTests, GCCallbackTests)
+        run_unittest(
+            GCTests,
+            GCCallbackTests,
+            GCTogglingTests,
+            PythonFinalizationTests)
     finally:
         gc.set_debug(debug)
         # test gc.enable() even if GC is disabled by default

@@ -27,3 +27,21 @@ class PackageMetadata(Protocol):
         """
         A JSON-compatible form of the metadata.
         """
+
+
+class SimplePath(Protocol):
+    """
+    A minimal subset of pathlib.Path required by PathDistribution.
+    """
+
+    def joinpath(self) -> 'SimplePath':
+        ...  # pragma: no cover
+
+    def __div__(self) -> 'SimplePath':
+        ...  # pragma: no cover
+
+    def parent(self) -> 'SimplePath':
+        ...  # pragma: no cover
+
+    def read_text(self) -> str:
+        ...  # pragma: no cover

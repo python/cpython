@@ -157,7 +157,7 @@ class Test_Csv(unittest.TestCase):
         self._write_error_test(OSError, BadIterable())
         class BadList:
             def __len__(self):
-                return 10;
+                return 10
             def __getitem__(self, i):
                 if i > 2:
                     raise OSError
@@ -458,9 +458,15 @@ class TestDialectRegistry(unittest.TestCase):
         class testUni(csv.excel):
             delimiter = "\u039B"
 
+        class unspecified():
+            # A class to pass as dialect but with no dialect attributes.
+            pass
+
         csv.register_dialect('testC', testC)
         try:
             self.compare_dialect_123("1,2,3\r\n")
+            self.compare_dialect_123("1,2,3\r\n", dialect=None)
+            self.compare_dialect_123("1,2,3\r\n", dialect=unspecified)
             self.compare_dialect_123("1\t2\t3\r\n", testA)
             self.compare_dialect_123("1:2:3\r\n", dialect=testB())
             self.compare_dialect_123("1|2|3\r\n", dialect='testC')
@@ -1013,6 +1019,42 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
 'Tommy''s Place'+ Blue Island'+ 'IL'+ '12/28/02'+ 'Blue Sunday/White Crow'
 'Stonecutters ''Seafood'' and Chop House'+ 'Lemont'+ 'IL'+ '12/19/02'+ 'Week Back'
 """
+
+    sample10 = dedent("""
+                        abc,def
+                        ghijkl,mno
+                        ghi,jkl
+                        """)
+
+    sample11 = dedent("""
+                        abc,def
+                        ghijkl,mnop
+                        ghi,jkl
+                         """)
+
+    sample12 = dedent(""""time","forces"
+                        1,1.5
+                        0.5,5+0j
+                        0,0
+                        1+1j,6
+                        """)
+
+    sample13 = dedent(""""time","forces"
+                        0,0
+                        1,2
+                        a,b
+                        """)
+
+    def test_issue43625(self):
+        sniffer = csv.Sniffer()
+        self.assertTrue(sniffer.has_header(self.sample12))
+        self.assertFalse(sniffer.has_header(self.sample13))
+
+    def test_has_header_strings(self):
+        "More to document existing (unexpected?) behavior than anything else."
+        sniffer = csv.Sniffer()
+        self.assertFalse(sniffer.has_header(self.sample10))
+        self.assertFalse(sniffer.has_header(self.sample11))
 
     def test_has_header(self):
         sniffer = csv.Sniffer()

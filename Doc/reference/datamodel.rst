@@ -969,8 +969,10 @@ Internal types
          single: co_varnames (code object attribute)
          single: co_cellvars (code object attribute)
          single: co_freevars (code object attribute)
+         single: co_qualname (code object attribute)
 
       Special read-only attributes: :attr:`co_name` gives the function name;
+      :attr:`co_qualname` gives the fully qualified function name;
       :attr:`co_argcount` is the total number of positional arguments
       (including positional-only arguments and arguments with default values);
       :attr:`co_posonlyargcount` is the number of positional-only arguments
@@ -1012,6 +1014,39 @@ Internal types
 
       If a code object represents a function, the first item in :attr:`co_consts` is
       the documentation string of the function, or ``None`` if undefined.
+
+      .. method:: codeobject.co_positions()
+
+         Returns an iterable over the source code positions of each bytecode
+         instruction in the code object.
+
+         The iterator returns tuples containing the ``(start_line, end_line,
+         start_column, end_column)``. The *i-th* tuple corresponds to the
+         position of the source code that compiled to the *i-th* instruction.
+         Column information is 0-indexed utf-8 byte offsets on the given source
+         line.
+
+         This positional information can be missing. A non-exhaustive lists of
+         cases where this may happen:
+
+         - Running the interpreter with :option:`-X` ``no_debug_ranges``.
+         - Loading a pyc file compiled while using :option:`-X` ``no_debug_ranges``.
+         - Position tuples corresponding to artificial instructions.
+         - Line and column numbers that can't be represented due to
+           implementation specific limitations.
+
+         When this occurs, some or all of the tuple elements can be
+         :const:`None`.
+
+         .. versionadded:: 3.11
+
+         .. note::
+            This feature requires storing column positions in code objects which may
+            result in a small increase of disk usage of compiled Python files or
+            interpreter memory usage. To avoid storing the extra information and/or
+            deactivate printing the extra traceback information, the
+            :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
+            environment variable can be used.
 
    .. _frame-objects:
 
@@ -2404,7 +2439,7 @@ left undefined.
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``).  For instance, to
    evaluate the expression ``x + y``, where *x* is an instance of a class that
-   has an :meth:`__add__` method, ``x.__add__(y)`` is called.  The
+   has an :meth:`__add__` method, ``type(x).__add__(x, y)`` is called.  The
    :meth:`__divmod__` method should be the equivalent to using
    :meth:`__floordiv__` and :meth:`__mod__`; it should not be related to
    :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined to accept
@@ -2440,8 +2475,9 @@ left undefined.
    (swapped) operands.  These functions are only called if the left operand does
    not support the corresponding operation [#]_ and the operands are of different
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
-   an instance of a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)``
-   is called if ``x.__sub__(y)`` returns *NotImplemented*.
+   an instance of a class that has an :meth:`__rsub__` method,
+   ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
+   *NotImplemented*.
 
    .. index:: builtin: pow
 
@@ -2714,7 +2750,7 @@ are awaitable.
 .. note::
 
    The :term:`generator iterator` objects returned from generators
-   decorated with :func:`types.coroutine` or :func:`asyncio.coroutine`
+   decorated with :func:`types.coroutine`
    are also awaitable, but they do not implement :meth:`__await__`.
 
 .. method:: object.__await__(self)

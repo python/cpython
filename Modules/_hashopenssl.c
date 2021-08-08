@@ -1496,9 +1496,11 @@ _hmac_update(HMACobject *self, PyObject *obj)
     }
 
     if (self->lock != NULL) {
-        ENTER_HASHLIB(self);
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
-        LEAVE_HASHLIB(self);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
     } else {
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
     }

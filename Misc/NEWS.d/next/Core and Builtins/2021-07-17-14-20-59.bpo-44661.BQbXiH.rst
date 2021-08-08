@@ -1,0 +1,2 @@
+Update ``property_descr_set`` to use vectorcall if possible. Patch by Dong-hee
+Na.

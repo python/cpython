@@ -1,0 +1,3 @@
+The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+deprecated in Python 3.10 and will be removed in Python 3.12. This feature
+requires a debug build of Python. Patch by Victor Stinner.

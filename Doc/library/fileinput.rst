@@ -205,7 +205,7 @@ The two following opening hooks are provided by this module:
    modules.  If the filename extension is not ``'.gz'`` or ``'.bz2'``, the file is
    opened normally (ie, using :func:`open` without any decompression).
 
-   The *encoding* and *errors* values are passed to to :class:`io.TextIOWrapper`
+   The *encoding* and *errors* values are passed to :class:`io.TextIOWrapper`
    for compressed files and open for normal files.
 
    Usage example:  ``fi = fileinput.FileInput(openhook=fileinput.hook_compressed, encoding="utf-8")``

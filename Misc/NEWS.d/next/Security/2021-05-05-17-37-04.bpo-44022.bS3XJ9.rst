@@ -1,2 +1,2 @@
-mod:`http.client` now avoids infinitely reading potential HTTP headers after a
+:mod:`http.client` now avoids infinitely reading potential HTTP headers after a
 ``100 Continue`` status response from the server.

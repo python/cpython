@@ -1,0 +1,3 @@
+Fix broken ``make install`` that caused standard library extension modules
+to be unnecessarily and incorrectly rebuilt during the install phase of
+cpython.

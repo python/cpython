@@ -278,7 +278,7 @@ class GzipFile(_compression.BaseStream):
         if self.fileobj is None:
             raise ValueError("write() on closed GzipFile object")
 
-        if isinstance(data, bytes):
+        if isinstance(data, (bytes, bytearray)):
             length = len(data)
         else:
             # accept any data that supports the buffer protocol

@@ -46,6 +46,11 @@ can be customized by end users easily.
 
    import configparser
 
+.. testcleanup::
+
+   import os
+   os.remove("example.ini")
+
 
 Quick Start
 -----------
@@ -1152,6 +1157,13 @@ ConfigParser Objects
       representation can be parsed by a future :meth:`read` call.  If
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
+
+   .. note::
+
+      Comments in the original configuration file are not preserved when
+      writing the configuration back.
+      What is considered a comment, depends on the given values for
+      *comment_prefix* and *inline_comment_prefix*.
 
 
    .. method:: remove_option(section, option)

@@ -165,7 +165,7 @@ Module functions and constants
    does not include the type, i. e. if you use something like
    ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
    everything until the first ``'['`` for the column name and strip
-   the preceeding space: the column name would simply be "Expiration date".
+   the preceding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
@@ -213,7 +213,7 @@ Module functions and constants
    The :mod:`sqlite3` module internally uses a statement cache to avoid SQL parsing
    overhead. If you want to explicitly set the number of statements that are cached
    for the connection, you can set the *cached_statements* parameter. The currently
-   implemented default is to cache 100 statements.
+   implemented default is to cache 128 statements.
 
    If *uri* is true, *database* is interpreted as a URI. This allows you
    to specify options. For example, to open a database in read-only mode
@@ -402,6 +402,10 @@ Connection Objects
 
          con.create_collation("reverse", None)
 
+      .. versionchanged:: 3.11
+         The collation name can contain any Unicode character.  Earlier, only
+         ASCII characters were allowed.
+
 
    .. method:: interrupt()
 
@@ -429,6 +433,11 @@ Connection Objects
       Please consult the SQLite documentation about the possible values for the first
       argument and the meaning of the second and third argument depending on the first
       one. All necessary constants are available in the :mod:`sqlite3` module.
+
+      Passing :const:`None` as *authorizer_callback* will disable the authorizer.
+
+      .. versionchanged:: 3.11
+         Added support for disabling the authorizer using :const:`None`.
 
 
    .. method:: set_progress_handler(handler, n)
@@ -648,7 +657,8 @@ Cursor Objects
 
       This is a nonstandard convenience method for executing multiple SQL statements
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
-      gets as a parameter.
+      gets as a parameter.  This method disregards :attr:`isolation_level`; any
+      transaction control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 
@@ -1047,6 +1057,9 @@ setting :attr:`isolation_level` to ``None``.  This will leave the underlying
 ``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
 control the transaction state by explicitly issuing ``BEGIN``, ``ROLLBACK``,
 ``SAVEPOINT``, and ``RELEASE`` statements in your code.
+
+Note that :meth:`~Cursor.executescript` disregards
+:attr:`isolation_level`; any transaction control must be added explicitly.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL

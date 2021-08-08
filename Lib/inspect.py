@@ -781,6 +781,8 @@ def getfile(object):
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
+            if object.__module__ == '__main__':
+                raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
@@ -2020,29 +2022,6 @@ def _signature_is_functionlike(obj):
             (isinstance(annotations, (dict)) or annotations is None) )
 
 
-def _signature_get_bound_param(spec):
-    """ Private helper to get first parameter name from a
-    __text_signature__ of a builtin method, which should
-    be in the following format: '($param1, ...)'.
-    Assumptions are that the first argument won't have
-    a default value or an annotation.
-    """
-
-    assert spec.startswith('($')
-
-    pos = spec.find(',')
-    if pos == -1:
-        pos = spec.find(')')
-
-    cpos = spec.find(':')
-    assert cpos == -1 or cpos > pos
-
-    cpos = spec.find('=')
-    assert cpos == -1 or cpos > pos
-
-    return spec[2:pos]
-
-
 def _signature_strip_non_python_syntax(signature):
     """
     Private helper function. Takes a signature in Argument Clinic's
@@ -2119,10 +2098,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    # Lazy import ast because it's relatively heavy and
-    # it's not used for other than this function.
-    import ast
-
     Parameter = cls._parameter_cls
 
     clean_signature, self_parameter, last_positional_only = \
@@ -2471,15 +2446,23 @@ def _signature_from_callable(obj, *,
         if call is not None:
             sig = _get_signature_of(call)
         else:
-            # Now we check if the 'obj' class has a '__new__' method
+            factory_method = None
             new = _signature_get_user_defined_method(obj, '__new__')
-            if new is not None:
-                sig = _get_signature_of(new)
-            else:
-                # Finally, we should have at least __init__ implemented
-                init = _signature_get_user_defined_method(obj, '__init__')
-                if init is not None:
-                    sig = _get_signature_of(init)
+            init = _signature_get_user_defined_method(obj, '__init__')
+            # Now we check if the 'obj' class has an own '__new__' method
+            if '__new__' in obj.__dict__:
+                factory_method = new
+            # or an own '__init__' method
+            elif '__init__' in obj.__dict__:
+                factory_method = init
+            # If not, we take inherited '__new__' or '__init__', if present
+            elif new is not None:
+                factory_method = new
+            elif init is not None:
+                factory_method = init
+
+            if factory_method is not None:
+                sig = _get_signature_of(factory_method)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-

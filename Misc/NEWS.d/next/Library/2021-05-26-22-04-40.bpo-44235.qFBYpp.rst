@@ -1,0 +1,1 @@
+Remove deprecated functions in the :mod:`gettext`. Patch by Dong-hee Na.

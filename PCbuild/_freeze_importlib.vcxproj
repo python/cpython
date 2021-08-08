@@ -123,17 +123,17 @@
       <IntFile>$(IntDir)importlib_zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\importlib_zipimport.h</OutFile>
     </None>
+    <None Include="..\Tools\freeze\flag.py">
+      <ModName>hello</ModName>
+      <IntFile>$(IntDir)frozen_hello.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_hello.h</OutFile>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_RebuildImportLib">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
-    
-    <PropertyGroup>
-      <_OldContent Condition="Exists($(OutTargetPath))"></_OldContent>
-      <_NewContent Condition="Exists($(IntTargetPath))">$([System.IO.File]::ReadAllText($(IntTargetPath)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))</_NewContent>
-    </PropertyGroup>
     
     <Copy SourceFiles="%(None.IntFile)"
           DestinationFiles="%(None.OutFile)"
@@ -153,9 +153,7 @@
   </Target>
   <Target Name="_CleanImportLib" BeforeTargets="CoreClean">
     <ItemGroup>
-      <Clean Include="$(IntDir)importlib.g.h" />
-      <Clean Include="$(IntDir)importlib_external.g.h" />
-      <Clean Include="$(IntDir)importlib_zipimport.g.h" />
+      <Clean Include="%(None.IntFile)" />
     </ItemGroup>
   </Target>
 </Project>
