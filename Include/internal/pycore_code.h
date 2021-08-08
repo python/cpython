@@ -287,6 +287,11 @@ too_many_cache_misses(_PyAdaptiveEntry *entry) {
     return entry->counter == saturating_zero();
 }
 
+static inline void
+set_cache_counter_zero(_PyAdaptiveEntry *entry) {
+    entry->counter = saturating_zero();
+}
+
 #define ADAPTIVE_CACHE_BACKOFF 64
 
 static inline void

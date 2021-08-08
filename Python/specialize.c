@@ -705,18 +705,17 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
                         *cls_dictptr != NULL &&
                         PyDict_CheckExact(*cls_dictptr));
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
-    int owner_has_dict = (owner_dictptr != NULL &&
-                          *owner_dictptr != NULL &&
-                          PyDict_CheckExact(*owner_dictptr));
+    int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
     PyDictObject *cls_dict = cls_has_dict ? (PyDictObject *)*cls_dictptr : NULL;
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
-    if (owner_cls->tp_dictoffset >= 0 && cls_has_dict) {
+    if (Py_TYPE(owner_cls)->tp_dictoffset >= 0 && cls_has_dict &&
+        owner_cls->tp_dictoffset >= 0) {
         // We found a type with a __dict__.
         if ((owner_cls->tp_flags & Py_TPFLAGS_HEAPTYPE)
             && cls_dict->ma_keys == ((PyHeapTypeObject*)owner_cls)->ht_cached_keys) {
             // Keys are shared. Rare for LOAD_METHOD. Might change
             // when new object layouts are implemented.
-            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "shared keys");
+            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "type dict shared keys");
             goto fail;
         }
         
@@ -724,14 +723,24 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         // instead of old type lookup. So record o.__dict__.
         uint32_t keys_version = UINT32_MAX;
         if (owner_has_dict) {
-            int is_attr = PyDict_Contains((PyObject *)owner_dict, name);
-            if (is_attr < 0) {
-                return -1;
-            }
-            if (is_attr) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "is attr");
+            if (!PyDict_CheckExact(owner_dict)) {
+                // _PyDictKeys_GetVersionForCurrentState isn't accurate for
+                // custom dict subclasses at the moment
+                SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "dict subclass");
                 goto fail;
             }
+            assert(PyUnicode_CheckExact(name));
+            Py_hash_t hash = PyObject_Hash(name);
+            if (hash == -1) {
+                return -1;
+            }
+            PyObject *value = NULL;
+            Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
+            assert(ix != DKIX_ERROR);
+            if (ix != DKIX_EMPTY) {
+                SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "is attr");
+                goto fail;
+            }            
             keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
             if (keys_version == 0) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, owner_cls, name,

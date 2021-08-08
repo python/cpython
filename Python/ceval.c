@@ -1384,7 +1384,10 @@ eval_frame_handle_pending(PyThreadState *tstate)
     _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
 
 
+/* Maybe deoptimize if too many cache misses */
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
+/* Immediately deoptimize entire instruction back to adaptive entry. */
+#define BACKOFF_IF(cond, instname) if (cond) { goto instname ## _backoff; }
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
@@ -4141,7 +4144,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             assert(cache1->tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
-            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            BACKOFF_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             
             PyObject *name = GETITEM(names, cache0->original_oparg);
             // inline version of _PyObject_GetDictPtr for offset >= 0
@@ -4153,26 +4156,33 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             if (dictptr != NULL && *dictptr != NULL) {
                 dict = (PyDictObject *)*dictptr;
                 assert(PyDict_CheckExact(dict));
+                // some objects support overriding __dict__ with a custom dict subclass
+                // BACKOFF_IF(!PyDict_CheckExact(dict), LOAD_METHOD);
+                BACKOFF_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+                
                 // printf("%p: %ld  %ld\n", self, dict->ma_keys->dk_version, cache1->dk_version_or_hint);
-                DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
-                int is_attr = PyDict_Contains((PyObject *)dict, name);
-                if (is_attr < 0) {
-                    goto error;
-                }
-                DEOPT_IF(is_attr, LOAD_METHOD);
+                //int is_attr = PyDict_Contains((PyObject *)dict, name);
+                //if (is_attr < 0) {
+                //    goto error;
+                //}
+                //if (is_attr) {
+                //    printf("%p: %ld  %ld, has_split: %d\n", self_cls, dict->ma_keys->dk_version, cache1->dk_version_or_hint, _PyDict_HasSplitTable(dict));
+                //    PyObject_Print((PyObject *)dict, stderr, Py_PRINT_RAW);
+                //    BACKOFF_IF(is_attr, LOAD_METHOD);
+                //}
             } // don't care if owner has no dict, could be builtin or __slots__
 
             // look in self_cls.__dict__, avoiding _PyType_Lookup
             uint32_t hint = cache0->index;
             dictptr = (PyObject **)((char *)self_cls + Py_TYPE(self_cls)->tp_dictoffset);
-            DEOPT_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
+            BACKOFF_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
             dict = (PyDictObject *)*dictptr;
             assert(PyDict_CheckExact(dict));
-            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_METHOD);
+            BACKOFF_IF(hint >= dict->ma_keys->dk_nentries, LOAD_METHOD);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-            DEOPT_IF(ep->me_key != name, LOAD_METHOD);
+            BACKOFF_IF(ep->me_key != name, LOAD_METHOD);
             res = ep->me_value;
-            DEOPT_IF(
+            BACKOFF_IF(
                 res == NULL ||
                 Py_TYPE(res)->tp_descr_get == NULL ||
                 !_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR),
@@ -4508,9 +4518,24 @@ opname ## _miss: \
         JUMP_TO_INSTRUCTION(opname); \
     }
 
+#define BACKOFF_WITH_CACHE(opname) \
+opname ## _backoff: \
+    { \
+        STAT_INC(opname, miss); \
+        _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive; \
+        record_cache_miss(cache); \
+        set_cache_counter_zero(cache); \
+        next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
+        STAT_INC(opname, deopt); \
+        cache_backoff(cache); \
+        oparg = cache->original_oparg; \
+        STAT_DEC(opname, unquickened); \
+        JUMP_TO_INSTRUCTION(opname); \
+    } \
+
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
-MISS_WITH_CACHE(LOAD_METHOD)
+BACKOFF_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 
 binary_subscr_dict_error:
