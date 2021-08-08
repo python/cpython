@@ -166,7 +166,8 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
                 }
                 o = context;
                 if (o == slow_o) {
-                    /* pre-existing cycle - leave it */
+                    /* pre-existing cycle - all exceptions on the
+                       path were visited and checked.  */
                     break;
                 }
                 if (slow_update_toggle) {
