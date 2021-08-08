@@ -1042,7 +1042,7 @@ value_callback(sqlite3_context *context)
 
     int rc = _pysqlite_set_result(context, res);
     Py_DECREF(res);
-    if (rc != 0) {
+    if (rc < 0) {
         set_sqlite_error(context,
                          "unable to set result from user-defined aggregate's "
                          "'value' method");

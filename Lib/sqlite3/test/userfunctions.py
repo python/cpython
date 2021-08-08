@@ -572,6 +572,15 @@ class WindowFunctionTests(unittest.TestCase):
         self.cur.execute(self.query % "sumint")
         self.assertEqual(self.cur.fetchall(), self.expected)
 
+    def test_win_error_value_return(self):
+        class ErrorValueReturn:
+            def __init__(self): pass
+            def step(self, x): pass
+            def value(self): return 1 << 65
+        self.con.create_window_function("err_val_ret", 1, ErrorValueReturn)
+        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
+                               self.cur.execute, self.query % "err_val_ret")
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
