@@ -302,6 +302,7 @@ int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT
 
 #define SPECIALIZATION_STATS 0
 #define SPECIALIZATION_STATS_DETAILED 0
+#define SPECIALIZATION_STATS_TO_FILE 0
 
 #if SPECIALIZATION_STATS
 
@@ -320,12 +321,14 @@ typedef struct _stats {
 
 extern SpecializationStats _specialization_stats[256];
 #define STAT_INC(opname, name) _specialization_stats[opname].name++
+#define STAT_DEC(opname, name) _specialization_stats[opname].name--
 void _Py_PrintSpecializationStats(void);
 
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
+#define STAT_DEC(opname, name) ((void)0)
 #endif
 
 

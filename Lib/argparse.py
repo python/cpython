@@ -855,6 +855,7 @@ class Action(_AttributeHolder):
     def __call__(self, parser, namespace, values, option_string=None):
         raise NotImplementedError(_('.__call__() not defined'))
 
+
 class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
@@ -936,7 +937,7 @@ class _StoreConstAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const,
+                 const=None,
                  default=None,
                  required=False,
                  help=None,
@@ -1031,7 +1032,7 @@ class _AppendConstAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const,
+                 const=None,
                  default=None,
                  required=False,
                  help=None,

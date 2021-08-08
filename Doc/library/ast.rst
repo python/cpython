@@ -1795,7 +1795,7 @@ Function and class definitions
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
-     <http://www.python.org/dev/peps/pep-3115/>`_.
+     <https://www.python.org/dev/peps/pep-3115/>`_.
    * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
      starargs will be expanded to join the list of base classes, and kwargs will
      be passed to the metaclass.
