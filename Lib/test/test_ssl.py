@@ -21,7 +21,6 @@ import pprint
 import urllib.request
 import threading
 import traceback
-import asyncore
 import weakref
 import platform
 import sysconfig
@@ -30,6 +29,11 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
 
 ssl = import_helper.import_module("ssl")
 import _ssl
@@ -62,7 +66,7 @@ def data_file(*name):
 
 # The custom key and certificate files used in test_ssl are generated
 # using Lib/test/make_ssl_certs.py.
-# Other certificates are simply fetched from the Internet servers they
+# Other certificates are simply fetched from the internet servers they
 # are meant to authenticate.
 
 CERTFILE = data_file("keycert.pem")

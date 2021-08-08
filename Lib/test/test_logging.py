@@ -54,12 +54,15 @@ import unittest
 import warnings
 import weakref
 
-import asyncore
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import smtpd
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -888,7 +891,7 @@ class ControlMixin(object):
                     single parameter - the request - in order to
                     process the request. This handler is called on the
                     server thread, effectively meaning that requests are
-                    processed serially. While not quite Web scale ;-),
+                    processed serially. While not quite web scale ;-),
                     this should be fine for testing applications.
     :param poll_interval: The polling interval in seconds.
     """
@@ -1938,6 +1941,14 @@ class SysLogHandlerTest(BaseTest):
         logger.error("sp\xe4m")
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
+
+    def test_udp_reconnection(self):
+        logger = logging.getLogger("slh")
+        self.sl_hdlr.close()
+        self.handled.clear()
+        logger.error("sp\xe4m")
+        self.handled.wait(0.1)
+        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
@@ -5171,6 +5182,9 @@ class BaseFileTest(BaseTest):
                         msg="Log file %r does not exist" % filename)
         self.rmfiles.append(filename)
 
+    def next_rec(self):
+        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
+                                 self.next_message(), None, None, None)
 
 class FileHandlerTest(BaseFileTest):
     def test_delay(self):
@@ -5183,11 +5197,18 @@ class FileHandlerTest(BaseFileTest):
         self.assertTrue(os.path.exists(self.fn))
         fh.close()
 
-class RotatingFileHandlerTest(BaseFileTest):
-    def next_rec(self):
-        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
-                                 self.next_message(), None, None, None)
+    def test_emit_after_closing_in_write_mode(self):
+        # Issue #42378
+        os.unlink(self.fn)
+        fh = logging.FileHandler(self.fn, encoding='utf-8', mode='w')
+        fh.setFormatter(logging.Formatter('%(message)s'))
+        fh.emit(self.next_rec())    # '1'
+        fh.close()
+        fh.emit(self.next_rec())    # '2'
+        with open(self.fn) as fp:
+            self.assertEqual(fp.read().strip(), '1')
 
+class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):
         # If maxbytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(

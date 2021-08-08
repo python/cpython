@@ -49,11 +49,6 @@ Modules/_io/_iomodule.h	-	_PyIO_str_write	-
 Modules/_io/_iomodule.h	-	_PyIO_empty_str	-
 Modules/_io/_iomodule.h	-	_PyIO_empty_bytes	-
 Modules/_multiprocessing/multiprocessing.h	-	_PyMp_SemLockType	-
-Modules/_sqlite/module.c	-	pysqlite_OperationalError	-
-Modules/_sqlite/module.c	-	pysqlite_ProgrammingError	-
-Modules/_sqlite/module.c	-	pysqlite_IntegrityError	-
-Modules/_sqlite/module.c	-	pysqlite_DataError	-
-Modules/_sqlite/module.c	-	pysqlite_NotSupportedError	-
 Modules/_sqlite/module.c	-	_pysqlite_converters	-
 Modules/_sqlite/module.c	-	_pysqlite_enable_callback_tracebacks	-
 Modules/_sqlite/module.c	-	pysqlite_BaseTypeAdapted	-
@@ -2361,11 +2356,6 @@ Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_queuemodule.c	-	EmptyError	-
-Modules/_sqlite/module.h	-	pysqlite_OperationalError	-
-Modules/_sqlite/module.h	-	pysqlite_ProgrammingError	-
-Modules/_sqlite/module.h	-	pysqlite_IntegrityError	-
-Modules/_sqlite/module.h	-	pysqlite_DataError	-
-Modules/_sqlite/module.h	-	pysqlite_NotSupportedError	-
 Modules/_ssl.c	-	PySSLErrorObject	-
 Modules/_ssl.c	-	PySSLCertVerificationErrorObject	-
 Modules/_ssl.c	-	PySSLZeroReturnErrorObject	-

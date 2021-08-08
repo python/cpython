@@ -309,6 +309,53 @@ PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
 
+/* === Old Buffer API ============================================ */
+
+/* FIXME:  usage of these should all be replaced in Python itself
+   but for backwards compatibility we will implement them.
+   Their usage without a corresponding "unlock" mechanism
+   may create issues (but they would already be there). */
+
+/* Takes an arbitrary object which must support the (character, single segment)
+   buffer interface and returns a pointer to a read-only memory location
+   useable as character based input for subsequent processing.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
+                                      const char **buffer,
+                                      Py_ssize_t *buffer_len);
+
+/* Checks whether an arbitrary object supports the (character, single segment)
+   buffer interface.
+
+   Returns 1 on success, 0 on failure. */
+Py_DEPRECATED(3.0) PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
+
+/* Same as PyObject_AsCharBuffer() except that this API expects (readable,
+   single segment) buffer interface and returns a pointer to a read-only memory
+   location which can contain arbitrary data.
+
+   0 is returned on success.  buffer and buffer_len are only set in case no
+   error occurs.  Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
+                                      const void **buffer,
+                                      Py_ssize_t *buffer_len);
+
+/* Takes an arbitrary object which must support the (writable, single segment)
+   buffer interface and returns a pointer to a writable memory location in
+   buffer of size 'buffer_len'.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
+                                       void **buffer,
+                                       Py_ssize_t *buffer_len);
+
+
 /* === New Buffer API ============================================ */
 
 /* Takes an arbitrary object and returns the result of calling

@@ -9,6 +9,11 @@ from test import support
 from test.support import os_helper
 from platform import win32_edition
 
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
+
 
 def setUpModule():
     global knownfiles
@@ -235,6 +240,21 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
         eq(self.db.guess_type("image.png"), ("image/png", None))
 
+    @unittest.skipIf(not hasattr(_winapi, "_mimetypes_read_windows_registry"),
+                     "read_windows_registry accelerator unavailable")
+    def test_registry_accelerator(self):
+        from_accel = {}
+        from_reg = {}
+        _winapi._mimetypes_read_windows_registry(
+            lambda v, k: from_accel.setdefault(k, set()).add(v)
+        )
+        mimetypes.MimeTypes._read_windows_registry(
+            lambda v, k: from_reg.setdefault(k, set()).add(v)
+        )
+        self.assertEqual(list(from_reg), list(from_accel))
+        for k in from_reg:
+            self.assertEqual(from_reg[k], from_accel[k])
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -287,7 +307,6 @@ class MimetypesCliTestCase(unittest.TestCase):
 
         type_info = self.mimetypes_cmd("foo.pic")
         eq(type_info, "I don't know anything about type foo.pic")
-
 
 if __name__ == "__main__":
     unittest.main()

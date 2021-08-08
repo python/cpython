@@ -1,0 +1,5 @@
+All necessary data for executing a Python function (local variables, stack,
+etc) is now kept in a per-thread stack. Frame objects are lazily allocated
+on demand. This increases performance by about 7% on the standard benchmark
+suite. Introspection and debugging are unaffected as frame objects are
+always available when needed. Patch by Mark Shannon.

@@ -77,7 +77,7 @@ Note that ``None`` as a type hint is a special case and is replaced by
 NewType
 =======
 
-Use the :func:`NewType` helper function to create distinct types::
+Use the :class:`NewType` helper class to create distinct types::
 
    from typing import NewType
 
@@ -106,15 +106,14 @@ accidentally creating a ``UserId`` in an invalid way::
 
 Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
-function that immediately returns whatever parameter you pass it. That means
+class that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
-any overhead beyond that of a regular function call.
+much overhead beyond that of a regular function call.
 
 More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
-This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type::
+It is invalid to create a subtype of ``Derived``::
 
    from typing import NewType
 
@@ -123,7 +122,7 @@ since it is an identity function at runtime, not an actual type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
 
    from typing import NewType
 
@@ -150,6 +149,12 @@ See :pep:`484` for more details.
    errors with minimal runtime cost.
 
 .. versionadded:: 3.5.2
+
+.. versionchanged:: 3.10
+   ``NewType`` is now a class rather than a function.  There is some additional
+   runtime cost when calling ``NewType`` over a regular function.  However, this
+   cost will be reduced in 3.11.0.
+
 
 Callable
 ========
@@ -1232,8 +1237,13 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required methods,
-        not their type signatures.
+        :func:`runtime_checkable` will check only the presence of the required
+        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        is a class, therefore it passes an :func:`issubclass`
+        check against :data:`Callable`.  However, the
+        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        :exc:`TypeError` with a more informative message, therefore making
+        it impossible to call (instantiate) :class:`ssl.SSLObject`.
 
    .. versionadded:: 3.8
 
@@ -1301,16 +1311,20 @@ These are not used in annotations. They are building blocks for declaring types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
-.. function:: NewType(name, tp)
+.. class:: NewType(name, tp)
 
-   A helper function to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns a function that returns
-   its argument. Usage::
+   A helper class to indicate a distinct type to a typechecker,
+   see :ref:`distinct`. At runtime it returns an object that returns
+   its argument when called.
+   Usage::
 
       UserId = NewType('UserId', int)
       first_user = UserId(1)
 
    .. versionadded:: 3.5.2
+
+   .. versionchanged:: 3.10
+      ``NewType`` is now a class rather than a function.
 
 .. class:: TypedDict(dict)
 

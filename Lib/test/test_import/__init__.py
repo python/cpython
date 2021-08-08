@@ -1350,6 +1350,16 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    def test_absolute_circular_submodule(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.subpkg2.parent
+        self.assertIn(
+            "cannot access submodule 'parent' of module "
+            "'test.test_import.data.circular_imports.subpkg2' "
+            "(most likely due to a circular import)",
+            str(cm.exception),
+        )
+
     def test_unwritable_module(self):
         self.addCleanup(unload, "test.test_import.data.unwritable")
         self.addCleanup(unload, "test.test_import.data.unwritable.x")

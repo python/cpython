@@ -1,0 +1,2 @@
+Make ``NewType.__call__`` faster by implementing it in C.
+Patch provided by Yurii Karabas.

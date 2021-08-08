@@ -2286,6 +2286,16 @@ class _TestContainers(BaseTestCase):
         self.assertIsInstance(outer[0], list)  # Not a ListProxy
         self.assertEqual(outer[-1][-1]['feed'], 3)
 
+    def test_nested_queue(self):
+        a = self.list() # Test queue inside list
+        a.append(self.Queue())
+        a[0].put(123)
+        self.assertEqual(a[0].get(), 123)
+        b = self.dict() # Test queue inside dict
+        b[0] = self.Queue()
+        b[0].put(456)
+        self.assertEqual(b[0].get(), 456)
+
     def test_namespace(self):
         n = self.Namespace()
         n.name = 'Bob'

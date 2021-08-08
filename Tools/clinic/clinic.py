@@ -44,6 +44,9 @@ NoneType = type(None)
 version = '1'
 
 NoneType = type(None)
+NO_VARARG = "PY_SSIZE_T_MAX"
+CLINIC_PREFIX = "__clinic_"
+CLINIC_PREFIXED_ARGS = {"args"}
 
 class Unspecified:
     def __repr__(self):
@@ -644,14 +647,21 @@ class CLanguage(Language):
 
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
 
-        pos_only = min_pos = max_pos = min_kw_only = 0
+        vararg = NO_VARARG
+        pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
-            if p.is_keyword_only():
+            if p.is_keyword_only() or vararg != NO_VARARG:
                 assert not p.is_positional_only()
                 if not p.is_optional():
                     min_kw_only = i - max_pos
+            elif p.is_vararg():
+                if vararg != NO_VARARG:
+                    fail("Too many var args")
+                pseudo_args += 1
+                vararg = i - 1
             else:
-                max_pos = i
+                if vararg == NO_VARARG:
+                    max_pos = i
                 if p.is_positional_only():
                     pos_only = i
                 if not p.is_optional():
@@ -834,7 +844,7 @@ class CLanguage(Language):
 
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
-        elif not requires_defining_class and pos_only == len(parameters):
+        elif not requires_defining_class and pos_only == len(parameters) - pseudo_args:
             if not new_or_init:
                 # positional-only, but no option groups
                 # we only need one call to _PyArg_ParseStack
@@ -852,15 +862,44 @@ class CLanguage(Language):
                 nargs = 'PyTuple_GET_SIZE(args)'
                 argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
+
+            left_args = "{} - {}".format(nargs, max_pos)
+            max_args = NO_VARARG if (vararg != NO_VARARG) else max_pos
             parser_code = [normalize_snippet("""
-                if (!_PyArg_CheckPositional("{name}", %s, %d, %d)) {{
+                if (!_PyArg_CheckPositional("{name}", %s, %d, %s)) {{
                     goto exit;
                 }}
-                """ % (nargs, min_pos, max_pos), indent=4)]
+                """ % (nargs, min_pos, max_args), indent=4)]
+
             has_optional = False
             for i, p in enumerate(parameters):
                 displayname = p.get_displayname(i+1)
-                parsearg = p.converter.parse_arg(argname_fmt % i, displayname)
+                argname = argname_fmt % i
+
+                if p.is_vararg():
+                    if not new_or_init:
+                        parser_code.append(normalize_snippet("""
+                            %s = PyTuple_New(%s);
+                            for (Py_ssize_t i = 0; i < %s; ++i) {{
+                                PyTuple_SET_ITEM(%s, i, args[%d + i]);
+                            }}
+                            """ % (
+                                p.converter.parser_name,
+                                left_args,
+                                left_args,
+                                p.converter.parser_name,
+                                max_pos
+                            ), indent=4))
+                    else:
+                        parser_code.append(normalize_snippet("""
+                            %s = PyTuple_GetSlice(%d, -1);
+                            """ % (
+                                p.converter.parser_name,
+                                max_pos
+                            ), indent=4))
+                    continue
+
+                parsearg = p.converter.parse_arg(argname, displayname)
                 if parsearg is None:
                     #print('Cannot convert %s %r for %s' % (p.converter.__class__.__name__, p.converter.format_unit, p.converter.name), file=sys.stderr)
                     parser_code = None
@@ -896,6 +935,19 @@ class CLanguage(Language):
 
         else:
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
+            if vararg == NO_VARARG:
+                args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
+                    min_pos,
+                    max_pos,
+                    min_kw_only
+                )
+            else:
+                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
+                    min_pos,
+                    max_pos,
+                    min_kw_only,
+                    vararg
+                )
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
@@ -906,13 +958,14 @@ class CLanguage(Language):
                     PyObject *argsbuf[%s];
                     """ % len(converters))
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (min_pos + min_kw_only)
+                    pre_buffer = "0" if vararg != NO_VARARG else "nargs"
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
-                    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, %d, %d, %d, argsbuf);
+                    args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                     if (!args) {{
                         goto exit;
                     }}
-                    """ % (min_pos, max_pos, min_kw_only), indent=4)]
+                    """ % args_declaration, indent=4)]
             else:
                 # positional-or-keyword arguments
                 flags = "METH_VARARGS|METH_KEYWORDS"
@@ -928,11 +981,12 @@ class CLanguage(Language):
                 if has_optional_kw:
                     declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
-                    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %d, %d, %d, argsbuf);
+                    fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                     if (!fastargs) {{
                         goto exit;
                     }}
-                    """ % (min_pos, max_pos, min_kw_only), indent=4)]
+                    """ % args_declaration, indent=4)]
+
             if requires_defining_class:
                 flags = 'METH_METHOD|' + flags
                 parser_prototype = parser_prototype_def_class
@@ -969,6 +1023,8 @@ class CLanguage(Language):
                     else:
                         label = 'skip_optional_kwonly'
                         first_opt = max_pos + min_kw_only
+                        if vararg != NO_VARARG:
+                            first_opt += 1
                     if i == first_opt:
                         add_label = label
                         parser_code.append(normalize_snippet("""
@@ -1248,6 +1304,9 @@ class CLanguage(Language):
 
             if (i != -1) and (p.default is not unspecified):
                 first_optional = min(first_optional, i)
+
+            if p.is_vararg():
+                data.cleanup.append("Py_XDECREF({});".format(c.parser_name))
 
             # insert group variable
             group = p.group
@@ -2307,8 +2366,11 @@ class Parameter:
     def is_positional_only(self):
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
 
+    def is_vararg(self):
+        return self.kind == inspect.Parameter.VAR_POSITIONAL
+
     def is_optional(self):
-        return (self.default is not unspecified)
+        return not self.is_vararg() and (self.default is not unspecified)
 
     def copy(self, **overrides):
         kwargs = {
@@ -2523,7 +2585,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def _render_self(self, parameter, data):
         self.parameter = parameter
-        name = self.name
+        name = self.parser_name
 
         # impl_arguments
         s = ("&" if self.impl_by_reference else "") + name
@@ -2541,7 +2603,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         name = self.name
 
         # declarations
-        d = self.declaration()
+        d = self.declaration(in_parser=True)
         data.declarations.append(d)
 
         # initializers
@@ -2555,7 +2617,9 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.modifications.append('/* modifications for ' + name + ' */\n' + modifications.rstrip())
 
         # keywords
-        if parameter.is_positional_only():
+        if parameter.is_vararg():
+            pass
+        elif parameter.is_positional_only():
             data.keywords.append('')
         else:
             data.keywords.append(parameter.name)
@@ -2587,7 +2651,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """Computes the name of the associated "length" variable."""
         if not self.length:
             return None
-        return self.name + "_length"
+        return self.parser_name + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
@@ -2613,7 +2677,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # All the functions after here are intended as extension points.
     #
 
-    def simple_declaration(self, by_reference=False):
+    def simple_declaration(self, by_reference=False, *, in_parser=False):
         """
         Computes the basic declaration of the variable.
         Used in computing the prototype declaration and the
@@ -2624,14 +2688,18 @@ class CConverter(metaclass=CConverterAutoRegister):
             prototype.append(" ")
         if by_reference:
             prototype.append('*')
-        prototype.append(self.name)
+        if in_parser:
+            name = self.parser_name
+        else:
+            name = self.name
+        prototype.append(name)
         return "".join(prototype)
 
-    def declaration(self):
+    def declaration(self, *, in_parser=False):
         """
         The C statement to declare this variable.
         """
-        declaration = [self.simple_declaration()]
+        declaration = [self.simple_declaration(in_parser=True)]
         default = self.c_default
         if not default and self.parameter.group:
             default = self.c_ignored_default
@@ -2683,7 +2751,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                 if (!{converter}({argname}, &{paramname})) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            converter=self.converter)
         if self.format_unit == 'O!':
             cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
@@ -2695,7 +2763,7 @@ class CConverter(metaclass=CConverterAutoRegister):
                         goto exit;
                     }}}}
                     {paramname} = {cast}{argname};
-                    """.format(argname=argname, paramname=self.name,
+                    """.format(argname=argname, paramname=self.parser_name,
                                displayname=displayname, typecheck=typecheck,
                                typename=typename, cast=cast)
             return """
@@ -2704,19 +2772,25 @@ class CConverter(metaclass=CConverterAutoRegister):
                     goto exit;
                 }}}}
                 {paramname} = {cast}{argname};
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            subclass_of=self.subclass_of, cast=cast,
                            displayname=displayname)
         if self.format_unit == 'O':
             cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
             return """
                 {paramname} = {cast}{argname};
-                """.format(argname=argname, paramname=self.name, cast=cast)
+                """.format(argname=argname, paramname=self.parser_name, cast=cast)
         return None
 
     def set_template_dict(self, template_dict):
         pass
 
+    @property
+    def parser_name(self):
+        if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
+            return CLINIC_PREFIX + self.name
+        else:
+            return self.name
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
@@ -2755,14 +2829,14 @@ class bool_converter(CConverter):
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         elif self.format_unit == 'p':
             return """
                 {paramname} = PyObject_IsTrue({argname});
                 if ({paramname} < 0) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class defining_class_converter(CConverter):
@@ -2812,7 +2886,7 @@ class char_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "a byte string of length 1", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -2850,7 +2924,7 @@ class unsigned_char_converter(CConverter):
                         {paramname} = (unsigned char) ival;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         elif self.format_unit == 'B':
             return """
                 {{{{
@@ -2862,7 +2936,7 @@ class unsigned_char_converter(CConverter):
                         {paramname} = (unsigned char) ival;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class byte_converter(unsigned_char_converter): pass
@@ -2895,7 +2969,7 @@ class short_converter(CConverter):
                         {paramname} = (short) ival;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class unsigned_short_converter(CConverter):
@@ -2916,7 +2990,7 @@ class unsigned_short_converter(CConverter):
                 if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 @add_legacy_c_converter('C', accept={str})
@@ -2941,7 +3015,7 @@ class int_converter(CConverter):
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         elif self.format_unit == 'C':
             return """
                 if (!PyUnicode_Check({argname})) {{{{
@@ -2956,7 +3030,7 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -2978,7 +3052,7 @@ class unsigned_int_converter(CConverter):
                 if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class long_converter(CConverter):
@@ -2994,7 +3068,7 @@ class long_converter(CConverter):
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class unsigned_long_converter(CConverter):
@@ -3016,7 +3090,7 @@ class unsigned_long_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongMask({argname});
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -3033,7 +3107,7 @@ class long_long_converter(CConverter):
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class unsigned_long_long_converter(CConverter):
@@ -3055,7 +3129,7 @@ class unsigned_long_long_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsUnsignedLongLongMask({argname});
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -3087,7 +3161,7 @@ class Py_ssize_t_converter(CConverter):
                     }}}}
                     {paramname} = ival;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 
@@ -3114,7 +3188,7 @@ class size_t_converter(CConverter):
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 
@@ -3150,7 +3224,7 @@ class float_converter(CConverter):
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 class double_converter(CConverter):
@@ -3172,7 +3246,7 @@ class double_converter(CConverter):
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 
@@ -3189,7 +3263,7 @@ class Py_complex_converter(CConverter):
                 if (PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name)
+                """.format(argname=argname, paramname=self.parser_name)
         return super().parse_arg(argname, displayname)
 
 
@@ -3274,7 +3348,7 @@ class str_converter(CConverter):
                     PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         if self.format_unit == 'z':
             return """
@@ -3296,7 +3370,7 @@ class str_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "str or None", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -3361,7 +3435,7 @@ class PyBytesObject_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            type=self.type, displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -3378,7 +3452,7 @@ class PyByteArrayObject_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = ({type}){argname};
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            type=self.type, displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -3398,7 +3472,7 @@ class unicode_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = {argname};
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -3514,7 +3588,7 @@ class Py_buffer_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         elif self.format_unit == 's*':
             return """
@@ -3535,7 +3609,7 @@ class Py_buffer_converter(CConverter):
                         goto exit;
                     }}}}
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         elif self.format_unit == 'w*':
             return """
@@ -3548,7 +3622,7 @@ class Py_buffer_converter(CConverter):
                     _PyArg_BadArgument("{{name}}", {displayname}, "contiguous buffer", {argname});
                     goto exit;
                 }}}}
-                """.format(argname=argname, paramname=self.name,
+                """.format(argname=argname, paramname=self.parser_name,
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
@@ -4042,7 +4116,7 @@ class DSLParser:
     def directive_dump(self, name):
         self.block.output.append(self.clinic.get_destination(name).dump())
 
-    def directive_print(self, *args):
+    def directive_printout(self, *args):
         self.block.output.append(' '.join(args))
         self.block.output.append('\n')
 
@@ -4436,10 +4510,15 @@ class DSLParser:
             fail("Function " + self.function.name + " has an invalid parameter declaration (comma?):\n\t" + line)
         if function_args.defaults or function_args.kw_defaults:
             fail("Function " + self.function.name + " has an invalid parameter declaration (default value?):\n\t" + line)
-        if function_args.vararg or function_args.kwarg:
-            fail("Function " + self.function.name + " has an invalid parameter declaration (*args? **kwargs?):\n\t" + line)
+        if function_args.kwarg:
+            fail("Function " + self.function.name + " has an invalid parameter declaration (**kwargs?):\n\t" + line)
 
-        parameter = function_args.args[0]
+        if function_args.vararg:
+            is_vararg = True
+            parameter = function_args.vararg
+        else:
+            is_vararg = False
+            parameter = function_args.args[0]
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
@@ -4447,10 +4526,17 @@ class DSLParser:
         if not default:
             if self.parameter_state == self.ps_optional:
                 fail("Can't have a parameter without a default (" + repr(parameter_name) + ")\nafter a parameter with a default!")
-            value = unspecified
+            if is_vararg:
+                value = NULL
+                kwargs.setdefault('c_default', "NULL")
+            else:
+                value = unspecified
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
         else:
+            if is_vararg:
+                fail("Vararg can't take a default value!")
+
             if self.parameter_state == self.ps_required:
                 self.parameter_state = self.ps_optional
             default = default.strip()
@@ -4570,7 +4656,12 @@ class DSLParser:
         # but the parameter object gets the python name
         converter = dict[name](c_name or parameter_name, parameter_name, self.function, value, **kwargs)
 
-        kind = inspect.Parameter.KEYWORD_ONLY if self.keyword_only else inspect.Parameter.POSITIONAL_OR_KEYWORD
+        if is_vararg:
+            kind = inspect.Parameter.VAR_POSITIONAL
+        elif self.keyword_only:
+            kind = inspect.Parameter.KEYWORD_ONLY
+        else:
+            kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
 
         if isinstance(converter, self_converter):
             if len(self.function.parameters) == 1:
@@ -4664,6 +4755,8 @@ class DSLParser:
                 fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
             # fixup preceding parameters
             for p in self.function.parameters.values():
+                if p.is_vararg():
+                    continue
                 if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)):
                     fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
                 p.kind = inspect.Parameter.POSITIONAL_ONLY
@@ -4858,10 +4951,13 @@ class DSLParser:
                 # calling the class to construct a new instance.
                 p_add('$')
 
+            if p.is_vararg():
+                p_add("*")
+
             name = p.converter.signature_name or p.name
             p_add(name)
 
-            if p.converter.is_optional():
+            if not p.is_vararg() and p.converter.is_optional():
                 p_add('=')
                 value = p.converter.py_default
                 if not value:

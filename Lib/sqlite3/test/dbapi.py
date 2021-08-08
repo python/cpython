@@ -28,6 +28,7 @@ import threading
 import unittest
 
 from test.support import (
+    bigmemtest,
     check_disallow_instantiation,
     threading_helper,
     SHORT_TIMEOUT,
@@ -246,6 +247,26 @@ class ConnectionTests(unittest.TestCase):
         for n in range(500):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
+
+
+class UninitialisedConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.cx = sqlite.Connection.__new__(sqlite.Connection)
+
+    def test_uninit_operations(self):
+        funcs = (
+            lambda: self.cx.isolation_level,
+            lambda: self.cx.total_changes,
+            lambda: self.cx.in_transaction,
+            lambda: self.cx.iterdump(),
+            lambda: self.cx.cursor(),
+            lambda: self.cx.close(),
+        )
+        for func in funcs:
+            with self.subTest(func=func):
+                self.assertRaisesRegex(sqlite.ProgrammingError,
+                                       "Base Connection.__init__ not called",
+                                       func)
 
 
 class OpenTests(unittest.TestCase):
@@ -657,6 +678,7 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.rollback(),
             lambda: self.con.close(),
             lambda: self.con.set_trace_callback(None),
+            lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
         ]
         for fn in fns:
@@ -742,9 +764,35 @@ class ExtensionTests(unittest.TestCase):
     def test_cursor_executescript_as_bytes(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError):
             cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
-        self.assertEqual(str(cm.exception), 'script argument must be unicode.')
+
+    def test_cursor_executescript_with_null_characters(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(ValueError):
+            cur.executescript("""
+                create table a(i);\0
+                insert into a(i) values (5);
+                """)
+
+    def test_cursor_executescript_with_surrogates(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(UnicodeEncodeError):
+            cur.executescript("""
+                create table a(s);
+                insert into a(s) values ('\ud8ff');
+                """)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_cursor_executescript_too_large_script(self, maxsize):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        for size in 2**31-1, 2**31:
+            with self.assertRaises(sqlite.DataError):
+                cur.executescript("create table a(s);".ljust(size))
 
     def test_connection_execute(self):
         con = sqlite.connect(":memory:")
@@ -1025,8 +1073,10 @@ def suite():
         ExtensionTests,
         ModuleTests,
         MultiprocessTests,
+        OpenTests,
         SqliteOnConflictTests,
         ThreadTests,
+        UninitialisedConnectionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
