@@ -954,7 +954,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(e, (None, None, None))
 
     def test_no_hang_on_context_chain_cycle1(self):
-        # See issue 25782.
+        # See issue 25782. Cycle in context chain.
 
         def cycle():
             try:
@@ -970,9 +970,50 @@ class ExceptionTests(unittest.TestCase):
 
         self.assertIsInstance(exc, TypeError)
         self.assertIsInstance(exc.__context__, ValueError)
+        self.assertIs(exc.__context__.__context__, exc.__context__)
 
-    def test_no_hang_on_context_chain_cycle2(self):
-        # See issue 25782.
+    def test_no_hang_on_context_chain_cycle1(self):
+        # See issue 25782. Cycle at head of context chain.
+
+        class A(Exception):
+            pass
+        class B(Exception):
+            pass
+        class C(Exception):
+            pass
+        class D(Exception):
+            pass
+        class E(Exception):
+            pass
+
+        # Context cycle:
+        # +-----------+
+        # V           |
+        # C --> B --> A
+        with self.assertRaises(C) as cm:
+            try:
+                raise A()
+            except A as _a:
+                a = _a
+                try:
+                    raise B()
+                except B as _b:
+                    b = _b
+                    try:
+                        raise C()
+                    except C as _c:
+                        c = _c
+                        a.__context__ = c
+                        raise c
+
+        self.assertIs(cm.exception, c)
+        # Verify the expected context chain cycle
+        self.assertIs(c.__context__, b)
+        self.assertIs(b.__context__, a)
+        self.assertIs(a.__context__, c)
+
+    def test_no_hang_on_context_chain_cycle3(self):
+        # See issue 25782. Longer context chain with cycle.
 
         class A(Exception):
             pass
