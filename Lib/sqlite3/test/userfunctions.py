@@ -178,12 +178,14 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnnull", 0, func_returnnull)
         self.con.create_function("returnblob", 0, func_returnblob)
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
+        self.con.create_function("returnnan", 0, lambda: float("nan"))
+        self.con.create_function("returntoolargeint", 0, lambda: 1 << 65)
         self.con.create_function("raiseexception", 0, func_raiseexception)
         self.con.create_function("memoryerror", 0, func_memoryerror)
         self.con.create_function("overflowerror", 0, func_overflowerror)
 
-        self.con.create_function("isblob", 1,
-                                 lambda x: isinstance(x, (bytes, memoryview)))
+        self.con.create_function("isblob", 1, lambda x: isinstance(x, bytes))
+        self.con.create_function("isnone", 1, lambda x: x is None)
         self.con.create_function("spam", -1, lambda *x: len(x))
         self.con.create_function("boomerang", 1, lambda x: x)
         self.con.execute("create table test(t text)")
@@ -262,6 +264,16 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 1<<31)
 
+    def test_func_return_nan(self):
+        cur = self.con.cursor()
+        cur.execute("select returnnan()")
+        self.assertIsNone(cur.fetchone()[0])
+
+    def test_func_return_too_large_int(self):
+        cur = self.con.cursor()
+        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
+                               self.con.execute, "select returntoolargeint()")
+
     @with_tracebacks(['func_raiseexception', '5/0', 'ZeroDivisionError'])
     def test_func_exception(self):
         cur = self.con.cursor()
@@ -295,14 +307,14 @@ class FunctionTests(unittest.TestCase):
         self.assertTrue(cur.fetchone()[0])
 
     def test_nan_float(self):
-        cur = self.con.execute("select boomerang(?)", (float('nan'),))
+        cur = self.con.execute("select isnone(?)", (float("nan"),))
         # SQLite has no concept of nan; it is converted to NULL
-        self.assertIsNone(cur.fetchone()[0])
+        self.assertTrue(cur.fetchone()[0])
 
     def test_too_large_int(self):
         err = "Python int too large to convert to SQLite INTEGER"
         self.assertRaisesRegex(OverflowError, err, self.con.execute,
-                               "select boomerang(?)", (1 << 65,))
+                               "select spam(?)", (1 << 65,))
 
     def test_non_contiguous_blob(self):
         err = "could not convert BLOB to buffer"
@@ -321,6 +333,7 @@ class FunctionTests(unittest.TestCase):
             ("1\x002", str),
             (b"blob", bytes),
             (bytearray(range(2)), bytes),
+            (memoryview(b"blob"), bytes),
             (None, type(None)),
         )
         for val, tp in dataset:
