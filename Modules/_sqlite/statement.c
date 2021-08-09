@@ -85,7 +85,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     if (pysqlite_check_remaining_sql(tail)) {
-        PyErr_SetString(connection->Warning,
+        PyErr_SetString(connection->ProgrammingError,
                         "You can only execute one statement at a time.");
         goto error;
     }
