@@ -20,9 +20,13 @@ The following modules have specific security considerations:
 * :mod:`pickle`: :ref:`Restricting globals in pickle <pickle-restrict>`
 * :mod:`random` shouldn't be used for security purposes, use :mod:`secrets`
   instead
+* :mod:`shelve`: :ref:`shelve is based on pickle and thus unsuitable for
+  dealing with untrusted sources <shelve-security>`
 * :mod:`ssl`: :ref:`SSL/TLS security considerations <ssl-security>`
 * :mod:`subprocess`: :ref:`Subprocess security considerations
   <subprocess-security>`
+* :mod:`tempfile`: :ref:`mktemp is deprecated due to vulnerability to race
+  conditions <tempfile-mktemp-deprecated>`
 * :mod:`xml`: :ref:`XML vulnerabilities <xml-vulnerabilities>`
 * :mod:`zipfile`: :ref:`maliciously prepared .zip files can cause disk volume
   exhaustion <zipfile-resources-limitations>`
