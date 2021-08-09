@@ -344,6 +344,7 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     >>>
     # directory and contents have been removed
 
+.. _tempfile-mktemp-deprecated:
 
 Deprecated functions and variables
 ----------------------------------
