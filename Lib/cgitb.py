@@ -91,7 +91,7 @@ def scanvars(reader, frame, locals):
                 where, value = lookup(token, frame, locals)
                 vars.append((token, where, value))
         elif token == '.':
-            prefix += lasttoken + '.'
+            prefix += f"{lasttoken}."
             parent = value
         else:
             parent, prefix = None, ''
@@ -103,6 +103,7 @@ def html(einfo, context=5):
     etype, evalue, etb = einfo
     if isinstance(etype, type):
         etype = etype.__name__
+    pyver = f'Python {sys.version.split()[0]}:{sys.executable}'
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())
     head = '<body bgcolor="#f0f0f8">' + pydoc.html.heading(
