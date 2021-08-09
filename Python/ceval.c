@@ -4156,20 +4156,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             if (dictptr != NULL && *dictptr != NULL) {
                 dict = (PyDictObject *)*dictptr;
                 assert(PyDict_CheckExact(dict));
-                // some objects support overriding __dict__ with a custom dict subclass
-                // BACKOFF_IF(!PyDict_CheckExact(dict), LOAD_METHOD);
                 BACKOFF_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
-                
-                // printf("%p: %ld  %ld\n", self, dict->ma_keys->dk_version, cache1->dk_version_or_hint);
-                //int is_attr = PyDict_Contains((PyObject *)dict, name);
-                //if (is_attr < 0) {
-                //    goto error;
-                //}
-                //if (is_attr) {
-                //    printf("%p: %ld  %ld, has_split: %d\n", self_cls, dict->ma_keys->dk_version, cache1->dk_version_or_hint, _PyDict_HasSplitTable(dict));
-                //    PyObject_Print((PyObject *)dict, stderr, Py_PRINT_RAW);
-                //    BACKOFF_IF(is_attr, LOAD_METHOD);
-                //}
             } // don't care if owner has no dict, could be builtin or __slots__
 
             // look in self_cls.__dict__, avoiding _PyType_Lookup

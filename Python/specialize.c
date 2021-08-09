@@ -697,7 +697,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyObject *descr = NULL;
     DesciptorClassification kind = analyze_descriptor(owner_cls, name, &descr);
     if (kind != METHOD || descr == NULL) {
+#if SPECIALIZATION_STATS
+        if (kind == GETATTRIBUTE_OVERRIDDEN &&
+            PyObject_TypeCheck(owner, &PyBaseObject_Type)) {
+            // Maybe TODO: LOAD_METHOD_CLASS
+            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "class method");
+            goto fail;
+        }
         SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "not a method");
+#endif
         goto fail;
     }
     PyObject **cls_dictptr = _PyObject_GetDictPtr((PyObject *)owner_cls);
@@ -752,7 +760,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         PyObject *value = NULL;
         Py_ssize_t hint = _PyDict_GetItemHint(cls_dict, name, -1, &value);
         if (hint != (uint16_t)hint) {
-            // possibly classmethod, maybe TODO: LOAD_METHOD_CLASS
+            // Happens when the method is inherited. TODO: make this work with inherited
+            // methods.
             SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "hint out of range");
             goto fail;
         }
