@@ -7,8 +7,22 @@ Security Considerations
 
 The following modules have specific security considerations:
 
-* :mod:`ssl` : :ref:`SSL/TLS security considerations <ssl-security>`
-* :mod:`cgi` : :ref:`CGI security considerations <cgi-security>`
-* :mod:`pickle` : :ref:`Restricting globals in pickle <pickle-restrict>`
-* :mod:`subprocess` : :ref:`Subprocess security considerations <subprocess-security>`
-* :mod:`xml` : :ref:`XML vulnerabilities <xml-vulnerabilities>`
+* :mod:`cgi`: :ref:`CGI security considerations <cgi-security>`
+* :mod:`hashlib`: :ref:`all constructors take a "usedforsecurity" keyword-only
+  argument disabling known insecure and blocked algorithms
+  <hashlib-usedforsecurity>`
+* :mod:`http.server` is not suitable for production use, only implementing
+  basic security checks
+* :mod:`logging`: :ref:`Logging configuration uses eval()
+  <logging-eval-security>`
+* :mod:`multiprocessing`: :ref:`Connection.recv() uses pickle
+  <multiprocessing-recv-pickle-security>`
+* :mod:`pickle`: :ref:`Restricting globals in pickle <pickle-restrict>`
+* :mod:`random` shouldn't be used for security purposes, use :mod:`secrets`
+  instead
+* :mod:`ssl`: :ref:`SSL/TLS security considerations <ssl-security>`
+* :mod:`subprocess`: :ref:`Subprocess security considerations
+  <subprocess-security>`
+* :mod:`xml`: :ref:`XML vulnerabilities <xml-vulnerabilities>`
+* :mod:`zipfile`: :ref:`maliciously prepared .zip files can cause disk volume
+  exhaustion <zipfile-resources-limitations>`
