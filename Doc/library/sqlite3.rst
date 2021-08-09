@@ -839,14 +839,14 @@ Exceptions
    .. attribute:: sqlite_errorcode
 
       The numeric error code from the
-      `SQLite API <http://www.sqlite.org/c3ref/c_abort.html>`_.
+      `SQLite API <https://sqlite.org/rescode.html>`_
 
       .. versionadded:: 3.11
 
    .. attribute:: sqlite_errorname
 
       The symbolic name of the numeric error code
-      from the `SQLite API <http://www.sqlite.org/c3ref/c_abort.html>`_.
+      from the `SQLite API <https://sqlite.org/rescode.html>`_
 
       .. versionadded:: 3.11
 
