@@ -165,8 +165,10 @@ class OtherFileTests:
             # Issue 14853: stdin becomes seekable when redirected to a file
             self.skipTest('stdin must be a TTY in this test')
 
-        self.assertRaises((IOError, ValueError), sys.stdin.seek, -1)
-        self.assertRaises((IOError, ValueError), sys.stdin.truncate)
+        with self.assertRaises((IOError, ValueError)):
+            sys.stdin.seek(-1)
+        with self.assertRaises((IOError, ValueError)):
+            sys.stdin.truncate()
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
