@@ -1,0 +1,7 @@
+Raise more accurate exceptions in :mod:`sqlite3`.
+
+* Raise InterfaceError iso. ProgrammingError for SQLITE_MISUSE
+* Don't overwrite BufferError with ValueError when converting to BLOB
+* Raise ProgrammingError iso. Warning if user tries to execute() more than one
+  statement
+* Raise DataError iso. ValueError if query contains NULL characters
