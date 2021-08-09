@@ -123,7 +123,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
         name = PyUnicode_FromString(error_name);
     }
     else {
-        name = PyUnicode_InternFromString("SQLITE_UNKNOWN");
+        name = PyUnicode_InternFromString("unknown");
     }
     if (name == NULL) {
         goto exit;
