@@ -83,7 +83,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
             PyErr_SetString(state->IntegrityError, sqlite3_errmsg(db));
             break;
         case SQLITE_MISUSE:
-            PyErr_SetString(state->ProgrammingError, sqlite3_errmsg(db));
+            PyErr_SetString(state->InterfaceError, sqlite3_errmsg(db));
             break;
         default:
             PyErr_SetString(state->DatabaseError, sqlite3_errmsg(db));
