@@ -953,6 +953,46 @@ class ExceptionTests(unittest.TestCase):
             pass
         self.assertEqual(e, (None, None, None))
 
+    def test_raise_does_not_create_context_chain_cycle(self):
+        class A(Exception):
+            pass
+        class B(Exception):
+            pass
+        class C(Exception):
+            pass
+
+        # Create a context chain:
+        # C -> B -> A
+        # Then raise A in context of C.
+        try:
+            try:
+                raise A
+            except A as a_:
+                a = a_
+                try:
+                    raise B
+                except B as b_:
+                    b = b_
+                    try:
+                        raise C
+                    except C as c_:
+                        c = c_
+                        self.assertIsInstance(a, A)
+                        self.assertIsInstance(b, B)
+                        self.assertIsInstance(c, C)
+                        self.assertIsNone(a.__context__)
+                        self.assertIs(b.__context__, a)
+                        self.assertIs(c.__context__, b)
+                        raise a
+        except A as e:
+            exc = e
+
+        # Expect A -> C -> B, without cycle
+        self.assertIs(exc, a)
+        self.assertIs(a.__context__, c)
+        self.assertIs(c.__context__, b)
+        self.assertIsNone(b.__context__)
+
     def test_no_hang_on_context_chain_cycle1(self):
         # See issue 25782. Cycle in context chain.
 
@@ -980,10 +1020,6 @@ class ExceptionTests(unittest.TestCase):
         class B(Exception):
             pass
         class C(Exception):
-            pass
-        class D(Exception):
-            pass
-        class E(Exception):
             pass
 
         # Context cycle:
