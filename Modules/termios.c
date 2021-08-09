@@ -1004,7 +1004,7 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static int 
+static int
 termios_exec(PyObject *mod)
 {
     struct constant *constant = termios_constants;
