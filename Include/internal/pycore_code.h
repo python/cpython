@@ -305,6 +305,8 @@ int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT
 #define SPECIALIZATION_STATS_DETAILED 0
 #define SPECIALIZATION_STATS_TO_FILE 0
 
+#define SPECIALIZATION_FAILURE_KINDS 20
+
 #if SPECIALIZATION_STATS
 
 typedef struct _stats {
@@ -316,7 +318,7 @@ typedef struct _stats {
     uint64_t deopt;
     uint64_t unquickened;
 #if SPECIALIZATION_STATS_DETAILED
-    PyObject *miss_types;
+    uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 #endif
 } SpecializationStats;
 
