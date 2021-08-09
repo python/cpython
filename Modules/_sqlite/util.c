@@ -105,18 +105,16 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
         goto exit;
     }
 
-    _Py_IDENTIFIER(sqlite_errorcode);
     PyObject *code = PyLong_FromLong(errorcode);
     if (code == NULL) {
         goto exit;
     }
-    int rc = _PyObject_SetAttrId(exc, &PyId_sqlite_errorcode, code);
+    int rc = PyObject_SetAttrString(exc, "sqlite_errorcode", code);
     Py_DECREF(code);
     if (rc < 0) {
         goto exit;
     }
 
-    _Py_IDENTIFIER(sqlite_errorname);
     const char *error_name = pysqlite_error_name(errorcode);
     PyObject *name;
     if (error_name) {
@@ -128,7 +126,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
     if (name == NULL) {
         goto exit;
     }
-    rc = _PyObject_SetAttrId(exc, &PyId_sqlite_errorname, name);
+    rc = PyObject_SetAttrString(exc, "sqlite_errorname", name);
     Py_DECREF(name);
     if (rc < 0) {
         goto exit;
