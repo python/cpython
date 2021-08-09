@@ -298,7 +298,6 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_DONE),
     DECLARE_ERROR_CODE(SQLITE_EMPTY),
     DECLARE_ERROR_CODE(SQLITE_ERROR),
-    DECLARE_ERROR_CODE(SQLITE_ERROR),
     DECLARE_ERROR_CODE(SQLITE_FORMAT),
     DECLARE_ERROR_CODE(SQLITE_FULL),
     DECLARE_ERROR_CODE(SQLITE_INTERNAL),
@@ -356,7 +355,6 @@ static int add_integer_constants(PyObject *module) {
 
     ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
     ret += PyModule_AddIntMacro(module, PARSE_COLNAMES);
-    ret += PyModule_AddIntMacro(module, SQLITE_OK);
     ret += PyModule_AddIntMacro(module, SQLITE_DENY);
     ret += PyModule_AddIntMacro(module, SQLITE_IGNORE);
     ret += PyModule_AddIntMacro(module, SQLITE_CREATE_INDEX);
