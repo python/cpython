@@ -91,7 +91,7 @@ def get_preprocessor(*,
             macros = list(_resolve_file_values(filename, file_macros))
         if file_incldirs:
             incldirs = [v for v, in _resolve_file_values(filename, file_incldirs)]
-    
+
         def preprocess(**kwargs):
             if file_macros and 'macros' not in kwargs:
                 kwargs['macros'] = macros
