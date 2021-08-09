@@ -184,7 +184,6 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
         case TYPE_BUFFER: {
             Py_buffer view;
             if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
-                PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
                 return -1;
             }
             if (view.len > INT_MAX) {
