@@ -7820,7 +7820,6 @@ is_exit_without_lineno(basicblock *b) {
 static int
 duplicate_exits_without_lineno(struct compiler *c)
 {
-    basicblock *entry = NULL;
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
@@ -7846,9 +7845,7 @@ duplicate_exits_without_lineno(struct compiler *c)
                 target->b_next = new_target;
             }
         }
-        entry = b;
     }
-    assert(entry != NULL);
     /* Eliminate empty blocks */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         while (b->b_next && b->b_next->b_iused == 0) {
