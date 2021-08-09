@@ -1,0 +1,1 @@
+:class:`argparse.BooleanOptionalAction`'s default value is now longer printed twice when used with :class:`argparse.ArgumentDefaultsHelpFormatter`.
