@@ -862,7 +862,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
      * a block can only have one fallthrough predecessor.
      */
     assert(block->b_nofallthrough);
-    basicblock *result = compiler_next_block(c);
+    basicblock *result = compiler_new_block(c);
     if (result == NULL) {
         return NULL;
     }
@@ -6980,8 +6980,9 @@ normalize_basic_block(basicblock *bb);
 static int
 optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 
+/* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
-ensure_exits_have_lineno(struct compiler *c);
+duplicate_exits_without_lineno(struct compiler *c);
 
 static int
 extend_block(basicblock *bb);
@@ -7035,10 +7036,10 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
         if (last->i_lineno < 0) {
-            if (last->i_opcode == RETURN_VALUE)
-            {
+            if (last->i_opcode == RETURN_VALUE) {
                 for (int i = 0; i < b->b_iused; i++) {
                     assert(b->b_instr[i].i_lineno < 0);
+
                     b->b_instr[i].i_lineno = lineno;
                 }
             }
@@ -7048,6 +7049,9 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
         }
     }
 }
+
+static void
+propagate_line_numbers(struct assembler *a);
 
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
@@ -7079,10 +7083,6 @@ assemble(struct compiler *c, int addNone)
         if (extend_block(b)) {
             return NULL;
         }
-    }
-
-    if (ensure_exits_have_lineno(c)) {
-        return NULL;
     }
 
     nblocks = 0;
@@ -7118,8 +7118,11 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(c, &a, consts)) {
         goto error;
     }
+    if (duplicate_exits_without_lineno(c)) {
+        return NULL;
+    }
+    propagate_line_numbers(&a);
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
-
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
@@ -7691,7 +7694,7 @@ eliminate_empty_basic_blocks(basicblock *entry) {
  * but has no impact on the generated line number events.
  */
 static void
-propogate_line_numbers(struct assembler *a) {
+propagate_line_numbers(struct assembler *a) {
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
             continue;
@@ -7748,6 +7751,11 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
         clean_basic_block(b, -1);
         assert(b->b_predecessors == 0);
     }
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (extend_block(b)) {
+            return -1;
+        }
+    }
     if (mark_reachable(a)) {
         return -1;
     }
@@ -7792,7 +7800,6 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     if (maybe_empty_blocks) {
         eliminate_empty_basic_blocks(a->a_entry);
     }
-    propogate_line_numbers(a);
     return 0;
 }
 
@@ -7811,7 +7818,7 @@ is_exit_without_lineno(basicblock *b) {
  * copy the line number from the sole predecessor block.
  */
 static int
-ensure_exits_have_lineno(struct compiler *c)
+duplicate_exits_without_lineno(struct compiler *c)
 {
     basicblock *entry = NULL;
     /* Copy all exit blocks without line number that are targets of a jump.
@@ -7826,21 +7833,22 @@ ensure_exits_have_lineno(struct compiler *c)
                     continue;
             }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
-            if (is_exit_without_lineno(target)) {
+            if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = compiler_copy_block(c, target);
                 if (new_target == NULL) {
                     return -1;
                 }
                 new_target->b_instr[0].i_lineno = b->b_instr[b->b_iused-1].i_lineno;
                 b->b_instr[b->b_iused-1].i_target = new_target;
+                target->b_predecessors--;
+                new_target->b_predecessors = 1;
+                new_target->b_next = target->b_next;
+                target->b_next = new_target;
             }
         }
         entry = b;
     }
     assert(entry != NULL);
-    if (is_exit_without_lineno(entry)) {
-        entry->b_instr[0].i_lineno = c->u->u_firstlineno;
-    }
     /* Eliminate empty blocks */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         while (b->b_next && b->b_next->b_iused == 0) {
