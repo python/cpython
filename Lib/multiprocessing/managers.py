@@ -33,10 +33,11 @@ from . import util
 from . import get_context
 try:
     from . import shared_memory
-    HAS_SHMEM = True
-    __all__.append('SharedMemoryManager')
 except ImportError:
     HAS_SHMEM = False
+else:
+    HAS_SHMEM = True
+    __all__.append('SharedMemoryManager')
 
 #
 # Register some things for pickling
