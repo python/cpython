@@ -214,7 +214,8 @@ Scheduling callbacks
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
    A thread-safe variant of :meth:`call_soon`.  Must be used to
-   schedule callbacks *from another thread*.
+   schedule callbacks *from another thread*. If the event loop has been
+   closed, :exc:`RuntimeError` is raised.
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
