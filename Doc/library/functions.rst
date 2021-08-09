@@ -1210,7 +1210,7 @@ are always available.  They are listed here in alphabetical order.
 
    * ``'surrogateescape'`` will represent any incorrect bytes as low
      surrogate code units ranging from U+DC80 to U+DCFF.
-     These private code points will then be turned back into
+     These surrogate code units will then be turned back into
      the same bytes when the ``surrogateescape`` error handler is used
      when writing data.  This is useful for processing files in an
      unknown encoding.
