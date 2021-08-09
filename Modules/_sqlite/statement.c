@@ -67,7 +67,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
     if (strlen(sql_cstr) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(connection->DataError,
                         "the query contains a null character");
         return NULL;
     }

@@ -338,12 +338,16 @@ class RegressionTests(unittest.TestCase):
 
     def test_null_character(self):
         # Issue #21147
-        con = sqlite.connect(":memory:")
-        self.assertRaises(ValueError, con, "\0select 1")
-        self.assertRaises(ValueError, con, "select 1\0")
-        cur = con.cursor()
-        self.assertRaises(ValueError, cur.execute, " \0select 2")
-        self.assertRaises(ValueError, cur.execute, "select 2\0")
+        cur = self.con.cursor()
+        queries = ["\0select 1", "select 1\0"]
+        msg = "the query contains a null character"
+        for query in queries:
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.DataError, msg,
+                                       self.con.execute, query)
+            with self.subTest(query=query):
+                self.assertRaisesRegex(sqlite.DataError, msg,
+                                       cur.execute, query)
 
     def test_surrogates(self):
         con = sqlite.connect(":memory:")
