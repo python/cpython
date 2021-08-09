@@ -43,7 +43,7 @@ pysqlite_step(sqlite3_stmt *statement)
 int
 _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
 {
-    PyObject *exc_class;
+    PyObject *exc_class = NULL;
     int errorcode = sqlite3_errcode(db);
 
     switch (errorcode)
@@ -90,6 +90,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
             exc_class = state->DatabaseError;
             break;
     }
+    assert(exc_class != NULL);
 
     /* Create and set the exception. */
     PyObject *exc = NULL;
