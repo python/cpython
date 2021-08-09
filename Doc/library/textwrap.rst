@@ -17,11 +17,11 @@ If you're just wrapping or filling one or two text strings, the convenience
 functions should be good enough; otherwise, you should use an instance of
 :class:`TextWrapper` for efficiency.
 
-.. function:: wrap(text, width=70, initial_indent="", \
+.. function:: wrap(text, width=70, *, initial_indent="", \
                    subsequent_indent="", expand_tabs=True, \
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
-                   break_on_hyphens=True, tabsize=8, *, max_lines=None, \
+                   break_on_hyphens=True, tabsize=8, max_lines=None, \
                    placeholder=' [...]')
 
    Wraps the single paragraph in *text* (a string) so every line is at most
@@ -35,12 +35,12 @@ functions should be good enough; otherwise, you should use an instance of
    :func:`wrap` behaves.
 
 
-.. function:: fill(text, width=70, initial_indent="", \
+.. function:: fill(text, width=70, *, initial_indent="", \
                    subsequent_indent="", expand_tabs=True, \
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   *, max_lines=None, placeholder=' [...]')
+                   max_lines=None, placeholder=' [...]')
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -51,9 +51,9 @@ functions should be good enough; otherwise, you should use an instance of
    :func:`wrap`.
 
 
-.. function:: shorten(text, width, fix_sentence_endings=False, \
+.. function:: shorten(text, width, *, fix_sentence_endings=False, \
                       break_long_words=True, break_on_hyphens=True, \
-                      *, placeholder=' [...]')
+                      placeholder=' [...]')
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
