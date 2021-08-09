@@ -861,6 +861,8 @@ Exceeding limitations on different file systems can cause decompression failed.
 Such as allowable characters in the directory entries, length of the file name,
 length of the pathname, size of a single file, and number of files, etc.
 
+.. _zipfile-resources-limitations:
+
 Resources limitations
 ~~~~~~~~~~~~~~~~~~~~~
 
