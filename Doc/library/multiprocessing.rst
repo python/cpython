@@ -1187,6 +1187,7 @@ For example:
     >>> arr2
     array('i', [0, 1, 2, 3, 4, 0, 0, 0, 0, 0])
 
+.. _multiprocessing-recv-pickle-security:
 
 .. warning::
 
