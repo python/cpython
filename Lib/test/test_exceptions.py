@@ -1036,6 +1036,7 @@ class ExceptionTests(unittest.TestCase):
                 o = o.__dir__
 
         foo()
+        support.gc_collect()
 
     @cpython_only
     def test_recursion_normalizing_exception(self):

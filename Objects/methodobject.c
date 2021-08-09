@@ -161,7 +161,7 @@ static void
 meth_dealloc(PyCFunctionObject *m)
 {
     PyObject_GC_UnTrack(m);
-    Py_TRASHCAN_SAFE_BEGIN(m);
+    Py_TRASHCAN_BEGIN(m, meth_dealloc);
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
@@ -171,7 +171,7 @@ meth_dealloc(PyCFunctionObject *m)
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
     PyObject_GC_Del(m);
-    Py_TRASHCAN_SAFE_END(m);
+    Py_TRASHCAN_END;
 }
 
 static PyObject *
