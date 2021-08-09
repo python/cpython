@@ -1,0 +1,1 @@
+Fail appropriately in cross-compile scenarios if no proper python interpreter is found in PATH.
