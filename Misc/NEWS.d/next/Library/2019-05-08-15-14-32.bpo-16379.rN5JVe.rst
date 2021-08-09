@@ -1,2 +1,2 @@
-Add sqlite error code and name to the exceptions of the sqlite3 module.
-Patch by Aviv Palivoda based on work by Daniel Shahaf.
+Add SQLite error code and name to :mod:`sqlite3` exceptions.
+Patch by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland.
