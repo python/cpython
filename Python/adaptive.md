@@ -12,7 +12,7 @@ A family of instructions has the following fundamental properties:
 * It has a single adaptive instruction that records an execution count and,
   at regular intervals, attempts to specialize itself. If not specializing,
   it executes the non-adaptive instruction.
-* It has at least one specialized form of the instruction that is tailored 
+* It has at least one specialized form of the instruction that is tailored
   for a particular value or set of values at runtime.
 * All members of the family have access to the same number of cache entries.
   Individual family members do not need to use all of the entries.
@@ -80,7 +80,7 @@ requiring judgement and experimentation to design the family of instructions.
 
 Before choosing how to specialize an instruction, it is important to gather
 some data. What are the patterns of usage of the base instruction?
-Data can best be gathered by instrumenting the interpreter. Since a 
+Data can best be gathered by instrumenting the interpreter. Since a
 specialization function and adaptive instruction are going to be required,
 instrumentation can most easily be added in the specialization function.
 
