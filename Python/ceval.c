@@ -4280,11 +4280,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             } // don't care if owner has no dict, could be builtin or __slots__
 
             res = cache2->meth;
-            BACKOFF_IF(
-                res == NULL ||
-                Py_TYPE(res)->tp_descr_get == NULL ||
-                !_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR),
-                LOAD_METHOD);
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             STAT_INC(LOAD_METHOD, hit);
             record_cache_hit(cache0);
             Py_INCREF(res);
