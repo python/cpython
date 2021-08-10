@@ -1910,7 +1910,8 @@ are always available.  They are listed here in alphabetical order.
       This is an advanced function that is not needed in everyday Python
       programming, unlike :func:`importlib.import_module`.
 
-   This function is invoked by the :keyword:`import` statement.  It can be
+   This function is invoked by the :keyword:`import` statement.
+   If the module cannot be imported, :exc:`ImportError` is raised. It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
    :keyword:`!import` statement, but doing so is **strongly** discouraged as it
