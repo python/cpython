@@ -19,9 +19,21 @@ STARTUP_MODULES_WITH_SITE = [
 
 def freeze_module(modname, destdir):
     if modname.startswith('<'):
-        modname = modname[1:-1]
-        pkgdir = os.path.join(STDLIB_DIR, *modname.split('.'))
-        pyfile = os.path.join(pkgdir, '__init__.py')
+        pkgname = modname[1:-1]
+        pkgname, sep, match= pkgname.partition('.')
+        pyfile, _ = _freeze_module(pkgname, MODULES_DIR, ispkg=True)
+
+        if sep:
+            pkgdir = os.path.dirname(pyfile)
+            for modname, ispkg in _iter_submodules(pkgname, pkgdir, match):
+                _freeze_module(modname, MODULES_DIR, ispkg)
+    else:
+        _freeze_module(modname, MODULES_DIR)
+
+
+def _freeze_module(modname, destdir, ispkg=False):
+    if ispkg:
+        pyfile = os.path.join(STDLIB_DIR, *modname.split('.'), '__init__.py')
     else:
         pyfile = os.path.join(STDLIB_DIR, *modname.split('.')) + '.py'
     destfile = os.path.join(destdir, 'frozen_' + modname.replace('.', '_')) + '.h'
@@ -32,6 +44,24 @@ def freeze_module(modname, destdir):
     subprocess.run(argv, check=True)
 
     os.replace(tmpfile, destfile)
+
+    return pyfile, destfile
+
+
+def _iter_submodules(pkgname, pkgdir, match='*'):
+    if not match:
+        match = '*'
+    if match != '*':
+        raise NotImplementedError(match)
+
+    for entry in os.scandir(pkgdir):
+        modname = f'{pkgname}.{entry.name}'
+        if modname.endswith('.py'):
+            yield modname[:-3], False
+        elif entry.is_dir():
+            if os.path.exists(os.path.join(entry.path, '__init__.py')):
+                yield modname, True
+                yield from _iter_submodules(modname, entry.path)
 
 
 def main():
