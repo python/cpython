@@ -9,10 +9,10 @@
 In Python, ``__main__`` is not a single mechanism in the language, but in fact
 is part of two quite different constructs:
 
-1. The ``__name__ == '__main__'`` statement
+1. The ``__name__ == '__main__'`` expression
 2. The ``__main__.py`` file in Python packages
 
-Each of these mechanisms are related to Python modules; how users interact with
+Both of these mechanisms are related to Python modules; how users interact with
 them and how they interact with each other. See section :ref:`tut-modules`.
 
 
@@ -84,7 +84,7 @@ For detailed documentation on Python packaging, see the
 *main* functions are often used to create command line tools by specifying them
 as entry points for console scripts.  When this is done, pip inserts the
 function call into a template script, where the return value of *main* is
-passed into sys.exit. For example::
+passed into :func:`sys.exit`. For example::
 
     sys.exit(main())
 
