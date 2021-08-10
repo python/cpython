@@ -1169,6 +1169,21 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(v, RecursionError, type(v))
         self.assertIn("maximum recursion depth exceeded", str(v))
 
+
+    @cpython_only
+    def test_crashcan_recursion(self):
+        # See bpo-33930
+
+        def foo():
+            o = object()
+            for x in range(1_000_000):
+                # Create a big chain of method objects that will trigger
+                # a deep chain of calls when they need to be destructed.
+                o = o.__dir__
+
+        foo()
+        support.gc_collect()
+
     @cpython_only
     def test_recursion_normalizing_exception(self):
         # Issue #22898.
