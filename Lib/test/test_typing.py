@@ -4791,66 +4791,185 @@ class TypeGuardTests(BaseTestCase):
             issubclass(int, TypeGuard)
 
 
-class SpecialAttrsTests(BaseTestCase):
-    def test_special_attrs(self):
-        cls_to_check = (
-            # ABC classes
-            typing.AbstractSet,
-            typing.AsyncContextManager,
-            typing.AsyncGenerator,
-            typing.AsyncIterable,
-            typing.AsyncIterator,
-            typing.Awaitable,
-            typing.ByteString,
-            typing.Callable,
-            typing.ChainMap,
-            typing.Collection,
-            typing.Container,
-            typing.ContextManager,
-            typing.Coroutine,
-            typing.Counter,
-            typing.DefaultDict,
-            typing.Deque,
-            typing.Dict,
-            typing.FrozenSet,
-            typing.Generator,
-            typing.Hashable,
-            typing.ItemsView,
-            typing.Iterable,
-            typing.Iterator,
-            typing.KeysView,
-            typing.List,
-            typing.Mapping,
-            typing.MappingView,
-            typing.MutableMapping,
-            typing.MutableSequence,
-            typing.MutableSet,
-            typing.OrderedDict,
-            typing.Reversible,
-            typing.Sequence,
-            typing.Set,
-            typing.Sized,
-            typing.Tuple,
-            typing.Type,
-            typing.ValuesView,
-            # Special Forms
-            typing.Any,
-            typing.NoReturn,
-            typing.ClassVar,
-            typing.Final,
-            typing.Union,
-            typing.Optional,
-            typing.Literal,
-            typing.TypeAlias,
-            typing.Concatenate,
-            typing.TypeGuard,
-        )
+SpecialAttrsP = typing.ParamSpec('SpecialAttrsP')
+SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 
-        for cls in cls_to_check:
+
+class SpecialAttrsTests(BaseTestCase):
+
+    def test_special_attrs(self):
+        cls_to_check = {
+            # ABC classes
+            typing.AbstractSet: 'AbstractSet',
+            typing.AsyncContextManager: 'AsyncContextManager',
+            typing.AsyncGenerator: 'AsyncGenerator',
+            typing.AsyncIterable: 'AsyncIterable',
+            typing.AsyncIterator: 'AsyncIterator',
+            typing.Awaitable: 'Awaitable',
+            typing.ByteString: 'ByteString',
+            typing.Callable: 'Callable',
+            typing.ChainMap: 'ChainMap',
+            typing.Collection: 'Collection',
+            typing.Container: 'Container',
+            typing.ContextManager: 'ContextManager',
+            typing.Coroutine: 'Coroutine',
+            typing.Counter: 'Counter',
+            typing.DefaultDict: 'DefaultDict',
+            typing.Deque: 'Deque',
+            typing.Dict: 'Dict',
+            typing.FrozenSet: 'FrozenSet',
+            typing.Generator: 'Generator',
+            typing.Hashable: 'Hashable',
+            typing.ItemsView: 'ItemsView',
+            typing.Iterable: 'Iterable',
+            typing.Iterator: 'Iterator',
+            typing.KeysView: 'KeysView',
+            typing.List: 'List',
+            typing.Mapping: 'Mapping',
+            typing.MappingView: 'MappingView',
+            typing.MutableMapping: 'MutableMapping',
+            typing.MutableSequence: 'MutableSequence',
+            typing.MutableSet: 'MutableSet',
+            typing.OrderedDict: 'OrderedDict',
+            typing.Reversible: 'Reversible',
+            typing.Sequence: 'Sequence',
+            typing.Set: 'Set',
+            typing.Sized: 'Sized',
+            typing.Tuple: 'Tuple',
+            typing.Type: 'Type',
+            typing.ValuesView: 'ValuesView',
+            # Subscribed ABC classes
+            typing.AbstractSet[Any]: 'AbstractSet',
+            typing.AsyncContextManager[Any]: 'AsyncContextManager',
+            typing.AsyncGenerator[Any, Any]: 'AsyncGenerator',
+            typing.AsyncIterable[Any]: 'AsyncIterable',
+            typing.AsyncIterator[Any]: 'AsyncIterator',
+            typing.Awaitable[Any]: 'Awaitable',
+            typing.Callable[[], Any]: 'Callable',
+            typing.Callable[..., Any]: 'Callable',
+            typing.ChainMap[Any, Any]: 'ChainMap',
+            typing.Collection[Any]: 'Collection',
+            typing.Container[Any]: 'Container',
+            typing.ContextManager[Any]: 'ContextManager',
+            typing.Coroutine[Any, Any, Any]: 'Coroutine',
+            typing.Counter[Any]: 'Counter',
+            typing.DefaultDict[Any, Any]: 'DefaultDict',
+            typing.Deque[Any]: 'Deque',
+            typing.Dict[Any, Any]: 'Dict',
+            typing.FrozenSet[Any]: 'FrozenSet',
+            typing.Generator[Any, Any, Any]: 'Generator',
+            typing.ItemsView[Any, Any]: 'ItemsView',
+            typing.Iterable[Any]: 'Iterable',
+            typing.Iterator[Any]: 'Iterator',
+            typing.KeysView[Any]: 'KeysView',
+            typing.List[Any]: 'List',
+            typing.Mapping[Any, Any]: 'Mapping',
+            typing.MappingView[Any]: 'MappingView',
+            typing.MutableMapping[Any, Any]: 'MutableMapping',
+            typing.MutableSequence[Any]: 'MutableSequence',
+            typing.MutableSet[Any]: 'MutableSet',
+            typing.OrderedDict[Any, Any]: 'OrderedDict',
+            typing.Reversible[Any]: 'Reversible',
+            typing.Sequence[Any]: 'Sequence',
+            typing.Set[Any]: 'Set',
+            typing.Tuple[Any]: 'Tuple',
+            typing.Tuple[Any, ...]: 'Tuple',
+            typing.Type[Any]: 'Type',
+            typing.ValuesView[Any]: 'ValuesView',
+            # Special Forms
+            typing.Annotated: 'Annotated',
+            typing.Any: 'Any',
+            typing.ClassVar: 'ClassVar',
+            typing.Concatenate: 'Concatenate',
+            typing.Final: 'Final',
+            typing.ForwardRef: 'ForwardRef',
+            typing.Literal: 'Literal',
+            typing.NewType: 'NewType',
+            typing.NoReturn: 'NoReturn',
+            typing.Optional: 'Optional',
+            typing.TypeAlias: 'TypeAlias',
+            typing.TypeGuard: 'TypeGuard',
+            typing.TypeVar: 'TypeVar',
+            typing.Union: 'Union',
+            # Subscribed special forms
+            typing.Annotated[Any, "Annotation"]: 'Annotated',
+            typing.ClassVar[Any]: 'ClassVar',
+            typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
+            typing.Final[Any]: 'Final',
+            typing.Literal[Any]: 'Literal',
+            typing.Optional[Any]: 'Optional',
+            typing.TypeGuard[Any]: 'TypeGuard',
+            typing.Union[Any]: 'Any',
+            typing.Union[int, float]: 'Union',
+            # Incompatible special forms (tested in test_special_attrs2)
+            # - typing.ForwardRef('set[Any]')
+            # - typing.NewType('TypeName', Any)
+            # - typing.ParamSpec('SpecialAttrsP')
+            # - typing.TypeVar('T')
+        }
+
+        for cls, name in cls_to_check.items():
             with self.subTest(cls=cls):
-                self.assertEqual(cls.__name__, cls._name)
-                self.assertEqual(cls.__qualname__, cls._name)
-                self.assertEqual(cls.__module__, 'typing')
+                self.assertEqual(cls.__name__, name, str(cls))
+                self.assertEqual(cls.__qualname__, name, str(cls))
+                self.assertEqual(cls.__module__, 'typing', str(cls))
+                self.assertEqual(getattr(cls, '_name', name), name, str(cls))
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(cls, proto)
+                    loaded = pickle.loads(s)
+                    self.assertIs(cls, loaded)
+
+    TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
+
+    def test_special_attrs2(self):
+        # Forward refs provide a different introspection API. __name__ and
+        # __qualname__ make little sense for forward refs as they can store
+        # complex typing expressions.
+        fr = typing.ForwardRef('set[Any]')
+        self.assertFalse(hasattr(fr, '__name__'))
+        self.assertFalse(hasattr(fr, '__qualname__'))
+        self.assertEqual(fr.__module__, 'typing')
+        # Forward refs are currently unpicklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(TypeError) as exc:
+                pickle.dumps(fr, proto)
+
+        self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')
+        self.assertEqual(
+            SpecialAttrsTests.TypeName.__qualname__,
+            'SpecialAttrsTests.TypeName',
+        )
+        self.assertEqual(
+            SpecialAttrsTests.TypeName.__module__,
+            'test.test_typing',
+        )
+        # NewTypes are picklable assuming correct qualname information.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsTests.TypeName, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsTests.TypeName, loaded)
+
+        # Type variables don't support non-global instantiation per PEP 484
+        # restriction that "The argument to TypeVar() must be a string equal
+        # to the variable name to which it is assigned".  Thus, providing
+        # __qualname__ is unnecessary.
+        self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
+        self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
+        self.assertEqual(SpecialAttrsT.__module__, 'test.test_typing')
+        # Module-level type variables are picklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsT, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsT, loaded)
+
+        self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
+        self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
+        self.assertEqual(SpecialAttrsP.__module__, 'test.test_typing')
+        # Module-level ParamSpecs are picklable.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(SpecialAttrsP, proto)
+            loaded = pickle.loads(s)
+            self.assertIs(SpecialAttrsP, loaded)
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""

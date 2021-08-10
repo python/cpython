@@ -70,12 +70,26 @@ stats_to_dict(SpecializationStats *stats)
     ADD_STAT_TO_DICT(res, deopt);
     ADD_STAT_TO_DICT(res, unquickened);
 #if SPECIALIZATION_STATS_DETAILED
-    if (stats->miss_types != NULL) {
-        if (PyDict_SetItemString(res, "fails", stats->miss_types) == -1) {
+    PyObject *failure_kinds = PyTuple_New(SPECIALIZATION_FAILURE_KINDS);
+    if (failure_kinds == NULL) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
+        PyObject *stat = PyLong_FromUnsignedLongLong(stats->specialization_failure_kinds[i]);
+        if (stat == NULL) {
             Py_DECREF(res);
+            Py_DECREF(failure_kinds);
             return NULL;
         }
+        PyTuple_SET_ITEM(failure_kinds, i, stat);
     }
+    if (PyDict_SetItemString(res, "specialization_failure_kinds", failure_kinds)) {
+        Py_DECREF(res);
+        Py_DECREF(failure_kinds);
+        return NULL;
+    }
+    Py_DECREF(failure_kinds);
 #endif
     return res;
 }
@@ -130,21 +144,9 @@ print_stats(FILE *out, SpecializationStats *stats, const char *name)
     PRINT_STAT(name, deopt);
     PRINT_STAT(name, unquickened);
 #if SPECIALIZATION_STATS_DETAILED
-    if (stats->miss_types == NULL) {
-        return;
-    }
-    fprintf(out, "    %s.fails:\n", name);
-    PyObject *key, *count;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(stats->miss_types, &pos, &key, &count)) {
-        PyObject *type = PyTuple_GetItem(key, 0);
-        PyObject *name = PyTuple_GetItem(key, 1);
-        PyObject *kind = PyTuple_GetItem(key, 2);
-        fprintf(out, "        %s.", ((PyTypeObject *)type)->tp_name);
-        PyObject_Print(name, out, Py_PRINT_RAW);
-        fprintf(out, " (");
-        PyObject_Print(kind, out, Py_PRINT_RAW);
-        fprintf(out, "): %ld\n", PyLong_AsLong(count));
+    for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
+        fprintf(out, "    %s.specialization_failure_kinds[%d] : %" PRIu64 "\n",
+            name, i, stats->specialization_failure_kinds[i]);
     }
 #endif
 }
@@ -174,63 +176,22 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     if (out != stderr) {
         fclose(out);
     }
 }
 
 #if SPECIALIZATION_STATS_DETAILED
-void
-_Py_IncrementTypeCounter(int opcode, PyObject *type, PyObject *name, const char *kind)
-{
-    PyObject *counter = _specialization_stats[opcode].miss_types;
-    if (counter == NULL) {
-        _specialization_stats[opcode].miss_types = PyDict_New();
-        counter = _specialization_stats[opcode].miss_types;
-        if (counter == NULL) {
-            return;
-        }
-    }
-    PyObject *key = NULL;
-    PyObject *kind_object = _PyUnicode_FromASCII(kind, strlen(kind));
-    if (kind_object == NULL) {
-        PyErr_Clear();
-        goto done;
-    }
-    key = PyTuple_Pack(3, type, name, kind_object);
-    if (key == NULL) {
-        PyErr_Clear();
-        goto done;
-    }
-    PyObject *count = PyDict_GetItem(counter, key);
-    if (count == NULL) {
-        count = _PyLong_GetZero();
-        if (PyDict_SetItem(counter, key, count) < 0) {
-            PyErr_Clear();
-            goto done;
-        }
-    }
-    count = PyNumber_Add(count, _PyLong_GetOne());
-    if (count == NULL) {
-        PyErr_Clear();
-        goto done;
-    }
-    if (PyDict_SetItem(counter, key, count)) {
-        PyErr_Clear();
-    }
-done:
-    Py_XDECREF(kind_object);
-    Py_XDECREF(key);
-}
 
-#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) _Py_IncrementTypeCounter(opcode, (PyObject *)(type), (PyObject *)(attribute), kind)
+#define SPECIALIZATION_FAIL(opcode, kind) _specialization_stats[opcode].specialization_failure_kinds[kind]++
 
 
 #endif
 #endif
 
 #ifndef SPECIALIZATION_FAIL
-#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) ((void)0)
+#define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
 static SpecializedCacheOrInstruction *
@@ -264,14 +225,16 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
+    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
+    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 2,
     [BINARY_SUBSCR] = 0,
+    [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -415,11 +378,39 @@ _Py_Quicken(PyCodeObject *code) {
 }
 
 
+/* Common */
+
+#define SPEC_FAIL_NO_DICT 1
+#define SPEC_FAIL_OVERRIDDEN 2
+#define SPEC_FAIL_OUT_OF_VERSIONS 3
+#define SPEC_FAIL_OUT_OF_RANGE 4
+#define SPEC_FAIL_EXPECTED_ERROR 5
+
+/* Attributes */
+
+#define SPEC_FAIL_NON_STRING_OR_SPLIT 6
+#define SPEC_FAIL_MODULE_ATTR_NOT_FOUND 7
+#define SPEC_FAIL_OVERRIDING_DESCRIPTOR 8
+#define SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR 9
+#define SPEC_FAIL_NOT_DESCRIPTOR 10
+#define SPEC_FAIL_METHOD 11
+#define SPEC_FAIL_MUTABLE_CLASS 12
+#define SPEC_FAIL_PROPERTY 13
+#define SPEC_FAIL_NON_OBJECT_SLOT 14
+#define SPEC_FAIL_READ_ONLY 15
+#define SPEC_FAIL_AUDITED_SLOT 16
+
+/* Binary subscr */
+
+#define SPEC_FAIL_LIST_NON_INT_SUBSCRIPT 8
+#define SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT 9
+#define SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT 10
+
 
 static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-    _PyAdaptiveEntry *cache0, _PyLoadAttrCache *cache1)
+    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1)
 {
     PyModuleObject *m = (PyModuleObject *)owner;
     PyObject *value = NULL;
@@ -427,34 +418,34 @@ specialize_module_load_attr(
     _Py_IDENTIFIER(__getattr__);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no __dict__");
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
         return -1;
     }
     if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "non-string keys (or split)");
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NON_STRING_OR_SPLIT);
         return -1;
     }
     getattr = _PyUnicode_FromId(&PyId___getattr__); /* borrowed */
     if (getattr == NULL) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "module.__getattr__ overridden");
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
         PyErr_Clear();
         return -1;
     }
     Py_ssize_t index = _PyDict_GetItemHint(dict, getattr, -1,  &value);
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "module attribute not found");
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_MODULE_ATTR_NOT_FOUND);
         return -1;
     }
     index = _PyDict_GetItemHint(dict, name, -1, &value);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "index out of range");
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
     uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
     if (keys_version == 0) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no more key versions");
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
     cache1->dk_version_or_hint = keys_version;
@@ -478,15 +469,24 @@ typedef enum {
     MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
     ABSENT, /* Attribute is not present on the class */
     DUNDER_CLASS, /* __class__ attribute */
-    GETATTRIBUTE_OVERRIDDEN /* __getattribute__ has been overridden */
+    GETSET_OVERRIDDEN /* __getattribute__ or __setattr__ has been overridden */
 } DesciptorClassification;
 
+
 static DesciptorClassification
-analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
+analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int store)
 {
-    if (type->tp_getattro != PyObject_GenericGetAttr) {
-        *descr = NULL;
-        return GETATTRIBUTE_OVERRIDDEN;
+    if (store) {
+        if (type->tp_setattro != PyObject_GenericSetAttr) {
+            *descr = NULL;
+            return GETSET_OVERRIDDEN;
+        }
+    }
+    else {
+        if (type->tp_getattro != PyObject_GenericGetAttr) {
+            *descr = NULL;
+            return GETSET_OVERRIDDEN;
+        }
     }
     PyObject *descriptor = _PyType_Lookup(type, name);
     *descr = descriptor;
@@ -525,11 +525,91 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
     return NON_DESCRIPTOR;
 }
 
+static int
+specialize_dict_access(
+    PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
+    DesciptorClassification kind, PyObject *name,
+    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
+    int base_op, int split_op, int hint_op)
+{
+    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT);
+    // No desciptor, or non overriding.
+    if (type->tp_dictoffset < 0) {
+        SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+        return 0;
+    }
+    if (type->tp_dictoffset > 0) {
+        PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
+            return 0;
+        }
+        // We found an instance with a __dict__.
+        PyDictObject *dict = (PyDictObject *)*dictptr;
+        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+        ) {
+            // Keys are shared
+            assert(PyUnicode_CheckExact(name));
+            Py_hash_t hash = PyObject_Hash(name);
+            if (hash == -1) {
+                return -1;
+            }
+            PyObject *value;
+            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+            assert (index != DKIX_ERROR);
+            if (index != (uint16_t)index) {
+                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+                return 0;
+            }
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+            if (keys_version == 0) {
+                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_VERSIONS);
+                return 0;
+            }
+            cache1->dk_version_or_hint = keys_version;
+            cache1->tp_version = type->tp_version_tag;
+            cache0->index = (uint16_t)index;
+            *instr = _Py_MAKECODEUNIT(split_op, _Py_OPARG(*instr));
+            return 0;
+        }
+        else {
+            PyObject *value = NULL;
+            Py_ssize_t hint =
+                _PyDict_GetItemHint(dict, name, -1, &value);
+            if (hint != (uint32_t)hint) {
+                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+                return 0;
+            }
+            cache1->dk_version_or_hint = (uint32_t)hint;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(hint_op, _Py_OPARG(*instr));
+            return 1;
+        }
+    }
+    assert(type->tp_dictoffset == 0);
+    /* No attribute in instance dictionary */
+    switch(kind) {
+        case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR);
+            return 0;
+        case NON_DESCRIPTOR:
+            /* To do -- Optimize this case */
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NOT_DESCRIPTOR);
+            return 0;
+        case ABSENT:
+            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_EXPECTED_ERROR);
+            return 0;
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    _PyAttrCache *cache1 = &cache[-1].attr;
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0, cache1);
         if (err) {
@@ -544,24 +624,28 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         }
     }
     PyObject *descr;
-    DesciptorClassification kind = analyze_descriptor(type, name, &descr);
+    DesciptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     switch(kind) {
         case OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "overriding descriptor");
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
             goto fail;
         case METHOD:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "method");
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_METHOD);
             goto fail;
         case PROPERTY:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "property");
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_PROPERTY);
             goto fail;
         case OBJECT_SLOT:
         {
             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
             struct PyMemberDef *dmem = member->d_member;
             Py_ssize_t offset = dmem->offset;
+            if (dmem->flags & PY_AUDIT_READ) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_AUDITED_SLOT);
+                goto fail;
+            }
             if (offset != (uint16_t)offset) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "offset out of range");
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
                 goto fail;
             }
             assert(dmem->type == T_OBJECT_EX);
@@ -581,90 +665,28 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             goto success;
         }
         case OTHER_SLOT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non-object slot");
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NON_OBJECT_SLOT);
             goto fail;
         case MUTABLE:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "mutable class attribute");
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_MUTABLE_CLASS);
             goto fail;
-        case GETATTRIBUTE_OVERRIDDEN:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "__getattribute__ overridden");
+        case GETSET_OVERRIDDEN:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
         case NON_OVERRIDING:
         case NON_DESCRIPTOR:
         case ABSENT:
             break;
     }
-    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT);
-    // No desciptor, or non overriding.
-    if (type->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "negative offset");
-        goto fail;
+    int err = specialize_dict_access(
+        owner, instr, type, kind, name, cache0, cache1,
+        LOAD_ATTR, LOAD_ATTR_SPLIT_KEYS, LOAD_ATTR_WITH_HINT
+    );
+    if (err < 0) {
+        return -1;
     }
-    if (type->tp_dictoffset > 0) {
-        PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no dict or not a dict");
-            goto fail;
-        }
-        // We found an instance with a __dict__.
-        PyDictObject *dict = (PyDictObject *)*dictptr;
-        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
-        ) {
-            // Keys are shared
-            assert(PyUnicode_CheckExact(name));
-            Py_hash_t hash = PyObject_Hash(name);
-            if (hash == -1) {
-                return -1;
-            }
-            PyObject *value;
-            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
-            assert (index != DKIX_ERROR);
-            if (index != (uint16_t)index) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name,
-                                    index < 0 ? "attribute not in dict" : "index out of range");
-                goto fail;
-            }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
-            if (keys_version == 0) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no more key versions");
-                goto fail;
-            }
-            cache1->dk_version_or_hint = keys_version;
-            cache1->tp_version = type->tp_version_tag;
-            cache0->index = (uint16_t)index;
-            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
-            goto success;
-        }
-        else {
-            PyObject *value = NULL;
-            Py_ssize_t hint =
-                _PyDict_GetItemHint(dict, name, -1, &value);
-            if (hint != (uint32_t)hint) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "hint out of range");
-                goto fail;
-            }
-            cache1->dk_version_or_hint = (uint32_t)hint;
-            cache1->tp_version = type->tp_version_tag;
-            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
-            goto success;
-        }
-    }
-    assert(type->tp_dictoffset == 0);
-    /* No attribute in instance dictionary */
-    switch(kind) {
-        case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non-overriding descriptor");
-            goto fail;
-        case NON_DESCRIPTOR:
-            /* To do -- Optimize this case */
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non descriptor");
-            goto fail;
-        case ABSENT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no attribute");
-            goto fail;
-        default:
-            Py_UNREACHABLE();
+    if (err) {
+        goto success;
     }
 fail:
     STAT_INC(LOAD_ATTR, specialization_failure);
@@ -677,6 +699,87 @@ success:
     cache0->counter = saturating_start();
     return 0;
 }
+
+int
+_Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyAttrCache *cache1 = &cache[-1].attr;
+    PyTypeObject *type = Py_TYPE(owner);
+    if (PyModule_CheckExact(owner)) {
+        SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
+        goto fail;
+    }
+    PyObject *descr;
+    DesciptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    switch(kind) {
+        case OVERRIDING:
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
+            goto fail;
+        case METHOD:
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_METHOD);
+            goto fail;
+        case PROPERTY:
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_PROPERTY);
+            goto fail;
+        case OBJECT_SLOT:
+        {
+            PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
+            struct PyMemberDef *dmem = member->d_member;
+            Py_ssize_t offset = dmem->offset;
+            if (dmem->flags & READONLY) {
+                SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_READ_ONLY);
+                goto fail;
+            }
+            if (offset != (uint16_t)offset) {
+                SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+                goto fail;
+            }
+            assert(dmem->type == T_OBJECT_EX);
+            assert(offset > 0);
+            cache0->index = (uint16_t)offset;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(STORE_ATTR_SLOT, _Py_OPARG(*instr));
+            goto success;
+        }
+        case DUNDER_CLASS:
+        case OTHER_SLOT:
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_NON_OBJECT_SLOT);
+            goto fail;
+        case MUTABLE:
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_MUTABLE_CLASS);
+            goto fail;
+        case GETSET_OVERRIDDEN:
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
+            goto fail;
+        case NON_OVERRIDING:
+        case NON_DESCRIPTOR:
+        case ABSENT:
+            break;
+    }
+
+    int err = specialize_dict_access(
+        owner, instr, type, kind, name, cache0, cache1,
+        STORE_ATTR, STORE_ATTR_SPLIT_KEYS, STORE_ATTR_WITH_HINT
+    );
+    if (err < 0) {
+        return -1;
+    }
+    if (err) {
+        goto success;
+    }
+fail:
+    STAT_INC(STORE_ATTR, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(STORE_ATTR, specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}
+
 
 int
 _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
@@ -863,7 +966,7 @@ _Py_Specialize_BinarySubscr(
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
             goto success;
         } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "list; non-integer subscr");
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_LIST_NON_INT_SUBSCRIPT);
             goto fail;
         }
     }
@@ -872,7 +975,7 @@ _Py_Specialize_BinarySubscr(
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
             goto success;
         } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "tuple; non-integer subscr");
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT);
             goto fail;
         }
     }
@@ -880,7 +983,7 @@ _Py_Specialize_BinarySubscr(
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
         goto success;
     }
-    SPECIALIZATION_FAIL(BINARY_SUBSCR, Py_TYPE(container), Py_TYPE(sub), "not list|tuple|dict");
+    SPECIALIZATION_FAIL(BINARY_SUBSCR,SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT);
     goto fail;
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);

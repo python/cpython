@@ -26,7 +26,7 @@ import sys
 import threading
 import unittest
 
-from test.support import check_disallow_instantiation, threading_helper
+from test.support import check_disallow_instantiation, threading_helper, bigmemtest
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -758,9 +758,35 @@ class ExtensionTests(unittest.TestCase):
     def test_cursor_executescript_as_bytes(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError):
             cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
-        self.assertEqual(str(cm.exception), 'script argument must be unicode.')
+
+    def test_cursor_executescript_with_null_characters(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(ValueError):
+            cur.executescript("""
+                create table a(i);\0
+                insert into a(i) values (5);
+                """)
+
+    def test_cursor_executescript_with_surrogates(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(UnicodeEncodeError):
+            cur.executescript("""
+                create table a(s);
+                insert into a(s) values ('\ud8ff');
+                """)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_cursor_executescript_too_large_script(self, maxsize):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        for size in 2**31-1, 2**31:
+            with self.assertRaises(sqlite.DataError):
+                cur.executescript("create table a(s);".ljust(size))
 
     def test_connection_execute(self):
         con = sqlite.connect(":memory:")
@@ -969,6 +995,7 @@ def suite():
         CursorTests,
         ExtensionTests,
         ModuleTests,
+        OpenTests,
         SqliteOnConflictTests,
         ThreadTests,
         UninitialisedConnectionTests,

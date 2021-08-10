@@ -23,33 +23,46 @@
 
 import contextlib
 import functools
+import gc
 import io
+import sys
 import unittest
 import unittest.mock
-import gc
 import sqlite3 as sqlite
 
-def with_tracebacks(strings):
+from test.support import bigmemtest
+
+
+def with_tracebacks(strings, traceback=True):
     """Convenience decorator for testing callback tracebacks."""
-    strings.append('Traceback')
+    if traceback:
+        strings.append('Traceback')
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             # First, run the test with traceback enabled.
-            sqlite.enable_callback_tracebacks(True)
-            buf = io.StringIO()
-            with contextlib.redirect_stderr(buf):
+            with check_tracebacks(self, strings):
                 func(self, *args, **kwargs)
-            tb = buf.getvalue()
-            for s in strings:
-                self.assertIn(s, tb)
 
             # Then run the test with traceback disabled.
-            sqlite.enable_callback_tracebacks(False)
             func(self, *args, **kwargs)
         return wrapper
     return decorator
+
+@contextlib.contextmanager
+def check_tracebacks(self, strings):
+    """Convenience context manager for testing callback tracebacks."""
+    sqlite.enable_callback_tracebacks(True)
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            yield
+        tb = buf.getvalue()
+        for s in strings:
+            self.assertIn(s, tb)
+    finally:
+        sqlite.enable_callback_tracebacks(False)
 
 def func_returntext():
     return "foo"
@@ -69,6 +82,10 @@ def func_returnlonglong():
     return 1<<31
 def func_raiseexception():
     5/0
+def func_memoryerror():
+    raise MemoryError
+def func_overflowerror():
+    raise OverflowError
 
 def func_isstring(v):
     return type(v) is str
@@ -187,6 +204,8 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnblob", 0, func_returnblob)
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("raiseexception", 0, func_raiseexception)
+        self.con.create_function("memoryerror", 0, func_memoryerror)
+        self.con.create_function("overflowerror", 0, func_overflowerror)
 
         self.con.create_function("isstring", 1, func_isstring)
         self.con.create_function("isint", 1, func_isint)
@@ -278,6 +297,20 @@ class FunctionTests(unittest.TestCase):
             cur.execute("select raiseexception()")
             cur.fetchone()
         self.assertEqual(str(cm.exception), 'user-defined function raised exception')
+
+    @with_tracebacks(['func_memoryerror', 'MemoryError'])
+    def test_func_memory_error(self):
+        cur = self.con.cursor()
+        with self.assertRaises(MemoryError):
+            cur.execute("select memoryerror()")
+            cur.fetchone()
+
+    @with_tracebacks(['func_overflowerror', 'OverflowError'])
+    def test_func_overflow_error(self):
+        cur = self.con.cursor()
+        with self.assertRaises(sqlite.DataError):
+            cur.execute("select overflowerror()")
+            cur.fetchone()
 
     def test_param_string(self):
         cur = self.con.cursor()
@@ -383,6 +416,42 @@ class FunctionTests(unittest.TestCase):
 
         del x,y
         gc.collect()
+
+    def test_func_return_too_large_int(self):
+        cur = self.con.cursor()
+        for value in 2**63, -2**63-1, 2**64:
+            self.con.create_function("largeint", 0, lambda value=value: value)
+            with check_tracebacks(self, ['OverflowError']):
+                with self.assertRaises(sqlite.DataError):
+                    cur.execute("select largeint()")
+
+    def test_func_return_text_with_surrogates(self):
+        cur = self.con.cursor()
+        self.con.create_function("pychr", 1, chr)
+        for value in 0xd8ff, 0xdcff:
+            with check_tracebacks(self,
+                    ['UnicodeEncodeError', 'surrogates not allowed']):
+                with self.assertRaises(sqlite.OperationalError):
+                    cur.execute("select pychr(?)", (value,))
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_func_return_too_large_text(self, size):
+        cur = self.con.cursor()
+        for size in 2**31-1, 2**31:
+            self.con.create_function("largetext", 0, lambda size=size: "b" * size)
+            with self.assertRaises(sqlite.DataError):
+                cur.execute("select largetext()")
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=2, dry_run=False)
+    def test_func_return_too_large_blob(self, size):
+        cur = self.con.cursor()
+        for size in 2**31-1, 2**31:
+            self.con.create_function("largeblob", 0, lambda size=size: b"b" * size)
+            with self.assertRaises(sqlite.DataError):
+                cur.execute("select largeblob()")
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):

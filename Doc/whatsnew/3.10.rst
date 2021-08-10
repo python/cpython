@@ -1691,6 +1691,11 @@ Deprecated
   * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
     :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
 
+* The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+  deprecated in Python 3.10 and will be removed in Python 3.12. This feature
+  requires a :ref:`debug build of Python <debug-build>`.
+  (Contributed by Victor Stinner in :issue:`44584`.)
+
 .. _whatsnew310-removed:
 
 Removed
