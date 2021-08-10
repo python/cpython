@@ -581,7 +581,7 @@ frame_dealloc(PyFrameObject *f)
         _PyObject_GC_UNTRACK(f);
     }
 
-    Py_TRASHCAN_SAFE_BEGIN(f)
+    Py_TRASHCAN_BEGIN(f, frame_dealloc);
     /* Kill all local variables */
     PyObject **valuestack = f->f_valuestack;
     for (PyObject **p = f->f_localsplus; p < valuestack; p++) {
@@ -621,7 +621,7 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_DECREF(co);
-    Py_TRASHCAN_SAFE_END(f)
+    Py_TRASHCAN_END;
 }
 
 static inline Py_ssize_t
