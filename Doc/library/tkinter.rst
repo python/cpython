@@ -72,6 +72,47 @@ details that are unchanged.
       Brent Welch's encyclopedic book.
 
 
+Architecture
+------------
+
+Tcl/Tk is not a single library but rather consists of a few distinct
+modules, each with a separate functionality and its own official
+documentation. Python's binary releases also ship an add-on module
+together with it.
+
+Tcl
+   Tcl is a dynamic interpreted programming language, just like Python. Though
+   it can be used on its own as a general-purpose programming language, it is
+   most commonly embedded into C applications as a scripting engine or an
+   interface to the Tk toolkit. The Tcl library has a C interface to
+   create and manage one or more instances of a Tcl interpreter, run Tcl
+   commands and scripts in those instances, and add custom commands
+   implemented in either Tcl or C. Each interpreter has an event queue,
+   and there are facilities to send events to it and process them.
+   Unlike Python, Tcl's execution model is designed around cooperative
+   multitasking, and Tkinter bridges this difference
+   (see `Threading model`_ for details).
+
+Tk
+   Tk is a `Tcl package <http://wiki.tcl.tk/37432>`_ implemented in C
+   that adds custom commands to create and manipulate GUI widgets. Each
+   :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
+   it. Tk's widgets are very customizable, though at the cost of a dated appearance.
+   Tk uses Tcl's event queue to generate and process GUI events.
+
+Ttk
+   Themed Tk (Ttk) is a newer family of Tk widgets that provide a much better
+   appearance on different platforms than many of the classic Tk widgets.
+   Ttk is distributed as part of Tk, starting with Tk version 8.5. Python
+   bindings are provided in a separate module, :mod:`tkinter.ttk`.
+
+Tix
+   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html>_ is an older
+   third-party Tcl package, an add-on for Tk that adds several new widgets.
+   Python bindings are found in the :mod:`tkinter.tix` module.
+   It's deprecated in favor of Ttk.
+
+
 Tkinter Modules
 ---------------
 
