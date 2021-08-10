@@ -400,6 +400,14 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_READ_ONLY 15
 #define SPEC_FAIL_AUDITED_SLOT 16
 
+/* Methods */
+
+#define SPEC_FAIL_IS_ATTR 15
+#define SPEC_FAIL_DICT_SUBCLASS 16
+#define SPEC_FAIL_MODULE_METHOD 17
+#define SPEC_FAIL_CLASS_METHOD 18
+#define SPEC_FAIL_NOT_METHOD 19
+
 /* Binary subscr */
 
 #define SPEC_FAIL_LIST_NON_INT_SUBSCRIPT 8
@@ -785,11 +793,11 @@ int
 _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    _PyAttrCache *cache1 = &cache[-1].attr;
     PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
         // Mabe TODO: LOAD_METHOD_MODULE
-        SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "module method");
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_MODULE_METHOD);
         goto fail;
     }
     if (owner_cls->tp_dict == NULL) {
@@ -798,16 +806,16 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
     }
     PyObject *descr = NULL;
-    DesciptorClassification kind = analyze_descriptor(owner_cls, name, &descr);
+    DesciptorClassification kind = analyze_descriptor(owner_cls, name, &descr, 0);
     if (kind != METHOD || descr == NULL) {
 #if SPECIALIZATION_STATS
         if (kind == GETATTRIBUTE_OVERRIDDEN &&
             PyObject_TypeCheck(owner, &PyBaseObject_Type)) {
             // Maybe TODO: LOAD_METHOD_CLASS
-            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "class method");
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD);
             goto fail;
         }
-        SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "not a method");
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
 #endif
         goto fail;
     }
@@ -821,14 +829,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     if (Py_TYPE(owner_cls)->tp_dictoffset >= 0 && cls_has_dict &&
         owner_cls->tp_dictoffset >= 0) {
-        // We found a type with a __dict__.
-        if ((owner_cls->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && cls_dict->ma_keys == ((PyHeapTypeObject*)owner_cls)->ht_cached_keys) {
-            // Keys are shared. Rare for LOAD_METHOD. Might change
-            // when new object layouts are implemented.
-            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "type dict shared keys");
-            goto fail;
-        }
         
         // if o.__dict__ changes, the method might be found in o.__dict__
         // instead of old type lookup. So record o.__dict__.
@@ -837,7 +837,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             if (!PyDict_CheckExact(owner_dict)) {
                 // _PyDictKeys_GetVersionForCurrentState isn't accurate for
                 // custom dict subclasses at the moment
-                SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "dict subclass");
+                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_DICT_SUBCLASS);
                 goto fail;
             }
             assert(PyUnicode_CheckExact(name));
@@ -849,13 +849,12 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
             assert(ix != DKIX_ERROR);
             if (ix != DKIX_EMPTY) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "is attr");
+                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
                 goto fail;
             }            
             keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
             if (keys_version == 0) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, owner_cls, name,
-                    "no more key versions");
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
                 goto fail;
             }
         } // else owner is maybe a builtin with no dict, or __slots__
@@ -865,7 +864,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         if (hint != (uint16_t)hint) {
             // Happens when the method is inherited. TODO: make this work with inherited
             // methods.
-            SPECIALIZATION_FAIL(LOAD_METHOD, owner_cls, name, "hint out of range");
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
         

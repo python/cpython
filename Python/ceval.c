@@ -4256,7 +4256,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             PyObject *res;
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            _PyAttrCache *cache1 = &caches[-1].attr;
             
             assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
