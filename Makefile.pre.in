@@ -735,28 +735,28 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 ############################################################################
 # Importlib
 
-Programs/_freeze_importlib.o: Programs/_freeze_importlib.c Makefile
+Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
-Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 .PHONY: regen-importlib
-regen-importlib: Programs/_freeze_importlib
+regen-importlib: Programs/_freeze_module
 	# Regenerate Python/importlib_external.h
-	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap_external \
+	# from Lib/importlib/_bootstrap_external.py using _freeze_module
+	./Programs/_freeze_module importlib._bootstrap_external \
 	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
 	    $(srcdir)/Python/importlib_external.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
 	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap \
+	# using _freeze_module
+	./Programs/_freeze_module importlib._bootstrap \
 	    $(srcdir)/Lib/importlib/_bootstrap.py \
 	    $(srcdir)/Python/importlib.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
 	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib zipimport \
+	# using _freeze_module
+	./Programs/_freeze_module zipimport \
 	    $(srcdir)/Lib/zipimport.py \
 	    $(srcdir)/Python/importlib_zipimport.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
@@ -884,9 +884,9 @@ regen-opcode:
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
 .PHONY: regen-frozen
-regen-frozen: Programs/_freeze_importlib
+regen-frozen: Programs/_freeze_module
 	# Regenerate code for frozen module "__hello__".
-	./Programs/_freeze_importlib hello \
+	./Programs/_freeze_module hello \
 		$(srcdir)/Tools/freeze/flag.py \
 		$(srcdir)/Python/frozen_hello.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
@@ -1917,7 +1917,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f Programs/_testembed Programs/_freeze_importlib
+	-rm -f Programs/_testembed Programs/_freeze_module
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
