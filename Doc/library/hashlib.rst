@@ -80,6 +80,8 @@ library that Python uses on your platform. On most platforms the
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
 
+.. _hashlib-usedforsecurity:
+
 .. versionchanged:: 3.9
    All hashlib constructors take a keyword-only argument *usedforsecurity*
    with default value ``True``. A false value allows the use of insecure and
