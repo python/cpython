@@ -85,9 +85,8 @@ class SpecializationStatsTests(unittest.TestCase):
                 stat_names + ['fails'])
             for sn in stat_names:
                 self.assertIsInstance(stats['load_attr'][sn], int)
-            self.assertIsInstance(stats['load_attr']['fails'], dict)
-            for k,v in stats['load_attr']['fails'].items():
-                self.assertIsInstance(k, tuple)
+            self.assertIsInstance(stats['load_attr']['specialization_failure_kinds'], tuple)
+            for v in stats['load_attr']['specialization_failure_kinds']:
                 self.assertIsInstance(v, int)
 
 
