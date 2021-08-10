@@ -71,8 +71,9 @@ encapsulates the program's primary behavior::
         sys.exit(main())  # next section explains the use of sys.exit
 
 This has the added benefit of the *echo* function itself being isolated and
-importable elsewhere. None of the code in ``echo.py`` will execute at
-import-time.
+importable elsewhere. When ``echo.py`` is imported, the ``echo`` and ``main``
+functions will be defined, but neither of them will be called, because
+``__name__ != '__main__'``.
 
 
 Packaging Considerations
