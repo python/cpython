@@ -160,6 +160,8 @@ PyCMethod_GetClass(PyObject *op)
 static void
 meth_dealloc(PyCFunctionObject *m)
 {
+    // The Py_TRASHCAN mechanism requires that we be able to
+    // call PyObject_GC_UnTrack twice on an object.
     PyObject_GC_UnTrack(m);
     Py_TRASHCAN_BEGIN(m, meth_dealloc);
     if (m->m_weakreflist != NULL) {

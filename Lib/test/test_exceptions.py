@@ -1030,9 +1030,13 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_crashcan_recursion(self):
+        # See bpo-33930
+
         def foo():
             o = object()
-            for x in range(1000000):
+            for x in range(1_000_000):
+                # Create a big chain of method objects that will trigger
+                # a deep chain of calls when they need to be destructed.
                 o = o.__dir__
 
         foo()
