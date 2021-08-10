@@ -168,7 +168,6 @@ static PyGetSetDef tb_getsetters[] = {
 static void
 tb_dealloc(PyTracebackObject *tb)
 {
-    PyObject_GC_UnTrack(tb);
     Py_TRASHCAN_BEGIN(tb, tb_dealloc)
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);

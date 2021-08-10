@@ -1928,8 +1928,6 @@ dict_dealloc(PyDictObject *mp)
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
 
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values != empty_values) {

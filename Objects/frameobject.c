@@ -615,10 +615,6 @@ static PyGetSetDef frame_getsetlist[] = {
 static void _Py_HOT_FUNCTION
 frame_dealloc(PyFrameObject *f)
 {
-    if (_PyObject_GC_IS_TRACKED(f)) {
-        _PyObject_GC_UNTRACK(f);
-    }
-
     Py_TRASHCAN_BEGIN(f, frame_dealloc);
     PyCodeObject *co = NULL;
 

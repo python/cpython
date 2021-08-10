@@ -664,8 +664,6 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, element_dealloc)
 
     if (self->weakreflist != NULL)

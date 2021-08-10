@@ -263,7 +263,6 @@ static void
 tupledealloc(PyTupleObject *op)
 {
     Py_ssize_t len =  Py_SIZE(op);
-    PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, tupledealloc)
     if (len > 0) {
         Py_ssize_t i = len;

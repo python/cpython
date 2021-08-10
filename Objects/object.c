@@ -2101,6 +2101,11 @@ _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
+    /* untrack is done by _PyTrash_begin() so the following assert must be
+     * true.  Previously _PyTrash_begin() did not untrack itself and it was the
+     * responsibility of the users of the trashcan mechanism to ensure that
+     * untrack was called first.
+     */
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
@@ -2150,6 +2155,9 @@ _PyTrash_thread_destroy_chain(void)
 int
 _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 {
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
     if (tstate->trash_delete_nesting >= _PyTrash_UNWIND_LEVEL) {
         /* Store the object (to be deallocated later) and jump past
          * Py_TRASHCAN_END, skipping the body of the deallocator */

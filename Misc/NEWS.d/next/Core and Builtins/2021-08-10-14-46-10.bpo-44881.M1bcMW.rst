@@ -1,0 +1,9 @@
+Change `Py_TRASHCAN_BEGIN()` to automatically call `PyObject_GC_UnTrack()`.
+Previously, the untrack function must be explicitly called before
+`Py_TRASHCAN_BEGIN()`. There have been a number of bugs over the years
+related to not doing this particular dance just right.  This change makes it
+harder to do things incorrectly.  That avoids some hard to find bugs (e.g.
+only triggered when object nesting gets deep enough). Extensions that still
+call `PyObject_GC_UnTrack()` explictly will still work correctly but the
+call is redundant after this change.  It would still be needed for the
+extension to work correctly with both older and newer versions of Python.

@@ -1381,9 +1381,6 @@ subtype_dealloc(PyObject *self)
 
     /* We get here only if the type has GC */
 
-    /* UnTrack and re-Track around the trashcan macro, alas */
-    /* See explanation at end of function for full disclosure */
-    PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, subtype_dealloc);
 
     /* Find the nearest base with a different tp_dealloc */
@@ -1487,43 +1484,6 @@ subtype_dealloc(PyObject *self)
 
   endlabel:
     Py_TRASHCAN_END
-
-    /* Explanation of the weirdness around the trashcan macros:
-
-       Q. What do the trashcan macros do?
-
-       A. Read the comment titled "Trashcan mechanism" in object.h.
-          For one, this explains why there must be a call to GC-untrack
-          before the trashcan begin macro.      Without understanding the
-          trashcan code, the answers to the following questions don't make
-          sense.
-
-       Q. Why do we GC-untrack before the trashcan and then immediately
-          GC-track again afterward?
-
-       A. In the case that the base class is GC-aware, the base class
-          probably GC-untracks the object.      If it does that using the
-          UNTRACK macro, this will crash when the object is already
-          untracked.  Because we don't know what the base class does, the
-          only safe thing is to make sure the object is tracked when we
-          call the base class dealloc.  But...  The trashcan begin macro
-          requires that the object is *untracked* before it is called.  So
-          the dance becomes:
-
-         GC untrack
-         trashcan begin
-         GC track
-
-       Q. Why did the last question say "immediately GC-track again"?
-          It's nowhere near immediately.
-
-       A. Because the code *used* to re-track immediately.      Bad Idea.
-          self has a refcount of 0, and if gc ever gets its hands on it
-          (which can happen if any weakref callback gets invoked), it
-          looks like trash to gc too, and gc also tries to delete self
-          then.  But we're already deleting self.  Double deallocation is
-          a subtle disaster.
-    */
 }
 
 static PyTypeObject *solid_base(PyTypeObject *type);

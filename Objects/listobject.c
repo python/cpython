@@ -331,7 +331,6 @@ static void
 list_dealloc(PyListObject *op)
 {
     Py_ssize_t i;
-    PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
