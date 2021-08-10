@@ -26,16 +26,23 @@ TESTFN = os_helper.TESTFN
 class TestSupport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        support.ignore_deprecations_from(
+        orig_filter_len = len(warnings.filters)
+        cls._warnings_helper_token = support.ignore_deprecations_from(
             "test.support.warnings_helper", like=".*used in test_support.*"
         )
-        support.ignore_deprecations_from(
+        cls._test_support_token = support.ignore_deprecations_from(
             "test.test_support", like=".*You should NOT be seeing this.*"
         )
+        assert len(warnings.filters) == orig_filter_len + 2
 
     @classmethod
     def tearDownClass(cls):
-        support.clear_ignored_deprecations()
+        orig_filter_len = len(warnings.filters)
+        support.clear_ignored_deprecations(
+            cls._warnings_helper_token,
+            cls._test_support_token,
+        )
+        assert len(warnings.filters) == orig_filter_len - 2
 
     def test_ignored_deprecations_are_silent(self):
         """Test support.ignore_deprecations_from() silences warnings"""

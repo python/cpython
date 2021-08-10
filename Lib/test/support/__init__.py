@@ -2055,21 +2055,28 @@ def infinite_recursion(max_depth=75):
     finally:
         sys.setrecursionlimit(original_depth)
 
-def ignore_deprecations_from(module, *, like):
+def ignore_deprecations_from(module: str, *, like: str) -> object:
+    token = object()
     warnings.filterwarnings(
         "ignore",
         category=DeprecationWarning,
         module=module,
-        message=like + r"(?#support)",
+        message=like + fr"(?#support{id(token)})",
     )
+    return token
 
-def clear_ignored_deprecations():
+def clear_ignored_deprecations(*tokens: object) -> None:
+    if not tokens:
+        raise ValueError("Provide token or tokens returned by ignore_deprecations_from")
+
     new_filters = []
     for action, message, category, module, lineno in warnings.filters:
         if action == "ignore" and category is DeprecationWarning:
             if isinstance(message, re.Pattern):
                 message = message.pattern
-            if message.endswith(r"(?#support)"):
+            if tokens:
+                endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
+            if message.endswith(endswith):
                 continue
         new_filters.append((action, message, category, module, lineno))
     if warnings.filters != new_filters:
