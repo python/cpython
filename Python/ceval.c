@@ -1583,6 +1583,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
              }
         }
 
+    DISPATCH();
+
     tracing_dispatch:
     {
         int instr_prev = frame->f_lasti;
