@@ -1170,22 +1170,22 @@ sys.setrecursionlimit
     limit as new_limit: int
     /
 
-Set the maximum depth of the Python interpreter stack to n.
+Set the maximum depth of the Python interpreter stack to limit.
 
 This limit prevents infinite recursion from causing an overflow of the C
 stack and crashing Python.  The highest possible limit is platform-
-dependent.
+dependent. limit must be positive.
 [clinic start generated code]*/
 
 static PyObject *
 sys_setrecursionlimit_impl(PyObject *module, int new_limit)
-/*[clinic end generated code: output=35e1c64754800ace input=b0f7a23393924af3]*/
+/*[clinic end generated code: output=35e1c64754800ace input=52cd3fdb5b8f4fc8]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (new_limit < 1) {
         _PyErr_SetString(tstate, PyExc_ValueError,
-                         "recursion limit must be greater or equal than 1");
+                         "recursion limit must be positive");
         return NULL;
     }
 

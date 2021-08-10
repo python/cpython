@@ -354,11 +354,11 @@ PyDoc_STRVAR(sys_setrecursionlimit__doc__,
 "setrecursionlimit($module, limit, /)\n"
 "--\n"
 "\n"
-"Set the maximum depth of the Python interpreter stack to n.\n"
+"Set the maximum depth of the Python interpreter stack to limit.\n"
 "\n"
 "This limit prevents infinite recursion from causing an overflow of the C\n"
 "stack and crashing Python.  The highest possible limit is platform-\n"
-"dependent.");
+"dependent. limit must be positive.");
 
 #define SYS_SETRECURSIONLIMIT_METHODDEF    \
     {"setrecursionlimit", (PyCFunction)sys_setrecursionlimit, METH_O, sys_setrecursionlimit__doc__},
@@ -992,4 +992,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=855fc93b2347710b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19f52bd1e4d7a963 input=a9049054013a1b77]*/

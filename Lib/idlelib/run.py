@@ -344,8 +344,7 @@ def install_recursionlimit_wrappers():
             raise TypeError(f"setrecursionlimit() takes exactly one "
                             f"argument ({len(args)} given)")
         if not limit > 0:
-            raise ValueError(
-                "recursion limit must be greater or equal than 1")
+            raise ValueError("recursion limit must be positive")
 
         return setrecursionlimit.__wrapped__(limit + RECURSIONLIMIT_DELTA)
 
