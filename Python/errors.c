@@ -148,12 +148,16 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             value = fixed_value;
         }
 
-        /* Avoid reference cycles through the context chain.
+        /* Avoid creating new reference cycles through the
+           context chain, while taking care not to hang on
+           pre-existing ones.
            This is O(chain length) but context chains are
            usually very short. Sensitive readers may try
            to inline the call to PyException_GetContext. */
         if (exc_value != value) {
             PyObject *o = exc_value, *context;
+            PyObject *slow_o = o;  /* Floyd's cycle detection algo */
+            int slow_update_toggle = 0;
             while ((context = PyException_GetContext(o))) {
                 Py_DECREF(context);
                 if (context == value) {
@@ -161,6 +165,16 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
                     break;
                 }
                 o = context;
+                if (o == slow_o) {
+                    /* pre-existing cycle - all exceptions on the
+                       path were visited and checked.  */
+                    break;
+                }
+                if (slow_update_toggle) {
+                    slow_o = PyException_GetContext(slow_o);
+                    Py_DECREF(slow_o);
+                }
+                slow_update_toggle = !slow_update_toggle;
             }
             PyException_SetContext(value, exc_value);
         }
