@@ -30,6 +30,11 @@ typedef struct {
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
+typedef union {
+    _PyAttrCache attr;
+    PyObject *meth;  /* borrowed */
+} _PyLoadMethodCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -45,6 +50,7 @@ typedef union {
     _PyAdaptiveEntry adaptive;
     _PyAttrCache attr;
     _PyLoadGlobalCache load_global;
+    _PyLoadMethodCache load_method;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))

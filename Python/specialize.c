@@ -232,7 +232,7 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
-    [LOAD_METHOD] = 2,
+    [LOAD_METHOD] = 3, /* _PyAdaptiveEntry and 2 _PyLoadMethodCache */
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -793,7 +793,9 @@ int
 _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyAttrCache *cache1 = &cache[-1].attr;
+    _PyLoadMethodCache *cache1 = &cache[-1].load_method;
+    _PyLoadMethodCache *cache2 = &cache[-2].load_method;
+
     PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
         // Mabe TODO: LOAD_METHOD_MODULE
@@ -809,7 +811,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     DesciptorClassification kind = analyze_descriptor(owner_cls, name, &descr, 0);
     if (kind != METHOD || descr == NULL) {
 #if SPECIALIZATION_STATS
-        if (kind == GETATTRIBUTE_OVERRIDDEN &&
+        if (kind == GETSET_OVERRIDDEN &&
             PyObject_TypeCheck(owner, &PyBaseObject_Type)) {
             // Maybe TODO: LOAD_METHOD_CLASS
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD);
@@ -823,11 +825,16 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     int cls_has_dict = (cls_dictptr != NULL &&
                         *cls_dictptr != NULL &&
                         PyDict_CheckExact(*cls_dictptr));
+    if (!cls_has_dict) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NO_DICT);
+        goto fail;
+    }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
-    PyDictObject *cls_dict = cls_has_dict ? (PyDictObject *)*cls_dictptr : NULL;
+    PyDictObject *cls_dict = (PyDictObject *)*cls_dictptr;
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
-    if (Py_TYPE(owner_cls)->tp_dictoffset >= 0 && cls_has_dict &&
+    if (Py_TYPE(owner_cls)->tp_dictoffset >= 0 &&
+        cls_has_dict &&
         owner_cls->tp_dictoffset >= 0) {
         
         // if o.__dict__ changes, the method might be found in o.__dict__
@@ -859,19 +866,10 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             }
         } // else owner is maybe a builtin with no dict, or __slots__
         
-        PyObject *value = NULL;
-        Py_ssize_t hint = _PyDict_GetItemHint(cls_dict, name, -1, &value);
-        if (hint != (uint16_t)hint) {
-            // Happens when the method is inherited. TODO: make this work with inherited
-            // methods.
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        
-        // printf("owner is %p with %ld\n", owner, keys_version);
-        cache0->index = (uint16_t)hint;
-        cache1->dk_version_or_hint = keys_version;
-        cache1->tp_version = owner_cls->tp_version_tag;
+        // Borrowed. Check tp_version_tag before accessing in case it's deleted.
+        cache2->meth = descr;
+        cache1->attr.dk_version_or_hint = keys_version;
+        cache1->attr.tp_version = owner_cls->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
         goto success;
 

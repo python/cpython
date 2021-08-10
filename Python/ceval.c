@@ -4253,16 +4253,17 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
-            PyObject *res;
+            PyObject *res = NULL;
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyAttrCache *cache1 = &caches[-1].attr;
-            
-            assert(cache1->dk_version_or_hint != 0);
-            assert(cache1->tp_version != 0);
+            _PyLoadMethodCache *cache1 = &caches[-1].load_method;
+            _PyLoadMethodCache *cache2 = &caches[-2].load_method;
+
+            assert(cache1->attr.dk_version_or_hint != 0);
+            assert(cache1->attr.tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
-            BACKOFF_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            BACKOFF_IF(self_cls->tp_version_tag != cache1->attr.tp_version, LOAD_METHOD);
             
             PyObject *name = GETITEM(names, cache0->original_oparg);
             // inline version of _PyObject_GetDictPtr for offset >= 0
@@ -4274,19 +4275,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             if (dictptr != NULL && *dictptr != NULL) {
                 dict = (PyDictObject *)*dictptr;
                 assert(PyDict_CheckExact(dict));
-                BACKOFF_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+                BACKOFF_IF(dict->ma_keys->dk_version !=
+                    cache1->attr.dk_version_or_hint, LOAD_METHOD);
             } // don't care if owner has no dict, could be builtin or __slots__
 
-            // look in self_cls.__dict__, avoiding _PyType_Lookup
-            uint32_t hint = cache0->index;
-            dictptr = (PyObject **)((char *)self_cls + Py_TYPE(self_cls)->tp_dictoffset);
-            BACKOFF_IF(dictptr == NULL || *dictptr == NULL, LOAD_METHOD);
-            dict = (PyDictObject *)*dictptr;
-            assert(PyDict_CheckExact(dict));
-            BACKOFF_IF(hint >= dict->ma_keys->dk_nentries, LOAD_METHOD);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-            BACKOFF_IF(ep->me_key != name, LOAD_METHOD);
-            res = ep->me_value;
+            res = cache2->meth;
             BACKOFF_IF(
                 res == NULL ||
                 Py_TYPE(res)->tp_descr_get == NULL ||
