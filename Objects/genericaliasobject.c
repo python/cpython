@@ -18,7 +18,6 @@ ga_dealloc(PyObject *self)
 {
     gaobject *alias = (gaobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
     if (alias->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)alias);
     }

@@ -18,7 +18,6 @@ class property "propertyobject *" "&PyProperty_Type"
 static void
 descr_dealloc(PyDescrObject *descr)
 {
-    _PyObject_GC_UNTRACK(descr);
     Py_XDECREF(descr->d_type);
     Py_XDECREF(descr->d_name);
     Py_XDECREF(descr->d_qualname);
@@ -1154,7 +1153,6 @@ static PyMethodDef mappingproxy_methods[] = {
 static void
 mappingproxy_dealloc(mappingproxyobject *pp)
 {
-    _PyObject_GC_UNTRACK(pp);
     Py_DECREF(pp->mapping);
     PyObject_GC_Del(pp);
 }
@@ -1265,12 +1263,9 @@ typedef struct {
 static void
 wrapper_dealloc(wrapperobject *wp)
 {
-    PyObject_GC_UnTrack(wp);
-    Py_TRASHCAN_BEGIN(wp, wrapper_dealloc)
     Py_XDECREF(wp->descr);
     Py_XDECREF(wp->self);
     PyObject_GC_Del(wp);
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -1577,7 +1572,6 @@ property_dealloc(PyObject *self)
 {
     propertyobject *gs = (propertyobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
     Py_XDECREF(gs->prop_get);
     Py_XDECREF(gs->prop_set);
     Py_XDECREF(gs->prop_del);

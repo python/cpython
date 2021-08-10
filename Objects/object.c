@@ -249,6 +249,10 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     Py_SET_REFCNT(self, refcnt);
 
+    if (_PyType_IS_GC(Py_TYPE(self)) && !_PyObject_GC_IS_TRACKED(self)) {
+        _PyObject_GC_TRACK(self);
+    }
+
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
@@ -2088,7 +2092,29 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-/* Trashcan support. */
+/* Trashcan mechanism, thanks to Christian Tismer.
+
+When deallocating a container object, it's possible to trigger an unbounded
+chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
+next" object in the chain to 0.  This can easily lead to stack overflows,
+especially in threads (which typically have less stack space to work with).
+
+We avoid this by checking the nesting level of _PyTrash_dealloc calls.
+
+How it works:  Entering _PyTrash_dealloc increments a call-depth counter.  So
+long as this counter is small, the dealloc method of the type is run directly
+without further ado.  But if the counter gets large, it instead adds the object
+to a list of objects to be deallocated later and skips calling the deallocator.
+In that case, _PyTrash_dealloc returns without deallocating anything (and so
+unbounded call-stack depth is avoided).
+
+When the call stack finishes unwinding again, the _PyTrash_dealloc function
+notices this, and calls another routine to deallocate all the objects that
+may have been added to the list of deferred deallocations.  In effect, a
+chain of N deallocations is broken into (N-1)/(_PyTrash_UNWIND_LEVEL-1) pieces,
+with the call stack never exceeding a depth of _PyTrash_UNWIND_LEVEL.
+*/
+
 
 #define _PyTrash_UNWIND_LEVEL 50
 
@@ -2101,6 +2127,11 @@ _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
+    /* untrack is done by _PyTrash_dealloc() so the following assert must be
+     * true.  Previously Py_TRASHCAN_BEGIN() did not untrack itself and it was
+     * the responsibility of the users of the trashcan mechanism to ensure that
+     * untrack was called first.
+     */
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
@@ -2146,17 +2177,11 @@ _PyTrash_thread_destroy_chain(void)
     --tstate->trash_delete_nesting;
 }
 
+// FIXME: next three functions are unused, might need for a stable ABI?
 
 int
 _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 {
-    if (tstate->trash_delete_nesting >= _PyTrash_UNWIND_LEVEL) {
-        /* Store the object (to be deallocated later) and jump past
-         * Py_TRASHCAN_END, skipping the body of the deallocator */
-        _PyTrash_thread_deposit_object(op);
-        return 1;
-    }
-    ++tstate->trash_delete_nesting;
     return 0;
 }
 
@@ -2164,21 +2189,37 @@ _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 void
 _PyTrash_end(PyThreadState *tstate)
 {
-    --tstate->trash_delete_nesting;
-    if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
-        _PyTrash_thread_destroy_chain();
-    }
 }
 
-
-/* bpo-40170: It's only be used in Py_TRASHCAN_BEGIN macro to hide
-   implementation details. */
 int
 _PyTrash_cond(PyObject *op, destructor dealloc)
 {
-    return Py_TYPE(op)->tp_dealloc == dealloc;
+    return 0;
 }
 
+static void
+_PyTrash_dealloc(PyObject *op)
+{
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        // The trash list re-uses the GC head pointers and so we must untrack
+        // the object first, if it is tracked.
+        _PyObject_GC_UNTRACK(op);
+    }
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate->trash_delete_nesting >= _PyTrash_UNWIND_LEVEL) {
+        /* Store the object (to be deallocated later) */
+        _PyTrash_thread_deposit_object(op);
+    }
+    else {
+        ++tstate->trash_delete_nesting;
+        destructor dealloc = Py_TYPE(op)->tp_dealloc;
+        (*dealloc)(op);
+        --tstate->trash_delete_nesting;
+        if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
+            _PyTrash_thread_destroy_chain();
+        }
+    }
+}
 
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
@@ -2239,11 +2280,17 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+    PyTypeObject *type = Py_TYPE(op);
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
-    (*dealloc)(op);
+    if (_PyType_IS_GC(type)) {
+        _PyTrash_dealloc(op);
+    }
+    else {
+        destructor dealloc = type->tp_dealloc;
+        (*dealloc)(op);
+    }
 }
 
 

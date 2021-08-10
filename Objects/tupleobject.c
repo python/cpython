@@ -263,8 +263,6 @@ static void
 tupledealloc(PyTupleObject *op)
 {
     Py_ssize_t len =  Py_SIZE(op);
-    PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, tupledealloc)
     if (len > 0) {
         Py_ssize_t i = len;
         while (--i >= 0) {
@@ -283,16 +281,11 @@ tupledealloc(PyTupleObject *op)
             op->ob_item[0] = (PyObject *) state->free_list[len];
             state->numfree[len]++;
             state->free_list[len] = op;
-            goto done; /* return */
+            return;
         }
 #endif
     }
     Py_TYPE(op)->tp_free((PyObject *)op);
-
-#if PyTuple_MAXSAVESIZE > 0
-done:
-#endif
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -1067,7 +1060,6 @@ typedef struct {
 static void
 tupleiter_dealloc(tupleiterobject *it)
 {
-    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }

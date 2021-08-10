@@ -527,7 +527,6 @@ fileio_dealloc(fileio *self)
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
-    _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_CLEAR(self->dict);

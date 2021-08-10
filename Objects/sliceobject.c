@@ -331,7 +331,6 @@ static void
 slice_dealloc(PySliceObject *r)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyObject_GC_UNTRACK(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);

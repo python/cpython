@@ -1431,7 +1431,6 @@ textiowrapper_dealloc(textio *self)
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     self->ok = 0;
-    _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     textiowrapper_clear(self);

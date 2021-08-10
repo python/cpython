@@ -234,7 +234,6 @@ method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 static void
 method_dealloc(PyMethodObject *im)
 {
-    _PyObject_GC_UNTRACK(im);
     if (im->im_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)im);
     Py_DECREF(im->im_func);
@@ -448,7 +447,6 @@ instancemethod_getattro(PyObject *self, PyObject *name)
 
 static void
 instancemethod_dealloc(PyObject *self) {
-    _PyObject_GC_UNTRACK(self);
     Py_DECREF(PyInstanceMethod_GET_FUNCTION(self));
     PyObject_GC_Del(self);
 }

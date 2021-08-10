@@ -89,7 +89,6 @@ BaseException_clear(PyBaseExceptionObject *self)
 static void
 BaseException_dealloc(PyBaseExceptionObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     BaseException_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -535,7 +534,6 @@ StopIteration_clear(PyStopIterationObject *self)
 static void
 StopIteration_dealloc(PyStopIterationObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     StopIteration_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -602,7 +600,6 @@ SystemExit_clear(PySystemExitObject *self)
 static void
 SystemExit_dealloc(PySystemExitObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     SystemExit_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -684,7 +681,6 @@ ImportError_clear(PyImportErrorObject *self)
 static void
 ImportError_dealloc(PyImportErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     ImportError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1087,7 +1083,6 @@ OSError_clear(PyOSErrorObject *self)
 static void
 OSError_dealloc(PyOSErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     OSError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1364,7 +1359,6 @@ NameError_clear(PyNameErrorObject *self)
 static void
 NameError_dealloc(PyNameErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     NameError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1443,7 +1437,6 @@ AttributeError_clear(PyAttributeErrorObject *self)
 static void
 AttributeError_dealloc(PyAttributeErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     AttributeError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1538,7 +1531,6 @@ SyntaxError_clear(PySyntaxErrorObject *self)
 static void
 SyntaxError_dealloc(PySyntaxErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     SyntaxError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -1988,7 +1980,6 @@ UnicodeError_clear(PyUnicodeErrorObject *self)
 static void
 UnicodeError_dealloc(PyUnicodeErrorObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     UnicodeError_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -2428,8 +2419,6 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
         Py_TYPE(self)->tp_free((PyObject *)self);
         return;
     }
-
-    _PyObject_GC_UNTRACK(self);
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {

@@ -1928,9 +1928,6 @@ dict_dealloc(PyDictObject *mp)
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
 
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values != empty_values) {
             for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
@@ -1955,7 +1952,6 @@ dict_dealloc(PyDictObject *mp)
     else {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
-    Py_TRASHCAN_END
 }
 
 
@@ -3570,8 +3566,6 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 static void
 dictiter_dealloc(dictiterobject *di)
 {
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_dict);
     Py_XDECREF(di->di_result);
     PyObject_GC_Del(di);
@@ -4066,8 +4060,6 @@ PyTypeObject PyDictRevIterValue_Type = {
 static void
 dictview_dealloc(_PyDictViewObject *dv)
 {
-    /* bpo-31095: UnTrack is needed before calling any callbacks */
-    _PyObject_GC_UNTRACK(dv);
     Py_XDECREF(dv->dv_dict);
     PyObject_GC_Del(dv);
 }

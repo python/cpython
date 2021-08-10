@@ -121,7 +121,7 @@ mbuf_release(_PyManagedBufferObject *self)
     self->flags |= _Py_MANAGED_BUFFER_RELEASED;
 
     /* PyBuffer_Release() decrements master->obj and sets it to NULL. */
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     PyBuffer_Release(&self->master);
 }
 
@@ -1077,7 +1077,6 @@ static void
 memory_dealloc(PyMemoryViewObject *self)
 {
     assert(self->exports == 0);
-    _PyObject_GC_UNTRACK(self);
     (void)_memory_release(self);
     Py_CLEAR(self->mbuf);
     if (self->weakreflist != NULL)
@@ -3177,7 +3176,6 @@ typedef struct {
 static void
 memoryiter_dealloc(memoryiterobject *it)
 {
-    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }

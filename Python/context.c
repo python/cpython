@@ -462,8 +462,6 @@ context_tp_traverse(PyContext *self, visitproc visit, void *arg)
 static void
 context_tp_dealloc(PyContext *self)
 {
-    _PyObject_GC_UNTRACK(self);
-
     if (self->ctx_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
     }

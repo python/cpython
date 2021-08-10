@@ -2371,7 +2371,6 @@ typedef struct {
 static void
 bytearrayiter_dealloc(bytesiterobject *it)
 {
-    _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }

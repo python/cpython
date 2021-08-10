@@ -383,7 +383,6 @@ buffered_dealloc(buffered *self)
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
-    _PyObject_GC_UNTRACK(self);
     self->ok = 0;
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
@@ -2144,7 +2143,6 @@ bufferedrwpair_clear(rwpair *self)
 static void
 bufferedrwpair_dealloc(rwpair *self)
 {
-    _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->reader);

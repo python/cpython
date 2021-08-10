@@ -1365,17 +1365,12 @@ static PyGetSetDef odict_getset[] = {
 static void
 odict_dealloc(PyODictObject *self)
 {
-    PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, odict_dealloc)
-
     Py_XDECREF(self->od_inst_dict);
     if (self->od_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
 
     _odict_clear_nodes(self);
     PyDict_Type.tp_dealloc((PyObject *)self);
-
-    Py_TRASHCAN_END
 }
 
 /* tp_repr */
@@ -1663,7 +1658,6 @@ typedef struct {
 static void
 odictiter_dealloc(odictiterobject *di)
 {
-    _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_odict);
     Py_XDECREF(di->di_current);
     if (di->kind & (_odict_ITER_KEYS | _odict_ITER_VALUES)) {
