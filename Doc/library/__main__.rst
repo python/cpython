@@ -77,7 +77,7 @@ functions will be defined, but neither of them will be called, because
 
 
 Packaging Considerations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 For detailed documentation on Python packaging, see the
 `Python Packaging User Guide. <https://packaging.python.org/>`_
