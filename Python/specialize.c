@@ -870,18 +870,19 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         } // else owner is maybe a builtin with no dict, or __slots__
         
         /* `descr` is borrowed. Just check tp_version_tag before accessing in case
-        *  it's deleted.  This is safe for methods as long as tp_version_tag is
-        *  validated for two main reasons:
+        *  it's deleted.  This is safe for methods (even inherited ones from super
+        *  classes!) as long as tp_version_tag is validated for two main reasons:
         * 
         *  1. The class will always hold a reference to the method so it will
         *  usually not be GC-ed. Should it be deleted in Python, e.g.
         *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
         * 
-        * 2. The pre-existing type method cache (MCACHE) uses the same principles
-        * of caching a borrowed descriptor. It does all the heavy lifting for us.
-        * E.g. it invalidates on every MRO modification, on every type object
-        * change, etc. (see PyType_Modified usages in typeobject.c).  The type method
-        * cache has been working since Python 2.6 and it's battle tested.
+        *  2. The pre-existing type method cache (MCACHE) uses the same principles
+        *  of caching a borrowed descriptor. It does all the heavy lifting for us.
+        *  E.g. it invalidates on any MRO modification, on any type object
+        *  change along said MRO, etc. (see PyType_Modified usages in typeobject.c).
+        *  The type method cache has been working since Python 2.6 and it's
+        *  battle-tested.
         */
         cache2->obj = descr;
         cache1->dk_version_or_hint = keys_version;
