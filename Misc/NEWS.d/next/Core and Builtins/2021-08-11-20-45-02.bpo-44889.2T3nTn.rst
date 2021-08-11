@@ -1,0 +1,2 @@
+Initial implementation of adaptive specialization of ``LOAD_METHOD``. One
+specialized form ``LOAD_METHOD_CACHED`` added.
