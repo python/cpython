@@ -1230,14 +1230,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#define TARGET(op) op: TARGET_##op
+#define TARGET(op) TARGET_##op
 #define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#define TARGET(op) op
+#define TARGET(op) case op
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
-
+/* RECORD_DXPROFILE()  records the dxprofile information, if enabled. Normally a no-op */
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
 #define RECORD_DXPROFILE() \
@@ -1256,8 +1256,15 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define RECORD_DXPROFILE() ((void)0)
 #endif
 
-/* Do lltrace and dxprofile if enabled. Normally a no-op */
+/* PRE_DISPATCH_GOTO() does lltrace and dxprofile if either is enabled. Normally a no-op */
+#ifndef LLTRACE
+#ifndef DYNAMIC_EXECUTION_PROFILE
+#define PRE_DISPATCH_GOTO() ((void)0)
+#endif
+#endif
+#ifndef PRE_DISPATCH_GOTO
 #define PRE_DISPATCH_GOTO() do { LLTRACE_INSTR();  RECORD_DXPROFILE(); } while (0)
+#endif
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
@@ -1653,20 +1660,25 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         DISPATCH_GOTO();
     }
 
+    /* Start instructions */
+#if USE_COMPUTED_GOTOS
+    {
+#else
     dispatch_opcode:
         switch (opcode) {
+#endif
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
            and that all operation that succeed call DISPATCH() ! */
 
-        case TARGET(NOP): {
+        TARGET(NOP): {
             DISPATCH();
         }
 
         /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-        case TARGET(LOAD_CLOSURE):
-        case TARGET(LOAD_FAST): {
+        TARGET(LOAD_CLOSURE):
+        TARGET(LOAD_FAST): {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 format_exc_check_arg(tstate, PyExc_UnboundLocalError,
@@ -1680,7 +1692,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_CONST): {
+        TARGET(LOAD_CONST): {
             PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -1688,20 +1700,20 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_FAST): {
+        TARGET(STORE_FAST): {
             PREDICTED(STORE_FAST);
             PyObject *value = POP();
             SETLOCAL(oparg, value);
             DISPATCH();
         }
 
-        case TARGET(POP_TOP): {
+        TARGET(POP_TOP): {
             PyObject *value = POP();
             Py_DECREF(value);
             DISPATCH();
         }
 
-        case TARGET(ROT_TWO): {
+        TARGET(ROT_TWO): {
             PyObject *top = TOP();
             PyObject *second = SECOND();
             SET_TOP(second);
@@ -1709,7 +1721,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(ROT_THREE): {
+        TARGET(ROT_THREE): {
             PyObject *top = TOP();
             PyObject *second = SECOND();
             PyObject *third = THIRD();
@@ -1719,7 +1731,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(ROT_FOUR): {
+        TARGET(ROT_FOUR): {
             PyObject *top = TOP();
             PyObject *second = SECOND();
             PyObject *third = THIRD();
@@ -1731,14 +1743,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DUP_TOP): {
+        TARGET(DUP_TOP): {
             PyObject *top = TOP();
             Py_INCREF(top);
             PUSH(top);
             DISPATCH();
         }
 
-        case TARGET(DUP_TOP_TWO): {
+        TARGET(DUP_TOP_TWO): {
             PyObject *top = TOP();
             PyObject *second = SECOND();
             Py_INCREF(top);
@@ -1749,7 +1761,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(UNARY_POSITIVE): {
+        TARGET(UNARY_POSITIVE): {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
             Py_DECREF(value);
@@ -1759,7 +1771,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(UNARY_NEGATIVE): {
+        TARGET(UNARY_NEGATIVE): {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Negative(value);
             Py_DECREF(value);
@@ -1769,7 +1781,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(UNARY_NOT): {
+        TARGET(UNARY_NOT): {
             PyObject *value = TOP();
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
@@ -1787,7 +1799,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto error;
         }
 
-        case TARGET(UNARY_INVERT): {
+        TARGET(UNARY_INVERT): {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Invert(value);
             Py_DECREF(value);
@@ -1797,7 +1809,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_POWER): {
+        TARGET(BINARY_POWER): {
             PyObject *exp = POP();
             PyObject *base = TOP();
             PyObject *res = PyNumber_Power(base, exp, Py_None);
@@ -1809,7 +1821,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_MULTIPLY): {
+        TARGET(BINARY_MULTIPLY): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Multiply(left, right);
@@ -1821,7 +1833,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_MATRIX_MULTIPLY): {
+        TARGET(BINARY_MATRIX_MULTIPLY): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_MatrixMultiply(left, right);
@@ -1833,7 +1845,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_TRUE_DIVIDE): {
+        TARGET(BINARY_TRUE_DIVIDE): {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_TrueDivide(dividend, divisor);
@@ -1845,7 +1857,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_FLOOR_DIVIDE): {
+        TARGET(BINARY_FLOOR_DIVIDE): {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_FloorDivide(dividend, divisor);
@@ -1857,7 +1869,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_MODULO): {
+        TARGET(BINARY_MODULO): {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *res;
@@ -1877,7 +1889,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_ADD): {
+        TARGET(BINARY_ADD): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
@@ -1903,7 +1915,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_SUBTRACT): {
+        TARGET(BINARY_SUBTRACT): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_Subtract(left, right);
@@ -1915,7 +1927,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_SUBSCR): {
+        TARGET(BINARY_SUBSCR): {
             PREDICTED(BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, unquickened);
             PyObject *sub = POP();
@@ -1929,7 +1941,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_SUBSCR_ADAPTIVE): {
+        TARGET(BINARY_SUBSCR_ADAPTIVE): {
             if (oparg == 0) {
                 PyObject *sub = TOP();
                 PyObject *container = SECOND();
@@ -1950,7 +1962,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }
         }
 
-        case TARGET(BINARY_SUBSCR_LIST_INT): {
+        TARGET(BINARY_SUBSCR_LIST_INT): {
             PyObject *sub = TOP();
             PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -1974,7 +1986,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_SUBSCR_TUPLE_INT): {
+        TARGET(BINARY_SUBSCR_TUPLE_INT): {
             PyObject *sub = TOP();
             PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -1998,7 +2010,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_SUBSCR_DICT): {
+        TARGET(BINARY_SUBSCR_DICT): {
             PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -2015,7 +2027,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_LSHIFT): {
+        TARGET(BINARY_LSHIFT): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Lshift(left, right);
@@ -2027,7 +2039,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_RSHIFT): {
+        TARGET(BINARY_RSHIFT): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Rshift(left, right);
@@ -2039,7 +2051,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_AND): {
+        TARGET(BINARY_AND): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_And(left, right);
@@ -2051,7 +2063,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_XOR): {
+        TARGET(BINARY_XOR): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Xor(left, right);
@@ -2063,7 +2075,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BINARY_OR): {
+        TARGET(BINARY_OR): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Or(left, right);
@@ -2075,7 +2087,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LIST_APPEND): {
+        TARGET(LIST_APPEND): {
             PyObject *v = POP();
             PyObject *list = PEEK(oparg);
             int err;
@@ -2087,7 +2099,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(SET_ADD): {
+        TARGET(SET_ADD): {
             PyObject *v = POP();
             PyObject *set = PEEK(oparg);
             int err;
@@ -2099,7 +2111,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_POWER): {
+        TARGET(INPLACE_POWER): {
             PyObject *exp = POP();
             PyObject *base = TOP();
             PyObject *res = PyNumber_InPlacePower(base, exp, Py_None);
@@ -2111,7 +2123,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_MULTIPLY): {
+        TARGET(INPLACE_MULTIPLY): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceMultiply(left, right);
@@ -2123,7 +2135,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_MATRIX_MULTIPLY): {
+        TARGET(INPLACE_MATRIX_MULTIPLY): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceMatrixMultiply(left, right);
@@ -2135,7 +2147,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_TRUE_DIVIDE): {
+        TARGET(INPLACE_TRUE_DIVIDE): {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_InPlaceTrueDivide(dividend, divisor);
@@ -2147,7 +2159,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_FLOOR_DIVIDE): {
+        TARGET(INPLACE_FLOOR_DIVIDE): {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_InPlaceFloorDivide(dividend, divisor);
@@ -2159,7 +2171,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_MODULO): {
+        TARGET(INPLACE_MODULO): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *mod = PyNumber_InPlaceRemainder(left, right);
@@ -2171,7 +2183,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_ADD): {
+        TARGET(INPLACE_ADD): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
@@ -2190,7 +2202,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_SUBTRACT): {
+        TARGET(INPLACE_SUBTRACT): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_InPlaceSubtract(left, right);
@@ -2202,7 +2214,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_LSHIFT): {
+        TARGET(INPLACE_LSHIFT): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceLshift(left, right);
@@ -2214,7 +2226,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_RSHIFT): {
+        TARGET(INPLACE_RSHIFT): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceRshift(left, right);
@@ -2226,7 +2238,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_AND): {
+        TARGET(INPLACE_AND): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceAnd(left, right);
@@ -2238,7 +2250,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_XOR): {
+        TARGET(INPLACE_XOR): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceXor(left, right);
@@ -2250,7 +2262,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(INPLACE_OR): {
+        TARGET(INPLACE_OR): {
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceOr(left, right);
@@ -2262,7 +2274,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_SUBSCR): {
+        TARGET(STORE_SUBSCR): {
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -2278,7 +2290,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DELETE_SUBSCR): {
+        TARGET(DELETE_SUBSCR): {
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             int err;
@@ -2292,7 +2304,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(PRINT_EXPR): {
+        TARGET(PRINT_EXPR): {
             _Py_IDENTIFIER(displayhook);
             PyObject *value = POP();
             PyObject *hook = _PySys_GetObjectId(&PyId_displayhook);
@@ -2311,7 +2323,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(RAISE_VARARGS): {
+        TARGET(RAISE_VARARGS): {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -2333,7 +2345,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto error;
         }
 
-        case TARGET(RETURN_VALUE): {
+        TARGET(RETURN_VALUE): {
             retval = POP();
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
@@ -2341,7 +2353,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto exiting;
         }
 
-        case TARGET(GET_AITER): {
+        TARGET(GET_AITER): {
             unaryfunc getter = NULL;
             PyObject *iter = NULL;
             PyObject *obj = TOP();
@@ -2385,7 +2397,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(GET_ANEXT): {
+        TARGET(GET_ANEXT): {
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
@@ -2436,7 +2448,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(GET_AWAITABLE): {
+        TARGET(GET_AWAITABLE): {
             PREDICTED(GET_AWAITABLE);
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
@@ -2477,7 +2489,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(YIELD_FROM): {
+        TARGET(YIELD_FROM): {
             PyObject *v = POP();
             PyObject *receiver = TOP();
             PySendResult gen_status;
@@ -2529,7 +2541,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto exiting;
         }
 
-        case TARGET(YIELD_VALUE): {
+        TARGET(YIELD_VALUE): {
             retval = POP();
 
             if (co->co_flags & CO_ASYNC_GENERATOR) {
@@ -2546,7 +2558,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto exiting;
         }
 
-        case TARGET(GEN_START): {
+        TARGET(GEN_START): {
             PyObject *none = POP();
             Py_DECREF(none);
             if (!Py_IsNone(none)) {
@@ -2570,7 +2582,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(POP_EXCEPT): {
+        TARGET(POP_EXCEPT): {
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
             exc_info = tstate->exc_info;
@@ -2586,7 +2598,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(POP_EXCEPT_AND_RERAISE): {
+        TARGET(POP_EXCEPT_AND_RERAISE): {
             PyObject *lasti = PEEK(4);
             if (PyLong_Check(lasti)) {
                 frame->f_lasti = PyLong_AsLong(lasti);
@@ -2616,7 +2628,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto exception_unwind;
         }
 
-        case TARGET(RERAISE): {
+        TARGET(RERAISE): {
             if (oparg) {
                 PyObject *lasti = PEEK(oparg+3);
                 if (PyLong_Check(lasti)) {
@@ -2637,7 +2649,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto exception_unwind;
         }
 
-        case TARGET(END_ASYNC_FOR): {
+        TARGET(END_ASYNC_FOR): {
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
@@ -2655,14 +2667,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }
         }
 
-        case TARGET(LOAD_ASSERTION_ERROR): {
+        TARGET(LOAD_ASSERTION_ERROR): {
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
             DISPATCH();
         }
 
-        case TARGET(LOAD_BUILD_CLASS): {
+        TARGET(LOAD_BUILD_CLASS): {
             _Py_IDENTIFIER(__build_class__);
 
             PyObject *bc;
@@ -2693,7 +2705,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_NAME): {
+        TARGET(STORE_NAME): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             PyObject *ns = LOCALS();
@@ -2714,7 +2726,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DELETE_NAME): {
+        TARGET(DELETE_NAME): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -2733,7 +2745,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(UNPACK_SEQUENCE): {
+        TARGET(UNPACK_SEQUENCE): {
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP(), *item, **items;
             if (PyTuple_CheckExact(seq) &&
@@ -2764,7 +2776,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(UNPACK_EX): {
+        TARGET(UNPACK_EX): {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject *seq = POP();
 
@@ -2779,7 +2791,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_ATTR): {
+        TARGET(STORE_ATTR): {
             PREDICTED(STORE_ATTR);
             STAT_INC(STORE_ATTR, unquickened);
             PyObject *name = GETITEM(names, oparg);
@@ -2795,7 +2807,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DELETE_ATTR): {
+        TARGET(DELETE_ATTR): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = POP();
             int err;
@@ -2806,7 +2818,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_GLOBAL): {
+        TARGET(STORE_GLOBAL): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             int err;
@@ -2817,7 +2829,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DELETE_GLOBAL): {
+        TARGET(DELETE_GLOBAL): {
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
@@ -2831,7 +2843,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_NAME): {
+        TARGET(LOAD_NAME): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = LOCALS();
             PyObject *v;
@@ -2895,7 +2907,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_GLOBAL): {
+        TARGET(LOAD_GLOBAL): {
             PREDICTED(LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, unquickened);
             PyObject *name = GETITEM(names, oparg);
@@ -2945,7 +2957,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_GLOBAL_ADAPTIVE): {
+        TARGET(LOAD_GLOBAL_ADAPTIVE): {
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
@@ -2965,7 +2977,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }
         }
 
-        case TARGET(LOAD_GLOBAL_MODULE): {
+        TARGET(LOAD_GLOBAL_MODULE): {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -2983,7 +2995,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_GLOBAL_BUILTIN): {
+        TARGET(LOAD_GLOBAL_BUILTIN): {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
@@ -3004,7 +3016,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DELETE_FAST): {
+        TARGET(DELETE_FAST): {
             PyObject *v = GETLOCAL(oparg);
             if (v != NULL) {
                 SETLOCAL(oparg, NULL);
@@ -3018,7 +3030,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto error;
         }
 
-        case TARGET(MAKE_CELL): {
+        TARGET(MAKE_CELL): {
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
@@ -3030,7 +3042,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DELETE_DEREF): {
+        TARGET(DELETE_DEREF): {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             if (oldobj != NULL) {
@@ -3042,7 +3054,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             goto error;
         }
 
-        case TARGET(LOAD_CLASSDEREF): {
+        TARGET(LOAD_CLASSDEREF): {
             PyObject *name, *value, *locals = LOCALS();
             assert(locals);
             assert(oparg >= 0 && oparg < co->co_nlocalsplus);
@@ -3078,7 +3090,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_DEREF): {
+        TARGET(LOAD_DEREF): {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
@@ -3090,7 +3102,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_DEREF): {
+        TARGET(STORE_DEREF): {
             PyObject *v = POP();
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
@@ -3099,7 +3111,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_STRING): {
+        TARGET(BUILD_STRING): {
             PyObject *str;
             PyObject *empty = PyUnicode_New(0, 0);
             if (empty == NULL) {
@@ -3117,7 +3129,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_TUPLE): {
+        TARGET(BUILD_TUPLE): {
             PyObject *tup = PyTuple_New(oparg);
             if (tup == NULL)
                 goto error;
@@ -3129,7 +3141,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_LIST): {
+        TARGET(BUILD_LIST): {
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)
                 goto error;
@@ -3141,7 +3153,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LIST_TO_TUPLE): {
+        TARGET(LIST_TO_TUPLE): {
             PyObject *list = POP();
             PyObject *tuple = PyList_AsTuple(list);
             Py_DECREF(list);
@@ -3152,7 +3164,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LIST_EXTEND): {
+        TARGET(LIST_EXTEND): {
             PyObject *iterable = POP();
             PyObject *list = PEEK(oparg);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
@@ -3173,7 +3185,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(SET_UPDATE): {
+        TARGET(SET_UPDATE): {
             PyObject *iterable = POP();
             PyObject *set = PEEK(oparg);
             int err = _PySet_Update(set, iterable);
@@ -3184,7 +3196,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_SET): {
+        TARGET(BUILD_SET): {
             PyObject *set = PySet_New(NULL);
             int err = 0;
             int i;
@@ -3205,7 +3217,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_MAP): {
+        TARGET(BUILD_MAP): {
             Py_ssize_t i;
             PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
             if (map == NULL)
@@ -3229,7 +3241,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(SETUP_ANNOTATIONS): {
+        TARGET(SETUP_ANNOTATIONS): {
             _Py_IDENTIFIER(__annotations__);
             int err;
             PyObject *ann_dict;
@@ -3288,7 +3300,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_CONST_KEY_MAP): {
+        TARGET(BUILD_CONST_KEY_MAP): {
             Py_ssize_t i;
             PyObject *map;
             PyObject *keys = TOP();
@@ -3321,7 +3333,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DICT_UPDATE): {
+        TARGET(DICT_UPDATE): {
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
             if (PyDict_Update(dict, update) < 0) {
@@ -3337,7 +3349,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(DICT_MERGE): {
+        TARGET(DICT_MERGE): {
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
 
@@ -3351,7 +3363,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(MAP_ADD): {
+        TARGET(MAP_ADD): {
             PyObject *value = TOP();
             PyObject *key = SECOND();
             PyObject *map;
@@ -3368,7 +3380,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_ATTR): {
+        TARGET(LOAD_ATTR): {
             PREDICTED(LOAD_ATTR);
             STAT_INC(LOAD_ATTR, unquickened);
             PyObject *name = GETITEM(names, oparg);
@@ -3382,7 +3394,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_ATTR_ADAPTIVE): {
+        TARGET(LOAD_ATTR_ADAPTIVE): {
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
@@ -3403,7 +3415,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }
         }
 
-        case TARGET(LOAD_ATTR_SPLIT_KEYS): {
+        TARGET(LOAD_ATTR_SPLIT_KEYS): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3428,7 +3440,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_ATTR_MODULE): {
+        TARGET(LOAD_ATTR_MODULE): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3452,7 +3464,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_ATTR_WITH_HINT): {
+        TARGET(LOAD_ATTR_WITH_HINT): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3481,7 +3493,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_ATTR_SLOT): {
+        TARGET(LOAD_ATTR_SLOT): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3502,7 +3514,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_ATTR_ADAPTIVE): {
+        TARGET(STORE_ATTR_ADAPTIVE): {
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
@@ -3523,7 +3535,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }
         }
 
-        case TARGET(STORE_ATTR_SPLIT_KEYS): {
+        TARGET(STORE_ATTR_SPLIT_KEYS): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3561,7 +3573,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_ATTR_WITH_HINT): {
+        TARGET(STORE_ATTR_WITH_HINT): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3597,7 +3609,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(STORE_ATTR_SLOT): {
+        TARGET(STORE_ATTR_SLOT): {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3618,7 +3630,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(COMPARE_OP): {
+        TARGET(COMPARE_OP): {
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -3633,7 +3645,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(IS_OP): {
+        TARGET(IS_OP): {
             PyObject *right = POP();
             PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
@@ -3647,7 +3659,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(CONTAINS_OP): {
+        TARGET(CONTAINS_OP): {
             PyObject *right = POP();
             PyObject *left = POP();
             int res = PySequence_Contains(right, left);
@@ -3667,7 +3679,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
                          "BaseException is not allowed"
 
-        case TARGET(JUMP_IF_NOT_EXC_MATCH): {
+        TARGET(JUMP_IF_NOT_EXC_MATCH): {
             PyObject *right = POP();
             PyObject *left = POP();
             if (PyTuple_Check(right)) {
@@ -3708,7 +3720,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(IMPORT_NAME): {
+        TARGET(IMPORT_NAME): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *fromlist = POP();
             PyObject *level = TOP();
@@ -3722,7 +3734,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(IMPORT_STAR): {
+        TARGET(IMPORT_STAR): {
             PyObject *from = POP(), *locals;
             int err;
             if (_PyFrame_FastToLocalsWithError(frame) < 0) {
@@ -3745,7 +3757,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(IMPORT_FROM): {
+        TARGET(IMPORT_FROM): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *from = TOP();
             PyObject *res;
@@ -3756,12 +3768,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(JUMP_FORWARD): {
+        TARGET(JUMP_FORWARD): {
             JUMPBY(oparg);
             DISPATCH();
         }
 
-        case TARGET(POP_JUMP_IF_FALSE): {
+        TARGET(POP_JUMP_IF_FALSE): {
             PREDICTED(POP_JUMP_IF_FALSE);
             PyObject *cond = POP();
             int err;
@@ -3788,7 +3800,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(POP_JUMP_IF_TRUE): {
+        TARGET(POP_JUMP_IF_TRUE): {
             PREDICTED(POP_JUMP_IF_TRUE);
             PyObject *cond = POP();
             int err;
@@ -3815,7 +3827,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(JUMP_IF_FALSE_OR_POP): {
+        TARGET(JUMP_IF_FALSE_OR_POP): {
             PyObject *cond = TOP();
             int err;
             if (Py_IsTrue(cond)) {
@@ -3839,7 +3851,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(JUMP_IF_TRUE_OR_POP): {
+        TARGET(JUMP_IF_TRUE_OR_POP): {
             PyObject *cond = TOP();
             int err;
             if (Py_IsFalse(cond)) {
@@ -3864,7 +3876,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(JUMP_ABSOLUTE): {
+        TARGET(JUMP_ABSOLUTE): {
             PREDICTED(JUMP_ABSOLUTE);
             if (oparg < INSTR_OFFSET()) {
                 /* Increment the warmup counter and quicken if warm enough
@@ -3886,13 +3898,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(JUMP_ABSOLUTE_QUICK): {
+        TARGET(JUMP_ABSOLUTE_QUICK): {
             JUMPTO(oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
-        case TARGET(GET_LEN): {
+        TARGET(GET_LEN): {
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(TOP());
             if (len_i < 0) {
@@ -3906,7 +3918,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(MATCH_CLASS): {
+        TARGET(MATCH_CLASS): {
             // Pop TOS. On success, set TOS to True and TOS1 to a tuple of
             // attributes. On failure, set TOS to False.
             PyObject *names = POP();
@@ -3929,7 +3941,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(MATCH_MAPPING): {
+        TARGET(MATCH_MAPPING): {
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             PyObject *res = match ? Py_True : Py_False;
@@ -3938,7 +3950,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(MATCH_SEQUENCE): {
+        TARGET(MATCH_SEQUENCE): {
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             PyObject *res = match ? Py_True : Py_False;
@@ -3947,7 +3959,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(MATCH_KEYS): {
+        TARGET(MATCH_KEYS): {
             // On successful match for all keys, PUSH(values) and PUSH(True).
             // Otherwise, PUSH(None) and PUSH(False).
             PyObject *keys = TOP();
@@ -3968,7 +3980,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(COPY_DICT_WITHOUT_KEYS): {
+        TARGET(COPY_DICT_WITHOUT_KEYS): {
             // rest = dict(TOS1)
             // for key in TOS:
             //     del rest[key]
@@ -3994,7 +4006,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(GET_ITER): {
+        TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter = PyObject_GetIter(iterable);
@@ -4007,7 +4019,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(GET_YIELD_FROM_ITER): {
+        TARGET(GET_YIELD_FROM_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter;
@@ -4036,7 +4048,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(FOR_ITER): {
+        TARGET(FOR_ITER): {
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
@@ -4063,7 +4075,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BEFORE_ASYNC_WITH): {
+        TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
             PyObject *mgr = TOP();
@@ -4101,7 +4113,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BEFORE_WITH): {
+        TARGET(BEFORE_WITH): {
             _Py_IDENTIFIER(__enter__);
             _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
@@ -4139,7 +4151,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(WITH_EXCEPT_START): {
+        TARGET(WITH_EXCEPT_START): {
             /* At the top of the stack are 8 values:
                - (TOP, SECOND, THIRD) = exc_info()
                - (FOURTH, FIFTH, SIXTH) = previous exception
@@ -4169,7 +4181,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(PUSH_EXC_INFO): {
+        TARGET(PUSH_EXC_INFO): {
             PyObject *type = TOP();
             PyObject *value = SECOND();
             PyObject *tb = THIRD();
@@ -4200,7 +4212,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_METHOD): {
+        TARGET(LOAD_METHOD): {
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
@@ -4237,7 +4249,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(CALL_METHOD): {
+        TARGET(CALL_METHOD): {
             /* Designed to work in tamdem with LOAD_METHOD. */
             PyObject **sp, *res;
             int meth_found;
@@ -4280,7 +4292,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
-        case TARGET(CALL_METHOD_KW): {
+        TARGET(CALL_METHOD_KW): {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
             PyObject **sp, *res;
@@ -4303,7 +4315,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
-        case TARGET(CALL_FUNCTION): {
+        TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
             sp = stack_pointer;
@@ -4317,7 +4329,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(CALL_FUNCTION_KW): {
+        TARGET(CALL_FUNCTION_KW): {
             PyObject **sp, *res, *names;
 
             names = POP();
@@ -4337,7 +4349,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(CALL_FUNCTION_EX): {
+        TARGET(CALL_FUNCTION_EX): {
             PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
@@ -4384,7 +4396,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(MAKE_FUNCTION): {
+        TARGET(MAKE_FUNCTION): {
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
@@ -4415,7 +4427,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(BUILD_SLICE): {
+        TARGET(BUILD_SLICE): {
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)
                 step = POP();
@@ -4433,7 +4445,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(FORMAT_VALUE): {
+        TARGET(FORMAT_VALUE): {
             /* Handles f-string value formatting. */
             PyObject *result;
             PyObject *fmt_spec;
@@ -4493,7 +4505,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(ROT_N): {
+        TARGET(ROT_N): {
             PyObject *top = TOP();
             memmove(&PEEK(oparg - 1), &PEEK(oparg),
                     sizeof(PyObject*) * (oparg - 1));
@@ -4501,7 +4513,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(EXTENDED_ARG): {
+        TARGET(EXTENDED_ARG): {
             int oldoparg = oparg;
             NEXTOPARG();
             oparg |= oldoparg << 8;
@@ -4512,8 +4524,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
-#endif
+#else
         default:
+#endif
             fprintf(stderr,
                 "XXX lineno: %d, opcode: %d\n",
                 PyCode_Addr2Line(frame->f_code, frame->f_lasti*2),
@@ -4521,7 +4534,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
             goto error;
 
-        } /* switch */
+        } /* End instructions */
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
