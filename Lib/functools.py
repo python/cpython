@@ -970,10 +970,8 @@ class cached_property:
         # allow the reentrant thread to proceed rather than waiting.
         key = id(self)
         this_thread = get_ident()
-        reentrant = False
         with self.updater_lock:
-            if self.updater.get(key) == this_thread:
-                reentrant = True
+            reentrant = self.updater.get(key) == this_thread
             wait = self.updater.setdefault(key, this_thread) != this_thread
 
         # Only if this particular instance is currently being updated, block and wait
