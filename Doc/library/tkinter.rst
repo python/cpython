@@ -22,7 +22,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 
 Tkinter supports a range of Tcl/Tk versions, built either with or
 without thread support. The official Python binary release bundles Tcl/Tk 8.6
-threaded. See the source code for the :mode:`_tkinter` module
+threaded. See the source code for the :mod:`_tkinter` module
 for more information about supported versions.
 
 Tkinter is not a thin wrapper, but adds a fair amount of its own logic to
