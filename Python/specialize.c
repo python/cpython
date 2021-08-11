@@ -870,7 +870,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         cache2->meth = descr;
         cache1->attr.dk_version_or_hint = keys_version;
         cache1->attr.tp_version = owner_cls->tp_version_tag;
-        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_WITH_HINT, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
         goto success;
 
     }

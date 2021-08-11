@@ -150,7 +150,7 @@ extern "C" {
 #define LOAD_GLOBAL_MODULE       42
 #define LOAD_GLOBAL_BUILTIN      43
 #define LOAD_METHOD_ADAPTIVE     44
-#define LOAD_METHOD_WITH_HINT    45
+#define LOAD_METHOD_CACHED       45
 #define STORE_ATTR_ADAPTIVE      46
 #define STORE_ATTR_SPLIT_KEYS    47
 #define STORE_ATTR_SLOT          48
