@@ -4251,7 +4251,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
-            PyObject *res = NULL;
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
@@ -4275,7 +4274,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
             STAT_INC(LOAD_METHOD, hit);
             record_cache_hit(cache0);
-            res = cache2->obj;
+            PyObject *res = cache2->obj;
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);

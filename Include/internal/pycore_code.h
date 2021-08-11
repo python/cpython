@@ -31,7 +31,8 @@ typedef struct {
 } _PyLoadGlobalCache;
 
 typedef struct {
-    PyObject *obj;  /* borrowed */
+    /* Borrowed ref in LOAD_METHOD */
+    PyObject *obj;
 } _PyObjectCache;
 
 /* Add specialized versions of entries to this union.
