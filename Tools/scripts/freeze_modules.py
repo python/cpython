@@ -422,21 +422,21 @@ def regen_makefile(headers, destdir=MODULES_DIR):
 
 def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     KINDS = ['all', *sorted(FROZEN_GROUPS)]
-    usage = f'usage: {prog} [-h] [{"|".join(KINDS)}] ...'
-    if '-h' in argv or '--help' in argv:
-        print(usage)
-        sys.exit(0)
-    else:
-        kinds = set()
-        for arg in argv:
-            if arg not in KINDS:
-                print(usage, file=sys.stderr)
-                sys.exit(f'ERROR: unsupported kind {arg!r}')
-            kinds.add(arg)
-    return {'kinds': kinds if kinds and 'all' not in kinds else None}
+    import argparse
+    parser = argparse.ArgumentParser(prog=prog)
+    parser.add_argument('--no-regen', dest='regen', action='store_false')
+    parser.add_argument('kinds', nargs='*', choices=KINDS)
+
+    args = parser.parse_args(argv)
+    ns = vars(args)
+
+    if not args.kinds or 'all' in args.kinds:
+        args.kinds = None
+
+    return ns
 
 
-def main(kinds=None):
+def main(kinds=None, *, regen=True):
     groups, frozen, headers, specs = expand_frozen(MODULES_DIR)
 
     # First, freeze the modules.
@@ -450,9 +450,10 @@ def main(kinds=None):
                 pyfile, frozenfile, _ = frozen[frozenid]
                 _freeze_module(frozenid, pyfile, frozenfile)
 
-    # Then regen frozen.c and Makefile.pre.in.
-    regen_frozen(headers, specs)
-    regen_makefile(headers, MODULES_DIR)
+    if regen:
+        # Then regen frozen.c and Makefile.pre.in.
+        regen_frozen(headers, specs)
+        regen_makefile(headers, MODULES_DIR)
 
 
 if __name__ == '__main__':
