@@ -60,6 +60,17 @@ static PyObject * do_call_core(
 #ifdef LLTRACE
 static int lltrace;
 static int prtrace(PyThreadState *, PyObject *, const char *);
+static void lltrace_instruction(InterpreterFrame *frame, int opcode, int oparg)
+{
+    if (HAS_ARG(opcode)) {
+        printf("%d: %d, %d\n",
+                frame->f_lasti, opcode, oparg);
+    }
+    else {
+        printf("%d: %d\n",
+                frame->f_lasti, opcode);
+    }
+}
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
                       PyThreadState *, InterpreterFrame *,
@@ -1190,9 +1201,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
  * the CFG.
  */
 #ifdef LLTRACE
-#define OR_LLTRACE || lltrace
+#define LLTRACE_INSTR() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
 #else
-#define OR_LLTRACE
+#define LLTRACE_INSTR() ((void)0)
 #endif
 
 #ifdef WITH_DTRACE
@@ -1226,13 +1237,37 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
+
+#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef DXPAIRS
+#define RECORD_DXPROFILE() \
+    do { \
+        dxpairs[lastopcode][opcode]++; \
+        lastopcode = opcode; \
+        dxp[opcode]++; \
+    } while (0)
+#else
+  #define RECORD_DXPROFILE() \
+    do { \
+        dxp[opcode]++; \
+    } while (0)
+#endif
+#else
+#define RECORD_DXPROFILE() ((void)0)
+#endif
+
+/* Do lltrace and dxprofile if enabled. Normally a no-op */
+#define PRE_DISPATCH_GOTO() do { LLTRACE_INSTR();  RECORD_DXPROFILE(); } while (0)
+
+/* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
-        if (cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
+        if (cframe.use_tracing OR_DTRACE_LINE) { \
             goto tracing_dispatch; \
         } \
         frame->f_lasti = INSTR_OFFSET(); \
         NEXTOPARG(); \
+        PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
     }
 
@@ -1614,32 +1649,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             frame->stackdepth = -1;
             TRACING_NEXTOPARG();
         }
+        PRE_DISPATCH_GOTO();
+        DISPATCH_GOTO();
     }
 
-#ifdef LLTRACE
-        /* Instruction tracing */
-
-        if (lltrace) {
-            if (HAS_ARG(opcode)) {
-                printf("%d: %d, %d\n",
-                       frame->f_lasti, opcode, oparg);
-            }
-            else {
-                printf("%d: %d\n",
-                       frame->f_lasti, opcode);
-            }
-        }
-#endif
-
     dispatch_opcode:
-#ifdef DYNAMIC_EXECUTION_PROFILE
-#ifdef DXPAIRS
-        dxpairs[lastopcode][opcode]++;
-        lastopcode = opcode;
-#endif
-        dxp[opcode]++;
-#endif
-
         switch (opcode) {
 
         /* BEWARE!
@@ -4491,7 +4505,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             int oldoparg = oparg;
             NEXTOPARG();
             oparg |= oldoparg << 8;
-            goto dispatch_opcode;
+            PRE_DISPATCH_GOTO();
+            DISPATCH_GOTO();
         }
 
 
@@ -4631,7 +4646,8 @@ exception_unwind:
         frame->f_state = FRAME_EXECUTING;
         frame->f_lasti = handler;
         NEXTOPARG();
-        goto dispatch_opcode;
+        PRE_DISPATCH_GOTO();
+        DISPATCH_GOTO();
     } /* main loop */
 
     assert(retval == NULL);
