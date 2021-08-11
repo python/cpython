@@ -124,12 +124,6 @@ class PtyTest(unittest.TestCase):
 
     @staticmethod
     def handle_sighup(signum, frame):
-        # bpo-38547: if the process is the session leader, os.close(master_fd)
-        # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
-        # signal: just ignore the signal.
-        #
-        # NOTE: the above comment is from an older version of the test;
-        # master_open() is not being used anymore.
         pass
 
     @expectedFailureIfStdinIsTTY
@@ -190,13 +184,6 @@ class PtyTest(unittest.TestCase):
         if new_stdin_winsz:
             self.assertEqual(_get_term_winsz(slave_fd), new_stdin_winsz,
                              "openpty() failed to set slave window size")
-
-        # Solaris requires reading the fd before anything is returned.
-        # My guess is that since we open and close the slave fd
-        # in master_open(), we need to read the EOF.
-        #
-        # NOTE: the above comment is from an older version of the test;
-        # master_open() is not being used anymore.
 
         # Ensure the fd is non-blocking in case there's nothing to read.
         blocking = os.get_blocking(master_fd)
@@ -325,12 +312,17 @@ class PtyTest(unittest.TestCase):
 
         self.assertEqual(data, b"")
 
+    def test_spawn_doesnt_hang(self):
+        pty.spawn([sys.executable, '-c', 'print("hi there")'])
+
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""
 
     def setUp(self):
         self.orig_stdin_fileno = pty.STDIN_FILENO
         self.orig_stdout_fileno = pty.STDOUT_FILENO
+        self.orig_pty_close = pty.close
+        self.orig_pty__copy = pty._copy
         self.orig_pty_fork = pty.fork
         self.orig_pty_select = pty.select
         self.orig_pty_setraw = pty.setraw
@@ -346,6 +338,8 @@ class SmallPtyTests(unittest.TestCase):
     def tearDown(self):
         pty.STDIN_FILENO = self.orig_stdin_fileno
         pty.STDOUT_FILENO = self.orig_stdout_fileno
+        pty.close = self.orig_pty_close
+        pty._copy = self.orig_pty__copy
         pty.fork = self.orig_pty_fork
         pty.select = self.orig_pty_select
         pty.setraw = self.orig_pty_setraw

@@ -7,11 +7,13 @@
 # Author: Steen Lumholt -- with additions by Guido.
 
 from select import select
-from os import close, waitpid
 import os
 import sys
-from tty import setraw, tcgetattr, tcsetattr
 import tty
+
+# names imported directly for test mocking purposes
+from os import close, waitpid
+from tty import setraw, tcgetattr, tcsetattr
 
 __all__ = ["openpty", "fork", "spawn"]
 
