@@ -831,7 +831,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
-    PyDictObject *cls_dict = (PyDictObject *)*cls_dictptr;
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     if (Py_TYPE(owner_cls)->tp_dictoffset >= 0 &&
         cls_has_dict &&
@@ -872,7 +871,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         cache1->tp_version = owner_cls->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
         goto success;
-
     }
 fail:
     STAT_INC(LOAD_METHOD, specialization_failure);
