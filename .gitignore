@@ -35,6 +35,7 @@ gmon.out
 .coverage
 .mypy_cache/
 .pytest_cache/
+.DS_Store
 
 *.exe
 !Lib/distutils/command/*.exe
