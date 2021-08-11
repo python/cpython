@@ -4254,34 +4254,30 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             PyObject *res = NULL;
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyLoadMethodCache *cache1 = &caches[-1].load_method;
-            _PyLoadMethodCache *cache2 = &caches[-2].load_method;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
 
-            DEOPT_IF(self_cls->tp_version_tag != cache1->attr.tp_version, LOAD_METHOD);
-            assert(cache1->attr.dk_version_or_hint != 0);
-            assert(cache1->attr.tp_version != 0);
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(cache1->dk_version_or_hint != 0);
+            assert(cache1->tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
             
-            PyObject *name = GETITEM(names, cache0->original_oparg);
             // inline version of _PyObject_GetDictPtr for offset >= 0
-            PyObject **dictptr = self_cls->tp_dictoffset != 0 ?
-                (PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
-            PyDictObject *dict = NULL;
+            PyObject *dict = self_cls->tp_dictoffset != 0 ?
+                *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
 
-            // ensure self.__dict__ didn't modify keys
-            if (dictptr != NULL && *dictptr != NULL) {
-                dict = (PyDictObject *)*dictptr;
-                assert(PyDict_CheckExact(dict));
-                DEOPT_IF(dict->ma_keys->dk_version !=
-                    cache1->attr.dk_version_or_hint, LOAD_METHOD);
-            } // don't care if owner has no dict, could be builtin or __slots__
+            // Ensure self.__dict__ didn't modify keys.
+            // Don't care if self has no dict, it could be builtin or __slots__.
+            DEOPT_IF(dict != NULL &&
+                ((PyDictObject *)dict)->ma_keys->dk_version !=
+                cache1->dk_version_or_hint, LOAD_METHOD);
 
-            res = cache2->meth;
-            assert(res != NULL);
-            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             STAT_INC(LOAD_METHOD, hit);
             record_cache_hit(cache0);
+            res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);

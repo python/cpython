@@ -232,7 +232,7 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
-    [LOAD_METHOD] = 3, /* _PyAdaptiveEntry and 2 _PyLoadMethodCache */
+    [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -793,8 +793,8 @@ int
 _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyLoadMethodCache *cache1 = &cache[-1].load_method;
-    _PyLoadMethodCache *cache2 = &cache[-2].load_method;
+    _PyAttrCache *cache1 = &cache[-1].attr;
+    _PyObjectCache *cache2 = &cache[-2].obj;
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
@@ -837,13 +837,13 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         cls_has_dict &&
         owner_cls->tp_dictoffset >= 0) {
         
-        // if o.__dict__ changes, the method might be found in o.__dict__
-        // instead of old type lookup. So record o.__dict__.
+        // If o.__dict__ changes, the method might be found in o.__dict__
+        // instead of old type lookup. So record o.__dict__'s keys.
         uint32_t keys_version = UINT32_MAX;
         if (owner_has_dict) {
+            // _PyDictKeys_GetVersionForCurrentState isn't accurate for
+            // custom dict subclasses at the moment.
             if (!PyDict_CheckExact(owner_dict)) {
-                // _PyDictKeys_GetVersionForCurrentState isn't accurate for
-                // custom dict subclasses at the moment
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_DICT_SUBCLASS);
                 goto fail;
             }
@@ -867,9 +867,9 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         } // else owner is maybe a builtin with no dict, or __slots__
         
         // Borrowed. Check tp_version_tag before accessing in case it's deleted.
-        cache2->meth = descr;
-        cache1->attr.dk_version_or_hint = keys_version;
-        cache1->attr.tp_version = owner_cls->tp_version_tag;
+        cache2->obj = descr;
+        cache1->dk_version_or_hint = keys_version;
+        cache1->tp_version = owner_cls->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
         goto success;
 
