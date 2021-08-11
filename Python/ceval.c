@@ -1392,6 +1392,45 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
 
+static int
+trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
+{
+    if (tstate->c_tracefunc != NULL) {
+        /* tstate->c_tracefunc, if defined, is a
+            function that will be called on *every* entry
+            to a code block.  Its return value, if not
+            None, is a function that will be called at
+            the start of each executed line of code.
+            (Actually, the function must return itself
+            in order to continue tracing.)  The trace
+            functions are called with three arguments:
+            a pointer to the current frame, a string
+            indicating why the function is called, and
+            an argument which depends on the situation.
+            The global trace function is also called
+            whenever an exception is detected. */
+        if (call_trace_protected(tstate->c_tracefunc,
+                                    tstate->c_traceobj,
+                                    tstate, frame,
+                                    PyTrace_CALL, Py_None)) {
+            /* Trace function raised an error */
+            return -1;
+        }
+    }
+    if (tstate->c_profilefunc != NULL) {
+        /* Similar for c_profilefunc, except it needn't
+            return itself and isn't called for "line" events */
+        if (call_trace_protected(tstate->c_profilefunc,
+                                    tstate->c_profileobj,
+                                    tstate, frame,
+                                    PyTrace_CALL, Py_None)) {
+            /* Profile function raised an error */
+            return -1;
+        }
+    }
+    return 0;
+}
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int throwflag)
 {
@@ -1405,22 +1444,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 #ifdef DXPAIRS
     int lastopcode = 0;
 #endif
-    PyObject **stack_pointer;  /* Next free slot in value stack */
-    _Py_CODEUNIT *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    PyObject **localsplus;
     PyObject *retval = NULL;            /* Return value */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
-    PyCodeObject *co;
-
-    _Py_CODEUNIT *first_instr;
-    PyObject *names;
-    PyObject *consts;
-
-#ifdef LLTRACE
-    _Py_IDENTIFIER(__ltrace__);
-#endif
 
     if (_Py_EnterRecursiveCall(tstate, "")) {
         return NULL;
@@ -1439,47 +1466,17 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     /* push frame */
     tstate->frame = frame;
-    co = frame->f_code;
 
     if (cframe.use_tracing) {
-        if (tstate->c_tracefunc != NULL) {
-            /* tstate->c_tracefunc, if defined, is a
-               function that will be called on *every* entry
-               to a code block.  Its return value, if not
-               None, is a function that will be called at
-               the start of each executed line of code.
-               (Actually, the function must return itself
-               in order to continue tracing.)  The trace
-               functions are called with three arguments:
-               a pointer to the current frame, a string
-               indicating why the function is called, and
-               an argument which depends on the situation.
-               The global trace function is also called
-               whenever an exception is detected. */
-            if (call_trace_protected(tstate->c_tracefunc,
-                                     tstate->c_traceobj,
-                                     tstate, frame,
-                                     PyTrace_CALL, Py_None)) {
-                /* Trace function raised an error */
-                goto exit_eval_frame;
-            }
-        }
-        if (tstate->c_profilefunc != NULL) {
-            /* Similar for c_profilefunc, except it needn't
-               return itself and isn't called for "line" events */
-            if (call_trace_protected(tstate->c_profilefunc,
-                                     tstate->c_profileobj,
-                                     tstate, frame,
-                                     PyTrace_CALL, Py_None)) {
-                /* Profile function raised an error */
-                goto exit_eval_frame;
-            }
+        if (trace_function_entry(tstate, frame)) {
+            goto exit_eval_frame;
         }
     }
 
     if (PyDTrace_FUNCTION_ENTRY_ENABLED())
         dtrace_function_entry(frame);
 
+    PyCodeObject *co = frame->f_code;
     /* Increment the warmup counter and quicken if warm enough
      * _Py_Quicken is idempotent so we don't worry about overflow */
     if (!PyCodeObject_IsWarmedUp(co)) {
@@ -1492,10 +1489,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     }
 
 
-    names = co->co_names;
-    consts = co->co_consts;
-    localsplus = _PyFrame_GetLocalsArray(frame);
-    first_instr = co->co_firstinstr;
+    PyObject *names = co->co_names;
+    PyObject *consts = co->co_consts;
+    PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
+    _Py_CODEUNIT *first_instr = co->co_firstinstr;
     /*
        frame->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -1512,8 +1509,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
        to the beginning of the combined pair.)
     */
     assert(frame->f_lasti >= -1);
-    next_instr = first_instr + frame->f_lasti + 1;
-    stack_pointer = frame->stack + frame->stackdepth;
+    _Py_CODEUNIT *next_instr = first_instr + frame->f_lasti + 1;
+    PyObject **stack_pointer = frame->stack + frame->stackdepth;
     /* Set stackdepth to -1.
      * Update when returning or calling trace function.
        Having f_stackdepth <= 0 ensures that invalid
@@ -1524,6 +1521,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     frame->f_state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
+    _Py_IDENTIFIER(__ltrace__);
     {
         int r = _PyDict_ContainsId(GLOBALS(), &PyId___ltrace__);
         if (r < 0) {
