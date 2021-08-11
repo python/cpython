@@ -965,7 +965,7 @@ class cached_property:
             raise TypeError(msg) from None
 
         # Quickly and atomically determine which thread is reponsible
-        # for doing the update, so other threads can wait for that
+        # for doing the update so that other threads can wait for the
         # update to complete. If the current thread is already running,
         # allow the reentrant thread to proceed rather than waiting.
         key = id(self)
@@ -974,8 +974,9 @@ class cached_property:
             reentrant = self.updater.get(key) == this_thread
             wait = self.updater.setdefault(key, this_thread) != this_thread
 
-        # Only if this particular instance is currently being updated, block and wait
-        # for the updating thread to finish. Other instances won't have to wait.
+        # Only if this particular instance is currently being updated,
+        # block and wait for the updating thread to finish. Other
+        # instances won't have to wait.
         if wait:
             with self.cv:
                 while key in self.updater:
