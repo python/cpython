@@ -50,7 +50,7 @@ The :mod:`pty` module defines the following functions:
    The functions *master_read* and *stdin_read* are passed a file descriptor
    which they should read from, and they should always return a byte string. In
    order to force spawn to return before the child process exits an
-   :exc:`OSError` should be thrown.
+   empty byte array should be returned to signal end of file.
 
    The default implementation for both functions will read and return up to 1024
    bytes each time the function is called. The *master_read* callback is passed
@@ -64,10 +64,6 @@ The :mod:`pty` module defines the following functions:
    communicate with the parent process OR the child process. Unless the child
    process will quit without any input, *spawn* will then loop forever. If
    *master_read* signals EOF the same behavior results (on linux at least).
-
-   If both callbacks signal EOF then *spawn* will probably never return, unless
-   *select* throws an error on your platform when passed three empty lists. This
-   is a bug, documented in `issue 26228 <https://bugs.python.org/issue26228>`_.
 
    Return the exit status value from :func:`os.waitpid` on the child process.
 
