@@ -4212,7 +4212,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_METHOD): {
+        TARGET(LOAD_METHOD): {
             PREDICTED(LOAD_METHOD);
             STAT_INC(LOAD_METHOD, unquickened);
             /* Designed to work in tandem with CALL_METHOD. */
@@ -4251,7 +4251,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(LOAD_METHOD_ADAPTIVE): {
+        TARGET(LOAD_METHOD_ADAPTIVE): {
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
@@ -4272,7 +4272,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             }            
         }
 
-        case TARGET(LOAD_METHOD_CACHED): {
+        TARGET(LOAD_METHOD_CACHED): {
             /* Designed to work in tandem with CALL_METHOD. */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -4309,7 +4309,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             DISPATCH();
         }
 
-        case TARGET(CALL_METHOD): {
+        TARGET(CALL_METHOD): {
             /* Designed to work in tamdem with LOAD_METHOD. */
             PyObject **sp, *res;
             int meth_found;
