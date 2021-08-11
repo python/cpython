@@ -4257,11 +4257,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             _PyLoadMethodCache *cache1 = &caches[-1].load_method;
             _PyLoadMethodCache *cache2 = &caches[-2].load_method;
 
+            DEOPT_IF(self_cls->tp_version_tag != cache1->attr.tp_version, LOAD_METHOD);
             assert(cache1->attr.dk_version_or_hint != 0);
             assert(cache1->attr.tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
-            DEOPT_IF(self_cls->tp_version_tag != cache1->attr.tp_version, LOAD_METHOD);
             
             PyObject *name = GETITEM(names, cache0->original_oparg);
             // inline version of _PyObject_GetDictPtr for offset >= 0
