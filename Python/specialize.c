@@ -122,6 +122,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
+    err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
