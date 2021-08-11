@@ -107,7 +107,7 @@ Ttk
    bindings are provided in a separate module, :mod:`tkinter.ttk`.
 
 Tix
-   `Tix`<https://core.tcl.tk/jenglish/gutter/packages/tix.html>_ is an older
+   `Tix <https://core.tcl.tk/jenglish/gutter/packages/tix.html>`_ is an older
    third-party Tcl package, an add-on for Tk that adds several new widgets.
    Python bindings are found in the :mod:`tkinter.tix` module.
    It's deprecated in favor of Ttk.
@@ -467,7 +467,7 @@ A number of special cases exist:
     lock ensures only one call occurs at a time.
 
   * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
-    object (with it's own interpreter), all interpreters that are part of the same
+    object (with its own interpreter), all interpreters that are part of the same
     thread share a common event queue, which gets ugly fast. In practice, don't create
     more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
     them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
