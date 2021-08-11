@@ -144,8 +144,8 @@ function calls leading up to the error, in the order they occurred.</p>'''
             for line in lines:
                 num = small('&nbsp;' * (5-len(str(i))) + str(i)) + '&nbsp;'
                 if i in highlight:
-                    line = '<tt>=&gt;%s%s</tt>' % (num, pydoc.html.preformat(line))
-                    rows.append('<tr><td bgcolor="#ffccee">%s</td></tr>' % line)
+                    line = f'<tt>=&gt;{num}{pydoc.html.preformat(line)}</tt>'
+                    rows.append(f'<tr><td bgcolor="#ffccee">{line}</td></tr>')
                 else:
                     line = '<tt>&nbsp;&nbsp;%s%s</tt>' % (num, pydoc.html.preformat(line))
                     rows.append('<tr><td>%s</td></tr>' % grey(line))
