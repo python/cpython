@@ -1,2 +1,0 @@
-Annotations for complex targets (everything beside simple names) no longer
-cause any runtime effects with ``from __future__ import annotations``.

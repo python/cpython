@@ -246,12 +246,15 @@ static PyThreadState *tcl_tstate = NULL;
 #endif
 
 #define ENTER_TCL \
-    { PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
+    { PyThreadState *tstate = PyThreadState_Get(); \
+      Py_BEGIN_ALLOW_THREADS \
+      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+      tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if(tcl_lock)PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
+    if(tcl_lock)PyThread_release_lock(tcl_lock); \
+    Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
@@ -261,12 +264,14 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_PYTHON \
     { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-        if(tcl_lock) \
-          PyThread_release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
+      if(tcl_lock) \
+        PyThread_release_lock(tcl_lock); \
+      PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
     { PyThreadState *tstate = PyEval_SaveThread(); \
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
+      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+      tcl_tstate = tstate; }
 
 #define CHECK_TCL_APPARTMENT \
     if (((TkappObject *)self)->threaded && \
@@ -1002,7 +1007,7 @@ static PyType_Spec PyTclObject_Type_spec = {
     "_tkinter.Tcl_Obj",
     sizeof(PyTclObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     PyTclObject_Type_slots,
 };
 
@@ -3192,8 +3197,10 @@ _tkinter__flatten(PyObject *module, PyObject *item)
 
     context.size = 0;
 
-    if (!_flatten1(&context, item,0))
+    if (!_flatten1(&context, item, 0)) {
+        Py_XDECREF(context.tuple);
         return NULL;
+    }
 
     if (_PyTuple_Resize(&context.tuple, context.size))
         return NULL;
@@ -3294,7 +3301,7 @@ static PyType_Spec Tktt_Type_spec = {
     "_tkinter.tktimertoken",
     sizeof(TkttObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     Tktt_Type_slots,
 };
 
@@ -3349,7 +3356,7 @@ static PyType_Spec Tkapp_Type_spec = {
     "_tkinter.tkapp",
     sizeof(TkappObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     Tkapp_Type_slots,
 };
 
@@ -3537,7 +3544,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkappType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3550,7 +3556,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkttType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3563,7 +3568,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "Tcl_Obj", o)) {
         Py_DECREF(o);
         Py_DECREF(m);

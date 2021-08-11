@@ -28,6 +28,7 @@ Lib/test/test_email/data/*.txt -text
 Lib/test/xmltestdata/* -text
 Lib/test/coding20731.py -text
 Lib/test/test_importlib/data01/* -text
+Lib/test/test_importlib/namespacedata01/* -text
 
 # CRLF files
 *.bat text eol=crlf
@@ -57,6 +58,7 @@ Doc/library/token-list.inc  linguist-generated=true
 Include/token.h             linguist-generated=true
 Lib/token.py                linguist-generated=true
 Parser/token.c              linguist-generated=true
+Programs/test_frozenmain.h  linguist-generated=true
 
 # Language aware diff headers
 # https://tekin.co.uk/2020/10/better-git-diff-output-for-ruby-python-elixir-and-more

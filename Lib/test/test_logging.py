@@ -54,12 +54,15 @@ import unittest
 import warnings
 import weakref
 
-import asyncore
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import smtpd
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
+    import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -888,7 +891,7 @@ class ControlMixin(object):
                     single parameter - the request - in order to
                     process the request. This handler is called on the
                     server thread, effectively meaning that requests are
-                    processed serially. While not quite Web scale ;-),
+                    processed serially. While not quite web scale ;-),
                     this should be fine for testing applications.
     :param poll_interval: The polling interval in seconds.
     """
@@ -1428,6 +1431,7 @@ class ConfigFileTest(BaseTest):
     class=FileHandler
     level=DEBUG
     args=("{tempfile}",)
+    kwargs={{"encoding": "utf-8"}}
     """
 
     disable_test = """
@@ -1453,7 +1457,7 @@ class ConfigFileTest(BaseTest):
 
     def apply_config(self, conf, **kwargs):
         file = io.StringIO(textwrap.dedent(conf))
-        logging.config.fileConfig(file, **kwargs)
+        logging.config.fileConfig(file, encoding="utf-8", **kwargs)
 
     def test_config0_ok(self):
         # A simple config file which overrides the default settings.
@@ -1659,6 +1663,7 @@ class ConfigFileTest(BaseTest):
             os.close(fd)
             logging.config.fileConfig(
                 fn,
+                encoding="utf-8",
                 defaults=dict(
                     version=1,
                     disable_existing_loggers=False,
@@ -1936,6 +1941,14 @@ class SysLogHandlerTest(BaseTest):
         logger.error("sp\xe4m")
         self.handled.wait()
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
+
+    def test_udp_reconnection(self):
+        logger = logging.getLogger("slh")
+        self.sl_hdlr.close()
+        self.handled.clear()
+        logger.error("sp\xe4m")
+        self.handled.wait(0.1)
+        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
@@ -3204,7 +3217,8 @@ class ConfigDictTest(BaseTest):
                 "handlers": {
                     "file": {
                         "class": "logging.FileHandler",
-                        "filename": fn
+                        "filename": fn,
+                        "encoding": "utf-8",
                     }
                 },
                 "root": {
@@ -4387,6 +4401,14 @@ class ModuleLevelMiscTest(BaseTest):
         self.assertNotIn("Cannot recover from stack overflow.", err)
         self.assertEqual(rc, 1)
 
+    def test_get_level_names_mapping(self):
+        mapping = logging.getLevelNamesMapping()
+        self.assertEqual(logging._nameToLevel, mapping)  # value is equivalent
+        self.assertIsNot(logging._nameToLevel, mapping)  # but not the internal data
+        new_mapping = logging.getLevelNamesMapping()     # another call -> another copy
+        self.assertIsNot(mapping, new_mapping)           # verify not the same object as before
+        self.assertEqual(mapping, new_mapping)           # but equivalent in value
+
 
 class LogRecordTest(BaseTest):
     def test_str_rep(self):
@@ -5160,6 +5182,9 @@ class BaseFileTest(BaseTest):
                         msg="Log file %r does not exist" % filename)
         self.rmfiles.append(filename)
 
+    def next_rec(self):
+        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
+                                 self.next_message(), None, None, None)
 
 class FileHandlerTest(BaseFileTest):
     def test_delay(self):
@@ -5172,11 +5197,18 @@ class FileHandlerTest(BaseFileTest):
         self.assertTrue(os.path.exists(self.fn))
         fh.close()
 
-class RotatingFileHandlerTest(BaseFileTest):
-    def next_rec(self):
-        return logging.LogRecord('n', logging.DEBUG, 'p', 1,
-                                 self.next_message(), None, None, None)
+    def test_emit_after_closing_in_write_mode(self):
+        # Issue #42378
+        os.unlink(self.fn)
+        fh = logging.FileHandler(self.fn, encoding='utf-8', mode='w')
+        fh.setFormatter(logging.Formatter('%(message)s'))
+        fh.emit(self.next_rec())    # '1'
+        fh.close()
+        fh.emit(self.next_rec())    # '2'
+        with open(self.fn) as fp:
+            self.assertEqual(fp.read().strip(), '1')
 
+class RotatingFileHandlerTest(BaseFileTest):
     def test_should_not_rollover(self):
         # If maxbytes is zero rollover never occurs
         rh = logging.handlers.RotatingFileHandler(
@@ -5219,7 +5251,7 @@ class RotatingFileHandlerTest(BaseFileTest):
 
             def rotator(self, source, dest):
                 if os.path.exists(source):
-                    os.rename(source, dest + ".rotated")
+                    os.replace(source, dest + ".rotated")
 
         rh = HandlerWithNamerAndRotator(
             self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
@@ -5279,8 +5311,8 @@ class RotatingFileHandlerTest(BaseFileTest):
 class TimedRotatingFileHandlerTest(BaseFileTest):
     # other test methods added below
     def test_rollover(self):
-        fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
-                                                       backupCount=1)
+        fh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, 'S', encoding="utf-8", backupCount=1)
         fmt = logging.Formatter('%(asctime)s %(message)s')
         fh.setFormatter(fmt)
         r1 = logging.makeLogRecord({'msg': 'testing - initial'})
@@ -5323,18 +5355,18 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'X', delay=True)
+                     self.fn, 'X', encoding="utf-8", delay=True)
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'W', delay=True)
+                     self.fn, 'W', encoding="utf-8", delay=True)
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'W7', delay=True)
+                     self.fn, 'W7', encoding="utf-8", delay=True)
 
     def test_compute_rollover_daily_attime(self):
         currentTime = 0
         atTime = datetime.time(12, 0, 0)
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, when='MIDNIGHT', interval=1, backupCount=0, utc=True,
-            atTime=atTime)
+            self.fn, encoding="utf-8", when='MIDNIGHT', interval=1, backupCount=0,
+            utc=True, atTime=atTime)
         try:
             actual = rh.computeRollover(currentTime)
             self.assertEqual(actual, currentTime + 12 * 60 * 60)
@@ -5354,8 +5386,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         wday = time.gmtime(today).tm_wday
         for day in range(7):
             rh = logging.handlers.TimedRotatingFileHandler(
-                self.fn, when='W%d' % day, interval=1, backupCount=0, utc=True,
-                atTime=atTime)
+                self.fn, encoding="utf-8", when='W%d' % day, interval=1, backupCount=0,
+                utc=True, atTime=atTime)
             try:
                 if wday > day:
                     # The rollover day has already passed this week, so we
@@ -5399,7 +5431,7 @@ for when, exp in (('S', 1),
                  ):
     def test_compute_rollover(self, when=when, exp=exp):
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, when=when, interval=1, backupCount=0, utc=True)
+            self.fn, encoding="utf-8", when=when, interval=1, backupCount=0, utc=True)
         currentTime = 0.0
         actual = rh.computeRollover(currentTime)
         if exp != actual:

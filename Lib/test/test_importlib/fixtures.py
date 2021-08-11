@@ -1,5 +1,6 @@
 import os
 import sys
+import copy
 import shutil
 import pathlib
 import tempfile
@@ -107,6 +108,16 @@ class DistInfoPkg(OnSysPath, SiteDir):
     def setUp(self):
         super(DistInfoPkg, self).setUp()
         build_files(DistInfoPkg.files, self.site_dir)
+
+    def make_uppercase(self):
+        """
+        Rewrite metadata with everything uppercase.
+        """
+        shutil.rmtree(self.site_dir / "distinfo_pkg-1.0.0.dist-info")
+        files = copy.deepcopy(DistInfoPkg.files)
+        info = files["distinfo_pkg-1.0.0.dist-info"]
+        info["METADATA"] = info["METADATA"].upper()
+        build_files(files, self.site_dir)
 
 
 class DistInfoPkgWithDot(OnSysPath, SiteDir):

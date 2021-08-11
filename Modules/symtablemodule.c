@@ -58,7 +58,6 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     }
     t = (PyObject *)st->st_top;
     Py_INCREF(t);
-    PyMem_Free((void *)st->st_future);
     _PySymtable_Free(st);
     return t;
 }

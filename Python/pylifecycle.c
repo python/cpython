@@ -17,6 +17,10 @@
 
 #include <locale.h>               // setlocale()
 
+#if defined(__APPLE__)
+#include <mach-o/loader.h>
+#endif
+
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIG_IGN
 #endif
@@ -33,7 +37,6 @@
 #  define PyWindowsConsoleIO_Check(op) \
        (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
-
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
@@ -59,7 +62,30 @@ static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
 int _Py_UnhandledKeyboardInterrupt = 0;
-_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+
+/* The following places the `_PyRuntime` structure in a location that can be
+ * found without any external information. This is meant to ease access to the
+ * interpreter state for various runtime debugging tools, but is *not* an
+ * officially supported feature */
+
+#if defined(MS_WINDOWS)
+
+#pragma section("PyRuntime", read, write)
+__declspec(allocate("PyRuntime"))
+
+#elif defined(__APPLE__)
+
+__attribute__((
+    section(SEG_DATA ",PyRuntime")
+))
+
+#endif
+
+_PyRuntimeState _PyRuntime
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+__attribute__ ((section (".PyRuntime")))
+#endif
+= _PyRuntimeState_INIT;
 static int runtime_initialized = 0;
 
 PyStatus
@@ -1031,6 +1057,8 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
+    extern void _PyThread_debug_deprecation(void);
+
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
@@ -1131,6 +1159,9 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
+
+    // Warn about PYTHONTHREADDEBUG deprecation
+    _PyThread_debug_deprecation();
 
     assert(!_PyErr_Occurred(tstate));
 

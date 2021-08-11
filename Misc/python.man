@@ -550,6 +550,7 @@ if Python was configured with the
 \fB\--with-pydebug\fP build option.
 .IP PYTHONTHREADDEBUG
 If this environment variable is set, Python will print threading debug info.
+The feature is deprecated in Python 3.10 and will be removed in Python 3.12.
 .IP PYTHONDUMPREFS
 If this environment variable is set, Python will dump objects and reference
 counts still alive after shutting down the interpreter.

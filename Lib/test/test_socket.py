@@ -224,7 +224,7 @@ class SocketCANTest(unittest.TestCase):
     the following commands:
     # modprobe vcan
     # ip link add dev vcan0 type vcan
-    # ifconfig vcan0 up
+    # ip link set up vcan0
     """
     interface = 'vcan0'
     bufsize = 128
@@ -2085,7 +2085,6 @@ class CANTest(ThreadedCANSocketTest):
         cf, addr = self.s.recvfrom(self.bufsize)
         self.assertEqual(self.cf, cf)
         self.assertEqual(addr[0], self.interface)
-        self.assertEqual(addr[1], socket.AF_CAN)
 
     def _testSendFrame(self):
         self.cf = self.build_can_frame(0x00, b'\x01\x02\x03\x04\x05')
@@ -6447,6 +6446,12 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             sock.bind(("type", "n" * 64))
 
 
+@unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
+class TestMacOSTCPFlags(unittest.TestCase):
+    def test_tcp_keepalive(self):
+        self.assertTrue(socket.TCP_KEEPALIVE)
+
+
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
 class TestMSWindowsTCPFlags(unittest.TestCase):
     knownTCPFlags = {
@@ -6705,6 +6710,7 @@ def test_main():
         SendfileUsingSendfileTest,
     ])
     tests.append(TestMSWindowsTCPFlags)
+    tests.append(TestMacOSTCPFlags)
 
     thread_info = threading_helper.threading_setup()
     support.run_unittest(*tests)

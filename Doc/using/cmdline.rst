@@ -474,6 +474,12 @@ Miscellaneous options
    * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when the
      locale-specific default encoding is used for opening files.
      See also :envvar:`PYTHONWARNDEFAULTENCODING`.
+   * ``-X no_debug_ranges`` disables the inclusion of the tables mapping extra
+     location information (end line, start column offset and end column offset)
+     to every instruction in code objects. This is useful when smaller code
+     objects and pyc files are desired as well as supressing the extra visual
+     location indicators when the interpreter displays tracebacks. See also
+     :envvar:`PYTHONNODEBUGRANGES`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -508,6 +514,9 @@ Miscellaneous options
 
    .. deprecated-removed:: 3.9 3.10
       The ``-X oldparser`` option.
+
+   .. versionadded:: 3.11
+      The ``-X no_debug_ranges`` option.
 
 
 Options you shouldn't use
@@ -799,16 +808,12 @@ conflict.
      :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
      the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
 
-   Install debug hooks:
+   Install :ref:`debug hooks <pymem-debug-hooks>`:
 
    * ``debug``: install debug hooks on top of the :ref:`default memory
      allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
-
-   See the :ref:`default memory allocators <default-memory-allocators>` and the
-   :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
-   memory allocators).
 
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
@@ -940,15 +945,28 @@ conflict.
 
    .. versionadded:: 3.10
 
+.. envvar:: PYTHONNODEBUGRANGES
+
+   If this variable is set, it disables the inclusion of the tables mapping
+   extra location information (end line, start column offset and end column
+   offset) to every instruction in code objects. This is useful when smaller
+   code objects and pyc files are desired as well as supressing the extra visual
+   location indicators when the interpreter displays tracebacks.
+
+   .. versionadded:: 3.11
+
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
 .. envvar:: PYTHONTHREADDEBUG
 
-   If set, Python will print threading debug info.
+   If set, Python will print threading debug info into stdout.
 
    Need a :ref:`debug build of Python <debug-build>`.
+
+   .. deprecated-removed:: 3.10 3.12
 
 
 .. envvar:: PYTHONDUMPREFS

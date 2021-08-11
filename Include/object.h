@@ -141,7 +141,9 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    return Py_TYPE(ob) == type;
+    // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
+    // object.
+    return ob->ob_type == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
@@ -237,6 +239,9 @@ PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObje
 PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
+#endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
@@ -320,6 +325,20 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
+#ifndef Py_LIMITED_API
+/* Set if instances of the type object are treated as sequences for pattern matching */
+#define Py_TPFLAGS_SEQUENCE (1 << 5)
+/* Set if instances of the type object are treated as mappings for pattern matching */
+#define Py_TPFLAGS_MAPPING (1 << 6)
+#endif
+
+/* Disallow creating instances of the type: set tp_new to NULL and don't create
+ * the "__new__" key in the type dictionary. */
+#define Py_TPFLAGS_DISALLOW_INSTANTIATION (1UL << 7)
+
+/* Set if the type object is immutable: type attributes cannot be set nor deleted */
+#define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
+
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
 
@@ -352,17 +371,11 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Objects support type attribute cache */
-#define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
+/* Object has up-to-date type attribute cache */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
-/* Type has am_send entry in tp_as_async slot */
-#define Py_TPFLAGS_HAVE_AM_SEND (1UL << 21)
-#endif
 
 // This undocumented flag gives certain built-ins their unique pattern-matching
 // behavior, which allows a single positional subpattern to match against the
@@ -381,19 +394,23 @@ given type object has a specified feature.
 
 #define Py_TPFLAGS_DEFAULT  ( \
                  Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
-                 Py_TPFLAGS_HAVE_VERSION_TAG | \
                 0)
 
-/* NOTE: The following flags reuse lower bits (removed as part of the
+/* NOTE: Some of the following flags reuse lower bits (removed as part of the
  * Python 3.0 transition). */
 
-/* The following flag is kept for compatibility. Starting with 3.8,
- * binary compatibility of C extensions across feature releases of
- * Python is not supported anymore, except when using the stable ABI.
+/* The following flags are kept for compatibility; in previous
+ * versions they indicated presence of newer tp_* fields on the
+ * type struct.
+ * Starting with 3.8, binary compatibility of C extensions across
+ * feature releases of Python is not supported anymore (except when
+ * using the stable ABI, in which all classes are created dynamically,
+ * using the interpreter's memory layout.)
+ * Note that older extensions using the stable ABI set these flags,
+ * so the bits must not be repurposed.
  */
-
-/* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
+#define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
 
 /*

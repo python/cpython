@@ -321,7 +321,7 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
     if (decoder == NULL) {
         return;
     }
-    
+
     _Py_IDENTIFIER(JSONDecodeError);
     PyObject *JSONDecodeError = _PyObject_GetAttrId(decoder, &PyId_JSONDecodeError);
     Py_DECREF(decoder);

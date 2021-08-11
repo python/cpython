@@ -1,0 +1,6 @@
+AIX: `Lib/_aix_support.get_platform()` may fail in an AIX WPAR.
+The fileset bos.rte appears to have a builddate in both LPAR and WPAR
+so this fileset is queried rather than bos.mp64.
+To prevent a similiar situation (no builddate in ODM) a value (9988)
+sufficient for completing a build is provided.
+Patch by M Felt.

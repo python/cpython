@@ -1,0 +1,1 @@
+Delete entry "coercion" in Doc/glossary.rst for its outdated definition.

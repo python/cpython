@@ -613,6 +613,12 @@ keywords, builtin class and function names, names following ``class`` and
 ``def``, strings, and comments. For any text window, these are the cursor (when
 present), found text (when possible), and selected text.
 
+IDLE also highlights the :ref:`soft keywords <soft-keywords>` :keyword:`match`,
+:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
+pattern-matching statements. However, this highlighting is not perfect and
+will be incorrect in some rare cases, including some ``_``-s in ``case``
+patterns.
+
 Text coloring is done in the background, so uncolorized text is occasionally
 visible.  To change the color scheme, use the Configure IDLE dialog
 Highlighting tab.  The marking of debugger breakpoint lines in the editor and
@@ -863,7 +869,7 @@ Running without a subprocess
 
 By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
-externally visible and no data is sent to or received from the Internet.
+externally visible and no data is sent to or received from the internet.
 If firewall software complains anyway, you can ignore it.
 
 If the attempt to make the socket connection fails, Idle will notify you.

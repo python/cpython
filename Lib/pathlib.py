@@ -14,12 +14,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
-if os.name == 'nt':
-    from nt import _getfinalpathname
-else:
-    _getfinalpathname = None
-
-
 __all__ = [
     "PurePath", "PurePosixPath", "PureWindowsPath",
     "Path", "PosixPath", "WindowsPath",
@@ -29,14 +23,17 @@ __all__ = [
 # Internals
 #
 
+_WINERROR_NOT_READY = 21  # drive exists but is not accessible
+_WINERROR_INVALID_NAME = 123  # fix for bpo-35306
+_WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
+
 # EBADF - guard against macOS `stat` throwing EBADF
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
-    21,  # ERROR_NOT_READY - drive exists but is not accessible
-    123, # ERROR_INVALID_NAME - fix for bpo-35306
-    1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
-)
+    _WINERROR_NOT_READY,
+    _WINERROR_INVALID_NAME,
+    _WINERROR_CANT_RESOLVE_FILENAME)
 
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
@@ -127,16 +124,25 @@ class _WindowsFlavour(_Flavour):
     ext_namespace_prefix = '\\\\?\\'
 
     reserved_names = (
-        {'CON', 'PRN', 'AUX', 'NUL'} |
-        {'COM%d' % i for i in range(1, 10)} |
-        {'LPT%d' % i for i in range(1, 10)}
+        {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+        {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
+        {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
         )
 
     # Interesting findings about extended paths:
-    # - '\\?\c:\a', '//?/c:\a' and '//?/c:/a' are all supported
-    #   but '\\?\c:/a' is not
-    # - extended paths are always absolute; "relative" extended paths will
-    #   fail.
+    # * '\\?\c:\a' is an extended path, which bypasses normal Windows API
+    #   path processing. Thus relative paths are not resolved and slash is not
+    #   translated to backslash. It has the native NT path limit of 32767
+    #   characters, but a bit less after resolving device symbolic links,
+    #   such as '\??\C:' => '\Device\HarddiskVolume2'.
+    # * '\\?\c:/a' looks for a device named 'C:/a' because slash is a
+    #   regular name character in the object namespace.
+    # * '\\?\c:\foo/bar' is invalid because '/' is illegal in NT filesystems.
+    #   The only path separator at the filesystem level is backslash.
+    # * '//?/c:\a' and '//?/c:/a' are effectively equivalent to '\\.\c:\a' and
+    #   thus limited to MAX_PATH.
+    # * Prior to Windows 8, ANSI API bytes paths are limited to MAX_PATH,
+    #   even with the '\\?\' prefix.
 
     def splitroot(self, part, sep=sep):
         first = part[0:1]
@@ -186,30 +192,6 @@ class _WindowsFlavour(_Flavour):
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
 
-    def resolve(self, path, strict=False):
-        s = str(path)
-        if not s:
-            return path._accessor.getcwd()
-        previous_s = None
-        if _getfinalpathname is not None:
-            if strict:
-                return self._ext_to_normal(_getfinalpathname(s))
-            else:
-                tail_parts = []  # End of the path after the first one not found
-                while True:
-                    try:
-                        s = self._ext_to_normal(_getfinalpathname(s))
-                    except FileNotFoundError:
-                        previous_s = s
-                        s, tail = os.path.split(s)
-                        tail_parts.append(tail)
-                        if previous_s == s:
-                            return path
-                    else:
-                        return os.path.join(s, *reversed(tail_parts))
-        # Means fallback on absolute
-        return None
-
     def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
         prefix = ''
         if s.startswith(ext_prefix):
@@ -220,21 +202,18 @@ class _WindowsFlavour(_Flavour):
                 s = '\\' + s[3:]
         return prefix, s
 
-    def _ext_to_normal(self, s):
-        # Turn back an extended path into a normal DOS-like path
-        return self._split_extended_path(s)[1]
-
     def is_reserved(self, parts):
         # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL").
-        # We err on the side of caution and return True for paths which are
-        # not considered reserved by Windows.
+        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
+        # exist). We err on the side of caution and return True for paths
+        # which are not considered reserved by Windows.
         if not parts:
             return False
         if parts[0].startswith('\\\\'):
             # UNC paths are never reserved
             return False
-        return parts[-1].partition('.')[0].upper() in self.reserved_names
+        name = parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
+        return name.upper() in self.reserved_names
 
     def make_uri(self, path):
         # Under Windows, file URIs use the UTF-8 encoding.
@@ -280,54 +259,6 @@ class _PosixFlavour(_Flavour):
 
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern)).fullmatch
-
-    def resolve(self, path, strict=False):
-        sep = self.sep
-        accessor = path._accessor
-        seen = {}
-        def _resolve(path, rest):
-            if rest.startswith(sep):
-                path = ''
-
-            for name in rest.split(sep):
-                if not name or name == '.':
-                    # current dir
-                    continue
-                if name == '..':
-                    # parent dir
-                    path, _, _ = path.rpartition(sep)
-                    continue
-                if path.endswith(sep):
-                    newpath = path + name
-                else:
-                    newpath = path + sep + name
-                if newpath in seen:
-                    # Already seen this path
-                    path = seen[newpath]
-                    if path is not None:
-                        # use cached value
-                        continue
-                    # The symlink is not resolved, so we must have a symlink loop.
-                    raise RuntimeError("Symlink loop from %r" % newpath)
-                # Resolve the symbolic link
-                try:
-                    target = accessor.readlink(newpath)
-                except OSError as e:
-                    if e.errno != EINVAL and strict:
-                        raise
-                    # Not a symlink, or non-strict mode. We just leave the path
-                    # untouched.
-                    path = newpath
-                else:
-                    seen[newpath] = None # not resolved symlink
-                    path = _resolve(path, target)
-                    seen[newpath] = path # resolved symlink
-
-            return path
-        # NOTE: according to POSIX, getcwd() cannot contain path components
-        # which are symlinks.
-        base = '' if path.is_absolute() else accessor.getcwd()
-        return _resolve(base, str(path)) or sep
 
     def is_reserved(self, parts):
         return False
@@ -423,6 +354,8 @@ class _NormalAccessor(_Accessor):
     getcwd = os.getcwd
 
     expanduser = staticmethod(os.path.expanduser)
+
+    realpath = staticmethod(os.path.realpath)
 
 
 _normal_accessor = _NormalAccessor()
@@ -1055,7 +988,7 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(cls()._accessor.getcwd())
+        return cls(cls._accessor.getcwd())
 
     @classmethod
     def home(cls):
@@ -1132,15 +1065,27 @@ class Path(PurePath):
         normalizing it (for example turning slashes into backslashes under
         Windows).
         """
-        s = self._flavour.resolve(self, strict=strict)
-        if s is None:
-            # No symlink resolution => for consistency, raise an error if
-            # the path doesn't exist or is forbidden
-            self.stat()
-            s = str(self.absolute())
-        # Now we have no symlinks in the path, it's safe to normalize it.
-        normed = self._flavour.pathmod.normpath(s)
-        return self._from_parts((normed,))
+
+        def check_eloop(e):
+            winerror = getattr(e, 'winerror', 0)
+            if e.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
+                raise RuntimeError("Symlink loop from %r" % e.filename)
+
+        try:
+            s = self._accessor.realpath(self, strict=strict)
+        except OSError as e:
+            check_eloop(e)
+            raise
+        p = self._from_parts((s,))
+
+        # In non-strict mode, realpath() doesn't raise on symlink loops.
+        # Ensure we get an exception by calling stat()
+        if not strict:
+            try:
+                p.stat()
+            except OSError as e:
+                check_eloop(e)
+        return p
 
     def stat(self, *, follow_symlinks=True):
         """
@@ -1330,7 +1275,7 @@ class Path(PurePath):
         warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
                       "for removal in Python 3.12. "
                       "Use pathlib.Path.hardlink_to() instead.",
-                      DeprecationWarning)
+                      DeprecationWarning, stacklevel=2)
         self._accessor.link(self, target)
 
     # Convenience functions for querying the stat results
@@ -1360,7 +1305,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1377,7 +1322,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1428,7 +1373,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1444,7 +1389,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1460,7 +1405,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1476,7 +1421,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path

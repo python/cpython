@@ -325,29 +325,6 @@ typedef struct {
     int fd;
 } PyStdPrinter_Object;
 
-static PyObject *
-stdprinter_new(PyTypeObject *type, PyObject *args, PyObject *kews)
-{
-    PyStdPrinter_Object *self;
-
-    assert(type != NULL && type->tp_alloc != NULL);
-
-    self = (PyStdPrinter_Object *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->fd = -1;
-    }
-
-    return (PyObject *) self;
-}
-
-static int
-stdprinter_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "cannot create 'stderrprinter' instances");
-    return -1;
-}
-
 PyObject *
 PyFile_NewStdPrinter(int fd)
 {
@@ -390,7 +367,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         return NULL;
     }
 
-    /* Encode Unicode to UTF-8/surrogateescape */
+    /* Encode Unicode to UTF-8/backslashreplace */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();
@@ -507,7 +484,7 @@ PyTypeObject PyStdPrinter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* tp_flags */
     0,                                          /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -523,9 +500,9 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    stdprinter_init,                            /* tp_init */
+    0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    stdprinter_new,                             /* tp_new */
+    0,                                          /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
 

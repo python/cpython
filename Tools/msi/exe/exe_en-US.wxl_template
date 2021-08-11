@@ -4,5 +4,5 @@
     <String Id="ShortDescriptor">executable</String>
     <String Id="ShortcutName">Python {{ShortVersion}} ({{Bitness}})</String>
     <String Id="ShortcutDescription">Launches the !(loc.ProductName) interpreter.</String>
-    <String Id="SupportUrl">http://www.python.org/</String>
+    <String Id="SupportUrl">https://www.python.org/</String>
 </WixLocalization>

@@ -37,6 +37,7 @@
 #endif
 
 static struct PyModuleDef _testcapimodule;
+static PyType_Spec HeapTypeNameType_Spec;
 
 static PyObject *TestError;     /* set to exception object in init */
 
@@ -144,6 +145,67 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 }
 
+static PyObject*
+test_gc_control(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int orig_enabled = PyGC_IsEnabled();
+    const char* msg = "ok";
+    int old_state;
+
+    old_state = PyGC_Enable();
+    msg = "Enable(1)";
+    if (old_state != orig_enabled) {
+        goto failed;
+    }
+    msg = "IsEnabled(1)";
+    if (!PyGC_IsEnabled()) {
+        goto failed;
+    }
+
+    old_state = PyGC_Disable();
+    msg = "disable(2)";
+    if (!old_state) {
+        goto failed;
+    }
+    msg = "IsEnabled(2)";
+    if (PyGC_IsEnabled()) {
+        goto failed;
+    }
+
+    old_state = PyGC_Enable();
+    msg = "enable(3)";
+    if (old_state) {
+        goto failed;
+    }
+    msg = "IsEnabled(3)";
+    if (!PyGC_IsEnabled()) {
+        goto failed;
+    }
+
+    if (!orig_enabled) {
+        old_state = PyGC_Disable();
+        msg = "disable(4)";
+        if (old_state) {
+            goto failed;
+        }
+        msg = "IsEnabled(4)";
+        if (PyGC_IsEnabled()) {
+            goto failed;
+        }
+    }
+
+    Py_RETURN_NONE;
+
+failed:
+    /* Try to clean up if we can. */
+    if (orig_enabled) {
+        PyGC_Enable();
+    } else {
+        PyGC_Disable();
+    }
+    PyErr_Format(TestError, "GC control failed in %s", msg);
+    return NULL;
+}
 
 static PyObject*
 test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1069,6 +1131,30 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *tp_name = PyType_GetName(&PyLong_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "int") == 0);
+    Py_DECREF(tp_name);
+
+    tp_name = PyType_GetName(&PyModule_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
+    Py_DECREF(tp_name);
+
+    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    if (HeapTypeNameType == NULL) {
+        Py_RETURN_NONE;
+    }
+    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "HeapTypeNameType") == 0);
+    Py_DECREF(tp_name);
+
+    Py_DECREF(HeapTypeNameType);
     Py_RETURN_NONE;
 }
 
@@ -2092,51 +2178,6 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 /* Ignore use of deprecated APIs */
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-
-static PyObject *
-unicode_encodedecimal(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    char *errors = NULL;
-    PyObject *decimal;
-    Py_ssize_t decimal_length, new_length;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length, &errors))
-        return NULL;
-
-    decimal_length = length * 7; /* len('&#8364;') */
-    decimal = PyBytes_FromStringAndSize(NULL, decimal_length);
-    if (decimal == NULL)
-        return NULL;
-
-    res = PyUnicode_EncodeDecimal(unicode, length,
-                                  PyBytes_AS_STRING(decimal),
-                                  errors);
-    if (res < 0) {
-        Py_DECREF(decimal);
-        return NULL;
-    }
-
-    new_length = strlen(PyBytes_AS_STRING(decimal));
-    assert(new_length <= decimal_length);
-    res = _PyBytes_Resize(&decimal, new_length);
-    if (res < 0)
-        return NULL;
-
-    return decimal;
-}
-
-static PyObject *
-unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length))
-        return NULL;
-    return PyUnicode_TransformDecimalToASCII(unicode, length);
-}
 
 static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
@@ -3800,6 +3841,25 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
+test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    PyStructSequence_Field descr_fields[1] = {
+        (PyStructSequence_Field){NULL, NULL}
+    };
+    // Test specifically for NULL .doc field.
+    PyStructSequence_Desc descr = {"_testcapi.test_descr", NULL, &descr_fields[0], 0};
+
+    PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
+    assert(structseq_type != NULL);
+    assert(PyType_Check(structseq_type));
+    assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
+    Py_DECREF(structseq_type);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyLong_FromLong(0);
@@ -4265,8 +4325,6 @@ temporary_c_thread(void *data)
     PyGILState_Release(state);
 
     PyThread_release_lock(test_c_thread->exit_event);
-
-    PyThread_exit_thread();
 }
 
 static PyObject *
@@ -4749,6 +4807,10 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self, PyObject *Py_UNUSED(args
 static PyObject*
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    /* This test would fail if run with the address sanitizer */
+#ifdef _Py_ADDRESS_SANITIZER
+    Py_RETURN_NONE;
+#else
     PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (op == NULL) {
         return NULL;
@@ -4758,6 +4820,7 @@ check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
     Py_SET_REFCNT(op, 1);
     /* object memory is freed! */
     return test_pyobject_is_freed("check_pyobject_freed_is_freed", op);
+#endif
 }
 
 
@@ -5375,9 +5438,6 @@ pynumber_tobase(PyObject *module, PyObject *args)
 }
 
 
-static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
-
-
 static PyObject*
 test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -5516,6 +5576,8 @@ test_fatal_error(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
+static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -5544,6 +5606,7 @@ static PyMethodDef TestMethods[] = {
     {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,      METH_O},
     {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,      METH_O},
     {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,     METH_O},
+    {"test_gc_control",         test_gc_control,                 METH_NOARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -5556,6 +5619,8 @@ static PyMethodDef TestMethods[] = {
     {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
     {"test_structseq_newtype_doesnt_leak",
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
+    {"test_structseq_newtype_null_descr_doc",
+        test_structseq_newtype_null_descr_doc, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
@@ -5584,6 +5649,7 @@ static PyMethodDef TestMethods[] = {
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
     {"get_args",                get_args,                        METH_VARARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
+    {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
@@ -5620,6 +5686,8 @@ static PyMethodDef TestMethods[] = {
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
+    {"getargs_s_hash_int",      (PyCFunction)(void(*)(void))getargs_s_hash_int,
+      METH_VARARGS|METH_KEYWORDS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
@@ -5653,8 +5721,6 @@ static PyMethodDef TestMethods[] = {
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
 #if USE_UNICODE_WCHAR_CACHE
-    {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
-    {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
 #endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
@@ -6474,6 +6540,21 @@ static PyType_Spec HeapDocCType_spec = {
 
 typedef struct {
     PyObject_HEAD
+} HeapTypeNameObject;
+
+static PyType_Slot HeapTypeNameType_slots[] = {
+    {0},
+};
+
+static PyType_Spec HeapTypeNameType_Spec = {
+    .name = "_testcapi.HeapTypeNameType",
+    .basicsize = sizeof(HeapTypeNameObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = HeapTypeNameType_slots,
+};
+
+typedef struct {
+    PyObject_HEAD
 } NullTpDocTypeObject;
 
 static PyType_Slot NullTpDocType_slots[] = {
@@ -6511,6 +6592,13 @@ heapctype_init(PyObject *self, PyObject *args, PyObject *kwargs)
     return 0;
 }
 
+static int
+heapgcctype_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 heapgcctype_dealloc(HeapCTypeObject *self)
 {
@@ -6524,6 +6612,7 @@ static PyType_Slot HeapGcCType_slots[] = {
     {Py_tp_init, heapctype_init},
     {Py_tp_members, heapctype_members},
     {Py_tp_dealloc, heapgcctype_dealloc},
+    {Py_tp_traverse, heapgcctype_traverse},
     {Py_tp_doc, (char*)heapgctype__doc__},
     {0, 0},
 };
@@ -7290,5 +7379,21 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyErr_Clear();
 
 
+    Py_RETURN_NONE;
+}
+
+#undef PyArg_ParseTupleAndKeywords
+PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
+                                            const char *, char **, ...);
+
+static PyObject *
+getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {"", "x", NULL};
+    const char *s;
+    int len;
+    int i = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#i", keywords, &s, &len, &i))
+        return NULL;
     Py_RETURN_NONE;
 }

@@ -1,0 +1,4 @@
+:c:func:`Py_RunMain` now resets :c:data:`PyImport_Inittab` to its initial value
+at exit. It must be possible to call :c:func:`PyImport_AppendInittab` or
+:c:func:`PyImport_ExtendInittab` at each Python initialization.
+Patch by Victor Stinner.

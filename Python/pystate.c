@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
+#include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
 #include "pycore_pyerrors.h"
@@ -308,8 +309,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
     Py_CLEAR(interp->dict);
-    Py_CLEAR(interp->map_abc);
-    Py_CLEAR(interp->seq_abc);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
     Py_CLEAR(interp->after_forkers_parent);
@@ -538,24 +537,25 @@ _PyInterpreterState_IDInitref(PyInterpreterState *interp)
 }
 
 
-void
+int
 _PyInterpreterState_IDIncref(PyInterpreterState *interp)
 {
-    if (interp->id_mutex == NULL) {
-        return;
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        return -1;
     }
+
     PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
     interp->id_refcount += 1;
     PyThread_release_lock(interp->id_mutex);
+    return 0;
 }
 
 
 void
 _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 {
-    if (interp->id_mutex == NULL) {
-        return;
-    }
+    assert(interp->id_mutex != NULL);
+
     struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
     PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
     assert(interp->id_refcount != 0);
@@ -608,6 +608,23 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
+/* Minimum size of data stack chunk */
+#define DATA_STACK_CHUNK_SIZE (16*1024)
+
+static _PyStackChunk*
+allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
+{
+    assert(size_in_bytes % sizeof(PyObject **) == 0);
+    _PyStackChunk *res = _PyObject_VirtualAlloc(size_in_bytes);
+    if (res == NULL) {
+        return NULL;
+    }
+    res->previous = previous;
+    res->size = size_in_bytes;
+    res->top = 0;
+    return res;
+}
+
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
@@ -629,6 +646,11 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->gilstate_counter = 0;
     tstate->async_exc = NULL;
     tstate->thread_id = PyThread_get_thread_ident();
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = PyThread_get_thread_native_id();
+#else
+    tstate->native_thread_id = 0;
+#endif
 
     tstate->dict = NULL;
 
@@ -659,6 +681,16 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->context = NULL;
     tstate->context_ver = 1;
+    tstate->datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
+    if (tstate->datastack_chunk == NULL) {
+        PyMem_RawFree(tstate);
+        return NULL;
+    }
+    /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
+    tstate->datastack_top = &tstate->datastack_chunk->data[1];
+    tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
+    /* Mark trace_info as uninitialized */
+    tstate->trace_info.code = NULL;
 
     if (init) {
         _PyThreadState_Init(tstate);
@@ -841,7 +873,7 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a frame\n");
     }
 
-    /* Don't clear tstate->frame: it is a borrowed reference */
+    /* Don't clear tstate->pyframe: it is a borrowed reference */
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
@@ -905,8 +937,14 @@ tstate_delete_common(PyThreadState *tstate,
     {
         PyThread_tss_set(&gilstate->autoTSSkey, NULL);
     }
+    _PyStackChunk *chunk = tstate->datastack_chunk;
+    tstate->datastack_chunk = NULL;
+    while (chunk != NULL) {
+        _PyStackChunk *prev = chunk->previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        chunk = prev;
+    }
 }
-
 
 static void
 _PyThreadState_Delete(PyThreadState *tstate, int check_current)
@@ -1096,7 +1134,13 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    PyFrameObject *frame = tstate->frame;
+    if (tstate->frame == NULL) {
+        return NULL;
+    }
+    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->frame);
+    if (frame == NULL) {
+        PyErr_Clear();
+    }
     Py_XINCREF(frame);
     return frame;
 }
@@ -1217,7 +1261,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            PyFrameObject *frame = t->frame;
+            InterpreterFrame *frame = t->frame;
             if (frame == NULL) {
                 continue;
             }
@@ -1225,7 +1269,7 @@ _PyThread_CurrentFrames(void)
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)frame);
+            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;
@@ -1969,6 +2013,75 @@ _Py_GetConfig(void)
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
+
+#define MINIMUM_OVERHEAD 1000
+
+static PyObject **
+push_chunk(PyThreadState *tstate, int size)
+{
+    assert(tstate->datastack_top + size >= tstate->datastack_limit);
+
+    int allocate_size = DATA_STACK_CHUNK_SIZE;
+    while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
+        allocate_size *= 2;
+    }
+    _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
+    if (new == NULL) {
+        return NULL;
+    }
+    tstate->datastack_chunk->top = tstate->datastack_top - &tstate->datastack_chunk->data[0];
+    tstate->datastack_chunk = new;
+    tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
+    PyObject **res = &new->data[0];
+    tstate->datastack_top = res + size;
+    return res;
+}
+
+InterpreterFrame *
+_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+{
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int nlocalsplus = code->co_nlocalsplus;
+    size_t size = nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
+    assert(size < INT_MAX/sizeof(PyObject *));
+    PyObject **localsarray = tstate->datastack_top;
+    PyObject **top = localsarray + size;
+    if (top >= tstate->datastack_limit) {
+        localsarray = push_chunk(tstate, (int)size);
+        if (localsarray == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        tstate->datastack_top = top;
+    }
+    InterpreterFrame * frame = (InterpreterFrame *)(localsarray + nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
+    for (int i=0; i < nlocalsplus; i++) {
+        localsarray[i] = NULL;
+    }
+    return frame;
+}
+
+void
+_PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
+{
+    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    if (locals == &tstate->datastack_chunk->data[0]) {
+        _PyStackChunk *chunk = tstate->datastack_chunk;
+        _PyStackChunk *previous = chunk->previous;
+        tstate->datastack_top = &previous->data[previous->top];
+        tstate->datastack_chunk = previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
+    }
+    else {
+        assert(tstate->datastack_top >= locals);
+        tstate->datastack_top = locals;
+    }
+}
+
 
 #ifdef __cplusplus
 }

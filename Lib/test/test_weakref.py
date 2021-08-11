@@ -411,6 +411,36 @@ class ReferencesTestCase(TestBase):
             # can be killed in the middle of the call
             "blech" in p
 
+    def test_proxy_next(self):
+        arr = [4, 5, 6]
+        def iterator_func():
+            yield from arr
+        it = iterator_func()
+
+        class IteratesWeakly:
+            def __iter__(self):
+                return weakref.proxy(it)
+
+        weak_it = IteratesWeakly()
+
+        # Calls proxy.__next__
+        self.assertEqual(list(weak_it), [4, 5, 6])
+
+    def test_proxy_bad_next(self):
+        # bpo-44720: PyIter_Next() shouldn't be called if the reference
+        # isn't an iterator.
+
+        not_an_iterator = lambda: 0
+
+        class A:
+            def __iter__(self):
+                return weakref.proxy(not_an_iterator)
+        a = A()
+
+        msg = "Weakref proxy referenced a non-iterator"
+        with self.assertRaisesRegex(TypeError, msg):
+            list(a)
+
     def test_proxy_reversed(self):
         class MyObj:
             def __len__(self):
@@ -422,14 +452,20 @@ class ReferencesTestCase(TestBase):
         self.assertEqual("".join(reversed(weakref.proxy(obj))), "cba")
 
     def test_proxy_hash(self):
-        cool_hash = 299_792_458
-
         class MyObj:
             def __hash__(self):
-                return cool_hash
+                return 42
 
         obj = MyObj()
-        self.assertEqual(hash(weakref.proxy(obj)), cool_hash)
+        with self.assertRaises(TypeError):
+            hash(weakref.proxy(obj))
+
+        class MyObj:
+            __hash__ = None
+
+        obj = MyObj()
+        with self.assertRaises(TypeError):
+            hash(weakref.proxy(obj))
 
     def test_getweakrefcount(self):
         o = C()

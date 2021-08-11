@@ -58,6 +58,7 @@ reindent-rst.py           Fix-up reStructuredText file whitespace
 rgrep.py                  Reverse grep through a file (useful for big logfiles)
 run_tests.py              Run the test suite with more sensible default options
 serve.py                  Small wsgiref-based web server, used in make serve in Doc
+stable_abi.py             Stable ABI checks and file generators.
 suff.py                   Sort a list of files by suffix
 texi2html.py              Convert GNU texinfo files into HTML
 untabify.py               Replace tabs with spaces in argument files

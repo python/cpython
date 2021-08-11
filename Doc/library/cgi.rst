@@ -73,7 +73,7 @@ When you write a new script, consider adding these lines::
    cgitb.enable()
 
 This activates a special exception handler that will display detailed reports in
-the Web browser if any errors occur.  If you'd rather not show the guts of your
+the web browser if any errors occur.  If you'd rather not show the guts of your
 program to users of your script, you can have the reports saved to files
 instead, with code like this::
 
@@ -316,7 +316,7 @@ algorithms implemented in this module in other circumstances.
 .. function:: test()
 
    Robust test CGI script, usable as main program. Writes minimal HTTP headers and
-   formats all information provided to the script in HTML form.
+   formats all information provided to the script in HTML format.
 
 
 .. function:: print_environ()
@@ -346,11 +346,11 @@ Caring about security
 
 .. index:: pair: CGI; security
 
-There's one important rule: if you invoke an external program (via the
-:func:`os.system` or :func:`os.popen` functions. or others with similar
+There's one important rule: if you invoke an external program (via
+:func:`os.system`, :func:`os.popen` or other functions with similar
 functionality), make very sure you don't pass arbitrary strings received from
 the client to the shell.  This is a well-known security hole whereby clever
-hackers anywhere on the Web can exploit a gullible CGI script to invoke
+hackers anywhere on the web can exploit a gullible CGI script to invoke
 arbitrary shell commands.  Even parts of the URL or field names cannot be
 trusted, since the request doesn't have to come from your form!
 
@@ -424,7 +424,7 @@ above on installing your CGI script carefully can save you a lot of time.  If
 you wonder whether you have understood the installation procedure correctly, try
 installing a copy of this module file (:file:`cgi.py`) as a CGI script.  When
 invoked as a script, the file will dump its environment and the contents of the
-form in HTML form. Give it the right mode etc, and send it a request.  If it's
+form in HTML format. Give it the right mode etc., and send it a request.  If it's
 installed in the standard :file:`cgi-bin` directory, it should be possible to
 send it a request by entering a URL into your browser of the form:
 
@@ -457,7 +457,7 @@ likely the traceback will end up in one of the HTTP server's log files, or be
 discarded altogether.
 
 Fortunately, once you have managed to get your script to execute *some* code,
-you can easily send tracebacks to the Web browser using the :mod:`cgitb` module.
+you can easily send tracebacks to the web browser using the :mod:`cgitb` module.
 If you haven't done so already, just add the lines::
 
    import cgitb

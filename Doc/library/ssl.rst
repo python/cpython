@@ -681,19 +681,23 @@ Constants
 
    .. deprecated:: 3.10
 
+      TLS clients and servers require different default settings for secure
+      communication. The generic TLS protocol constant is deprecated in
+      favor of :data:`PROTOCOL_TLS_CLIENT` and :data:`PROTOCOL_TLS_SERVER`.
+
 .. data:: PROTOCOL_TLS_CLIENT
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
-   but only support client-side :class:`SSLSocket` connections. The protocol
-   enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
-   default.
+   Auto-negotiate the highest protocol version that both the client and
+   server support, and configure the context client-side connections. The
+   protocol enables :data:`CERT_REQUIRED` and
+   :attr:`~SSLContext.check_hostname` by default.
 
    .. versionadded:: 3.6
 
 .. data:: PROTOCOL_TLS_SERVER
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
-   but only support server-side :class:`SSLSocket` connections.
+   Auto-negotiate the highest protocol version that both the client and
+   server support, and configure the context server-side connections.
 
    .. versionadded:: 3.6
 
@@ -1052,7 +1056,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web servers (therefore, it will
+   context may be used to authenticate web servers (therefore, it will
    be used to create client-side sockets).
 
    .. versionadded:: 3.4
@@ -1061,7 +1065,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web clients (therefore, it will
+   context may be used to authenticate web clients (therefore, it will
    be used to create server-side sockets).
 
    .. versionadded:: 3.4
@@ -1358,6 +1362,10 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.10
+
+      NPN has been superseded by ALPN
+
 .. method:: SSLSocket.unwrap()
 
    Performs the SSL shutdown handshake, which removes the TLS layer from the
@@ -1508,6 +1516,14 @@ to speed up repeated connections from the same clients.
       :class:`SSLContext` without protocol argument is deprecated. The
       context class will either require :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol in the future.
+
+   .. versionchanged:: 3.10
+
+      The default cipher suites now include only secure AES and ChaCha20
+      ciphers with forward secrecy and security level 2. RSA and DH keys with
+      less than 2048 bits and ECC keys with less than 224 bits are prohibited.
+      :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
+      :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
 
 :class:`SSLContext` objects have the following methods and attributes:
@@ -1706,6 +1722,10 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.10
+
+      NPN has been superseded by ALPN
+
 .. attribute:: SSLContext.sni_callback
 
    Register a callback function that will be called after the TLS Client Hello
@@ -1850,7 +1870,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
     .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslsocket_class`
+      The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
 .. attribute:: SSLContext.sslsocket_class
@@ -1876,7 +1896,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
    .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslobject_class`
+      The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
 
 .. attribute:: SSLContext.sslobject_class

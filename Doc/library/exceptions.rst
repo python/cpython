@@ -42,12 +42,12 @@ include the originating exception(s) and the final exception.
 
 When raising a new exception (rather than using a bare ``raise`` to re-raise
 the exception currently being handled), the implicit exception context can be
-supplemented with an explicit cause by using :keyword:`from` with
+supplemented with an explicit cause by using :keyword:`from<raise>` with
 :keyword:`raise`::
 
    raise new_exc from original_exc
 
-The expression following :keyword:`from` must be an exception or ``None``. It
+The expression following :keyword:`from<raise>` must be an exception or ``None``. It
 will be set as :attr:`__cause__` on the raised exception. Setting
 :attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
 attribute to ``True``, so that using ``raise new_exc from None``
@@ -96,7 +96,7 @@ The following exceptions are used mostly as base classes for other exceptions.
       instance of ``OtherException`` while preserving the traceback.  Once
       raised, the current frame is pushed onto the traceback of the
       ``OtherException``, as would have happened to the traceback of the
-      original ``SomeException`` had we allowed it to propagate to the caller.
+      original ``SomeException`` had we allowed it to propagate to the caller. ::
 
          try:
              ...
@@ -409,14 +409,16 @@ The following exceptions are the exceptions that are usually raised.
 
    .. versionadded:: 3.5
 
-.. exception:: SyntaxError
+.. exception:: SyntaxError(message, details)
 
    Raised when the parser encounters a syntax error.  This may occur in an
-   :keyword:`import` statement, in a call to the built-in functions :func:`exec`
+   :keyword:`import` statement, in a call to the built-in functions
+   :func:`compile`, :func:`exec`,
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
    The :func:`str` of the exception instance returns only the error message.
+   Details is a tuple whose members are also available as separate attributes.
 
    .. attribute:: filename
 
@@ -445,6 +447,11 @@ The following exceptions are the exceptions that are usually raised.
 
       The column in the end line where the error occurred finishes. This is
       1-indexed: the first character in the line has an ``offset`` of 1.
+
+   For errors in f-string fields, the message is prefixed by "f-string: "
+   and the offsets are offsets in a text constructed from the replacement
+   expression.  For example, compiling f'Bad {a b} field' results in this
+   args attribute: ('f-string: ...', ('', 1, 2, '(a b)\n', 1, 5)).
 
    .. versionchanged:: 3.10
       Added the :attr:`end_lineno` and :attr:`end_offset` attributes.
@@ -683,8 +690,10 @@ depending on the system error code.
 
 .. exception:: NotADirectoryError
 
-   Raised when a directory operation (such as :func:`os.listdir`) is requested
-   on something which is not a directory.
+   Raised when a directory operation (such as :func:`os.listdir`) is requested on
+   something which is not a directory.  On most POSIX platforms, it may also be
+   raised if an operation attempts to open or traverse a non-directory file as if
+   it were a directory.
    Corresponds to :c:data:`errno` ``ENOTDIR``.
 
 .. exception:: PermissionError
@@ -814,3 +823,4 @@ Exception hierarchy
 The class hierarchy for built-in exceptions is:
 
 .. literalinclude:: ../../Lib/test/exception_hierarchy.txt
+  :language: text

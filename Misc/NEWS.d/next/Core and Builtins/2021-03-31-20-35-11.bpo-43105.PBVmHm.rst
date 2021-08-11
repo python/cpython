@@ -1,2 +1,0 @@
-Importlib now resolves relative paths when creating module spec objects from
-file locations.

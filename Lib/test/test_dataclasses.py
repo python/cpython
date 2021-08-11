@@ -2781,6 +2781,72 @@ class TestSlots(unittest.TestCase):
         # We can add a new field to the derived instance.
         d.z = 10
 
+    def test_generated_slots(self):
+        @dataclass(slots=True)
+        class C:
+            x: int
+            y: int
+
+        c = C(1, 2)
+        self.assertEqual((c.x, c.y), (1, 2))
+
+        c.x = 3
+        c.y = 4
+        self.assertEqual((c.x, c.y), (3, 4))
+
+        with self.assertRaisesRegex(AttributeError, "'C' object has no attribute 'z'"):
+            c.z = 5
+
+    def test_add_slots_when_slots_exists(self):
+        with self.assertRaisesRegex(TypeError, '^C already specifies __slots__$'):
+            @dataclass(slots=True)
+            class C:
+                __slots__ = ('x',)
+                x: int
+
+    def test_generated_slots_value(self):
+        @dataclass(slots=True)
+        class Base:
+            x: int
+
+        self.assertEqual(Base.__slots__, ('x',))
+
+        @dataclass(slots=True)
+        class Delivered(Base):
+            y: int
+
+        self.assertEqual(Delivered.__slots__, ('x', 'y'))
+
+        @dataclass
+        class AnotherDelivered(Base):
+            z: int
+
+        self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
+
+    def test_returns_new_class(self):
+        class A:
+            x: int
+
+        B = dataclass(A, slots=True)
+        self.assertIsNot(A, B)
+
+        self.assertFalse(hasattr(A, "__slots__"))
+        self.assertTrue(hasattr(B, "__slots__"))
+
+    # Can't be local to test_frozen_pickle.
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsClass:
+        foo: str
+        bar: int
+
+    def test_frozen_pickle(self):
+        # bpo-43999
+
+        assert self.FrozenSlotsClass.__slots__ == ("foo", "bar")
+        p = pickle.dumps(self.FrozenSlotsClass("a", 1))
+        assert pickle.loads(p) == self.FrozenSlotsClass("a", 1)
+
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
@@ -3632,6 +3698,83 @@ class TestKeywordArgs(unittest.TestCase):
         self.assertEqual(c.a, 1)
         self.assertEqual(c.b, 3)
         self.assertEqual(c.c, 2)
+
+    def test_KW_ONLY_as_string(self):
+        @dataclass
+        class A:
+            a: int
+            _: 'dataclasses.KW_ONLY'
+            b: int
+            c: int
+        A(3, c=5, b=4)
+        msg = "takes 2 positional arguments but 4 were given"
+        with self.assertRaisesRegex(TypeError, msg):
+            A(3, 4, 5)
+
+    def test_KW_ONLY_twice(self):
+        msg = "'Y' is KW_ONLY, but KW_ONLY has already been specified"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass
+            class A:
+                a: int
+                X: KW_ONLY
+                Y: KW_ONLY
+                b: int
+                c: int
+
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass
+            class A:
+                a: int
+                X: KW_ONLY
+                b: int
+                Y: KW_ONLY
+                c: int
+
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass
+            class A:
+                a: int
+                X: KW_ONLY
+                b: int
+                c: int
+                Y: KW_ONLY
+
+        # But this usage is okay, since it's not using KW_ONLY.
+        @dataclass
+        class A:
+            a: int
+            _: KW_ONLY
+            b: int
+            c: int = field(kw_only=True)
+
+        # And if inheriting, it's okay.
+        @dataclass
+        class A:
+            a: int
+            _: KW_ONLY
+            b: int
+            c: int
+        @dataclass
+        class B(A):
+            _: KW_ONLY
+            d: int
+
+        # Make sure the error is raised in a derived class.
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass
+            class A:
+                a: int
+                _: KW_ONLY
+                b: int
+                c: int
+            @dataclass
+            class B(A):
+                X: KW_ONLY
+                d: int
+                Y: KW_ONLY
+
 
     def test_post_init(self):
         @dataclass

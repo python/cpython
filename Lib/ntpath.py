@@ -635,7 +635,7 @@ else:
                 tail = join(name, tail) if tail else name
         return tail
 
-    def realpath(path):
+    def realpath(path, *, strict=False):
         path = normpath(path)
         if isinstance(path, bytes):
             prefix = b'\\\\?\\'
@@ -660,6 +660,8 @@ else:
             path = _getfinalpathname(path)
             initial_winerror = 0
         except OSError as ex:
+            if strict:
+                raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -

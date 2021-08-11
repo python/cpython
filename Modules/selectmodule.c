@@ -728,13 +728,6 @@ newPollObject(PyObject *module)
     return self;
 }
 
-static PyObject *
-poll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 poll_dealloc(pollObject *self)
 {
@@ -1117,13 +1110,6 @@ newDevPollObject(PyObject *module)
     return self;
 }
 
-static PyObject *
-devpoll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 devpoll_dealloc(devpollObject *self)
 {
@@ -1138,7 +1124,6 @@ static PyType_Slot devpoll_Type_slots[] = {
     {Py_tp_dealloc, devpoll_dealloc},
     {Py_tp_getset, devpoll_getsetlist},
     {Py_tp_methods, devpoll_methods},
-    {Py_tp_new, devpoll_new},
     {0, 0},
 };
 
@@ -1146,7 +1131,7 @@ static PyType_Spec devpoll_Type_spec = {
     "select.devpoll",
     sizeof(devpollObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     devpoll_Type_slots
 };
 
@@ -2275,16 +2260,14 @@ static PyMethodDef poll_methods[] = {
 static PyType_Slot poll_Type_slots[] = {
     {Py_tp_dealloc, poll_dealloc},
     {Py_tp_methods, poll_methods},
-    {Py_tp_new, poll_new},
     {0, 0},
 };
 
 static PyType_Spec poll_Type_spec = {
-    "select.poll",
-    sizeof(pollObject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    poll_Type_slots
+    .name = "select.poll",
+    .basicsize = sizeof(pollObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = poll_Type_slots,
 };
 
 #ifdef HAVE_SYS_DEVPOLL_H

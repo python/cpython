@@ -10,7 +10,7 @@ extern "C" {
 
 struct _mod;   // Type defined in pycore_ast.h
 
-typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
+typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock, AnnotationBlock }
     _Py_block_ty;
 
 struct _symtable_entry;
@@ -32,7 +32,6 @@ struct symtable {
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
-    int in_pattern;                 /* whether we are currently in a pattern */
 };
 
 typedef struct _symtable_entry {
@@ -73,6 +72,7 @@ extern PyTypeObject PySTEntry_Type;
 
 #define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
 
+extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
 
 extern struct symtable* _PySymtable_Build(

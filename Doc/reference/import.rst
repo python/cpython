@@ -603,9 +603,14 @@ the module.
 .. attribute:: __file__
 .. attribute:: __cached__
 
-   ``__file__`` is optional. If set, this attribute's value must be a
-   string.  The import system may opt to leave ``__file__`` unset if it
-   has no semantic meaning (e.g. a module loaded from a database).
+   ``__file__`` is optional (if set, value must be a string). It indicates
+   the pathname of the file from which the module was loaded (if
+   loaded from a file), or the pathname of the shared libray file
+   for extension modules loaded dynamically from a shared library.
+   It might be missing for certain types of modules, such as C
+   modules that are statically linked into the interpreter, and the
+   import system may opt to leave it unset if it has no semantic
+   meaning (e.g. a module loaded from a database).
 
    If ``__file__`` is set, it may also be appropriate to set the
    ``__cached__`` attribute which is the path to any compiled version of

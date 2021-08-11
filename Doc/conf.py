@@ -85,7 +85,7 @@ templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
+    # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
     # Removes the quick search block
     '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
     'index': ['indexsidebar.html'],
@@ -225,8 +225,9 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
 # Options for extensions
 # ----------------------
 
-# Relative filename of the reference count data file.
+# Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
+stable_abi_file = 'data/stable_abi.dat'
 
 # Sphinx 2 and Sphinx 3 compatibility
 # -----------------------------------

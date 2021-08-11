@@ -948,6 +948,13 @@ class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
     if c_functools:
         cmp_to_key = c_functools.cmp_to_key
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        support.check_disallow_instantiation(
+            self, type(c_functools.cmp_to_key(None))
+        )
+
 
 class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):
     cmp_to_key = staticmethod(py_functools.cmp_to_key)
@@ -1155,6 +1162,34 @@ class TestTotalOrdering(unittest.TestCase):
                     method = getattr(Orderable_LT, name)
                     method_copy = pickle.loads(pickle.dumps(method, proto))
                     self.assertIs(method_copy, method)
+
+
+    def test_total_ordering_for_metaclasses_issue_44605(self):
+
+        @functools.total_ordering
+        class SortableMeta(type):
+            def __new__(cls, name, bases, ns):
+                return super().__new__(cls, name, bases, ns)
+
+            def __lt__(self, other):
+                if not isinstance(other, SortableMeta):
+                    pass
+                return self.__name__ < other.__name__
+
+            def __eq__(self, other):
+                if not isinstance(other, SortableMeta):
+                    pass
+                return self.__name__ == other.__name__
+
+        class B(metaclass=SortableMeta):
+            pass
+
+        class A(metaclass=SortableMeta):
+            pass
+
+        self.assertTrue(A < B)
+        self.assertFalse(A > B)
+
 
 @functools.total_ordering
 class Orderable_LT:
