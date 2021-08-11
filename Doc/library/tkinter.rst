@@ -20,6 +20,16 @@ demonstrating a simple Tk interface, letting you know that :mod:`tkinter` is
 properly installed on your system, and also showing what version of Tcl/Tk is
 installed, so you can read the Tcl/Tk documentation specific to that version.
 
+Tkinter supports a range of Tcl/Tk versions, built either with or
+without thread support. The official Python binary release bundles Tcl/Tk 8.6
+threaded. See the source code for the :mod:`_tkinter` module
+for more information about supported versions.
+
+Tkinter is not a thin wrapper, but adds a fair amount of its own logic to
+make the experience more pythonic. This documentation will concentrate on these
+additions and changes, and refer to the official Tcl/Tk documentation for
+details that are unchanged.
+
 .. seealso::
 
    Tkinter documentation:
@@ -63,6 +73,47 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
 
    `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
       Brent Welch's encyclopedic book.
+
+
+Architecture
+------------
+
+Tcl/Tk is not a single library but rather consists of a few distinct
+modules, each with a separate functionality and its own official
+documentation. Python's binary releases also ship an add-on module
+together with it.
+
+Tcl
+   Tcl is a dynamic interpreted programming language, just like Python. Though
+   it can be used on its own as a general-purpose programming language, it is
+   most commonly embedded into C applications as a scripting engine or an
+   interface to the Tk toolkit. The Tcl library has a C interface to
+   create and manage one or more instances of a Tcl interpreter, run Tcl
+   commands and scripts in those instances, and add custom commands
+   implemented in either Tcl or C. Each interpreter has an event queue,
+   and there are facilities to send events to it and process them.
+   Unlike Python, Tcl's execution model is designed around cooperative
+   multitasking, and Tkinter bridges this difference
+   (see `Threading model`_ for details).
+
+Tk
+   Tk is a `Tcl package <http://wiki.tcl.tk/37432>`_ implemented in C
+   that adds custom commands to create and manipulate GUI widgets. Each
+   :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
+   it. Tk's widgets are very customizable, though at the cost of a dated appearance.
+   Tk uses Tcl's event queue to generate and process GUI events.
+
+Ttk
+   Themed Tk (Ttk) is a newer family of Tk widgets that provide a much better
+   appearance on different platforms than many of the classic Tk widgets.
+   Ttk is distributed as part of Tk, starting with Tk version 8.5. Python
+   bindings are provided in a separate module, :mod:`tkinter.ttk`.
+
+Tix
+   `Tix <https://core.tcl.tk/jenglish/gutter/packages/tix.html>`_ is an older
+   third-party Tcl package, an add-on for Tk that adds several new widgets.
+   Python bindings are found in the :mod:`tkinter.tix` module.
+   It's deprecated in favor of Ttk.
 
 
 Tkinter Modules
@@ -378,6 +429,59 @@ Tk (C)
 
 Xlib (C)
    the Xlib library to draw graphics on the screen.
+
+
+Threading model
+---------------
+
+Python and Tcl/Tk have very different threading models, which :mod:`tkinter`
+tries to bridge. If you use threads, you may need to be aware of this.
+
+A Python interpreter may have many threads associated with it. In Tcl, multiple
+threads can be created, but each thread has a separate Tcl interpreter instance
+associated with it. Threads can also create more than one interpreter instance,
+though each interpreter instance can be used only by the one thread that created it.
+
+Each :class:`Tk` object created by :mod:`tkinter` contains a Tcl interpreter.
+It also keeps track of which thread created that interpreter. Calls to
+:mod:`tkinter` can be made from any Python thread. Internally, if a call comes
+from a thread other than the one that created the :class:`Tk` object, an event
+is posted to the interpreter's event queue, and when executed, the result is
+returned to the calling Python thread.
+
+Tcl/Tk applications are normally event-driven, meaning that after initialization,
+the interpreter runs an event loop (i.e. :func:`Tk.mainloop`) and responds to events.
+Because it is single-threaded, event handlers must respond quickly, otherwise they
+will block other events from being processed. To avoid this, any long-running
+computations should not run in an event handler, but are either broken into smaller
+pieces using timers, or run in another thread. This is different from many GUI
+toolkits where the GUI runs in a completely separate thread from all application
+code including event handlers.
+
+If the Tcl interpreter is not running the event loop and processing events, any
+:mod:`tkinter` calls made from threads other than the one running the Tcl
+interpreter will fail.
+
+A number of special cases exist:
+
+  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+    :mod:`tkinter` calls the library from the originating Python thread, even
+    if this is different than the thread that created the Tcl interpreter. A global
+    lock ensures only one call occurs at a time.
+
+  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+    object (with its own interpreter), all interpreters that are part of the same
+    thread share a common event queue, which gets ugly fast. In practice, don't create
+    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+
+  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
+    reentering the event loop. It is even possible to run multiple nested event loops
+    or abandon the event loop entirely. If you're doing anything tricky when it comes
+    to events or threads, be aware of these possibilities.
+
+  * There are a few select :mod:`tkinter` functions that presently work only when
+    called from the thread that created the Tcl interpreter.
 
 
 Handy Reference
