@@ -330,8 +330,8 @@ PyList_Append(PyObject *op, PyObject *newitem)
 static void
 list_dealloc(PyListObject *op)
 {
-    Py_ssize_t i;
     Py_TRASHCAN_BEGIN(op, list_dealloc)
+    Py_ssize_t i;
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces

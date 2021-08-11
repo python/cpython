@@ -1558,11 +1558,10 @@ hamt_node_collision_traverse(PyHamtNode_Collision *self,
 static void
 hamt_node_collision_dealloc(PyHamtNode_Collision *self)
 {
+    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
     /* Collision's tp_dealloc */
 
     Py_ssize_t len = Py_SIZE(self);
-
-    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
 
     if (len > 0) {
 

@@ -1924,11 +1924,11 @@ Fail:
 static void
 dict_dealloc(PyDictObject *mp)
 {
+    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     PyObject **values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
 
-    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values != empty_values) {
             for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {

@@ -482,10 +482,10 @@ set_next(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
 static void
 set_dealloc(PySetObject *so)
 {
+    Py_TRASHCAN_BEGIN(so, set_dealloc)
     setentry *entry;
     Py_ssize_t used = so->used;
 
-    Py_TRASHCAN_BEGIN(so, set_dealloc)
     if (so->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) so);
 
