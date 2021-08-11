@@ -574,7 +574,7 @@ coverage-lcov:
 	@echo
 
 # Force regeneration of parser and importlib
-coverage-report: regen-token regen-importlib
+coverage-report: regen-token regen-importlib regen-frozen-stdlib
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -733,51 +733,46 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
-# Importlib
+# frozen modules (including importlib)
 
 Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
 Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-.PHONY: regen-importlib
-regen-importlib: Programs/_freeze_module
-	# Regenerate Python/importlib_external.h
-	# from Lib/importlib/_bootstrap_external.py using _freeze_module
-	./Programs/_freeze_module importlib._bootstrap_external \
-	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
-	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
-	# using _freeze_module
-	./Programs/_freeze_module importlib._bootstrap \
-	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
-	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
-	# using _freeze_module
-	./Programs/_freeze_module zipimport \
-	    $(srcdir)/Lib/zipimport.py \
-	    $(srcdir)/Python/importlib_zipimport.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
+Tools/scripts/freeze_modules.py: Programs/_freeze_module
 
+.PHONY: regen-importlib
+regen-importlib: Tools/scripts/freeze_modules.py
+	# Regenerate Python/importlib_external.h, importlib.h, and zipimport.h.
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py importlib
+
+.PHONY: regen-frozen-stdlib
+regen-frozen-stdlib: Tools/scripts/freeze_modules.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py stdlib
+
+.PHONY: regen-frozen
+regen-frozen: Tools/scripts/freeze_modules.py
+	# Regenerate code for frozen module "__hello__".
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py test
+
+.PHONY: regen-frozen-all
+regen-frozen-all: Tools/scripts/freeze_modules.py
+	# Regenerate code for frozen module "__hello__".
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py all
+
+############################################################################
+# ABI
 
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
 
 ############################################################################
-# Frozen stdlib
-
-.PHONY: regen-frozen-stdlib
-regen-frozen-stdlib: Programs/_freeze_importlib
-	$(PYTHON_FOR_REGEN) ./Tools/scripts/freeze_stdlib.py
-
-############################################################################
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-importlib regen-frozen-stdlib \
-	clinic regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
+	regen-token regen-ast regen-keyword regen-frozen-all clinic \
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
@@ -888,15 +883,6 @@ regen-opcode:
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
-
-.PHONY: regen-frozen
-regen-frozen: Programs/_freeze_module
-	# Regenerate code for frozen module "__hello__".
-	./Programs/_freeze_module hello \
-		$(srcdir)/Tools/freeze/flag.py \
-		$(srcdir)/Python/frozen_hello.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
-		$(srcdir)/Python/frozen_hello.h.new
 
 .PHONY: regen-token
 regen-token:
