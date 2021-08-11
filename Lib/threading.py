@@ -952,7 +952,7 @@ class Thread:
         finally:
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
-            del self._target, self._args, self._kwargs
+            del self._context, self._target, self._args, self._kwargs
 
     def _bootstrap(self):
         # Wrapper around the real bootstrap code that ignores
