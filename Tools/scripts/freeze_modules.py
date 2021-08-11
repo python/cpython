@@ -17,8 +17,8 @@ TOOLS_DIR = os.path.dirname(SCRIPTS_DIR)
 ROOT_DIR = os.path.dirname(TOOLS_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
+# XXX It may make more sense to put frozen modules in Modules/ or Lib/...
 MODULES_DIR = os.path.join(ROOT_DIR, 'Python')
-#MODULES_DIR = os.path.join(ROOT_DIR, 'Modules')
 TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
 
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
@@ -87,39 +87,34 @@ def expand_frozen(destdir=MODULES_DIR):
     frozen = {}
     packages = {}
     for frozenid, info in FROZEN.items():
-        if frozenid.startswith('<'):
-            assert info is None, (frozenid, info)
-            modids = packages[frozenid] = []
-            pkgname = frozenid[1:-1]
-            _pkgname, sep, match = pkgname.rpartition('.')
-            if not sep or match.isidentifier():
-                frozen[pkgname] = (None, None, True)
-                modids.append(pkgname)
-            else:
-                pkgname = _pkgname
-                frozen[pkgname] = (None, None, True)
-                modids.append(okgname)
-                for subname, ispkg in _iter_submodules(pkgname, match=match):
-                    frozen[subname] = (None, None, ispkg)
-                    modids.append(subname)
+        if info is None or isinstance(info, str):
+            pyfile = info
+            frozenfile = None
         else:
-            if info is None or isinstance(info, str):
-                info = (info, None, False)
-            else:
-                pyfile, frozenfile = info
-                info = (pyfile, frozenfile, False)
-            frozen[frozenid] = info
+            pyfile, frozenfile = info
+
+        resolved = iter(resolve_modules(frozenid, pyfile))
+        modname, _pyfile, ispkg = next(resolved)
+        if not pyfile:
+            pyfile = _pyfile
+        frozen[modname] = (pyfile, frozenfile, ispkg)
+        if ispkg:
+            assert info is None
+            modids = packages[frozenid] = [modname]
+            for subname, subpyfile, ispkg in resolved:
+                frozen[subname] = (subpyfile, None, ispkg)
+                modids.append(subname)
+        else:
+            assert not list(resolved)
     for frozenid, info in frozen.items():
         pyfile, frozenfile, ispkg = info
 
         if not pyfile:
-            pyfile = _resolve_module(frozenid, ispkg)
+            pyfile = _resolve_module(frozenid, ispkg=ispkg)
             info = (pyfile, frozenfile, ispkg)
 
         if not frozenfile:
             frozenfile = _resolve_frozen(frozenid, destdir)
-#            frozenfile = f'frozen_{frozenid}'
-#            frozenfile = os.path.join(destdir, frozenfile)
             info = (pyfile, frozenfile, ispkg)
         elif not os.path.isabs(frozenfile):
             frozenfile = os.path.join(destdir, frozenfile)
@@ -135,6 +130,7 @@ def expand_frozen(destdir=MODULES_DIR):
             if frozenid in packages:
                 group.extend(packages[frozenid])
             else:
+                assert frozenid in frozen, (frozenid, frozen)
                 group.append(frozenid)
 
     # Finally, expand MODULES.
@@ -144,8 +140,8 @@ def expand_frozen(destdir=MODULES_DIR):
             if row in packages:
                 for modname in packages[row]:
                     rows.append((modname, modname))
-                continue
-            row = (row, row)
+            else:
+                row = (row, row)
         rows.append(row)
     headers = []
     specs = []
@@ -170,6 +166,7 @@ def expand_frozen(destdir=MODULES_DIR):
 
         if modname.startswith('<'):
             modname = modname[1:-1]
+            assert check_modname(modname), modname
             ispkg = True
         spec = (modname, frozenid, ispkg)
         specs.append(spec)
@@ -177,25 +174,131 @@ def expand_frozen(destdir=MODULES_DIR):
     return groups, frozen, headers, specs
 
 
-#def freeze_stdlib_module(modname, destdir=MODULES_DIR):
-#    if modname.startswith('<'):
-#        pkgname = modname[1:-1]
-#        pkgname, sep, match = pkgname.rpartition('.')
-#        if not sep or match.isidentifier():
-#            pyfile = _resolve_module(pkgname, ispkg=True)
-#            frozenfile = _resolve_frozen(pkgname, destdir)
-#            _freeze_module(pkgname, pyfile, frozenfile)
-#        else:
-#            pkgdir = os.path.dirname(pyfile)
-#            for subname, ispkg in _iter_submodules(pkgname, pkgdir, match):
-#                pyfile = _resolve_module(subname, ispkg)
-#                frozenfile = _resolve_frozen(subname, destdir)
-#                _freeze_module(subname, pyfile, frozenfile)
-#    else:
-#        pyfile = _resolve_module(modname, ispkg=False)
-#        frozenfile = _resolve_frozen(modname, destdir)
-#        _freeze_module(modname, pyfile, frozenfile)
+def resolve_modules(modname, pyfile=None):
+    if modname.startswith('<') and modname.endswith('>'):
+        if pyfile:
+            assert os.path.isdir(pyfile) or os.path.basename(pyfile) == '__init__.py', pyfile
+        ispkg = True
+        modname = modname[1:-1]
+        rawname = modname
+        # For now, we only expect match patterns at the end of the name.
+        _modname, sep, match = pkgname.rpartition('.')
+        if sep:
+            if _modname.endswith('.**'):
+                modname = _modname[:-3]
+                match = f'**.{match}'
+            elif match and not match.isidentifier():
+                modname = _modname
+            # Otherwise it's a plain name so we leave it alone.
+        else:
+            match = None
+    else:
+        ispkg = False
+        rawname = modname
+        match = None
 
+    if not check_modname(modname):
+        raise ValueError(f'not a valid module name ({rawname})')
+
+    if not pyfile:
+        pyfile = _resolve_module(modname, ispkg=ispkg)
+    elif os.path.isdir(pyfile):
+        pyfile = _resolve_module(modname, pyfile, ispkg)
+    yield modname, pyfile, ispkg
+
+    if match:
+        pkgdir = os.path.dirname(pyfile)
+        yield from iter_submodules(modname, pkgdir, match)
+
+
+def check_modname(modname):
+    return all(n.isidentifier() for n in modname.split('.'))
+
+
+def iter_submodules(pkgname, pkgdir=None, match='*'):
+    if not pkgdir:
+        pkgdir = os.path.join(STDLIB_DIR, *pkgname.split('.'))
+    if not match:
+        match = '**.*'
+    match_modname = _resolve_modname_matcher(match, pkgdir)
+
+    def _iter_submodules(pkgname, pkgdir):
+        for entry in os.scandir(pkgdir):
+            matched, recursive = match_modname(entry.name)
+            if not matched:
+                continue
+            modname = f'{pkgname}.{entry.name}'
+            if modname.endswith('.py'):
+                yield modname[:-3], entry.path, False
+            elif entry.is_dir():
+                pyfile = os.path.join(entry.path, '__init__.py')
+                # We ignore namespace packages.
+                if os.path.exists(pyfile):
+                    yield modname, pyfile, True
+                    if recursive:
+                        yield from _iter_submodules(modname, entry.path)
+
+    return _iter_submodules(pkgname, pkgdir)
+
+
+def _resolve_modname_matcher(match, rootdir=None):
+    if isinstance(match, str):
+        if match.startswith('**.'):
+            recursive = True
+            pat = match[3:]
+            assert match
+        else:
+            recursive = False
+            pat = match
+
+        if pat == '*':
+            def match_modname(modname):
+                return True, recursive
+        else:
+            raise NotImplementedError(match)
+    elif callable(match):
+        match_modname = match(rootdir)
+    else:
+        raise ValueError(f'unsupported matcher {match!r}')
+    return match_modname
+
+
+def _resolve_module(modname, pathentry=STDLIB_DIR, ispkg=False):
+    assert pathentry, pathentry
+    pathentry = os.path.normpath(pathentry)
+    assert os.path.isabs(pathentry)
+    if ispkg:
+        return os.path.join(pathentry, *modname.split('.'), '__init__.py')
+    return os.path.join(pathentry, *modname.split('.')) + '.py'
+
+
+def _resolve_frozen(modname, destdir):
+    # We use a consistent naming convention for frozen modules.
+    return os.path.join(destdir, 'frozen_' + modname.replace('.', '_')) + '.h'
+
+
+#######################################
+# freezing modules
+
+def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
+    """Generate the frozen module .h file for the given module."""
+    for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
+        frozenfile = _resolve_frozen(modname, destdir)
+        _freeze_module(modname, pyfile, frozenfile)
+
+
+def _freeze_module(frozenid, pyfile, frozenfile):
+    tmpfile = frozenfile + '.new'
+
+    argv = [TOOL, frozenid, pyfile, tmpfile]
+    print('#', ' '.join(argv))
+    subprocess.run(argv, check=True)
+
+    os.replace(tmpfile, frozenfile)
+
+
+#######################################
+# regenerating dependent files
 
 def regen_frozen(headers, specs):
     headerlines = []
@@ -312,44 +415,6 @@ def regen_makefile(headers, destdir=MODULES_DIR):
         outfile.write('Python/frozen.o: $(FROZEN_FILES)' + os.linesep)
         for line in lines:
             outfile.write(line)
-
-
-def _freeze_module(frozenid, pyfile, frozenfile):
-    tmpfile = frozenfile + '.new'
-
-    argv = [TOOL, frozenid, pyfile, tmpfile]
-    print('#', ' '.join(argv))
-    subprocess.run(argv, check=True)
-
-    os.replace(tmpfile, frozenfile)
-
-
-def _resolve_module(modname, ispkg=False):
-    if ispkg:
-        return os.path.join(STDLIB_DIR, *modname.split('.'), '__init__.py')
-    return os.path.join(STDLIB_DIR, *modname.split('.')) + '.py'
-
-
-def _resolve_frozen(modname, destdir):
-    return os.path.join(destdir, 'frozen_' + modname.replace('.', '_')) + '.h'
-
-
-def _iter_submodules(pkgname, pkgdir=None, match='*'):
-    if not pkgdir:
-        pkgdir = os.path.join(STDLIB_DIR, *pkgname.split('.'))
-    if not match:
-        match = '*'
-    if match != '*':
-        raise NotImplementedError(match)
-
-    for entry in os.scandir(pkgdir):
-        modname = f'{pkgname}.{entry.name}'
-        if modname.endswith('.py'):
-            yield modname[:-3], False
-        elif entry.is_dir():
-            if os.path.exists(os.path.join(entry.path, '__init__.py')):
-                yield modname, True
-                yield from _iter_submodules(modname, entry.path)
 
 
 #######################################
