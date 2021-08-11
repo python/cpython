@@ -90,8 +90,6 @@ class SpecializationStatsTests(unittest.TestCase):
                 tuple)
             for v in stats['load_attr']['specialization_failure_kinds']:
                 self.assertIsInstance(v, int)
-        else:
-            print('No specialization stats to check')
 
 
 if __name__ == "__main__":
