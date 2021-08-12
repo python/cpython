@@ -279,7 +279,7 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
 /* Fix locations for the given node and its children.
 
    `parent` is the enclosing node.
-   `expr_sart` is the starting position of the expression (pointing to the open brace).
+   `expr_start` is the starting position of the expression (pointing to the open brace).
    `n` is the node which locations are going to be fixed relative to parent.
    `expr_str` is the child node's string representation, including braces.
 */
