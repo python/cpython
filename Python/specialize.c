@@ -403,8 +403,9 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Methods */
 
-#define SPEC_FAIL_IS_ATTR 14
-#define SPEC_FAIL_DICT_SUBCLASS 15
+#define SPEC_FAIL_NEGATIVE_DICTOFFSET 14
+#define SPEC_FAIL_IS_ATTR 15
+#define SPEC_FAIL_DICT_SUBCLASS 16
 #define SPEC_FAIL_BUILTIN_CLASS_METHOD 17
 #define SPEC_FAIL_CLASS_METHOD_OBJ 18
 #define SPEC_FAIL_NOT_METHOD 19
@@ -792,6 +793,9 @@ success:
 }
 
 
+// Note: Please collect stats carefully before modifying. A subtle change can cause
+// a significant drop in cache hits. A possible test is python.exe -m test_typing
+// test_re test_dis test_zlib.
 int
 _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
@@ -813,43 +817,39 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             return -1;
         }
     }
-    PyObject *descr = NULL;
-    DesciptorClassification kind = analyze_descriptor(owner_cls, name, &descr, 0);
-    // Store the version right away, in case it's modified halfway through.
-    cache1->tp_version = owner_cls->tp_version_tag;
-
+    // Technically this is fine for bound method calls, but slightly slower at runtime.
+    if (Py_TYPE(owner_cls)->tp_dictoffset < 0) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+        goto fail;
+    }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
+    // Check for classmethods.
+    int owner_is_class = (owner_cls->tp_getattro != PyObject_GenericGetAttr) &&
+        PyObject_TypeCheck(owner, &PyBaseObject_Type);
+
+    PyObject *descr = NULL;
+    DesciptorClassification kind = 0;
+    // class method
+    if (owner_is_class) {
+        kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
+        // Store the version right away, in case it's modified halfway through.
+        cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
+    }
+    else {
+        // instance method
+        kind = analyze_descriptor(owner_cls, name, &descr, 0);
+        cache1->tp_version = owner_cls->tp_version_tag;
+    }
 
     if (kind != METHOD || descr == NULL) {
-        if (kind == GETSET_OVERRIDDEN &&
-            PyObject_TypeCheck(owner, &PyBaseObject_Type)) {
-            PyTypeObject *cls = (PyTypeObject *)owner;
-            kind = analyze_descriptor(cls, name, &descr, 0);
-            // Store the version right away, in case it's modified halfway through.
-            cache1->tp_version = cls->tp_version_tag;
+#if SPECIALIZATION_STATS
+        if (owner_is_class) {
             if (descr == NULL) {
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
                 goto fail;
             }
-
-            // Python class method
-            if (kind == METHOD) {
-                assert(owner_has_dict);
-                uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
-                    owner_dict);
-                if (keys_version == 0) {
-                    SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
-                    goto fail;
-                }
-                // borrowed, see below for why this is safe
-                cache2->obj = descr;
-                cache1->dk_version_or_hint = keys_version;
-                *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
-                goto success;
-            }
-#if SPECIALIZATION_STATS
             // Builtin class method -- ie wrapped PyCFunction
             else if (kind == NON_OVERRIDING && Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
                 // Unlike python classes, builtins don't hold a reference to the
@@ -866,8 +866,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
                 goto fail;
             }
-#endif
         }
+#endif
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
         goto fail;
     }
@@ -879,10 +879,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NO_DICT);
         goto fail;
     }
-    if (Py_TYPE(owner_cls)->tp_dictoffset >= 0 &&
-        cls_has_dict &&
-        owner_cls->tp_dictoffset >= 0) {
-        
+    assert(kind == METHOD);
+    if (cls_has_dict && owner_cls->tp_dictoffset >= 0) {
         // If o.__dict__ changes, the method might be found in o.__dict__
         // instead of old type lookup. So record o.__dict__'s keys.
         uint32_t keys_version = UINT32_MAX;
@@ -899,19 +897,23 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
                 return -1;
             }
             PyObject *value = NULL;
-            Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
-            assert(ix != DKIX_ERROR);
-            // Shouldn't be in __dict__. That makes it an attribute.
-            if (ix != DKIX_EMPTY) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
-                goto fail;
-            }            
+            if (!owner_is_class) {
+                // Normal methods shouldn't be in o.__dict__.
+                // That makes it an attribute.
+                Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
+                assert(ix != DKIX_ERROR);
+                if (ix != DKIX_EMPTY) {
+                    SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+                    goto fail;
+                }
+            }
             keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
             if (keys_version == 0) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
                 goto fail;
-            } // Fall through.
-        } // Else owner is maybe a builtin with no dict, or __slots__
+            }
+            // Fall through.
+        } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
         
         /* `descr` is borrowed. Just check tp_version_tag before accessing in case
         *  it's deleted.  This is safe for methods (even inherited ones from super
@@ -930,7 +932,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         */
         cache2->obj = descr;
         cache1->dk_version_or_hint = keys_version;
-        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(owner_is_class ? LOAD_METHOD_CLASS :
+            LOAD_METHOD_CACHED, _Py_OPARG(*instr));
         goto success;
     }
 fail:
