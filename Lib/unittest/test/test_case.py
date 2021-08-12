@@ -56,235 +56,6 @@ class Test(object):
             self.events.append('tearDown')
 
 
-class Test_HeuristicDiff(unittest.TestCase):
-
-    # this large contant coerces the use of `unified_diff` for several tests
-    N = 50_000
-
-    @staticmethod
-    def is_unified_diff(diff: Iterator[str]) -> bool:
-        """Check for the presence of the @@ ... @@ diff summary line."""
-        diffstr = ''.join(diff)
-        p = r'@@ -(\d(,)?(\d)?)+ \+(\d(,)?(\d)?)+ @@'
-        mo = re.search(p, diffstr)
-        return bool(mo)
-
-    def test_is_unified_diff(self):
-        """Test the helper above"""
-        ud = difflib.unified_diff('foo', 'bar')
-        nd = difflib.ndiff('foo', 'bar')
-        self.assertTrue(self.is_unified_diff(ud))
-        self.assertFalse(self.is_unified_diff(nd))
-
-    def assertHeuristicDiffReturns(self, a, b, expect: tuple[str, ...]):
-        """check that _heuristic_diff(a, b) == expect"""
-        diff_iterable = unittest.case._heuristic_diff(a, b)  # type: ignore
-        diff = tuple(diff_iterable)
-        self.assertTrue(diff == expect)
-
-    def test_ndiff_is_used_with_small_inputs(self):
-        a = ('foo',)
-        b = ('bar',)
-        expect = ('- foo', '+ bar')
-        self.assertHeuristicDiffReturns(a, b, expect)
-
-    def test_unified_diff_is_used_with_large_inputs(self):
-        """One long line, as well as many single-character lines."""
-        # one long line
-        a = ('foo' * self.N,)
-        b = ('bar' * self.N,)
-        expect = ('--- expected\n', '+++ got\n', '@@ -1 +1 @@\n',
-                  '-' + 'foo' * self.N,
-                  '+' + 'bar' * self.N)
-        self.assertHeuristicDiffReturns(a, b, expect)
-
-        # many lines
-        a = ('1\n' * self.N).splitlines()
-        b = ('2\n' * self.N).splitlines()
-        expect = ('--- expected\n', '+++ got\n', f'@@ -1,{self.N} +1,{self.N} @@\n',
-                  *(['-1'] * self.N),
-                  *(['+2'] * self.N))
-        self.assertHeuristicDiffReturns(a, b, expect)
-
-    def test_ndiff_to_unified_diff_breaking_point_long_line(self):
-        """This is the approximate single line length at which the heuristic
-        will switch from ndiff to unified_diff."""
-        expect_switch_at = 125_000
-        a = ''
-        b = ''
-        n = expect_switch_at // 2
-        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
-            n *= 1.3
-            a = ('a' * int(n),)
-            b = ('b' * int(n),)
-
-        self.assertGreater(n, expect_switch_at * 0.8)
-        self.assertLess(n, expect_switch_at * 1.1)
-
-    def test_ndiff_to_unified_diff_breaking_point_many_lines(self):
-        """For lines just one character long, the heuristic will switch from
-        ndiff to unified_diff around 70,000 differing lines."""
-        expect_switch_at = 70_000
-        a = ''
-        b = ''
-        n = expect_switch_at // 2
-        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
-            n *= 1.3
-            a = ('a\n' * int(n),)
-            b = ('b\n' * int(n),)
-
-        self.assertGreater(n, expect_switch_at * 0.8)
-        self.assertLess(n, expect_switch_at * 1.1)
-
-    def test_ndiff_to_unified_diff_scaled_line_and_cols(self):
-        """Scale line length and number of differing columns at different
-        rates, expecting a switch to `unified_diff` at specified points.
-        """
-
-        @dataclass
-        class Case:
-            """Case class specifies parameters for all tests."""
-            line_length_factor: int
-            num_lines_factor: int
-            extent_differing: float
-
-            # this is a "magic number" for all cases where the heuristic
-            # will switch from using ndiff to unified_diff.
-            expect_unified_diff_at: int
-
-        # --- Layout test cases
-        # ---------------------
-
-        cases = (
-            # scale width and length by ratios of 2:1
-            Case(
-                line_length_factor=1,
-                num_lines_factor=2,
-                extent_differing=1,
-                expect_unified_diff_at = 22,
-            ),
-            Case(
-                line_length_factor=2,
-                num_lines_factor=1,
-                extent_differing=1,
-                expect_unified_diff_at = 28,
-            ),
-
-            # scale width and length by ratios of 3:1
-            Case(
-                line_length_factor=1,
-                num_lines_factor=3,
-                extent_differing=1,
-                expect_unified_diff_at = 16,
-            ),
-            Case(
-                line_length_factor=3,
-                num_lines_factor=1,
-                extent_differing=1,
-                expect_unified_diff_at = 24,
-            ),
-
-            # # scale by ratios of 3:1, with only 40% differing
-            Case(
-                line_length_factor=3,
-                num_lines_factor=1,
-                extent_differing=1,
-                expect_unified_diff_at = 24,
-            ),
-            Case(
-                line_length_factor=1,
-                num_lines_factor=3,
-                extent_differing=0.4,
-                expect_unified_diff_at = 16,
-            ),
-            Case(
-                line_length_factor=3,
-                num_lines_factor=1,
-                extent_differing=0.4,
-                expect_unified_diff_at = 23,
-            ),
-        )
-
-        # --- Execute test cases
-        # ----------------------
-
-        def run_case(case: Case, N):
-            """Given one of the test cases above, execute the test case for a
-            given `N` constant value. Check if the test has passed as
-            specified."""
-
-            # we are working out way towards _heuristic_diff(foo, bar)
-
-                    # --- Construct Differing Strings ---
-
-            # construct foo. Double line count because bar will have twice
-            # as many lines (lines of 'a' and lines of 'b')
-            foo = (
-                ('a' * N * (case.line_length_factor),)  # create line
-                * (N * case.num_lines_factor * 2)       # duplicate line
-            )
-
-            # construct bar
-            bar_a_line = ('a' * (N * case.line_length_factor))
-            bar_b_line = ('b' * (N * case.line_length_factor))
-            bar_a_lines = ((bar_a_line,) * (N * case.num_lines_factor))
-            if case.extent_differing != 1:
-                # diminish the amount of 'b' by case.extent_differing, and add
-                # additional 'a' at the end as padding
-                bar_b_lines = ((bar_b_line,)
-                               * int(N
-                                     * case.num_lines_factor
-                                     * case.extent_differing))
-                bar_a_padding = ((bar_a_line,)
-                                 * int(N
-                                       * case.num_lines_factor
-                                       * (1 - case.extent_differing)))
-                bar = tuple((*bar_a_lines, *bar_b_lines, *bar_a_padding))
-            else:
-                bar_b_lines = ((bar_b_line,) * int(N * case.num_lines_factor))
-                bar = tuple((*bar_a_lines, *bar_b_lines))
-
-                    # --- Perform Diff ---
-
-            # after all that, we have `foo` and `bar`; two string sequences
-            # with differences as specified by the Case parameters, scaled
-            # by a factor of `N`.
-            diff = unittest.case._heuristic_diff(foo, bar)  # type: ignore
-
-                    # --- Make Assertions ---
-
-            # now, check that the `case.expect_unified_diff_at` condition was
-            # met
-            if (
-                N < case.expect_unified_diff_at
-                    and self.is_unified_diff(diff)
-            ):
-                self.fail('Switched to `unified_diff` prematurely. Expected '
-                          f'switch at {case.expect_unified_diff_at}, but '
-                          f'actually switched at {N} for the case {case}')
-            elif (
-                N > case.expect_unified_diff_at
-                and not self.is_unified_diff(diff)
-            ):
-                self.fail('Switch to `unified_diff` did not occur. Expected '
-                          'switch at {case.expect_unified_diff_at}, but no '
-                          f'switch occured when N == {N}')
-
-        for case in cases:
-            for N in range(10, case.expect_unified_diff_at + 1):
-                run_case(case, N)
-
-    def test_ndiff_is_always_used_for_similar_sequences(self):
-        """ndiff is perfectly efficient at showing small diffs. As long as
-        the difference  between `a` and `b` are small, the size of `a` and `b`
-        should not disqualify the use of ndiff."""
-        a = ('foo ' * 5 + '\n') * 10_000
-        b = ('foo ' * 5 + '\n') *  9_999 + ('bar ' * 5 + '\n')
-
-        diff = unittest.case._heuristic_diff(a, b)  # type: ignore
-        self.assertFalse(self.is_unified_diff(diff))
-
-
 class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
     ### Set up attributes used by inherited tests
@@ -2182,6 +1953,233 @@ test case
             self.assertEqual(MyException.ninstance, 0)
 
 
+class Test_HeuristicDiff(unittest.TestCase):
+
+    # this large contant coerces the use of `unified_diff` for several tests
+    N = 50_000
+
+    @staticmethod
+    def is_unified_diff(diff: Iterator[str]) -> bool:
+        """Check for the presence of the @@ ... @@ diff summary line."""
+        diffstr = ''.join(diff)
+        p = r'@@ -(\d(,)?(\d)?)+ \+(\d(,)?(\d)?)+ @@'
+        mo = re.search(p, diffstr)
+        return bool(mo)
+
+    def test_is_unified_diff(self):
+        """Test the helper above"""
+        ud = difflib.unified_diff('foo', 'bar')
+        nd = difflib.ndiff('foo', 'bar')
+        self.assertTrue(self.is_unified_diff(ud))
+        self.assertFalse(self.is_unified_diff(nd))
+
+    def assertHeuristicDiffReturns(self, a, b, expect: tuple[str, ...]):
+        """check that _heuristic_diff(a, b) == expect"""
+        diff_iterable = unittest.case._heuristic_diff(a, b)  # type: ignore
+        diff = tuple(diff_iterable)
+        self.assertTrue(diff == expect)
+
+    def test_ndiff_is_used_with_small_inputs(self):
+        a = ('foo',)
+        b = ('bar',)
+        expect = ('- foo', '+ bar')
+        self.assertHeuristicDiffReturns(a, b, expect)
+
+    def test_unified_diff_is_used_with_large_inputs(self):
+        """One long line, as well as many single-character lines."""
+        # one long line
+        a = ('foo' * self.N,)
+        b = ('bar' * self.N,)
+        expect = ('--- expected\n', '+++ got\n', '@@ -1 +1 @@\n',
+                  '-' + 'foo' * self.N,
+                  '+' + 'bar' * self.N)
+        self.assertHeuristicDiffReturns(a, b, expect)
+
+        # many lines
+        a = ('1\n' * self.N).splitlines()
+        b = ('2\n' * self.N).splitlines()
+        expect = ('--- expected\n', '+++ got\n', f'@@ -1,{self.N} +1,{self.N} @@\n',
+                  *(['-1'] * self.N),
+                  *(['+2'] * self.N))
+        self.assertHeuristicDiffReturns(a, b, expect)
+
+    def test_ndiff_to_unified_diff_breaking_point_long_line(self):
+        """This is the approximate single line length at which the heuristic
+        will switch from ndiff to unified_diff."""
+        expect_switch_at = 125_000
+        a = ''
+        b = ''
+        n = expect_switch_at // 2
+        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
+            n *= 1.3
+            a = ('a' * int(n),)
+            b = ('b' * int(n),)
+
+        self.assertGreater(n, expect_switch_at * 0.8)
+        self.assertLess(n, expect_switch_at * 1.1)
+
+    def test_ndiff_to_unified_diff_breaking_point_many_lines(self):
+        """For lines just one character long, the heuristic will switch from
+        ndiff to unified_diff around 70,000 differing lines."""
+        expect_switch_at = 70_000
+        a = ''
+        b = ''
+        n = expect_switch_at // 2
+        while '@' not in ''.join(unittest.case._heuristic_diff(a, b)):  # type: ignore
+            n *= 1.3
+            a = ('a\n' * int(n),)
+            b = ('b\n' * int(n),)
+
+        self.assertGreater(n, expect_switch_at * 0.8)
+        self.assertLess(n, expect_switch_at * 1.1)
+
+    def test_ndiff_to_unified_diff_scaled_line_and_cols(self):
+        """Scale line length and number of differing columns at different
+        rates, expecting a switch to `unified_diff` at specified points.
+        """
+
+        @dataclass
+        class Case:
+            """Case class specifies parameters for all tests."""
+            line_length_factor: int
+            num_lines_factor: int
+            extent_differing: float
+
+            # this is a "magic number" for all cases where the heuristic
+            # will switch from using ndiff to unified_diff.
+            expect_unified_diff_at: int
+
+        # --- Layout test cases
+        # ---------------------
+
+        cases = (
+            # scale width and length by ratios of 2:1
+            Case(
+                line_length_factor=1,
+                num_lines_factor=2,
+                extent_differing=1,
+                expect_unified_diff_at = 22,
+            ),
+            Case(
+                line_length_factor=2,
+                num_lines_factor=1,
+                extent_differing=1,
+                expect_unified_diff_at = 28,
+            ),
+
+            # scale width and length by ratios of 3:1
+            Case(
+                line_length_factor=1,
+                num_lines_factor=3,
+                extent_differing=1,
+                expect_unified_diff_at = 16,
+            ),
+            Case(
+                line_length_factor=3,
+                num_lines_factor=1,
+                extent_differing=1,
+                expect_unified_diff_at = 24,
+            ),
+
+            # # scale by ratios of 3:1, with only 40% differing
+            Case(
+                line_length_factor=3,
+                num_lines_factor=1,
+                extent_differing=1,
+                expect_unified_diff_at = 24,
+            ),
+            Case(
+                line_length_factor=1,
+                num_lines_factor=3,
+                extent_differing=0.4,
+                expect_unified_diff_at = 16,
+            ),
+            Case(
+                line_length_factor=3,
+                num_lines_factor=1,
+                extent_differing=0.4,
+                expect_unified_diff_at = 23,
+            ),
+        )
+
+        # --- Execute test cases
+        # ----------------------
+
+        def run_case(case: Case, N):
+            """Given one of the test cases above, execute the test case for a
+            given `N` constant value. Check if the test has passed as
+            specified."""
+
+            # we are working out way towards _heuristic_diff(foo, bar)
+
+                    # --- Construct Differing Strings ---
+
+            # construct foo. Double line count because bar will have twice
+            # as many lines (lines of 'a' and lines of 'b')
+            foo = (
+                ('a' * N * (case.line_length_factor),)  # create line
+                * (N * case.num_lines_factor * 2)       # duplicate line
+            )
+
+            # construct bar
+            bar_a_line = ('a' * (N * case.line_length_factor))
+            bar_b_line = ('b' * (N * case.line_length_factor))
+            bar_a_lines = ((bar_a_line,) * (N * case.num_lines_factor))
+            if case.extent_differing != 1:
+                # diminish the amount of 'b' by case.extent_differing, and add
+                # additional 'a' at the end as padding
+                bar_b_lines = ((bar_b_line,)
+                               * int(N
+                                     * case.num_lines_factor
+                                     * case.extent_differing))
+                bar_a_padding = ((bar_a_line,)
+                                 * int(N
+                                       * case.num_lines_factor
+                                       * (1 - case.extent_differing)))
+                bar = tuple((*bar_a_lines, *bar_b_lines, *bar_a_padding))
+            else:
+                bar_b_lines = ((bar_b_line,) * int(N * case.num_lines_factor))
+                bar = tuple((*bar_a_lines, *bar_b_lines))
+
+                    # --- Perform Diff ---
+
+            # after all that, we have `foo` and `bar`; two string sequences
+            # with differences as specified by the Case parameters, scaled
+            # by a factor of `N`.
+            diff = unittest.case._heuristic_diff(foo, bar)  # type: ignore
+
+                    # --- Make Assertions ---
+
+            # now, check that the `case.expect_unified_diff_at` condition was
+            # met
+            if (
+                N < case.expect_unified_diff_at
+                    and self.is_unified_diff(diff)
+            ):
+                self.fail('Switched to `unified_diff` prematurely. Expected '
+                          f'switch at {case.expect_unified_diff_at}, but '
+                          f'actually switched at {N} for the case {case}')
+            elif (
+                N > case.expect_unified_diff_at
+                and not self.is_unified_diff(diff)
+            ):
+                self.fail('Switch to `unified_diff` did not occur. Expected '
+                          'switch at {case.expect_unified_diff_at}, but no '
+                          f'switch occured when N == {N}')
+
+        for case in cases:
+            for N in range(10, case.expect_unified_diff_at + 1):
+                run_case(case, N)
+
+    def test_ndiff_is_always_used_for_similar_sequences(self):
+        """ndiff is perfectly efficient at showing small diffs. As long as
+        the difference  between `a` and `b` are small, the size of `a` and `b`
+        should not disqualify the use of ndiff."""
+        a = ('foo ' * 5 + '\n') * 10_000
+        b = ('foo ' * 5 + '\n') *  9_999 + ('bar ' * 5 + '\n')
+
+        diff = unittest.case._heuristic_diff(a, b)  # type: ignore
+        self.assertFalse(self.is_unified_diff(diff))
 
 
 if __name__ == "__main__":
