@@ -213,15 +213,18 @@ class ImportTests(unittest.TestCase):
         # state after reversion. Reinitialising the module contents
         # and just reverting os.environ to its previous state is an OK
         # workaround
-        orig_path = os.path
-        orig_getenv = os.getenv
+        import types as mod
+        expect_same = ('SimpleNamespace', mod.SimpleNamespace)
+        expect_changed = ('new_class', mod.new_class)
         with os_helper.EnvironmentVarGuard():
-            x = imp.find_module("os")
+            x = imp.find_module("types")
             self.addCleanup(x[0].close)
-            new_os = imp.load_module("os", *x)
-            self.assertIs(os, new_os)
-            self.assertIs(orig_path, new_os.path)
-            self.assertIsNot(orig_getenv, new_os.getenv)
+            new_mod = imp.load_module("types", *x)
+            self.assertIs(mod, new_mod)
+            name, orig = expect_same
+            self.assertIs(getattr(new_mod, name), orig)
+            name, orig = expect_changed
+            self.assertIsNot(getattr(new_mod, name), orig)
 
     @requires_load_dynamic
     def test_issue15828_load_extensions(self):
