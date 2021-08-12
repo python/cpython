@@ -326,10 +326,14 @@ class FunctionTests(unittest.TestCase):
                                "select spam(?)", (1 << 65,))
 
     def test_non_contiguous_blob(self):
-        err = "could not convert BLOB to buffer"
-        self.assertRaisesRegex(ValueError, err, self.con.execute,
-                               "select boomerang(?)",
+        self.assertRaisesRegex(ValueError, "could not convert BLOB to buffer",
+                               self.con.execute, "select boomerang(?)",
                                (memoryview(b"blob")[::2],))
+
+    def test_param_surrogates(self):
+        self.assertRaisesRegex(UnicodeEncodeError, "surrogates not allowed",
+                               self.con.execute, "select spam(?)",
+                               ("\ud803\ude6d",))
 
     def test_func_params(self):
         dataset = (
@@ -340,6 +344,7 @@ class FunctionTests(unittest.TestCase):
             (float('inf'), float),
             ("text", str),
             ("1\x002", str),
+            ("\u02e2q\u02e1\u2071\u1d57\u1d49", str),
             (b"blob", bytes),
             (bytearray(range(2)), bytes),
             (memoryview(b"blob"), bytes),
