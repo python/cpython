@@ -1076,7 +1076,7 @@ def _handle_fromlist(module, fromlist, import_, *, recursive=False):
             if recursive:
                 where = module.__name__ + '.__all__'
             else:
-                where = "``from list''"
+                where = "``from list``"
             raise TypeError(f"Item in {where} must be str, "
                             f"not {type(x).__name__}")
         elif x == '*':
