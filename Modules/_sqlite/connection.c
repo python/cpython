@@ -1821,8 +1821,12 @@ serialize_impl(pysqlite_Connection *self, const char *name)
 
     sqlite3_int64 size;
     const unsigned int flags = 0;
-    const char *data = (const char *)sqlite3_serialize(self->db, name, &size,
-                                                       flags);
+    const char *data;
+
+    Py_BEGIN_ALLOW_THREADS
+    data = (const char *)sqlite3_serialize(self->db, name, &size, flags);
+    Py_END_ALLOW_THREADS
+
     if (data == NULL) {
         PyErr_Format(self->OperationalError, "unable to serialize '%s'",
                      name);
