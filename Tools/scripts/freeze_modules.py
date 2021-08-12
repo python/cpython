@@ -157,7 +157,7 @@ def resolve_modules(modname, pyfile=None):
         modname = modname[1:-1]
         rawname = modname
         # For now, we only expect match patterns at the end of the name.
-        _modname, sep, match = pkgname.rpartition('.')
+        _modname, sep, match = modname.rpartition('.')
         if sep:
             if _modname.endswith('.**'):
                 modname = _modname[:-3]
