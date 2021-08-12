@@ -341,7 +341,7 @@ PyEval_InitThreads(void)
 void
 _PyEval_Fini(void)
 {
-#if SPECIALIZATION_STATS
+#if PRINT_SPECIALIZATION_STATS
     _Py_PrintSpecializationStats();
 #endif
 }
