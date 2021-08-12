@@ -742,8 +742,8 @@ Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
 
 Tools/scripts/freeze_modules.py: Programs/_freeze_module
 
-.PHONY: regen-importlib
-regen-importlib: Tools/scripts/freeze_modules.py
+.PHONY: regen-frozen-importlib
+regen-frozen-importlib: Tools/scripts/freeze_modules.py
 	# Regenerate Python/importlib_external.h, importlib.h, and zipimport.h.
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py importlib
 
@@ -751,8 +751,8 @@ regen-importlib: Tools/scripts/freeze_modules.py
 regen-frozen-stdlib: Tools/scripts/freeze_modules.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py stdlib
 
-.PHONY: regen-frozen
-regen-frozen: Tools/scripts/freeze_modules.py
+.PHONY: regen-frozen-test
+regen-frozen-test: Tools/scripts/freeze_modules.py
 	# Regenerate code for frozen module "__hello__".
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py test
 
@@ -760,6 +760,14 @@ regen-frozen: Tools/scripts/freeze_modules.py
 regen-frozen-all: Tools/scripts/freeze_modules.py
 	# Regenerate code for frozen module "__hello__".
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py all
+
+# We keep some renamed targets around for folks with muscle memory.
+
+.PHONY: regen-importlib
+regen-importlib: regen-frozen-importlib
+
+.PHONY: regen-frozen
+regen-frozen: regen-frozen-test
 
 ############################################################################
 # ABI
