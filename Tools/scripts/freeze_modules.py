@@ -30,9 +30,9 @@ FROZEN = {
     # frozen_id: pyfile
 
     # importlib
-    'importlib._bootstrap': (None, 'importlib.h'),
-    'importlib._bootstrap_external': (None, 'importlib_external.h'),
-    'zipimport': (None, 'importlib_zipimport.h'),
+    'importlib._bootstrap': None,
+    'importlib._bootstrap_external': None,
+    'zipimport': None,
     # stdlib
     # ...
     # test
@@ -84,43 +84,28 @@ MODULES = [
 
 def expand_frozen(destdir=MODULES_DIR):
     # First, expand FROZEN.
-    frozen = {}
+    _frozen = []
     packages = {}
-    for frozenid, info in FROZEN.items():
-        if info is None or isinstance(info, str):
-            pyfile = info
-            frozenfile = None
-        else:
-            pyfile, frozenfile = info
-
+    for frozenid, pyfile in FROZEN.items():
         resolved = iter(resolve_modules(frozenid, pyfile))
         modname, _pyfile, ispkg = next(resolved)
         if not pyfile:
             pyfile = _pyfile
-        frozen[modname] = (pyfile, frozenfile, ispkg)
+        _frozen.append((modname, pyfile, ispkg))
         if ispkg:
-            assert info is None
             modids = packages[frozenid] = [modname]
             for subname, subpyfile, ispkg in resolved:
-                frozen[subname] = (subpyfile, None, ispkg)
+                frozen[subname] = (subpyfile, ispkg)
+                _frozen.append((subname, subpyfile, ispkg))
                 modids.append(subname)
         else:
             assert not list(resolved)
-    for frozenid, info in frozen.items():
-        pyfile, frozenfile, ispkg = info
-
+    frozen = {}
+    for frozenid, pyfile, ispkg in _frozen:
         if not pyfile:
             pyfile = _resolve_module(frozenid, ispkg=ispkg)
-            info = (pyfile, frozenfile, ispkg)
-
-        if not frozenfile:
-            frozenfile = _resolve_frozen(frozenid, destdir)
-            info = (pyfile, frozenfile, ispkg)
-        elif not os.path.isabs(frozenfile):
-            frozenfile = os.path.join(destdir, frozenfile)
-            info = (pyfile, frozenfile, ispkg)
-
-        frozen[frozenid] = info
+        frozenfile = _resolve_frozen(frozenid, destdir)
+        frozen[frozenid] = (pyfile, frozenfile, ispkg)
 
     # Then, expand FROZEN_GROUPS.
     groups = {}
@@ -425,7 +410,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     import argparse
     parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument('--no-regen', dest='regen', action='store_false')
-    parser.add_argument('kinds', nargs='*', choices=KINDS)
+    parser.add_argument('kinds', nargs='*', choices=KINDS, default='all')
 
     args = parser.parse_args(argv)
     ns = vars(args)

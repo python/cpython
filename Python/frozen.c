@@ -40,9 +40,9 @@
 /* Includes for frozen modules: */
 
 /* importlib */
-#include "importlib.h"
-#include "importlib_external.h"
-#include "importlib_zipimport.h"
+#include "frozen_importlib__bootstrap.h"
+#include "frozen_importlib__bootstrap_external.h"
+#include "frozen_zipimport.h"
 /* stdlib */
 /* Test module */
 #include "frozen_hello.h"
