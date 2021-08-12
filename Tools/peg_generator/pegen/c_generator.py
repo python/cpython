@@ -12,6 +12,7 @@ from pegen.grammar import (
     Gather,
     GrammarVisitor,
     Group,
+    Leaf,
     Lookahead,
     NamedItem,
     NameLeaf,
@@ -91,7 +92,16 @@ class FunctionCall:
             parts.append(", 1")
         if self.assigned_variable:
             if self.assigned_variable_type:
-                parts = ["(", self.assigned_variable, " = ", '(', self.assigned_variable_type, ')', *parts, ")"]
+                parts = [
+                    "(",
+                    self.assigned_variable,
+                    " = ",
+                    "(",
+                    self.assigned_variable_type,
+                    ")",
+                    *parts,
+                    ")",
+                ]
             else:
                 parts = ["(", self.assigned_variable, " = ", *parts, ")"]
         if self.comment:
@@ -256,9 +266,10 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def visit_Forced(self, node: Forced) -> FunctionCall:
         call = self.generate_call(node.node)
-        if call.nodetype == NodeTypes.GENERIC_TOKEN:
+        if isinstance(node.node, Leaf):
+            assert isinstance(node.node, Leaf)
             val = ast.literal_eval(node.node.value)
-            assert val in self.exact_tokens, f"{node.value} is not a known literal"
+            assert val in self.exact_tokens, f"{node.node.value} is not a known literal"
             type = self.exact_tokens[val]
             return FunctionCall(
                 assigned_variable="_literal",
@@ -268,9 +279,19 @@ class CCallMakerVisitor(GrammarVisitor):
                 return_type="Token *",
                 comment=f"forced_token='{val}'",
             )
+        if isinstance(node.node, Group):
+            call = self.visit(node.node.rhs)
+            call.assigned_variable = None
+            call.comment = None
+            return FunctionCall(
+                assigned_variable="_literal",
+                function=f"_PyPegen_expect_forced_result",
+                arguments=["p", str(call), f'"{node.node.rhs!s}"'],
+                return_type="void *",
+                comment=f"forced_token=({node.node.rhs!s})",
+            )
         else:
-            raise NotImplementedError(
-                    f"Forced tokens don't work with {call.nodetype} tokens")
+            raise NotImplementedError(f"Forced tokens don't work with {node.node} nodes")
 
     def visit_Opt(self, node: Opt) -> FunctionCall:
         call = self.generate_call(node.node)
@@ -347,7 +368,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         debug: bool = False,
         skip_actions: bool = False,
     ):
-        super().__init__(grammar, tokens, file)
+        super().__init__(grammar, set(tokens.values()), file)
         self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
             self, exact_tokens, non_exact_tokens
         )
@@ -386,7 +407,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print(f"goto {goto_target};")
         self.print(f"}}")
 
-    def out_of_memory_return(self, expr: str, cleanup_code: Optional[str] = None,) -> None:
+    def out_of_memory_return(
+        self,
+        expr: str,
+        cleanup_code: Optional[str] = None,
+    ) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
             if cleanup_code is not None:
@@ -568,7 +593,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(
-                rhs, is_loop=False, is_gather=node.is_gather(), rulename=node.name,
+                rhs,
+                is_loop=False,
+                is_gather=node.is_gather(),
+                rulename=node.name,
             )
             if self.debug:
                 self.print(f'D(fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark));')
@@ -601,7 +629,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(
-                rhs, is_loop=True, is_gather=node.is_gather(), rulename=node.name,
+                rhs,
+                is_loop=True,
+                is_gather=node.is_gather(),
+                rulename=node.name,
             )
             if is_repeat1:
                 self.print("if (_n == 0 || p->error_indicator) {")
@@ -771,7 +802,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(
         self, node: Alt, is_loop: bool, is_gather: bool, rulename: Optional[str]
     ) -> None:
-        if len(node.items) == 1 and str(node.items[0]).startswith('invalid_'):
+        if len(node.items) == 1 and str(node.items[0]).startswith("invalid_"):
             self.print(f"if (p->call_invalid_rules) {{ // {node}")
         else:
             self.print(f"{{ // {node}")
@@ -791,7 +822,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if v == "_cut_var":
                     v += " = 0"  # cut_var must be initialized
                 self.print(f"{var_type}{v};")
-                if v.startswith("_opt_var"):
+                if v and v.startswith("_opt_var"):
                     self.print(f"UNUSED({v}); // Silence compiler warnings")
 
             with self.local_variable_context():
