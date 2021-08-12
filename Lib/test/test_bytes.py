@@ -1185,7 +1185,6 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 
         s = SubBytes(b'qwerty()')
         self.assertEqual(id(s), id(s))
-        self.assertNotEqual(id(s), id(s))
         self.assertNotEqual(id(s), id(s * -4))
         self.assertNotEqual(id(s), id(s * 0))
         self.assertNotEqual(id(s), id(s * 1))
