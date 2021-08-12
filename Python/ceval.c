@@ -1280,7 +1280,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
-        continue; \
+        goto check_eval_breaker; \
     }
 
 
@@ -1584,7 +1584,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-    for (;;) {
+check_eval_breaker:
+    {
         assert(STACK_LEVEL() >= 0); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
         assert(!_PyErr_Occurred(tstate));
@@ -4292,6 +4293,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         TARGET(CALL_METHOD_KW): {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
@@ -4315,6 +4317,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
@@ -4621,7 +4624,17 @@ exception_unwind:
         int level, handler, lasti;
         if (get_exception_handler(co, offset, &level, &handler, &lasti) == 0) {
             // No handlers, so exit.
-            break;
+            assert(retval == NULL);
+            assert(_PyErr_Occurred(tstate));
+
+            /* Pop remaining stack entries. */
+            while (!EMPTY()) {
+                PyObject *o = POP();
+                Py_XDECREF(o);
+            }
+            frame->stackdepth = 0;
+            frame->f_state = FRAME_RAISED;
+            goto exiting;
         }
 
         assert(STACK_LEVEL() >= level);
@@ -4661,18 +4674,8 @@ exception_unwind:
         NEXTOPARG();
         PRE_DISPATCH_GOTO();
         DISPATCH_GOTO();
-    } /* main loop */
-
-    assert(retval == NULL);
-    assert(_PyErr_Occurred(tstate));
-
-    /* Pop remaining stack entries. */
-    while (!EMPTY()) {
-        PyObject *o = POP();
-        Py_XDECREF(o);
     }
-    frame->stackdepth = 0;
-    frame->f_state = FRAME_RAISED;
+
 exiting:
     if (cframe.use_tracing) {
         if (tstate->c_tracefunc) {
