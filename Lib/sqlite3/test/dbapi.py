@@ -263,11 +263,14 @@ class UninitialisedConnectionTests(unittest.TestCase):
                                        func)
 
 
-@unittest.skipIf(hasattr(sqlite.Connection, "serialize") == False,
-                 "Serialize API missing")
+@unittest.skipUnless(hasattr(sqlite.Connection, "serialize"),
+                     "requires serialize API")
 class SerializeTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
+
+    def tearDown(self):
+        self.cx.close()
 
     def test_serialize_deserialize(self):
         with self.cx:
@@ -275,16 +278,30 @@ class SerializeTests(unittest.TestCase):
             data = self.cx.serialize()
         self.assertEqual(len(data), 8192)
 
-        # Remove test table, then load the saved database
+        # Remove test table, verify that it was removed
         with self.cx:
             self.cx.execute("drop table t")
+        try:
+            self.cx.execute("select t from t")
+        except sqlite.OperationalError:
+            pass
+        else:
+            self.fail()
+
+        # Load the serialized database, verify that the table is back again
         self.cx.deserialize(data)
         self.cx.execute("select t from t")
 
     def test_deserialize_wrong_args(self):
-        self.assertRaises(TypeError, self.cx.deserialize, [])
-        self.assertRaises(TypeError, self.cx.deserialize, None)
-        self.assertRaises(TypeError, self.cx.deserialize, 1)
+        dataset = [
+            (BufferError, memoryview(b"blob")[::2]),
+            (TypeError, []),
+            (TypeError, 1),
+            (TypeError, None),
+        ]
+        for exc, arg in dataset:
+            with self.subTest(exc=exc, arg=arg):
+                self.assertRaises(exc, self.cx.deserialize, arg)
 
     def test_deserialize_corrupt_database(self):
         with self.assertRaises(sqlite.DatabaseError):
