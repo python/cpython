@@ -163,11 +163,12 @@ def _heuristic_diff(a: list[str], b: list[str]) -> Iterable[str]:
         cost = (number of differing lines
                 * total length of all differing lines)
     """
+    # bpo-19217: speed up assertEqual on long sequences
 
-    # @ambv: I just deduced this number from guess and check.... is there a
-    # better way?
     cost_limit = 1_000_000
 
+    # unified diff is always cheap, so we can use it to measure the magnitude
+    # of the differences, which is a proxy for the cost of difflib.ndiff
     udiff = [l for l in difflib.unified_diff(a, b,
                                              fromfile='expected',
                                              tofile='got')]
