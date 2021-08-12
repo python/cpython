@@ -728,8 +728,8 @@ class PydocDocTest(unittest.TestCase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -OO and above')
     def test_synopsis_sourceless(self):
-        expected = os.__doc__.splitlines()[0]
-        filename = os.__cached__
+        expected = types.__doc__.splitlines()[0]
+        filename = types.__cached__
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)

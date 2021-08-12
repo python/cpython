@@ -375,8 +375,11 @@ class TestCoverage(unittest.TestCase):
         self.assertIn("unittest.case.cover", files)
 
     def test_coverage_ignore(self):
+        # If you change the module, be sure that the new one
+        # is actually used in test_pprint.QueryTestCase.
+        import dataclasses
         # Ignore all files, nothing should be traced nor printed
-        libpath = os.path.normpath(os.path.dirname(os.__file__))
+        libpath = os.path.normpath(os.path.dirname(dataclasses.__file__))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
                              libpath], trace=0, count=1)

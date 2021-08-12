@@ -136,8 +136,8 @@ class ModuleNameTest(unittest.TestCase):
         dialog = self.Dummy_ModuleName('idlelib')
         self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
         self.assertEqual(dialog.entry_error['text'], '')
-        dialog = self.Dummy_ModuleName('os.path')
-        self.assertTrue(dialog.entry_ok().endswith('path.py'))
+        dialog = self.Dummy_ModuleName('types')
+        self.assertTrue(dialog.entry_ok().endswith('types.py'))
         self.assertEqual(dialog.entry_error['text'], '')
 
 

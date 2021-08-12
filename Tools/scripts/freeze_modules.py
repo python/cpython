@@ -31,6 +31,9 @@ PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
 TEST_CTYPES = os.path.join(STDLIB_DIR, 'ctypes', 'test', 'test_values.py')
 
+
+OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
+
 # These are modules that get frozen.
 FROZEN = [
     # See parse_frozen_spec() for the format.
@@ -43,6 +46,24 @@ FROZEN = [
         # This module is important because some Python builds rely
         # on a builtin zip file instead of a filesystem.
         'zipimport',
+        ]),
+    ('stdlib', [
+        # without site (python -S)
+        'abc',
+        'codecs',
+        '<encodings.*>',
+        'io',
+        # with site
+        '_collections_abc',
+        '_sitebuiltins',
+        'genericpath',
+        OS_PATH,
+        # We must explicitly mark os.path as a frozen module
+        # even though it will never be imported.
+        f'{OS_PATH} : os.path',
+        'os',
+        'site',
+        'stat',
         ]),
     ('Test module', [
         'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
