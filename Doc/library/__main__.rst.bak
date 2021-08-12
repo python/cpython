@@ -94,7 +94,7 @@ passed into :func:`sys.exit`. For example::
 Since the call to *main* is wrapped in :func:`sys.exit`, the expectation is
 that your function will return some value acceptable as an input to
 :func:`sys.exit`; typically, an integer or ``None`` (which is implicitly
-returned if your function does not have a return statement).
+returned if your function does not have a return statement). 
 
 By proactively following this convention ourselves, our module will have the
 same behavior when run directly (i.e. ``python3 echo.py``) as it will have if
