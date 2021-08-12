@@ -21,16 +21,18 @@ them and how they interact with each other. See section :ref:`tut-modules`.
 ``__name__ == '__main__'``
 ---------------------------
 
-``'__main__'`` is the name of the environment where top-level code is run.
-"Top-level code" means when a Python module is initialized from an interactive
-prompt, from standard input, from a file argument, from a :option:`-c`
-argument, or from a :option:`-m` argument, but **not** when it is initialized
-from an import statement.  In any of these situations, the module's
-``__name__`` is set equal to ``'__main__'``.
+When a Python module or package is imported, ``__name__`` is set to the
+module's name.  Usually, this is the name of the Python file itself without the
+``.py`` extension.  For a more detailed look at how ``__name__`` is set in
+all situations, see section :ref:`tut-modules`.
 
-The only other context in which Python code is run is when it is imported
-through an import statement. In that case, ``__name__`` is set equal to the
-module's name: usually the name of the file without the ``.py`` extension.
+In some circumstances, ``__name__`` is set to the string ``'__main__'``.
+``__main__`` is the name of the environment where top-level code is run.
+"Top-level code" means when a Python module is initialized from an interactive
+prompt, from standard input, from a file argument, with the :option:`-c`
+argument, or with the :option:`-m` argument, but **not** when it is initialized
+from an import statement.  In any of these situations, the module's
+``__name__`` is set to ``'__main__'``.
 
 As a result, a module can discover whether or not it is running in the
 top-level environment by checking its own ``__name__``, which allows a common
@@ -92,13 +94,16 @@ passed into :func:`sys.exit`. For example::
 Since the call to *main* is wrapped in :func:`sys.exit`, the expectation is
 that your function will return some value acceptable as an input to
 :func:`sys.exit`; typically, an integer or ``None`` (which is implicitly
-returned if your function does not have a return statement).
+returned if your function does not have a return statement). 
 
 By proactively following this convention ourselves, our module will have the
-same behavior when run directly (``python3 echo.py``) as it will have if we
-later package it as a console script entry-point in a pip-installable package.
-That is why the ``echo.py`` example from earlier used the ``sys.exit(main())``
-convention.
+same behavior when run directly (i.e. ``python3 echo.py``) as it will have if
+we later package it as a console script entry-point in a pip-installable
+package.  In particular, be careful about returning strings from your *main*
+function.  :func:`sys.exit` will interpret a string as a failure message, so
+your program will have an exit code of ``1``, indicating failure, and the
+string will be written to :data:`sys.stderr`.  The ``echo.py`` example from
+earlier exemplifies using the ``sys.exit(main())`` convention.
 
 
 ``import __main__``
