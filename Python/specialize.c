@@ -793,9 +793,9 @@ success:
 }
 
 
-// Note: Please collect stats carefully before modifying. A subtle change can cause
-// a significant drop in cache hits. A possible test is python.exe -m test_typing
-// test_re test_dis test_zlib.
+// Please collect stats carefully before and after modifying. A subtle change
+// can cause a significant drop in cache hits. A possible test is
+// python.exe -m test_typing test_re test_dis test_zlib.
 int
 _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
@@ -831,8 +831,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
-    // class method
     if (owner_is_class) {
+        // class method
         kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
         // Store the version right away, in case it's modified halfway through.
         cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
@@ -850,19 +850,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
                 goto fail;
             }
-            // Builtin class method -- ie wrapped PyCFunction
-            else if (kind == NON_OVERRIDING && Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
-                // Unlike python classes, builtins don't hold a reference to the
-                // classmethod object (but instead the descriptor). Instead, a new
-                // object is created every time. So we can't use the borrowed
-                // object cache.
-                // TODO: make LOAD_METHOD_CLASS work with builtin classmethods
+            // Builtin METH_CLASS class method -- ie wrapped PyCFunction
+            else if (kind == NON_OVERRIDING &&
+                Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
+                // NOTE (KJ): Don't bother, rare and no speedup in microbenchmarks.
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
                 goto fail;
             }
             else if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
-                // Note: this is the actual @classmethod decorator object, not
-                // the X.y form.
+                // Note: this is the actual Python classmethod(func) object.
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
                 goto fail;
             }
@@ -898,7 +894,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             }
             PyObject *value = NULL;
             if (!owner_is_class) {
-                // Normal methods shouldn't be in o.__dict__.
+                // Instance methods shouldn't be in o.__dict__.
                 // That makes it an attribute.
                 Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
                 assert(ix != DKIX_ERROR);
