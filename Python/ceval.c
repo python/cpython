@@ -1434,6 +1434,27 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
 
+/* Shared opcode macros */
+
+// shared by LOAD_ATTR_MODULE and LOAD_METHOD_MODULE
+#define LOAD_MODULE_ATTR_OR_METHOD(attr_or_method) \
+    SpecializedCacheEntry *caches = GET_CACHE(); \
+    _PyAdaptiveEntry *cache0 = &caches[0].adaptive; \
+    _PyAttrCache *cache1 = &caches[-1].attr; \
+    DEOPT_IF(!PyModule_CheckExact(owner), LOAD_##attr_or_method); \
+    PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict; \
+    assert(dict != NULL); \
+    DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, \
+        LOAD_##attr_or_method); \
+    assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
+    assert(cache0->index < dict->ma_keys->dk_nentries); \
+    PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index; \
+    res = ep->me_value; \
+    DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
+    STAT_INC(LOAD_##attr_or_method, hit); \
+    record_cache_hit(cache0); \
+    Py_INCREF(res);
+
 static int
 trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
 {
@@ -3443,27 +3464,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         TARGET(LOAD_ATTR_MODULE): {
             assert(cframe.use_tracing == 0);
             // shared with LOAD_METHOD_MODULE
-            #define LOAD_MODULE_ATTR_OR_METHOD(attr_or_method) \
-            PyObject *owner = TOP(); \
-            PyObject *res; \
-            SpecializedCacheEntry *caches = GET_CACHE(); \
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive; \
-            _PyAttrCache *cache1 = &caches[-1].attr; \
-            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_##attr_or_method); \
-            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict; \
-            assert(dict != NULL); \
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, \
-                LOAD_##attr_or_method); \
-            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
-            assert(cache0->index < dict->ma_keys->dk_nentries); \
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index; \
-            res = ep->me_value; \
-            DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
-            STAT_INC(LOAD_##attr_or_method, hit); \
-            record_cache_hit(cache0);
-            
+            PyObject *owner = TOP();
+            PyObject *res;
             LOAD_MODULE_ATTR_OR_METHOD(ATTR);
-            Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
             DISPATCH();
@@ -4316,8 +4319,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
         TARGET(LOAD_METHOD_MODULE): {
             assert(cframe.use_tracing == 0);
+            PyObject *owner = TOP();
+            PyObject *res;
             LOAD_MODULE_ATTR_OR_METHOD(METHOD);
-            Py_INCREF(res);
             SET_TOP(NULL);
             Py_DECREF(owner);
             PUSH(res);
@@ -4331,12 +4335,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
-            _PyObjectCache *cache3 = &caches[-3].obj;
 
-            DEOPT_IF(TOP() != cache3->obj, LOAD_METHOD);
-            PyTypeObject *cls = (PyTypeObject *)TOP();
-            DEOPT_IF(cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-
+            PyObject *cls = TOP();
+            PyTypeObject *cls_type = Py_TYPE(cls);
+            assert(cls_type->tp_dictoffset > 0);
+            PyObject *dict = *(PyObject **) ((char *)cls + cls_type->tp_dictoffset);
+            DEOPT_IF(((PyDictObject *)dict)->ma_keys->dk_version !=
+                cache1->dk_version_or_hint, LOAD_METHOD);
+            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
+                LOAD_METHOD);
+            
             STAT_INC(LOAD_METHOD, hit);
             record_cache_hit(cache0);
             PyObject *res = cache2->obj;
