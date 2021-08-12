@@ -231,11 +231,6 @@ TEST_CASES = [
     ('f-string_doublestarred', "f'{ {**x} }'"),
     ('f-string_escape_brace', "f'{{Escape'"),
     ('f-string_escape_closing_brace', "f'Escape}}'"),
-    ('f-string_repr', "f'{a!r}'"),
-    ('f-string_str', "f'{a!s}'"),
-    ('f-string_ascii', "f'{a!a}'"),
-    ('f-string_debug', "f'{a=}'"),
-    ('f-string_padding', "f'{a:03d}'"),
     ('f-string_multiline',
      """
         f'''
