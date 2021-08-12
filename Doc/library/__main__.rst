@@ -16,7 +16,7 @@ Both of these mechanisms are related to Python modules; how users interact with
 them and how they interact with each other. See section :ref:`tut-modules`.
 
 
-.. _name_is_main:
+.. _name_equals_main:
 
 ``__name__ == '__main__'``
 ---------------------------
