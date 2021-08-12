@@ -233,6 +233,10 @@ _specialized_instructions = [
     "LOAD_GLOBAL_ADAPTIVE",
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
+    "STORE_ATTR_ADAPTIVE",
+    "STORE_ATTR_SPLIT_KEYS",
+    "STORE_ATTR_SLOT",
+    "STORE_ATTR_WITH_HINT",
 ]
 
 _specialization_stats = [

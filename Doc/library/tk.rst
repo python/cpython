@@ -19,8 +19,7 @@ The :mod:`tkinter` package is a thin object-oriented layer on top of Tcl/Tk. To
 use :mod:`tkinter`, you don't need to write Tcl code, but you will need to
 consult the Tk documentation, and occasionally the Tcl documentation.
 :mod:`tkinter` is a set of wrappers that implement the Tk widgets as Python
-classes.  In addition, the internal module :mod:`_tkinter` provides a threadsafe
-mechanism which allows Python and Tcl to interact.
+classes.
 
 :mod:`tkinter`'s chief virtues are that it is fast, and that it usually comes
 bundled with Python. Although its standard documentation is weak, good
