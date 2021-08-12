@@ -11,7 +11,11 @@ import os
 import sys
 import tty
 
-__all__ = ["openpty","fork","spawn"]
+# names imported directly for test mocking purposes
+from os import close, waitpid
+from tty import setraw, tcgetattr, tcsetattr
+
+__all__ = ["openpty", "fork", "spawn"]
 
 STDIN_FILENO = 0
 STDOUT_FILENO = 1
@@ -105,8 +109,8 @@ def fork():
         os.dup2(slave_fd, STDIN_FILENO)
         os.dup2(slave_fd, STDOUT_FILENO)
         os.dup2(slave_fd, STDERR_FILENO)
-        if (slave_fd > STDERR_FILENO):
-            os.close (slave_fd)
+        if slave_fd > STDERR_FILENO:
+            os.close(slave_fd)
 
         # Explicitly open the tty to make it become a controlling tty.
         tmp_fd = os.open(os.ttyname(STDOUT_FILENO), os.O_RDWR)
@@ -133,14 +137,22 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
             pty master -> standard output   (master_read)
             standard input -> pty master    (stdin_read)"""
     fds = [master_fd, STDIN_FILENO]
-    while True:
-        rfds, wfds, xfds = select(fds, [], [])
+    while fds:
+        rfds, _wfds, _xfds = select(fds, [], [])
+
         if master_fd in rfds:
-            data = master_read(master_fd)
+            # Some OSes signal EOF by returning an empty byte string,
+            # some throw OSErrors.
+            try:
+                data = master_read(master_fd)
+            except OSError:
+                data = b""
             if not data:  # Reached EOF.
-                fds.remove(master_fd)
+                return    # Assume the child process has exited and is
+                          # unreachable, so we clean up.
             else:
                 os.write(STDOUT_FILENO, data)
+
         if STDIN_FILENO in rfds:
             data = stdin_read(STDIN_FILENO)
             if not data:
@@ -153,20 +165,23 @@ def spawn(argv, master_read=_read, stdin_read=_read):
     if type(argv) == type(''):
         argv = (argv,)
     sys.audit('pty.spawn', argv)
+
     pid, master_fd = fork()
     if pid == CHILD:
         os.execlp(argv[0], *argv)
+
     try:
-        mode = tty.tcgetattr(STDIN_FILENO)
-        tty.setraw(STDIN_FILENO)
-        restore = 1
+        mode = tcgetattr(STDIN_FILENO)
+        setraw(STDIN_FILENO)
+        restore = True
     except tty.error:    # This is the same as termios.error
-        restore = 0
+        restore = False
+
     try:
         _copy(master_fd, master_read, stdin_read)
-    except OSError:
+    finally:
         if restore:
-            tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
+            tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
 
-    os.close(master_fd)
-    return os.waitpid(pid, 0)[1]
+    close(master_fd)
+    return waitpid(pid, 0)[1]

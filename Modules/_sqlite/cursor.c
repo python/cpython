@@ -728,21 +728,21 @@ pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
 /*[clinic input]
 _sqlite3.Cursor.executescript as pysqlite_cursor_executescript
 
-    sql_script as script_obj: object
+    sql_script: str
     /
 
 Executes multiple SQL statements at once. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
-/*[clinic end generated code: output=115a8132b0f200fe input=ba3ec59df205e362]*/
+pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
+                                   const char *sql_script)
+/*[clinic end generated code: output=8fd726dde1c65164 input=1ac0693dc8db02a8]*/
 {
     _Py_IDENTIFIER(commit);
-    const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
-    Py_ssize_t sql_len;
+    size_t sql_len;
     PyObject* result;
 
     if (!check_cursor(self)) {
@@ -751,21 +751,12 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
 
     self->reset = 0;
 
-    if (PyUnicode_Check(script_obj)) {
-        script_cstr = PyUnicode_AsUTF8AndSize(script_obj, &sql_len);
-        if (!script_cstr) {
-            return NULL;
-        }
-
-        int max_length = sqlite3_limit(self->connection->db,
-                                       SQLITE_LIMIT_LENGTH, -1);
-        if (sql_len >= max_length) {
-            PyErr_SetString(self->connection->DataError,
-                            "query string is too large");
-            return NULL;
-        }
-    } else {
-        PyErr_SetString(PyExc_ValueError, "script argument must be unicode.");
+    sql_len = strlen(sql_script);
+    int max_length = sqlite3_limit(self->connection->db,
+                                   SQLITE_LIMIT_LENGTH, -1);
+    if (sql_len >= (unsigned)max_length) {
+        PyErr_SetString(self->connection->DataError,
+                        "query string is too large");
         return NULL;
     }
 
@@ -782,7 +773,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
 
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare_v2(self->connection->db,
-                                script_cstr,
+                                sql_script,
                                 (int)sql_len + 1,
                                 &statement,
                                 &tail);
@@ -816,8 +807,8 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
         if (*tail == (char)0) {
             break;
         }
-        sql_len -= (tail - script_cstr);
-        script_cstr = tail;
+        sql_len -= (tail - sql_script);
+        sql_script = tail;
     }
 
 error:

@@ -1,0 +1,3 @@
+:mod:`sqlite3` user-defined functions and aggregators returning
+:class:`strings <str>` with embedded NUL characters are no longer
+truncated. Patch by Erlend E. Aasland.
