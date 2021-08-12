@@ -25,18 +25,21 @@ FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 
 # These are modules that get frozen.
-FROZEN = {
-    # frozenid: pyfile
-    # <frozenid.**.*>: pyfile
+FROZEN = [
+    # frozenid
+    # <frozenid.**.*>
+    # (frozenid, pyfile)
 
     # importlib
-    'importlib._bootstrap': None,
-    'importlib._bootstrap_external': None,
-    'zipimport': None,
+    'importlib._bootstrap',
+    'importlib._bootstrap_external',
+    'zipimport',
     # test
-    'hello': os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
-}
+    ('hello', os.path.join(TOOLS_DIR, 'freeze', 'flag.py')),
+]
 FROZEN_GROUPS = {
+    # group: [frozenid]
+    # group: [<frozenid.**.*>]
     'importlib': [
         'importlib._bootstrap',
         'importlib._bootstrap_external',
@@ -48,9 +51,10 @@ FROZEN_GROUPS = {
 }
 # These are the modules defined in frozen.c, in order.
 MODULES = [
-    # frozen_id
-    # (module, frozen_id)
-    # (<package>, frozen_id)
+    # frozenid
+    # <frozenid>
+    # (module, frozenid)
+    # (<package>, frozenid)
 
     # importlib
     '# [importlib]',
@@ -71,7 +75,8 @@ def expand_frozen(destdir=MODULES_DIR):
     # First, expand FROZEN.
     _frozen = []
     packages = {}
-    for frozenid, pyfile in FROZEN.items():
+    for row in FROZEN:
+        frozenid, pyfile = (row, None) if isinstance(row, str) else row
         resolved = iter(resolve_modules(frozenid, pyfile))
         modname, _pyfile, ispkg = next(resolved)
         if not pyfile:
