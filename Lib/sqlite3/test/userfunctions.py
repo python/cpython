@@ -340,6 +340,7 @@ class FunctionTests(unittest.TestCase):
             (42, int),
             (-1, int),
             (1234567890123456789, int),
+            (4611686018427387905, int),  # 63-bit int with non-zero low bits
             (3.14, float),
             (float('inf'), float),
             ("text", str),
