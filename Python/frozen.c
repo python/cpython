@@ -7,15 +7,9 @@
  *
  * These files must be regenerated any time * the corresponding .pyc
  * file would change (e.g. compiler, bytecode format, marshal format).
- * This can be done with "make regen-frozen-all".
+ * This can be done with "make regen-frozen".
  *
- * Additionally, specific groups of frozen modules can be regenerated:
- *
- *  import-related     make regen-importlib
- *  stdlib (partial)   make regen-frozen-stdlib
- *  test modules       make regen-frozen
- *
- * Those make targets simply run Tools/scripts/freeze_modules.py, which
+ * That make target simply runs Tools/scripts/freeze_modules.py, which
  * does the following:
  *
  * 1. run Programs/_freeze_module on the target modules

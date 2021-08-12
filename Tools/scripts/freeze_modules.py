@@ -41,18 +41,6 @@ FROZEN = [
     'hello : <__phello__>',
     'hello : __phello__.spam',
 ]
-FROZEN_GROUPS = {
-    # group: [frozenid]
-    # group: [<frozenid.**.*>]
-    'importlib': [
-        'importlib._bootstrap',
-        'importlib._bootstrap_external',
-        'zipimport',
-    ],
-    'test': [
-        'hello',
-    ],
-}
 
 
 def parse_frozen_spec(spec, known=None):
@@ -129,6 +117,7 @@ def parse_frozen_spec(spec, known=None):
 
 def expand_frozen(destdir=MODULES_DIR):
     frozen = {}
+    frozenids = []
     headers = []
     definitions = []
     for spec in FROZEN:
@@ -147,6 +136,7 @@ def expand_frozen(destdir=MODULES_DIR):
                     frozenfile = _resolve_frozen(frozenid, destdir)
 #                    assert frozenfile.startswith(destdir), (frozenfile, destdir)
                     frozen[frozenid] = (pyfile, frozenfile)
+                    frozenids.append(frozenid)
                 else:
                     assert not pyfile, spec
 
@@ -156,7 +146,7 @@ def expand_frozen(destdir=MODULES_DIR):
 
                 definition = (modname, frozenid, ispkg)
                 definitions.append(definition)
-    return frozen, headers, definitions
+    return frozen, frozenids, headers, definitions
 
 
 def resolve_modules(modname, pyfile=None):
@@ -406,34 +396,24 @@ def regen_makefile(headers, destdir=MODULES_DIR):
 # the script
 
 def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
-    KINDS = ['all', *sorted(FROZEN_GROUPS)]
     import argparse
     parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument('--no-regen', dest='regen', action='store_false')
-    parser.add_argument('kinds', nargs='*', choices=KINDS, default='all')
 
     args = parser.parse_args(argv)
     ns = vars(args)
 
-    if not args.kinds or 'all' in args.kinds:
-        args.kinds = None
-
     return ns
 
 
-def main(kinds=None, *, regen=True):
-    frozen, headers, definitions = expand_frozen(MODULES_DIR)
+def main(*, regen=True):
+    frozen, frozenids, headers, definitions = expand_frozen(MODULES_DIR)
 
     # First, freeze the modules.
-    # (We use a consistent order:)
-    ordered = ['importlib', 'test']
-    assert (set(ordered) == set(FROZEN_GROUPS))
-    for kind in ordered:
-        if not kinds or kind in kinds:
-            for frozenid in FROZEN_GROUPS[kind]:
-                #freeze_module(frozenid, frozen)
-                pyfile, frozenfile = frozen[frozenid]
-                _freeze_module(frozenid, pyfile, frozenfile)
+    # (We use a consistent order: that of FROZEN above.)
+    for frozenid in frozenids:
+        pyfile, frozenfile = frozen[frozenid]
+        _freeze_module(frozenid, pyfile, frozenfile)
 
     if regen:
         # Then regen frozen.c and Makefile.pre.in.
