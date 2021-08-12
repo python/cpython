@@ -105,7 +105,7 @@ convention.
 -------------------
 
 All the values in the ``__main__`` namespace can be imported elsewhere in
-Python packages. See section :ref:`name_is_main` for a list of where the
+Python packages. See section :ref:`name_equals_main` for a list of where the
 ``__main__`` package is in different Python execution scenarios.
 
 Here is an example package that consumes the ``__main__`` namespace::
