@@ -429,9 +429,6 @@ SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f((x)=2)
 Traceback (most recent call last):
 SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f(True=2)
-Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -978,10 +975,11 @@ def func2():
 """
         self._check_error(code, "invalid syntax")
 
+    @unittest.skipIf(support.use_old_parser(), "The old parser ")
     def test_invalid_line_continuation_error_position(self):
         self._check_error(r"a = 3 \ 4",
                           "unexpected character after line continuation character",
-                          lineno=1, offset=9)
+                          lineno=1, offset=(10 if support.use_old_parser() else 9))
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
