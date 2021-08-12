@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import warnings
 
 from .case import TestCase
 
@@ -62,7 +63,9 @@ class IsolatedAsyncioTestCase(TestCase):
         self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
-        self._callMaybeAsync(method)
+        if self._callMaybeAsync(method) is not None:
+            warnings.warn(f'It is deprecated to return a value!=None from a '
+                          f'test case ({method})', DeprecationWarning)
 
     def _callTearDown(self):
         self._callAsync(self.asyncTearDown)
