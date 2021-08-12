@@ -35,6 +35,12 @@ FROZEN = [
         'importlib._bootstrap_external : _frozen_importlib_external',
         'zipimport',
         ]),
+    ('stdlib', [
+        # without site (python -S)
+        # ...
+        # with site
+        # ...
+        ]),
     ('Test module', [
         'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
         'hello : <__phello__>',
