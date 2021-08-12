@@ -827,7 +827,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     // Check for classmethods.
     int owner_is_class = (owner_cls->tp_getattro != PyObject_GenericGetAttr) &&
-        PyObject_TypeCheck(owner, &PyBaseObject_Type);
+        PyObject_TypeCheck(owner, &PyBaseObject_Type) && PyType_Check(owner);
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
