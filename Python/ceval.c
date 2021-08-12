@@ -3442,22 +3442,26 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
         TARGET(LOAD_ATTR_MODULE): {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
-            PyObject *res;
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyAttrCache *cache1 = &caches[-1].attr;
-            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
-            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
-            assert(dict != NULL);
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
-            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(cache0->index < dict->ma_keys->dk_nentries);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
-            res = ep->me_value;
-            DEOPT_IF(res == NULL, LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
+            // shared with LOAD_METHOD_MODULE
+            #define LOAD_MODULE_ATTR_OR_METHOD(attr_or_method) \
+            PyObject *owner = TOP(); \
+            PyObject *res; \
+            SpecializedCacheEntry *caches = GET_CACHE(); \
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive; \
+            _PyAttrCache *cache1 = &caches[-1].attr; \
+            DEOPT_IF(!PyModule_CheckExact(owner), ##attr_or_method); \
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict; \
+            assert(dict != NULL); \
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, ##attr_or_method); \
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
+            assert(cache0->index < dict->ma_keys->dk_nentries); \
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index; \
+            res = ep->me_value; \
+            DEOPT_IF(res == NULL, ##attr_or_method); \
+            STAT_INC(##attr_or_method, hit); \
             record_cache_hit(cache0);
+            
+            LOAD_MODULE_ATTR_OR_METHOD(LOAD_ATTR);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -4273,7 +4277,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         }
 
         TARGET(LOAD_METHOD_CACHED): {
-            /* Designed to work in tandem with CALL_METHOD. */
+            /* LOAD_METHOD, with cached method object */
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
@@ -4306,6 +4310,41 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             Py_INCREF(res);
             SET_TOP(res);
             PUSH(self);
+            DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_MODULE): {
+            assert(cframe.use_tracing == 0);
+            LOAD_MODULE_ATTR_OR_METHOD(LOAD_METHOD);
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            Py_DECREF(owner);
+            PUSH(res);
+            DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_CLASS): {
+            /* LOAD_METHOD, for class methods */
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+            _PyObjectCache *cache3 = &caches[-3].obj;
+
+            DEOPT_IF(TOP() != cache3->obj, LOAD_METHOD);
+            PyTypeObject *cls = (PyTypeObject *)TOP();
+            DEOPT_IF(cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+
+            STAT_INC(LOAD_METHOD, hit);
+            record_cache_hit(cache0);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            Py_DECREF(cls);
+            PUSH(res);
             DISPATCH();
         }
 
