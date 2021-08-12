@@ -3449,19 +3449,20 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             SpecializedCacheEntry *caches = GET_CACHE(); \
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive; \
             _PyAttrCache *cache1 = &caches[-1].attr; \
-            DEOPT_IF(!PyModule_CheckExact(owner), ##attr_or_method); \
+            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_##attr_or_method); \
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict; \
             assert(dict != NULL); \
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, ##attr_or_method); \
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, \
+                LOAD_##attr_or_method); \
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
             assert(cache0->index < dict->ma_keys->dk_nentries); \
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index; \
             res = ep->me_value; \
-            DEOPT_IF(res == NULL, ##attr_or_method); \
-            STAT_INC(##attr_or_method, hit); \
+            DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
+            STAT_INC(LOAD_##attr_or_method, hit); \
             record_cache_hit(cache0);
             
-            LOAD_MODULE_ATTR_OR_METHOD(LOAD_ATTR);
+            LOAD_MODULE_ATTR_OR_METHOD(ATTR);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -4315,7 +4316,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
         TARGET(LOAD_METHOD_MODULE): {
             assert(cframe.use_tracing == 0);
-            LOAD_MODULE_ATTR_OR_METHOD(LOAD_METHOD);
+            LOAD_MODULE_ATTR_OR_METHOD(METHOD);
             Py_INCREF(res);
             SET_TOP(NULL);
             Py_DECREF(owner);
