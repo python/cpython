@@ -43,7 +43,6 @@
 #include "frozen_importlib__bootstrap.h"
 #include "frozen_importlib__bootstrap_external.h"
 #include "frozen_zipimport.h"
-/* stdlib */
 /* Test module */
 #include "frozen_hello.h"
 
@@ -54,10 +53,6 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
         (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
-
-    /* stdlib */
-    /* without site (python -S) */
-    /* with site */
 
     /* Test module */
     {"__hello__", _Py_M__hello, (int)sizeof(_Py_M__hello)},

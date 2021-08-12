@@ -747,10 +747,6 @@ regen-frozen-importlib: Tools/scripts/freeze_modules.py
 	# Regenerate Python/importlib_external.h, importlib.h, and zipimport.h.
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py importlib
 
-.PHONY: regen-frozen-stdlib
-regen-frozen-stdlib: Tools/scripts/freeze_modules.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py stdlib
-
 .PHONY: regen-frozen-test
 regen-frozen-test: Tools/scripts/freeze_modules.py
 	# Regenerate code for frozen module "__hello__".

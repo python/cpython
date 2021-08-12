@@ -26,15 +26,13 @@ MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 
 # These are modules that get frozen.
 FROZEN = {
-    # frozen_id: (pyfile, frozenfile)
-    # frozen_id: pyfile
+    # frozenid: pyfile
+    # <frozenid.**.*>: pyfile
 
     # importlib
     'importlib._bootstrap': None,
     'importlib._bootstrap_external': None,
     'zipimport': None,
-    # stdlib
-    # ...
     # test
     'hello': os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
 }
@@ -43,12 +41,6 @@ FROZEN_GROUPS = {
         'importlib._bootstrap',
         'importlib._bootstrap_external',
         'zipimport',
-    ],
-    'stdlib': [
-        # without site (python -S):
-
-        # with site:
-
     ],
     'test': [
         'hello',
@@ -65,13 +57,6 @@ MODULES = [
     ('_frozen_importlib', 'importlib._bootstrap'),
     ('_frozen_importlib_external', 'importlib._bootstrap_external'),
     'zipimport',
-
-    # stdlib
-    '# [stdlib]',
-    '# without site (python -S)',
-    # ...
-    '# with site',
-    # ...
 
     # test
     '# [Test module]',
@@ -426,7 +411,7 @@ def main(kinds=None, *, regen=True):
 
     # First, freeze the modules.
     # (We use a consistent order:)
-    ordered = ['importlib', 'stdlib', 'test']
+    ordered = ['importlib', 'test']
     assert (set(ordered) == set(groups))
     for kind in ordered:
         if not kinds or kind in kinds:
