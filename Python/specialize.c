@@ -37,7 +37,7 @@
 */
 
 Py_ssize_t _Py_QuickenedCount = 0;
-#if SPECIALIZATION_STATS
+#if COLLECT_SPECIALIZATION_STATS
 SpecializationStats _specialization_stats[256] = { 0 };
 
 #define ADD_STAT_TO_DICT(res, field) \
@@ -69,7 +69,7 @@ stats_to_dict(SpecializationStats *stats)
     ADD_STAT_TO_DICT(res, miss);
     ADD_STAT_TO_DICT(res, deopt);
     ADD_STAT_TO_DICT(res, unquickened);
-#if SPECIALIZATION_STATS_DETAILED
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
     PyObject *failure_kinds = PyTuple_New(SPECIALIZATION_FAILURE_KINDS);
     if (failure_kinds == NULL) {
         Py_DECREF(res);
@@ -111,7 +111,7 @@ add_stat_dict(
     return err;
 }
 
-#if SPECIALIZATION_STATS
+#if COLLECT_SPECIALIZATION_STATS
 PyObject*
 _Py_GetSpecializationStats(void) {
     PyObject *stats = PyDict_New();
@@ -144,7 +144,7 @@ print_stats(FILE *out, SpecializationStats *stats, const char *name)
     PRINT_STAT(name, miss);
     PRINT_STAT(name, deopt);
     PRINT_STAT(name, unquickened);
-#if SPECIALIZATION_STATS_DETAILED
+#if PRINT_SPECIALIZATION_STATS_DETAILED
     for (int i = 0; i < SPECIALIZATION_FAILURE_KINDS; i++) {
         fprintf(out, "    %s.specialization_failure_kinds[%d] : %" PRIu64 "\n",
             name, i, stats->specialization_failure_kinds[i]);
@@ -157,7 +157,7 @@ void
 _Py_PrintSpecializationStats(void)
 {
     FILE *out = stderr;
-#if SPECIALIZATION_STATS_TO_FILE
+#if PRINT_SPECIALIZATION_STATS_TO_FILE
     /* Write to a file instead of stderr. */
 # ifdef MS_WINDOWS
     const char *dirname = "c:\\temp\\py_stats\\";
@@ -182,7 +182,7 @@ _Py_PrintSpecializationStats(void)
     }
 }
 
-#if SPECIALIZATION_STATS_DETAILED
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
 
 #define SPECIALIZATION_FAIL(opcode, kind) _specialization_stats[opcode].specialization_failure_kinds[kind]++
 

@@ -301,13 +301,16 @@ int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
-#define SPECIALIZATION_STATS_TO_FILE 0
+#define PRINT_SPECIALIZATION_STATS 0
+#define PRINT_SPECIALIZATION_STATS_DETAILED 0
+#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
+
+#define COLLECT_SPECIALIZATION_STATS (Py_DEBUG || PRINT_SPECIALIZATION_STATS)
+#define COLLECT_SPECIALIZATION_STATS_DETAILED (Py_DEBUG || PRINT_SPECIALIZATION_STATS_DETAILED)
 
 #define SPECIALIZATION_FAILURE_KINDS 20
 
-#if SPECIALIZATION_STATS
+#if COLLECT_SPECIALIZATION_STATS
 
 typedef struct _stats {
     uint64_t specialization_success;
@@ -317,7 +320,7 @@ typedef struct _stats {
     uint64_t miss;
     uint64_t deopt;
     uint64_t unquickened;
-#if SPECIALIZATION_STATS_DETAILED
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
     uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 #endif
 } SpecializationStats;
