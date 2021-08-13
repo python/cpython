@@ -478,3 +478,20 @@ and off individually.  They are described here in more detail.
 
 .. _LibCST: https://libcst.readthedocs.io/
 .. _parso: https://parso.readthedocs.io/
+
+
+**Third-party resources:**
+
+--------------
+
+#. Web application
+    * `360 Tech Explorer's Python 2 to 3 Converter <http://360techexplorer.com/tools/python-2-to-3-converter/>`_
+
+#. Blog Posts
+    * `GeekForGeeks's post about Automate the Conversion from Python2 to Python3 <https://www.geeksforgeeks.org/automate-the-conversion-from-python2-to-python3>`_
+    * `Python's post about Porting Python 2 Code to Python 3 <https://docs.python.org/3/howto/pyporting.html>`_
+
+
+.. note::
+
+    These sites are not controlled by Python Software Foundation (PSF). PSF cannot make any representations regarding the quality, safety, or suitability of any software or information found there. Please make sure that you completely understand the risk before retrieving any suggestions from the above link.
