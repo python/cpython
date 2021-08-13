@@ -5,7 +5,7 @@ import functools
 import difflib
 import pprint
 import re
-from typing import Iterable
+from typing import Iterator
 import warnings
 import collections
 import contextlib
@@ -155,16 +155,16 @@ def _is_subtype(expected, basetype):
     return isinstance(expected, type) and issubclass(expected, basetype)
 
 
-def _heuristic_diff(a: list[str], b: list[str]) -> Iterable[str]:
+def _heuristic_diff(a: list[str], b: list[str]) -> Iterator[str]:
     """After testing the magnitude of the inputs, preferably return the output
     of difflib.ndiff, but fallback to difflib.unified_diff for prohibitively
     expensive inputs. How cost is calclated:
 
         cost = (number of differing lines
                 * total length of all differing lines)
-    """
-    # bpo-19217: speed up assertEqual on long sequences
 
+    See bpo-19217 for context.
+    """
     cost_limit = 1_000_000
 
     # unified diff is always cheap, so we can use it to measure the magnitude
