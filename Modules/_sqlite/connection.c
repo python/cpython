@@ -155,7 +155,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    self->created_statements = 0;
     self->created_cursors = 0;
 
     /* Create list of weak references to cursors */
