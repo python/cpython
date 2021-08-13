@@ -211,6 +211,7 @@ f'{a * f"-{x()}-"}'"""
         self.assertEqual(call.lineno, 3)
         self.assertEqual(call.col_offset, 11)
 
+    @unittest.skipIf(use_old_parser(), "The old parser gets the offsets incorrectly for fstrings")
     def test_ast_line_numbers_duplicate_expression(self):
         expr = """
 a = 10
@@ -277,6 +278,7 @@ f'{a * x()} {a * x()} {a * x()}'
         self.assertEqual(binop.left.col_offset, 23)
         self.assertEqual(binop.right.col_offset, 27)
 
+    @unittest.skipIf(use_old_parser(), "The old parser gets the offsets incorrectly for fstrings")
     def test_ast_numbers_fstring_with_formatting(self):
 
         t = ast.parse('f"Here is that pesky {xxx:.3f} again"')
