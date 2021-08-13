@@ -537,7 +537,6 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
             return BUILTIN_CLASSMETHOD;
         }
         if (Py_IS_TYPE(descriptor, &PyClassMethod_Type)) {
-            // Python classmethod(func) object.
             return PYTHON_CLASSMETHOD;
         }
         return NON_OVERRIDING;
