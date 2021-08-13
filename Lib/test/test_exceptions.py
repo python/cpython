@@ -1171,7 +1171,7 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
-    def test_crashcan_recursion(self):
+    def test_trashcan_recursion(self):
         # See bpo-33930
 
         def foo():
