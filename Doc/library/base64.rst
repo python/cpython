@@ -287,6 +287,8 @@ An example usage of the module:
    >>> data
    b'data to be encoded'
 
+.. _base64-security:
+
 Security Considerations
 -----------------------
 
