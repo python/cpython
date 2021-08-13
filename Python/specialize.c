@@ -817,9 +817,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             return -1;
         }
     }
-    // Technically this is fine for bound method calls, but slightly slower at runtime.
     if (Py_TYPE(owner_cls)->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
@@ -832,116 +831,112 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     if (owner_is_class) {
-        // class method
+        // Class method.
         kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
         // Store the version right away, in case it's modified halfway through.
         cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
     }
     else {
-        // instance method
+        // Instance method,
         kind = analyze_descriptor(owner_cls, name, &descr, 0);
         cache1->tp_version = owner_cls->tp_version_tag;
     }
-
-    if (kind != METHOD || descr == NULL) {
+    assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
+    switch (kind) {
+        case METHOD:
+            break;
 #if SPECIALIZATION_STATS
-        if (owner_is_class) {
-            if (descr == NULL) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
-                goto fail;
-            }
-            // Builtin METH_CLASS class method -- ie wrapped PyCFunction
-            else if (kind == NON_OVERRIDING &&
-                Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
-                // NOTE (KJ): Don't bother, rare and no speedup in microbenchmarks.
+        case NON_OVERRIDING:
+            if (Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
+                // Builtin METH_CLASS class method -- ie wrapped PyCFunction.
+                // (KJ): Don't bother, rare and no speedup in microbenchmarks.
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
-                goto fail;
             }
             else if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
-                // Note: this is the actual Python classmethod(func) object.
+                // This is the actual Python classmethod(func) object.
                 SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
-                goto fail;
             }
-        }
+        goto fail;
 #endif
+    default:
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
         goto fail;
     }
-    PyObject **cls_dictptr = _PyObject_GetDictPtr((PyObject *)owner_cls);
-    int cls_has_dict = (cls_dictptr != NULL &&
-                        *cls_dictptr != NULL &&
-                        PyDict_CheckExact(*cls_dictptr));
-    if (!cls_has_dict) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NO_DICT);
-        goto fail;
-    }
+    
     assert(kind == METHOD);
-    if (cls_has_dict && owner_cls->tp_dictoffset >= 0) {
-        // If o.__dict__ changes, the method might be found in o.__dict__
-        // instead of old type lookup. So record o.__dict__'s keys.
-        uint32_t keys_version = UINT32_MAX;
-        if (owner_has_dict) {
-            // _PyDictKeys_GetVersionForCurrentState isn't accurate for
-            // custom dict subclasses at the moment.
-            if (!PyDict_CheckExact(owner_dict)) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_DICT_SUBCLASS);
-                goto fail;
-            }
-            assert(PyUnicode_CheckExact(name));
-            Py_hash_t hash = PyObject_Hash(name);
-            if (hash == -1) {
-                return -1;
-            }
-            PyObject *value = NULL;
-            if (!owner_is_class) {
-                // Instance methods shouldn't be in o.__dict__.
-                // That makes it an attribute.
-                Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
-                assert(ix != DKIX_ERROR);
-                if (ix != DKIX_EMPTY) {
-                    SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
-                    goto fail;
-                }
-            }
-            keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
-            if (keys_version == 0) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
-                goto fail;
-            }
-            // Fall through.
-        } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-        
-        /* `descr` is borrowed. Just check tp_version_tag before accessing in case
-        *  it's deleted.  This is safe for methods (even inherited ones from super
-        *  classes!) as long as tp_version_tag is validated for two main reasons:
-        * 
-        *  1. The class will always hold a reference to the method so it will
-        *  usually not be GC-ed. Should it be deleted in Python, e.g.
-        *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
-        * 
-        *  2. The pre-existing type method cache (MCACHE) uses the same principles
-        *  of caching a borrowed descriptor. It does all the heavy lifting for us.
-        *  E.g. it invalidates on any MRO modification, on any type object
-        *  change along said MRO, etc. (see PyType_Modified usages in typeobject.c).
-        *  The type method cache has been working since Python 2.6 and it's
-        *  battle-tested.
-        */
-        cache2->obj = descr;
-        cache1->dk_version_or_hint = keys_version;
-        *instr = _Py_MAKECODEUNIT(owner_is_class ? LOAD_METHOD_CLASS :
-            LOAD_METHOD_CACHED, _Py_OPARG(*instr));
-        goto success;
+    // Technically this is fine for bound method calls, but slightly slower at
+    // runtime to get dict. TODO: profile pyperformance and see if it's worth it
+    // to slightly slow down the common case, so that we can specialize this
+    // uncommon one.
+    if (owner_cls->tp_dictoffset < 0) {
+     SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+     goto fail;
     }
-fail:
-    STAT_INC(LOAD_METHOD, specialization_failure);
-    assert(!PyErr_Occurred());
-    cache_backoff(cache0);
-    return 0;
+    // If o.__dict__ changes, the method might be found in o.__dict__
+    // instead of old type lookup. So record o.__dict__'s keys.
+    uint32_t keys_version = UINT32_MAX;
+    if (owner_has_dict) {
+        // _PyDictKeys_GetVersionForCurrentState isn't accurate for
+        // custom dict subclasses at the moment.
+        if (!PyDict_CheckExact(owner_dict)) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_DICT_SUBCLASS);
+            goto fail;
+        }
+        assert(PyUnicode_CheckExact(name));
+        Py_hash_t hash = PyObject_Hash(name);
+        if (hash == -1) {
+            return -1;
+        }
+        PyObject *value = NULL;
+        if (!owner_is_class) {
+            // Instance methods shouldn't be in o.__dict__. That makes
+            // it an attribute.
+            Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
+            assert(ix != DKIX_ERROR);
+            if (ix != DKIX_EMPTY) {
+                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+                goto fail;
+            }
+        }
+        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
+        if (keys_version == 0) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+            goto fail;
+        }
+        // Fall through.
+    } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
+        
+    /* `descr` is borrowed. Just check tp_version_tag before accessing in case
+    *  it's deleted.  This is safe for methods (even inherited ones from super
+    *  classes!) as long as tp_version_tag is validated for two main reasons:
+    * 
+    *  1. The class will always hold a reference to the method so it will
+    *  usually not be GC-ed. Should it be deleted in Python, e.g.
+    *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
+    * 
+    *  2. The pre-existing type method cache (MCACHE) uses the same principles
+    *  of caching a borrowed descriptor. It does all the heavy lifting for us.
+    *  E.g. it invalidates on any MRO modification, on any type object
+    *  change along said MRO, etc. (see PyType_Modified usages in typeobject.c).
+    *  The type method cache has been working since Python 2.6 and it's
+    *  battle-tested.
+    */
+    cache2->obj = descr;
+    cache1->dk_version_or_hint = keys_version;
+    *instr = _Py_MAKECODEUNIT(owner_is_class ? LOAD_METHOD_CLASS :
+        LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+    // Fall through.
 success:
     STAT_INC(LOAD_METHOD, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
+fail:
+    STAT_INC(LOAD_METHOD, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+
 }
 int
 _Py_Specialize_LoadGlobal(
