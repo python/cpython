@@ -476,6 +476,8 @@ typedef enum {
     OBJECT_SLOT, /* Is an object slot descriptor */
     OTHER_SLOT, /* Is a slot descriptor of another type */
     NON_OVERRIDING, /* Is another non-overriding descriptor, and is an instance of an immutable class*/
+    BUILTIN_CLASSMETHOD, /* Builtin methods with METH_CLASS */
+    PYTHON_CLASSMETHOD, /* Python classmethod(func) object */
     NON_DESCRIPTOR, /* Is not a descriptor, and is an instance of an immutable class */
     MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
     ABSENT, /* Attribute is not present on the class */
@@ -530,6 +532,13 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
     if (desc_cls->tp_descr_get) {
         if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
             return METHOD;
+        }
+        if (Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
+            return BUILTIN_CLASSMETHOD;
+        }
+        if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
+            // Python classmethod(func) object.
+            return PYTHON_CLASSMETHOD;
         }
         return NON_OVERRIDING;
     }
@@ -602,6 +611,8 @@ specialize_dict_access(
     /* No attribute in instance dictionary */
     switch(kind) {
         case NON_OVERRIDING:
+        case BUILTIN_CLASSMETHOD:
+        case PYTHON_CLASSMETHOD:
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR);
             return 0;
         case NON_DESCRIPTOR:
@@ -834,7 +845,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     // Check for classmethods.
     int owner_is_class = (owner_cls->tp_getattro != PyObject_GenericGetAttr) &&
-        PyType_Check(owner) && PyObject_TypeCheck(owner, &PyBaseObject_Type);
+        PyType_Check(owner);
     owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
 
     PyObject *descr = NULL;
@@ -847,22 +858,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     switch (kind) {
         case METHOD:
             break;
-#if SPECIALIZATION_STATS
-        case NON_OVERRIDING:
-            if (Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
-                // Builtin METH_CLASS class method -- ie wrapped PyCFunction.
-                // (KJ): Don't bother, rare and no speedup in microbenchmarks.
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
-            }
-            else if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
-                // This is the actual Python classmethod(func) object.
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
-            }
-        goto fail;
-#endif
-    default:
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
-        goto fail;
+        case BUILTIN_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
+            goto fail;
+        case PYTHON_CLASSMETHOD:
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
+            goto fail;
+        default:
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
+            goto fail;
     }
     
     assert(kind == METHOD);
