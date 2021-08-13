@@ -552,7 +552,8 @@ specialize_dict_access(
     _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
     int base_op, int split_op, int hint_op)
 {
-    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT);
+    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
+        kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
     // No desciptor, or non overriding.
     if (type->tp_dictoffset < 0) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
@@ -696,6 +697,8 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         case GETSET_OVERRIDDEN:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
+        case BUILTIN_CLASSMETHOD:
+        case PYTHON_CLASSMETHOD:
         case NON_OVERRIDING:
         case NON_DESCRIPTOR:
         case ABSENT:
@@ -775,6 +778,8 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
         case GETSET_OVERRIDDEN:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
             goto fail;
+        case BUILTIN_CLASSMETHOD:
+        case PYTHON_CLASSMETHOD:
         case NON_OVERRIDING:
         case NON_DESCRIPTOR:
         case ABSENT:
@@ -844,8 +849,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     // Check for classmethods.
-    int owner_is_class = (owner_cls->tp_getattro != PyObject_GenericGetAttr) &&
-        PyType_Check(owner);
+    int owner_is_class = PyType_Check(owner);
     owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
 
     PyObject *descr = NULL;
