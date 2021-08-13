@@ -821,26 +821,28 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
+    // Technically this is fine for bound method calls, but slightly slower at
+    // runtime to get dict. TODO: profile pyperformance and see if it's worth it
+    // to slightly slow down the common case, so that we can specialize this
+    // uncommon one.
+    if (owner_cls->tp_dictoffset < 0) {
+     SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+     goto fail;
+    }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
     PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     // Check for classmethods.
     int owner_is_class = (owner_cls->tp_getattro != PyObject_GenericGetAttr) &&
-        PyObject_TypeCheck(owner, &PyBaseObject_Type) && PyType_Check(owner);
+        PyType_Check(owner) && PyObject_TypeCheck(owner, &PyBaseObject_Type);
+    owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
-    if (owner_is_class) {
-        // Class method.
-        kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
-        // Store the version right away, in case it's modified halfway through.
-        cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
-    }
-    else {
-        // Instance method,
-        kind = analyze_descriptor(owner_cls, name, &descr, 0);
-        cache1->tp_version = owner_cls->tp_version_tag;
-    }
+    kind = analyze_descriptor(owner_cls, name, &descr, 0);
+    // Store the version right away, in case it's modified halfway through.
+    cache1->tp_version = owner_cls->tp_version_tag;
+
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     switch (kind) {
         case METHOD:
@@ -864,14 +866,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     }
     
     assert(kind == METHOD);
-    // Technically this is fine for bound method calls, but slightly slower at
-    // runtime to get dict. TODO: profile pyperformance and see if it's worth it
-    // to slightly slow down the common case, so that we can specialize this
-    // uncommon one.
-    if (owner_cls->tp_dictoffset < 0) {
-     SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
-     goto fail;
-    }
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
     uint32_t keys_version = UINT32_MAX;
