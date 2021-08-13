@@ -1014,6 +1014,9 @@ class ExceptionTests(unittest.TestCase):
 
     def test_no_hang_on_context_chain_cycle2(self):
         # See issue 25782. Cycle at head of context chain.
+        while gc.collect():
+            # Remove this once issue 44895 is resolved
+            pass
 
         class A(Exception):
             pass
