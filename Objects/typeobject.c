@@ -1391,12 +1391,10 @@ subtype_dealloc(PyObject *self)
     has_finalizer = type->tp_finalize || type->tp_del;
 
     if (type->tp_finalize) {
-        _PyObject_GC_TRACK(self);
         if (PyObject_CallFinalizerFromDealloc(self) < 0) {
             /* Resurrected */
             return;
         }
-        _PyObject_GC_UNTRACK(self);
     }
     /*
       If we added a weaklist, we clear it. Do this *before* calling tp_del,
@@ -1456,13 +1454,6 @@ subtype_dealloc(PyObject *self)
 
     /* Extract the type again; tp_del may have changed it */
     type = Py_TYPE(self);
-
-    /* Call the base tp_dealloc(); first retrack self if
-     * basedealloc knows about gc.
-     */
-    if (_PyType_IS_GC(base)) {
-        _PyObject_GC_TRACK(self);
-    }
 
     // Don't read type memory after calling basedealloc() since basedealloc()
     // can deallocate the type and free its memory.

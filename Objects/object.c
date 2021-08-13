@@ -249,13 +249,16 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _Py_NewReference(self);
     Py_SET_REFCNT(self, refcnt);
 
-    if (_PyType_IS_GC(Py_TYPE(self)) && !_PyObject_GC_IS_TRACKED(self)) {
-        _PyObject_GC_TRACK(self);
+    if (_PyType_IS_GC(Py_TYPE(self))) {
+        /* If we get here, it must have originally been tracked when
+         * _Py_Dealloc was called.  Make it tracked again so it can't become
+         * part of a reference cycle and leak.
+         */
+        if (!_PyObject_GC_IS_TRACKED(self)) {
+            _PyObject_GC_TRACK(self);
+        }
     }
 
-    _PyObject_ASSERT(self,
-                     (!_PyType_IS_GC(Py_TYPE(self))
-                      || _PyObject_GC_IS_TRACKED(self)));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
 #ifdef Py_REF_DEBUG
@@ -2201,7 +2204,7 @@ static void
 _PyTrash_dealloc(PyObject *op)
 {
     if (_PyObject_GC_IS_TRACKED(op)) {
-        // The trash list re-uses the GC head pointers and so we must untrack
+        // The trash list re-uses the GC prev pointer and so we must untrack
         // the object first, if it is tracked.
         _PyObject_GC_UNTRACK(op);
     }
