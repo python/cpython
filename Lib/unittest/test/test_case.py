@@ -1955,7 +1955,7 @@ test case
 
 class Test_HeuristicDiff(unittest.TestCase):
 
-    # this large contant coerces the use of `unified_diff` for several tests
+    # this large constant coerces the use of `unified_diff` for several tests
     N = 50_000
 
     @staticmethod
