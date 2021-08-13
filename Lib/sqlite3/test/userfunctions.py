@@ -475,6 +475,7 @@ class WindowSumInt:
 class WindowFunctionTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
+        self.cur = self.con.cursor()
 
         # Test case taken from https://www.sqlite.org/windowfunctions.html#udfwinfunc
         values = [
@@ -484,8 +485,9 @@ class WindowFunctionTests(unittest.TestCase):
             ("d", 8),
             ("e", 1),
         ]
-        self.cur = self.con.execute("create table test(x, y)")
-        self.cur.executemany("insert into test values(?, ?)", values)
+        with self.con:
+            self.con.execute("create table test(x, y)")
+            self.con.executemany("insert into test values(?, ?)", values)
         self.expected = [
             ("a", 9),
             ("b", 12),
