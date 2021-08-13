@@ -710,6 +710,7 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
 
+.. _subprocess-security:
 
 Security Considerations
 -----------------------

@@ -1034,7 +1034,7 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
     {0, NULL}
-}; 
+};
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,
