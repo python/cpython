@@ -23,14 +23,13 @@
 
 import contextlib
 import functools
-import gc
 import io
 import sys
 import unittest
 import unittest.mock
 import sqlite3 as sqlite
 
-from test.support import bigmemtest
+from test.support import bigmemtest, gc_collect
 
 
 def with_tracebacks(strings, traceback=True):
@@ -413,7 +412,7 @@ class FunctionTests(unittest.TestCase):
         y.append(y)
 
         del x,y
-        gc.collect()
+        gc_collect()
 
     def test_func_return_too_large_int(self):
         cur = self.con.cursor()
