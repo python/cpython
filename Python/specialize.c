@@ -233,7 +233,7 @@ static uint8_t adaptive_opcodes[256] = {
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
-    [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
+    [LOAD_METHOD] = 4, /* _PyAdaptiveEntry, _PyAttrCache and 2 _PyObjectCache */
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -817,6 +817,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyAttrCache *cache1 = &cache[-1].attr;
     _PyObjectCache *cache2 = &cache[-2].obj;
+    _PyObjectCache *cache3 = &cache[-3].obj;
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
     if (PyModule_CheckExact(owner)) {
@@ -851,6 +852,10 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     int owner_is_class = PyType_Check(owner);
     owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
 
+    if ((owner_cls->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG) == 0) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
+        goto fail;
+    }
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
@@ -875,8 +880,9 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     assert(kind == METHOD);
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
+    // Not required for class methods -- tp_version_tag is enough for those.
     uint32_t keys_version = UINT32_MAX;
-    if (owner_has_dict) {
+    if (owner_has_dict && !owner_is_class) {
         // _PyDictKeys_GetVersionForCurrentState isn't accurate for
         // custom dict subclasses at the moment.
         if (!PyDict_CheckExact(owner_dict)) {
@@ -923,6 +929,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     *  battle-tested.
     */
     cache2->obj = descr;
+    cache3->obj = (PyObject *)owner_cls; // borrowed - cache the type
     cache1->dk_version_or_hint = keys_version;
     *instr = _Py_MAKECODEUNIT(owner_is_class ? LOAD_METHOD_CLASS :
         LOAD_METHOD_CACHED, _Py_OPARG(*instr));

@@ -4289,7 +4289,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
+            _PyObjectCache *cache3 = &caches[-3].obj;
 
+            DEOPT_IF((PyObject *)self_cls != cache3->obj, LOAD_METHOD);
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
@@ -4335,13 +4337,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
+            _PyObjectCache *cache3 = &caches[-3].obj;
 
             PyObject *cls = TOP();
             PyTypeObject *cls_type = Py_TYPE(cls);
             assert(cls_type->tp_dictoffset > 0);
             PyObject *dict = *(PyObject **) ((char *)cls + cls_type->tp_dictoffset);
-            DEOPT_IF(((PyDictObject *)dict)->ma_keys->dk_version !=
-                cache1->dk_version_or_hint, LOAD_METHOD);
+            DEOPT_IF(cls != cache3->obj, LOAD_METHOD);
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
                 LOAD_METHOD);
             
