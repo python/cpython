@@ -288,7 +288,7 @@ An example usage of the module:
    b'data to be encoded'
 
 Security Considerations
----
+-----------------------
 
 A new security considerations section was added to :rfc:`4648` (section 12); it's
 recommended to review the security section for any code deployed to production.
