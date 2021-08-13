@@ -533,10 +533,10 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
         if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
             return METHOD;
         }
-        if (Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
+        if (Py_IS_TYPE(descriptor, &PyClassMethodDescr_Type)) {
             return BUILTIN_CLASSMETHOD;
         }
-        if (Py_IS_TYPE(descr, &PyClassMethod_Type)) {
+        if (Py_IS_TYPE(descriptor, &PyClassMethod_Type)) {
             // Python classmethod(func) object.
             return PYTHON_CLASSMETHOD;
         }
@@ -842,8 +842,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     // to slightly slow down the common case, so that we can specialize this
     // uncommon one.
     if (owner_cls->tp_dictoffset < 0) {
-     SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
-     goto fail;
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+        goto fail;
     }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
