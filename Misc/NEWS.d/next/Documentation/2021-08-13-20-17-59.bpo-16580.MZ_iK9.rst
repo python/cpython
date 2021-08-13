@@ -1,0 +1,2 @@
+Added code equivalents for the ``int.to_bytes`` and ``int.from_bytes``
+functions, as well as tests ensuring that these code equivalents are valid.
