@@ -360,23 +360,6 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-int pysqlite_statement_finalize(pysqlite_Statement* self)
-{
-    int rc;
-
-    rc = SQLITE_OK;
-    if (self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_finalize(self->st);
-        Py_END_ALLOW_THREADS
-        self->st = NULL;
-    }
-
-    self->in_use = 0;
-
-    return rc;
-}
-
 int pysqlite_statement_reset(pysqlite_Statement* self)
 {
     int rc;
