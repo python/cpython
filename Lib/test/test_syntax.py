@@ -975,7 +975,6 @@ def func2():
 """
         self._check_error(code, "invalid syntax")
 
-    @unittest.skipIf(support.use_old_parser(), "The old parser ")
     def test_invalid_line_continuation_error_position(self):
         self._check_error(r"a = 3 \ 4",
                           "unexpected character after line continuation character",
