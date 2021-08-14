@@ -225,10 +225,10 @@ You can also follow development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
 
 
-Proposals for enhancement
--------------------------
+Proposals for enhancements
+--------------------------
 
-If you have a proposal to change Python, you may want to send an email to the
+If you have a proposal to change Python, you can send an email to the
 comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
