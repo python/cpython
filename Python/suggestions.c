@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_xframe.h"
+#include "pycore_framedata.h"
 
 #include "pycore_pyerrors.h"
 #include "pycore_code.h"        // _PyCode_GetVarnames()
@@ -232,7 +232,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_xframe->xf_globals);
+    dir = PySequence_List(frame->f_fdata->globals);
     if (dir == NULL) {
         return NULL;
     }
@@ -242,7 +242,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_xframe->xf_builtins);
+    dir = PySequence_List(frame->f_fdata->builtins);
     if (dir == NULL) {
         return NULL;
     }

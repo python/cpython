@@ -29,7 +29,7 @@ Data members:
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_xframe.h"
+#include "pycore_framedata.h"
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -1815,22 +1815,22 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyExecFrame *xframe = tstate->xframe;
+    _Py_framedata *fdata = tstate->fdata;
 
     if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
         return NULL;
     }
 
-    while (depth > 0 && xframe != NULL) {
-        xframe = xframe->xf_previous;
+    while (depth > 0 && fdata != NULL) {
+        fdata = fdata->previous;
         --depth;
     }
-    if (xframe == NULL) {
+    if (fdata == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "call stack is not deep enough");
         return NULL;
     }
-    return _Py_XNewRef((PyObject *)_PyExecFrame_GetFrameObject(xframe));
+    return _Py_XNewRef((PyObject *)_Py_framedata_GetFrameObject(fdata));
 }
 
 /*[clinic input]

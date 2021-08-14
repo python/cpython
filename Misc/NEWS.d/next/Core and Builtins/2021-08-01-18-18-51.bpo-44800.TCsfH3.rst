@@ -1,4 +1,8 @@
-Refactored internal APIs for the new lazy introspection frame creation to
-consistently distinguish between the classic introspection frames (full
-Python objects) and the new lighter weight internal execution frames (C
-structs with no intrinsic instance lifecycle management)
+Refactored internal APIs for the new lazy frame object creation to more
+consistently distinguish between the full ``PyFrameObject`` Python object
+implementation that is still used in the Python and C runtime state
+introspection APIs (function prefix ``PyFrame``, field prefix ``f_``, typical
+variable names ``frame`` and ``f``) and the new ``_Py_framedata`` internal
+frame data storage (C structs with no intrinsic instance lifecycle management)
+that is now used for code execution (function prefix ``_Py_framedata``, no
+field prefix, typical variable name ``fdata``).

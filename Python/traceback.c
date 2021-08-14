@@ -6,7 +6,7 @@
 #include "code.h"                 // PyCode_Addr2Line etc
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_xframe.h"         // _PyExecFrame_GetCode()
+#include "pycore_framedata.h"         // _Py_framedata_GetCode()
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_compile.h"       // _PyAST_Optimize
@@ -240,7 +240,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_xframe->xf_lasti*2,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_fdata->lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -710,7 +710,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = frame->f_xframe->xf_code;
+    PyCodeObject* code = frame->f_fdata->code;
 
     int start_line;
     int end_line;
@@ -1024,9 +1024,9 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, _PyExecFrame *xframe)
+dump_frame(int fd, _Py_framedata *fdata)
 {
-    PyCodeObject *code = xframe->xf_code;
+    PyCodeObject *code = fdata->code;
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -1038,7 +1038,7 @@ dump_frame(int fd, _PyExecFrame *xframe)
         PUTS(fd, "???");
     }
 
-    int lineno = PyCode_Addr2Line(code, xframe->xf_lasti*2);
+    int lineno = PyCode_Addr2Line(code, fdata->lasti*2);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -1062,15 +1062,15 @@ dump_frame(int fd, _PyExecFrame *xframe)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _PyExecFrame *xframe;
+    _Py_framedata *fdata;
     unsigned int depth;
 
     if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    xframe = tstate->xframe;
-    if (xframe == NULL) {
+    fdata = tstate->fdata;
+    if (fdata == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;
     }
@@ -1081,9 +1081,9 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             PUTS(fd, "  ...\n");
             break;
         }
-        dump_frame(fd, xframe);
-        xframe = xframe->xf_previous;
-        if (xframe == NULL) {
+        dump_frame(fd, fdata);
+        fdata = fdata->previous;
+        if (fdata == NULL) {
             break;
         }
         depth++;

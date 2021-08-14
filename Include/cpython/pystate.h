@@ -72,8 +72,8 @@ typedef struct _stack_chunk {
 
 // Declared here so the thread state can use it without creating an include loop
 // See cpython/frameobject.h for an explanation of the type
-// See internal/pycore_xframe.h for the struct definition
-typedef struct _Py_execution_frame _PyExecFrame;
+// See internal/pycore_framedata.h for the struct definition
+typedef struct _Py_execution_frame _Py_framedata;
 
 // The PyThreadState typedef is in Include/pystate.h.
 struct _ts {
@@ -84,7 +84,7 @@ struct _ts {
     PyInterpreterState *interp;
 
     /* Borrowed reference to the current execution frame (it can be NULL) */
-    _PyExecFrame *xframe;
+    _Py_framedata *fdata;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
     int stackcheck_counter;
@@ -229,7 +229,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyExecFrame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _Py_framedata *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);

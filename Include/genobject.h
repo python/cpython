@@ -15,8 +15,8 @@ extern "C" {
    and coroutine objects. */
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
-    /* Note: gi_xframe can be NULL if the generator is "finished" */        \
-    _PyExecFrame *prefix##_xframe;                                          \
+    /* Note: gi_fdata can be NULL if the generator is "finished" */        \
+    _Py_framedata *prefix##_fdata;                                          \
     /* The code object backing the generator */                             \
     PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \

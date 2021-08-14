@@ -29,7 +29,7 @@
 #include "pycore_dict.h"
 #include "dictobject.h"
 #include "frameobject.h"
-#include "pycore_xframe.h"
+#include "pycore_framedata.h"
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
@@ -62,27 +62,27 @@ static int lltrace;
 static int prtrace(PyThreadState *, PyObject *, const char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
-                      PyThreadState *, _PyExecFrame *,
+                      PyThreadState *, _Py_framedata *,
                       int, PyObject *);
 static int call_trace_protected(Py_tracefunc, PyObject *,
-                                PyThreadState *, _PyExecFrame *,
+                                PyThreadState *, _Py_framedata *,
                                 int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *,
-                           PyThreadState *, _PyExecFrame *);
+                           PyThreadState *, _Py_framedata *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
-                                 PyThreadState *, _PyExecFrame *, int);
-static void maybe_dtrace_line(_PyExecFrame *, PyTraceInfo *, int);
-static void dtrace_function_entry(_PyExecFrame *);
-static void dtrace_function_return(_PyExecFrame *);
+                                 PyThreadState *, _Py_framedata *, int);
+static void maybe_dtrace_line(_Py_framedata *, PyTraceInfo *, int);
+static void dtrace_function_entry(_Py_framedata *);
+static void dtrace_function_return(_Py_framedata *);
 
-static PyObject * import_name(PyThreadState *, _PyExecFrame *,
+static PyObject * import_name(PyThreadState *, _Py_framedata *,
                               PyObject *, PyObject *, PyObject *);
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
 static int import_all_from(PyThreadState *, PyObject *, PyObject *);
 static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyThreadState *, PyObject *, PyObject *,
-                                      _PyExecFrame *, const _Py_CODEUNIT *);
+                                      _Py_framedata *, const _Py_CODEUNIT *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
@@ -1065,14 +1065,14 @@ PyEval_EvalFrame(PyFrameObject *f)
 {
     /* Function kept for backward compatibility */
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_EvalFrame(tstate, f->f_xframe, 0);
+    return _PyEval_EvalFrame(tstate, f->f_fdata, 0);
 }
 
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyEval_EvalFrame(tstate, f->f_xframe, throwflag);
+    return _PyEval_EvalFrame(tstate, f->f_fdata, throwflag);
 }
 
 
@@ -1231,7 +1231,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         if (cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
             goto tracing_dispatch; \
         } \
-        xframe->xf_lasti = INSTR_OFFSET(); \
+        fdata->lasti = INSTR_OFFSET(); \
         NEXTOPARG(); \
         DISPATCH_GOTO(); \
     }
@@ -1320,7 +1320,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()     ((int)(stack_pointer - xframe->xf_stack))
+#define STACK_LEVEL()     ((int)(stack_pointer - fdata->stack))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1388,12 +1388,12 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
-#define GLOBALS() xframe->xf_globals
-#define BUILTINS() xframe->xf_builtins
-#define LOCALS() xframe->xf_locals
+#define GLOBALS() fdata->globals
+#define BUILTINS() fdata->builtins
+#define LOCALS() fdata->locals
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwflag)
+_PyEval_EvalFrameDefault(PyThreadState *tstate, _Py_framedata *fdata, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -1438,8 +1438,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
     tstate->cframe = &cframe;
 
     /* push execution frame */
-    tstate->xframe = xframe;
-    co = xframe->xf_code;
+    tstate->fdata = fdata;
+    co = fdata->code;
 
     if (cframe.use_tracing) {
         if (tstate->c_tracefunc != NULL) {
@@ -1458,7 +1458,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                whenever an exception is detected. */
             if (call_trace_protected(tstate->c_tracefunc,
                                      tstate->c_traceobj,
-                                     tstate, xframe,
+                                     tstate, fdata,
                                      PyTrace_CALL, Py_None)) {
                 /* Trace function raised an error */
                 goto exit_eval_frame;
@@ -1469,7 +1469,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                return itself and isn't called for "line" events */
             if (call_trace_protected(tstate->c_profilefunc,
                                      tstate->c_profileobj,
-                                     tstate, xframe,
+                                     tstate, fdata,
                                      PyTrace_CALL, Py_None)) {
                 /* Profile function raised an error */
                 goto exit_eval_frame;
@@ -1478,7 +1478,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
     }
 
     if (PyDTrace_FUNCTION_ENTRY_ENABLED())
-        dtrace_function_entry(xframe);
+        dtrace_function_entry(fdata);
 
     /* Increment the warmup counter and quicken if warm enough
      * _Py_Quicken is idempotent so we don't worry about overflow */
@@ -1494,34 +1494,34 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
 
     names = co->co_names;
     consts = co->co_consts;
-    localsplus = _PyExecFrame_GetLocalsArray(xframe);
+    localsplus = _Py_framedata_GetLocalsArray(fdata);
     first_instr = co->co_firstinstr;
     /*
-       xframe->xf_lasti refers to the index of the last instruction,
+       fdata->lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
 
-       YIELD_FROM sets xframe->xf_lasti to itself, in order to repeatedly yield
+       YIELD_FROM sets fdata->lasti to itself, in order to repeatedly yield
        multiple values.
 
        When the PREDICT() macros are enabled, some opcode pairs follow in
-       direct succession without updating xframe->xf_lasti.  A successful
+       direct succession without updating fdata->lasti.  A successful
        prediction effectively links the two codes together as if they
-       were a single new opcode; accordingly, xframe->xf_lasti will point to
+       were a single new opcode; accordingly, fdata->lasti will point to
        the first code in the pair (for instance, GET_ITER followed by
-       FOR_ITER is effectively a single opcode and xframe->xf_lasti will point
+       FOR_ITER is effectively a single opcode and fdata->lasti will point
        to the beginning of the combined pair.)
     */
-    assert(xframe->xf_lasti >= -1);
-    next_instr = first_instr + xframe->xf_lasti + 1;
-    stack_pointer = xframe->xf_stack + xframe->xf_stackdepth;
+    assert(fdata->lasti >= -1);
+    next_instr = first_instr + fdata->lasti + 1;
+    stack_pointer = fdata->stack + fdata->stackdepth;
     /* Set stackdepth to -1.
      * Update when returning or calling trace function.
        Having f_stackdepth <= 0 ensures that invalid
        values are not visible to the cycle GC.
        We choose -1 rather than 0 to assist debugging.
      */
-    xframe->xf_stackdepth = -1;
-    xframe->xf_state = FRAME_EXECUTING;
+    fdata->stackdepth = -1;
+    fdata->state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
     {
@@ -1585,12 +1585,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
 
     tracing_dispatch:
     {
-        int instr_prev = xframe->xf_lasti;
-        xframe->xf_lasti = INSTR_OFFSET();
+        int instr_prev = fdata->lasti;
+        fdata->lasti = INSTR_OFFSET();
         TRACING_NEXTOPARG();
 
         if (PyDTrace_LINE_ENABLED())
-            maybe_dtrace_line(xframe, &tstate->trace_info, instr_prev);
+            maybe_dtrace_line(fdata, &tstate->trace_info, instr_prev);
 
         /* line-by-line tracing support */
 
@@ -1599,19 +1599,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
             int err;
             /* see maybe_call_line_trace()
                for expository comments */
-            xframe->xf_stackdepth = (int)(stack_pointer - xframe->xf_stack);
+            fdata->stackdepth = (int)(stack_pointer - fdata->stack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
-                                        tstate, xframe, instr_prev);
+                                        tstate, fdata, instr_prev);
             if (err) {
                 /* trace function raised an exception */
                 goto error;
             }
             /* Reload possibly changed frame fields */
-            JUMPTO(xframe->xf_lasti);
-            stack_pointer = xframe->xf_stack+xframe->xf_stackdepth;
-            xframe->xf_stackdepth = -1;
+            JUMPTO(fdata->lasti);
+            stack_pointer = fdata->stack+fdata->stackdepth;
+            fdata->stackdepth = -1;
             TRACING_NEXTOPARG();
         }
     }
@@ -1622,11 +1622,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
         if (lltrace) {
             if (HAS_ARG(opcode)) {
                 printf("%d: %d, %d\n",
-                       xframe->xf_lasti, opcode, oparg);
+                       fdata->lasti, opcode, oparg);
             }
             else {
                 printf("%d: %d\n",
-                       xframe->xf_lasti, opcode);
+                       fdata->lasti, opcode);
             }
         }
 #endif
@@ -1875,7 +1875,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                speedup on microbenchmarks. */
             if (PyUnicode_CheckExact(left) &&
                      PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, xframe, next_instr);
+                sum = unicode_concatenate(tstate, left, right, fdata, next_instr);
                 /* unicode_concatenate consumed the ref to left */
             }
             else {
@@ -2162,7 +2162,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
             PyObject *left = TOP();
             PyObject *sum;
             if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, xframe, next_instr);
+                sum = unicode_concatenate(tstate, left, right, fdata, next_instr);
                 /* unicode_concatenate consumed the ref to left */
             }
             else {
@@ -2322,8 +2322,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
         case TARGET(RETURN_VALUE): {
             retval = POP();
             assert(EMPTY());
-            xframe->xf_state = FRAME_RETURNED;
-            xframe->xf_stackdepth = 0;
+            fdata->state = FRAME_RETURNED;
+            fdata->stackdepth = 0;
             goto exiting;
         }
 
@@ -2480,7 +2480,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, xframe);
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, fdata);
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -2508,10 +2508,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
             assert (gen_status == PYGEN_NEXT);
             /* receiver remains on stack, retval is value to be yielded */
             /* and repeat... */
-            assert(xframe->xf_lasti > 0);
-            xframe->xf_lasti -= 1;
-            xframe->xf_state = FRAME_SUSPENDED;
-            xframe->xf_stackdepth = (int)(stack_pointer - xframe->xf_stack);
+            assert(fdata->lasti > 0);
+            fdata->lasti -= 1;
+            fdata->state = FRAME_SUSPENDED;
+            fdata->stackdepth = (int)(stack_pointer - fdata->stack);
             goto exiting;
         }
 
@@ -2527,8 +2527,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                 }
                 retval = w;
             }
-            xframe->xf_state = FRAME_SUSPENDED;
-            xframe->xf_stackdepth = (int)(stack_pointer - xframe->xf_stack);
+            fdata->state = FRAME_SUSPENDED;
+            fdata->stackdepth = (int)(stack_pointer - fdata->stack);
             goto exiting;
         }
 
@@ -2575,7 +2575,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
         case TARGET(POP_EXCEPT_AND_RERAISE): {
             PyObject *lasti = PEEK(4);
             if (PyLong_Check(lasti)) {
-                xframe->xf_lasti = PyLong_AsLong(lasti);
+                fdata->lasti = PyLong_AsLong(lasti);
                 assert(!_PyErr_Occurred(tstate));
             }
             else {
@@ -2606,7 +2606,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
             if (oparg) {
                 PyObject *lasti = PEEK(oparg+3);
                 if (PyLong_Check(lasti)) {
-                    xframe->xf_lasti = PyLong_AsLong(lasti);
+                    fdata->lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -3581,7 +3581,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
             PyObject *fromlist = POP();
             PyObject *level = TOP();
             PyObject *res;
-            res = import_name(tstate, xframe, name, fromlist, level);
+            res = import_name(tstate, fdata, name, fromlist, level);
             Py_DECREF(level);
             Py_DECREF(fromlist);
             SET_TOP(res);
@@ -3593,7 +3593,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
         case TARGET(IMPORT_STAR): {
             PyObject *from = POP(), *locals;
             int err;
-            if (_PyExecFrame_FastToLocalsWithError(xframe) < 0) {
+            if (_Py_framedata_FastToLocalsWithError(fdata) < 0) {
                 Py_DECREF(from);
                 goto error;
             }
@@ -3606,7 +3606,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                 goto error;
             }
             err = import_all_from(tstate, locals, from);
-            _PyExecFrame_LocalsToFast(xframe, 0);
+            _Py_framedata_LocalsToFast(fdata, 0);
             Py_DECREF(from);
             if (err != 0)
                 goto error;
@@ -3920,7 +3920,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
                     goto error;
                 }
                 else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, xframe);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, fdata);
                 }
                 _PyErr_Clear(tstate);
             }
@@ -4383,7 +4383,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyExecFrame *xframe, int throwf
         default:
             fprintf(stderr,
                 "XXX lineno: %d, opcode: %d\n",
-                PyCode_Addr2Line(xframe->xf_code, xframe->xf_lasti*2),
+                PyCode_Addr2Line(fdata->code, fdata->lasti*2),
                 opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
             goto error;
@@ -4452,22 +4452,22 @@ error:
 #endif
 
         /* Log traceback info. */
-        PyFrameObject *f = _PyExecFrame_GetFrameObject(xframe);
+        PyFrameObject *f = _Py_framedata_GetFrameObject(fdata);
         if (f != NULL) {
             PyTraceBack_Here(f);
         }
 
         if (tstate->c_tracefunc != NULL) {
             /* Make sure state is set to FRAME_UNWINDING for tracing */
-            assert(xframe->xf_state == FRAME_EXECUTING);
-            xframe->xf_state = FRAME_UNWINDING;
+            assert(fdata->state == FRAME_EXECUTING);
+            fdata->state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
-                           tstate, xframe);
+                           tstate, fdata);
         }
 
 exception_unwind:
-        xframe->xf_state = FRAME_UNWINDING;
-        /* We can't use xframe->xf_lasti here, as RERAISE may have set it */
+        fdata->state = FRAME_UNWINDING;
+        /* We can't use fdata->lasti here, as RERAISE may have set it */
         int offset = INSTR_OFFSET()-1;
         int level, handler, lasti;
         if (get_exception_handler(co, offset, &level, &handler, &lasti) == 0) {
@@ -4482,7 +4482,7 @@ exception_unwind:
         }
         PyObject *exc, *val, *tb;
         if (lasti) {
-            PyObject *lasti = PyLong_FromLong(xframe->xf_lasti);
+            PyObject *lasti = PyLong_FromLong(fdata->lasti);
             if (lasti == NULL) {
                 goto exception_unwind;
             }
@@ -4507,8 +4507,8 @@ exception_unwind:
         PUSH(exc);
         JUMPTO(handler);
         /* Resume normal execution */
-        xframe->xf_state = FRAME_EXECUTING;
-        xframe->xf_lasti = handler;
+        fdata->state = FRAME_EXECUTING;
+        fdata->lasti = handler;
         NEXTOPARG();
         goto dispatch_opcode;
     } /* main loop */
@@ -4521,19 +4521,19 @@ exception_unwind:
         PyObject *o = POP();
         Py_XDECREF(o);
     }
-    xframe->xf_stackdepth = 0;
-    xframe->xf_state = FRAME_RAISED;
+    fdata->stackdepth = 0;
+    fdata->state = FRAME_RAISED;
 exiting:
     if (cframe.use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
-                                     tstate, xframe, PyTrace_RETURN, retval)) {
+                                     tstate, fdata, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
         }
         if (tstate->c_profilefunc) {
             if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
-                                     tstate, xframe, PyTrace_RETURN, retval)) {
+                                     tstate, fdata, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
         }
@@ -4546,9 +4546,9 @@ exit_eval_frame:
     tstate->cframe->use_tracing = cframe.use_tracing;
 
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
-        dtrace_function_return(xframe);
+        dtrace_function_return(fdata);
     _Py_LeaveRecursiveCall(tstate);
-    tstate->xframe = xframe->xf_previous;
+    tstate->fdata = fdata->previous;
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
@@ -5055,7 +5055,7 @@ fail: /* Jump here from prelude on failure */
 
 }
 
-static _PyExecFrame *
+static _Py_framedata *
 make_coro_frame(PyThreadState *tstate,
            PyFrameConstructor *con, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
@@ -5073,14 +5073,14 @@ make_coro_frame(PyThreadState *tstate,
     for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
         localsarray[i] = NULL;
     }
-    _PyExecFrame *xframe = (_PyExecFrame *)(localsarray + code->co_nlocalsplus);
-    _PyExecFrame_InitializeSpecials(xframe, con, locals, code->co_nlocalsplus);
-    assert(xframe->xf_frame_obj == NULL);
+    _Py_framedata *fdata = (_Py_framedata *)(localsarray + code->co_nlocalsplus);
+    _Py_framedata_InitializeSpecials(fdata, con, locals, code->co_nlocalsplus);
+    assert(fdata->frame_obj == NULL);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
-        _PyExecFrame_Clear(xframe, 1);
+        _Py_framedata_Clear(fdata, 1);
         return NULL;
     }
-    return xframe;
+    return fdata;
 }
 
 static PyObject *
@@ -5090,11 +5090,11 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
           PyObject *kwnames)
 {
     assert (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
-    _PyExecFrame *xframe = make_coro_frame(tstate, con, locals, args, argcount, kwnames);
-    if (xframe == NULL) {
+    _Py_framedata *fdata = make_coro_frame(tstate, con, locals, args, argcount, kwnames);
+    if (fdata == NULL) {
         return NULL;
     }
-    PyObject *gen = _Py_MakeCoro(con, xframe);
+    PyObject *gen = _Py_MakeCoro(con, fdata);
     if (gen == NULL) {
         return NULL;
     }
@@ -5102,37 +5102,37 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
     return gen;
 }
 
-static _PyExecFrame *
+static _Py_framedata *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)
 {
-    _PyExecFrame * xframe = _PyThreadState_PushExecFrame(tstate, con, locals);
-    if (xframe == NULL) {
+    _Py_framedata * fdata = _PyThreadState_Push_framedata(tstate, con, locals);
+    if (fdata == NULL) {
         return NULL;
     }
-    PyObject **localsarray = _PyExecFrame_GetLocalsArray(xframe);
+    PyObject **localsarray = _Py_framedata_GetLocalsArray(fdata);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
-        _PyExecFrame_Clear(xframe, 0);
+        _Py_framedata_Clear(fdata, 0);
         return NULL;
     }
-    xframe->xf_previous = tstate->xframe;
-    tstate->xframe = xframe;
-    return xframe;
+    fdata->previous = tstate->fdata;
+    tstate->fdata = fdata;
+    return fdata;
 }
 
 static int
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyExecFrame * xframe)
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _Py_framedata * fdata)
 {
     ++tstate->recursion_depth;
-    assert(xframe->xf_frame_obj == NULL || xframe->xf_frame_obj->f_own_locals_memory == 0);
-    if (_PyExecFrame_Clear(xframe, 0)) {
+    assert(fdata->frame_obj == NULL || fdata->frame_obj->f_own_locals_memory == 0);
+    if (_Py_framedata_Clear(fdata, 0)) {
         return -1;
     }
-    assert(xframe->xf_frame_obj == NULL);
+    assert(fdata->frame_obj == NULL);
     --tstate->recursion_depth;
-    tstate->xframe = xframe->xf_previous;
-    _PyThreadState_PopExecFrame(tstate, xframe);
+    tstate->fdata = fdata->previous;
+    _PyThreadState_Pop_framedata(tstate, fdata);
     return 0;
 }
 
@@ -5148,15 +5148,15 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (is_coro) {
         return make_coro(tstate, con, locals, args, argcount, kwnames);
     }
-    _PyExecFrame *xframe = _PyEvalFramePushAndInit(
+    _Py_framedata *fdata = _PyEvalFramePushAndInit(
         tstate, con, locals, args, argcount, kwnames);
-    if (xframe == NULL) {
+    if (fdata == NULL) {
         return NULL;
     }
     assert (tstate->interp->eval_frame != NULL);
-    PyObject *retval = _PyEval_EvalFrame(tstate, xframe, 0);
-    assert(xframe->xf_stackdepth == 0);
-    if (_PyEvalFrameClearAndPop(tstate, xframe)) {
+    PyObject *retval = _PyEval_EvalFrame(tstate, fdata, 0);
+    assert(fdata->stackdepth == 0);
+    if (_PyEvalFrameClearAndPop(tstate, fdata)) {
         retval = NULL;
     }
     return retval;
@@ -5465,7 +5465,7 @@ prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
                PyThreadState *tstate,
-               _PyExecFrame *xf)
+               _Py_framedata *fdata)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
@@ -5481,7 +5481,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
         _PyErr_Restore(tstate, type, value, orig_traceback);
         return;
     }
-    err = call_trace(func, self, tstate, xf, PyTrace_EXCEPTION, arg);
+    err = call_trace(func, self, tstate, fdata, PyTrace_EXCEPTION, arg);
     Py_DECREF(arg);
     if (err == 0) {
         _PyErr_Restore(tstate, type, value, orig_traceback);
@@ -5495,13 +5495,13 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
 
 static int
 call_trace_protected(Py_tracefunc func, PyObject *obj,
-                     PyThreadState *tstate, _PyExecFrame *xframe,
+                     PyThreadState *tstate, _Py_framedata *fdata,
                      int what, PyObject *arg)
 {
     PyObject *type, *value, *traceback;
     int err;
     _PyErr_Fetch(tstate, &type, &value, &traceback);
-    err = call_trace(func, obj, tstate, xframe, what, arg);
+    err = call_trace(func, obj, tstate, fdata, what, arg);
     if (err == 0)
     {
         _PyErr_Restore(tstate, type, value, traceback);
@@ -5516,9 +5516,9 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
 }
 
 static void
-initialize_trace_info(PyTraceInfo *trace_info, _PyExecFrame *xframe)
+initialize_trace_info(PyTraceInfo *trace_info, _Py_framedata *fdata)
 {
-    PyCodeObject *code = xframe->xf_code;
+    PyCodeObject *code = fdata->code;
     if (trace_info->code != code) {
         trace_info->code = code;
         _PyCode_InitAddressRange(code, &trace_info->bounds);
@@ -5527,7 +5527,7 @@ initialize_trace_info(PyTraceInfo *trace_info, _PyExecFrame *xframe)
 
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
-           PyThreadState *tstate, _PyExecFrame *xframe,
+           PyThreadState *tstate, _Py_framedata *fdata,
            int what, PyObject *arg)
 {
     int result;
@@ -5535,16 +5535,16 @@ call_trace(Py_tracefunc func, PyObject *obj,
         return 0;
     tstate->tracing++;
     tstate->cframe->use_tracing = 0;
-    PyFrameObject *f = _PyExecFrame_GetFrameObject(xframe);
+    PyFrameObject *f = _Py_framedata_GetFrameObject(fdata);
     if (f == NULL) {
         return -1;
     }
-    if (xframe->xf_lasti < 0) {
-        f->f_lineno = xframe->xf_code->co_firstlineno;
+    if (fdata->lasti < 0) {
+        f->f_lineno = fdata->code->co_firstlineno;
     }
     else {
-        initialize_trace_info(&tstate->trace_info, xframe);
-        f->f_lineno = _PyCode_CheckLineNumber(xframe->xf_lasti*2, &tstate->trace_info.bounds);
+        initialize_trace_info(&tstate->trace_info, fdata);
+        f->f_lineno = _PyCode_CheckLineNumber(fdata->lasti*2, &tstate->trace_info.bounds);
     }
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
@@ -5574,7 +5574,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 /* See Objects/lnotab_notes.txt for a description of how tracing works. */
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
-                      PyThreadState *tstate, _PyExecFrame *xframe, int instr_prev)
+                      PyThreadState *tstate, _Py_framedata *fdata, int instr_prev)
 {
     int result = 0;
 
@@ -5582,22 +5582,22 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    initialize_trace_info(&tstate->trace_info, xframe);
+    initialize_trace_info(&tstate->trace_info, fdata);
     int lastline = _PyCode_CheckLineNumber(instr_prev*2, &tstate->trace_info.bounds);
-    int line = _PyCode_CheckLineNumber(xframe->xf_lasti*2, &tstate->trace_info.bounds);
-    PyFrameObject *f = _PyExecFrame_GetFrameObject(xframe);
+    int line = _PyCode_CheckLineNumber(fdata->lasti*2, &tstate->trace_info.bounds);
+    PyFrameObject *f = _Py_framedata_GetFrameObject(fdata);
     if (f == NULL) {
         return -1;
     }
     if (line != -1 && f->f_trace_lines) {
         /* Trace backward edges or if line number has changed */
-        if (xframe->xf_lasti < instr_prev || line != lastline) {
-            result = call_trace(func, obj, tstate, xframe, PyTrace_LINE, Py_None);
+        if (fdata->lasti < instr_prev || line != lastline) {
+            result = call_trace(func, obj, tstate, fdata, PyTrace_LINE, Py_None);
         }
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
     if (f->f_trace_opcodes) {
-        result = call_trace(func, obj, tstate, xframe, PyTrace_OPCODE, Py_None);
+        result = call_trace(func, obj, tstate, fdata, PyTrace_OPCODE, Py_None);
     }
     return result;
 }
@@ -5743,21 +5743,21 @@ _PyEval_GetAsyncGenFinalizer(void)
     return tstate->async_gen_finalizer;
 }
 
-_PyExecFrame *
-_PyEval_GetExecFrame(void)
+_Py_framedata *
+_PyEval_GetFrameData(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->xframe;
+    return tstate->fdata;
 }
 
 PyFrameObject *
 PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->xframe == NULL) {
+    if (tstate->fdata == NULL) {
         return NULL;
     }
-    PyFrameObject *f = _PyExecFrame_GetFrameObject(tstate->xframe);
+    PyFrameObject *f = _Py_framedata_GetFrameObject(tstate->fdata);
     if (f == NULL) {
         PyErr_Clear();
     }
@@ -5767,9 +5767,9 @@ PyEval_GetFrame(void)
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    _PyExecFrame *xframe = tstate->xframe;
-    if (xframe != NULL) {
-        return xframe->xf_builtins;
+    _Py_framedata *fdata = tstate->fdata;
+    if (fdata != NULL) {
+        return fdata->builtins;
     }
     return tstate->interp->builtins;
 }
@@ -5800,17 +5800,17 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-     _PyExecFrame *xframe = tstate->xframe;
-    if (xframe == NULL) {
+     _Py_framedata *fdata = tstate->fdata;
+    if (fdata == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
     }
 
-    if (_PyExecFrame_FastToLocalsWithError(xframe) < 0) {
+    if (_Py_framedata_FastToLocalsWithError(fdata) < 0) {
         return NULL;
     }
 
-    PyObject *locals = xframe->xf_locals;
+    PyObject *locals = fdata->locals;
     assert(locals != NULL);
     return locals;
 }
@@ -5819,22 +5819,22 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyExecFrame *xframe = tstate->xframe;
-    if (xframe == NULL) {
+    _Py_framedata *fdata = tstate->fdata;
+    if (fdata == NULL) {
         return NULL;
     }
-    return xframe->xf_globals;
+    return fdata->globals;
 }
 
 int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyExecFrame *xframe = tstate->xframe;
+    _Py_framedata *fdata = tstate->fdata;
     int result = cf->cf_flags != 0;
 
-    if (xframe != NULL) {
-        const int codeflags = xframe->xf_code->co_flags;
+    if (fdata != NULL) {
+        const int codeflags = fdata->code->co_flags;
         const int compilerflags = codeflags & PyCF_MASK;
         if (compilerflags) {
             result = 1;
@@ -5880,7 +5880,7 @@ PyEval_GetFuncDesc(PyObject *func)
 #define C_TRACE(x, call) \
 if (use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->xframe, \
+        tstate, tstate->fdata, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -5890,13 +5890,13 @@ if (use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->xframe, \
+                    tstate, tstate->fdata, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->xframe, \
+                    tstate, tstate->fdata, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
@@ -6068,21 +6068,21 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 }
 
 static PyObject *
-import_name(PyThreadState *tstate, _PyExecFrame *xframe,
+import_name(PyThreadState *tstate, _Py_framedata *fdata,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     _Py_IDENTIFIER(__import__);
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemIdWithError(xframe->xf_builtins, &PyId___import__);
+    import_func = _PyDict_GetItemIdWithError(fdata->builtins, &PyId___import__);
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
     }
-    PyObject *locals = xframe->xf_locals;
+    PyObject *locals = fdata->locals;
     /* Fast path for not overloaded __import__. */
     if (import_func == tstate->interp->import_func) {
         int ilevel = _PyLong_AsInt(level);
@@ -6091,7 +6091,7 @@ import_name(PyThreadState *tstate, _PyExecFrame *xframe,
         }
         res = PyImport_ImportModuleLevelObject(
                         name,
-                        xframe->xf_globals,
+                        fdata->globals,
                         locals == NULL ? Py_None : locals,
                         fromlist,
                         ilevel);
@@ -6101,7 +6101,7 @@ import_name(PyThreadState *tstate, _PyExecFrame *xframe,
     Py_INCREF(import_func);
 
     stack[0] = name;
-    stack[1] = xframe->xf_globals;
+    stack[1] = fdata->globals;
     stack[2] = locals == NULL ? Py_None : locals;
     stack[3] = fromlist;
     stack[4] = level;
@@ -6407,7 +6407,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
 
 static PyObject *
 unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
-                    _PyExecFrame *xframe, const _Py_CODEUNIT *next_instr)
+                    _Py_framedata *fdata, const _Py_CODEUNIT *next_instr)
 {
     PyObject *res;
     if (Py_REFCNT(v) == 2) {
@@ -6422,14 +6422,14 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         switch (opcode) {
         case STORE_FAST:
         {
-            PyObject **localsplus = _PyExecFrame_GetLocalsArray(xframe);
+            PyObject **localsplus = _Py_framedata_GetLocalsArray(fdata);
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
             break;
         }
         case STORE_DEREF:
         {
-            PyObject *c = _PyExecFrame_GetLocalsArray(xframe)[oparg];
+            PyObject *c = _Py_framedata_GetLocalsArray(fdata)[oparg];
             if (PyCell_GET(c) ==  v) {
                 PyCell_SET(c, NULL);
                 Py_DECREF(v);
@@ -6438,9 +6438,9 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         }
         case STORE_NAME:
         {
-            PyObject *names = xframe->xf_code->co_names;
+            PyObject *names = fdata->code->co_names;
             PyObject *name = GETITEM(names, oparg);
-            PyObject *locals = xframe->xf_locals;
+            PyObject *locals = fdata->locals;
             if (locals && PyDict_CheckExact(locals)) {
                 PyObject *w = PyDict_GetItemWithError(locals, name);
                 if ((w == v && PyDict_DelItem(locals, name) != 0) ||
@@ -6518,38 +6518,38 @@ _PyEval_RequestCodeExtraIndex(freefunc free)
 }
 
 static void
-dtrace_function_entry(_PyExecFrame *xframe)
+dtrace_function_entry(_Py_framedata *fdata)
 {
     const char *filename;
     const char *funcname;
     int lineno;
 
-    PyCodeObject *code = xframe->xf_code;
+    PyCodeObject *code = fdata->code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(xframe->xf_code, xframe->xf_lasti*2);
+    lineno = PyCode_Addr2Line(fdata->code, fdata->lasti*2);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
 
 static void
-dtrace_function_return(_PyExecFrame *xframe)
+dtrace_function_return(_Py_framedata *fdata)
 {
     const char *filename;
     const char *funcname;
     int lineno;
 
-    PyCodeObject *code = xframe->xf_code;
+    PyCodeObject *code = fdata->code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(xframe->xf_code, xframe->xf_lasti*2);
+    lineno = PyCode_Addr2Line(fdata->code, fdata->lasti*2);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 
 /* DTrace equivalent of maybe_call_line_trace. */
 static void
-maybe_dtrace_line(_PyExecFrame *xframe,
+maybe_dtrace_line(_Py_framedata *fdata,
                   PyTraceInfo *trace_info,
                   int instr_prev)
 {
@@ -6558,19 +6558,19 @@ maybe_dtrace_line(_PyExecFrame *xframe,
     /* If the last instruction executed isn't in the current
        instruction window, reset the window.
     */
-    initialize_trace_info(trace_info, xframe);
+    initialize_trace_info(trace_info, fdata);
     int lastline = _PyCode_CheckLineNumber(instr_prev*2, &trace_info->bounds);
-    int line = _PyCode_CheckLineNumber(xframe->xf_lasti*2, &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(fdata->lasti*2, &trace_info->bounds);
     if (line != -1) {
         /* Trace backward edges or first instruction of a new line */
-        if (xframe->xf_lasti < instr_prev ||
-            (line != lastline && xframe->xf_lasti*2 == trace_info->bounds.ar_start))
+        if (fdata->lasti < instr_prev ||
+            (line != lastline && fdata->lasti*2 == trace_info->bounds.ar_start))
         {
-            co_filename = PyUnicode_AsUTF8(xframe->xf_code->co_filename);
+            co_filename = PyUnicode_AsUTF8(fdata->code->co_filename);
             if (!co_filename) {
                 co_filename = "?";
             }
-            co_name = PyUnicode_AsUTF8(xframe->xf_code->co_name);
+            co_name = PyUnicode_AsUTF8(fdata->code->co_name);
             if (!co_name) {
                 co_name = "?";
             }

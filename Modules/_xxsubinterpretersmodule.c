@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_xframe.h"
+#include "pycore_framedata.h"
 #include "interpreteridobject.h"
 
 
@@ -1835,12 +1835,12 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyExecFrame *xframe = tstate->xframe;
-    if (xframe == NULL) {
+    _Py_framedata *fdata = tstate->fdata;
+    if (fdata == NULL) {
         return 0;
     }
 
-    int executing = _PyExecFrame_IsExecuting(xframe);
+    int executing = _Py_framedata_IsExecuting(fdata);
 
     return executing;
 }

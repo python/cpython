@@ -3,7 +3,7 @@
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
 #include "pycore_hashtable.h"
-#include <pycore_xframe.h>
+#include <pycore_framedata.h>
 
 #include "clinic/_tracemalloc.c.h"
 /*[clinic input]
@@ -299,16 +299,16 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(_PyExecFrame *xframe, frame_t *frame)
+tracemalloc_get_frame(_Py_framedata *fdata, frame_t *frame)
 {
     frame->filename = unknown_filename;
-    int lineno = PyCode_Addr2Line(xframe->xf_code, xframe->xf_lasti*2);
+    int lineno = PyCode_Addr2Line(fdata->code, fdata->lasti*2);
     if (lineno < 0) {
         lineno = 0;
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = xframe->xf_code->co_filename;
+    PyObject *filename = fdata->code->co_filename;
 
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
@@ -393,10 +393,10 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    _PyExecFrame *xframe = tstate->xframe;
-    for (; xframe != NULL;) {
+    _Py_framedata *fdata = tstate->fdata;
+    for (; fdata != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
-            tracemalloc_get_frame(xframe, &traceback->frames[traceback->nframe]);
+            tracemalloc_get_frame(fdata, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
             traceback->nframe++;
         }
@@ -404,8 +404,8 @@ traceback_get_frames(traceback_t *traceback)
             traceback->total_nframe++;
         }
 
-        _PyExecFrame *back = xframe->xf_previous;
-        xframe = back;
+        _Py_framedata *back = fdata->previous;
+        fdata = back;
     }
 }
 

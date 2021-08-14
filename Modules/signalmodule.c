@@ -7,7 +7,7 @@
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_xframe.h"
+#include "pycore_framedata.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pylifecycle.h"   // NSIG
@@ -1787,7 +1787,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      */
     _Py_atomic_store(&is_tripped, 0);
 
-    _PyExecFrame *xframe = tstate->xframe;
+    _Py_framedata *fdata = tstate->fdata;
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
@@ -1819,11 +1819,11 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             continue;
         }
         PyObject *arglist = NULL;
-        if (xframe == NULL) {
+        if (fdata == NULL) {
             arglist = Py_BuildValue("(iO)", i, Py_None);
         }
         else {
-            PyFrameObject *f = _PyExecFrame_GetFrameObject(xframe);
+            PyFrameObject *f = _Py_framedata_GetFrameObject(fdata);
             if (f != NULL) {
                 arglist = Py_BuildValue("(iO)", i, f);
             }
