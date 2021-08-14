@@ -9,7 +9,7 @@ PyFrameObject*
 _PyFrame_New_NoTrack(_Py_framedata *, int);
 
 /* These values are chosen so that the inline functions below all
- * compare f_state to zero.
+ * compare fdata->state to zero.
  */
 enum _framestate {
     FRAME_CREATED = -2,
