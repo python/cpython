@@ -6,7 +6,7 @@
 #include "code.h"                 // PyCode_Addr2Line etc
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_framedata.h"         // _Py_framedata_GetCode()
+#include "pycore_framedata.h"     // _Py_framedata_GetCode()
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_ast.h"           // asdl_seq_*
 #include "pycore_compile.h"       // _PyAST_Optimize
