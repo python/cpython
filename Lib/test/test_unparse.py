@@ -425,6 +425,30 @@ class UnparseTestCase(ASTTestCase):
         ):
             self.check_ast_roundtrip(statement, type_comments=True)
 
+    def test_ast_without_attributes(self):
+        node = ast.Module(
+            body = [
+                ast.Assign(
+                    targets=[ast.Name(id="hello", ctx=ast.Store())],
+                    value=ast.Constant(value="world")
+                )
+            ],
+            type_ignores = []
+        )
+        self.check_ast_roundtrip(node, type_comments=True)
+
+    def test_type_comment_without_line_numbers(self):
+        node = ast.Module(
+            body = [
+                ast.Assign(
+                    targets=[ast.Name(id="hello", ctx=ast.Store())],
+                    value=ast.Constant(value="world"),
+                    type_comment="bla bla"
+                )
+            ],
+            type_ignores = []
+        )
+        self.check_ast_roundtrip(node, type_comments=True)
 
 class CosmeticTestCase(ASTTestCase):
     """Test if there are cosmetic issues caused by unnecesary additions"""

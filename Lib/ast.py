@@ -788,7 +788,12 @@ class _Unparser(NodeVisitor):
             return node
 
     def get_type_comment(self, node):
-        comment = self._type_ignores.get(node.lineno) or node.type_comment
+        comment = None
+        if node.type_comment is not None:
+            comment = node.type_comment
+        elif (lineno := getattr(node, 'lineno', None)) is not None:
+            comment = self._type_ignores.get(lineno)
+
         if comment is not None:
             return f" # type: {comment}"
 
