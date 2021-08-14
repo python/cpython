@@ -611,7 +611,6 @@ config_check_consistency(const PyConfig *config)
     assert(config->show_ref_count >= 0);
     assert(config->dump_refs >= 0);
     assert(config->malloc_stats >= 0);
-    assert(config->dump_file >= 0);
     assert(config->site_import >= 0);
     assert(config->bytes_warning >= 0);
     assert(config->warn_default_encoding >= 0);
@@ -899,7 +898,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(no_debug_ranges);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
-    COPY_ATTR(dump_file);
+    COPY_ATTR(python_dump_dir);
     COPY_ATTR(malloc_stats);
 
     COPY_WSTR_ATTR(pycache_prefix);
@@ -1702,8 +1701,13 @@ config_read_env_vars(PyConfig *config)
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
     }
-    if (config_get_env(config, "PYTHONDUMPFILE")) {
-        config->dump_file = 1;
+
+    if (config->python_dump_dir == NULL) {
+        status = CONFIG_GET_ENV_DUP(config, &config->python_dump_dir,
+                                    L"PYTHONDUMPDIR", "PYTHONDUMPDIR");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     if (config->pythonpath_env == NULL) {
