@@ -1201,7 +1201,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
  * the CFG.
  */
 #ifdef LLTRACE
-#define LLTRACE_INSTR() if (lltrace) { lltrace_instruction(frame, opcode, oparg); }
+#define LLTRACE_INSTR() if (lltrace) { lltrace_instruction(fdata, opcode, oparg); }
 #else
 #define LLTRACE_INSTR() ((void)0)
 #endif
