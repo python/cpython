@@ -83,7 +83,7 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    /* Borrowed reference to the current execution frame (it can be NULL) */
+    /* Borrowed reference to the current execution frame's data (it can be NULL) */
     _Py_framedata *fdata;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */

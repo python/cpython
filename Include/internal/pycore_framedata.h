@@ -102,12 +102,12 @@ _Py_framedata_GetFrameObject(_Py_framedata *fdata)
 }
 
 /* Clears all references in the frame.
- * If take is non-zero, then the execution frame
+ * If take is non-zero, then the frame data
  * may be transfered to the frame object it references
  * instead of being cleared. Either way
  * the caller no longer owns the references
  * in the frame.
- * take should  be set to 1 for heap allocated
+ * take should be set to 1 for heap allocated
  * frames like the ones in generators and coroutines.
  */
 int
