@@ -169,6 +169,14 @@ class CompileallTestsBase:
         compileall.compile_file(data_file)
         self.assertFalse(os.path.exists(os.path.join(data_dir, '__pycache__')))
 
+
+    def test_compile_file_encoding_fallback(self):
+        # Bug 44666 reported that compile_file failed when sys.stdout.encoding is None
+        self.add_bad_source_file()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertFalse(compileall.compile_file(self.bad_source_path))
+
+
     def test_optimize(self):
         # make sure compiling with different optimization settings than the
         # interpreter's creates the correct file names

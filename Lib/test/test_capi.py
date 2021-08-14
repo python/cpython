@@ -323,9 +323,13 @@ class CAPITest(unittest.TestCase):
                         break
         """
         rc, out, err = assert_python_ok('-c', code)
-        self.assertIn(b'MemoryError 1', out)
-        self.assertIn(b'MemoryError 2 20', out)
-        self.assertIn(b'MemoryError 3 30', out)
+        lines = out.splitlines()
+        for i, line in enumerate(lines, 1):
+            self.assertIn(b'MemoryError', out)
+            *_, count = line.split(b' ')
+            count = int(count)
+            self.assertLessEqual(count, i*5)
+            self.assertGreaterEqual(count, i*5-1)
 
     def test_mapping_keys_values_items(self):
         class Mapping1(dict):
@@ -635,11 +639,11 @@ class TestPendingCalls(unittest.TestCase):
             #unsuccessful.
             while True:
                 if _testcapi._pending_threadfunc(callback):
-                    break;
+                    break
 
     def pendingcalls_wait(self, l, n, context = None):
         #now, stick around until l[0] has grown to 10
-        count = 0;
+        count = 0
         while len(l) != n:
             #this busy loop is where we expect to be interrupted to
             #run our callbacks.  Note that callbacks are only run on the

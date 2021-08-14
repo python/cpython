@@ -262,7 +262,7 @@ the *new_callable* argument to :func:`patch`.
       this is a new Mock (created on first access). See the
       :attr:`return_value` attribute.
 
-    * *unsafe*: By default, accessing any attribute with name starting with
+    * *unsafe*: By default, accessing any attribute whose name starts with
       *assert*, *assret*, *asert*, *aseert* or *assrt* will raise an
       :exc:`AttributeError`. Passing ``unsafe=True`` will allow access to
       these attributes.
@@ -2208,7 +2208,7 @@ In this example we monkey patch ``method`` to return ``sentinel.some_object``:
     >>> real.method.return_value = sentinel.some_object
     >>> result = real.method()
     >>> assert result is sentinel.some_object
-    >>> sentinel.some_object
+    >>> result
     sentinel.some_object
 
 

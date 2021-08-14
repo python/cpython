@@ -77,6 +77,18 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     return 0;
 }
 
+int
+_PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
+    assert(name->kind == Name_kind);
+    const char* candidates[2] = {"print", "exec"};
+    for (int i=0; i<2; i++) {
+        if (PyUnicode_CompareWithASCIIString(name->v.Name.id, candidates[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 PyObject *
 _PyPegen_new_identifier(Parser *p, const char *n)
 {
@@ -137,27 +149,6 @@ static PyObject *
 _create_dummy_identifier(Parser *p)
 {
     return _PyPegen_new_identifier(p, "");
-}
-
-static inline Py_ssize_t
-byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
-{
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return 0;
-    }
-    Py_ssize_t len = strlen(str);
-    if (col_offset > len + 1) {
-        col_offset = len + 1;
-    }
-    assert(col_offset >= 0);
-    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
-    if (!text) {
-        return 0;
-    }
-    Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    Py_DECREF(text);
-    return size;
 }
 
 const char *
@@ -418,6 +409,27 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
 }
 
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+{
+    const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return -1;
+    }
+    Py_ssize_t len = strlen(str);
+    if (col_offset > len + 1) {
+        col_offset = len + 1;
+    }
+    assert(col_offset >= 0);
+    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
+    if (!text) {
+        return -1;
+    }
+    Py_ssize_t size = PyUnicode_GET_LENGTH(text);
+    Py_DECREF(text);
+    return size;
+}
+
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -498,10 +510,18 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     Py_ssize_t end_col_number = end_col_offset;
 
     if (p->tok->encoding != NULL) {
-        col_number = byte_offset_to_character_offset(error_line, col_offset);
-        end_col_number = end_col_number > 0 ?
-                         byte_offset_to_character_offset(error_line, end_col_offset) :
-                         end_col_number;
+        col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
+        if (col_number < 0) {
+            goto error;
+        }
+        if (end_col_number > 0) {
+            Py_ssize_t end_col_offset = _PyPegen_byte_offset_to_character_offset(error_line, end_col_number);
+            if (end_col_offset < 0) {
+                goto error;
+            } else {
+                end_col_number = end_col_offset;
+            }
+        }
     }
     tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
@@ -875,6 +895,19 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     p->mark += 1;
     return t;
+}
+
+void*
+_PyPegen_expect_forced_result(Parser *p, void* result, const char* expected) {
+
+    if (p->error_indicator == 1) {
+        return NULL;
+    }
+    if (result == NULL) {
+        RAISE_SYNTAX_ERROR("expected (%s)", expected);
+        return NULL;
+    }
+    return result;
 }
 
 Token *
@@ -1556,6 +1589,13 @@ _PyPegen_seq_last_item(asdl_seq *seq)
     Py_ssize_t len = asdl_seq_LEN(seq);
     return asdl_seq_GET_UNTYPED(seq, len - 1);
 }
+
+void *
+_PyPegen_seq_first_item(asdl_seq *seq)
+{
+    return asdl_seq_GET_UNTYPED(seq, 0);
+}
+
 
 /* Creates a new name of the form <first_name>.<second_name> */
 expr_ty

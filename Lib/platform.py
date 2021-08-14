@@ -116,7 +116,6 @@ import collections
 import os
 import re
 import sys
-import subprocess
 import functools
 import itertools
 
@@ -280,6 +279,7 @@ def _syscmd_ver(system='', release='', version='',
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
             info = subprocess.check_output(cmd,
+                                           stdin=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL,
                                            text=True,
                                            shell=True)
@@ -747,6 +747,7 @@ class _Processor:
         """
         Fall back to `uname -p`
         """
+        import subprocess
         try:
             return subprocess.check_output(
                 ['uname', '-p'],

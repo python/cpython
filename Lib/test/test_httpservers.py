@@ -259,7 +259,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         for code in (HTTPStatus.NO_CONTENT, HTTPStatus.NOT_MODIFIED,
                      HTTPStatus.PROCESSING, HTTPStatus.RESET_CONTENT,
                      HTTPStatus.SWITCHING_PROTOCOLS):
-            self.con.request('SEND_ERROR', '/{:d}'.format(code))
+            self.con.request('SEND_ERROR', '/{}'.format(code))
             res = self.con.getresponse()
             self.assertEqual(code, res.status)
             self.assertEqual(None, res.getheader('Content-Length'))
@@ -276,7 +276,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         for code in (HTTPStatus.OK, HTTPStatus.NO_CONTENT,
                      HTTPStatus.NOT_MODIFIED, HTTPStatus.RESET_CONTENT,
                      HTTPStatus.SWITCHING_PROTOCOLS):
-            self.con.request('HEAD', '/{:d}'.format(code))
+            self.con.request('HEAD', '/{}'.format(code))
             res = self.con.getresponse()
             self.assertEqual(code, res.status)
             if code == HTTPStatus.OK:
@@ -593,9 +593,18 @@ cgi_file6 = """\
 #!%s
 import os
 
-print("Content-type: text/plain")
+print("X-ambv: was here")
+print("Content-type: text/html")
 print()
-print(repr(os.environ))
+print("<pre>")
+for k, v in os.environ.items():
+    try:
+        k.encode('ascii')
+        v.encode('ascii')
+    except UnicodeEncodeError:
+        continue  # see: BPO-44647
+    print(f"{k}={v}")
+print("</pre>")
 """
 
 
@@ -850,8 +859,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
             with self.subTest(headers):
                 res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
                 self.assertEqual(http.HTTPStatus.OK, res.status)
-                expected = f"'HTTP_ACCEPT': {expected!r}"
-                self.assertIn(expected.encode('ascii'), res.read())
+                expected = f"HTTP_ACCEPT={expected}".encode('ascii')
+                self.assertIn(expected, res.read())
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):

@@ -22,8 +22,8 @@ class ModuleTests(unittest.TestCase):
         # An uninitialized module has no __dict__ or __name__,
         # and __doc__ is None
         foo = ModuleType.__new__(ModuleType)
-        self.assertTrue(foo.__dict__ is None)
-        self.assertRaises(TypeError, dir, foo)
+        self.assertTrue(isinstance(foo.__dict__, dict))
+        self.assertEqual(dir(foo), [])
         try:
             s = foo.__name__
             self.fail("__name__ = %s" % repr(s))
@@ -318,15 +318,6 @@ a = A(destroyed)"""
                 del foo.__dict__['__annotations__']
 
     def test_annotations_getset_raises(self):
-        # module has no dict, all operations fail
-        foo = ModuleType.__new__(ModuleType)
-        with self.assertRaises(TypeError):
-            print(foo.__annotations__)
-        with self.assertRaises(TypeError):
-            foo.__annotations__ = {}
-        with self.assertRaises(TypeError):
-            del foo.__annotations__
-
         # double delete
         foo = ModuleType("foo")
         foo.__annotations__ = {}
@@ -340,6 +331,18 @@ a = A(destroyed)"""
         del ann_module4.__annotations__
         self.assertFalse("__annotations__" in ann_module4.__dict__)
 
+
+    def test_repeated_attribute_pops(self):
+        # Repeated accesses to module attribute will be specialized
+        # Check that popping the attribute doesn't break it
+        m = ModuleType("test")
+        d = m.__dict__
+        count = 0
+        for _ in range(100):
+            m.attr = 1
+            count += m.attr # Might be specialized
+            d.pop("attr")
+        self.assertEqual(count, 100)
 
     # frozen and namespace module reprs are tested in importlib.
 

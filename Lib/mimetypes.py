@@ -27,6 +27,12 @@ import os
 import sys
 import posixpath
 import urllib.parse
+
+try:
+    from _winapi import _mimetypes_read_windows_registry
+except ImportError:
+    _mimetypes_read_windows_registry = None
+
 try:
     import winreg as _winreg
 except ImportError:
@@ -237,10 +243,21 @@ class MimeTypes:
         types.
         """
 
-        # Windows only
-        if not _winreg:
+        if not _mimetypes_read_windows_registry and not _winreg:
             return
 
+        add_type = self.add_type
+        if strict:
+            add_type = lambda type, ext: self.add_type(type, ext, True)
+
+        # Accelerated function if it is available
+        if _mimetypes_read_windows_registry:
+            _mimetypes_read_windows_registry(add_type)
+        elif _winreg:
+            self._read_windows_registry(add_type)
+
+    @classmethod
+    def _read_windows_registry(cls, add_type):
         def enum_types(mimedb):
             i = 0
             while True:
@@ -265,7 +282,7 @@ class MimeTypes:
                             subkey, 'Content Type')
                         if datatype != _winreg.REG_SZ:
                             continue
-                        self.add_type(mimetype, subkeyname, strict)
+                        add_type(mimetype, subkeyname)
                 except OSError:
                     continue
 
@@ -349,8 +366,8 @@ def init(files=None):
 
     if files is None or _db is None:
         db = MimeTypes()
-        if _winreg:
-            db.read_windows_registry()
+        # Quick return if not supported
+        db.read_windows_registry()
 
         if files is None:
             files = knownfiles

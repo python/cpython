@@ -4,6 +4,7 @@ import argparse
 import importlib._bootstrap
 import importlib.machinery
 import importlib.util
+import logging
 import os
 import re
 import sys
@@ -44,7 +45,6 @@ with warnings.catch_warnings():
         DeprecationWarning
     )
 
-    from distutils import log
     from distutils.command.build_ext import build_ext
     from distutils.command.build_scripts import build_scripts
     from distutils.command.install import install
@@ -62,6 +62,10 @@ DISABLED_MODULE_LIST = []
 
 # --list-module-names option used by Tools/scripts/generate_module_names.py
 LIST_MODULE_NAMES = False
+
+
+logging.basicConfig(format='%(message)s', level=logging.INFO)
+log = logging.getLogger('setup')
 
 
 def get_platform():
@@ -241,6 +245,7 @@ def grep_headers_for(function, headers):
                 return True
     return False
 
+
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
@@ -259,23 +264,23 @@ def find_file(filename, std_dirs, paths):
         sysroot = macosx_sdk_root()
 
     # Check the standard locations
-    for dir in std_dirs:
-        f = os.path.join(dir, filename)
+    for dir_ in std_dirs:
+        f = os.path.join(dir_, filename)
 
-        if MACOS and is_macosx_sdk_path(dir):
-            f = os.path.join(sysroot, dir[1:], filename)
+        if MACOS and is_macosx_sdk_path(dir_):
+            f = os.path.join(sysroot, dir_[1:], filename)
 
         if os.path.exists(f): return []
 
     # Check the additional directories
-    for dir in paths:
-        f = os.path.join(dir, filename)
+    for dir_ in paths:
+        f = os.path.join(dir_, filename)
 
-        if MACOS and is_macosx_sdk_path(dir):
-            f = os.path.join(sysroot, dir[1:], filename)
+        if MACOS and is_macosx_sdk_path(dir_):
+            f = os.path.join(sysroot, dir_[1:], filename)
 
         if os.path.exists(f):
-            return [dir]
+            return [dir_]
 
     # Not found anywhere
     return None
@@ -333,6 +338,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
 
+
 def validate_tzpath():
     base_tzpath = sysconfig.get_config_var('TZPATH')
     if not base_tzpath:
@@ -345,15 +351,16 @@ def validate_tzpath():
                          + f'found:\n{tzpaths!r}\nwith invalid paths:\n'
                          + f'{bad_paths!r}')
 
+
 def find_module_file(module, dirlist):
     """Find a module in a set of possible folders. If it is not found
     return the unadorned filename"""
-    list = find_file(module, [], dirlist)
-    if not list:
+    dirs = find_file(module, [], dirlist)
+    if not dirs:
         return module
-    if len(list) > 1:
-        log.info("WARNING: multiple copies of %s found", module)
-    return os.path.join(list[0], module)
+    if len(dirs) > 1:
+        log.info(f"WARNING: multiple copies of {module} found")
+    return os.path.join(dirs[0], module)
 
 
 class PyBuildExt(build_ext):
@@ -563,6 +570,9 @@ class PyBuildExt(build_ext):
             if sysconfig.get_config_var("OPENSSL_LDFLAGS"):
                 print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
+
+        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (self.failed or self.failed_on_import):
+            raise RuntimeError("Failed to build some stdlib modules")
 
     def build_extension(self, ext):
 
@@ -950,6 +960,8 @@ class PyBuildExt(build_ext):
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
+        # _typing module
+        self.add(Extension("_typing", ["_typingmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
@@ -1025,7 +1037,7 @@ class PyBuildExt(build_ext):
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
 
-        # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
+        # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
         self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
@@ -1228,7 +1240,7 @@ class PyBuildExt(build_ext):
         # similar functionality (but slower of course) implemented in Python.
 
         # Sleepycat^WOracle Berkeley DB interface.
-        #  http://www.oracle.com/database/berkeley-db/db/index.html
+        #  https://www.oracle.com/database/technologies/related/berkeleydb.html
         #
         # This requires the Sleepycat^WOracle DB code. The supported versions
         # are set below.  Visit the URL above to download
@@ -1270,7 +1282,7 @@ class PyBuildExt(build_ext):
             '/usr/include/db3',
             '/usr/local/include/db3',
             '/opt/sfw/include/db3',
-            # Fink defaults (http://fink.sourceforge.net/)
+            # Fink defaults (https://www.finkproject.org/)
             '/sw/include/db4',
             '/sw/include/db3',
         ]
@@ -1282,7 +1294,7 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/usr/local/include/db4%d' % x)
             db_inc_paths.append('/pkg/db-4.%d/include' % x)
             db_inc_paths.append('/opt/db-4.%d/include' % x)
-            # MacPorts default (http://www.macports.org/)
+            # MacPorts default (https://www.macports.org/)
             db_inc_paths.append('/opt/local/include/db4%d' % x)
         # 3.x minor number specific paths
         for x in gen_db_minor_ver_nums(3):
@@ -2388,12 +2400,12 @@ class PyBuildExt(build_ext):
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):
             # Some versions of gcc miscompile inline asm:
-            # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-            # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
             extra_compile_args.append('-fno-ipa-pure-const')
         if sysconfig.get_config_var('HAVE_GLIBC_MEMMOVE_BUG'):
             # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-            # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
             undef_macros.append('_FORTIFY_SOURCE')
 
         # Uncomment for extra functionality:
@@ -2667,7 +2679,7 @@ class PyBuildScripts(build_scripts):
                 newfilename = filename + fullversion
             else:
                 newfilename = filename + minoronly
-            log.info('renaming %s to %s', filename, newfilename)
+            log.info(f'renaming {filename} to {newfilename}')
             os.rename(filename, newfilename)
             newoutfiles.append(newfilename)
             if filename in updated_files:
@@ -2698,7 +2710,7 @@ def main():
     setup(# PyPI Metadata (PEP 301)
           name = "Python",
           version = sys.version.split()[0],
-          url = "http://www.python.org/%d.%d" % sys.version_info[:2],
+          url = "https://www.python.org/%d.%d" % sys.version_info[:2],
           maintainer = "Guido van Rossum and the Python community",
           maintainer_email = "python-dev@python.org",
           description = "A high-level object-oriented programming language",
