@@ -2283,14 +2283,20 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    PyTypeObject *type = Py_TYPE(op);
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
-    if (_PyType_IS_GC(type)) {
+    // Note: it might be safe to use _PyType_IS_GC() here, for a small
+    // optimization. The question is if a type that implements tp_is_gc() that
+    // returns false can ever be deallocated. For PyType_Type, the answer
+    // seems to be no since those objects are statically allocated. However,
+    // it seems possible that some 3rd party type could have a heap allocated
+    // instance where tp_is_gc() returns false.
+    if (_PyObject_IS_GC(op)) {
         _PyTrash_dealloc(op);
     }
     else {
+        PyTypeObject *type = Py_TYPE(op);
         destructor dealloc = type->tp_dealloc;
         (*dealloc)(op);
     }
