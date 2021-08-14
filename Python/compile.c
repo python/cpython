@@ -1475,6 +1475,17 @@ compiler_add_const(struct compiler *c, PyObject *o)
 static int
 compiler_addop_load_const(struct compiler *c, PyObject *o)
 {
+    if (PyLong_CheckExact(o)) {
+        Py_ssize_t arg = PyLong_AsLong(o);
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+        } else {
+            arg += MAKE_INT_BIAS;
+            if (arg >= 0 && arg < 256) {
+                return compiler_addop_i(c, MAKE_INT, arg);
+            }
+        }
+    }
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
