@@ -1443,7 +1443,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 
         // Instead of rewriting o, we create new frozenset and embed in the
         // key tuple.  Caller should get merged frozenset from the key tuple.
-        PyObject *new = PyFrozenSet_New(tuple);
+        PyObject *new = _PyReproducibleFrozenSet_New(tuple);
         Py_DECREF(tuple);
         if (new == NULL) {
             Py_DECREF(key);
@@ -3910,7 +3910,7 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
             ADDOP_LOAD_CONST_NEW(c, folded);
         } else {
             if (add == SET_ADD) {
-                Py_SETREF(folded, PyFrozenSet_New(folded));
+                Py_SETREF(folded, _PyReproducibleFrozenSet_New(folded));
                 if (folded == NULL) {
                     return 0;
                 }

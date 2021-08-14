@@ -492,12 +492,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         }
         w_object((PyObject *)NULL, p);
     }
-    else if (PyAnySet_CheckExact(v)) {
+    else if (PyAnySet_CheckExact(v) || _PyReproducibleFrozenSet_CheckExact(v)) {
         PyObject *value;
         Py_ssize_t pos = 0;
         Py_hash_t hash;
 
-        if (PyFrozenSet_CheckExact(v))
+        if (PyFrozenSet_CheckExact(v) ||
+            _PyReproducibleFrozenSet_CheckExact(v))
             W_TYPE(TYPE_FROZENSET, p);
         else
             W_TYPE(TYPE_SET, p);

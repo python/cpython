@@ -99,6 +99,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 
 static int set_table_resize(PySetObject *, Py_ssize_t);
 
+PyTypeObject PyReproducibleFrozenSet_Type;
+
 static int
 set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
@@ -118,9 +120,15 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
   restart:
 
     mask = so->mask;
-    i = (size_t)hash & mask;
     freeslot = NULL;
-    perturb = hash;
+
+    if (_PyReproducibleFrozenSet_CheckExact(so)) {
+        i = 0;
+        perturb = 0;
+    } else {
+        i = (size_t)hash & mask;
+        perturb = hash;
+    }
 
     while (1) {
         entry = &so->table[i];
@@ -2233,6 +2241,53 @@ PyTypeObject PyFrozenSet_Type = {
 };
 
 
+PyTypeObject _PyReproducibleFrozenSet_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "reproducible_frozenset",           /* tp_name */
+    sizeof(PySetObject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)set_dealloc,            /* tp_dealloc */
+    0,                                  /* tp_vectorcall_offset */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_as_async */
+    (reprfunc)set_repr,                 /* tp_repr */
+    &frozenset_as_number,               /* tp_as_number */
+    &set_as_sequence,                   /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    frozenset_hash,                     /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE |
+        _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
+    frozenset_doc,                      /* tp_doc */
+    (traverseproc)set_traverse,         /* tp_traverse */
+    (inquiry)set_clear_internal,        /* tp_clear */
+    (richcmpfunc)set_richcompare,       /* tp_richcompare */
+    offsetof(PySetObject, weakreflist), /* tp_weaklistoffset */
+    (getiterfunc)set_iter,              /* tp_iter */
+    0,                                  /* tp_iternext */
+    0,                                  /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    &PyFrozenSet_Type,                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    PyType_GenericAlloc,                /* tp_alloc */
+    frozenset_new,                      /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = frozenset_vectorcall,
+};
+
+
 /***** C API functions *************************************************/
 
 PyObject *
@@ -2245,6 +2300,12 @@ PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
     return make_new_set(&PyFrozenSet_Type, iterable);
+}
+
+PyObject *
+_PyReproducibleFrozenSet_New(PyObject *iterable)
+{
+    return make_new_set(&_PyReproducibleFrozenSet_Type, iterable);
 }
 
 Py_ssize_t

@@ -67,9 +67,18 @@ typedef struct {
 #define PySet_GET_SIZE(so) (assert(PyAnySet_Check(so)),(((PySetObject *)(so))->used))
 
 PyAPI_DATA(PyObject *) _PySet_Dummy;
+PyAPI_DATA(PyTypeObject) _PyReproducibleFrozenSet_Type;
+
+PyAPI_FUNC(PyObject *) _PyReproducibleFrozenSet_New(PyObject *);
 
 PyAPI_FUNC(int) _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash);
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
+
+#define _PyReproducibleFrozenSet_CheckExact(ob) \
+    Py_IS_TYPE(ob, &_PyReproducibleFrozenSet_Type)
+#define _PyReproducibleFrozenSet_Check(ob) \
+    (Py_IS_TYPE(ob, &_PyReproducibleFrozenSet_Type) || \
+      PyType_IsSubtype(Py_TYPE(ob), &_PyReproducibleFrozenSet_Type))
 
 #endif /* Section excluded by Py_LIMITED_API */
 
