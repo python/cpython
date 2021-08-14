@@ -4430,6 +4430,12 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(MAKE_INT): {
+            PyObject *value = PyLong_FromLong(oparg - MAKE_INT_BIAS);
+            PUSH(value);
+            DISPATCH();
+        }
+
         TARGET(BUILD_SLICE): {
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)

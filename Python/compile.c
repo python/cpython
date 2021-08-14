@@ -1197,6 +1197,8 @@ stack_effect(int opcode, int oparg, int jump)
         case MAKE_FUNCTION:
             return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
                 ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
+        case MAKE_INT:
+            return 1;
         case BUILD_SLICE:
             if (oparg == 3)
                 return -2;
