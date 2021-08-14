@@ -229,7 +229,7 @@ PyDoc_STRVAR(termios_tcgetwinsize__doc__,
 "\n"
 "Get the tty winsize for file descriptor fd.\n"
 "\n"
-"Returns a list [ws_row, ws_col].");
+"Returns a tuple (ws_row, ws_col).");
 
 #define TERMIOS_TCGETWINSIZE_METHODDEF    \
     {"tcgetwinsize", (PyCFunction)termios_tcgetwinsize, METH_O, termios_tcgetwinsize__doc__},
@@ -259,7 +259,7 @@ PyDoc_STRVAR(termios_tcsetwinsize__doc__,
 "Set the tty winsize for file descriptor fd.\n"
 "\n"
 "The winsize to be set is taken from the winsize argument, which\n"
-"is a list like the one returned by tcgetwinsize().");
+"is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().");
 
 #define TERMIOS_TCSETWINSIZE_METHODDEF    \
     {"tcsetwinsize", (PyCFunction)(void(*)(void))termios_tcsetwinsize, METH_FASTCALL, termios_tcsetwinsize__doc__},
@@ -286,4 +286,4 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c71166c2d959710d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db808d31296f6643 input=a9049054013a1b77]*/

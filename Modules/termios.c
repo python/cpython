@@ -323,12 +323,12 @@ termios.tcgetwinsize
 
 Get the tty winsize for file descriptor fd.
 
-Returns a list [ws_row, ws_col].
+Returns a tuple (ws_row, ws_col).
 [clinic start generated code]*/
 
 static PyObject *
 termios_tcgetwinsize_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=31825977d5325fb6 input=c7ed8aa957d108c0]*/
+/*[clinic end generated code: output=31825977d5325fb6 input=5706c379d7fd984d]*/
 {
 #if defined(TIOCGWINSZ)
     termiosmodulestate *state = PyModule_GetState(module);
@@ -338,12 +338,12 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
     }
 
     PyObject *v;
-    if (!(v = PyList_New(2))) {
+    if (!(v = PyTuple_New(2))) {
         return NULL;
     }
 
-    PyList_SetItem(v, 0, PyLong_FromLong((long)w.ws_row));
-    PyList_SetItem(v, 1, PyLong_FromLong((long)w.ws_col));
+    PyTuple_SetItem(v, 0, PyLong_FromLong((long)w.ws_row));
+    PyTuple_SetItem(v, 1, PyLong_FromLong((long)w.ws_col));
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
@@ -357,12 +357,12 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
     }
 
     PyObject *v;
-    if (!(v = PyList_New(2))) {
+    if (!(v = PyTuple_New(2))) {
         return NULL;
     }
 
-    PyList_SetItem(v, 0, PyLong_FromLong((long)s.ts_lines));
-    PyList_SetItem(v, 1, PyLong_FromLong((long)s.ts_cols));
+    PyTuple_SetItem(v, 0, PyLong_FromLong((long)s.ts_lines));
+    PyTuple_SetItem(v, 1, PyLong_FromLong((long)s.ts_cols));
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
@@ -385,17 +385,17 @@ termios.tcsetwinsize
 Set the tty winsize for file descriptor fd.
 
 The winsize to be set is taken from the winsize argument, which
-is a list like the one returned by tcgetwinsize().
+is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
 [clinic start generated code]*/
 
 static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
-/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=c495180b2b932a30]*/
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
 {
 #if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
-    if (!PyList_Check(winsz) || PyList_Size(winsz) != 2) {
+    if (!PyTuple_Check(winsz) || PyTuple_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,
-                     "tcsetwinsize, arg 2: must be 2 element list");
+                     "tcsetwinsize, arg 2: must be a two-item tuple");
         return NULL;
     }
 
@@ -407,8 +407,8 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    w.ws_row = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 0));
-    w.ws_col = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 1));
+    w.ws_row = (unsigned short) PyLong_AsLong(PyTuple_GetItem(winsz, 0));
+    w.ws_col = (unsigned short) PyLong_AsLong(PyTuple_GetItem(winsz, 1));
     if (PyErr_Occurred()) {
         return NULL;
     }
@@ -419,9 +419,9 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     Py_RETURN_NONE;
 #elif defined(TIOCGSIZE) && defined(TIOCSSIZE)
-    if (!PyList_Check(winsz) || PyList_Size(winsz) != 2) {
+    if (!PyTuple_Check(winsz) || PyTuple_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,
-                     "tcsetwinsize, arg 2: must be 2 element list");
+                     "tcsetwinsize, arg 2: must be a two-item tuple");
         return NULL;
     }
 
@@ -432,8 +432,8 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    s.ts_lines = (int) PyLong_AsLong(PyList_GetItem(winsz, 0));
-    s.ts_cols = (int) PyLong_AsLong(PyList_GetItem(winsz, 1));
+    s.ts_lines = (int) PyLong_AsLong(PyTuple_GetItem(winsz, 0));
+    s.ts_cols = (int) PyLong_AsLong(PyTuple_GetItem(winsz, 1));
     if (PyErr_Occurred()) {
         return NULL;
     }
