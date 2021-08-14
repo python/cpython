@@ -619,7 +619,7 @@ frame_dealloc(PyFrameObject *f)
         _PyObject_GC_UNTRACK(f);
     }
 
-    Py_TRASHCAN_SAFE_BEGIN(f)
+    Py_TRASHCAN_BEGIN(f, frame_dealloc);
     PyCodeObject *co = NULL;
 
     /* Kill all local variables including specials, if we own them */
@@ -659,7 +659,7 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_XDECREF(co);
-    Py_TRASHCAN_SAFE_END(f)
+    Py_TRASHCAN_END;
 }
 
 static int

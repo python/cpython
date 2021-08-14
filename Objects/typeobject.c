@@ -4505,7 +4505,15 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(joined);
         return NULL;
     }
-    return type->tp_alloc(type, 0);
+    PyObject *obj = type->tp_alloc(type, 0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    if (_PyObject_InitializeDict(obj)) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    return obj;
 }
 
 static void

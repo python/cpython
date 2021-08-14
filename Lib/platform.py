@@ -116,7 +116,6 @@ import collections
 import os
 import re
 import sys
-import subprocess
 import functools
 import itertools
 
@@ -748,6 +747,7 @@ class _Processor:
         """
         Fall back to `uname -p`
         """
+        import subprocess
         try:
             return subprocess.check_output(
                 ['uname', '-p'],
