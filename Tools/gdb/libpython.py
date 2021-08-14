@@ -861,7 +861,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
-            self._frame = Py_framedataPtr(self.field('f_fdata'))
+            self._fdata = _Py_framedataPtr(self.field('f_fdata'))
 
     def iter_locals(self):
         '''
@@ -870,7 +870,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         '''
         if self.is_optimized_out():
             return
-        return self._frame.iter_locals()
+        return self._fdata.iter_locals()
 
     def iter_globals(self):
         '''
@@ -879,7 +879,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         '''
         if self.is_optimized_out():
             return ()
-        return self._frame.iter_globals()
+        return self._fdata.iter_globals()
 
     def iter_builtins(self):
         '''
@@ -888,19 +888,19 @@ class PyFrameObjectPtr(PyObjectPtr):
         '''
         if self.is_optimized_out():
             return ()
-        return self._frame.iter_builtins()
+        return self._fdata.iter_builtins()
 
     def get_var_by_name(self, name):
 
         if self.is_optimized_out():
             return None, None
-        return self._frame.get_var_by_name(name)
+        return self._fdata.get_var_by_name(name)
 
     def filename(self):
         '''Get the path of the current Python source file, as a string'''
         if self.is_optimized_out():
             return FRAME_INFO_OPTIMIZED_OUT
-        return self._frame.filename()
+        return self._fdata.filename()
 
     def current_line_num(self):
         '''Get current line number as an integer (1-based)
@@ -911,28 +911,28 @@ class PyFrameObjectPtr(PyObjectPtr):
         '''
         if self.is_optimized_out():
             return None
-        return self._frame.current_line_num()
+        return self._fdata.current_line_num()
 
     def current_line(self):
         '''Get the text of the current source line as a string, with a trailing
         newline character'''
         if self.is_optimized_out():
             return FRAME_INFO_OPTIMIZED_OUT
-        return self._frame.current_line()
+        return self._fdata.current_line()
 
     def write_repr(self, out, visited):
         if self.is_optimized_out():
             out.write(FRAME_INFO_OPTIMIZED_OUT)
             return
-        return self._frame.write_repr(out, visited)
+        return self._fdata.write_repr(out, visited)
 
     def print_traceback(self):
         if self.is_optimized_out():
             sys.stdout.write('  %s\n' % FRAME_INFO_OPTIMIZED_OUT)
             return
-        return self._frame.print_traceback()
+        return self._fdata.print_traceback()
 
-class Py_framedataPtr:
+class _Py_framedataPtr:
 
     def __init__(self, gdbval):
         self._gdbval = gdbval
@@ -1734,7 +1734,7 @@ class Frame(object):
     def get_pyop(self):
         try:
             fdata = self._gdbframe.read_var('fdata')
-            fdata = Py_framedataPtr(fdata)
+            fdata = _Py_framedataPtr(fdata)
             if not fdata.is_optimized_out():
                 return fdata
             # gdb is unable to get the "fdata" argument of PyEval_EvalFrameEx()
@@ -1744,7 +1744,7 @@ class Frame(object):
             caller = self._gdbframe.older()
             if caller:
                 fdata = caller.read_var('fdata')
-                fdata = Py_framedataPtr(fdata)
+                fdata = _Py_framedataPtr(fdata)
                 if not fdata.is_optimized_out():
                     return fdata
             return orig_fdata
