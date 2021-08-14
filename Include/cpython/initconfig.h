@@ -144,6 +144,7 @@ typedef struct PyConfig {
     int show_ref_count;
     int dump_refs;
     int malloc_stats;
+    int dump_file;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
     wchar_t *pycache_prefix;

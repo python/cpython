@@ -1736,6 +1736,7 @@ Py_FinalizeEx(void)
     int show_ref_count = tstate->interp->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
+    int dump_file = tstate->interp->config.dump_file;
     int dump_refs = tstate->interp->config.dump_refs;
 #endif
 #ifdef WITH_PYMALLOC
@@ -1835,8 +1836,16 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
+
+    FILE *fp = stderr;
+    if (dump_file) {
+        char dump_file_name[255];
+        time_t now = time(NULL);
+        sprintf(dump_file_name, "cpython-tracerefs-%ld.dump", now);
+        fp = fopen(dump_file_name,"w");
+    }
     if (dump_refs) {
-        _Py_PrintReferences(stderr);
+        _Py_PrintReferences(fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1849,7 +1858,10 @@ Py_FinalizeEx(void)
      * above by _Py_PrintReferences.
      */
     if (dump_refs) {
-        _Py_PrintReferenceAddresses(stderr);
+        _Py_PrintReferenceAddresses(fp);
+    }
+    if (fp != NULL && fp != stderr) {
+        fclose(fp);
     }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
