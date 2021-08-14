@@ -122,10 +122,10 @@ _Py_framedata_FastToLocalsWithError(_Py_framedata *frame);
 void
 _Py_framedata_LocalsToFast(_Py_framedata *frame, int clear);
 
-_Py_framedata *_PyThreadState_Push_framedata(
+_Py_framedata *_PyThreadState_PushFrame(
     PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals);
 
-void _PyThreadState_Pop_framedata(PyThreadState *tstate, _Py_framedata *frame);
+void _PyThreadState_PopFrame(PyThreadState *tstate, _Py_framedata *frame);
 
 #ifdef __cplusplus
 }

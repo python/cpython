@@ -5259,7 +5259,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames)
 {
-    _Py_framedata * fdata = _PyThreadState_Push_framedata(tstate, con, locals);
+    _Py_framedata * fdata = _PyThreadState_PushFrame(tstate, con, locals);
     if (fdata == NULL) {
         return NULL;
     }
@@ -5284,7 +5284,7 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _Py_framedata * fdata)
     assert(fdata->frame_obj == NULL);
     --tstate->recursion_depth;
     tstate->fdata = fdata->previous;
-    _PyThreadState_Pop_framedata(tstate, fdata);
+    _PyThreadState_PopFrame(tstate, fdata);
     return 0;
 }
 

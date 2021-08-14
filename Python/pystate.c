@@ -686,7 +686,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         PyMem_RawFree(tstate);
         return NULL;
     }
-    /* If top points to entry 0, then _PyThreadState_Pop_framedata will try to pop this chunk */
+    /* If top points to entry 0, then _PyThreadState_PopFrame will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
     /* Mark trace_info as uninitialized */
@@ -2038,7 +2038,7 @@ push_chunk(PyThreadState *tstate, int size)
 }
 
 _Py_framedata *
-_PyThreadState_Push_framedata(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int nlocalsplus = code->co_nlocalsplus;
@@ -2065,7 +2065,7 @@ _PyThreadState_Push_framedata(PyThreadState *tstate, PyFrameConstructor *con, Py
 }
 
 void
-_PyThreadState_Pop_framedata(PyThreadState *tstate, _Py_framedata * fdata)
+_PyThreadState_PopFrame(PyThreadState *tstate, _Py_framedata * fdata)
 {
     PyObject **locals = _Py_framedata_GetLocalsArray(fdata);
     if (locals == &tstate->datastack_chunk->data[0]) {
