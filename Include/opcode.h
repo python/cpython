@@ -156,6 +156,7 @@ extern "C" {
 #define STORE_ATTR_WITH_HINT     47
 
 #define MAKE_INT_BIAS             5
+
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

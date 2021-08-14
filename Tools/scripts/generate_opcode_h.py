@@ -73,6 +73,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n")
         for k, v in opcode['config'].items():
             fobj.write("#define %-23s %3s\n" % (k, v))
+        fobj.write("\n")
         fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)
