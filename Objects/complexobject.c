@@ -518,7 +518,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     }
     errno = 0;
     exponent = b;
-    if (exponent.imag == 0.0 && exponent.real == rint(exponent.real)
+    if (exponent.imag == 0.0 && exponent.real == floor(exponent.real)
                              && fabs(exponent.real) <= 100.0) {
         p = c_powi(a, (long)exponent.real);
     }
