@@ -296,7 +296,10 @@ PyType_ClearCache(void)
 void
 _PyType_Fini(PyInterpreterState *interp)
 {
-    _PyType_ClearCache(interp);
+    struct type_cache *cache = &interp->type_cache;
+    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
+        Py_DECREF(cache->hashtable[i].name);
+    }
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
