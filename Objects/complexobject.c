@@ -172,8 +172,6 @@ c_powu(Py_complex x, long n)
 static Py_complex
 c_powi(Py_complex x, long n)
 {
-    Py_complex cn;
-
     if (n > 0)
         return c_powu(x,n);
     else
