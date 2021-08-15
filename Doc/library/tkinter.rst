@@ -417,6 +417,13 @@ You'll also find that many Tkinter methods have compound names, e.g.,
 documentation for all of these in the
 `winfo <https://www.tcl.tk/man/tcl8.6/TkCmd/winfo.htm>`_ man page.
 
+.. note::
+   Somewhat confusingly, there are also methods on all Tkinter widgets
+   that don't actually operate on the widget, but operate at a global
+   scope, independent of any widget. Examples are methods for accessing
+   the clipboard or the system bell. (They happen to be implemented as
+   methods in the base :class:`Widget` class that all Tkinter widgets
+   inherit from).
 
 
 How Tk and Tkinter are Related
