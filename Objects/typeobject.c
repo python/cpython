@@ -272,7 +272,7 @@ _PyType_InitCache(PyInterpreterState *interp)
 
 
 static unsigned int
-_PyType_ClearCache(PyInterpreterState *interp)
+_PyType_ClearCache(PyInterpreterState *interp, int reset_global_version_tag)
 {
     struct type_cache *cache = &interp->type_cache;
 #if MCACHE_STATS
@@ -288,7 +288,7 @@ _PyType_ClearCache(PyInterpreterState *interp)
 #endif
 
     unsigned int cur_version_tag = next_version_tag - 1;
-    if (_Py_IsMainInterpreter(interp)) {
+    if (reset_global_version_tag && _Py_IsMainInterpreter(interp)) {
         next_version_tag = 0;
     }
 
@@ -302,14 +302,20 @@ unsigned int
 PyType_ClearCache(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyType_ClearCache(interp);
+    return _PyType_ClearCache(interp, 1);
 }
 
+unsigned int
+_PyType_ClearCache_NoResetGlobalVersionTag(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _PyType_ClearCache(interp, 1);
+}
 
 void
 _PyType_Fini(PyInterpreterState *interp)
 {
-    _PyType_ClearCache(interp);
+    _PyType_ClearCache(interp, 1);
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
@@ -3853,7 +3859,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         }
 #endif
         assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
-        Py_SETREF(entry->name, Py_NewRef(name));
+        Py_XSETREF(entry->name, Py_NewRef(name));
     }
     return res;
 }
