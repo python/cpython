@@ -45,7 +45,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 // bpo-42745: next_version_tag remains shared by all interpreters because of static types
 // Used to set PyTypeObject.tp_version_tag
-static unsigned int next_version_tag = 0;
+static unsigned int next_version_tag = 1;
 
 typedef struct PySlot_Offset {
     short subslot_offset;
@@ -248,9 +248,6 @@ type_cache_clear(struct type_cache *cache, int use_none)
         }
         entry->value = NULL;
     }
-
-    // Mark all version tags as invalid
-    PyType_Modified(&PyBaseObject_Type);
 }
 
 
@@ -287,14 +284,9 @@ _PyType_ClearCache(PyInterpreterState *interp)
             sizeof(cache->hashtable) / 1024);
 #endif
 
-    unsigned int cur_version_tag = next_version_tag - 1;
-    if (_Py_IsMainInterpreter(interp)) {
-        next_version_tag = 0;
-    }
+    type_cache_clear(cache, 1);
 
-    type_cache_clear(cache, 0);
-
-    return cur_version_tag;
+    return next_version_tag - 1;
 }
 
 
@@ -426,14 +418,12 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_READY))
         return 0;
 
-    type->tp_version_tag = next_version_tag++;
-    /* for stress-testing: next_version_tag &= 0xFF; */
-
-    if (type->tp_version_tag == 0) {
-        // Wrap-around or just starting Python - clear the whole cache
-        type_cache_clear(cache, 1);
+    if (next_version_tag == 0) {
+        /* We have run out of version numbers */
         return 0;
     }
+    type->tp_version_tag = next_version_tag++;
+    assert (type->tp_version_tag != 0);
 
     bases = type->tp_bases;
     n = PyTuple_GET_SIZE(bases);
