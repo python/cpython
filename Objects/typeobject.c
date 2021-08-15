@@ -298,7 +298,10 @@ _PyType_Fini(PyInterpreterState *interp)
 {
     struct type_cache *cache = &interp->type_cache;
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        Py_DECREF(cache->hashtable[i].name);
+        struct type_cache_entry *entry = &cache->hashtable[i];
+        entry->version = 0;
+        Py_CLEAR(entry->name);
+        entry->value = NULL;
     }
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
