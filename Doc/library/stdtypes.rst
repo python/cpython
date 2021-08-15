@@ -587,7 +587,6 @@ class`. In addition, it provides a few more methods:
 
             return n
 
-
     .. versionadded:: 3.2
 
 .. method:: int.as_integer_ratio()
