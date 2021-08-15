@@ -529,6 +529,18 @@ class`. In addition, it provides a few more methods:
     given, an :exc:`OverflowError` is raised. The default value for *signed*
     is ``False``.
 
+    Equivalent to::
+
+        def to_bytes(n, length, byteorder, signed=False):
+            if byteorder == 'little':
+                order = range(length)
+            elif byteorder == 'big':
+                order = reversed(range(length))
+            else:
+                raise ValueError("byteorder must be either 'little' or 'big'")
+
+            return bytes((n >> i*8) & 0xff for i in order)
+
     .. versionadded:: 3.2
 
 .. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
@@ -558,6 +570,22 @@ class`. In addition, it provides a few more methods:
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.
+
+    Equivalent to::
+
+        def from_bytes(bytes, byteorder, signed=False):
+            if byteorder == 'little':
+                little_ordered = list(bytes)
+            elif byteorder == 'big':
+                little_ordered = list(reversed(bytes))
+            else:
+                raise ValueError("byteorder must be either 'little' or 'big'")
+
+            n = sum(b << i*8 for i, b in enumerate(little_ordered))
+            if signed and little_ordered and (little_ordered[-1] & 0x80):
+                n -= 1 << 8*len(little_ordered)
+
+            return n
 
     .. versionadded:: 3.2
 
