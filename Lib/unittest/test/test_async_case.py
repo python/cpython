@@ -215,7 +215,7 @@ class TestAsyncCase(unittest.TestCase):
         test = Test("test_cancel")
         output = test.run()
         self.assertFalse(output.wasSuccessful())
-    
+
     def test_cancellation_hanging_tasks(self):
         cancelled = False
         class Test(unittest.IsolatedAsyncioTestCase):
@@ -227,10 +227,10 @@ class TestAsyncCase(unittest.TestCase):
                     except asyncio.CancelledError:
                         cancelled = True
                         raise
-                
+
                 # Leave this running in the background
                 asyncio.create_task(coro())
-        
+
         test = Test("test_leaking_task")
         output = test.run()
         self.assertTrue(cancelled)
