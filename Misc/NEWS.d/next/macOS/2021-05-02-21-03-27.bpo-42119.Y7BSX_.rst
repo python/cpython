@@ -1,7 +1,0 @@
-Fix check for macOS SDK paths when building Python. Narrow search to match
-contents of SDKs, namely only files in ``/System/Library``,
-``/System/IOSSupport``, and ``/usr`` other than ``/usr/local``. Previously,
-anything under ``/System`` was assumed to be in an SDK which causes problems
-with the new file system layout in 10.15+ where user file systems may appear
-to be mounted under ``/System``.  Paths in ``/Library`` were also
-incorrectly treated as SDK locations.

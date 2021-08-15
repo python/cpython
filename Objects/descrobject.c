@@ -1614,10 +1614,13 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     propertyobject *gs = (propertyobject *)self;
     PyObject *func, *res;
 
-    if (value == NULL)
+    if (value == NULL) {
         func = gs->prop_del;
-    else
+    }
+    else {
         func = gs->prop_set;
+    }
+
     if (func == NULL) {
         if (gs->prop_name != NULL) {
             PyErr_Format(PyExc_AttributeError,
@@ -1625,7 +1628,8 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
                         "can't delete attribute %R" :
                         "can't set attribute %R",
                         gs->prop_name);
-        } else {
+        }
+        else {
             PyErr_SetString(PyExc_AttributeError,
                             value == NULL ?
                             "can't delete attribute" :
@@ -1633,12 +1637,19 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         }
         return -1;
     }
-    if (value == NULL)
+
+    if (value == NULL) {
         res = PyObject_CallOneArg(func, obj);
-    else
-        res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
-    if (res == NULL)
+    }
+    else {
+        PyObject *args[] = { obj, value };
+        res = PyObject_Vectorcall(func, args, 2, NULL);
+    }
+
+    if (res == NULL) {
         return -1;
+    }
+
     Py_DECREF(res);
     return 0;
 }

@@ -254,7 +254,7 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if it is the class or a base class of the exception
+compatible with an exception if the object is the class or a base class of the exception
 object, or a tuple containing an item that is the class or a base class of
 the exception object.
 
@@ -822,7 +822,7 @@ and binds no name.  Syntax:
 
 ``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
 but only within patterns.  It is an identifier, as usual, even within
-``match`` headers, ``guards``, and ``case`` blocks.
+``match`` subject expressions, ``guard``\ s, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
 
@@ -900,8 +900,8 @@ sequence pattern.
 The following is the logical flow for matching a sequence pattern against a
 subject value:
 
-#. If the subject value is not an instance of a
-   :class:`collections.abc.Sequence` the sequence pattern fails.
+#. If the subject value is not a sequence [#]_, the sequence pattern
+   fails.
 
 #. If the subject value is an instance of ``str``, ``bytes`` or ``bytearray``
    the sequence pattern fails.
@@ -943,7 +943,7 @@ subject value:
 In simple terms ``[P1, P2, P3,`` ... ``, P<N>]`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Sequence)``
+* check ``<subject>`` is a sequence
 * ``len(subject) == <N>``
 * ``P1`` matches ``<subject>[0]`` (note that this match can also bind names)
 * ``P2`` matches ``<subject>[1]`` (note that this match can also bind names)
@@ -968,22 +968,22 @@ Syntax:
 At most one double star pattern may be in a mapping pattern.  The double star
 pattern must be the last subpattern in the mapping pattern.
 
-Duplicate key values in mapping patterns are disallowed. (If all key patterns
-are literal patterns this is considered a syntax error; otherwise this is a
-runtime error and will raise :exc:`ValueError`.)
+Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will
+raise a :exc:`SyntaxError`. Two keys that otherwise have the same value will
+raise a :exc:`ValueError` at runtime.
 
 The following is the logical flow for matching a mapping pattern against a
 subject value:
 
-#. If the subject value is not an instance of :class:`collections.abc.Mapping`,
-   the mapping pattern fails.
+#. If the subject value is not a mapping [#]_,the mapping pattern fails.
 
 #. If every key given in the mapping pattern is present in the subject mapping,
    and the pattern for each key matches the corresponding item of the subject
    mapping, the mapping pattern succeeds.
 
 #. If duplicate keys are detected in the mapping pattern, the pattern is
-   considered invalid and :exc:`ValueError` is raised.
+   considered invalid. A :exc:`SyntaxError` is raised for duplicate literal
+   values; or a :exc:`ValueError` for named keys of the same value.
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
@@ -993,7 +993,7 @@ subject value:
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Mapping)``
+* check ``<subject>`` is a mapping
 * ``KEY1 in <subject>``
 * ``P1`` matches ``<subject>[KEY1]``
 * ... and so on for the corresponding KEY/pattern pair.
@@ -1525,6 +1525,35 @@ body of a coroutine function.
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
+
+.. [#] In pattern matching, a sequence is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Sequence`
+      * a Python class that has been registered as :class:`collections.abc.Sequence`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
+      * a class that inherits from any of the above
+
+   The following standard library classes are sequences:
+
+      * :class:`array.array`
+      * :class:`collections.deque`
+      * :class:`list`
+      * :class:`memoryview`
+      * :class:`range`
+      * :class:`tuple`
+
+   .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
+      do not match sequence patterns.
+
+.. [#] In pattern matching, a mapping is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Mapping`
+      * a Python class that has been registered as :class:`collections.abc.Mapping`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
+      * a class that inherits from any of the above
+
+   The standard library classes :class:`dict` and :class:`types.MappingProxyType`
+   are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the

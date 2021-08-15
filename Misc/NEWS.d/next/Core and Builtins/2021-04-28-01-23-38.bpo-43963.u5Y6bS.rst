@@ -1,2 +1,0 @@
-Importing the :mod:`_signal` module in a subinterpreter has no longer side
-effects.

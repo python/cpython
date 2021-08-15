@@ -1,0 +1,4 @@
+Remove ``PyErr_SetFromErrnoWithUnicodeFilename()``,
+``PyErr_SetFromWindowsErrWithUnicodeFilename()``, and
+``PyErr_SetExcFromWindowsErrWithUnicodeFilename()``. They are not documented
+and have been deprecated since Python 3.3.

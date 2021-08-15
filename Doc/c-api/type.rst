@@ -13,7 +13,7 @@ Type Objects
    The C structure of the objects used to describe built-in types.
 
 
-.. c:var:: PyObject* PyType_Type
+.. c:var:: PyTypeObject PyType_Type
 
    This is the type object for type objects; it is the same object as
    :class:`type` in the Python layer.
@@ -96,6 +96,21 @@ Type Objects
    their initialization.  This function is responsible for adding inherited slots
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
+
+   .. note::
+       If some of the base classes implements the GC protocol and the provided
+       type does not include the :const:`Py_TPFLAGS_HAVE_GC` in its flags, then
+       the GC protocol will be automatically implemented from its parents. On
+       the contrary, if the type being created does include
+       :const:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
+       GC protocol itself by at least implementing the
+       :c:member:`~PyTypeObject.tp_traverse` handle.
+
+.. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
+
+   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+
+   .. versionadded:: 3.11
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 

@@ -41,9 +41,9 @@ extern PyObject *_PyEval_BuiltinsFromGlobals(
 
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, struct _interpreter_frame *frame, int throwflag)
 {
-    return tstate->interp->eval_frame(tstate, f, throwflag);
+    return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 
 extern PyObject *
@@ -107,6 +107,9 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 #define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
 
+struct _interpreter_frame *_PyEval_GetFrame(void);
+
+PyObject *_Py_MakeCoro(PyFrameConstructor *, struct _interpreter_frame *);
 
 #ifdef __cplusplus
 }

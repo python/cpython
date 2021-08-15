@@ -476,6 +476,8 @@ Customize Memory Allocators
    the :c:func:`PyMem_SetupDebugHooks` function must be called to reinstall the
    debug hooks on top on the new allocator.
 
+   See also :c:member:`PyPreConfig.allocator` and :ref:`Preinitialize Python
+   with PyPreConfig <c-preinit>`.
 
 .. c:function:: void PyMem_SetupDebugHooks(void)
 
@@ -488,7 +490,7 @@ Customize Memory Allocators
 Debug hooks on the Python memory allocators
 ===========================================
 
-When :ref:`Python is built is debug mode <debug-build>`, the
+When :ref:`Python is built in debug mode <debug-build>`, the
 :c:func:`PyMem_SetupDebugHooks` function is called at the :ref:`Python
 preinitialization <c-preinit>` to setup debug hooks on Python memory allocators
 to detect memory errors.

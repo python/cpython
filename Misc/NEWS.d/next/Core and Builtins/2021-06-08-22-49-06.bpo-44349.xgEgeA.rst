@@ -1,0 +1,1 @@
+Fix an edge case when displaying text from files with encoding in syntax errors. Patch by Pablo Galindo.

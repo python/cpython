@@ -1,2 +1,0 @@
-Install schemes in :mod:`distutils.command.install` are now loaded from
-:mod:`sysconfig`.

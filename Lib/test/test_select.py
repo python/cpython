@@ -88,12 +88,10 @@ class SelectTestCase(unittest.TestCase):
         self.assertEqual(select.select([], a, []), ([], a[:5], []))
 
     def test_disallow_instantiation(self):
-        tp = type(select.poll())
-        self.assertRaises(TypeError, tp)
+        support.check_disallow_instantiation(self, type(select.poll()))
 
         if hasattr(select, 'devpoll'):
-            tp = type(select.devpoll())
-            self.assertRaises(TypeError, tp)
+            support.check_disallow_instantiation(self, type(select.devpoll()))
 
 def tearDownModule():
     support.reap_children()

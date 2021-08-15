@@ -66,6 +66,8 @@ Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 source code.
 
 
+.. _faq-create-standalone-binary:
+
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
 
@@ -89,14 +91,15 @@ only contains those built-in modules which are actually used in the program.  It
 then compiles the generated C code and links it with the rest of the Python
 interpreter to form a self-contained binary which acts exactly like your script.
 
-Obviously, freeze requires a C compiler.  There are several other utilities
-which don't:
+The following packages can help with the creation of console and GUI
+executables:
 
-* `py2exe <http://www.py2exe.org/>`_ for Windows binaries
-* `py2app <https://github.com/ronaldoussoren/py2app>`_ for Mac OS X binaries
-* `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for cross-platform
-  binaries
-
+* `Nuitka <https://nuitka.net/>`_ (Cross-platform)
+* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
+* `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
+* `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
+* `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
+* `py2exe <http://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
@@ -1822,6 +1825,85 @@ For example, here is the implementation of
             if v is value or v == value:
                 return True
         return False
+
+How do I cache method calls?
+----------------------------
+
+The two principal tools for caching methods are
+:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+former stores results at the instance level and the latter at the class
+level.
+
+The *cached_property* approach only works with methods that do not take
+any arguments.  It does not create a reference to the instance.  The
+cached method result will be kept only as long as the instance is alive.
+
+The advantage is that when an instance is not longer used, the cached
+method result will be released right away.  The disadvantage is that if
+instances accumulate, so too will the accumulated method results.  They
+can grow without bound.
+
+The *lru_cache* approach works with methods that have hashable
+arguments.  It creates a reference to the instance unless special
+efforts are made to pass in weak references.
+
+The advantage of the least recently used algorithm is that the cache is
+bounded by the specified *maxsize*.  The disadvantage is that instances
+are kept alive until they age out of the cache or until the cache is
+cleared.
+
+This example shows the various techniques::
+
+    class Weather:
+        "Lookup weather information on a government website"
+
+        def __init__(self, station_id):
+            self._station_id = station_id
+            # The _station_id is private and immutable
+
+        def current_temperature(self):
+            "Latest hourly observation"
+            # Do not cache this because old results
+            # can be out of date.
+
+        @cached_property
+        def location(self):
+            "Return the longitude/latitude coordinates of the station"
+            # Result only depends on the station_id
+
+        @lru_cache(maxsize=20)
+        def historic_rainfall(self, date, units='mm'):
+            "Rainfall on a given date"
+            # Depends on the station_id, date, and units.
+
+The above example assumes that the *station_id* never changes.  If the
+relevant instance attributes are mutable, the *cached_property* approach
+can't be made to work because it cannot detect changes to the
+attributes.
+
+The *lru_cache* approach can be made to work, but the class needs to define the
+*__eq__* and *__hash__* methods so the cache can detect relevant attribute
+updates::
+
+    class Weather:
+        "Example with a mutable station identifier"
+
+        def __init__(self, station_id):
+            self.station_id = station_id
+
+        def change_station(self, station_id):
+            self.station_id = station_id
+
+        def __eq__(self, other):
+            return self.station_id == other.station_id
+
+        def __hash__(self):
+            return hash(self.station_id)
+
+        @lru_cache(maxsize=20)
+        def historic_rainfall(self, date, units='cm'):
+            'Rainfall on a given date'
+            # Depends on the station_id, date, and units.
 
 
 Modules

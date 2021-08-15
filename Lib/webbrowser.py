@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Interfaces for launching and remotely controlling Web browsers."""
+"""Interfaces for launching and remotely controlling web browsers."""
 # Maintained by Georg Brandl.
 
 import os
@@ -531,6 +531,10 @@ def register_standard_browsers():
         register("safari", None, MacOSXOSAScript('safari'))
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
+
+    if sys.platform == "serenityos":
+        # SerenityOS webbrowser, simply called "Browser".
+        register("Browser", None, BackgroundBrowser("Browser"))
 
     if sys.platform[:3] == "win":
         # First try to use the default Windows browser

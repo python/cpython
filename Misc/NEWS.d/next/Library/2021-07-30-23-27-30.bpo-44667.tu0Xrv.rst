@@ -1,0 +1,4 @@
+The :func:`tokenize.tokenize` doesn't incorrectly generate a ``NEWLINE``
+token if the source doesn't end with a new line character but the last line
+is a comment, as the function is already generating a ``NL`` token. Patch by
+Pablo Galindo

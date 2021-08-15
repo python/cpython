@@ -1,2 +1,0 @@
-Provide a locale.localize() function, which converts a normalized number string
-into a locale format.

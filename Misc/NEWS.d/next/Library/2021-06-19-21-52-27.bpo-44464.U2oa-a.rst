@@ -1,0 +1,2 @@
+Remove exception for flake8 in deprecated importlib.metadata interfaces.
+Sync with importlib_metadata 4.6.
