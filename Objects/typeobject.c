@@ -233,19 +233,14 @@ get_type_cache(void)
 
 
 static void
-type_cache_clear(struct type_cache *cache, int use_none)
+type_cache_clear(struct type_cache *cache)
 {
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
         entry->version = 0;
-        if (use_none) {
-            // Set to None so _PyType_Lookup() can use Py_SETREF(),
-            // rather than using slower Py_XSETREF().
-            Py_XSETREF(entry->name, Py_NewRef(Py_None));
-        }
-        else {
-            Py_CLEAR(entry->name);
-        }
+        // Set to None, rather than NULL, so _PyType_Lookup() can
+        // use Py_SETREF() rather than using slower Py_XSETREF().
+        Py_XSETREF(entry->name, Py_NewRef(Py_None));
         entry->value = NULL;
     }
 }
@@ -284,7 +279,7 @@ _PyType_ClearCache(PyInterpreterState *interp)
             sizeof(cache->hashtable) / 1024);
 #endif
 
-    type_cache_clear(cache, 1);
+    type_cache_clear(cache);
 
     return next_version_tag - 1;
 }
