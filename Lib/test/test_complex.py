@@ -269,6 +269,22 @@ class ComplexTest(unittest.TestCase):
                     except OverflowError:
                         pass
 
+        # Check that z**2.0 is handled identically to z**2.
+        values = [
+            complex(5.0, 12.0),
+            complex(5.0e100, 12.0e100),
+            complex(-4.0, INF),
+            complex(INF, 0.0),
+        ]
+        for value in values:
+            with self.subTest(value=value):
+                int_square = value**2
+                float_square = value**2.0
+                self.assertFloatsAreIdentical(
+                    int_square.real, float_square.real)
+                self.assertFloatsAreIdentical(
+                    int_square.imag, float_square.imag)
+
     def test_boolcontext(self):
         for i in range(100):
             self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
