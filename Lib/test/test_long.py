@@ -1122,13 +1122,15 @@ class LongTest(unittest.TestCase):
 
                 try:
                     self.assertEqual(
-                        equivalent_python(test, len(expected), byteorder, signed=signed),
+                        equivalent_python(
+                            test, len(expected), byteorder, signed=signed),
                         expected
                     )
                 except Exception as err:
                     raise AssertionError(
-                        "Code equivalent from docs is not equivalent for conversion of {0} with byteorder byteorder={1} and signed={2}"
-                        .format(test, byteorder, signed)) from err
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder byteorder={1} and "
+                        "signed={2}".format(test, byteorder, signed)) from err
 
         # Convert integers to signed big-endian byte arrays.
         tests1 = {
@@ -1248,7 +1250,8 @@ class LongTest(unittest.TestCase):
                     )
                 except Exception as err:
                     raise AssertionError(
-                        "Code equivalent from docs is not equivalent for conversion of {0} with byteorder={1!r} and signed={2}"
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder={1!r} and signed={2}"
                         .format(test, byteorder, signed)) from err
 
         # Convert signed big-endian byte arrays to integers.
