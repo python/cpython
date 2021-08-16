@@ -2155,6 +2155,7 @@ _PyTrash_thread_destroy_chain(void)
 int
 _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 {
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     if (_PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }
