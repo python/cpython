@@ -39,7 +39,7 @@ parameters: ``-n`` opens the URL in a new browser window, if possible;
 ``-t`` opens the URL in a new browser page ("tab"). The options are,
 naturally, mutually exclusive.  Usage example::
 
-   python -m webbrowser -t "http://www.python.org"
+   python -m webbrowser -t "https://www.python.org"
 
 The following exception is defined:
 
@@ -176,7 +176,7 @@ Notes:
 
 Here are some simple examples::
 
-   url = 'http://docs.python.org/'
+   url = 'https://docs.python.org/'
 
    # Open URL in a new tab, if a browser window is already open.
    webbrowser.open_new_tab(url)

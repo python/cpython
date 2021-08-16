@@ -722,8 +722,9 @@ The :meth:`~ArgumentParser.add_argument` method must know whether an optional
 argument, like ``-f`` or ``--foo``, or a positional argument, like a list of
 filenames, is expected.  The first arguments passed to
 :meth:`~ArgumentParser.add_argument` must therefore be either a series of
-flags, or a simple argument name.  For example, an optional argument could
-be created like::
+flags, or a simple argument name.
+
+For example, an optional argument could be created like::
 
    >>> parser.add_argument('-f', '--foo')
 
@@ -765,8 +766,9 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo='1')
 
 * ``'store_const'`` - This stores the value specified by the const_ keyword
-  argument.  The ``'store_const'`` action is most commonly used with
-  optional arguments that specify some sort of flag.  For example::
+  argument; note that the const_ keyword argument defaults to ``None``.  The
+  ``'store_const'`` action is most commonly used with optional arguments that
+  specify some sort of flag.  For example::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_const', const=42)
@@ -795,8 +797,8 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=['1', '2'])
 
 * ``'append_const'`` - This stores a list, and appends the value specified by
-  the const_ keyword argument to the list.  (Note that the const_ keyword
-  argument defaults to ``None``.)  The ``'append_const'`` action is typically
+  the const_ keyword argument to the list; note that the const_ keyword
+  argument defaults to ``None``. The ``'append_const'`` action is typically
   useful when multiple arguments need to store constants to the same list. For
   example::
 
@@ -979,17 +981,20 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   ``action='store_const'`` or ``action='append_const'``.  These actions add the
   ``const`` value to one of the attributes of the object returned by
   :meth:`~ArgumentParser.parse_args`. See the action_ description for examples.
+  If ``const`` is not provided to :meth:`~ArgumentParser.add_argument`, it will
+  receive a default value of ``None``.
+
 
 * When :meth:`~ArgumentParser.add_argument` is called with option strings
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
   argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
-  command-line argument following it, the value of ``const`` will be assumed instead.
-  See the nargs_ description for examples.
+  command-line argument following it, the value of ``const`` will be assumed to
+  be ``None`` instead.  See the nargs_ description for examples.
 
-With the ``'store_const'`` and ``'append_const'`` actions, the ``const``
-keyword argument must be given.  For other actions, it defaults to ``None``.
-
+.. versionchanged:: 3.11
+   ``const=None`` by default, including when ``action='append_const'`` or
+   ``action='store_const'``.
 
 default
 ^^^^^^^

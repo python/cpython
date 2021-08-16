@@ -150,7 +150,7 @@ See :pep:`484` for more details.
 
 .. versionadded:: 3.5.2
 
-.. versionchanged:: 3.10.0
+.. versionchanged:: 3.10
    ``NewType`` is now a class rather than a function.  There is some additional
    runtime cost when calling ``NewType`` over a regular function.  However, this
    cost will be reduced in 3.11.0.
@@ -1323,7 +1323,7 @@ These are not used in annotations. They are building blocks for declaring types.
 
    .. versionadded:: 3.5.2
 
-   .. versionchanged:: 3.10.0
+   .. versionchanged:: 3.10
       ``NewType`` is now a class rather than a function.
 
 .. class:: TypedDict(dict)

@@ -29,7 +29,8 @@ from pegen.grammar import (
 )
 
 argparser = argparse.ArgumentParser(
-    prog="calculate_first_sets", description="Calculate the first sets of a grammar",
+    prog="calculate_first_sets",
+    description="Calculate the first sets of a grammar",
 )
 argparser.add_argument("grammar_file", help="The grammar file")
 

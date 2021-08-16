@@ -1,3 +1,5 @@
+import ast
+import difflib
 import io
 import textwrap
 import unittest
@@ -6,14 +8,10 @@ from test import test_tools
 from typing import Dict, Any
 from tokenize import TokenInfo, NAME, NEWLINE, NUMBER, OP
 
-test_tools.skip_if_missing('peg_generator')
-with test_tools.imports_under_tool('peg_generator'):
+test_tools.skip_if_missing("peg_generator")
+with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar_parser import GeneratedParser as GrammarParser
-    from pegen.testutil import (
-        parse_string,
-        generate_parser,
-        make_parser
-    )
+    from pegen.testutil import parse_string, generate_parser, make_parser
     from pegen.grammar import GrammarVisitor, GrammarError, Grammar
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
@@ -38,7 +36,9 @@ class TestPegen(unittest.TestCase):
         # Check the str() and repr() of a few rules; AST nodes don't support ==.
         self.assertEqual(str(rules["start"]), "start: sum NEWLINE")
         self.assertEqual(str(rules["sum"]), "sum: term '+' term | term")
-        expected_repr = "Rule('term', None, Rhs([Alt([NamedItem(None, NameLeaf('NUMBER'))])]))"
+        expected_repr = (
+            "Rule('term', None, Rhs([Alt([NamedItem(None, NameLeaf('NUMBER'))])]))"
+        )
         self.assertEqual(repr(rules["term"]), expected_repr)
 
     def test_long_rule_str(self) -> None:
@@ -71,7 +71,7 @@ class TestPegen(unittest.TestCase):
         self.assertEqual(str(rules["sum"]), "sum: term '+' term | term")
         self.assertEqual(
             repr(rules["term"]),
-            "Rule('term', 'int', Rhs([Alt([NamedItem(None, NameLeaf('NUMBER'))])]))"
+            "Rule('term', 'int', Rhs([Alt([NamedItem(None, NameLeaf('NUMBER'))])]))",
         )
 
     def test_gather(self) -> None:
@@ -81,24 +81,31 @@ class TestPegen(unittest.TestCase):
         """
         rules = parse_string(grammar, GrammarParser).rules
         self.assertEqual(str(rules["start"]), "start: ','.thing+ NEWLINE")
-        self.assertTrue(repr(rules["start"]).startswith(
-            "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
-        ))
+        self.assertTrue(
+            repr(rules["start"]).startswith(
+                "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
+            )
+        )
         self.assertEqual(str(rules["thing"]), "thing: NUMBER")
         parser_class = make_parser(grammar)
         node = parse_string("42\n", parser_class)
-        assert node == [
-            [[TokenInfo(NUMBER, string="42", start=(1, 0), end=(1, 2), line="42\n")]],
-            TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="42\n"),
-        ]
         node = parse_string("1, 2\n", parser_class)
-        assert node == [
+        self.assertEqual(
+            node,
             [
-                [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2\n")],
-                [TokenInfo(NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2\n")],
+                [
+                    TokenInfo(
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2\n"
+                    ),
+                    TokenInfo(
+                        NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2\n"
+                    ),
+                ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 4), end=(1, 5), line="1, 2\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 4), end=(1, 5), line="1, 2\n"),
-        ]
+        )
 
     def test_expr_grammar(self) -> None:
         grammar = """
@@ -108,10 +115,13 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("42\n", parser_class)
-        self.assertEqual(node, [
-            [[TokenInfo(NUMBER, string="42", start=(1, 0), end=(1, 2), line="42\n")]],
-            TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="42\n"),
-        ])
+        self.assertEqual(
+            node,
+            [
+                TokenInfo(NUMBER, string="42", start=(1, 0), end=(1, 2), line="42\n"),
+                TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="42\n"),
+            ],
+        )
 
     def test_optional_operator(self) -> None:
         grammar = """
@@ -120,22 +130,39 @@ class TestPegen(unittest.TestCase):
         term: NUMBER
         """
         parser_class = make_parser(grammar)
-        node = parse_string("1+2\n", parser_class)
-        self.assertEqual(node, [
+        node = parse_string("1 + 2\n", parser_class)
+        self.assertEqual(
+            node,
             [
-                [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1+2\n")],
                 [
-                    TokenInfo(OP, string="+", start=(1, 1), end=(1, 2), line="1+2\n"),
-                    [TokenInfo(NUMBER, string="2", start=(1, 2), end=(1, 3), line="1+2\n")],
+                    TokenInfo(
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2\n"
+                    ),
+                    [
+                        TokenInfo(
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2\n"
+                        ),
+                        TokenInfo(
+                            NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2\n"
+                        ),
+                    ],
                 ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 3), end=(1, 4), line="1+2\n"),
-        ])
+        )
         node = parse_string("1\n", parser_class)
-        self.assertEqual(node, [
-            [[TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n")], None],
-            TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
-        ])
+        self.assertEqual(
+            node,
+            [
+                [
+                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                    None,
+                ],
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+            ],
+        )
 
     def test_optional_literal(self) -> None:
         grammar = """
@@ -145,18 +172,29 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1+\n", parser_class)
-        self.assertEqual(node, [
+        self.assertEqual(
+            node,
             [
-                [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1+\n")],
-                TokenInfo(OP, string="+", start=(1, 1), end=(1, 2), line="1+\n"),
+                [
+                    TokenInfo(
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1+\n"
+                    ),
+                    TokenInfo(OP, string="+", start=(1, 1), end=(1, 2), line="1+\n"),
+                ],
+                TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="1+\n"),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 2), end=(1, 3), line="1+\n"),
-        ])
+        )
         node = parse_string("1\n", parser_class)
-        self.assertEqual(node, [
-            [[TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n")], None],
-            TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
-        ])
+        self.assertEqual(
+            node,
+            [
+                [
+                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                    None,
+                ],
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+            ],
+        )
 
     def test_alt_optional_operator(self) -> None:
         grammar = """
@@ -166,21 +204,38 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1 + 2\n", parser_class)
-        self.assertEqual(node, [
+        self.assertEqual(
+            node,
             [
-                [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2\n")],
                 [
-                    TokenInfo(OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2\n"),
-                    [TokenInfo(NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2\n")],
+                    TokenInfo(
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2\n"
+                    ),
+                    [
+                        TokenInfo(
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2\n"
+                        ),
+                        TokenInfo(
+                            NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2\n"
+                        ),
+                    ],
                 ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 + 2\n"),
-        ])
+        )
         node = parse_string("1\n", parser_class)
-        self.assertEqual(node, [
-            [[TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n")], None],
-            TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
-        ])
+        self.assertEqual(
+            node,
+            [
+                [
+                    TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                    None,
+                ],
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+            ],
+        )
 
     def test_repeat_0_simple(self) -> None:
         grammar = """
@@ -189,20 +244,32 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1 2 3\n", parser_class)
-        self.assertEqual(node, [
-            [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3\n")],
+        self.assertEqual(
+            node,
             [
-                [[TokenInfo(NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3\n")]],
-                [[TokenInfo(NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3\n")]],
+                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3\n"),
+                [
+                    TokenInfo(
+                        NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3\n"
+                    ),
+                    TokenInfo(
+                        NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3\n"
+                    ),
+                ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3\n"),
-        ])
+        )
         node = parse_string("1\n", parser_class)
-        self.assertEqual(node, [
-            [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n")],
-            [],
-            TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
-        ])
+        self.assertEqual(
+            node,
+            [
+                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1\n"),
+                [],
+                TokenInfo(NEWLINE, string="\n", start=(1, 1), end=(1, 2), line="1\n"),
+            ],
+        )
 
     def test_repeat_0_complex(self) -> None:
         grammar = """
@@ -211,24 +278,43 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1 + 2 + 3\n", parser_class)
-        self.assertEqual(node, [
-            [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n")],
+        self.assertEqual(
+            node,
             [
+                TokenInfo(
+                    NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n"
+                ),
                 [
                     [
-                        TokenInfo(OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"),
-                        [TokenInfo(NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2 + 3\n")],
-                    ]
-                ],
-                [
+                        TokenInfo(
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"
+                        ),
+                        TokenInfo(
+                            NUMBER,
+                            string="2",
+                            start=(1, 4),
+                            end=(1, 5),
+                            line="1 + 2 + 3\n",
+                        ),
+                    ],
                     [
-                        TokenInfo(OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"),
-                        [TokenInfo(NUMBER, string="3", start=(1, 8), end=(1, 9), line="1 + 2 + 3\n")],
-                    ]
+                        TokenInfo(
+                            OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"
+                        ),
+                        TokenInfo(
+                            NUMBER,
+                            string="3",
+                            start=(1, 8),
+                            end=(1, 9),
+                            line="1 + 2 + 3\n",
+                        ),
+                    ],
                 ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"),
-        ])
+        )
 
     def test_repeat_1_simple(self) -> None:
         grammar = """
@@ -237,14 +323,23 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1 2 3\n", parser_class)
-        self.assertEqual(node, [
-            [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3\n")],
+        self.assertEqual(
+            node,
             [
-                [[TokenInfo(NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3\n")]],
-                [[TokenInfo(NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3\n")]],
+                TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 2 3\n"),
+                [
+                    TokenInfo(
+                        NUMBER, string="2", start=(1, 2), end=(1, 3), line="1 2 3\n"
+                    ),
+                    TokenInfo(
+                        NUMBER, string="3", start=(1, 4), end=(1, 5), line="1 2 3\n"
+                    ),
+                ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 5), end=(1, 6), line="1 2 3\n"),
-        ])
+        )
         with self.assertRaises(SyntaxError):
             parse_string("1\n", parser_class)
 
@@ -255,24 +350,43 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1 + 2 + 3\n", parser_class)
-        self.assertEqual(node, [
-            [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n")],
+        self.assertEqual(
+            node,
             [
+                TokenInfo(
+                    NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n"
+                ),
                 [
                     [
-                        TokenInfo(OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"),
-                        [TokenInfo(NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2 + 3\n")],
-                    ]
-                ],
-                [
+                        TokenInfo(
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"
+                        ),
+                        TokenInfo(
+                            NUMBER,
+                            string="2",
+                            start=(1, 4),
+                            end=(1, 5),
+                            line="1 + 2 + 3\n",
+                        ),
+                    ],
                     [
-                        TokenInfo(OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"),
-                        [TokenInfo(NUMBER, string="3", start=(1, 8), end=(1, 9), line="1 + 2 + 3\n")],
-                    ]
+                        TokenInfo(
+                            OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"
+                        ),
+                        TokenInfo(
+                            NUMBER,
+                            string="3",
+                            start=(1, 8),
+                            end=(1, 9),
+                            line="1 + 2 + 3\n",
+                        ),
+                    ],
                 ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"),
-        ])
+        )
         with self.assertRaises(SyntaxError):
             parse_string("1\n", parser_class)
 
@@ -283,14 +397,25 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("1, 2, 3\n", parser_class)
-        self.assertEqual(node, [
+        self.assertEqual(
+            node,
             [
-                [TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2, 3\n")],
-                [TokenInfo(NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2, 3\n")],
-                [TokenInfo(NUMBER, string="3", start=(1, 6), end=(1, 7), line="1, 2, 3\n")],
+                [
+                    TokenInfo(
+                        NUMBER, string="1", start=(1, 0), end=(1, 1), line="1, 2, 3\n"
+                    ),
+                    TokenInfo(
+                        NUMBER, string="2", start=(1, 3), end=(1, 4), line="1, 2, 3\n"
+                    ),
+                    TokenInfo(
+                        NUMBER, string="3", start=(1, 6), end=(1, 7), line="1, 2, 3\n"
+                    ),
+                ],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 7), end=(1, 8), line="1, 2, 3\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 7), end=(1, 8), line="1, 2, 3\n"),
-        ])
+        )
 
     def test_left_recursive(self) -> None:
         grammar_source = """
@@ -311,18 +436,41 @@ class TestPegen(unittest.TestCase):
         self.assertFalse(rules["bar"].left_recursive)
         self.assertFalse(rules["baz"].left_recursive)
         node = parse_string("1 + 2 + 3\n", parser_class)
-        self.assertEqual(node, [
+        self.assertEqual(
+            node,
             [
                 [
-                    [[TokenInfo(NUMBER, string="1", start=(1, 0), end=(1, 1), line="1 + 2 + 3\n")]],
-                    TokenInfo(OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"),
-                    [TokenInfo(NUMBER, string="2", start=(1, 4), end=(1, 5), line="1 + 2 + 3\n")],
+                    [
+                        TokenInfo(
+                            NUMBER,
+                            string="1",
+                            start=(1, 0),
+                            end=(1, 1),
+                            line="1 + 2 + 3\n",
+                        ),
+                        TokenInfo(
+                            OP, string="+", start=(1, 2), end=(1, 3), line="1 + 2 + 3\n"
+                        ),
+                        TokenInfo(
+                            NUMBER,
+                            string="2",
+                            start=(1, 4),
+                            end=(1, 5),
+                            line="1 + 2 + 3\n",
+                        ),
+                    ],
+                    TokenInfo(
+                        OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"
+                    ),
+                    TokenInfo(
+                        NUMBER, string="3", start=(1, 8), end=(1, 9), line="1 + 2 + 3\n"
+                    ),
                 ],
-                TokenInfo(OP, string="+", start=(1, 6), end=(1, 7), line="1 + 2 + 3\n"),
-                [TokenInfo(NUMBER, string="3", start=(1, 8), end=(1, 9), line="1 + 2 + 3\n")],
+                TokenInfo(
+                    NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"
+                ),
             ],
-            TokenInfo(NEWLINE, string="\n", start=(1, 9), end=(1, 10), line="1 + 2 + 3\n"),
-        ])
+        )
 
     def test_python_expr(self) -> None:
         grammar = """
@@ -392,31 +540,79 @@ class TestPegen(unittest.TestCase):
         exec(out.getvalue(), ns)
         parser_class: Type[Parser] = ns["GeneratedParser"]
         node = parse_string("D A C A E", parser_class)
-        self.assertEqual(node, [
+
+        self.assertEqual(
+            node,
             [
                 [
                     [
-                        [TokenInfo(type=NAME, string="D", start=(1, 0), end=(1, 1), line="D A C A E")],
-                        TokenInfo(type=NAME, string="A", start=(1, 2), end=(1, 3), line="D A C A E"),
+                        [
+                            TokenInfo(
+                                type=NAME,
+                                string="D",
+                                start=(1, 0),
+                                end=(1, 1),
+                                line="D A C A E",
+                            ),
+                            TokenInfo(
+                                type=NAME,
+                                string="A",
+                                start=(1, 2),
+                                end=(1, 3),
+                                line="D A C A E",
+                            ),
+                        ],
+                        TokenInfo(
+                            type=NAME,
+                            string="C",
+                            start=(1, 4),
+                            end=(1, 5),
+                            line="D A C A E",
+                        ),
                     ],
-                    TokenInfo(type=NAME, string="C", start=(1, 4), end=(1, 5), line="D A C A E"),
+                    TokenInfo(
+                        type=NAME,
+                        string="A",
+                        start=(1, 6),
+                        end=(1, 7),
+                        line="D A C A E",
+                    ),
                 ],
-                TokenInfo(type=NAME, string="A", start=(1, 6), end=(1, 7), line="D A C A E"),
+                TokenInfo(
+                    type=NAME, string="E", start=(1, 8), end=(1, 9), line="D A C A E"
+                ),
             ],
-            TokenInfo(type=NAME, string="E", start=(1, 8), end=(1, 9), line="D A C A E"),
-        ])
+        )
         node = parse_string("B C A E", parser_class)
-        self.assertIsNotNone(node)
-        self.assertEqual(node, [
+        self.assertEqual(
+            node,
             [
                 [
-                    [TokenInfo(type=NAME, string="B", start=(1, 0), end=(1, 1), line="B C A E")],
-                    TokenInfo(type=NAME, string="C", start=(1, 2), end=(1, 3), line="B C A E"),
+                    [
+                        TokenInfo(
+                            type=NAME,
+                            string="B",
+                            start=(1, 0),
+                            end=(1, 1),
+                            line="B C A E",
+                        ),
+                        TokenInfo(
+                            type=NAME,
+                            string="C",
+                            start=(1, 2),
+                            end=(1, 3),
+                            line="B C A E",
+                        ),
+                    ],
+                    TokenInfo(
+                        type=NAME, string="A", start=(1, 4), end=(1, 5), line="B C A E"
+                    ),
                 ],
-                TokenInfo(type=NAME, string="A", start=(1, 4), end=(1, 5), line="B C A E"),
+                TokenInfo(
+                    type=NAME, string="E", start=(1, 6), end=(1, 7), line="B C A E"
+                ),
             ],
-            TokenInfo(type=NAME, string="E", start=(1, 6), end=(1, 7), line="B C A E"),
-        ])
+        )
 
     def test_nasty_mutually_left_recursive(self) -> None:
         # This grammar does not recognize 'x - + =', much to my chagrin.
@@ -454,43 +650,44 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("foo = 12 + 12 .", parser_class)
-        self.assertEqual(node, [
+        self.assertEqual(
+            node,
             [
+                TokenInfo(
+                    NAME, string="foo", start=(1, 0), end=(1, 3), line="foo = 12 + 12 ."
+                ),
+                TokenInfo(
+                    OP, string="=", start=(1, 4), end=(1, 5), line="foo = 12 + 12 ."
+                ),
                 [
-                    [TokenInfo(NAME, string="foo", start=(1, 0), end=(1, 3), line="foo = 12 + 12 .")],
-                    TokenInfo(OP, string="=", start=(1, 4), end=(1, 5), line="foo = 12 + 12 ."),
+                    TokenInfo(
+                        NUMBER,
+                        string="12",
+                        start=(1, 6),
+                        end=(1, 8),
+                        line="foo = 12 + 12 .",
+                    ),
                     [
                         [
                             TokenInfo(
-                                NUMBER, string="12", start=(1, 6), end=(1, 8), line="foo = 12 + 12 ."
-                            )
-                        ],
-                        [
-                            [
-                                [
-                                    TokenInfo(
-                                        OP,
-                                        string="+",
-                                        start=(1, 9),
-                                        end=(1, 10),
-                                        line="foo = 12 + 12 .",
-                                    ),
-                                    [
-                                        TokenInfo(
-                                            NUMBER,
-                                            string="12",
-                                            start=(1, 11),
-                                            end=(1, 13),
-                                            line="foo = 12 + 12 .",
-                                        )
-                                    ],
-                                ]
-                            ]
-                        ],
+                                OP,
+                                string="+",
+                                start=(1, 9),
+                                end=(1, 10),
+                                line="foo = 12 + 12 .",
+                            ),
+                            TokenInfo(
+                                NUMBER,
+                                string="12",
+                                start=(1, 11),
+                                end=(1, 13),
+                                line="foo = 12 + 12 .",
+                            ),
+                        ]
                     ],
-                ]
-            ]
-        ])
+                ],
+            ],
+        )
 
     def test_named_lookahead_error(self) -> None:
         grammar = """
@@ -533,11 +730,14 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("(1)", parser_class)
-        self.assertEqual(node, [
-            TokenInfo(OP, string="(", start=(1, 0), end=(1, 1), line="(1)"),
-            [TokenInfo(NUMBER, string="1", start=(1, 1), end=(1, 2), line="(1)")],
-            TokenInfo(OP, string=")", start=(1, 2), end=(1, 3), line="(1)"),
-        ])
+        self.assertEqual(
+            node,
+            [
+                TokenInfo(OP, string="(", start=(1, 0), end=(1, 1), line="(1)"),
+                TokenInfo(NUMBER, string="1", start=(1, 1), end=(1, 2), line="(1)"),
+                TokenInfo(OP, string=")", start=(1, 2), end=(1, 3), line="(1)"),
+            ],
+        )
 
     def test_dangling_reference(self) -> None:
         grammar = """
@@ -588,6 +788,124 @@ class TestPegen(unittest.TestCase):
         """
         with self.assertRaisesRegex(GrammarError, "cannot start with underscore: '_x'"):
             parser_class = make_parser(grammar)
+
+    def test_soft_keyword(self) -> None:
+        grammar = """
+        start:
+            | "number" n=NUMBER { eval(n.string) }
+            | "string" n=STRING { n.string }
+            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { f"{l.string} = {n.string}"}
+        """
+        parser_class = make_parser(grammar)
+        self.assertEqual(parse_string("number 1", parser_class, verbose=True), 1)
+        self.assertEqual(parse_string("string 'b'", parser_class, verbose=True), "'b'")
+        self.assertEqual(
+            parse_string("number test 1", parser_class, verbose=True), "test = 1"
+        )
+        assert (
+            parse_string("string test 'b'", parser_class, verbose=True) == "test = 'b'"
+        )
+        with self.assertRaises(SyntaxError):
+            parse_string("test 1", parser_class, verbose=True)
+
+    def test_forced(self) -> None:
+        grammar = """
+        start: NAME &&':' | NAME
+        """
+        parser_class = make_parser(grammar)
+        self.assertTrue(parse_string("number :", parser_class, verbose=True))
+        with self.assertRaises(SyntaxError) as e:
+            parse_string("a", parser_class, verbose=True)
+
+        self.assertIn("expected ':'", str(e.exception))
+
+    def test_forced_with_group(self) -> None:
+        grammar = """
+        start: NAME &&(':' | ';') | NAME
+        """
+        parser_class = make_parser(grammar)
+        self.assertTrue(parse_string("number :", parser_class, verbose=True))
+        self.assertTrue(parse_string("number ;", parser_class, verbose=True))
+        with self.assertRaises(SyntaxError) as e:
+            parse_string("a", parser_class, verbose=True)
+        self.assertIn("expected (':' | ';')", e.exception.args[0])
+
+    def test_unreachable_explicit(self) -> None:
+        source = """
+        start: NAME { UNREACHABLE }
+        """
+        grammar = parse_string(source, GrammarParser)
+        out = io.StringIO()
+        genr = PythonParserGenerator(
+            grammar, out, unreachable_formatting="This is a test"
+        )
+        genr.generate("<string>")
+        self.assertIn("This is a test", out.getvalue())
+
+    def test_unreachable_implicit1(self) -> None:
+        source = """
+        start: NAME | invalid_input
+        invalid_input: NUMBER { None }
+        """
+        grammar = parse_string(source, GrammarParser)
+        out = io.StringIO()
+        genr = PythonParserGenerator(
+            grammar, out, unreachable_formatting="This is a test"
+        )
+        genr.generate("<string>")
+        self.assertIn("This is a test", out.getvalue())
+
+    def test_unreachable_implicit2(self) -> None:
+        source = """
+        start: NAME | '(' invalid_input ')'
+        invalid_input: NUMBER { None }
+        """
+        grammar = parse_string(source, GrammarParser)
+        out = io.StringIO()
+        genr = PythonParserGenerator(
+            grammar, out, unreachable_formatting="This is a test"
+        )
+        genr.generate("<string>")
+        self.assertIn("This is a test", out.getvalue())
+
+    def test_unreachable_implicit3(self) -> None:
+        source = """
+        start: NAME | invalid_input { None }
+        invalid_input: NUMBER
+        """
+        grammar = parse_string(source, GrammarParser)
+        out = io.StringIO()
+        genr = PythonParserGenerator(
+            grammar, out, unreachable_formatting="This is a test"
+        )
+        genr.generate("<string>")
+        self.assertNotIn("This is a test", out.getvalue())
+
+    def test_locations_in_alt_action_and_group(self) -> None:
+        grammar = """
+        start: t=term NEWLINE? $ { ast.Expression(t, LOCATIONS) }
+        term:
+            | l=term '*' r=factor { ast.BinOp(l, ast.Mult(), r, LOCATIONS) }
+            | l=term '/' r=factor { ast.BinOp(l, ast.Div(), r, LOCATIONS) }
+            | factor
+        factor:
+            | (
+                n=NAME { ast.Name(id=n.string, ctx=ast.Load(), LOCATIONS) } |
+                n=NUMBER { ast.Constant(value=ast.literal_eval(n.string), LOCATIONS) }
+            )
+        """
+        parser_class = make_parser(grammar)
+        source = "2*3\n"
+        o = ast.dump(parse_string(source, parser_class).body, include_attributes=True)
+        p = ast.dump(ast.parse(source).body[0].value, include_attributes=True).replace(
+            " kind=None,", ""
+        )
+        diff = "\n".join(
+            difflib.unified_diff(
+                o.split("\n"), p.split("\n"), "cpython", "python-pegen"
+            )
+        )
+        self.assertFalse(diff)
 
 
 class TestGrammarVisitor:
