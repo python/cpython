@@ -2,17 +2,14 @@
 import unittest
 from collections import Counter
 from test import support
-from test.support import import_helper
 try:
-    from sys import _clear_type_cache
+    from sys import _clear_type_cache, _get_type_version_tag
 except ImportError:
     _clear_type_cache = None
 
-# Skip this test if the _testcapi module isn't available.
-type_get_version = import_helper.import_module('_testcapi').type_get_version
-
+msg = "requires sys._clear_type_cache and _get_type_version_tag"
 @support.cpython_only
-@unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
+@unittest.skipIf(_clear_type_cache is None, msg)
 class TypeCacheTests(unittest.TestCase):
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
@@ -22,11 +19,11 @@ class TypeCacheTests(unittest.TestCase):
         Y = type('Y', (), {})
         Y.x = 1
         Y.x  # Force a _PyType_Lookup, populating version tag
-        y_ver = type_get_version(Y)
+        y_ver = _get_type_version_tag (Y)
         # Overflow, or not enough left to conduct the test.
         if y_ver == 0 or y_ver > 0xFFFFF000:
             self.skipTest("Out of type version tags")
-        # Note: try to avoid any method lookups within this loop,
+        # Note: try to avoid any method lookups within this loop.
         # It will affect global version tag.
         all_version_tags = []
         append_result = all_version_tags.append
@@ -36,7 +33,7 @@ class TypeCacheTests(unittest.TestCase):
             X = type('Y', (), {})
             X.x = 1
             X.x
-            tp_version_tag_after = type_get_version(X)
+            tp_version_tag_after = _get_type_version_tag(X)
             assertNotEqual(tp_version_tag_after, 0, msg="Version overflowed")
             append_result(tp_version_tag_after)
         tp_version_tag, count = Counter(all_version_tags).most_common(1)[0]
