@@ -5575,6 +5575,23 @@ test_fatal_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+// type->tp_version_tag
+static PyObject *
+type_get_version(PyObject *self, PyObject *type)
+{
+    if (!PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return NULL;
+    }
+    PyObject *res = PyLong_FromUnsignedLong(
+        ((PyTypeObject *)type)->tp_version_tag);
+    if (res == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    return res;
+}
+
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -5854,6 +5871,7 @@ static PyMethodDef TestMethods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
+    {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
     {NULL, NULL} /* sentinel */
 };
 
