@@ -1,6 +1,5 @@
 """ Tests for the internal type cache in CPython. """
 import unittest
-from collections import Counter
 from test import support
 from test.support import import_helper
 try:
@@ -10,6 +9,7 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 type_get_version = import_helper.import_module('_testcapi').type_get_version
+
 
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
@@ -39,9 +39,8 @@ class TypeCacheTests(unittest.TestCase):
             tp_version_tag_after = type_get_version(X)
             assertNotEqual(tp_version_tag_after, 0, msg="Version overflowed")
             append_result(tp_version_tag_after)
-        tp_version_tag, count = Counter(all_version_tags).most_common(1)[0]
-        self.assertEqual(count, 1,
-                         msg=f"tp_version_tag {tp_version_tag} was not unique")
+        self.assertEqual(len(set(all_version_tags)), 30,
+                         msg=f"{all_version_tags} contains non-unique versions")
 
 
 if __name__ == "__main__":

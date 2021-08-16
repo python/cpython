@@ -5584,7 +5584,7 @@ type_get_version(PyObject *self, PyObject *type)
         return NULL;
     }
     PyObject *res = PyLong_FromUnsignedLong(
-        (unsigned long)((PyTypeObject *)type)->tp_version_tag);
+        ((PyTypeObject *)type)->tp_version_tag);
     if (res == NULL) {
         assert(PyErr_Occurred());
         return NULL;
