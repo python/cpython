@@ -11,9 +11,8 @@ except ImportError:
 # Skip this test if the _testcapi module isn't available.
 type_get_version = import_helper.import_module('_testcapi').type_get_version
 
-msg = "requires sys._clear_type_cache and sys._get_type_version_tag"
 @support.cpython_only
-@unittest.skipIf(_clear_type_cache is None, msg)
+@unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
