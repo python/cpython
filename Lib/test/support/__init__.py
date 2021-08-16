@@ -13,6 +13,7 @@ import sysconfig
 import time
 import types
 import unittest
+import warnings
 
 from .testresult import get_test_runner
 
@@ -2040,3 +2041,49 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
         qualname = f"{name}"
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+
+
+@contextlib.contextmanager
+def infinite_recursion(max_depth=75):
+    """Set a lower limit for tests that interact with infinite recursions
+    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
+    debug windows builds, due to not enough functions being inlined the
+    stack size might not handle the default recursion limit (1000). See
+    bpo-11105 for details."""
+
+    original_depth = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(max_depth)
+        yield
+    finally:
+        sys.setrecursionlimit(original_depth)
+
+
+def ignore_deprecations_from(module: str, *, like: str) -> object:
+    token = object()
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=module,
+        message=like + fr"(?#support{id(token)})",
+    )
+    return token
+
+
+def clear_ignored_deprecations(*tokens: object) -> None:
+    if not tokens:
+        raise ValueError("Provide token or tokens returned by ignore_deprecations_from")
+
+    new_filters = []
+    for action, message, category, module, lineno in warnings.filters:
+        if action == "ignore" and category is DeprecationWarning:
+            if isinstance(message, re.Pattern):
+                message = message.pattern
+            if tokens:
+                endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
+            if message.endswith(endswith):
+                continue
+        new_filters.append((action, message, category, module, lineno))
+    if warnings.filters != new_filters:
+        warnings.filters[:] = new_filters
+        warnings._filters_mutated()
