@@ -456,14 +456,15 @@ PyAPI_FUNC(int) _PyObject_CheckConsistency(
     int check_content);
 
 
-#if 1
-/* do nothing trashcan macros, for backwards compatibility */
+/* Backwards compatibility macros.  The trashcan mechanism is now integrated
+ * with _Py_Dealloc and so these do nothing.  The assert() is present to handle
+ * the case that a 'goto' statement precedes Py_TRASHCAN_END.  */
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
     do {
 #define Py_TRASHCAN_END \
     assert(1); \
     } while (0);
-#endif
+
 
 /* For backwards compatibility, these macros enable the trashcan
  * unconditionally */

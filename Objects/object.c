@@ -2095,6 +2095,61 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+void _Py_NO_RETURN
+_PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
+                       const char *file, int line, const char *function)
+{
+    fprintf(stderr, "%s:%d: ", file, line);
+    if (function) {
+        fprintf(stderr, "%s: ", function);
+    }
+    fflush(stderr);
+
+    if (expr) {
+        fprintf(stderr, "Assertion \"%s\" failed", expr);
+    }
+    else {
+        fprintf(stderr, "Assertion failed");
+    }
+    fflush(stderr);
+
+    if (msg) {
+        fprintf(stderr, ": %s", msg);
+    }
+    fprintf(stderr, "\n");
+    fflush(stderr);
+
+    if (_PyObject_IsFreed(obj)) {
+        /* It seems like the object memory has been freed:
+           don't access it to prevent a segmentation fault. */
+        fprintf(stderr, "<object at %p is freed>\n", obj);
+        fflush(stderr);
+    }
+    else {
+        /* Display the traceback where the object has been allocated.
+           Do it before dumping repr(obj), since repr() is more likely
+           to crash than dumping the traceback. */
+        void *ptr;
+        PyTypeObject *type = Py_TYPE(obj);
+        if (_PyType_IS_GC(type)) {
+            ptr = (void *)((char *)obj - sizeof(PyGC_Head));
+        }
+        else {
+            ptr = (void *)obj;
+        }
+        _PyMem_DumpTraceback(fileno(stderr), ptr);
+
+        /* This might succeed or fail, but we're about to abort, so at least
+           try to provide any extra info we can: */
+        _PyObject_Dump(obj);
+
+        fprintf(stderr, "\n");
+        fflush(stderr);
+    }
+
+    Py_FatalError("_PyObject_AssertFailed");
+}
+
 /* Trashcan mechanism, thanks to Christian Tismer.
 
 When deallocating a container object, it's possible to trigger an unbounded
@@ -2117,7 +2172,6 @@ may have been added to the list of deferred deallocations.  In effect, a
 chain of N deallocations is broken into (N-1)/(_PyTrash_UNWIND_LEVEL-1) pieces,
 with the call stack never exceeding a depth of _PyTrash_UNWIND_LEVEL.
 */
-
 
 #define _PyTrash_UNWIND_LEVEL 50
 
@@ -2180,81 +2234,6 @@ _PyTrash_thread_destroy_chain(void)
     --tstate->trash_delete_nesting;
 }
 
-// FIXME: next three functions are unused, might need for a stable ABI?
-
-int
-_PyTrash_begin(PyThreadState *tstate, PyObject *op)
-{
-    return 0;
-}
-
-
-void
-_PyTrash_end(PyThreadState *tstate)
-{
-}
-
-int
-_PyTrash_cond(PyObject *op, destructor dealloc)
-{
-    return 0;
-}
-
-void _Py_NO_RETURN
-_PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
-                       const char *file, int line, const char *function)
-{
-    fprintf(stderr, "%s:%d: ", file, line);
-    if (function) {
-        fprintf(stderr, "%s: ", function);
-    }
-    fflush(stderr);
-
-    if (expr) {
-        fprintf(stderr, "Assertion \"%s\" failed", expr);
-    }
-    else {
-        fprintf(stderr, "Assertion failed");
-    }
-    fflush(stderr);
-
-    if (msg) {
-        fprintf(stderr, ": %s", msg);
-    }
-    fprintf(stderr, "\n");
-    fflush(stderr);
-
-    if (_PyObject_IsFreed(obj)) {
-        /* It seems like the object memory has been freed:
-           don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<object at %p is freed>\n", obj);
-        fflush(stderr);
-    }
-    else {
-        /* Display the traceback where the object has been allocated.
-           Do it before dumping repr(obj), since repr() is more likely
-           to crash than dumping the traceback. */
-        void *ptr;
-        PyTypeObject *type = Py_TYPE(obj);
-        if (_PyType_IS_GC(type)) {
-            ptr = (void *)((char *)obj - sizeof(PyGC_Head));
-        }
-        else {
-            ptr = (void *)obj;
-        }
-        _PyMem_DumpTraceback(fileno(stderr), ptr);
-
-        /* This might succeed or fail, but we're about to abort, so at least
-           try to provide any extra info we can: */
-        _PyObject_Dump(obj);
-
-        fprintf(stderr, "\n");
-        fflush(stderr);
-    }
-
-    Py_FatalError("_PyObject_AssertFailed");
-}
-
 static void
 dealloc_gc(PyObject *op)
 {
@@ -2287,16 +2266,17 @@ dealloc_simple(PyObject *op)
     (*dealloc)(op);
 }
 
+/* Called by Py_DECREF() when refcount goes to zero. */
 void
 _Py_Dealloc(PyObject *op)
 {
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+    PyTypeObject *type = Py_TYPE(op);
     // Note: using _PyType_IS_GC() here is probably not safe.  A 3rd party
     // extension type might have a tp_is_gc() that returns false for heap
-    // allocated instances.  It doesn't seem likely but it's possible.
-    PyTypeObject *type = Py_TYPE(op);
+    // allocated instances.  It doesn't seem likely but seems possible.
     if (!_PyType_IS_GC(type)) {
         dealloc_simple(op);
     }
