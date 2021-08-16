@@ -1955,17 +1955,14 @@ static PyObject *
 sys__get_type_version_tag(PyObject *module, PyObject *type)
 /*[clinic end generated code: output=bdcfab8b295e0a76 input=6016e5a02b3c3675]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_EnsureTstateNotNULL(tstate);
-
     if (!PyType_Check(type)) {
-        _PyErr_SetString(tstate, PyExc_TypeError, "argument must be a type");
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
         return NULL;
     }
     PyObject *res = PyLong_FromUnsignedLong(
         (unsigned long)((PyTypeObject *)type)->tp_version_tag);
     if (res == NULL) {
-        assert(_PyErr_Occurred(tstate));
+        assert(PyErr_Occurred());
         return NULL;
     }
     return res;
