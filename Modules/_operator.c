@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "structmember.h"
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -1478,14 +1479,33 @@ typedef struct {
     PyObject *name;
     PyObject *args;
     PyObject *kwds;
+    PyObject **vectorcall_args;  /* Borrowed references */
+    PyObject *vectorcall_kwnames;
+    vectorcallfunc vectorcall;
 } methodcallerobject;
+
+static PyObject *
+methodcaller_vectorcall(
+        methodcallerobject *mc, PyObject *const *args, size_t nargsf, PyObject* kwnames)
+{
+    if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
+        || !_PyArg_NoKwnames("methodcaller", kwnames)) {
+        return NULL;
+    }
+    mc->vectorcall_args[0] = args[0];
+    return PyObject_VectorcallMethod(
+            mc->name, mc->vectorcall_args,
+            (1 + PyTuple_GET_SIZE(mc->args)) | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            mc->vectorcall_kwnames);
+}
 
 /* AC 3.5: variable number of arguments, not currently support by AC */
 static PyObject *
 methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     methodcallerobject *mc;
-    PyObject *name;
+    PyObject *name, *key, *value;
+    Py_ssize_t nargs, i, ppos;
 
     if (PyTuple_GET_SIZE(args) < 1) {
         PyErr_SetString(PyExc_TypeError, "methodcaller needs at least "
@@ -1521,6 +1541,32 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    nargs = PyTuple_GET_SIZE(args) - 1;
+    mc->vectorcall_args = PyMem_Calloc(
+            1 + nargs + (kwds ? PyDict_Size(kwds) : 0),
+            sizeof(PyObject *));
+    if (!mc->vectorcall_args) {
+        return PyErr_NoMemory();
+    }
+    /* The first item of vectorcall_args will be filled with obj. */
+    memcpy(mc->vectorcall_args + 1, PySequence_Fast_ITEMS(mc->args),
+           nargs * sizeof(PyObject *));
+    if (kwds) {
+        mc->vectorcall_kwnames = PySequence_Tuple(kwds);
+        if (!mc->vectorcall_kwnames) {
+            return NULL;
+        }
+        i = ppos = 0;
+        while (PyDict_Next(kwds, &ppos, &key, &value)) {
+            mc->vectorcall_args[1 + nargs + i] = value;
+            ++i;
+        }
+    }
+    else {
+        mc->vectorcall_kwnames = NULL;
+    }
+    mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
+
     PyObject_GC_Track(mc);
     return (PyObject *)mc;
 }
@@ -1531,6 +1577,7 @@ methodcaller_clear(methodcallerobject *mc)
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->args);
     Py_CLEAR(mc->kwds);
+    Py_CLEAR(mc->vectorcall_kwnames);
     return 0;
 }
 
@@ -1540,6 +1587,7 @@ methodcaller_dealloc(methodcallerobject *mc)
     PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
     (void)methodcaller_clear(mc);
+    PyMem_Free(mc->vectorcall_args);
     tp->tp_free(mc);
     Py_DECREF(tp);
 }
@@ -1696,6 +1744,12 @@ static PyMethodDef methodcaller_methods[] = {
      reduce_doc},
     {NULL}
 };
+
+static PyMemberDef methodcaller_members[] = {
+    {"__vectorcalloffset__", T_PYSSIZET, offsetof(methodcallerobject, vectorcall), READONLY},
+    {NULL}
+};
+
 PyDoc_STRVAR(methodcaller_doc,
 "methodcaller(name, ...) --> methodcaller object\n\
 \n\
@@ -1711,6 +1765,7 @@ static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_traverse, methodcaller_traverse},
     {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
+    {Py_tp_members, methodcaller_members},
     {Py_tp_new, methodcaller_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, methodcaller_repr},
@@ -1722,7 +1777,7 @@ static PyType_Spec methodcaller_type_spec = {
     .basicsize = sizeof(methodcallerobject),
     .itemsize = 0,
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = methodcaller_type_slots,
 };
 
