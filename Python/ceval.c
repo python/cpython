@@ -1959,28 +1959,127 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_ADD): {
+            PREDICTED(BINARY_ADD);
+            STAT_INC(BINARY_ADD, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *sum;
-            /* NOTE(vstinner): Please don't try to micro-optimize int+int on
-               CPython using bytecode, it is simply worthless.
-               See http://bugs.python.org/issue21955 and
-               http://bugs.python.org/issue10044 for the discussion. In short,
-               no patch shown any impact on a realistic benchmark, only a minor
-               speedup on microbenchmarks. */
-            if (PyUnicode_CheckExact(left) &&
-                     PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
-                /* unicode_concatenate consumed the ref to left */
+            PyObject *sum = PyNumber_Add(left, right);
+            SET_TOP(sum);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_ADAPTIVE): {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_BinaryAdd(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
             }
             else {
-                sum = PyNumber_Add(left, right);
-                Py_DECREF(left);
+                STAT_INC(BINARY_ADD, deferred);
+                // oparg is the adaptive (cache counter*2 | inplace_bit)
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(BINARY_ADD, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_ADD);
             }
+        }
+
+        TARGET(BINARY_ADD_UNICODE_INPLACE_FAST): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_ADD);
+            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
+            int next_oparg = _Py_OPARG(*next_instr);
+            assert(_Py_OPCODE(*next_instr) == STORE_FAST);
+            /* In the common case, there are 2 references to the value
+            * stored in 'variable' when the += is performed: one on the
+            * value stack (in 'v') and one still stored in the
+            * 'variable'.  We try to delete the variable now to reduce
+            * the refcnt to 1.
+            */
+            PyObject *var = GETLOCAL(next_oparg);
+            DEOPT_IF(var != left, BINARY_ADD);
+            GETLOCAL(next_oparg) = NULL;
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            PyUnicode_Append(&TOP(), right);
             Py_DECREF(right);
-            SET_TOP(sum);
-            if (sum == NULL)
+            if (TOP() == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_UNICODE_INPLACE_DEREF): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_ADD);
+            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
+            int next_oparg = _Py_OPARG(*next_instr);
+            assert(_Py_OPCODE(*next_instr) == STORE_DEREF);
+            /* In the common case, there are 2 references to the value
+            * stored in 'variable' when the += is performed: one on the
+            * value stack (in 'v') and one still stored in the
+            * 'variable'.  We try to delete the variable now to reduce
+            * the refcnt to 1.
+            */
+            PyObject *cell = GETLOCAL(next_oparg);
+            DEOPT_IF(PyCell_GET(cell) != left, BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            PyCell_SET(cell, NULL);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            PyUnicode_Append(&TOP(), right);
+            Py_DECREF(right);
+            if (TOP() == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_FLOAT): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            double dsum = ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *sum = PyFloat_FromDouble(dsum);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_INT): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            PyObject *sum = PyLong_Type.tp_as_number->nb_add(left, right);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -4649,6 +4748,7 @@ MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
+MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 
 binary_subscr_dict_error:
         {

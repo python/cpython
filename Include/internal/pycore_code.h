@@ -300,6 +300,7 @@ int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name
 int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
 #define PRINT_SPECIALIZATION_STATS 0
 #define PRINT_SPECIALIZATION_STATS_DETAILED 0
