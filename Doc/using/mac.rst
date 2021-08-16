@@ -10,7 +10,7 @@ Using Python on a Macintosh
 
 Python on a Macintosh running Mac OS X is in principle very similar to Python on
 any other Unix platform, but there are a number of additional features such as
-the IDE and the Package Manager that are worth pointing out.
+the IDLE and the Package Manager that are worth pointing out.
 
 .. _getting-osx:
 
@@ -55,8 +55,8 @@ How to run a Python script
 --------------------------
 
 Your best way to get started with Python on Mac OS X is through the IDLE
-integrated development environment, see section :ref:`ide` and use the Help menu
-when the IDE is running.
+integrated development environment, see section :ref:`idle` and use the Help menu
+when the IDLE is running.
 
 If you want to run Python scripts from the Terminal window command line or from
 the Finder you first need an editor to create your script. Mac OS X comes with a
