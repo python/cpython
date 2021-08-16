@@ -857,10 +857,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
-    // Technically this is fine for bound method calls, but slightly slower at
-    // runtime to get dict. TODO: profile pyperformance and see if it's worth it
-    // to slightly slow down the common case, so that we can specialize this
-    // uncommon one.
+    // Technically this is fine for bound method calls, but it's uncommon and
+    // slightly slower at runtime to get dict.
     if (owner_cls->tp_dictoffset < 0) {
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
         goto fail;
@@ -868,7 +866,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
     owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
-    Py_XINCREF(owner_dict); // make sure dict doesn't disappear halfway
+    // Make sure dict doesn't get GC-ed halfway.
+    Py_XINCREF(owner_dict);
     // Check for classmethods.
     int owner_is_class = PyType_Check(owner);
     owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
