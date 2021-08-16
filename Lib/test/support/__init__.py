@@ -2043,22 +2043,6 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
 
-@contextlib.contextmanager
-def infinite_recursion(max_depth=75):
-    """Set a lower limit for tests that interact with infinite recursions
-    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
-    debug windows builds, due to not enough functions being inlined the
-    stack size might not handle the default recursion limit (1000). See
-    bpo-11105 for details."""
-
-    original_depth = sys.getrecursionlimit()
-    try:
-        sys.setrecursionlimit(max_depth)
-        yield
-    finally:
-        sys.setrecursionlimit(original_depth)
-
-
 def ignore_deprecations_from(module: str, *, like: str) -> object:
     token = object()
     warnings.filterwarnings(
