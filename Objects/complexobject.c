@@ -507,7 +507,6 @@ static PyObject *
 complex_pow(PyObject *v, PyObject *w, PyObject *z)
 {
     Py_complex p;
-    Py_complex exponent;
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
@@ -517,13 +516,13 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     errno = 0;
-    exponent = b;
-    if (exponent.imag == 0.0 && exponent.real == floor(exponent.real)
-                             && fabs(exponent.real) <= 100.0) {
-        p = c_powi(a, (long)exponent.real);
+    // Check whether the exponent has a small integer value, and if so use
+    // a faster and more accurate algorithm.
+    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+        p = c_powi(a, (long)b.real);
     }
     else {
-        p = _Py_c_pow(a, exponent);
+        p = _Py_c_pow(a, b);
     }
 
     Py_ADJUST_ERANGE2(p.real, p.imag);
