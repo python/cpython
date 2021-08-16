@@ -32,7 +32,7 @@
 #ifdef MS_WINDOWS
 #  undef BYTE
 #  include "windows.h"
-#  define getpid GetCurrentProcessId
+
    extern PyTypeObject PyWindowsConsoleIO_Type;
 #  define PyWindowsConsoleIO_Check(op) \
        (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
@@ -1736,7 +1736,7 @@ Py_FinalizeEx(void)
     int show_ref_count = tstate->interp->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    wchar_t *python_dump_dir = tstate->interp->config.python_dump_dir;
+    wchar_t *python_dump_file = tstate->interp->config.python_dump_file;
     int dump_refs = tstate->interp->config.dump_refs;
 #endif
 #ifdef WITH_PYMALLOC
@@ -1838,10 +1838,8 @@ Py_FinalizeEx(void)
      */
 
     FILE *fp = stderr;
-    if (python_dump_dir != NULL) {
-        char dump_file_name[255];
-        sprintf(dump_file_name, "%S/python-tracerefs-%d.txt", python_dump_dir, getpid());
-        fp = fopen(dump_file_name,"w");
+    if (python_dump_file != NULL) {
+        fp = _Py_wfopen(python_dump_file, L"w");
     }
     if (dump_refs) {
         _Py_PrintReferences(fp);
