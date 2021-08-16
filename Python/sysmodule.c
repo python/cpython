@@ -1962,7 +1962,8 @@ sys__get_type_version_tag(PyObject *module, PyObject *type)
         _PyErr_SetString(tstate, PyExc_TypeError, "argument must be a type");
         return NULL;
     }
-    PyObject *res = PyLong_FromUnsignedLong(((PyTypeObject *)type)->tp_version_tag);
+    PyObject *res = PyLong_FromUnsignedLong(
+        (unsigned long)((PyTypeObject *)type)->tp_version_tag);
     if (res == NULL) {
         assert(_PyErr_Occurred(tstate));
         return NULL;
