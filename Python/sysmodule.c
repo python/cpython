@@ -1941,34 +1941,6 @@ sys__clear_type_cache_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
-#ifdef Py_DEBUG
-/*[clinic input]
-sys._get_type_version_tag
-
-    type: object
-    /
-
-For internal use only: get the `tp_version_tag` of *type*.
-[clinic start generated code]*/
-
-static PyObject *
-sys__get_type_version_tag(PyObject *module, PyObject *type)
-/*[clinic end generated code: output=bdcfab8b295e0a76 input=6016e5a02b3c3675]*/
-{
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    PyObject *res = PyLong_FromUnsignedLong(
-        (unsigned long)((PyTypeObject *)type)->tp_version_tag);
-    if (res == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    return res;
-}
-#endif /* Py_DEBUG */
-
 /*[clinic input]
 sys.is_finalizing
 
@@ -2004,7 +1976,6 @@ static PyMethodDef sys_methods[] = {
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS__CLEAR_TYPE_CACHE_METHODDEF
-    SYS__GET_TYPE_VERSION_TAG_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS__CURRENT_EXCEPTIONS_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF

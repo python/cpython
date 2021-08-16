@@ -925,19 +925,6 @@ sys__clear_type_cache(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__clear_type_cache_impl(module);
 }
 
-#if defined(Py_DEBUG)
-
-PyDoc_STRVAR(sys__get_type_version_tag__doc__,
-"_get_type_version_tag($module, type, /)\n"
-"--\n"
-"\n"
-"For internal use only: get the `tp_version_tag` of *type*.");
-
-#define SYS__GET_TYPE_VERSION_TAG_METHODDEF    \
-    {"_get_type_version_tag", (PyCFunction)sys__get_type_version_tag, METH_O, sys__get_type_version_tag__doc__},
-
-#endif /* defined(Py_DEBUG) */
-
 PyDoc_STRVAR(sys_is_finalizing__doc__,
 "is_finalizing($module, /)\n"
 "--\n"
@@ -1002,11 +989,7 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
-#ifndef SYS__GET_TYPE_VERSION_TAG_METHODDEF
-    #define SYS__GET_TYPE_VERSION_TAG_METHODDEF
-#endif /* !defined(SYS__GET_TYPE_VERSION_TAG_METHODDEF) */
-
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=8e0a9df4ee406dcb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=855fc93b2347710b input=a9049054013a1b77]*/
