@@ -233,14 +233,12 @@ get_type_cache(void)
 
 
 static void
-type_cache_clear(struct type_cache *cache)
+type_cache_clear(struct type_cache *cache, PyObject *value)
 {
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
         entry->version = 0;
-        // Set to None, rather than NULL, so _PyType_Lookup() can
-        // use Py_SETREF() rather than using slower Py_XSETREF().
-        Py_XSETREF(entry->name, Py_NewRef(Py_None));
+        Py_XSETREF(entry->name, _Py_XNewRef(value));
         entry->value = NULL;
     }
 }
@@ -279,7 +277,9 @@ _PyType_ClearCache(PyInterpreterState *interp)
             sizeof(cache->hashtable) / 1024);
 #endif
 
-    type_cache_clear(cache);
+    // Set to None, rather than NULL, so _PyType_Lookup() can
+    // use Py_SETREF() rather than using slower Py_XSETREF().
+    type_cache_clear(cache, Py_None);
 
     return next_version_tag - 1;
 }
@@ -297,12 +297,7 @@ void
 _PyType_Fini(PyInterpreterState *interp)
 {
     struct type_cache *cache = &interp->type_cache;
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-        entry->version = 0;
-        Py_CLEAR(entry->name);
-        entry->value = NULL;
-    }
+    type_cache_clear(cache, NULL);
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
