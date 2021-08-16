@@ -819,6 +819,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyObjectCache *cache2 = &cache[-2].obj;
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
+    PyDictObject *owner_dict = NULL;
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
             LOAD_METHOD, LOAD_METHOD_MODULE);
@@ -846,10 +847,17 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
-    PyDictObject *owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
+    owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
+    Py_XINCREF(owner_dict); // make sure dict doesn't disappear halfway
     // Check for classmethods.
     int owner_is_class = PyType_Check(owner);
     owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
+
+    if ((owner_cls->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG) == 0 ||
+        owner_cls->tp_version_tag == 0) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
+        goto fail;
+    }
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
@@ -928,11 +936,13 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         LOAD_METHOD_CACHED, _Py_OPARG(*instr));
     // Fall through.
 success:
+    Py_XDECREF(owner_dict);
     STAT_INC(LOAD_METHOD, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
 fail:
+    Py_XDECREF(owner_dict);
     STAT_INC(LOAD_METHOD, specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
