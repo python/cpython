@@ -269,8 +269,9 @@ class ComplexTest(unittest.TestCase):
                     except OverflowError:
                         pass
 
+    def test_pow_with_small_integer_exponents(self):
         # Check that small integer exponents are handled identically
-        # regardless of type.
+        # regardless of their type.
         values = [
             complex(5.0, 12.0),
             complex(5.0e100, 12.0e100),
