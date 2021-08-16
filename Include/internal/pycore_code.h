@@ -308,13 +308,21 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
-#define SPECIALIZATION_STATS_TO_FILE 0
+#define PRINT_SPECIALIZATION_STATS 0
+#define PRINT_SPECIALIZATION_STATS_DETAILED 0
+#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
+
+#ifdef Py_DEBUG
+#define COLLECT_SPECIALIZATION_STATS 1
+#define COLLECT_SPECIALIZATION_STATS_DETAILED 1
+#else
+#define COLLECT_SPECIALIZATION_STATS PRINT_SPECIALIZATION_STATS
+#define COLLECT_SPECIALIZATION_STATS_DETAILED PRINT_SPECIALIZATION_STATS_DETAILED
+#endif
 
 #define SPECIALIZATION_FAILURE_KINDS 20
 
-#if SPECIALIZATION_STATS
+#if COLLECT_SPECIALIZATION_STATS
 
 typedef struct _stats {
     uint64_t specialization_success;
@@ -324,7 +332,7 @@ typedef struct _stats {
     uint64_t miss;
     uint64_t deopt;
     uint64_t unquickened;
-#if SPECIALIZATION_STATS_DETAILED
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
     uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 #endif
 } SpecializationStats;

@@ -341,7 +341,7 @@ PyEval_InitThreads(void)
 void
 _PyEval_Fini(void)
 {
-#if SPECIALIZATION_STATS
+#if PRINT_SPECIALIZATION_STATS
     _Py_PrintSpecializationStats();
 #endif
 }
@@ -1266,21 +1266,26 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define PRE_DISPATCH_GOTO() do { LLTRACE_INSTR();  RECORD_DXPROFILE(); } while (0)
 #endif
 
-/* Do interpreter dispatch accounting for tracing and instrumentation */
-#define DISPATCH() \
+#define NOTRACE_DISPATCH() \
     { \
-        if (cframe.use_tracing OR_DTRACE_LINE) { \
-            goto tracing_dispatch; \
-        } \
         frame->f_lasti = INSTR_OFFSET(); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
     }
 
+/* Do interpreter dispatch accounting for tracing and instrumentation */
+#define DISPATCH() \
+    { \
+        if (cframe.use_tracing OR_DTRACE_LINE) { \
+            goto tracing_dispatch; \
+        } \
+        NOTRACE_DISPATCH(); \
+    }
+
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
-        continue; \
+        goto check_eval_breaker; \
     }
 
 
@@ -1605,7 +1610,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-    for (;;) {
+check_eval_breaker:
+    {
         assert(STACK_LEVEL() >= 0); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
         assert(!_PyErr_Occurred(tstate));
@@ -1702,11 +1708,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
         TARGET(LOAD_FAST): {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
-                format_exc_check_arg(tstate, PyExc_UnboundLocalError,
-                                     UNBOUNDLOCAL_ERROR_MSG,
-                                     PyTuple_GetItem(co->co_localsplusnames,
-                                                     oparg));
-                goto error;
+                goto unbound_local_error;
             }
             Py_INCREF(value);
             PUSH(value);
@@ -1726,6 +1728,73 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             PyObject *value = POP();
             SETLOCAL(oparg, value);
             DISPATCH();
+        }
+
+        TARGET(LOAD_FAST__LOAD_FAST): {
+            PyObject *value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            NEXTOPARG();
+            Py_INCREF(value);
+            PUSH(value);
+            value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_FAST__LOAD_CONST): {
+            PyObject *value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            NEXTOPARG();
+            Py_INCREF(value);
+            PUSH(value);
+            value = GETITEM(consts, oparg);
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(STORE_FAST__LOAD_FAST): {
+            PyObject *value = POP();
+            SETLOCAL(oparg, value);
+            NEXTOPARG();
+            value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(STORE_FAST__STORE_FAST): {
+            PyObject *value = POP();
+            SETLOCAL(oparg, value);
+            NEXTOPARG();
+            value = POP();
+            SETLOCAL(oparg, value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_CONST__LOAD_FAST): {
+            PyObject *value = GETITEM(consts, oparg);
+            NEXTOPARG();
+            Py_INCREF(value);
+            PUSH(value);
+            value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
         }
 
         TARGET(POP_TOP): {
@@ -4400,6 +4469,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         TARGET(CALL_METHOD_KW): {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
@@ -4423,6 +4493,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+
         TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
@@ -4698,6 +4769,15 @@ binary_subscr_dict_error:
             goto error;
         }
 
+unbound_local_error:
+        {
+            format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+                UNBOUNDLOCAL_ERROR_MSG,
+                PyTuple_GetItem(co->co_localsplusnames, oparg)
+            );
+            goto error;
+        }
+
 error:
         /* Double-check exception status. */
 #ifdef NDEBUG
@@ -4730,7 +4810,17 @@ exception_unwind:
         int level, handler, lasti;
         if (get_exception_handler(co, offset, &level, &handler, &lasti) == 0) {
             // No handlers, so exit.
-            break;
+            assert(retval == NULL);
+            assert(_PyErr_Occurred(tstate));
+
+            /* Pop remaining stack entries. */
+            while (!EMPTY()) {
+                PyObject *o = POP();
+                Py_XDECREF(o);
+            }
+            frame->stackdepth = 0;
+            frame->f_state = FRAME_RAISED;
+            goto exiting;
         }
 
         assert(STACK_LEVEL() >= level);
@@ -4770,18 +4860,8 @@ exception_unwind:
         NEXTOPARG();
         PRE_DISPATCH_GOTO();
         DISPATCH_GOTO();
-    } /* main loop */
-
-    assert(retval == NULL);
-    assert(_PyErr_Occurred(tstate));
-
-    /* Pop remaining stack entries. */
-    while (!EMPTY()) {
-        PyObject *o = POP();
-        Py_XDECREF(o);
     }
-    frame->stackdepth = 0;
-    frame->f_state = FRAME_RAISED;
+
 exiting:
     if (cframe.use_tracing) {
         if (tstate->c_tracefunc) {
