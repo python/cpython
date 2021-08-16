@@ -1,0 +1,52 @@
+.. bpo: 44022
+.. date: 2021-05-05-17-37-04
+.. nonce: bS3XJ9
+.. release date: 2021-06-28
+.. section: Security
+
+mod:`http.client` now avoids infinitely reading potential HTTP headers after
+a ``100 Continue`` status response from the server.
+
+..
+
+.. bpo: 43882
+.. date: 2021-04-25-07-46-37
+.. nonce: Jpwx85
+.. section: Security
+
+The presence of newline or tab characters in parts of a URL could allow some
+forms of attacks.
+
+Following the controlling specification for URLs defined by WHATWG
+:func:`urllib.parse` now removes ASCII newlines and tabs from URLs,
+preventing such attacks.
+
+..
+
+.. bpo: 42800
+.. date: 2021-01-09-17-07-36
+.. nonce: _dtZvW
+.. section: Security
+
+Audit hooks are now fired for frame.f_code, traceback.tb_frame, and
+generator code/frame attribute access.
+
+..
+
+.. bpo: 44070
+.. date: 2021-05-10-22-30-12
+.. nonce: 5bBtKx
+.. section: Core and Builtins
+
+No longer eagerly makes import filenames absolute, except for extension
+modules, which was introduced in 3.8.10.
+
+..
+
+.. bpo: 44061
+.. date: 2021-05-07-08-39-23
+.. nonce: MvElG6
+.. section: Library
+
+Fix regression in previous release when calling :func:`pkgutil.iter_modules`
+with a list of :class:`pathlib.Path` objects
