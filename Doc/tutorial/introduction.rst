@@ -268,8 +268,8 @@ Python 还内置支持 :ref:`complex numbers <typesnumeric>`, 使用后缀 ``j``
    >>> word[42:]
    ''
 
-   Python 字符串不能修改 --- 它们 :term:`immutable`的。
-   因此，为字符串中某个索引位置赋值会报错::
+Python 字符串不能修改 --- 它们 :term:`immutable`的。
+因此，为字符串中某个索引位置赋值会报错::
 
    >>> word[0] = 'J'
    Traceback (most recent call last):
