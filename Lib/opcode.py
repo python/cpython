@@ -237,8 +237,13 @@ _specialized_instructions = [
     "STORE_ATTR_SPLIT_KEYS",
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
+    # Super instructions
+    "LOAD_FAST__LOAD_FAST",
+    "STORE_FAST__LOAD_FAST",
+    "LOAD_FAST__LOAD_CONST",
+    "LOAD_CONST__LOAD_FAST",
+    "STORE_FAST__STORE_FAST",
 ]
-
 _specialization_stats = [
     "specialization_success",
     "specialization_failure",
