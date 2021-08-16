@@ -109,10 +109,10 @@ For more information on installation Python packages in MacPython, see section
 :ref:`mac-package-manager`.
 
 
-.. _ide:
+.. _idle:
 
-The IDE
-=======
+The IDLE
+========
 
 MacPython ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
