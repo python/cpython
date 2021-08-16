@@ -628,6 +628,11 @@ class SysModuleTest(unittest.TestCase):
     def test_clear_type_cache(self):
         sys._clear_type_cache()
 
+    @test.support.cpython_only
+    def test_get_type_version_tag(self):
+        test.support.get_attribute(sys, "_get_type_version_tag")
+        self.assertIsInstance(sys._get_type_version_tag(int), int)
+
     def test_ioencoding(self):
         env = dict(os.environ)
 

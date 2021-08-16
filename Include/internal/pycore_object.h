@@ -182,8 +182,6 @@ extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
 
-extern unsigned int _PyType_ClearCache_NoResetGlobalVersionTag(void);
-
 #ifdef __cplusplus
 }
 #endif
