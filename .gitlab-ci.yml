@@ -43,10 +43,9 @@ deploy_x64:
   rules:
     !reference [.manual]
   script:
-    - $hash_or_tag = (git describe --exact-match --tags 2> $null)
-    - if ($hash_or_tag -eq $null -or $hash_or_tag -eq ""){$hash_or_tag=git rev-parse --short HEAD}
-    - Write-Host "Uploading zip python-windows-3.8.11-${hash_or_tag}-x64.zip"
-    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.11-x64.zip s3://dd-agent-omnibus/python-windows-3.8.11-${hash_or_tag}-x64.zip"
+    - $hash = (git rev-parse --short HEAD 2> $null)
+    - Write-Host "Uploading zip python-windows-3.8.11-${hash}-x64.zip"
+    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.11-x64.zip s3://dd-agent-omnibus/python-windows-3.8.11-${hash}-x64.zip"
 
 deploy_x86:
   stage: deploy
@@ -55,7 +54,6 @@ deploy_x86:
   rules:
     !reference [.manual]
   script:
-    - $hash_or_tag = (git describe --exact-match --tags 2> $null)
-    - if ($hash_or_tag -eq $null -or $hash_or_tag -eq ""){$hash_or_tag=git rev-parse --short HEAD}
-    - Write-Host "Uploading zip python-windows-3.8.11-${hash_or_tag}-x86.zip"
-    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.11-x86.zip s3://dd-agent-omnibus/python-windows-3.8.11-${hash_or_tag}-x86.zip"
+    - $hash = (git rev-parse --short HEAD 2> $null)
+    - Write-Host "Uploading zip python-windows-3.8.11-${hash}-x86.zip"
+    - Invoke-Expression "aws s3 cp --only-show-errors --region us-east-1 --sse AES256 --acl public-read build-out/python-windows-3.8.11-x86.zip s3://dd-agent-omnibus/python-windows-3.8.11-${hash}-x86.zip"
