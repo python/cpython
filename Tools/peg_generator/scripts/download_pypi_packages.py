@@ -8,7 +8,8 @@ from typing import Dict, Any
 from urllib.request import urlretrieve
 
 argparser = argparse.ArgumentParser(
-    prog="download_pypi_packages", description="Helper program to download PyPI packages",
+    prog="download_pypi_packages",
+    description="Helper program to download PyPI packages",
 )
 argparser.add_argument(
     "-n", "--number", type=int, default=100, help="Number of packages to download"

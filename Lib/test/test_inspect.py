@@ -585,6 +585,17 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
+class TestGetsourceInteractive(unittest.TestCase):
+    def test_getclasses_interactive(self):
+        # bpo-44648: simulate a REPL session;
+        # there is no `__file__` in the __main__ module
+        code = "import sys, inspect; \
+                assert not hasattr(sys.modules['__main__'], '__file__'); \
+                A = type('A', (), {}); \
+                inspect.getsource(A)"
+        _, _, stderr = assert_python_failure("-c", code, __isolated=True)
+        self.assertIn(b'OSError: source code not available', stderr)
+
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
     fodderModule = mod
 
@@ -4342,7 +4353,8 @@ def test_main():
         TestBoundArguments, TestSignaturePrivateHelpers,
         TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
+        TestGetCoroutineState, TestGettingSourceOfToplevelFrames,
+        TestGetsourceInteractive,
     )
 
 if __name__ == "__main__":

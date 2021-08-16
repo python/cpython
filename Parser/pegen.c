@@ -897,6 +897,19 @@ _PyPegen_expect_token(Parser *p, int type)
     return t;
 }
 
+void*
+_PyPegen_expect_forced_result(Parser *p, void* result, const char* expected) {
+
+    if (p->error_indicator == 1) {
+        return NULL;
+    }
+    if (result == NULL) {
+        RAISE_SYNTAX_ERROR("expected (%s)", expected);
+        return NULL;
+    }
+    return result;
+}
+
 Token *
 _PyPegen_expect_forced_token(Parser *p, int type, const char* expected) {
 

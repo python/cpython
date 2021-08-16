@@ -931,8 +931,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('http://www.python.org'))
-      http://www\.python\.org
+      >>> print(re.escape('https://www.python.org'))
+      https://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
