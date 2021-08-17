@@ -228,7 +228,7 @@ cleanup:
         PyObject *exc, *val, *tb;
         PyErr_Fetch(&exc, &val, &tb);
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
         if (tmp == NULL) {
             Py_CLEAR(self);
         }

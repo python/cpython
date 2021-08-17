@@ -2955,7 +2955,7 @@ task_step(TaskObj *task, PyObject *exc)
         PyObject *et, *ev, *tb;
         PyErr_Fetch(&et, &ev, &tb);
         leave_task(task->task_loop, (PyObject*)task);
-        _PyErr_ChainExceptions(et, ev, tb);
+        PyErr_ChainExceptions(et, ev, tb);
         return NULL;
     }
     else {

@@ -1006,7 +1006,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
             tuple = PyTuple_New(count * 2);
             if (tuple == NULL) {
-                _PyErr_ChainExceptions(err_type, err_value, err_tb);
+                PyErr_ChainExceptions(err_type, err_value, err_tb);
                 return;
             }
 

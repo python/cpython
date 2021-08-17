@@ -2863,7 +2863,7 @@ fail:
         PyObject *type, *value, *traceback;
         PyErr_Fetch(&type, &value, &traceback);
         res = _PyObject_CallMethodIdOneArg(self->decoder, &PyId_setstate, saved_state);
-        _PyErr_ChainExceptions(type, value, traceback);
+        PyErr_ChainExceptions(type, value, traceback);
         Py_DECREF(saved_state);
         Py_XDECREF(res);
     }
@@ -3078,7 +3078,7 @@ _io_TextIOWrapper_close_impl(textio *self)
 
         res = _PyObject_CallMethodIdNoArgs(self->buffer, &PyId_close);
         if (exc != NULL) {
-            _PyErr_ChainExceptions(exc, val, tb);
+            PyErr_ChainExceptions(exc, val, tb);
             Py_CLEAR(res);
         }
         return res;

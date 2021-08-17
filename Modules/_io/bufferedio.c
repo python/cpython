@@ -526,7 +526,7 @@ buffered_close(buffered *self, PyObject *args)
     }
 
     if (exc != NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
         Py_CLEAR(res);
     }
 
@@ -2239,7 +2239,7 @@ bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
         Py_DECREF(ret);
     ret = _forward_call(self->reader, &PyId_close, NULL);
     if (exc != NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
         Py_CLEAR(ret);
     }
     return ret;

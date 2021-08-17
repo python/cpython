@@ -206,7 +206,7 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
         PyErr_Fetch(&exc, &val, &tb);
     rc = internal_close(self);
     if (res == NULL)
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
     if (rc < 0)
         Py_CLEAR(res);
     return res;

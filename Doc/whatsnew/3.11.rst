@@ -295,6 +295,11 @@ Changes in the Python API
 
 C API Changes
 =============
+
+* Add a new :c:func:`PyErr_ChainExceptions` function that allows to chain exceptions
+  using the C-API. See :ref:`tut-exception-chaining` for more information
+  regarding the semantics of exception chaining. (Contributed by Pablo Galindo in :issue:`44938`.)
+
 * Add a new :c:func:`PyType_GetName` function to get type's short name.
   (Contributed by Hai Shi in :issue:`42035`.)
 

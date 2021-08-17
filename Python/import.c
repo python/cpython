@@ -655,7 +655,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
         }
     }
 
-    _PyErr_ChainExceptions(type, value, traceback);
+    PyErr_ChainExceptions(type, value, traceback);
 }
 
 

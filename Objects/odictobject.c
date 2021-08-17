@@ -1617,7 +1617,7 @@ _PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
             PyObject *exc, *val, *tb;
             PyErr_Fetch(&exc, &val, &tb);
             (void) _PyDict_DelItem_KnownHash(od, key, hash);
-            _PyErr_ChainExceptions(exc, val, tb);
+            PyErr_ChainExceptions(exc, val, tb);
         }
     }
     return res;

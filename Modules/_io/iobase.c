@@ -240,7 +240,7 @@ _io__IOBase_close_impl(PyObject *self)
 
     PyErr_Fetch(&exc, &val, &tb);
     rc = _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
-    _PyErr_ChainExceptions(exc, val, tb);
+    PyErr_ChainExceptions(exc, val, tb);
     if (rc < 0) {
         Py_CLEAR(res);
     }

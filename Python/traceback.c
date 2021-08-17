@@ -252,7 +252,7 @@ PyTraceBack_Here(PyFrameObject *frame)
     PyErr_Fetch(&exc, &val, &tb);
     newtb = _PyTraceBack_FromFrame(tb, frame);
     if (newtb == NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
         return -1;
     }
     PyErr_Restore(exc, val, newtb);
@@ -294,7 +294,7 @@ void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
     return;
 
 error:
-    _PyErr_ChainExceptions(exc, val, tb);
+    PyErr_ChainExceptions(exc, val, tb);
 }
 
 static PyObject *

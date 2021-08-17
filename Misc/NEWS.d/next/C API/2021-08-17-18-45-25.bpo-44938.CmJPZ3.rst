@@ -1,0 +1,2 @@
+Expose :c:func:`PyErr_ChainExceptions` in the stable API. Patch by Pablo
+Galindo.

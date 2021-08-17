@@ -697,7 +697,7 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         PyErr_BadInternalCall();
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
         _PyErr_Print(tstate);
     }
 }

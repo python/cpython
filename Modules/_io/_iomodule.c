@@ -497,7 +497,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
         close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);
     }

@@ -163,7 +163,7 @@ _io_FileIO_close_impl(fileio *self)
     }
     rc = internal_close(self);
     if (res == NULL)
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_ChainExceptions(exc, val, tb);
     if (rc < 0)
         Py_CLEAR(res);
     return res;

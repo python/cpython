@@ -125,6 +125,41 @@ For convenience, some of these functions will always return a
 
    .. versionadded:: 3.5
 
+.. c:function:: void PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
+
+   Set the provided exception as the cause for the current exception. If there is no exception
+   currently set (:c:func:`PyErr_Occurred` returns ``0``) this function behaves as like :c:func:`PyErr_Restore`, but if an exception is already set, set the context
+   associated with it.
+
+   The exception type should be a class. Do not pass an invalid exception type or value. This call
+   takes away a reference to each object: you must own a reference to each object before the call
+   and after the call you no longer own these references.  
+   
+   .. warning::
+
+      The caller is responsible for ensuring that this call won't create
+      any cycles in the exception context chain. 
+
+   See :ref:`tut-exception-chaining` for more information regarding the semantics of exception
+   chaining.
+
+   Example usage:
+
+   .. code-block:: c
+
+      PyObject *type, *value, *traceback;
+
+      /* Fetch the original exception */
+      PyErr_Fetch(&type, &value, &traceback);
+
+      /* ... code that might produce other errors ... */
+
+      /* Set the original exception as the cause for the new exception */
+      PyErr_ChainExceptions(type, value, traceback);
+
+
+   .. versionadded:: 3.11
+
 
 .. c:function:: void PyErr_SetNone(PyObject *type)
 

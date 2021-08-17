@@ -574,7 +574,7 @@ PySSL_ChainExceptions(PySSLSocket *sslsock) {
     if (sslsock->exc_type == NULL)
         return 0;
 
-    _PyErr_ChainExceptions(sslsock->exc_type, sslsock->exc_value, sslsock->exc_tb);
+    PyErr_ChainExceptions(sslsock->exc_type, sslsock->exc_value, sslsock->exc_tb);
     sslsock->exc_type = NULL;
     sslsock->exc_value = NULL;
     sslsock->exc_tb = NULL;
