@@ -133,12 +133,12 @@ For convenience, some of these functions will always return a
 
    The exception type should be a class. Do not pass an invalid exception type or value. This call
    takes away a reference to each object: you must own a reference to each object before the call
-   and after the call you no longer own these references.  
-   
+   and after the call you no longer own these references.
+
    .. warning::
 
       The caller is responsible for ensuring that this call won't create
-      any cycles in the exception context chain. 
+      any cycles in the exception context chain.
 
    See :ref:`tut-exception-chaining` for more information regarding the semantics of exception
    chaining.
