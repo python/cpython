@@ -539,5 +539,11 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
  * will be removed in the future.
  * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
  */
-#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
-#define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
+Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
+#define Py_TRASHCAN_SAFE_BEGIN(op) \
+    do { \
+        UsingDeprecatedTrashcanMacro cond=1; \
+        Py_TRASHCAN_BEGIN_CONDITION(op, cond);
+#define Py_TRASHCAN_SAFE_END(op) \
+        Py_TRASHCAN_END; \
+    } while(0);
