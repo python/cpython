@@ -1837,13 +1837,20 @@ Py_FinalizeEx(void)
      * up later.
      */
 
-    FILE *fp = dump_refs_file ? _Py_wfopen(dump_refs_file, L"w") : stderr;
-    if (dump_refs || dump_refs_file != NULL) {
-        if (fp == NULL) {
-            fprintf(stderr, "Can not log all live objects.\n");
-        } else {
-            _Py_PrintReferences(fp);
+    FILE *dump_refs_fp = NULL;
+    if (dump_refs_file != NULL) {
+        dump_refs_fp = _Py_wfopen(dump_refs_file, L"w");
+        if (dump_refs_fp == NULL) {
+            fprintf(stderr, "PYTHONDUMPREFSFILE: cannot create file: %ls\n", dump_refs_file);
         }
+    }
+
+    if (dump_refs) {
+        _Py_PrintReferences(stderr);
+    }
+
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferences(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1855,15 +1862,14 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (dump_refs || dump_refs_file) {
-        if (fp == NULL) {
-            fprintf(stderr, "Can not log the addresses of all live objects.\n");
-        } else {
-            _Py_PrintReferenceAddresses(fp);
-            if (fp != stderr) {
-                fclose(fp);
-            }
-        }
+
+    if (dump_refs) {
+        _Py_PrintReferenceAddresses(stderr);
+    }
+
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferenceAddresses(dump_refs_fp);
+        fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
