@@ -149,15 +149,19 @@ extern "C" {
 #define LOAD_GLOBAL_ADAPTIVE     41
 #define LOAD_GLOBAL_MODULE       42
 #define LOAD_GLOBAL_BUILTIN      43
-#define STORE_ATTR_ADAPTIVE      44
-#define STORE_ATTR_SPLIT_KEYS    45
-#define STORE_ATTR_SLOT          46
-#define STORE_ATTR_WITH_HINT     47
-#define LOAD_FAST__LOAD_FAST     48
-#define STORE_FAST__LOAD_FAST    58
-#define LOAD_FAST__LOAD_CONST    80
-#define LOAD_CONST__LOAD_FAST    81
-#define STORE_FAST__STORE_FAST   87
+#define LOAD_METHOD_ADAPTIVE     44
+#define LOAD_METHOD_CACHED       45
+#define LOAD_METHOD_CLASS        46
+#define LOAD_METHOD_MODULE       47
+#define STORE_ATTR_ADAPTIVE      48
+#define STORE_ATTR_SPLIT_KEYS    58
+#define STORE_ATTR_SLOT          80
+#define STORE_ATTR_WITH_HINT     81
+#define LOAD_FAST__LOAD_FAST     87
+#define STORE_FAST__LOAD_FAST    88
+#define LOAD_FAST__LOAD_CONST   120
+#define LOAD_CONST__LOAD_FAST   122
+#define STORE_FAST__STORE_FAST  123
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
