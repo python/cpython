@@ -46,7 +46,6 @@ import time
 import struct
 import copy
 import re
-import zlib
 
 try:
     import pwd
@@ -2350,8 +2349,6 @@ class TarFile(object):
                     raise ReadError(str(e)) from None
             except SubsequentHeaderError as e:
                 raise ReadError(str(e)) from None
-            except zlib.error as e:
-                raise ExtractError('archive may be corrupted or invalid') from e
             break
 
         if tarinfo is not None:

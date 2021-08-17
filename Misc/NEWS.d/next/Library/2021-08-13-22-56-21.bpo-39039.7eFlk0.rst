@@ -1,3 +1,0 @@
-tarfile.open raises :exc:`~tarfile.ExtractError` when a zlib error occurs
-during file extraction. The message provides a user-friendly notice that the
-tar file may be corrupt or invalid.
