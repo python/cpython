@@ -128,12 +128,13 @@ For convenience, some of these functions will always return a
 .. c:function:: void PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
 
    Set the provided exception as the cause for the current exception. If there is no exception
-   currently set (:c:func:`PyErr_Occurred` returns ``0``) this function behaves as like :c:func:`PyErr_Restore`, but if an exception is already set, set the context
-   associated with it.
+   currently set (:c:func:`PyErr_Occurred` returns ``0``) this function behaves
+   as like :c:func:`PyErr_Restore`, but if an exception is already set, set the
+   context associated with it.
 
-   The exception type should be a class. Do not pass an invalid exception type or value. This call
-   takes away a reference to each object: you must own a reference to each object before the call
-   and after the call you no longer own these references.
+   The exception type should be a class. Do not pass an invalid exception type or value. This
+   function steals a reference to each of its arguments in the same fashion as :c:func:`PyErr_Restore`
+   does.
 
    .. warning::
 
