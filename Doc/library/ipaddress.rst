@@ -116,7 +116,13 @@ write code that handles both IP versions correctly.  Address objects are
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
 
+
    .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.8.12
 
       Leading zeros are no longer tolerated and are treated as an error.
       IPv4 address strings are now parsed as strict as glibc
