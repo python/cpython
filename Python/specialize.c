@@ -921,7 +921,6 @@ int
 specialize_unicode_add(_Py_CODEUNIT *instr)
 {
     int next_opcode = _Py_OPCODE(instr[1]);
-    int next_oparg = _Py_OPARG(instr[1]);
     switch (next_opcode) {
         case STORE_FAST:
             *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
