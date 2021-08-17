@@ -438,7 +438,7 @@ Buffer-related functions
 
    Send a request to *exporter* to fill in *view* as specified by  *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
-   :c:data:`PyExc_BufferError`, set ``view->obj`` to ``NULL`` and
+   :c:data:`PyExc_TypeError`, set ``view->obj`` to ``NULL`` and
    return ``-1``.
 
    On success, fill in *view*, set ``view->obj`` to a new reference
