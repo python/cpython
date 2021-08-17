@@ -921,14 +921,18 @@ int
 specialize_unicode_add(_Py_CODEUNIT *instr)
 {
     int next_opcode = _Py_OPCODE(instr[1]);
+    int next_oparg = _Py_OPARG(instr[1]);
     switch (next_opcode) {
         case STORE_FAST:
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, 1);
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
             return 0;
         case STORE_DEREF:
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_DEREF, 1);
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_DEREF, saturating_start());
             return 0;
+        default:
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
     }
+
     SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_NON_FUNCTION_SCOPE);
     return -1;
 }

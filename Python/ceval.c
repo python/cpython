@@ -1435,6 +1435,12 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
+static inline void
+record_hit_inline(_Py_CODEUNIT *next_instr, int oparg)
+{
+    UPDATE_PREV_INSTR_OPARG(next_instr, saturating_increment(oparg));
+}
+
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
@@ -1985,11 +1991,28 @@ check_eval_breaker:
             }
             else {
                 STAT_INC(BINARY_ADD, deferred);
-                // oparg is the adaptive (cache counter*2 | inplace_bit)
                 UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
                 STAT_DEC(BINARY_ADD, unquickened);
                 JUMP_TO_INSTRUCTION(BINARY_ADD);
             }
+        }
+
+        TARGET(BINARY_ADD_UNICODE): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *res = PyUnicode_Concat(left, right);
+            STACK_SHRINK(1);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (TOP() == NULL) {
+                goto error;
+            }
+            DISPATCH();
         }
 
         TARGET(BINARY_ADD_UNICODE_INPLACE_FAST): {
@@ -2008,6 +2031,8 @@ check_eval_breaker:
             */
             PyObject *var = GETLOCAL(next_oparg);
             DEOPT_IF(var != left, BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
             GETLOCAL(next_oparg) = NULL;
             Py_DECREF(left);
             STACK_SHRINK(1);
@@ -2036,6 +2061,7 @@ check_eval_breaker:
             PyObject *cell = GETLOCAL(next_oparg);
             DEOPT_IF(PyCell_GET(cell) != left, BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
             PyCell_SET(cell, NULL);
             Py_DECREF(left);
             STACK_SHRINK(1);
@@ -2053,6 +2079,7 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
@@ -2072,6 +2099,7 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
             PyObject *sum = PyLong_Type.tp_as_number->nb_add(left, right);
             SET_SECOND(sum);
             Py_DECREF(right);
