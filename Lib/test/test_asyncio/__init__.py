@@ -4,7 +4,6 @@ import unittest
 
 # Skip tests if we don't have concurrent.futures.
 support.import_module('concurrent.futures')
-module_deprecation_tokens = set()
 
 
 def load_tests(loader, _, pattern):
@@ -21,26 +20,18 @@ class AsyncioTestSuite(unittest.TestSuite):
     would be tedious, let's run this once and for all.
     """
     def run(self, result, debug=False):
+        ignore = support.ignore_deprecations_from
+        tokens = {
+            ignore("asyncio.base_events", like=r".*loop argument.*"),
+            ignore("asyncio.unix_events", like=r".*loop argument.*"),
+            ignore("asyncio.futures", like=r".*loop argument.*"),
+            ignore("asyncio.runners", like=r".*loop argument.*"),
+            ignore("asyncio.subprocess", like=r".*loop argument.*"),
+            ignore("asyncio.tasks", like=r".*loop argument.*"),
+            ignore("test.test_asyncio.test_queues", like=r".*loop argument.*"),
+            ignore("test.test_asyncio.test_tasks", like=r".*loop argument.*"),
+        }
         try:
-            setUpModule()
             super().run(result, debug=debug)
         finally:
-            tearDownModule()
-
-
-def setUpModule():
-    ignore = support.ignore_deprecations_from
-    module_deprecation_tokens.update((
-        ignore("asyncio.base_events", like=r".*loop argument.*"),
-        ignore("asyncio.unix_events", like=r".*loop argument.*"),
-        ignore("asyncio.futures", like=r".*loop argument.*"),
-        ignore("asyncio.runners", like=r".*loop argument.*"),
-        ignore("asyncio.subprocess", like=r".*loop argument.*"),
-        ignore("asyncio.tasks", like=r".*loop argument.*"),
-        ignore("test.test_asyncio.test_queues", like=r".*loop argument.*"),
-        ignore("test.test_asyncio.test_tasks", like=r".*loop argument.*"),
-    ))
-
-
-def tearDownModule():
-    support.clear_ignored_deprecations(*module_deprecation_tokens)
+            support.clear_ignored_deprecations(*tokens)
