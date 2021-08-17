@@ -2147,6 +2147,8 @@ function PyGC_IsEnabled
 
 function PyType_GetName
     added 3.11
+function PyType_GetQualName
+    added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
