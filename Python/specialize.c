@@ -429,7 +429,6 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Binary add */
 
-#define SPEC_FAIL_NOT_INPLACE 10
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 #define SPEC_FAIL_OTHER_TYPE 13
@@ -921,11 +920,6 @@ success:
 int
 specialize_unicode_add(_Py_CODEUNIT *instr)
 {
-    int oparg = _Py_OPARG(instr[0]);
-    if (oparg == 0) {
-        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_NOT_INPLACE);
-        return -1;
-    }
     int next_opcode = _Py_OPCODE(instr[1]);
     switch (next_opcode) {
         case STORE_FAST:
