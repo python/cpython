@@ -118,19 +118,9 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. versionchanged:: 3.8
 
-      Leading zeros are tolerated, even in ambiguous cases that look like
-      octal notation.
-
-   .. versionchanged:: 3.10
-
       Leading zeros are no longer tolerated and are treated as an error.
       IPv4 address strings are now parsed as strict as glibc
       :func:`~socket.inet_pton`.
-
-   .. versionchanged:: 3.9.5
-
-      The above change was also included in Python 3.9 starting with
-      version 3.9.5.
 
    .. attribute:: version
 
