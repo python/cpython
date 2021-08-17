@@ -221,7 +221,7 @@ Module contents
      c.mylist += [1, 2, 3]
 
    As shown above, the :const:`MISSING` value is a sentinel object used to
-   detect if the ``default`` and ``default_factory`` parameters are
+   detect if the ``default``, ``default_factory`` and `kw_only` parameters are
    provided.  This sentinel is used because ``None`` is a valid value
    for ``default``.  No code should directly use the :const:`MISSING`
    value.
