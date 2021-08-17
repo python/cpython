@@ -155,7 +155,7 @@ For convenience, some of these functions will always return a
 
       /* ... code that might produce other errors ... */
 
-      /* Set the original exception as the cause for the new exception */
+      /* Set the original exception as the context for the new exception, and set the new exception as the current exception */
       PyErr_ChainExceptions(type, value, traceback);
 
 
