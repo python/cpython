@@ -172,14 +172,7 @@ c_powu(Py_complex x, long n)
 static Py_complex
 c_powi(Py_complex x, long n)
 {
-    Py_complex cn;
-
-    if (n > 100 || n < -100) {
-        cn.real = (double) n;
-        cn.imag = 0.;
-        return _Py_c_pow(x,cn);
-    }
-    else if (n > 0)
+    if (n > 0)
         return c_powu(x,n);
     else
         return _Py_c_quot(c_1, c_powu(x,-n));
@@ -523,19 +516,12 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     errno = 0;
-    // Check if w is an integer value that fits inside a C long, so we can
-    // use a faster algorithm. TO_COMPLEX(w, b), above, already handled the
-    // conversion from larger longs, as well as other types.
-    if (PyLong_Check(w)) {
-        int overflow = 0;
-        long int_exponent = PyLong_AsLongAndOverflow(w, &overflow);
-        if (int_exponent == -1 && PyErr_Occurred())
-            return NULL;
-        if (overflow == 0)
-            p = c_powi(a, int_exponent);
-        else
-            p = _Py_c_pow(a, b);
-    } else {
+    // Check whether the exponent has a small integer value, and if so use
+    // a faster and more accurate algorithm.
+    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+        p = c_powi(a, (long)b.real);
+    }
+    else {
         p = _Py_c_pow(a, b);
     }
 
