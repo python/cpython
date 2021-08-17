@@ -269,6 +269,34 @@ class ComplexTest(unittest.TestCase):
                     except OverflowError:
                         pass
 
+    def test_pow_with_small_integer_exponents(self):
+        # Check that small integer exponents are handled identically
+        # regardless of their type.
+        values = [
+            complex(5.0, 12.0),
+            complex(5.0e100, 12.0e100),
+            complex(-4.0, INF),
+            complex(INF, 0.0),
+        ]
+        exponents = [-19, -5, -3, -2, -1, 0, 1, 2, 3, 5, 19]
+        for value in values:
+            for exponent in exponents:
+                with self.subTest(value=value, exponent=exponent):
+                    try:
+                        int_pow = value**exponent
+                    except OverflowError:
+                        int_pow = "overflow"
+                    try:
+                        float_pow = value**float(exponent)
+                    except OverflowError:
+                        float_pow = "overflow"
+                    try:
+                        complex_pow = value**complex(exponent)
+                    except OverflowError:
+                        complex_pow = "overflow"
+                    self.assertEqual(str(float_pow), str(int_pow))
+                    self.assertEqual(str(complex_pow), str(int_pow))
+
     def test_boolcontext(self):
         for i in range(100):
             self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
