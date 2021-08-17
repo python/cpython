@@ -3260,10 +3260,11 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     for action, message, category, module, lineno in warnings.filters:
         if action == "ignore" and category is DeprecationWarning:
             if isinstance(message, re.Pattern):
-                message = message.pattern
-            if tokens:
-                endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
-            if message.endswith(endswith):
+                msg = message.pattern
+            else:
+                msg = message or ""
+            endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
+            if msg.endswith(endswith):
                 continue
         new_filters.append((action, message, category, module, lineno))
     if warnings.filters != new_filters:
