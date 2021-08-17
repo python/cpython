@@ -216,6 +216,10 @@ Scheduling callbacks
    A thread-safe variant of :meth:`call_soon`.  Must be used to
    schedule callbacks *from another thread*.
 
+   Raises :exc:`RuntimeError` if called on a loop that's been closed.
+   This can happen on a secondary thread when the main application is
+   shutting down.
+
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
