@@ -1736,8 +1736,8 @@ Py_FinalizeEx(void)
     int show_ref_count = tstate->interp->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    wchar_t *python_dump_file = tstate->interp->config.python_dump_file;
     int dump_refs = tstate->interp->config.dump_refs;
+    wchar_t *dump_refs_file = tstate->interp->config.dump_refs_file;
 #endif
 #ifdef WITH_PYMALLOC
     int malloc_stats = tstate->interp->config.malloc_stats;
@@ -1837,12 +1837,13 @@ Py_FinalizeEx(void)
      * up later.
      */
 
-    FILE *fp = stderr;
-    if (python_dump_file != NULL) {
-        fp = _Py_wfopen(python_dump_file, L"w");
-    }
-    if (dump_refs) {
-        _Py_PrintReferences(fp);
+    FILE *fp = dump_refs_file ? _Py_wfopen(dump_refs_file, L"w") : stderr;
+    if (dump_refs || dump_refs_file != NULL) {
+        if (fp == NULL) {
+            fprintf(stderr, "Can not log all live objects.\n");
+        } else {
+            _Py_PrintReferences(fp);
+        }
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1854,11 +1855,15 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
-    if (dump_refs) {
-        _Py_PrintReferenceAddresses(fp);
-    }
-    if (fp != NULL && fp != stderr) {
-        fclose(fp);
+    if (dump_refs || dump_refs_file) {
+        if (fp == NULL) {
+            fprintf(stderr, "Can not log the addresses of all live objects.\n");
+        } else {
+            _Py_PrintReferenceAddresses(fp);
+            if (fp != stderr) {
+                fclose(fp);
+            }
+        }
     }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
