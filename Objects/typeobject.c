@@ -3620,6 +3620,12 @@ PyType_GetName(PyTypeObject *type)
     return type_name(type, NULL);
 }
 
+PyObject *
+PyType_GetQualName(PyTypeObject *type)
+{
+    return type_qualname(type, NULL);
+}
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
