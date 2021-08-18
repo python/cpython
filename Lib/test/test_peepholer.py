@@ -1,5 +1,6 @@
 import dis
 from itertools import combinations, product
+import opcode
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
@@ -228,7 +229,8 @@ class TestTranforms(BytecodeTestCase):
             ('a = 13 | 7', 15),                 # binary or
             ):
             code = compile(line, '', 'single')
-            if isinstance(elem, int):
+            if opcode.is_immediate_const(elem):
+                assert isinstance(elem, int)
                 self.assertInBytecode(code, 'MAKE_INT', elem)
             else:
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
@@ -290,7 +292,8 @@ class TestTranforms(BytecodeTestCase):
             ('+1', 1),                          # unary positive
         ):
             code = compile(line, '', 'single')
-            if isinstance(elem, int):
+            if opcode.is_immediate_const(elem):
+                assert isinstance(elem, int)
                 self.assertInBytecode(code, 'MAKE_INT', elem)
             else:
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
