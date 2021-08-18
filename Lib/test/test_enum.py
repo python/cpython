@@ -3112,6 +3112,22 @@ class TestFlag(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
 
+@enum.global_enum
+class HeadlightsK(IntFlag, boundary=enum.KEEP):
+    OFF = 0
+    LOW_BEAM = auto()
+    HIGH_BEAM = auto()
+    FOG = auto()
+
+
+@enum.global_enum
+class HeadlightsC(IntFlag, boundary=enum.CONFORM):
+    OFF = 0
+    LOW_BEAM = auto()
+    HIGH_BEAM = auto()
+    FOG = auto()
+
+
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
 
@@ -3223,6 +3239,24 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open.AC')
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(repr(Open(~4)), '-5')
+
+    def test_global_repr_keep1(self):
+        self.assertEqual(repr(HeadlightsK(0)), 'test.test_enum.HeadlightsK.OFF')
+
+    def test_global_repr_keep2(self):
+        self.assertEqual(
+            repr(HeadlightsK(2**0 + 2**2 + 2**3)),
+            'test.test_enum.HeadlightsK.LOW_BEAM|test.test_enum.HeadlightsK.FOG|0x8',
+        )
+
+    def test_global_repr_conform1(self):
+        self.assertEqual(repr(HeadlightsC(0)), 'test.test_enum.HeadlightsC.OFF')
+
+    def test_global_repr_conform2(self):
+        self.assertEqual(
+            repr(HeadlightsC(2**0 + 2**2 + 2**3)),
+            'test.test_enum.HeadlightsC.LOW_BEAM|test.test_enum.HeadlightsC.FOG|0x8',
+        )
 
     def test_format(self):
         Perm = self.Perm
