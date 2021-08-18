@@ -7,6 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
+from opcode import config as opcode_config
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -26,6 +27,8 @@ FORMAT_VALUE_CONVERTERS = (
 MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
+MAKE_INT = opmap['MAKE_INT']
+MAKE_INT_BIAS = opcode_config['MAKE_INT_BIAS']
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -425,6 +428,9 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif op == MAKE_FUNCTION:
                 argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
                                     if arg & (1<<i))
+            elif op == MAKE_INT:
+                argval -= MAKE_INT_BIAS
+                argrepr = repr(argval)
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)
