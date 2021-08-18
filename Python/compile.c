@@ -29,7 +29,7 @@
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_symtable.h"      // PySTEntryObject()
 
 #define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"               // EXTENDED_ARG
@@ -731,7 +731,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
         if (!compiler_set_qualname(c))
             return 0;
     }
-
     return 1;
 }
 
@@ -842,8 +841,7 @@ compiler_set_qualname(struct compiler *c)
 
 
 /* Allocate a new block and return a pointer to it.
-   Returns NULL on error.
-*/
+   Returns NULL on error. */
 
 static basicblock *
 compiler_new_block(struct compiler *c)
