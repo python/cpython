@@ -19607,7 +19607,7 @@ invalid_group_rule(Parser *p)
     return _res;
 }
 
-// invalid_import_from_targets: import_from_as_names ','
+// invalid_import_from_targets: import_from_as_names ',' NEWLINE
 static void *
 invalid_import_from_targets_rule(Parser *p)
 {
@@ -19618,21 +19618,24 @@ invalid_import_from_targets_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // import_from_as_names ','
+    { // import_from_as_names ',' NEWLINE
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_from_as_names ','"));
+        D(fprintf(stderr, "%*c> invalid_import_from_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "import_from_as_names ',' NEWLINE"));
         Token * _literal;
         asdl_alias_seq* import_from_as_names_var;
+        Token * newline_var;
         if (
             (import_from_as_names_var = import_from_as_names_rule(p))  // import_from_as_names
             &&
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_import_from_targets[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "import_from_as_names ','"));
+            D(fprintf(stderr, "%*c+ invalid_import_from_targets[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "import_from_as_names ',' NEWLINE"));
             _res = RAISE_SYNTAX_ERROR ( "trailing comma not allowed without surrounding parentheses" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -19643,7 +19646,7 @@ invalid_import_from_targets_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_import_from_targets[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "import_from_as_names ','"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "import_from_as_names ',' NEWLINE"));
     }
     _res = NULL;
   done:
