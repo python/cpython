@@ -635,16 +635,17 @@ def __sleep0():
 
 async def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
+    if loop is not None:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
     if delay <= 0:
         await __sleep0()
         return result
 
     if loop is None:
         loop = events.get_running_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
 
     future = loop.create_future()
     h = loop.call_later(delay,
@@ -750,13 +751,14 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     after catching an exception (raised by one of the awaitables) from
     gather won't cancel any other awaitables.
     """
+    if loop is not None:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
     if not coros_or_futures:
         if loop is None:
             loop = events.get_event_loop()
-        else:
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
         outer = loop.create_future()
         outer.set_result([])
         return outer
