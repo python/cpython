@@ -925,6 +925,9 @@ Constants
    Allow legacy insecure renegotiation between OpenSSL and unpatched servers
    only.
 
+   This option is only available with OpenSSL 0.9.8m and later, and is disabled
+   in default context since OpenSSL 3.0.0.
+
    .. versionadded:: 3.11
 
 .. data:: HAS_ALPN
