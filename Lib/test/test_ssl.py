@@ -4083,6 +4083,18 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         self.assertIs(stats['compression'], None)
 
+    @unittest.skipUnless(hasattr(ssl, 'OP_LEGACY_SERVER_CONNECT'),
+                         "ssl.OP_LEGACY_SERVER_CONNECT needed for this test")
+    def test_legacy_server_connect(self):
+        client_context, server_context, hostname = testing_context()
+        if IS_OPENSSL_3_0_0:
+            client_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
+        else:
+            client_context.options &= ~ssl.OP_LEGACY_SERVER_CONNECT
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_dh_params(self):
         # Check we can get a connection with ephemeral Diffie-Hellman
