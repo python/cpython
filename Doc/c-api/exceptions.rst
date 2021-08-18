@@ -129,7 +129,7 @@ For convenience, some of these functions will always return a
 
    Set the provided exception as the cause for the current exception. If there
    is no exception currently set (:c:func:`PyErr_Occurred` returns ``0``) this
-   function behaves as like :c:func:`PyErr_Restore`, but if an exception is
+   function behaves like :c:func:`PyErr_Restore`, but if an exception is
    already set, set the provided exception as the context (accessible from
    Python through the :attr:`__context__` attribute of the exception) of the
    one that is currently set.
