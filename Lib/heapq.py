@@ -176,6 +176,11 @@ def heapify(x):
     for i in reversed(range(n//2)):
         _siftup(x, i)
 
+def _heappush_max(heap, item):
+    """Maxheap version of heappush."""
+    heap.append(item)
+    _siftdown_max(heap, 0, len(heap)-1)
+
 def _heappop_max(heap):
     """Maxheap version of a heappop."""
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
