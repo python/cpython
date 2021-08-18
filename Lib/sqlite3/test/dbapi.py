@@ -27,7 +27,7 @@ import threading
 import unittest
 
 from test.support import check_disallow_instantiation, threading_helper, bigmemtest
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, temp_dir
 
 
 # Helper for tests using TESTFN
@@ -172,11 +172,12 @@ class ModuleTests(unittest.TestCase):
 
     def test_error_code_on_exception(self):
         err_msg = "unable to open database file"
-        with self.assertRaisesRegex(sqlite.Error, err_msg) as cm:
-            sqlite.connect("/no/such/file/exists")
-        e = cm.exception
-        self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
-        self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
+        with temp_dir() as db:
+            with self.assertRaisesRegex(sqlite.Error, err_msg) as cm:
+                sqlite.connect(db)
+            e = cm.exception
+            self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
+            self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
 
     # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
     # OperationalError on some buildbots.
