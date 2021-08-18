@@ -1192,6 +1192,9 @@ class ContextTests(unittest.TestCase):
         ctx.options = 0
         # Ubuntu has OP_NO_SSLv3 forced on by default
         self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
+        # 0.9.8m or later
+        if ssl.OPENSSL_VERSION_INFO >= (0, 9, 8, 13, 15):
+            self.assertNotEqual(OP_LEGACY_SERVER_CONNECT, 0)
 
     def test_verify_mode_protocol(self):
         with warnings_helper.check_warnings():
@@ -1682,6 +1685,12 @@ class ContextTests(unittest.TestCase):
         if OP_CIPHER_SERVER_PREFERENCE != 0:
             self.assertEqual(ctx.options & OP_CIPHER_SERVER_PREFERENCE,
                              OP_CIPHER_SERVER_PREFERENCE)
+        if OP_LEGACY_SERVER_CONNECT != 0:
+            if IS_OPENSSL_3_0_0:
+                self.assertEqual(ctx.options & OP_LEGACY_SERVER_CONNECT, 0)
+            else:
+                self.assertEqual(ctx.options & OP_LEGACY_SERVER_CONNECT,
+                                 OP_LEGACY_SERVER_CONNECT)
 
     def test_create_default_context(self):
         ctx = ssl.create_default_context()
