@@ -26,14 +26,17 @@ class int "PyObject *" "&PyLong_Type"
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
 
+/* Is this PyLong of size 1, 0 or -1? */
+#define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1 < 3)
+
 /* convert a PyLong of size 1, 0 or -1 to an sdigit */
-#define MEDIUM_VALUE(x) (assert(-1 <= Py_SIZE(x) && Py_SIZE(x) <= 1),   \
-         Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :   \
-             (Py_SIZE(x) == 0 ? (sdigit)0 :                             \
-              (sdigit)(x)->ob_digit[0]))
+#define MEDIUM_VALUE(x) (assert(IS_MEDIUM_VALUE(x)), \
+    ((sdigit)(Py_SIZE(x) * (x)->ob_digit[0])))
 
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
+
+#define IS_MEDIUM_INT(utype, x) (((utype)x)+PyLong_MASK <= 2*PyLong_MASK)
 
 static PyObject *
 get_small_int(sdigit ival)
@@ -47,7 +50,7 @@ get_small_int(sdigit ival)
 static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
-    if (v && Py_ABS(Py_SIZE(v)) <= 1) {
+    if (v && IS_MEDIUM_VALUE(v)) {
         sdigit ival = MEDIUM_VALUE(v);
         if (IS_SMALL_INT(ival)) {
             Py_DECREF(v);
@@ -167,20 +170,34 @@ _PyLong_Copy(PyLongObject *src)
     return (PyObject *)result;
 }
 
-/* Create a new int object from a C long int */
+static PyObject *
+PyLong_FromMedium(sdigit x)
+{
+    assert(!IS_SMALL_INT(x));
+    assert(x > (sdigit)-PyLong_BASE);
+    assert(x < (sdigit)PyLong_BASE);
+    /* We could use a freelist here */
+    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
+    if (v == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    Py_ssize_t sign = x < 0 ? -1: 1;
+    digit abs_x = x < 0 ? -x : x;
+    _PyObject_InitVar((PyVarObject*)v, &PyLong_Type, sign);
+    v->ob_digit[0] = abs_x;
+    return (PyObject*)v;
+}
 
-PyObject *
-PyLong_FromLong(long ival)
+static PyObject *
+PyLong_FromLarge(long ival)
 {
     PyLongObject *v;
     unsigned long abs_ival;
     unsigned long t;  /* unsigned so >> doesn't propagate sign bit */
     int ndigits = 0;
     int sign;
-
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
+    assert(!IS_MEDIUM_INT(unsigned long, ival));
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
@@ -190,36 +207,9 @@ PyLong_FromLong(long ival)
     }
     else {
         abs_ival = (unsigned long)ival;
-        sign = ival == 0 ? 0 : 1;
+        sign = 1;
     }
-
-    /* Fast path for single-digit ints */
-    if (!(abs_ival >> PyLong_SHIFT)) {
-        v = _PyLong_New(1);
-        if (v) {
-            Py_SET_SIZE(v, sign);
-            v->ob_digit[0] = Py_SAFE_DOWNCAST(
-                abs_ival, unsigned long, digit);
-        }
-        return (PyObject*)v;
-    }
-
-#if PyLong_SHIFT==15
-    /* 2 digits */
-    if (!(abs_ival >> 2*PyLong_SHIFT)) {
-        v = _PyLong_New(2);
-        if (v) {
-            Py_SET_SIZE(v, 2 * sign);
-            v->ob_digit[0] = Py_SAFE_DOWNCAST(
-                abs_ival & PyLong_MASK, unsigned long, digit);
-            v->ob_digit[1] = Py_SAFE_DOWNCAST(
-                  abs_ival >> PyLong_SHIFT, unsigned long, digit);
-        }
-        return (PyObject*)v;
-    }
-#endif
-
-    /* Larger numbers: loop to determine number of digits */
+    /* Loop to determine number of digits */
     t = abs_ival;
     while (t) {
         ++ndigits;
@@ -237,6 +227,39 @@ PyLong_FromLong(long ival)
         }
     }
     return (PyObject *)v;
+}
+
+/* Convert result of add/subtract of medium values
+ * to a PyLong.
+ */
+static inline PyObject *
+PyLong_FromDigitPlusOneBit(sdigit x)
+{
+    if (IS_SMALL_INT(x)) {
+        return get_small_int(x);
+    }
+    assert(x != 0);
+    if (IS_MEDIUM_INT(digit, x)) {
+        return PyLong_FromMedium(x);
+    }
+    return PyLong_FromLarge(x);
+}
+
+/* Create a new int object from a C long int */
+
+PyObject *
+PyLong_FromLong(long ival)
+{
+
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+
+    assert(ival != 0);
+    if (IS_MEDIUM_INT(unsigned long, ival)) {
+        return PyLong_FromMedium(ival);
+    }
+    return PyLong_FromLarge(ival);
 }
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
@@ -2860,7 +2883,7 @@ PyLong_AsDouble(PyObject *v)
         PyErr_SetString(PyExc_TypeError, "an integer is required");
         return -1.0;
     }
-    if (Py_ABS(Py_SIZE(v)) <= 1) {
+    if (IS_MEDIUM_VALUE(v)) {
         /* Fast path; single digit long (31 bits) will cast safely
            to double.  This improves performance of FP/long operations
            by 20%.
@@ -3067,7 +3090,7 @@ long_add(PyLongObject *a, PyLongObject *b)
 
     CHECK_BINOP(a, b);
 
-    if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
+    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return PyLong_FromLong(MEDIUM_VALUE(a) + MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
@@ -3101,8 +3124,8 @@ long_sub(PyLongObject *a, PyLongObject *b)
 
     CHECK_BINOP(a, b);
 
-    if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
-        return PyLong_FromLong(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
+    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
+        return PyLong_FromDigitPlusOneBit(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
@@ -3536,7 +3559,7 @@ long_mul(PyLongObject *a, PyLongObject *b)
     CHECK_BINOP(a, b);
 
     /* fast path for single-digit multiplication */
-    if (Py_ABS(Py_SIZE(a)) <= 1 && Py_ABS(Py_SIZE(b)) <= 1) {
+    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         stwodigits v = (stwodigits)(MEDIUM_VALUE(a)) * MEDIUM_VALUE(b);
         return PyLong_FromLongLong((long long)v);
     }
@@ -4358,7 +4381,7 @@ static PyObject *
 long_neg(PyLongObject *v)
 {
     PyLongObject *z;
-    if (Py_ABS(Py_SIZE(v)) <= 1)
+    if (IS_MEDIUM_VALUE(v))
         return PyLong_FromLong(-MEDIUM_VALUE(v));
     z = (PyLongObject *)_PyLong_Copy(v);
     if (z != NULL)
@@ -4704,28 +4727,37 @@ long_bitwise(PyLongObject *a,
 static PyObject *
 long_and(PyObject *a, PyObject *b)
 {
-    PyObject *c;
     CHECK_BINOP(a, b);
-    c = long_bitwise((PyLongObject*)a, '&', (PyLongObject*)b);
-    return c;
+    PyLongObject *x = (PyLongObject*)a;
+    PyLongObject *y = (PyLongObject*)b;
+    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
+        return PyLong_FromDigitPlusOneBit(MEDIUM_VALUE(x) & MEDIUM_VALUE(y));
+    }
+    return long_bitwise(x, '&', y);
 }
 
 static PyObject *
 long_xor(PyObject *a, PyObject *b)
 {
-    PyObject *c;
     CHECK_BINOP(a, b);
-    c = long_bitwise((PyLongObject*)a, '^', (PyLongObject*)b);
-    return c;
+    PyLongObject *x = (PyLongObject*)a;
+    PyLongObject *y = (PyLongObject*)b;
+    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
+        return PyLong_FromDigitPlusOneBit(MEDIUM_VALUE(x) ^ MEDIUM_VALUE(y));
+    }
+    return long_bitwise(x, '^', y);
 }
 
 static PyObject *
 long_or(PyObject *a, PyObject *b)
 {
-    PyObject *c;
     CHECK_BINOP(a, b);
-    c = long_bitwise((PyLongObject*)a, '|', (PyLongObject*)b);
-    return c;
+    PyLongObject *x = (PyLongObject*)a;
+    PyLongObject *y = (PyLongObject*)b;
+    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
+        return PyLong_FromDigitPlusOneBit(MEDIUM_VALUE(x) | MEDIUM_VALUE(y));
+    }
+    return long_bitwise(x, '|', y);
 }
 
 static PyObject *
