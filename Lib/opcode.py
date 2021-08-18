@@ -37,6 +37,12 @@ config = {}
 opmap = {}
 opname = ['<%r>' % (op,) for op in range(256)]
 
+def is_immediate_const(v):
+    if isinstance(v, int):
+        oparg = v + config['MAKE_INT_BIAS']
+        return oparg >= 0 and oparg <= 255
+    return False
+
 def def_op(name, op):
     opname[op] = name
     opmap[name] = op

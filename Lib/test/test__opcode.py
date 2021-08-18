@@ -65,6 +65,31 @@ class OpcodeTests(unittest.TestCase):
                     self.assertEqual(nojump, common)
 
 
+class IsImmediateConstTests(unittest.TestCase):
+    def test_ints(self):
+        self.assertFalse(opcode.is_immediate_const(-220))
+        self.assertFalse(opcode.is_immediate_const(-6))
+        self.assertTrue(opcode.is_immediate_const(-5))
+        self.assertTrue(opcode.is_immediate_const(-1))
+        self.assertTrue(opcode.is_immediate_const(0))
+        self.assertTrue(opcode.is_immediate_const(20))
+        self.assertTrue(opcode.is_immediate_const(250))
+        self.assertFalse(opcode.is_immediate_const(251))
+        self.assertFalse(opcode.is_immediate_const(1010))
+
+    def test_other_types(self):
+        values = [
+            1.0,
+            "1",
+            (1, 2),
+            [1, 2, 3],
+            {'a': 1, 'b': 2},
+            lambda x: 1,
+        ]
+        for v in values:
+            self.assertFalse(opcode.is_immediate_const(v))
+
+
 class SpecializationStatsTests(unittest.TestCase):
     def test_specialization_stats(self):
         stat_names = opcode._specialization_stats
