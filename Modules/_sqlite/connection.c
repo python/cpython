@@ -29,9 +29,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#define ACTION_FINALIZE 1
-#define ACTION_RESET 2
-
 #if SQLITE_VERSION_NUMBER >= 3014000
 #define HAVE_TRACE_V2
 #endif
@@ -114,7 +111,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->begin_statement = NULL;
 
     Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
 
     Py_INCREF(Py_None);
@@ -159,13 +155,11 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    self->created_statements = 0;
     self->created_cursors = 0;
 
-    /* Create lists of weak references to statements/cursors */
-    self->statements = PyList_New(0);
+    /* Create list of weak references to cursors */
     self->cursors = PyList_New(0);
-    if (!self->statements || !self->cursors) {
+    if (self->cursors == NULL) {
         return -1;
     }
 
@@ -198,37 +192,24 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     return 0;
 }
 
-/* action in (ACTION_RESET, ACTION_FINALIZE) */
 static void
-pysqlite_do_all_statements(pysqlite_Connection *self, int action,
-                           int reset_cursors)
+pysqlite_do_all_statements(pysqlite_Connection *self)
 {
-    int i;
-    PyObject* weakref;
-    PyObject* statement;
-    pysqlite_Cursor* cursor;
-
-    for (i = 0; i < PyList_Size(self->statements); i++) {
-        weakref = PyList_GetItem(self->statements, i);
-        statement = PyWeakref_GetObject(weakref);
-        if (statement != Py_None) {
-            Py_INCREF(statement);
-            if (action == ACTION_RESET) {
-                (void)pysqlite_statement_reset((pysqlite_Statement*)statement);
-            } else {
-                (void)pysqlite_statement_finalize((pysqlite_Statement*)statement);
-            }
-            Py_DECREF(statement);
+    // Reset all statements
+    sqlite3_stmt *stmt = NULL;
+    while ((stmt = sqlite3_next_stmt(self->db, stmt))) {
+        if (sqlite3_stmt_busy(stmt)) {
+            (void)sqlite3_reset(stmt);
         }
     }
 
-    if (reset_cursors) {
-        for (i = 0; i < PyList_Size(self->cursors); i++) {
-            weakref = PyList_GetItem(self->cursors, i);
-            cursor = (pysqlite_Cursor*)PyWeakref_GetObject(weakref);
-            if ((PyObject*)cursor != Py_None) {
-                cursor->reset = 1;
-            }
+    // Reset all cursors
+    for (int i = 0; i < PyList_Size(self->cursors); i++) {
+        PyObject *weakref = PyList_GetItem(self->cursors, i);
+        PyObject *object = PyWeakref_GetObject(weakref);
+        if (object != Py_None) {
+            pysqlite_Cursor *cursor = (pysqlite_Cursor *)object;
+            cursor->reset = 1;
         }
     }
 }
@@ -239,7 +220,6 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->isolation_level);
     Py_VISIT(self->statement_cache);
-    Py_VISIT(self->statements);
     Py_VISIT(self->cursors);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->text_factory);
@@ -254,7 +234,6 @@ connection_clear(pysqlite_Connection *self)
 {
     Py_CLEAR(self->isolation_level);
     Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
@@ -378,7 +357,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
+    Py_CLEAR(self->statement_cache);
     connection_close(self);
 
     Py_RETURN_NONE;
@@ -474,7 +453,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
     }
 
     if (!sqlite3_get_autocommit(self->db)) {
-        pysqlite_do_all_statements(self, ACTION_RESET, 1);
+        pysqlite_do_all_statements(self);
 
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare_v2(self->db, "ROLLBACK", 9, &statement, NULL);
@@ -772,37 +751,6 @@ _pysqlite_final_callback(sqlite3_context *context)
 
 error:
     PyGILState_Release(threadstate);
-}
-
-static void _pysqlite_drop_unused_statement_references(pysqlite_Connection* self)
-{
-    PyObject* new_list;
-    PyObject* weakref;
-    int i;
-
-    /* we only need to do this once in a while */
-    if (self->created_statements++ < 200) {
-        return;
-    }
-
-    self->created_statements = 0;
-
-    new_list = PyList_New(0);
-    if (!new_list) {
-        return;
-    }
-
-    for (i = 0; i < PyList_Size(self->statements); i++) {
-        weakref = PyList_GetItem(self->statements, i);
-        if (PyWeakref_GetObject(weakref) != Py_None) {
-            if (PyList_Append(new_list, weakref) != 0) {
-                Py_DECREF(new_list);
-                return;
-            }
-        }
-    }
-
-    Py_SETREF(self->statements, new_list);
 }
 
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
@@ -1358,7 +1306,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 {
     PyObject* sql;
     pysqlite_Statement* statement;
-    PyObject* weakref;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1370,27 +1317,12 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
     if (!PyArg_ParseTuple(args, "U", &sql))
         return NULL;
 
-    _pysqlite_drop_unused_statement_references(self);
-
     statement = pysqlite_statement_create(self, sql);
     if (statement == NULL) {
         return NULL;
     }
 
-    weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
-    if (weakref == NULL)
-        goto error;
-    if (PyList_Append(self->statements, weakref) != 0) {
-        Py_DECREF(weakref);
-        goto error;
-    }
-    Py_DECREF(weakref);
-
     return (PyObject*)statement;
-
-error:
-    Py_DECREF(statement);
-    return NULL;
 }
 
 /*[clinic input]
