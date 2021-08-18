@@ -127,7 +127,7 @@ For convenience, some of these functions will always return a
 
 .. c:function:: void PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
 
-   Set the provided exception as the cause for the current exception. If there
+   Set the provided exception as the context for the current exception. If there
    is no exception currently set (:c:func:`PyErr_Occurred` returns ``0``) this
    function behaves like :c:func:`PyErr_Restore`, but if an exception is
    already set, set the provided exception as the context (accessible from
