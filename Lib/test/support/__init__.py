@@ -13,6 +13,7 @@ import sysconfig
 import time
 import types
 import unittest
+import warnings
 
 from .testresult import get_test_runner
 
@@ -2053,3 +2054,31 @@ def infinite_recursion(max_depth=75):
         yield
     finally:
         sys.setrecursionlimit(original_depth)
+
+def ignore_deprecations_from(module: str, *, like: str) -> object:
+    token = object()
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=module,
+        message=like + fr"(?#support{id(token)})",
+    )
+    return token
+
+def clear_ignored_deprecations(*tokens: object) -> None:
+    if not tokens:
+        raise ValueError("Provide token or tokens returned by ignore_deprecations_from")
+
+    new_filters = []
+    for action, message, category, module, lineno in warnings.filters:
+        if action == "ignore" and category is DeprecationWarning:
+            if isinstance(message, re.Pattern):
+                message = message.pattern
+            if tokens:
+                endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
+            if message.endswith(endswith):
+                continue
+        new_filters.append((action, message, category, module, lineno))
+    if warnings.filters != new_filters:
+        warnings.filters[:] = new_filters
+        warnings._filters_mutated()
