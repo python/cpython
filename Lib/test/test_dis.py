@@ -147,29 +147,23 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
-%3d           0 MAKE_INT                 5 (0)
-              2 POP_JUMP_IF_TRUE        12 (to 24)
-              4 LOAD_ASSERTION_ERROR
-              6 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              8 MAKE_FUNCTION            0
-             10 LOAD_FAST                0 (x)
-             12 GET_ITER
-             14 CALL_FUNCTION            1
+%3d           0 LOAD_ASSERTION_ERROR
+              2 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              4 MAKE_FUNCTION            0
+              6 LOAD_FAST                0 (x)
+              8 GET_ITER
+             10 CALL_FUNCTION            1
 
-%3d          16 MAKE_INT                 6 (1)
+%3d          12 MAKE_INT                 6 (1)
 
-%3d          18 BINARY_ADD
-             20 CALL_FUNCTION            1
-             22 RAISE_VARARGS            1
-
-%3d     >>   24 LOAD_CONST               0 (None)
-             26 RETURN_VALUE
+%3d          14 BINARY_ADD
+             16 CALL_FUNCTION            1
+             18 RAISE_VARARGS            1
 """ % (bug1333982.__code__.co_firstlineno + 1,
        __file__,
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
-       bug1333982.__code__.co_firstlineno + 1,
-       bug1333982.__code__.co_firstlineno + 3)
+       bug1333982.__code__.co_firstlineno + 1)
 
 
 def bug42562():
@@ -285,20 +279,14 @@ dis_compound_stmt_str = """\
   1           0 MAKE_INT                 5 (0)
               2 STORE_NAME               0 (x)
 
-  2           4 MAKE_INT                 6 (1)
-              6 POP_JUMP_IF_FALSE       12 (to 24)
+  2           4 NOP
 
-  3     >>    8 LOAD_NAME                0 (x)
-             10 MAKE_INT                 6 (1)
-             12 INPLACE_ADD
-             14 STORE_NAME               0 (x)
+  3     >>    6 LOAD_NAME                0 (x)
+              8 MAKE_INT                 6 (1)
+             10 INPLACE_ADD
+             12 STORE_NAME               0 (x)
 
-  2          16 MAKE_INT                 6 (1)
-             18 POP_JUMP_IF_TRUE         4 (to 8)
-             20 LOAD_CONST               0 (None)
-             22 RETURN_VALUE
-        >>   24 LOAD_CONST               0 (None)
-             26 RETURN_VALUE
+  2          14 JUMP_ABSOLUTE            3 (to 6)
 """
 
 dis_traceback = """\

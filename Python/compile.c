@@ -8099,20 +8099,26 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
             target = &nop;
         }
         switch (inst->i_opcode) {
-            /* Remove LOAD_CONST const; conditional jump */
+            /* Remove LOAD_CONST/MAKE_INT const; conditional jump */
             case LOAD_CONST:
+            case MAKE_INT:
             {
                 PyObject* cnt;
-                int is_true;
+                int is_true = -1;
                 int jump_if_true;
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
-                        cnt = PyList_GET_ITEM(consts, oparg);
-                        is_true = PyObject_IsTrue(cnt);
-                        if (is_true == -1) {
-                            goto error;
+                        if (inst->i_opcode == LOAD_CONST) {
+                            cnt = PyList_GET_ITEM(consts, oparg);
+                            is_true = PyObject_IsTrue(cnt);
+                            if (is_true == -1) {
+                                goto error;
+                            }
+                        } else if (inst->i_opcode == MAKE_INT) {
+                            is_true = oparg - MAKE_INT_BIAS;
                         }
+                        assert(is_true != -1);
                         inst->i_opcode = NOP;
                         jump_if_true = nextop == POP_JUMP_IF_TRUE;
                         if (is_true == jump_if_true) {
@@ -8125,11 +8131,16 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                     case JUMP_IF_FALSE_OR_POP:
                     case JUMP_IF_TRUE_OR_POP:
-                        cnt = PyList_GET_ITEM(consts, oparg);
-                        is_true = PyObject_IsTrue(cnt);
-                        if (is_true == -1) {
-                            goto error;
+                        if (inst->i_opcode == LOAD_CONST) {
+                            cnt = PyList_GET_ITEM(consts, oparg);
+                            is_true = PyObject_IsTrue(cnt);
+                            if (is_true == -1) {
+                                goto error;
+                            }
+                        } else if (inst->i_opcode == MAKE_INT) {
+                            is_true = oparg - MAKE_INT_BIAS;
                         }
+                        assert(is_true != -1);
                         jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
                         if (is_true == jump_if_true) {
                             bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;

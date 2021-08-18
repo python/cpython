@@ -228,14 +228,17 @@ class TestTranforms(BytecodeTestCase):
             ('a = 13 | 7', 15),                 # binary or
             ):
             code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
+            if isinstance(elem, int):
+                self.assertInBytecode(code, 'MAKE_INT', elem)
+            else:
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
             for instr in dis.get_instructions(code):
                 self.assertFalse(instr.opname.startswith('BINARY_'))
             self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 2)
+        self.assertInBytecode(code, 'MAKE_INT', 2)
         self.assertInBytecode(code, 'LOAD_CONST', 'b')
         self.check_lnotab(code)
 
@@ -277,6 +280,7 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(code)
 
     def test_folding_of_unaryops_on_constants(self):
+
         for line, elem in (
             ('-0.5', -0.5),                     # unary negative
             ('-0.0', -0.0),                     # -0.0
@@ -286,7 +290,10 @@ class TestTranforms(BytecodeTestCase):
             ('+1', 1),                          # unary positive
         ):
             code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'LOAD_CONST', elem)
+            if isinstance(elem, int):
+                self.assertInBytecode(code, 'MAKE_INT', elem)
+            else:
+                self.assertInBytecode(code, 'LOAD_CONST', elem)
             for instr in dis.get_instructions(code):
                 self.assertFalse(instr.opname.startswith('UNARY_'))
             self.check_lnotab(code)
