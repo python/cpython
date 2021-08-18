@@ -1,0 +1,2 @@
+Make exception message more useful when subclass from typing special form
+alias. Patch provided by Yurii Karabas.
