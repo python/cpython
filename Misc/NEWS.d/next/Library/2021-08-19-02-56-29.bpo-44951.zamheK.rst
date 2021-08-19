@@ -1,0 +1,1 @@
+:func:`selectors.EpollSelector.set_exclusive` added to enable setting *EPOLLEXCLUSIVE* automatically on polled file descriptors.

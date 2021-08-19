@@ -212,10 +212,25 @@ constants below:
 
    :func:`select.epoll`-based selector.
 
+   .. attribute:: exclusive
+
+      Check if *EPOLLEXCLUSIVE* will be set on newly registered
+      files.
+
    .. method:: fileno()
 
       This returns the file descriptor used by the underlying
       :func:`select.epoll` object.
+
+   .. method:: set_exclusive(value)
+
+      Enable or disable setting *EPOLLEXCLUSIVE* on newly
+      registered files. A file descriptor with *EPOLLEXCLUSIVE* set on it
+      will raise :exc:`OSError` if you attempt to
+      :meth:`~BaseSelector.modify` it. You must unregister and
+      re-register a file descriptor to enable or disable *EPOLLEXCLUSIVE*.
+
+      *value* must be a boolean.
 
 .. class:: DevpollSelector()
 
