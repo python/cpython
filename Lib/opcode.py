@@ -233,12 +233,21 @@ _specialized_instructions = [
     "LOAD_GLOBAL_ADAPTIVE",
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
+    "LOAD_METHOD_ADAPTIVE",
+    "LOAD_METHOD_CACHED",
+    "LOAD_METHOD_CLASS",
+    "LOAD_METHOD_MODULE",
     "STORE_ATTR_ADAPTIVE",
     "STORE_ATTR_SPLIT_KEYS",
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
+    # Super instructions
+    "LOAD_FAST__LOAD_FAST",
+    "STORE_FAST__LOAD_FAST",
+    "LOAD_FAST__LOAD_CONST",
+    "LOAD_CONST__LOAD_FAST",
+    "STORE_FAST__STORE_FAST",
 ]
-
 _specialization_stats = [
     "specialization_success",
     "specialization_failure",

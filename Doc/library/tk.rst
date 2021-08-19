@@ -26,8 +26,8 @@ bundled with Python. Although its standard documentation is weak, good
 material is available, which includes: references, tutorials, a book and
 others. :mod:`tkinter` is also famous for having an outdated look and feel,
 which has been vastly improved in Tk 8.5. Nevertheless, there are many other
-GUI libraries that you could be interested in. For more information about
-alternatives, see the :ref:`other-gui-packages` section.
+GUI libraries that you could be interested in. The Python wiki lists several
+alternative `GUI frameworks and tools <https://wiki.python.org/moin/GuiProgramming>`_.
 
 .. toctree::
 
@@ -41,7 +41,6 @@ alternatives, see the :ref:`other-gui-packages` section.
    tkinter.ttk.rst
    tkinter.tix.rst
    idle.rst
-   othergui.rst
 
 .. Other sections I have in mind are
    Tkinter internals
