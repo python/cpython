@@ -40,7 +40,7 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
-#define IS_MEDIUM_INT(x) (((unsigned long)x)+PyLong_MASK <= 2*PyLong_MASK)
+#define IS_MEDIUM_INT(x) (((twodigits)x)+PyLong_MASK <= 2*PyLong_MASK)
 
 static PyObject *
 get_small_int(sdigit ival)
@@ -239,7 +239,7 @@ _PyLong_FromLarge(long ival)
  * to a PyLong.
  */
 static inline PyObject *
-_PyLong_FromSDigit(sdigit x)
+_PyLong_FromSDigit(stwodigits x)
 {
     if (IS_SMALL_INT(x)) {
         return get_small_int(x);
