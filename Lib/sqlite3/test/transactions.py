@@ -139,6 +139,7 @@ class TransactionTests(unittest.TestCase):
         con.rollback()
         self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
 
+
 class RollbackTests(unittest.TestCase):
     """bpo-44092: sqlite3 now leaves it to SQLite to resolve rollback issues"""
 
@@ -178,6 +179,7 @@ class RollbackTests(unittest.TestCase):
     def test_no_duplicate_rows_after_rollback_new_query(self):
         self.cur1.execute("select c from t where c = 1")
         self._check_rows()
+
 
 class SpecialCommandTests(unittest.TestCase):
     def setUp(self):
