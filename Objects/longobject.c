@@ -124,18 +124,21 @@ PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
     PyLongObject *result;
-    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
-       sizeof(digit)*size.  Previous incarnations of this code used
-       sizeof(PyVarObject) instead of the offsetof, but this risks being
-       incorrect in the presence of padding between the PyVarObject header
-       and the digits. */
     if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
         PyErr_SetString(PyExc_OverflowError,
                         "too many digits in integer");
         return NULL;
     }
+    /* Fast operations for single digit integers (including zero)
+     * assume that there is always at least one digit present. */
+    Py_ssize_t ndigits = size ? size : 1;
+    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+       sizeof(digit)*size.  Previous incarnations of this code used
+       sizeof(PyVarObject) instead of the offsetof, but this risks being
+       incorrect in the presence of padding between the PyVarObject header
+       and the digits. */
     result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
-                             size*sizeof(digit));
+                             ndigits*sizeof(digit));
     if (!result) {
         PyErr_NoMemory();
         return NULL;
