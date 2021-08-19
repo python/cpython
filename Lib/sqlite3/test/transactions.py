@@ -129,7 +129,7 @@ class TransactionTests(unittest.TestCase):
         self.con1.commit()
 
     def test_rollback_cursor_consistency(self):
-        """Checks if that cursors behave correctly after rollback."""
+        """Check that cursors behave correctly after rollback."""
         con = sqlite.connect(":memory:")
         cur = con.cursor()
         cur.execute("create table test(x)")
@@ -140,12 +140,8 @@ class TransactionTests(unittest.TestCase):
         self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
 
 class RollbackTests(unittest.TestCase):
-    """bpo-33376: Duplicate rows can be returned after rollback.
+    """bpo-44092: sqlite3 now leaves it to SQLite to resolve rollback issues"""
 
-    Similar to test_commit_cursor_reset in regression.py,
-    Connection::rollback() used to reset statements and cursors, which could
-    cause statements to be reset again when they shouldn't be.
-    """
     def setUp(self):
         self.con = sqlite.connect(":memory:")
         self.assertEqual(self.con.isolation_level, "")
