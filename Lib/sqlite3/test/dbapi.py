@@ -277,6 +277,19 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
             self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
 
+    @unittest.skipIf(sqlite.sqlite_version_info <= (3, 10, 0),
+                     "Requires SQLite 3.10.0 or newer")
+    def test_extended_error_code_on_exception(self):
+        con = sqlite.connect(":memory:")
+        with con:
+            con.execute("create table t(t integer check(t > 0))")
+        errmsg = "CHECK constraint failed"
+        with self.assertRaisesRegex(sqlite.IntegrityError, errmsg) as cm:
+            con.execute("insert into t values(-1)")
+        exc = cm.exception
+        self.assertEqual(exc.sqlite_errorcode, sqlite.SQLITE_CONSTRAINT_CHECK)
+        self.assertEqual(exc.sqlite_errorname, "SQLITE_CONSTRAINT_CHECK")
+
     # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
     # OperationalError on some buildbots.
     @unittest.skipIf(sys.platform == "darwin", "shared cache is deprecated on macOS")
