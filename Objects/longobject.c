@@ -27,14 +27,14 @@ _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
 
 /* Is this PyLong of size 1, 0 or -1? */
-#define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1 < 3)
+#define IS_MEDIUM_VALUE(x) (((size_t)Py_SIZE(x)) + 1U < 3U)
 
 /* convert a PyLong of size 1, 0 or -1 to a C integer */
-static inline sdigit
+static inline stwodigits
 medium_value(PyLongObject *x)
 {
     assert(IS_MEDIUM_VALUE(x));
-    return Py_SIZE(x) * x->ob_digit[0];
+    return ((stwodigits)Py_SIZE(x)) * x->ob_digit[0];
 }
 
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
@@ -55,7 +55,7 @@ static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
     if (v && IS_MEDIUM_VALUE(v)) {
-        long ival = medium_value(v);
+        sdigit ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
             Py_DECREF(v);
             return (PyLongObject *)get_small_int(ival);
@@ -3565,7 +3565,7 @@ long_mul(PyLongObject *a, PyLongObject *b)
 
     /* fast path for single-digit multiplication */
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
-        stwodigits v = (stwodigits)(medium_value(a)) * medium_value(b);
+        stwodigits v = medium_value(a) * medium_value(b);
         return PyLong_FromLongLong((long long)v);
     }
 
