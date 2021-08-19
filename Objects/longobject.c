@@ -178,7 +178,7 @@ _PyLong_Copy(PyLongObject *src)
 }
 
 static PyObject *
-PyLong_FromMedium(sdigit x)
+_PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(IS_MEDIUM_INT(x));
@@ -246,7 +246,7 @@ _PyLong_FromSDigit(sdigit x)
     }
     assert(x != 0);
     if (IS_MEDIUM_INT(x)) {
-        return PyLong_FromMedium(x);
+        return _PyLong_FromMedium(x);
     }
     return _PyLong_FromLarge(x);
 }
@@ -262,7 +262,7 @@ PyLong_FromLong(long ival)
 
     assert(ival != 0);
     if (IS_MEDIUM_INT(ival)) {
-        return PyLong_FromMedium(ival);
+        return _PyLong_FromMedium(ival);
     }
     return _PyLong_FromLarge(ival);
 }
