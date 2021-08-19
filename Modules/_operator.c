@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "structmember.h"         // PyMemberDef
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -953,7 +954,14 @@ typedef struct {
     Py_ssize_t nitems;
     PyObject *item;
     Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
+    vectorcallfunc vectorcall;
 } itemgetterobject;
+
+// Forward declarations
+static PyObject *
+itemgetter_vectorcall(PyObject *, PyObject *const *, size_t, PyObject *);
+static PyObject *
+itemgetter_call_impl(itemgetterobject *, PyObject *);
 
 /* AC 3.5: treats first argument as an iterable, otherwise uses *args */
 static PyObject *
@@ -1000,6 +1008,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
+    ig->vectorcall = (vectorcallfunc)itemgetter_vectorcall;
     PyObject_GC_Track(ig);
     return (PyObject *)ig;
 }
@@ -1032,16 +1041,33 @@ itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 static PyObject *
 itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
 {
-    PyObject *obj, *result;
-    Py_ssize_t i, nitems=ig->nitems;
-
     assert(PyTuple_CheckExact(args));
     if (!_PyArg_NoKeywords("itemgetter", kw))
         return NULL;
     if (!_PyArg_CheckPositional("itemgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    return itemgetter_call_impl(ig, PyTuple_GET_ITEM(args, 0));
+}
 
-    obj = PyTuple_GET_ITEM(args, 0);
+static PyObject *
+itemgetter_vectorcall(PyObject *ig, PyObject *const *args,
+                      size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("itemgetter", kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("itemgetter", nargs, 1, 1)) {
+        return NULL;
+    }
+    return itemgetter_call_impl((itemgetterobject *)ig, args[0]);
+}
+
+static PyObject *
+itemgetter_call_impl(itemgetterobject *ig, PyObject *obj)
+{
+    PyObject *result;
+    Py_ssize_t i, nitems=ig->nitems;
     if (nitems == 1) {
         if (ig->index >= 0
             && PyTuple_CheckExact(obj)
@@ -1109,12 +1135,18 @@ static PyMethodDef itemgetter_methods[] = {
     {NULL}
 };
 
+static PyMemberDef itemgetter_members[] = {
+    {"__vectorcalloffset__", T_PYSSIZET, offsetof(itemgetterobject, vectorcall), READONLY},
+    {NULL} /* Sentinel */
+};
+
 PyDoc_STRVAR(itemgetter_doc,
 "itemgetter(item, ...) --> itemgetter object\n\
 \n\
 Return a callable object that fetches the given item(s) from its operand.\n\
 After f = itemgetter(2), the call f(r) returns r[2].\n\
 After g = itemgetter(2, 5, 3), the call g(r) returns (r[2], r[5], r[3])");
+
 
 static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_doc, (void *)itemgetter_doc},
@@ -1123,6 +1155,7 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_traverse, itemgetter_traverse},
     {Py_tp_clear, itemgetter_clear},
     {Py_tp_methods, itemgetter_methods},
+    {Py_tp_members, itemgetter_members},
     {Py_tp_new, itemgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, itemgetter_repr},
@@ -1134,7 +1167,7 @@ static PyType_Spec itemgetter_type_spec = {
     .basicsize = sizeof(itemgetterobject),
     .itemsize = 0,
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_VECTORCALL),
     .slots = itemgetter_type_slots,
 };
 
