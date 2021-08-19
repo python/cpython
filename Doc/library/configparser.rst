@@ -291,7 +291,7 @@ For example:
                deeper than the first line
                of a value
            # Did I mention we can indent comments, too?
-
+           # Remember to set the emtpy lines option to False in your ConfigParser: empty_lines_in_values=False
 
 Interpolation of values
 -----------------------
