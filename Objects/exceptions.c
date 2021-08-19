@@ -574,10 +574,10 @@ SimpleExtendsException(PyExc_BaseException, GeneratorExit,
 static int
 SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
 {
-    Py_ssize_t size = PyTuple_GET_SIZE(args);
-
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
+
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
 
     if (size == 0)
         return 0;
