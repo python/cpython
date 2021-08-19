@@ -140,6 +140,26 @@ SyntaxError: cannot assign to expression
 Traceback (most recent call last):
 SyntaxError: cannot assign to conditional expression
 
+>>> a = 42 if True
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> a = (42 if True)
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> a = [1, 42 if True, 4]
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> if True:
+...     print("Hello"
+...
+... if 2:
+...    print(123))
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 >>> True = True = 3
 Traceback (most recent call last):
 SyntaxError: cannot assign to True
@@ -1181,6 +1201,13 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 >>> from t import x,y,
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
+
+# Check that we dont raise the "trailing comma" error if there is more
+# input to the left of the valid part that we parsed.
+
+>>> from t import x,y, and 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> (): int
 Traceback (most recent call last):

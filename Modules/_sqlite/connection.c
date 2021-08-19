@@ -29,9 +29,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#define ACTION_FINALIZE 1
-#define ACTION_RESET 2
-
 #if SQLITE_VERSION_NUMBER >= 3014000
 #define HAVE_TRACE_V2
 #endif
@@ -111,12 +108,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 
     const char *database = PyBytes_AsString(database_obj);
 
-    self->initialized = 1;
-
     self->begin_statement = NULL;
 
     Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
 
     Py_INCREF(Py_None);
@@ -147,7 +141,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         Py_INCREF(isolation_level);
     }
     Py_CLEAR(self->isolation_level);
-    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) < 0) {
+    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
         Py_DECREF(isolation_level);
         return -1;
     }
@@ -161,13 +155,11 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    self->created_statements = 0;
     self->created_cursors = 0;
 
-    /* Create lists of weak references to statements/cursors */
-    self->statements = PyList_New(0);
+    /* Create list of weak references to cursors */
     self->cursors = PyList_New(0);
-    if (!self->statements || !self->cursors) {
+    if (self->cursors == NULL) {
         return -1;
     }
 
@@ -195,40 +187,29 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
+    self->initialized = 1;
+
     return 0;
 }
 
-/* action in (ACTION_RESET, ACTION_FINALIZE) */
 static void
-pysqlite_do_all_statements(pysqlite_Connection *self, int action,
-                           int reset_cursors)
+pysqlite_do_all_statements(pysqlite_Connection *self)
 {
-    int i;
-    PyObject* weakref;
-    PyObject* statement;
-    pysqlite_Cursor* cursor;
-
-    for (i = 0; i < PyList_Size(self->statements); i++) {
-        weakref = PyList_GetItem(self->statements, i);
-        statement = PyWeakref_GetObject(weakref);
-        if (statement != Py_None) {
-            Py_INCREF(statement);
-            if (action == ACTION_RESET) {
-                (void)pysqlite_statement_reset((pysqlite_Statement*)statement);
-            } else {
-                (void)pysqlite_statement_finalize((pysqlite_Statement*)statement);
-            }
-            Py_DECREF(statement);
+    // Reset all statements
+    sqlite3_stmt *stmt = NULL;
+    while ((stmt = sqlite3_next_stmt(self->db, stmt))) {
+        if (sqlite3_stmt_busy(stmt)) {
+            (void)sqlite3_reset(stmt);
         }
     }
 
-    if (reset_cursors) {
-        for (i = 0; i < PyList_Size(self->cursors); i++) {
-            weakref = PyList_GetItem(self->cursors, i);
-            cursor = (pysqlite_Cursor*)PyWeakref_GetObject(weakref);
-            if ((PyObject*)cursor != Py_None) {
-                cursor->reset = 1;
-            }
+    // Reset all cursors
+    for (int i = 0; i < PyList_Size(self->cursors); i++) {
+        PyObject *weakref = PyList_GetItem(self->cursors, i);
+        PyObject *object = PyWeakref_GetObject(weakref);
+        if (object != Py_None) {
+            pysqlite_Cursor *cursor = (pysqlite_Cursor *)object;
+            cursor->reset = 1;
         }
     }
 }
@@ -239,7 +220,6 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->isolation_level);
     Py_VISIT(self->statement_cache);
-    Py_VISIT(self->statements);
     Py_VISIT(self->cursors);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->text_factory);
@@ -254,7 +234,6 @@ connection_clear(pysqlite_Connection *self)
 {
     Py_CLEAR(self->isolation_level);
     Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
@@ -371,7 +350,14 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
+    if (!self->initialized) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        PyErr_SetString(state->ProgrammingError,
+                        "Base Connection.__init__ not called.");
+        return NULL;
+    }
+
+    Py_CLEAR(self->statement_cache);
     connection_close(self);
 
     Py_RETURN_NONE;
@@ -510,10 +496,17 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
     } else if (PyUnicode_Check(py_val)) {
-        const char *str = PyUnicode_AsUTF8(py_val);
-        if (str == NULL)
+        Py_ssize_t sz;
+        const char *str = PyUnicode_AsUTF8AndSize(py_val, &sz);
+        if (str == NULL) {
             return -1;
-        sqlite3_result_text(context, str, -1, SQLITE_TRANSIENT);
+        }
+        if (sz > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "string is longer than INT_MAX bytes");
+            return -1;
+        }
+        sqlite3_result_text(context, str, (int)sz, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
         Py_buffer view;
         if (PyObject_GetBuffer(py_val, &view, PyBUF_SIMPLE) != 0) {
@@ -603,6 +596,29 @@ error:
     return NULL;
 }
 
+// Checks the Python exception and sets the appropriate SQLite error code.
+static void
+set_sqlite_error(sqlite3_context *context, const char *msg)
+{
+    assert(PyErr_Occurred());
+    if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+        sqlite3_result_error_nomem(context);
+    }
+    else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        sqlite3_result_error_toobig(context);
+    }
+    else {
+        sqlite3_result_error(context, msg, -1);
+    }
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    if (state->enable_callback_tracebacks) {
+        PyErr_Print();
+    }
+    else {
+        PyErr_Clear();
+    }
+}
+
 static void
 _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
@@ -629,14 +645,7 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
         Py_DECREF(py_retval);
     }
     if (!ok) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined function raised exception", -1);
+        set_sqlite_error(context, "user-defined function raised exception");
     }
 
     PyGILState_Release(threadstate);
@@ -660,18 +669,9 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
     if (*aggregate_instance == NULL) {
         *aggregate_instance = _PyObject_CallNoArg(aggregate_class);
-
-        if (PyErr_Occurred()) {
-            *aggregate_instance = 0;
-
-            pysqlite_state *state = pysqlite_get_state(NULL);
-            if (state->enable_callback_tracebacks) {
-                PyErr_Print();
-            }
-            else {
-                PyErr_Clear();
-            }
-            sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
+        if (!*aggregate_instance) {
+            set_sqlite_error(context,
+                    "user-defined aggregate's '__init__' method raised error");
             goto error;
         }
     }
@@ -690,14 +690,8 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
     Py_DECREF(args);
 
     if (!function_result) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'step' method raised error");
     }
 
 error:
@@ -745,14 +739,8 @@ _pysqlite_final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-        sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'finalize' method raised error");
     }
 
     /* Restore the exception (if any) of the last call to step(),
@@ -761,37 +749,6 @@ _pysqlite_final_callback(sqlite3_context *context)
 
 error:
     PyGILState_Release(threadstate);
-}
-
-static void _pysqlite_drop_unused_statement_references(pysqlite_Connection* self)
-{
-    PyObject* new_list;
-    PyObject* weakref;
-    int i;
-
-    /* we only need to do this once in a while */
-    if (self->created_statements++ < 200) {
-        return;
-    }
-
-    self->created_statements = 0;
-
-    new_list = PyList_New(0);
-    if (!new_list) {
-        return;
-    }
-
-    for (i = 0; i < PyList_Size(self->statements); i++) {
-        weakref = PyList_GetItem(self->statements, i);
-        if (PyWeakref_GetObject(weakref) != Py_None) {
-            if (PyList_Append(new_list, weakref) != 0) {
-                Py_DECREF(new_list);
-                return;
-            }
-        }
-    }
-
-    Py_SETREF(self->statements, new_list);
 }
 
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
@@ -986,6 +943,14 @@ static int _progress_handler(void* user_arg)
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
+        /* abort query if error occurred */
+        rc = -1;
+    }
+    else {
+        rc = PyObject_IsTrue(ret);
+        Py_DECREF(ret);
+    }
+    if (rc < 0) {
         pysqlite_state *state = pysqlite_get_state(NULL);
         if (state->enable_callback_tracebacks) {
             PyErr_Print();
@@ -993,12 +958,6 @@ static int _progress_handler(void* user_arg)
         else {
             PyErr_Clear();
         }
-
-        /* abort query if error occurred */
-        rc = 1;
-    } else {
-        rc = (int)PyObject_IsTrue(ret);
-        Py_DECREF(ret);
     }
 
     PyGILState_Release(gilstate);
@@ -1256,6 +1215,9 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 
 static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
 {
+    if (!pysqlite_check_connection(self)) {
+        return NULL;
+    }
     return Py_NewRef(self->isolation_level);
 }
 
@@ -1287,11 +1249,17 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         return -1;
     }
     if (isolation_level == Py_None) {
-        PyObject *res = pysqlite_connection_commit(self, NULL);
-        if (!res) {
-            return -1;
+        /* We might get called during connection init, so we cannot use
+         * pysqlite_connection_commit() here. */
+        if (self->db && !sqlite3_get_autocommit(self->db)) {
+            int rc;
+            Py_BEGIN_ALLOW_THREADS
+            rc = sqlite3_exec(self->db, "COMMIT", NULL, NULL, NULL);
+            Py_END_ALLOW_THREADS
+            if (rc != SQLITE_OK) {
+                return _pysqlite_seterror(self->state, self->db);
+            }
         }
-        Py_DECREF(res);
 
         self->begin_statement = NULL;
     } else {
@@ -1336,7 +1304,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 {
     PyObject* sql;
     pysqlite_Statement* statement;
-    PyObject* weakref;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1348,27 +1315,12 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
     if (!PyArg_ParseTuple(args, "U", &sql))
         return NULL;
 
-    _pysqlite_drop_unused_statement_references(self);
-
     statement = pysqlite_statement_create(self, sql);
     if (statement == NULL) {
         return NULL;
     }
 
-    weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
-    if (weakref == NULL)
-        goto error;
-    if (PyList_Append(self->statements, weakref) != 0) {
-        Py_DECREF(weakref);
-        goto error;
-    }
-    Py_DECREF(weakref);
-
     return (PyObject*)statement;
-
-error:
-    Py_DECREF(statement);
-    return NULL;
 }
 
 /*[clinic input]

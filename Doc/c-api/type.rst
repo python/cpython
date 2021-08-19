@@ -13,7 +13,7 @@ Type Objects
    The C structure of the objects used to describe built-in types.
 
 
-.. c:var:: PyObject* PyType_Type
+.. c:var:: PyTypeObject PyType_Type
 
    This is the type object for type objects; it is the same object as
    :class:`type` in the Python layer.
@@ -109,6 +109,13 @@ Type Objects
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
    Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
+
+   Return the type's qualified name. Equivalent to getting the
+   type's ``__qualname__`` attribute.
 
    .. versionadded:: 3.11
 

@@ -1,0 +1,1 @@
+Added support for Apple's aifc/sowt pseudo-compression

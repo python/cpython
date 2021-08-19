@@ -1171,27 +1171,43 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`::
+variants of :func:`functools.lru_cache`:
 
-    class LRU(OrderedDict):
-        'Limit size, evicting the least recently looked-up key when full'
+.. testcode::
 
-        def __init__(self, maxsize=128, /, *args, **kwds):
+    class LRU:
+
+        def __init__(self, func, maxsize=128):
+            self.func = func
             self.maxsize = maxsize
-            super().__init__(*args, **kwds)
+            self.cache = OrderedDict()
 
-        def __getitem__(self, key):
-            value = super().__getitem__(key)
-            self.move_to_end(key)
+        def __call__(self, *args):
+            if args in self.cache:
+                value = self.cache[args]
+                self.cache.move_to_end(args)
+                return value
+            value = self.func(*args)
+            if len(self.cache) >= self.maxsize:
+                self.cache.popitem(False)
+            self.cache[args] = value
             return value
 
-        def __setitem__(self, key, value):
-            if key in self:
-                self.move_to_end(key)
-            super().__setitem__(key, value)
-            if len(self) > self.maxsize:
-                oldest = next(iter(self))
-                del self[oldest]
+.. doctest::
+    :hide:
+
+    >>> def square(x):
+    ...     return x ** 2
+    ...
+    >>> s = LRU(square, maxsize=5)
+    >>> actual = [(s(x), s(x)) for x in range(20)]
+    >>> expected = [(x**2, x**2) for x in range(20)]
+    >>> actual == expected
+    True
+    >>> actual = list(s.cache.items())
+    >>> expected = [((x,), x**2) for x in range(15, 20)]
+    >>> actual == expected
+    True
 
 
 :class:`UserDict` objects
