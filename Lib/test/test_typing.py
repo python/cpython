@@ -4570,7 +4570,8 @@ class AnnotatedTests(BaseTestCase):
 
     def test_annotated_mro(self):
         class X(Annotated[int, (1, 10)]): ...
-        self.assertNotIn(Generic, X.__mro__, "Annotated should be transparent.")
+        self.assertEqual(X.__mro__, (X, int, object),
+                         "Annotated should be transparent.")
 
 
 class TypeAliasTests(BaseTestCase):
