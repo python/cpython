@@ -625,7 +625,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Optional type.
 
-   ``Optional[X]`` is equivalent to ``X | None``.
+   ``Optional[X]`` is equivalent to ``X | None`` (or ``Union[X, None]``).
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
