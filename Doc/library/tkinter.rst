@@ -30,6 +30,13 @@ make the experience more pythonic. This documentation will concentrate on these
 additions and changes, and refer to the official Tcl/Tk documentation for
 details that are unchanged.
 
+.. warning::
+
+   Tcl/Tk 8.5 (2007) introduced a modern set of themed user interface components
+   along with a new API to use them. Both old and new API's are still available.
+   Unfortunately, most documentation you will find online uses the old API and
+   is woefully outdated.
+
 .. seealso::
 
    Tkinter documentation:
