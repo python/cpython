@@ -1578,7 +1578,7 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
             origin = origin.__origin__
-        super().__init__(origin, origin, name="Annotated")
+        super().__init__(origin, origin)
         self.__metadata__ = metadata
 
     def copy_with(self, params):

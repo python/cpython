@@ -1,0 +1,2 @@
+Temporarily remove ``__name__`` and ``__qualname__`` from subscripted
+:data:`typing.Annotated` to maintain MRO.
