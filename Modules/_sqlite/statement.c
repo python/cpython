@@ -359,21 +359,6 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-int pysqlite_statement_reset(pysqlite_Statement* self)
-{
-    int rc;
-
-    rc = SQLITE_OK;
-
-    if (self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_reset(self->st);
-        Py_END_ALLOW_THREADS
-    }
-
-    return rc;
-}
-
 static void
 stmt_dealloc(pysqlite_Statement *self)
 {

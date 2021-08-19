@@ -43,8 +43,6 @@ void pysqlite_statement_bind_parameters(pysqlite_state *state,
                                         pysqlite_Statement *self,
                                         PyObject *parameters);
 
-int pysqlite_statement_reset(pysqlite_Statement* self);
-
 int pysqlite_statement_setup_types(PyObject *module);
 
 #endif
