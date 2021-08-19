@@ -145,16 +145,11 @@ class RollbackTests(unittest.TestCase):
 
     def setUp(self):
         self.con = sqlite.connect(":memory:")
-        self.assertEqual(self.con.isolation_level, "")
         self.cur1 = self.con.cursor()
         self.cur2 = self.con.cursor()
-        self.assertIsNot(self.cur1, self.cur2)
-        self.cur1.executescript("""
-            create table t(c);
-            insert into t values(0);
-            insert into t values(1);
-            insert into t values(2);
-        """)
+        with self.con:
+            self.con.execute("create table t(c)");
+            self.con.executemany("insert into t values(?)", [(0,), (1,), (2,)])
         self.cur1.execute("begin transaction")
         select = "select c from t"
         self.cur1.execute(select)
