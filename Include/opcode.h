@@ -136,15 +136,32 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
-#define JUMP_ABSOLUTE_QUICK       7
-#define LOAD_ATTR_ADAPTIVE        8
-#define LOAD_ATTR_SPLIT_KEYS     13
-#define LOAD_ATTR_WITH_HINT      14
-#define LOAD_ATTR_SLOT           18
-#define LOAD_ATTR_MODULE         21
-#define LOAD_GLOBAL_ADAPTIVE     36
-#define LOAD_GLOBAL_MODULE       38
-#define LOAD_GLOBAL_BUILTIN      39
+#define BINARY_SUBSCR_ADAPTIVE    7
+#define BINARY_SUBSCR_LIST_INT    8
+#define BINARY_SUBSCR_TUPLE_INT  13
+#define BINARY_SUBSCR_DICT       14
+#define JUMP_ABSOLUTE_QUICK      18
+#define LOAD_ATTR_ADAPTIVE       21
+#define LOAD_ATTR_SPLIT_KEYS     36
+#define LOAD_ATTR_WITH_HINT      38
+#define LOAD_ATTR_SLOT           39
+#define LOAD_ATTR_MODULE         40
+#define LOAD_GLOBAL_ADAPTIVE     41
+#define LOAD_GLOBAL_MODULE       42
+#define LOAD_GLOBAL_BUILTIN      43
+#define LOAD_METHOD_ADAPTIVE     44
+#define LOAD_METHOD_CACHED       45
+#define LOAD_METHOD_CLASS        46
+#define LOAD_METHOD_MODULE       47
+#define STORE_ATTR_ADAPTIVE      48
+#define STORE_ATTR_SPLIT_KEYS    58
+#define STORE_ATTR_SLOT          80
+#define STORE_ATTR_WITH_HINT     81
+#define LOAD_FAST__LOAD_FAST     87
+#define STORE_FAST__LOAD_FAST    88
+#define LOAD_FAST__LOAD_CONST   120
+#define LOAD_CONST__LOAD_FAST   122
+#define STORE_FAST__STORE_FAST  123
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

@@ -4,6 +4,7 @@
 
 :Release: |release|
 :Date: |today|
+:Editor: Pablo Galindo Salgado
 
 .. Rules for maintenance:
 
@@ -65,7 +66,34 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
-* :pep:`644`, require OpenSSL 1.1.1 or newer
+New syntax features:
+
+* :pep:`634`, Structural Pattern Matching: Specification
+* :pep:`635`, Structural Pattern Matching: Motivation and Rationale
+* :pep:`636`, Structural Pattern Matching: Tutorial
+* :issue:`12782`, Parenthesized context managers are now officially allowed.
+
+New features in the standard library:
+
+* :pep:`618`, Add Optional Length-Checking To zip.
+
+Interpreter improvements:
+
+* :pep:`626`, Precise line numbers for debugging and other tools.
+
+New typing features:
+
+* :pep:`604`, Allow writing union types as X | Y
+* :pep:`613`, Explicit Type Aliases
+* :pep:`612`, Parameter Specification Variables
+
+Important deprecations, removals or restrictions:
+
+* :pep:`644`, Require OpenSSL 1.1.1 or newer
+* :pep:`632`, Deprecate distutils module.
+* :pep:`623`, Deprecate and prepare for the removal of the wstr member in PyUnicodeObject.
+* :pep:`624`, Remove Py_UNICODE encoder APIs
+* :pep:`597`, Add optional EncodingWarning
 
 
 New Features
@@ -463,11 +491,11 @@ The associated action to the case is executed after a match::
             case 418:
                 return "I'm a teapot"
             case _:
-                return "Something's wrong with the Internet"
+                return "Something's wrong with the internet"
 
 If the above function is passed a ``status`` of 418, "I'm a teapot" is returned.
 If the above function is passed a ``status`` of 500, the case statement with
-``_`` will match as a wildcard, and "Something's wrong with the Internet" is
+``_`` will match as a wildcard, and "Something's wrong with the internet" is
 returned.
 Note the last block: the variable name, ``_``, acts as a *wildcard* and insures
 the subject will always match. The use of ``_`` is optional.
@@ -719,7 +747,8 @@ and :func:`issubclass`::
 
 See :ref:`types-union` and :pep:`604` for more details.
 
-(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`,
+with additions by Yurii Karabas and Serhiy Storchaka in :issue:`44490`.)
 
 
 PEP 612: Parameter Specification Variables
@@ -1662,6 +1691,11 @@ Deprecated
   * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
     :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
 
+* The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+  deprecated in Python 3.10 and will be removed in Python 3.12. This feature
+  requires a :ref:`debug build of Python <debug-build>`.
+  (Contributed by Victor Stinner in :issue:`44584`.)
+
 .. _whatsnew310-removed:
 
 Removed
@@ -2083,11 +2117,6 @@ Deprecated
 
 Removed
 -------
-
-* ``PyObject_AsCharBuffer()``, ``PyObject_AsReadBuffer()``, ``PyObject_CheckReadBuffer()``,
-  and ``PyObject_AsWriteBuffer()`` are removed. Please migrate to new buffer protocol;
-  :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`.
-  (Contributed by Inada Naoki in :issue:`41103`.)
 
 * Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.
   (Contributed by Inada Naoki in :issue:`41123`.)

@@ -529,6 +529,18 @@ class`. In addition, it provides a few more methods:
     given, an :exc:`OverflowError` is raised. The default value for *signed*
     is ``False``.
 
+    Equivalent to::
+
+        def to_bytes(n, length, byteorder, signed=False):
+            if byteorder == 'little':
+                order = range(length)
+            elif byteorder == 'big':
+                order = reversed(range(length))
+            else:
+                raise ValueError("byteorder must be either 'little' or 'big'")
+
+            return bytes((n >> i*8) & 0xff for i in order)
+
     .. versionadded:: 3.2
 
 .. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
@@ -558,6 +570,22 @@ class`. In addition, it provides a few more methods:
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.
+
+    Equivalent to::
+
+        def from_bytes(bytes, byteorder, signed=False):
+            if byteorder == 'little':
+                little_ordered = list(bytes)
+            elif byteorder == 'big':
+                little_ordered = list(reversed(bytes))
+            else:
+                raise ValueError("byteorder must be either 'little' or 'big'")
+
+            n = sum(b << i*8 for i, b in enumerate(little_ordered))
+            if signed and little_ordered and (little_ordered[-1] & 0x80):
+                n -= 1 << 8*len(little_ordered)
+
+            return n
 
     .. versionadded:: 3.2
 
@@ -1112,7 +1140,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | index given by *i*             |                     |
 |                              | (same as ``s[i:i] = [x]``)     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.pop([i])``               | retrieves the item at *i* and  | \(2)                |
+| ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.remove(x)``              | remove the first item from *s* | \(3)                |
@@ -5040,16 +5068,16 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
+:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
 instantiated from the type::
 
    >>> import types
-   >>> isinstance(int | str, types.Union)
+   >>> isinstance(int | str, types.UnionType)
    True
-   >>> types.Union()
+   >>> types.UnionType()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.Union' instances
+   TypeError: cannot create 'types.UnionType' instances
 
 .. note::
    The :meth:`__or__` method for type objects was added to support the syntax

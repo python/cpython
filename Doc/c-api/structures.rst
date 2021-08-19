@@ -469,6 +469,21 @@ Accessing attributes of extension types
           {NULL}  /* Sentinel */
       };
 
+
+.. c:function:: PyObject* PyMember_GetOne(const char *obj_addr, struct PyMemberDef *m)
+
+   Get an attribute belonging to the object at address *obj_addr*.  The
+   attribute is described by ``PyMemberDef`` *m*.  Returns ``NULL``
+   on error.
+
+
+.. c:function:: int PyMember_SetOne(char *obj_addr, struct PyMemberDef *m, PyObject *o)
+
+   Set an attribute belonging to the object at address *obj_addr* to object *o*.
+   The attribute to set is described by ``PyMemberDef`` *m*.  Returns ``0``
+   if successful and a negative value on failure.
+
+
 .. c:type:: PyGetSetDef
 
    Structure to define property-like access for a type. See also description of

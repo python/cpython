@@ -55,7 +55,7 @@ an event loop:
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if there is no running event loop.
-      If future Python releases this function will be an alias of
+      In future Python releases, this function will be an alias of
       :func:`get_running_loop`.
 
 .. function:: set_event_loop(loop)
@@ -215,6 +215,10 @@ Scheduling callbacks
 
    A thread-safe variant of :meth:`call_soon`.  Must be used to
    schedule callbacks *from another thread*.
+
+   Raises :exc:`RuntimeError` if called on a loop that's been closed.
+   This can happen on a secondary thread when the main application is
+   shutting down.
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.

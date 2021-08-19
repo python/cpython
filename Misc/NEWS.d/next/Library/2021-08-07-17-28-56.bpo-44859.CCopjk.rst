@@ -1,0 +1,8 @@
+Improve error handling in :mod:`sqlite3` and raise more accurate exceptions.
+
+* :exc:`MemoryError` is now raised instead of :exc:`sqlite3.Warning` when memory is not enough for encoding a statement to UTF-8 in ``Connection.__call__()`` and ``Cursor.execute()``.
+* :exc:`UnicodEncodeError` is now raised instead of :exc:`sqlite3.Warning` when the statement contains surrogate characters in ``Connection.__call__()`` and ``Cursor.execute()``.
+* :exc:`TypeError` is now raised instead of :exc:`ValueError` for non-string script argument in ``Cursor.executescript()``.
+* :exc:`ValueError` is now raised for script containing the null character instead of truncating it in ``Cursor.executescript()``.
+* Correctly handle exceptions raised when getting boolean value of the result of the progress handler.
+* Add many tests covering different corner cases.

@@ -114,10 +114,39 @@ PyDoc_STRVAR(pysqlite_cursor_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
 "\n"
-"Executes a multiple SQL statements at once. Non-standard.");
+"Executes multiple SQL statements at once. Non-standard.");
 
 #define PYSQLITE_CURSOR_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_O, pysqlite_cursor_executescript__doc__},
+
+static PyObject *
+pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
+                                   const char *sql_script);
+
+static PyObject *
+pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *sql_script;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("executescript", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t sql_script_length;
+    sql_script = PyUnicode_AsUTF8AndSize(arg, &sql_script_length);
+    if (sql_script == NULL) {
+        goto exit;
+    }
+    if (strlen(sql_script) != (size_t)sql_script_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = pysqlite_cursor_executescript_impl(self, sql_script);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(pysqlite_cursor_fetchone__doc__,
 "fetchone($self, /)\n"
@@ -249,14 +278,25 @@ PyDoc_STRVAR(pysqlite_cursor_close__doc__,
 "Closes the cursor.");
 
 #define PYSQLITE_CURSOR_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)pysqlite_cursor_close, METH_NOARGS, pysqlite_cursor_close__doc__},
+    {"close", (PyCFunction)(void(*)(void))pysqlite_cursor_close, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_cursor_close__doc__},
 
 static PyObject *
-pysqlite_cursor_close_impl(pysqlite_Cursor *self);
+pysqlite_cursor_close_impl(pysqlite_Cursor *self, PyTypeObject *cls);
 
 static PyObject *
-pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
+pysqlite_cursor_close(pysqlite_Cursor *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return pysqlite_cursor_close_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":close", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = pysqlite_cursor_close_impl(self, cls);
+
+exit:
+    return return_value;
 }
-/*[clinic end generated code: output=e3a502bb26aaefa5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ace31a7481aa3f41 input=a9049054013a1b77]*/

@@ -522,8 +522,11 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_localspluskinds, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
+        w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
+        w_object(co->co_endlinetable, p);
+        w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
     }
     else if (PyObject_CheckBuffer(v)) {
@@ -1313,8 +1316,11 @@ r_object(RFILE *p)
             PyObject *localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
+            PyObject *qualname = NULL;
             int firstlineno;
             PyObject *linetable = NULL;
+            PyObject* endlinetable = NULL;
+            PyObject* columntable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1361,11 +1367,20 @@ r_object(RFILE *p)
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
+            qualname = r_object(p);
+            if (qualname == NULL)
+                goto code_error;
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
             linetable = r_object(p);
             if (linetable == NULL)
+                goto code_error;
+            endlinetable = r_object(p);
+            if (endlinetable == NULL)
+                goto code_error;
+            columntable = r_object(p);
+            if (columntable == NULL)
                 goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
@@ -1374,11 +1389,14 @@ r_object(RFILE *p)
             struct _PyCodeConstructor con = {
                 .filename = filename,
                 .name = name,
+                .qualname = qualname,
                 .flags = flags,
 
                 .code = code,
                 .firstlineno = firstlineno,
                 .linetable = linetable,
+                .endlinetable = endlinetable,
+                .columntable = columntable,
 
                 .consts = consts,
                 .names = names,
@@ -1414,7 +1432,10 @@ r_object(RFILE *p)
             Py_XDECREF(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
+            Py_XDECREF(qualname);
             Py_XDECREF(linetable);
+            Py_XDECREF(endlinetable);
+            Py_XDECREF(columntable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;

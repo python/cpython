@@ -33,28 +33,6 @@ OutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
-OutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_size,
-                          Bytef **next_out, uint32_t *avail_out)
-{
-    Py_ssize_t allocated;
-
-    if (init_size >= 0 &&  // ensure (size_t) cast is safe
-        (size_t)init_size > UINT32_MAX)
-    {
-        /* In 32-bit build, never reach this conditional branch.
-           The maximum block size accepted by zlib is UINT32_MAX. */
-        init_size = UINT32_MAX;
-    }
-
-    allocated = _BlocksOutputBuffer_InitWithSize(
-                    buffer, init_size, (void**) next_out);
-    *avail_out = (uint32_t) allocated;
-    return allocated;
-}
-
-/* On success, return value >= 0
-   On failure, return -1 */
-static inline Py_ssize_t
 OutputBuffer_Grow(_BlocksOutputBuffer *buffer,
                   Bytef **next_out, uint32_t *avail_out)
 {
@@ -80,6 +58,106 @@ OutputBuffer_Finish(_BlocksOutputBuffer *buffer, uint32_t avail_out)
 
 static inline void
 OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
+{
+    _BlocksOutputBuffer_OnError(buffer);
+}
+
+/* The max buffer size accepted by zlib is UINT32_MAX, the initial buffer size
+   `init_size` may > it in 64-bit build. These wrapper functions maintain an
+   UINT32_MAX sliding window for the first block:
+    1. OutputBuffer_WindowInitWithSize()
+    2. OutputBuffer_WindowGrow()
+    3. OutputBuffer_WindowFinish()
+    4. OutputBuffer_WindowOnError()
+
+   ==== is the sliding window:
+    1. ====------
+           ^ next_posi, left_bytes is 6
+    2. ----====--
+               ^ next_posi, left_bytes is 2
+    3. --------==
+                 ^ next_posi, left_bytes is 0  */
+typedef struct {
+    Py_ssize_t left_bytes;
+    Bytef *next_posi;
+} _Uint32Window;
+
+/* Initialize the buffer with an inital buffer size.
+
+   On success, return value >= 0
+   On failure, return value < 0 */
+static inline Py_ssize_t
+OutputBuffer_WindowInitWithSize(_BlocksOutputBuffer *buffer, _Uint32Window *window,
+                                Py_ssize_t init_size,
+                                Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated = _BlocksOutputBuffer_InitWithSize(
+                               buffer, init_size, (void**) next_out);
+
+    if (allocated >= 0) {
+        // the UINT32_MAX sliding window
+        Py_ssize_t window_size = Py_MIN((size_t)allocated, UINT32_MAX);
+        *avail_out = (uint32_t) window_size;
+
+        window->left_bytes = allocated - window_size;
+        window->next_posi = *next_out + window_size;
+    }
+    return allocated;
+}
+
+/* Grow the buffer.
+
+   On success, return value >= 0
+   On failure, return value < 0 */
+static inline Py_ssize_t
+OutputBuffer_WindowGrow(_BlocksOutputBuffer *buffer, _Uint32Window *window,
+                        Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    /* ensure no gaps in the data.
+       if inlined, this check could be optimized away.*/
+    if (*avail_out != 0) {
+        PyErr_SetString(PyExc_SystemError,
+                        "*avail_out != 0 in OutputBuffer_WindowGrow().");
+        return -1;
+    }
+
+    // slide the UINT32_MAX sliding window
+    if (window->left_bytes > 0) {
+        Py_ssize_t window_size = Py_MIN((size_t)window->left_bytes, UINT32_MAX);
+
+        *next_out = window->next_posi;
+        *avail_out = (uint32_t) window_size;
+
+        window->left_bytes -= window_size;
+        window->next_posi += window_size;
+
+        return window_size;
+    }
+    assert(window->left_bytes == 0);
+
+    // only the first block may > UINT32_MAX
+    allocated = _BlocksOutputBuffer_Grow(
+                    buffer, (void**) next_out, (Py_ssize_t) *avail_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+/* Finish the buffer.
+
+   On success, return a bytes object
+   On failure, return NULL */
+static inline PyObject *
+OutputBuffer_WindowFinish(_BlocksOutputBuffer *buffer, _Uint32Window *window,
+                          uint32_t avail_out)
+{
+    Py_ssize_t real_avail_out = (Py_ssize_t) avail_out + window->left_bytes;
+    return _BlocksOutputBuffer_Finish(buffer, real_avail_out);
+}
+
+static inline void
+OutputBuffer_WindowOnError(_BlocksOutputBuffer *buffer, _Uint32Window *window)
 {
     _BlocksOutputBuffer_OnError(buffer);
 }
@@ -344,6 +422,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     int err, flush;
     z_stream zst;
     _BlocksOutputBuffer buffer = {.list = NULL};
+    _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     zlibstate *state = get_zlib_state(module);
 
@@ -354,7 +433,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         bufsize = 1;
     }
 
-    if (OutputBuffer_InitWithSize(&buffer, bufsize, &zst.next_out, &zst.avail_out) < 0) {
+    if (OutputBuffer_WindowInitWithSize(&buffer, &window, bufsize,
+                                        &zst.next_out, &zst.avail_out) < 0) {
         goto error;
     }
 
@@ -387,7 +467,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
 
         do {
             if (zst.avail_out == 0) {
-                if (OutputBuffer_Grow(&buffer, &zst.next_out, &zst.avail_out) < 0) {
+                if (OutputBuffer_WindowGrow(&buffer, &window,
+                                            &zst.next_out, &zst.avail_out) < 0) {
                     inflateEnd(&zst);
                     goto error;
                 }
@@ -430,13 +511,13 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, zst.avail_out);
+    RetVal = OutputBuffer_WindowFinish(&buffer, &window, zst.avail_out);
     if (RetVal != NULL) {
         return RetVal;
     }
 
  error:
-    OutputBuffer_OnError(&buffer);
+    OutputBuffer_WindowOnError(&buffer, &window);
     return NULL;
 }
 
@@ -1171,6 +1252,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     PyObject *RetVal;
     Py_ssize_t ibuflen;
     _BlocksOutputBuffer buffer = {.list = NULL};
+    _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL) {
@@ -1193,7 +1275,8 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     self->zst.next_in = data.buf;
     ibuflen = data.len;
 
-    if (OutputBuffer_InitWithSize(&buffer, length, &self->zst.next_out, &self->zst.avail_out) < 0) {
+    if (OutputBuffer_WindowInitWithSize(&buffer, &window, length,
+                                        &self->zst.next_out, &self->zst.avail_out) < 0) {
         goto abort;
     }
 
@@ -1203,7 +1286,8 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (OutputBuffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+                if (OutputBuffer_WindowGrow(&buffer, &window,
+                                            &self->zst.next_out, &self->zst.avail_out) < 0) {
                     goto abort;
                 }
             }
@@ -1248,13 +1332,13 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         }
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    RetVal = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
     if (RetVal != NULL) {
         goto success;
     }
 
  abort:
-    OutputBuffer_OnError(&buffer);
+    OutputBuffer_WindowOnError(&buffer, &window);
     RetVal = NULL;
  success:
     PyBuffer_Release(&data);
