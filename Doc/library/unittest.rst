@@ -1471,6 +1471,16 @@ Test cases
       .. versionadded:: 3.1
 
 
+   .. method:: enterContext(cm)
+
+      Enter the supplied :term:`context manager`.  If successful, also
+      add its :meth:`~object.__exit__` method as a cleanup function by
+      :meth:`addCleanup` and return the result of the
+      :meth:`~object.__enter__` method.
+
+      .. versionadded:: 3.11
+
+
    .. method:: doCleanups()
 
       This method is called unconditionally after :meth:`tearDown`, or
@@ -1486,6 +1496,7 @@ Test cases
 
       .. versionadded:: 3.1
 
+
    .. classmethod:: addClassCleanup(function, /, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDownClass` to cleanup
@@ -1498,6 +1509,16 @@ Test cases
       called, then any cleanup functions added will still be called.
 
       .. versionadded:: 3.8
+
+
+   .. classmethod:: enterClassContext(cm)
+
+      Enter the supplied :term:`context manager`.  If successful, also
+      add its :meth:`~object.__exit__` method as a cleanup function by
+      :meth:`addClassCleanup` and return the result of the
+      :meth:`~object.__enter__` method.
+
+      .. versionadded:: 3.11
 
 
    .. classmethod:: doClassCleanups()
@@ -1546,6 +1567,16 @@ Test cases
    .. method:: addAsyncCleanup(function, /, *args, **kwargs)
 
       This method accepts a coroutine that can be used as a cleanup function.
+
+   .. coroutinemethod:: enterAsyncContext(cm)
+
+      Enter the supplied :term:`asynchronous context manager`.  If successful,
+      also add its :meth:`~object.__aexit__` method as a cleanup function by
+      :meth:`addAsyncCleanup` and return the result of the
+      :meth:`~object.__aenter__` method.
+
+      .. versionadded:: 3.11
+
 
    .. method:: run(result=None)
 
@@ -2437,6 +2468,16 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
+.. classmethod:: enterModuleContext(cm)
+
+   Enter the supplied :term:`context manager`.  If successful, also
+   add its :meth:`~object.__exit__` method as a cleanup function by
+   :func:`addModuleCleanup` and return the result of the
+   :meth:`~object.__enter__` method.
+
+   .. versionadded:: 3.11
+
+
 .. function:: doModuleCleanups()
 
    This function is called unconditionally after :func:`tearDownModule`, or
@@ -2451,6 +2492,7 @@ To add cleanup code that must be run even in the case of an exception, use
    functions one at a time, so it can be called at any time.
 
    .. versionadded:: 3.8
+
 
 Signal Handling
 ---------------

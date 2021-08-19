@@ -227,6 +227,18 @@ sqlite3
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
 
+unittest
+--------
+
+* Added methods :meth:`~unittest.TestCase.enterContext` and
+  :meth:`~unittest.TestCase.enterClassContext` of class
+  :class:`~unittest.TestCase`, method
+  :meth:`~unittest.IsolatedAsyncioTestCase.enterAsyncContext` of
+  class :class:`~unittest.IsolatedAsyncioTestCase` and function
+  :func:`unittest.enterModuleContext`.
+  (Contributed by Serhiy Storchaka in :issue:`XXXXX`.)
+
+
 Removed
 =======
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without

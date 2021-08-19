@@ -1594,7 +1594,7 @@ class LocalServerTests(unittest.TestCase):
         self.addCleanup(self.background.join)
 
         self.nntp = NNTP(socket_helper.HOST, port, usenetrc=False).__enter__()
-        self.addCleanup(self.nntp.__exit__, None, None, None)
+        self.enterContext(self.nntp)
 
     def run_server(self, sock):
         # Could be generalized to handle more commands in separate methods
