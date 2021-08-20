@@ -4372,7 +4372,7 @@ long_invert(PyLongObject *v)
     /* Implement ~x as -(x+1) */
     PyLongObject *x;
     if (IS_MEDIUM_VALUE(v))
-        return PyLong_FromLong(-(medium_value(v)+1));
+        return _PyLong_FromSDigit(~medium_value(v));
     x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_GetOne());
     if (x == NULL)
         return NULL;
@@ -4387,7 +4387,7 @@ long_neg(PyLongObject *v)
 {
     PyLongObject *z;
     if (IS_MEDIUM_VALUE(v))
-        return PyLong_FromLong(-medium_value(v));
+        return _PyLong_FromSDigit(-medium_value(v));
     z = (PyLongObject *)_PyLong_Copy(v);
     if (z != NULL)
         Py_SET_SIZE(z, -(Py_SIZE(v)));
