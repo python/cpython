@@ -2,6 +2,7 @@
 #include "pycore_ast.h"           // expr_ty
 #include <float.h>                // DBL_MAX_10_EXP
 #include <stdbool.h>
+#include <conio.h>
 
 /* This limited unparser is used to convert annotations back to strings
  * during compilation rather than being a full AST unparser.
