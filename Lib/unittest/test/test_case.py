@@ -314,12 +314,16 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def test2(self):
                 yield 1
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   'It is deprecated to return a value!=None'):
+        with self.assertWarns(DeprecationWarning) as w:
             Foo('test').run()
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   'It is deprecated to return a value!=None'):
+            self.assertIn('It is deprecated to return a value!=None', w.warnings[0].message.args[0])
+            self.assertIn('test', w.warnings[0].message.args[0])
+            self.assertIn(w.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
+            self.assertIn('It is deprecated to return a value!=None', w.warnings[0].message.args[0])
+            self.assertIn('test2', w.warnings[0].message.args[0])
+            self.assertEqual(w.warnings[0].filename, __file__)
 
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
