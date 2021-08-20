@@ -121,7 +121,7 @@ cursor_dealloc(pysqlite_Cursor *self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
     if (self->statement) {
-        pysqlite_statement_reset(self->statement);
+        (void)pysqlite_statement_reset(self->statement);
     }
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
@@ -565,7 +565,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             break;
         }
 
-        pysqlite_statement_reset(self->statement);
+        (void)pysqlite_statement_reset(self->statement);
         pysqlite_statement_mark_dirty(self->statement);
 
         pysqlite_statement_bind_parameters(state, self->statement, parameters);
