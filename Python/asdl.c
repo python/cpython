@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_asdl.h"
+#include "conio.h"
 
 GENERATE_ASDL_SEQ_CONSTRUCTOR(generic, void*);
 GENERATE_ASDL_SEQ_CONSTRUCTOR(identifier, PyObject*);
