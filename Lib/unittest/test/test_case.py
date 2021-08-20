@@ -306,6 +306,21 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         Foo('test').run()
 
+    def test_deprecation_of_return_val_from_test(self):
+        # Issue 41322 - deprecate return of value!=None from a test
+        class Foo(unittest.TestCase):
+            def test(self):
+                return 1
+            def test2(self):
+                yield 1
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   'It is deprecated to return a value!=None'):
+            Foo('test').run()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   'It is deprecated to return a value!=None'):
+            Foo('test2').run()
+
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
             def test(self):
