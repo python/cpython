@@ -55,30 +55,13 @@ static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
     if (v && IS_MEDIUM_VALUE(v)) {
-        sdigit ival = medium_value(v);
+        stwodigits ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
             Py_DECREF(v);
             return (PyLongObject *)get_small_int(ival);
         }
     }
     return v;
-}
-
-/* If a freshly-allocated int is already shared, it must
-   be a small integer, so negating it must go to PyLong_FromLong */
-Py_LOCAL_INLINE(void)
-_PyLong_Negate(PyLongObject **x_p)
-{
-    PyLongObject *x;
-
-    x = (PyLongObject *)*x_p;
-    if (Py_REFCNT(x) == 1) {
-        Py_SET_SIZE(x, -Py_SIZE(x));
-        return;
-    }
-
-    *x_p = (PyLongObject *)PyLong_FromLong(-medium_value(x));
-    Py_DECREF(x);
 }
 
 /* For int multiplication, use the O(N**2) school algorithm unless
@@ -247,6 +230,23 @@ _PyLong_FromSTwoDigits(stwodigits x)
         return _PyLong_FromMedium(x);
     }
     return _PyLong_FromLarge(x);
+}
+
+/* If a freshly-allocated int is already shared, it must
+   be a small integer, so negating it must go to PyLong_FromLong */
+Py_LOCAL_INLINE(void)
+_PyLong_Negate(PyLongObject **x_p)
+{
+    PyLongObject *x;
+
+    x = (PyLongObject *)*x_p;
+    if (Py_REFCNT(x) == 1) {
+        Py_SET_SIZE(x, -Py_SIZE(x));
+        return;
+    }
+
+    *x_p = (PyLongObject *)_PyLong_FromSTwoDigits(-medium_value(x));
+    Py_DECREF(x);
 }
 
 /* Create a new int object from a C long int */
