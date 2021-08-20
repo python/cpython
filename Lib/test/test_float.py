@@ -1477,6 +1477,10 @@ class HexFloatTestCase(unittest.TestCase):
         self.identical(fromHex('0x8.1p-1078'), TINY)
         self.identical(fromHex('0x80p-1082'), 0.0)
         self.identical(fromHex('0x81p-1082'), TINY)
+        self.identical(fromHex('.8p-1074'), 0.0)
+        self.identical(fromHex('8p-1078'), 0.0)
+        self.identical(fromHex('-.8p-1074'), 0.0)
+        self.identical(fromHex('+8p-1078'), 0.0)
 
     def test_roundtrip(self):
         def roundtrip(x):
