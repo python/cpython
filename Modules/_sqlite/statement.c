@@ -367,7 +367,7 @@ int pysqlite_statement_reset(pysqlite_Statement* self)
         return SQLITE_OK;
     }
 
-#if SQLITE_VERSION_NUMBER > 3020000
+#if SQLITE_VERSION_NUMBER >= 3020000
     /* Check if the statement has been run (that is, sqlite3_step() has been
      * called at least once). Third parameter is non-zero in order to reset the
      * run count. */
