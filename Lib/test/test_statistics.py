@@ -2266,7 +2266,7 @@ class TestGeometricMean(unittest.TestCase):
     def test_mixed_int_and_float(self):
         # Regression test for b.p.o. issue #28327
         geometric_mean = statistics.geometric_mean
-        expected_mean = 3.80675
+        expected_mean = 3.80675409583932
         values = [
             [2, 3, 5, 7],
             [2, 3, 5, 7.0],
