@@ -179,39 +179,37 @@ _PyLong_FromMedium(sdigit x)
 }
 
 static PyObject *
-_PyLong_FromLarge(long ival)
+_PyLong_FromLarge(stwodigits ival)
 {
-    PyLongObject *v;
-    unsigned long abs_ival;
-    unsigned long t;  /* unsigned so >> doesn't propagate sign bit */
-    int ndigits = 0;
+    twodigits abs_ival;
     int sign;
     assert(!IS_MEDIUM_INT(ival));
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
            invokes undefined behaviour when ival is LONG_MIN */
-        abs_ival = 0U-(unsigned long)ival;
+        abs_ival = 0U-(twodigits)ival;
         sign = -1;
     }
     else {
-        abs_ival = (unsigned long)ival;
+        abs_ival = (twodigits)ival;
         sign = 1;
     }
     /* Loop to determine number of digits */
-    t = abs_ival;
+    twodigits t = abs_ival;
+    Py_ssize_t ndigits = 0;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
     }
-    v = _PyLong_New(ndigits);
+    PyLongObject *v = _PyLong_New(ndigits);
     if (v != NULL) {
         digit *p = v->ob_digit;
         Py_SET_SIZE(v, ndigits * sign);
         t = abs_ival;
         while (t) {
             *p++ = Py_SAFE_DOWNCAST(
-                t & PyLong_MASK, unsigned long, digit);
+                t & PyLong_MASK, twodigits, digit);
             t >>= PyLong_SHIFT;
         }
     }
