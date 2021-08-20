@@ -1,0 +1,2 @@
+Fix a crash in the signal handler of the :mod:`faulthandler` module: no
+longer modify the reference count of frame objects. Patch by Victor Stinner.
