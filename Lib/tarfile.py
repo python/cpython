@@ -2349,15 +2349,18 @@ class TarFile(object):
                     raise ReadError(str(e)) from None
             except SubsequentHeaderError as e:
                 raise ReadError(str(e)) from None
-            except Exception as e:
-                try:
-                    import zlib
-                    if isinstance(e, zlib.error):
-                        raise ReadError(f'zlib error: {e}')
-                    else:
-                        raise e
-                except ImportError:
-                    raise e
+
+            # I am commenting out the fix in this commit to demonstrate that
+            # the test fails without it
+            # except Exception as e:
+            #     try:
+            #         import zlib
+            #         if isinstance(e, zlib.error):
+            #             raise ReadError(f'zlib error: {e}')
+            #         else:
+            #             raise e
+            #     except ImportError:
+            #         raise e
             break
 
         if tarinfo is not None:
