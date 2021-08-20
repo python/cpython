@@ -43,7 +43,7 @@ medium_value(PyLongObject *x)
 #define IS_MEDIUM_INT(x) (((twodigits)x)+PyLong_MASK <= 2*PyLong_MASK)
 
 static PyObject *
-get_small_int(sdigit ival)
+get_small_int(stwodigits ival)
 {
     assert(IS_SMALL_INT(ival));
     PyObject *v = __PyLong_GetSmallInt_internal(ival);
@@ -145,7 +145,7 @@ _PyLong_Copy(PyLongObject *src)
     if (i < 0)
         i = -(i);
     if (i < 2) {
-        sdigit ival = medium_value(src);
+        stwodigits ival = medium_value(src);
         if (IS_SMALL_INT(ival)) {
             return get_small_int(ival);
         }
@@ -258,7 +258,7 @@ PyLong_FromLong(long ival)
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
     do { \
         if (IS_SMALL_UINT(ival)) { \
-            return get_small_int((sdigit)(ival)); \
+            return get_small_int((stwodigits)(ival)); \
         } \
         /* Count the number of Python digits. */ \
         Py_ssize_t ndigits = 0; \
@@ -1050,7 +1050,7 @@ PyLong_FromLongLong(long long ival)
     int negative = 0;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
+        return get_small_int((stwodigits)ival);
     }
 
     if (ival < 0) {
@@ -1097,7 +1097,7 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     int negative = 0;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
+        return get_small_int((stwodigits)ival);
     }
 
     if (ival < 0) {
