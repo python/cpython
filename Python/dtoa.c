@@ -125,6 +125,7 @@
 #ifndef PY_NO_SHORT_FLOAT_REPR
 
 #include "float.h"
+#include "math.h"
 
 #define MALLOC PyMem_Malloc
 #define FREE PyMem_Free
