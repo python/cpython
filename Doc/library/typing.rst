@@ -2013,6 +2013,14 @@ Introspection helpers
            'name': Annotated[str, 'some marker']
        }
 
+   .. note::
+
+      :func:`get_type_hints` does not work reliably with :ref:`type aliases <type-aliases>` that include
+      forward references.
+      When type aliases are imported into other modules, their forward references are
+      not evaluated in the namespace they were originally declared in.
+      Consider avoiding forward references by enabling postponed evaluation of annotations (:pep:`563`) instead.
+
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
 
