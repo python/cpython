@@ -36,7 +36,7 @@ class FixUnicode(fixer_base.BaseFix):
             if val[0] in 'uU':
                 val = val[1:]
             if val == node.value:
-                return node
+                return None
             new = node.clone()
             new.value = val
             return new

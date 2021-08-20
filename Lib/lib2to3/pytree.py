@@ -115,11 +115,12 @@ class Base(object):
             else:
                 l_children.append(ch)
         assert found, (self.children, self, new)
-        self.parent.changed()
-        self.parent.children = l_children
+		parent = self.parent
+		self.parent = None
+        parent.children = l_children
         for x in new:
-            x.parent = self.parent
-        self.parent = None
+            x.parent = parent
+        parent.changed()
 
     def get_lineno(self):
         """Return the line number which generated the invocant node."""
