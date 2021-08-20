@@ -595,11 +595,13 @@ class Fraction(numbers.Rational):
         return Fraction(abs(a._numerator), a._denominator, _normalize=False)
 
     def __trunc__(a):
-        """trunc(a)"""
+        """math.trunc(a)"""
         if a._numerator < 0:
             return -(-a._numerator // a._denominator)
         else:
             return a._numerator // a._denominator
+
+    __int__ = __trunc__
 
     def __floor__(a):
         """math.floor(a)"""

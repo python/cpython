@@ -8,6 +8,7 @@ import operator
 import fractions
 import functools
 import sys
+import typing
 import unittest
 from copy import copy, deepcopy
 import pickle
@@ -384,6 +385,11 @@ class FractionTest(unittest.TestCase):
                                float(F(int('2'*400+'7'), int('3'*400+'1'))))
 
         self.assertTypedEquals(0.1+0j, complex(F(1,10)))
+
+    def testSupportsInt(self):
+        # See bpo-44547.
+        f = F(3, 2)
+        self.assertIsInstance(f, typing.SupportsInt)
 
     def testBoolGuarateesBoolReturn(self):
         # Ensure that __bool__ is used on numerator which guarantees a bool
