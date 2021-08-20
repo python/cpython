@@ -235,11 +235,9 @@ _PyLong_FromLarge(long ival)
     return (PyObject *)v;
 }
 
-/* Convert result of add/subtract of medium values
- * to a PyLong.
- */
+/* Create a new int object from a C word-sized int */
 static inline PyObject *
-_PyLong_FromSDigit(stwodigits x)
+_PyLong_FromSTwoDigits(stwodigits x)
 {
     if (IS_SMALL_INT(x)) {
         return get_small_int(x);
@@ -252,19 +250,11 @@ _PyLong_FromSDigit(stwodigits x)
 }
 
 /* Create a new int object from a C long int */
-
 PyObject *
 PyLong_FromLong(long ival)
 {
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
-
-    assert(ival != 0);
-    if (IS_MEDIUM_INT(ival)) {
-        return _PyLong_FromMedium(ival);
-    }
-    return _PyLong_FromLarge(ival);
+    Py_BUILD_ASSERT(sizeof(stwodigits) >= sizeof(long));
+    return _PyLong_FromSTwoDigits(ival);
 }
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
@@ -3130,7 +3120,7 @@ long_sub(PyLongObject *a, PyLongObject *b)
     CHECK_BINOP(a, b);
 
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
-        return _PyLong_FromSDigit(medium_value(a) - medium_value(b));
+        return _PyLong_FromSTwoDigits(medium_value(a) - medium_value(b));
     }
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
@@ -4372,7 +4362,7 @@ long_invert(PyLongObject *v)
     /* Implement ~x as -(x+1) */
     PyLongObject *x;
     if (IS_MEDIUM_VALUE(v))
-        return _PyLong_FromSDigit(~medium_value(v));
+        return _PyLong_FromSTwoDigits(~medium_value(v));
     x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_GetOne());
     if (x == NULL)
         return NULL;
@@ -4387,7 +4377,7 @@ long_neg(PyLongObject *v)
 {
     PyLongObject *z;
     if (IS_MEDIUM_VALUE(v))
-        return _PyLong_FromSDigit(-medium_value(v));
+        return _PyLong_FromSTwoDigits(-medium_value(v));
     z = (PyLongObject *)_PyLong_Copy(v);
     if (z != NULL)
         Py_SET_SIZE(z, -(Py_SIZE(v)));
@@ -4736,7 +4726,7 @@ long_and(PyObject *a, PyObject *b)
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
     if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
-        return _PyLong_FromSDigit(medium_value(x) & medium_value(y));
+        return _PyLong_FromSTwoDigits(medium_value(x) & medium_value(y));
     }
     return long_bitwise(x, '&', y);
 }
@@ -4748,7 +4738,7 @@ long_xor(PyObject *a, PyObject *b)
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
     if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
-        return _PyLong_FromSDigit(medium_value(x) ^ medium_value(y));
+        return _PyLong_FromSTwoDigits(medium_value(x) ^ medium_value(y));
     }
     return long_bitwise(x, '^', y);
 }
@@ -4760,7 +4750,7 @@ long_or(PyObject *a, PyObject *b)
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
     if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
-        return _PyLong_FromSDigit(medium_value(x) | medium_value(y));
+        return _PyLong_FromSTwoDigits(medium_value(x) | medium_value(y));
     }
     return long_bitwise(x, '|', y);
 }
