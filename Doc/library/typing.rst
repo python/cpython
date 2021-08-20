@@ -2015,9 +2015,10 @@ Introspection helpers
 
    .. note::
 
-      :func:`get_type_hints` does not work with imported :ref:`type aliases <type-aliases>` that include
-      forward references.
-      Enabling postponed evaluation of annotations (:pep:`563`) may remove the need for most forward references.
+      :func:`get_type_hints` does not work with imported
+      :ref:`type aliases <type-aliases>` that include forward references.
+      Enabling postponed evaluation of annotations (:pep:`563`) may remove
+      the need for most forward references.
 
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
