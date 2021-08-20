@@ -3084,7 +3084,7 @@ long_add(PyLongObject *a, PyLongObject *b)
     CHECK_BINOP(a, b);
 
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
-        return PyLong_FromLong(medium_value(a) + medium_value(b));
+        return _PyLong_FromSTwoDigits(medium_value(a) + medium_value(b));
     }
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
