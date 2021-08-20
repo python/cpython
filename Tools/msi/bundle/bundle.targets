@@ -67,6 +67,7 @@
         <Package Include="..\exe\exe*.wixproj" />
         <Package Include="..\lib\lib*.wixproj" />
         <Package Include="..\path\path*.wixproj" />
+        <Package Include="..\appendpath\appendpath*.wixproj" />
         <Package Include="..\pip\pip*.wixproj" />
         <Package Include="..\tcltk\tcltk*.wixproj" />
         <Package Include="..\test\test*.wixproj" />
