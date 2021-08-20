@@ -43,7 +43,7 @@ medium_value(PyLongObject *x)
 #define IS_MEDIUM_INT(x) (((twodigits)x)+PyLong_MASK <= 2*PyLong_MASK)
 
 static PyObject *
-get_small_int(stwodigits ival)
+get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
     PyObject *v = __PyLong_GetSmallInt_internal(ival);
@@ -58,7 +58,7 @@ maybe_small_long(PyLongObject *v)
         stwodigits ival = medium_value(v);
         if (IS_SMALL_INT(ival)) {
             Py_DECREF(v);
-            return (PyLongObject *)get_small_int(ival);
+            return (PyLongObject *)get_small_int((sdigit)ival);
         }
     }
     return v;
@@ -147,7 +147,7 @@ _PyLong_Copy(PyLongObject *src)
     if (i < 2) {
         stwodigits ival = medium_value(src);
         if (IS_SMALL_INT(ival)) {
-            return get_small_int(ival);
+            return get_small_int((sdigit)ival);
         }
     }
     result = _PyLong_New(i);
@@ -221,11 +221,11 @@ static inline PyObject *
 _PyLong_FromSTwoDigits(stwodigits x)
 {
     if (IS_SMALL_INT(x)) {
-        return get_small_int(x);
+        return get_small_int((sdigit)x);
     }
     assert(x != 0);
     if (IS_MEDIUM_INT(x)) {
-        return _PyLong_FromMedium(x);
+        return _PyLong_FromMedium((sdigit)x);
     }
     return _PyLong_FromLarge(x);
 }
@@ -258,7 +258,7 @@ PyLong_FromLong(long ival)
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
     do { \
         if (IS_SMALL_UINT(ival)) { \
-            return get_small_int((stwodigits)(ival)); \
+            return get_small_int((sdigit)(ival)); \
         } \
         /* Count the number of Python digits. */ \
         Py_ssize_t ndigits = 0; \
@@ -1050,7 +1050,7 @@ PyLong_FromLongLong(long long ival)
     int negative = 0;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((stwodigits)ival);
+        return get_small_int((sdigit)ival);
     }
 
     if (ival < 0) {
@@ -1097,7 +1097,7 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     int negative = 0;
 
     if (IS_SMALL_INT(ival)) {
-        return get_small_int((stwodigits)ival);
+        return get_small_int((sdigit)ival);
     }
 
     if (ival < 0) {
