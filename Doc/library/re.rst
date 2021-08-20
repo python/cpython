@@ -830,9 +830,9 @@ form.
    The result depends on the number of capturing groups in the pattern.
    If there are no groups, return a list of strings matching the whole
    pattern.  If there is exactly one group, return a list of strings
-   matching the group.  If more than one groups are present, return a list
+   matching that group.  If multiple groups are present, return a list
    of tuples of strings matching the groups.  Non-capturing groups do not
-   affect the result.
+   affect the form of the result.
 
       >>> re.findall(r'\bf[a-z]*', 'which foot or hand fell fastest')
       ['foot', 'fell', 'fastest']
