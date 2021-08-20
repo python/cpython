@@ -172,9 +172,16 @@ class TestAsyncCase(unittest.TestCase):
         class Test(unittest.IsolatedAsyncioTestCase):
             async def test(self):
                 return 1
+            async def test2(self):
+                yield 1
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test').run()
+            self.assertIn('It is deprecated to return a value!=None', w.warnings[0].message.args[0])
+            self.assertIn('test', w.warnings[0].message.args[0])
+            self.assertIn(w.warnings[0].filename, __file__)
+        with self.assertWarns(DeprecationWarning) as w:
+            Test('test2').run()
             self.assertIn('It is deprecated to return a value!=None', w.warnings[0].message.args[0])
             self.assertIn('test', w.warnings[0].message.args[0])
             self.assertIn(w.warnings[0].filename, __file__)
