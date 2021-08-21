@@ -453,7 +453,7 @@ def ClassVar(self, parameters):
     be used with isinstance() or issubclass().
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,), name="ClassVar")
+    return _GenericAlias(self, (item,))
 
 @_SpecialForm
 def Final(self, parameters):
@@ -474,7 +474,7 @@ def Final(self, parameters):
     There is no runtime checking of these properties.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,), name="Final")
+    return _GenericAlias(self, (item,))
 
 @_SpecialForm
 def Union(self, parameters):
@@ -512,12 +512,9 @@ def Union(self, parameters):
     parameters = _remove_dups_flatten(parameters)
     if len(parameters) == 1:
         return parameters[0]
-
     if len(parameters) == 2 and type(None) in parameters:
-        name = "Optional"
-    else:
-        name = "Union"
-    return _UnionGenericAlias(self, parameters, name=name)
+        return _UnionGenericAlias(self, parameters, name="Optional")
+    return _UnionGenericAlias(self, parameters)
 
 @_SpecialForm
 def Optional(self, parameters):
@@ -562,7 +559,7 @@ def Literal(self, parameters):
     except TypeError:  # unhashable parameters
         pass
 
-    return _LiteralGenericAlias(self, parameters, name="Literal")
+    return _LiteralGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -601,7 +598,7 @@ def Concatenate(self, parameters):
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = tuple(_type_check(p, msg) for p in parameters)
-    return _ConcatenateGenericAlias(self, parameters, name="Concatenate")
+    return _ConcatenateGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -649,7 +646,7 @@ def TypeGuard(self, parameters):
     PEP 647 (User-Defined Type Guards).
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,), name="TypeGuard")
+    return _GenericAlias(self, (item,))
 
 
 class ForwardRef(_Final, _root=True):
@@ -960,7 +957,7 @@ class _BaseGenericAlias(_Final, _root=True):
 
     def __getattr__(self, attr):
         if attr in {'__name__', '__qualname__'}:
-            return self._name
+            return self._name or self.__origin__.__name__
 
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
