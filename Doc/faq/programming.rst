@@ -1835,8 +1835,8 @@ instead of the :meth:`__init__` method.  The latter only runs *after* an
 instance is created which is too late to store data in an immutable
 instance.
 
-For example, all of these immutable classes have a different signature
-than the type they inherited from:
+All of these immutable classes have a different signature than their
+parent class:
 
 .. testcode::
 
