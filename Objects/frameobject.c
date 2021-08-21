@@ -55,6 +55,7 @@ _PyFrame_BorrowLocals(PyFrameObject *f)
 {
     // This frame API supports the PyEval_GetLocals() stable API, which has
     // historically returned a borrowed reference (so this does the same)
+    // It also ensures the cache is up to date
     return _frame_get_updated_locals(f);
 }
 
@@ -770,6 +771,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
+    Py_VISIT(f->f_fast_refs);
 
     /* locals */
     PyObject **localsplus = f->f_localsptr;
@@ -795,6 +797,7 @@ frame_tp_clear(PyFrameObject *f)
     f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
+    Py_CLEAR(f->f_fast_refs);
     PyCodeObject *co = _PyFrame_GetCode(f);
     /* locals */
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -993,6 +996,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     specials[FRAME_SPECIALS_GLOBALS_OFFSET] = Py_NewRef(con->fc_globals);
     specials[FRAME_SPECIALS_LOCALS_OFFSET] = Py_XNewRef(locals);
     f->f_trace = NULL;
+    f->f_fast_refs = NULL;
     f->f_stackdepth = 0;
     f->f_trace_lines = 1;
     f->f_trace_opcodes = 0;
@@ -1320,7 +1324,7 @@ class fastlocalsproxy "fastlocalsproxyobject *" "&_PyFastLocalsProxy_Type"
 typedef struct {
     PyObject_HEAD
     PyFrameObject *frame;
-    PyObject      *fast_refs; /* Cell refs and local variable indices */
+    //int           frame_cache_refreshed; /* Assume cache is out of date if this is not set */
 } fastlocalsproxyobject;
 
 // PEP 558 TODO: Implement correct Python sizeof() support for fastlocalsproxyobject
@@ -1330,14 +1334,15 @@ fastlocalsproxy_init_fast_refs(fastlocalsproxyobject *flp)
 {
     // Build fast ref mapping if it hasn't been built yet
     assert(flp);
-    if (flp->fast_refs != NULL) {
+    assert(flp->frame);
+    if (flp->frame->f_fast_refs != NULL) {
         return 0;
     }
     PyObject *fast_refs = _PyFrame_BuildFastRefs(flp->frame);
     if (fast_refs == NULL) {
         return -1;
     }
-    flp->fast_refs = fast_refs;
+    flp->frame->f_fast_refs = fast_refs;
     return 0;
 }
 
@@ -1383,7 +1388,7 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return NULL;
     }
-    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
+    PyObject *fast_ref = PyDict_GetItem(flp->frame->f_fast_refs, key);
     if (fast_ref == NULL) {
         // No such local variable, delegate the request to the f_locals mapping
         // Used by pdb (at least) to access __return__ and __exception__ values
@@ -1433,7 +1438,7 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
                     _PyFrame_OpAlreadyRan(f, MAKE_CELL, offset)) {
                 // MAKE_CELL has built the cell, so use it as the proxy target
                 Py_INCREF(target);
-                if (set_fast_ref(flp->fast_refs, key, target) != 0) {
+                if (set_fast_ref(flp->frame->f_fast_refs, key, target) != 0) {
                     return NULL;
                 }
                 value = PyCell_GET(target);
@@ -1468,7 +1473,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return -1;
     }
-    PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
+    PyObject *fast_ref = PyDict_GetItem(flp->frame->f_fast_refs, key);
     if (fast_ref == NULL) {
         // No such local variable, delegate the request to the f_locals mapping
         // Used by pdb (at least) to store __return__ and __exception__ values
@@ -1517,7 +1522,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
                 _PyFrame_OpAlreadyRan(f, MAKE_CELL, offset)) {
             // MAKE_CELL has built the cell, so use it as the proxy target
             Py_INCREF(target);
-            if (set_fast_ref(flp->fast_refs, key, target) != 0) {
+            if (set_fast_ref(flp->frame->f_fast_refs, key, target) != 0) {
                 return -1;
             }
             int result = PyCell_Set(target, value);
@@ -1869,7 +1874,6 @@ fastlocalsproxy_dealloc(fastlocalsproxyobject *flp)
     Py_TRASHCAN_SAFE_BEGIN(flp)
 
     Py_CLEAR(flp->frame);
-    Py_CLEAR(flp->fast_refs);
     PyObject_GC_Del(flp);
 
     Py_TRASHCAN_SAFE_END(flp)
@@ -1895,7 +1899,6 @@ fastlocalsproxy_traverse(PyObject *self, visitproc visit, void *arg)
 {
     fastlocalsproxyobject *flp = (fastlocalsproxyobject *)self;
     Py_VISIT(flp->frame);
-    Py_VISIT(flp->fast_refs);
     return 0;
 }
 
@@ -1936,7 +1939,6 @@ _PyFastLocalsProxy_New(PyObject *frame)
         return NULL;
     flp->frame = (PyFrameObject *) frame;
     Py_INCREF(flp->frame);
-    flp->fast_refs = NULL;
     _PyObject_GC_TRACK(flp);
     return (PyObject *)flp;
 }

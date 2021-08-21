@@ -24,6 +24,7 @@ struct _frame {
     struct _frame *f_back;      /* previous frame, or NULL */
     PyObject **f_valuestack;    /* points after the last local */
     PyObject *f_trace;          /* Trace function */
+    PyObject *f_fast_refs;      /* Name -> index-or-cell lookup for fast locals */
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
     int f_stackdepth;           /* Depth of value stack */
