@@ -539,6 +539,21 @@ class FastLocalsProxyTest(unittest.TestCase):
         locals_view = PyFrame_GetLocalsView(cls_frame)
         self.assertIsInstance(locals_view, types.MappingProxyType)
 
+    def test_locals_to_fast_error(self):
+        # Use ctypes to access the C APIs under test
+        ctypes = import_helper.import_module('ctypes')
+        Py_IncRef = ctypes.pythonapi.Py_IncRef
+        PyFrame_LocalsToFast = ctypes.pythonapi.PyFrame_LocalsToFast
+        PyFrame_LocalsToFast.argtypes = (ctypes.py_object, ctypes.c_int)
+        frame = sys._getframe()
+        # Ensure the error message recommends the replacement API
+        replacement_api = r'PyObject_GetAttrString\(frame, "f_locals"\)'
+        with self.assertRaisesRegex(RuntimeError, replacement_api):
+            PyFrame_LocalsToFast(frame, 0)
+        # Ensure the error is still raised when the "clear" parameter is set
+        with self.assertRaisesRegex(RuntimeError, replacement_api):
+            PyFrame_LocalsToFast(frame, 1)
+
 
 class ReprTest(unittest.TestCase):
     """
