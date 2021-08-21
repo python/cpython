@@ -1831,11 +1831,12 @@ How can a subclass control what data is stored in an immutable instance?
 ------------------------------------------------------------------------
 
 When subclassing an immutable type, override the :meth:`__new__` method
-instead of the :meth:`__init__` method.  The latter only runs *after*
-an instance is created when it is too late to store data in an
-immutable instance.
+instead of the :meth:`__init__` method.  The latter only runs *after* an
+instance is created which is too late to store data in an immutable
+instance.
 
-For example, all of these classes modify the inherited contructor.
+For example, all of these immutable classes have a different signature
+than the type they inherited from:
 
 .. testcode::
 
@@ -1845,7 +1846,6 @@ For example, all of these classes modify the inherited contructor.
         "Always choose the first day of the month"
         def __new__(cls, year, month, day):
             return super().__new__(cls, year, month, 1)
-
 
     class NamedInt(int):
         "Allow text names for some numbers"
