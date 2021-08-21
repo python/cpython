@@ -546,9 +546,10 @@ class TestCase(object):
         self.setUp()
 
     def _callTestMethod(self, method):
-        if method() is not None:
-            warnings.warn(f'It is deprecated to return a value!=None from a '
-                          f'test case ({method})', DeprecationWarning)
+        val = method()
+        if val is not None:
+            raise Exception(f'It is not allowed to return a value!=None from a '
+                            f'test case ({method}), val={val}')
 
     def _callTearDown(self):
         self.tearDown()
