@@ -4913,8 +4913,8 @@ class SpecialAttrsTests(BaseTestCase):
             typing.TypeVar: 'TypeVar',
             typing.Union: 'Union',
             # Subscribed special forms
-            # Fixme: make Annotated work without messing up its MRO
-            # typing.Annotated[Any, "Annotation"]: 'Annotated',
+            # Annotated is special - it returns the contained type
+            typing.Annotated[Any, "Annotation"]: 'Any',
             typing.ClassVar[Any]: 'ClassVar',
             typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',
