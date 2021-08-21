@@ -280,6 +280,23 @@ class FastLocalsProxyTest(unittest.TestCase):
         del proxy["extra_variable"]
         self.assertNotIn("extra_variable", proxy)
 
+        # Check pop() on all 3 kinds of variable
+        unbound_local = "set directly"
+        self.assertEqual(proxy.pop("unbound_local"), "set directly")
+        self.assertIs(proxy.pop("unbound_local", None), None)
+        with self.assertRaises(KeyError):
+            proxy.pop("unbound_local")
+        cell_variable = "set directly"
+        self.assertEqual(proxy.pop("cell_variable"), "set directly")
+        self.assertIs(proxy.pop("cell_variable", None), None)
+        with self.assertRaises(KeyError):
+            proxy.pop("cell_variable")
+        proxy["extra_variable"] = "added via proxy"
+        self.assertEqual(proxy.pop("extra_variable"), "added via proxy")
+        self.assertIs(proxy.pop("extra_variable", None), None)
+        with self.assertRaises(KeyError):
+            proxy.pop("extra_variable")
+
         # Check updating all 3 kinds of variable via update()
         updated_keys = {
             "unbound_local": "set via proxy.update()",
@@ -339,7 +356,6 @@ class FastLocalsProxyTest(unittest.TestCase):
 
 
         self.fail("PEP 558 TODO: Implement proxy setdefault() test")
-        self.fail("PEP 558 TODO: Implement proxy pop() test")
         self.fail("PEP 558 TODO: Implement proxy popitem() test")
 
     def test_sync_frame_cache(self):

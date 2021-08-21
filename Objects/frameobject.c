@@ -1411,7 +1411,6 @@ fastlocalsproxy_set_value_cache_entry(fastlocalsproxyobject *flp, PyObject *key,
 static PyObject *
 fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
 {
-    // PEP 558 TODO: try to factor out the common get/set key lookup code
     assert(flp);
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return NULL;
@@ -1497,7 +1496,6 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
 static int
 fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
 {
-    // PEP 558 TODO: try to factor out the common get/set key lookup code
     assert(flp);
     if (fastlocalsproxy_init_fast_refs(flp) != 0) {
         return -1;
