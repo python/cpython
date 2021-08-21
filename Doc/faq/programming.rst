@@ -1832,7 +1832,7 @@ How can a subclass control what data is stored in an immutable instance?
 
 When subclassing an immutable type, override the :meth:`__new__` method
 instead of the :meth:`__init__` method.  The latter only runs *after* an
-instance is created which is too late to store data in an immutable
+instance is created, which is too late to alter data in an immutable
 instance.
 
 All of these immutable classes have a different signature than their
