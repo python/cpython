@@ -1086,6 +1086,9 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return operator.getitem, (origin, args)
 
     def __mro_entries__(self, bases):
+        if isinstance(self.__origin__, _SpecialForm):
+            raise TypeError(f"Cannot subclass {self!r}")
+
         if self._name:  # generic version of an ABC or built-in class
             return super().__mro_entries__(bases)
         if self.__origin__ is Generic:

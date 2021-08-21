@@ -112,6 +112,13 @@ Type Objects
 
    .. versionadded:: 3.11
 
+.. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
+
+   Return the type's qualified name. Equivalent to getting the
+   type's ``__qualname__`` attribute.
+
+   .. versionadded:: 3.11
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
