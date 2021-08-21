@@ -276,7 +276,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         proxy["extra_variable"] = "added via proxy"
         self.assertEqual(proxy["extra_variable"], "added via proxy")
         with self.assertRaises(NameError):
-            print(extra_variable)
+            extra_variable
         del proxy["extra_variable"]
         self.assertNotIn("extra_variable", proxy)
 
