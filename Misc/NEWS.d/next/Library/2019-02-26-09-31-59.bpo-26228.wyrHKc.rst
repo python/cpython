@@ -1,1 +1,1 @@
-pty.spawn no longer hangs on FreeBSD, OS X, and Solaris.
+pty.spawn no longer hangs on FreeBSD, macOS, and Solaris.

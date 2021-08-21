@@ -551,6 +551,7 @@ class TestCase(object):
             raise Exception(f'It is not allowed to return a value!=None from a '
                             f'test case ({method}), val={val}')
 
+
     def _callTearDown(self):
         self.tearDown()
 

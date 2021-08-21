@@ -2,7 +2,7 @@
 ===============================================================
 
 .. module:: base64
-   :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings;
+   :synopsis: RFC 4648: Base16, Base32, Base64 Data Encodings;
               Base85 and Ascii85
 
 **Source code:** :source:`Lib/base64.py`
@@ -16,10 +16,10 @@
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.
 It provides encoding and decoding functions for the encodings specified in
-:rfc:`3548`, which defines the Base16, Base32, and Base64 algorithms,
+:rfc:`4648`, which defines the Base16, Base32, and Base64 algorithms,
 and for the de-facto standard Ascii85 and Base85 encodings.
 
-The :rfc:`3548` encodings are suitable for encoding binary data so that it can
+The :rfc:`4648` encodings are suitable for encoding binary data so that it can be
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.  The encoding algorithm is not the same as the
 :program:`uuencode` program.
@@ -28,7 +28,7 @@ There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 :class:`bytes`, and decoding :term:`bytes-like objects <bytes-like object>` or
 strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
-defined in :rfc:`3548` (normal, and URL- and filesystem-safe) are supported.
+defined in :rfc:`4648` (normal, and URL- and filesystem-safe) are supported.
 
 The legacy interface does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
@@ -287,6 +287,13 @@ An example usage of the module:
    >>> data
    b'data to be encoded'
 
+.. _base64-security:
+
+Security Considerations
+-----------------------
+
+A new security considerations section was added to :rfc:`4648` (section 12); it's
+recommended to review the security section for any code deployed to production.
 
 .. seealso::
 
