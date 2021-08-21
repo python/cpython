@@ -117,14 +117,15 @@ frame_getlocals(PyFrameObject *f, void *Py_UNUSED(ignored))
         /* PEP 558: If this is an optimized frame, ensure f_locals at the Python
          * layer is a new fastlocalsproxy instance, while f_locals at the C
          * layer still refers to the underlying shared namespace mapping.
+         *
+         * To minimise runtime overhead when the frame value cache isn't used,
+         * each new proxy instance postpones refreshing the cache until the
+         * first operation that assumes the value cache is up to date.
          */
-        if (PyFrame_FastToLocalsWithError(f) < 0) {
-            return NULL;
-        }
         f_locals_attr = _PyFastLocalsProxy_New((PyObject *) f);
     } else {
         // Share a direct locals reference for class and module scopes
-        f_locals_attr = _frame_get_updated_locals(f);
+        f_locals_attr = _frame_get_locals_mapping(f);
         if (f_locals_attr == NULL) {
             return NULL;
         }
@@ -1324,10 +1325,36 @@ class fastlocalsproxy "fastlocalsproxyobject *" "&_PyFastLocalsProxy_Type"
 typedef struct {
     PyObject_HEAD
     PyFrameObject *frame;
-    //int           frame_cache_refreshed; /* Assume cache is out of date if this is not set */
+    int           frame_cache_updated; /* Assume cache is out of date if this is not set */
 } fastlocalsproxyobject;
 
 // PEP 558 TODO: Implement correct Python sizeof() support for fastlocalsproxyobject
+
+static PyObject *
+fastlocalsproxy_get_updated_value_cache(fastlocalsproxyobject *flp)
+{
+    // Retrieve the locals value cache from an optimised frame,
+    // ensuring it is up to date with the current state of the frame
+    assert(flp);
+    assert(flp->frame);
+    flp->frame_cache_updated = 1;
+    return _frame_get_updated_locals(flp->frame);
+}
+
+static PyObject *
+fastlocalsproxy_get_value_cache(fastlocalsproxyobject *flp)
+{
+    // Retrieve the locals value cache from an optimised frame.
+    // If this proxy hasn't previously updated the locals value cache,
+    // assume the cache may be out of date and update it first
+    assert(flp);
+    if (flp->frame_cache_updated) {
+        assert(flp->frame);
+        return _frame_get_locals_mapping(flp->frame);
+    }
+    return fastlocalsproxy_get_updated_value_cache(flp);
+}
+
 
 static int
 fastlocalsproxy_init_fast_refs(fastlocalsproxyobject *flp)
@@ -1350,15 +1377,16 @@ static Py_ssize_t
 fastlocalsproxy_len(fastlocalsproxyobject *flp)
 {
     // Extra keys may have been added, and some variables may not have been
-    // bound yet, so use the dynamic snapshot on the frame rather than the
+    // bound yet, so use the value cache on the frame rather than the
     // keys in the fast locals reverse lookup mapping
-    // Assume f_locals snapshot is up to date (as actually checking is O(n))
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return PyObject_Size(locals);
 }
 
 static int
-fastlocalsproxy_set_snapshot_entry(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
+fastlocalsproxy_set_value_cache_entry(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
 {
         PyFrameObject *f = flp->frame;
         if (f->f_state == FRAME_CLEARED) {
@@ -1450,7 +1478,7 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
     // or was only just converted since the last cache sync
     // Ensure the value cache is up to date if the frame is still live
     if (!PyErr_Occurred()) {
-        if (fastlocalsproxy_set_snapshot_entry(flp, key, value) != 0) {
+        if (fastlocalsproxy_set_value_cache_entry(flp, key, value) != 0) {
             return NULL;
         }
     }
@@ -1477,7 +1505,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     if (fast_ref == NULL) {
         // No such local variable, delegate the request to the f_locals mapping
         // Used by pdb (at least) to store __return__ and __exception__ values
-        return fastlocalsproxy_set_snapshot_entry(flp, key, value);
+        return fastlocalsproxy_set_value_cache_entry(flp, key, value);
     }
     /* Key is a valid Python variable for the frame, so update that reference */
     if (PyCell_Check(fast_ref)) {
@@ -1485,7 +1513,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
         int result = PyCell_Set(fast_ref, value);
         if (result == 0) {
             // Ensure the value cache is up to date if the frame is still live
-            result = fastlocalsproxy_set_snapshot_entry(flp, key, value);
+            result = fastlocalsproxy_set_value_cache_entry(flp, key, value);
         }
         return result;
     }
@@ -1528,7 +1556,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
             int result = PyCell_Set(target, value);
             if (result == 0) {
                 // Ensure the value cache is up to date if the frame is still live
-                result = fastlocalsproxy_set_snapshot_entry(flp, key, value);
+                result = fastlocalsproxy_set_value_cache_entry(flp, key, value);
             }
             return result;
         }
@@ -1538,7 +1566,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     Py_XINCREF(value);
     Py_XSETREF(fast_locals[offset], value);
     // Ensure the value cache is up to date if the frame is still live
-    return fastlocalsproxy_set_snapshot_entry(flp, key, value);
+    return fastlocalsproxy_set_value_cache_entry(flp, key, value);
 }
 
 static int
@@ -1634,37 +1662,40 @@ static PyObject *
 fastlocalsproxy_keys(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
     // Extra keys may have been added, and some variables may not have been
-    // bound yet, so use the dynamic snapshot on the frame rather than the
+    // bound yet, so use the value cache on the frame rather than the
     // keys in the fast locals reverse lookup mapping
-    // Assume f_locals snapshot is up to date (as actually checking is O(n))
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return PyDict_Keys(locals);
 }
 
 static PyObject *
 fastlocalsproxy_values(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // Need values, so use the dynamic snapshot on the frame
-    // Assume f_locals snapshot is up to date (as actually checking is O(n))
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // Need values, so use the value cache on the frame
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return PyDict_Values(locals);
 }
 
 static PyObject *
 fastlocalsproxy_items(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // Need values, so use the dynamic snapshot on the frame
-    // Assume f_locals snapshot is up to date (as actually checking is O(n))
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // Need values, so use the value cache on the frame
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return PyDict_Items(locals);
 }
 
 static PyObject *
 fastlocalsproxy_copy(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // Need values, so use the dynamic snapshot on the frame
-    // Ensure it is up to date, as checking is O(n) anyway
-    PyObject *locals = _frame_get_updated_locals(flp->frame);
+    // Need values, so use the value cache on the frame
+    // Ensure it is up to date, as copying the entire mapping is already O(n)
+    PyObject *locals = fastlocalsproxy_get_updated_value_cache(flp);
     return PyDict_Copy(locals);
 }
 
@@ -1673,10 +1704,11 @@ fastlocalsproxy_reversed(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored
 {
     _Py_IDENTIFIER(__reversed__);
     // Extra keys may have been added, and some variables may not have been
-    // bound yet, so use the dynamic snapshot on the frame rather than the
+    // bound yet, so use the value cache on the frame rather than the
     // keys in the fast locals reverse lookup mapping
-    // Assume f_locals snapshot is up to date (as actually checking is O(n))
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return _PyObject_CallMethodIdNoArgs(locals, &PyId___reversed__);
 }
 
@@ -1684,21 +1716,23 @@ static PyObject *
 fastlocalsproxy_getiter(fastlocalsproxyobject *flp)
 {
     // Extra keys may have been added, and some variables may not have been
-    // bound yet, so use the dynamic snapshot on the frame rather than the
+    // bound yet, so use the value cache on the frame rather than the
     // keys in the fast locals reverse lookup mapping
-    // Assume f_locals snapshot is up to date (as actually checking is O(n))
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return PyObject_GetIter(locals);
 }
 
 static PyObject *
 fastlocalsproxy_richcompare(fastlocalsproxyobject *flp, PyObject *w, int op)
 {
-    // Need values, so use the dynamic snapshot on the frame
-    // Assume f_locals snapshot is up to date, as even though the worst
-    // case comparison is O(n) to determine equality, there are O(1) shortcuts
-    // for inequality checks (i.e. different sizes)
-    PyObject *locals = _frame_get_locals_mapping(flp->frame);
+    // Need values, so use the value cache on the frame
+    // As long as it has been updated at least once, assume value cache
+    // is up to date, as even though the worst case comparison is O(n) to
+    // determine equality, there are O(1) shortcuts for inequality checks
+    // (i.e. different sizes)
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
     return PyObject_RichCompare(locals, w, op);
 }
 
@@ -1723,7 +1757,7 @@ fastlocalsproxy_setdefault(PyObject *flp, PyObject *args, PyObject *kwargs)
 
     PyObject *value = NULL;
 
-    // PEP 558 TODO: implement this
+    // PEP 558 TODO: implement setdefault() on proxy objects
     PyErr_Format(PyExc_NotImplementedError,
                  "FastLocalsProxy does not yet implement setdefault()");
     return value;
@@ -1788,7 +1822,7 @@ PyDoc_STRVAR(fastlocalsproxy_popitem__doc__,
 static PyObject *
 fastlocalsproxy_popitem(PyObject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // PEP 558 TODO: implement this
+    // PEP 558 TODO: implement popitem() on proxy objects
     PyErr_Format(PyExc_NotImplementedError,
                  "FastLocalsProxy does not yet implement popitem()");
     return NULL;
@@ -1812,7 +1846,7 @@ PyDoc_STRVAR(fastlocalsproxy_clear__doc__,
 static PyObject *
 fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // PEP 558 TODO: implement this
+    // PEP 558 TODO: implement clear() on proxy objects
     PyErr_Format(PyExc_NotImplementedError,
                  "FastLocalsProxy does not yet implement clear()");
     return NULL;
@@ -1888,9 +1922,9 @@ fastlocalsproxy_repr(fastlocalsproxyobject *flp)
 static PyObject *
 fastlocalsproxy_str(fastlocalsproxyobject *flp)
 {
-    // Need values, so use the dynamic snapshot on the frame
-    // Ensure it is up to date, as displaying everything is O(n) anyway
-    PyObject *locals = _frame_get_updated_locals(flp->frame);
+    // Need values, so use the value cache on the frame
+    // Ensure it is up to date, as rendering the entire mapping is already O(n)
+    PyObject *locals = fastlocalsproxy_get_updated_value_cache(flp);
     return PyObject_Str(locals);
 }
 
@@ -1939,6 +1973,7 @@ _PyFastLocalsProxy_New(PyObject *frame)
         return NULL;
     flp->frame = (PyFrameObject *) frame;
     Py_INCREF(flp->frame);
+    flp->frame_cache_updated = 0;
     _PyObject_GC_TRACK(flp);
     return (PyObject *)flp;
 }

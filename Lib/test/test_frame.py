@@ -201,32 +201,109 @@ class FastLocalsProxyTest(unittest.TestCase):
     def check_proxy_contents(self, proxy, expected_contents):
         # These checks should never implicitly resync the frame proxy's cache,
         # even if the proxy is referenced as a local variable in the frame
+        # However, the first executed check may trigger the initial lazy sync
         self.assertEqual(len(proxy), len(expected_contents))
-        self.assertCountEqual(proxy, expected_contents)
-        self.assertCountEqual(proxy.keys(), expected_contents.keys())
-        self.assertCountEqual(proxy.values(), expected_contents.values())
         self.assertCountEqual(proxy.items(), expected_contents.items())
 
-    def test_dict_operations(self):
-        # No real iteration order guarantees for the locals proxy, as it
-        # depends on exactly how the compiler composes the frame locals array
+    def test_dict_query_operations(self):
+        # Check retrieval of individual keys via the proxy
         proxy = sys._getframe().f_locals
-        # Not yet set values aren't visible in the proxy
-        self.check_proxy_contents(proxy, {"self": self})
+        self.assertIs(proxy["self"], self)
+        self.assertIs(proxy.get("self"), self)
+        self.assertIs(proxy.get("no-such-key"), None)
+        self.assertIs(proxy.get("no-such-key", Ellipsis), Ellipsis)
+
+        # Proxy value cache is lazily refreshed on the first operation that cares
+        # about the full contents of the mapping (such as querying the length)
+        expected_proxy_contents = {"self": self, "proxy": proxy}
+        expected_proxy_contents["expected_proxy_contents"] = expected_proxy_contents
+        self.check_proxy_contents(proxy, expected_proxy_contents)
 
         # Ensuring copying the proxy produces a plain dict instance
         dict_copy = proxy.copy()
         self.assertIsInstance(dict_copy, dict)
-        self.assertEqual(dict_copy.keys(), {"proxy", "self"})
+        self.check_proxy_contents(dict_copy, expected_proxy_contents)
+
         # The proxy automatically updates its cache for O(n) operations like copying,
         # but won't pick up new local variables until it is resync'ed with the frame
         # or that particular key is accessed or queried
         self.check_proxy_contents(proxy, dict_copy)
         self.assertIn("dict_copy", proxy) # Implicitly updates cache for this key
-        dict_copy["dict_copy"] = dict_copy
-        self.check_proxy_contents(proxy, dict_copy)
+        expected_proxy_contents["dict_copy"] = dict_copy
+        self.check_proxy_contents(proxy, expected_proxy_contents)
 
-        self.fail("Test not finished yet")
+        # Check forward iteration (order is abitrary, so only check overall contents)
+        # Note: len() and the items() method are covered by "check_proxy_contents"
+        self.assertCountEqual(proxy, expected_proxy_contents)
+        self.assertCountEqual(proxy.keys(), expected_proxy_contents.keys())
+        self.assertCountEqual(proxy.values(), expected_proxy_contents.values())
+        # Check reversed iteration (order should be reverse of forward iteration)
+        self.assertEqual(list(reversed(proxy)), list(reversed(list(proxy))))
+
+        self.fail("PEP 558 TODO: Implement proxy '|' operator test")
+
+    def test_dict_mutation_operations(self):
+        # Check mutation of local variables via proxy
+        proxy = sys._getframe().f_locals
+        if not len(proxy): # Trigger the initial implicit cache update
+            # This code block never actually runs
+            unbound_local = None
+        self.assertNotIn("unbound_local", proxy)
+        proxy["unbound_local"] = "set via proxy"
+        self.assertEqual(unbound_local, "set via proxy")
+        del proxy["unbound_local"]
+        with self.assertRaises(UnboundLocalError):
+            print(unbound_local)
+        # Check mutation of cell variables via proxy
+        cell_variable = None
+        proxy["cell_variable"] = "set via proxy"
+        self.assertEqual(cell_variable, "set via proxy")
+        def inner():
+            return cell_variable
+        self.assertEqual(inner(), "set via proxy")
+        del proxy["cell_variable"]
+        with self.assertRaises(UnboundLocalError):
+            print(cell_variable)
+        with self.assertRaises(NameError):
+            inner()
+        # Check storage of additional variables in the frame value cache via proxy
+        proxy["extra_variable"] = "added via proxy"
+        self.assertEqual(proxy["extra_variable"], "added via proxy")
+        with self.assertRaises(NameError):
+            print(extra_variable)
+        del proxy["extra_variable"]
+        self.assertNotIn("extra_variable", proxy)
+
+        # Check updating all 3 kinds of variable via update()
+        updated_keys = {
+            "unbound_local": "set via proxy.update()",
+            "cell_variable": "set via proxy.update()",
+            "extra_variable": "set via proxy.update()",
+        }
+        proxy.update(updated_keys)
+        self.assertEqual(unbound_local, "set via proxy.update()")
+        self.assertEqual(cell_variable, "set via proxy.update()")
+        self.assertEqual(proxy["extra_variable"], "set via proxy.update()")
+
+        self.fail("PEP 558 TODO: Implement proxy '|=' operator test")
+        self.fail("PEP 558 TODO: Implement proxy update() test")
+        self.fail("PEP 558 TODO: Implement proxy setdefault() test")
+        self.fail("PEP 558 TODO: Implement proxy pop() test")
+        self.fail("PEP 558 TODO: Implement proxy popitem() test")
+        self.fail("PEP 558 TODO: Implement proxy clear() test")
+
+    def test_sync_frame_cache(self):
+        proxy = sys._getframe().f_locals
+        self.assertEqual(len(proxy), 2) # Trigger the initial implicit cache update
+        new_variable = None
+        # No implicit value cache refresh
+        self.assertNotIn("new_variable", set(proxy))
+        # But an explicit refresh adds the new key
+        proxy.sync_frame_cache()
+        self.assertIn("new_variable", set(proxy))
+
+    def test_proxy_sizeof(self):
+        self.fail("TODO: Implement proxy sys.getsizeof() test")
 
     def test_active_frame_c_apis(self):
         # Use ctypes to access the C APIs under test
