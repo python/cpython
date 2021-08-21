@@ -84,6 +84,103 @@ class DummyFraction(fractions.Fraction):
     """Dummy Fraction subclass for copy and deepcopy testing."""
 
 
+class CustomInteger(numbers.Integral):
+    """int-like class that doesn't inherit from int"""
+
+    def __new__(cls, value):
+        if not isinstance(value, int):
+            raise ValueError("value should be an 'int' instance")
+        self = object.__new__(CustomInteger)
+        # Ensure we have something of exact type 'int' internally.
+        self._value = int(value)
+        return self
+
+    def __int__(self):
+        return self._value
+
+    def __index__(self):
+        return self._value
+
+    @property
+    def numerator(self):
+        return self
+
+    @property
+    def denominator(self):
+        return CustomInteger(1)
+
+    def _operator_wrappers(operator, wrap_return=True):
+        """
+        Helper for defining binary operations.
+        """
+        def forward(a, b):
+            if isinstance(b, CustomInteger):
+                b = b._value
+            elif not isinstance(b, int):
+                return NotImplemented
+            result = operator(a._value, b)
+            return CustomInteger(result) if wrap_return else result
+
+        def reverse(a, b):
+            if isinstance(b, CustomInteger):
+                b = b._value
+            elif not isinstance(b, int):
+                return NotImplemented
+            result = operator(b, a._value)
+            return CustomInteger(result) if wrap_return else result
+
+        return forward, reverse
+
+    # Arithmetic operations
+    __add__, __radd__ = _operator_wrappers(operator.add)
+    __sub__, __rsub__ = _operator_wrappers(operator.sub)
+    __mul__, __rmul__ = _operator_wrappers(operator.mul)
+    __floordiv__, __rfloordiv__ = _operator_wrappers(operator.floordiv)
+    __mod__, __rmod__ = _operator_wrappers(operator.mod)
+    __or__, __ror__ = _operator_wrappers(operator.or_)
+    __and__, __rand__ = _operator_wrappers(operator.and_)
+    __xor__, __rxor__ = _operator_wrappers(operator.xor)
+    __lshift__, __rlshift__ = _operator_wrappers(operator.lshift)
+    __rshift__, __rrshift__ = _operator_wrappers(operator.rshift)
+    __truediv__, __rtruediv__ = _operator_wrappers(
+        operator.truediv, wrap_return=False)
+
+    # Comparisons
+    __lt__, __gt__ = _operator_wrappers(operator.lt, wrap_return=False)
+    __le__, __ge__ = _operator_wrappers(operator.le, wrap_return=False)
+    __eq__, _unused = _operator_wrappers(operator.eq, wrap_return=False)
+
+    # Unary operations
+    def __abs__(self): return CustomInteger(abs(self._value))
+    def __neg__(self): return CustomInteger(-self._value)
+    def __pos__(self): return CustomInteger(+self._value)
+    def __invert__(self): return CustomInteger(~self._value)
+    def __bool__(self): return bool(self._value)
+
+    # These should all return an int rather than a CustomInteger.
+    __floor__ = __ceil__ = __trunc__ = __int__
+
+    def __round__(self, ndigits=None):
+        if ndigits is None:  # return int if no second arg
+            return round(self._value)
+        else:  # return same type if second arg
+            return CustomInteger(round(self._value, ndigits))
+
+    # pow is messy. We don't attempt to do anything with 3-argument pow.
+    # 2-argument pow for ints has a range of different return types; we only
+    # want to re-wrap if the returned value is an int.
+    _pow , _rpow = _operator_wrappers(operator.pow, wrap_return=False)
+
+    def __pow__(self, other):
+        result = self._pow(other)
+        return CustomInteger(result) if isinstance(result, int) else result
+
+    def __rpow__(self, other):
+        result = self._rpow(other)
+        return CustomInteger(result) if isinstance(result, int) else result
+
+
+
 def _components(r):
     return (r.numerator, r.denominator)
 
@@ -390,6 +487,17 @@ class FractionTest(unittest.TestCase):
         # See bpo-44547.
         f = F(3, 2)
         self.assertIsInstance(f, typing.SupportsInt)
+        self.assertEqual(int(f), 1)
+        self.assertEqual(type(int(f)), int)
+
+    def testIntGuaranteesIntReturn(self):
+        # Check that int(some_fraction) gives a result of exact type `int`
+        # even if the fraction is using some other Integral type for its
+        # numerator and denominator.
+        f = F(CustomInteger(13), CustomInteger(5))
+        self.assertIsInstance(f, typing.SupportsInt)
+        self.assertEqual(int(f), 2)
+        self.assertEqual(type(int(f)), int)
 
     def testBoolGuarateesBoolReturn(self):
         # Ensure that __bool__ is used on numerator which guarantees a bool
