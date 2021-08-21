@@ -1426,19 +1426,20 @@ fastlocalsproxy_getitem(fastlocalsproxyobject *flp, PyObject *key)
         }
         return PyObject_GetItem(locals, key);
     }
-    /* Key is a valid Python variable for the frame, so retrieve the value */
+    // If the frame has been cleared, disallow access to locals and cell variables
+    PyFrameObject *f = flp->frame;
+    if (f->f_state == FRAME_CLEARED) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Fast locals proxy attempted to read from cleared frame (%R)", f);
+        return NULL;
+    }
+    // Key is a valid Python variable for the frame, so retrieve the value
     PyObject *value = NULL;
     if (PyCell_Check(fast_ref)) {
-        // Closure cells can be queried even after the frame terminates
+        // Closure cells are accessed directly via the fast refs mapping
         value = PyCell_GET(fast_ref);
     } else {
-        PyFrameObject *f = flp->frame;
-        if (f->f_state == FRAME_CLEARED) {
-            PyErr_Format(PyExc_RuntimeError,
-                "Fast locals proxy attempted to read from cleared frame (%R)", f);
-            return NULL;
-        }
-        /* Fast ref is a Python int mapping into the fast locals array */
+        // Fast ref is a Python int mapping into the fast locals array
         assert(PyLong_CheckExact(fast_ref));
         Py_ssize_t offset = PyLong_AsSsize_t(fast_ref);
         if (offset < 0) {
@@ -1507,9 +1508,16 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
         // Used by pdb (at least) to store __return__ and __exception__ values
         return fastlocalsproxy_set_value_cache_entry(flp, key, value);
     }
-    /* Key is a valid Python variable for the frame, so update that reference */
+    // If the frame has been cleared, disallow access to locals and cell variables
+    PyFrameObject *f = flp->frame;
+    if (f->f_state == FRAME_CLEARED) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Fast locals proxy attempted to write to cleared frame (%R)", f);
+        return -1;
+    }
+    // Key is a valid Python variable for the frame, so update that reference
     if (PyCell_Check(fast_ref)) {
-        // Closure cells can be updated even after the frame terminates
+        // Closure cells are accessed directly via the fast refs mapping
         int result = PyCell_Set(fast_ref, value);
         if (result == 0) {
             // Ensure the value cache is up to date if the frame is still live
@@ -1517,13 +1525,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
         }
         return result;
     }
-    PyFrameObject *f = flp->frame;
-    if (f->f_state == FRAME_CLEARED) {
-        PyErr_Format(PyExc_RuntimeError,
-            "Fast locals proxy attempted to write to cleared frame (%R)", f);
-        return -1;
-    }
-    /* Fast ref is a Python int mapping into the fast locals array */
+    // Fast ref is a Python int mapping into the fast locals array
     assert(PyLong_CheckExact(fast_ref));
     Py_ssize_t offset = PyLong_AsSsize_t(fast_ref);
     if (offset < 0) {
@@ -1864,10 +1866,69 @@ PyDoc_STRVAR(fastlocalsproxy_clear__doc__,
 static PyObject *
 fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // PEP 558 TODO: implement clear() on proxy objects
-    PyErr_Format(PyExc_NotImplementedError,
-                 "FastLocalsProxy does not yet implement clear()");
-    return NULL;
+    /* Merge fast locals into f->f_locals */
+    PyFrameObject *f;
+    PyObject *locals;
+
+    assert(flp);
+    f = ((fastlocalsproxyobject *)flp)->frame;
+    if (f == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    // Clear any local and still referenced cell variables
+    // Nothing to do in this step if the frame itself has already been cleared
+    if (f->f_state != FRAME_CLEARED) {
+        PyCodeObject *co = _PyFrame_GetCode(f);
+        PyObject **fast = f->f_localsptr;
+        // Fast locals proxies only get created for optimised frames
+        assert(co);
+        assert(co->co_flags & CO_OPTIMIZED);
+        assert(fast);
+        for (int i = 0; i < co->co_nlocalsplus; i++) {
+            _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, i);
+
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            PyObject *value = fast[i];
+            if (kind & CO_FAST_FREE) {
+                // The cell was set by _PyEval_MakeFrameVector() from
+                // the function's closure.
+                assert(value != NULL && PyCell_Check(value));
+                if (PyCell_Set(value, NULL)) {
+                    return NULL;
+                }
+            }
+            else if (kind & CO_FAST_CELL) {
+                // If the cell has already been created, unbind its reference,
+                // otherwise clear its initial value (if any)
+                if (value != NULL) {
+                    if (PyCell_Check(value) &&
+                            _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
+                        // (likely) MAKE_CELL must have executed already.
+                        if (PyCell_Set(value, NULL)) {
+                            return NULL;
+                        }
+                    } else {
+                        // Clear the initial value
+                        Py_CLEAR(fast[i]);
+                    }
+                }
+            } else if (value != NULL) {
+                // Clear local variable reference
+                Py_CLEAR(fast[i]);
+            }
+        }
+    }
+
+    // Finally, clear the frame value cache (including any extra variables)
+    locals = _frame_get_locals_mapping(f);
+    if (locals == NULL) {
+        return NULL;
+    }
+    PyDict_Clear(locals);
+
+    Py_RETURN_NONE;
 }
 
 

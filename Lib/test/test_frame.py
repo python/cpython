@@ -259,7 +259,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         self.assertEqual(unbound_local, "set via proxy")
         del proxy["unbound_local"]
         with self.assertRaises(UnboundLocalError):
-            print(unbound_local)
+            unbound_local
         # Check mutation of cell variables via proxy
         cell_variable = None
         proxy["cell_variable"] = "set via proxy"
@@ -269,7 +269,7 @@ class FastLocalsProxyTest(unittest.TestCase):
         self.assertEqual(inner(), "set via proxy")
         del proxy["cell_variable"]
         with self.assertRaises(UnboundLocalError):
-            print(cell_variable)
+            cell_variable
         with self.assertRaises(NameError):
             inner()
         # Check storage of additional variables in the frame value cache via proxy
@@ -302,10 +302,45 @@ class FastLocalsProxyTest(unittest.TestCase):
         self.assertEqual(cell_variable, "set via proxy |=")
         self.assertEqual(proxy["extra_variable"], "set via proxy |=")
 
+        # Check clearing all variables via the proxy
+        # Use a nested generator to allow the test case reference to be
+        # restored even after the frame variables are cleared
+        def clear_frame_via_proxy(test_case_arg):
+            inner_proxy = sys._getframe().f_locals
+            inner_proxy["extra_variable"] = "added via inner_proxy"
+            test_case_arg.assertEqual(inner_proxy, {
+                "inner_proxy": inner_proxy,
+                "cell_variable": cell_variable,
+                "test_case_arg": test_case_arg,
+                "extra_variable": "added via inner_proxy",
+            })
+            inner_proxy.clear()
+            test_case = yield None
+            with test_case.assertRaises(UnboundLocalError):
+                inner_proxy
+            with test_case.assertRaises(UnboundLocalError):
+                test_case_arg
+            with test_case.assertRaises(NameError):
+                cell_variable
+            inner_proxy = sys._getframe().f_locals
+            test_case.assertNotIn("extra_variable", inner_proxy)
+        # Clearing the inner frame even clears the cell in the outer frame
+        clear_iter = clear_frame_via_proxy(self)
+        next(clear_iter)
+        with self.assertRaises(UnboundLocalError):
+            cell_variable
+        # Run the final checks in the inner frame
+        try:
+            clear_iter.send(self)
+            self.fail("Inner proxy clearing iterator didn't stop")
+        except StopIteration:
+            pass
+
+
+
         self.fail("PEP 558 TODO: Implement proxy setdefault() test")
         self.fail("PEP 558 TODO: Implement proxy pop() test")
         self.fail("PEP 558 TODO: Implement proxy popitem() test")
-        self.fail("PEP 558 TODO: Implement proxy clear() test")
 
     def test_sync_frame_cache(self):
         proxy = sys._getframe().f_locals
