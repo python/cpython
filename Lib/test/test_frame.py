@@ -421,8 +421,13 @@ class FastLocalsProxyTest(unittest.TestCase):
         proxy.sync_frame_cache()
         self.assertIn("new_variable", set(proxy))
 
+    @support.cpython_only
     def test_proxy_sizeof(self):
-        self.fail("TODO: Implement proxy sys.getsizeof() test")
+        # Proxy should only be storing a frame reference and the flag that
+        # indicates whether or not the proxy has refreshed the value cache
+        proxy = sys._getframe().f_locals
+        expected_size = support.calcobjsize("Pi")
+        support.check_sizeof(self, proxy, expected_size)
 
     def test_active_frame_c_apis(self):
         # Use ctypes to access the C APIs under test

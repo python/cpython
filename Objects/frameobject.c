@@ -1328,7 +1328,13 @@ typedef struct {
     int           frame_cache_updated; /* Assume cache is out of date if this is not set */
 } fastlocalsproxyobject;
 
-// PEP 558 TODO: Implement correct Python sizeof() support for fastlocalsproxyobject
+static PyObject *
+fastlocalsproxy_sizeof(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
+{
+    Py_ssize_t res;
+    res = sizeof(fastlocalsproxyobject);
+    return PyLong_FromSsize_t(res);
+}
 
 static PyObject *
 fastlocalsproxy_get_updated_value_cache(fastlocalsproxyobject *flp)
@@ -1979,20 +1985,22 @@ fastlocalsproxy_sync_frame_cache(register PyObject *self, PyObject *Py_UNUSED(ig
 
 static PyMethodDef fastlocalsproxy_methods[] = {
     {"get",       (PyCFunction)(void(*)(void))fastlocalsproxy_get, METH_FASTCALL,
-     PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
+     PyDoc_STR("P.get(k[,d]) -> P[k] if k in P, else d."
                "  d defaults to None.")},
     {"keys",      (PyCFunction)fastlocalsproxy_keys,       METH_NOARGS,
-     PyDoc_STR("D.keys() -> virtual set of D's keys")},
+     PyDoc_STR("P.keys() -> virtual set of proxy's bound keys")},
     {"values",    (PyCFunction)fastlocalsproxy_values,     METH_NOARGS,
-     PyDoc_STR("D.values() -> virtual multiset of D's values")},
+     PyDoc_STR("P.values() -> virtual multiset of proxy's bound values")},
     {"items",     (PyCFunction)fastlocalsproxy_items,      METH_NOARGS,
-     PyDoc_STR("D.items() -> virtual set of D's (key, value) pairs, as 2-tuples")},
+     PyDoc_STR("P.items() -> virtual set of P's (key, value) pairs, as 2-tuples")},
     {"copy",      (PyCFunction)fastlocalsproxy_copy,       METH_NOARGS,
-     PyDoc_STR("D.copy() -> a shallow copy of D as a regular dict")},
+     PyDoc_STR("P.copy() -> a shallow copy of P as a regular dict")},
     {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {"__reversed__", (PyCFunction)fastlocalsproxy_reversed, METH_NOARGS,
-     PyDoc_STR("D.__reversed__() -> reverse iterator over D's keys")},
+     PyDoc_STR("P.__reversed__() -> reverse iterator over P's keys")},
+    {"__sizeof__",      (PyCFunction)fastlocalsproxy_sizeof,      METH_NOARGS,
+     PyDoc_STR("P.__sizeof__: size of P in memory, in bytes (excludes frame)")},
      // PEP 558 TODO: Convert METH_VARARGS/METH_KEYWORDS methods to METH_FASTCALL
     {"setdefault",      (PyCFunction)(void(*)(void))fastlocalsproxy_setdefault,
      METH_VARARGS | METH_KEYWORDS, fastlocalsproxy_setdefault__doc__},
