@@ -1835,15 +1835,32 @@ fastlocalsproxy_pop(PyObject *flp, PyObject *args, PyObject *kwargs)
 
 PyDoc_STRVAR(fastlocalsproxy_popitem__doc__,
 "flp.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
-        2-tuple; but raise KeyError if D is empty.");
+        2-tuple; but raise KeyError if proxy has no bound values.");
 
 static PyObject *
 fastlocalsproxy_popitem(PyObject *flp, PyObject *Py_UNUSED(ignored))
 {
-    // PEP 558 TODO: implement popitem() on proxy objects
-    PyErr_Format(PyExc_NotImplementedError,
-                 "FastLocalsProxy does not yet implement popitem()");
-    return NULL;
+    _Py_IDENTIFIER(popitem);
+    // Need values, so use the value cache on the frame
+    // As long as it has been updated at least once, assume value cache
+    // is up to date (as actually checking is O(n))
+    PyObject *locals = fastlocalsproxy_get_value_cache(flp);
+    if (locals == NULL) {
+        return NULL;
+    }
+    PyObject *result = _PyObject_CallMethodIdNoArgs(locals, &PyId_popitem);
+    if (result != NULL) {
+        // We popped a key from the cache, so ensure it is also cleared on the frame
+        assert(PyTuple_CheckExact(result));
+        assert(PyTuple_GET_SIZE(result) == 2);
+        PyObject *key = PyTuple_GET_ITEM(result, 0);
+        if (fastlocalsproxy_delitem(flp, key)) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    return result;
 }
 
 /* update() */

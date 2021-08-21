@@ -358,6 +358,26 @@ class FastLocalsProxyTest(unittest.TestCase):
         self.fail("PEP 558 TODO: Implement proxy setdefault() test")
         self.fail("PEP 558 TODO: Implement proxy popitem() test")
 
+    def test_popitem(self):
+        # Check popitem() in a controlled inner frame
+        # This is a separate test case so it can be skipped if the test case
+        # detects that something is injecting extra keys into the frame state
+        if len(sys._getframe().f_locals) != 1:
+            self.skipTest("Locals other than 'self' detected, test case will be unreliable")
+
+        # With no local variables, trying to pop one should fail
+        def popitem_exception():
+            return sys._getframe().f_locals.popitem()
+        with self.assertRaises(KeyError):
+            popitem_exception()
+
+        # With exactly one local variable, it should be popped
+        def popitem_result(arg="only proxy entry"):
+            return sys._getframe().f_locals.popitem(), list(sys._getframe().f_locals)
+        popped_item, remaining_vars = popitem_result()
+        self.assertEqual(popped_item, ("arg", "only proxy entry"))
+        self.assertEqual(remaining_vars, [])
+
     def test_sync_frame_cache(self):
         proxy = sys._getframe().f_locals
         self.assertEqual(len(proxy), 2) # Trigger the initial implicit cache update
