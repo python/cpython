@@ -1775,24 +1775,18 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
         output=None):
     """Display text documentation, given an object or a path to an object."""
-    try:
-        if output is None:
-            pager(render_doc(thing, title, forceload))
-        else:
-            output.write(render_doc(thing, title, forceload, plaintext))
-    except (ImportError, ErrorDuringImport) as value:
-        print(value)
+    if output is None:
+        pager(render_doc(thing, title, forceload))
+    else:
+        output.write(render_doc(thing, title, forceload, plaintext))
 
 def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""
-    try:
-        object, name = resolve(thing, forceload)
-        page = html.page(describe(object), html.document(object, name))
-        with open(name + '.html', 'w', encoding='utf-8') as file:
-            file.write(page)
-        print('wrote', name + '.html')
-    except (ImportError, ErrorDuringImport) as value:
-        print(value)
+    object, name = resolve(thing, forceload)
+    page = html.page(describe(object), html.document(object, name))
+    with open(name + '.html', 'w', encoding='utf-8') as file:
+        file.write(page)
+    print('wrote', name + '.html')
 
 def writedocs(dir, pkgpath='', done=None):
     """Write out HTML documentation for all modules in a directory tree."""
@@ -2786,7 +2780,7 @@ def cli():
         for arg in args:
             if ispath(arg) and not os.path.exists(arg):
                 print('file %r does not exist' % arg)
-                break
+                sys.exit(1)
             try:
                 if ispath(arg) and os.path.isfile(arg):
                     arg = importfile(arg)
@@ -2797,8 +2791,9 @@ def cli():
                         writedoc(arg)
                 else:
                     help.help(arg)
-            except ErrorDuringImport as value:
+            except (ImportError, ErrorDuringImport) as value:
                 print(value)
+                sys.exit(1)
 
     except (getopt.error, BadUsage):
         cmd = os.path.splitext(os.path.basename(sys.argv[0]))[0]
