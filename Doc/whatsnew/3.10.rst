@@ -1403,8 +1403,9 @@ if they want runtime protocols.
 
 Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
 :exc:`DeprecationWarning`.  These submodules have been deprecated since
-Python 3.8.  Anything previously belonging to those submodules should be
-imported directly from :mod:`typing` instead.
+Python 3.8 and will be removed in a future version of Python.  Anything
+belonging to those submodules should be imported directly from
+:mod:`typing` instead.
 (Contributed by Sebastian Rittau in :issue:`38291`)
 
 unittest
