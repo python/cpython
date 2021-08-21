@@ -240,7 +240,13 @@ class FastLocalsProxyTest(unittest.TestCase):
         # Check reversed iteration (order should be reverse of forward iteration)
         self.assertEqual(list(reversed(proxy)), list(reversed(list(proxy))))
 
-        self.fail("PEP 558 TODO: Implement proxy '|' operator test")
+        # Check dict union operations (these implicitly refresh the value cache)
+        extra_contents = dict(a=1, b=2)
+        expected_proxy_contents["extra_contents"] = extra_contents
+        self.check_proxy_contents(proxy | proxy, expected_proxy_contents)
+        self.assertIsInstance(proxy | proxy, dict)
+        self.check_proxy_contents(proxy | extra_contents, expected_proxy_contents | extra_contents)
+        self.check_proxy_contents(extra_contents | proxy, expected_proxy_contents | extra_contents)
 
     def test_dict_mutation_operations(self):
         # Check mutation of local variables via proxy
@@ -285,8 +291,17 @@ class FastLocalsProxyTest(unittest.TestCase):
         self.assertEqual(cell_variable, "set via proxy.update()")
         self.assertEqual(proxy["extra_variable"], "set via proxy.update()")
 
-        self.fail("PEP 558 TODO: Implement proxy '|=' operator test")
-        self.fail("PEP 558 TODO: Implement proxy update() test")
+        # Check updating all 3 kinds of variable via an in-place dict union
+        updated_keys = {
+            "unbound_local": "set via proxy |=",
+            "cell_variable": "set via proxy |=",
+            "extra_variable": "set via proxy |=",
+        }
+        proxy |= updated_keys
+        self.assertEqual(unbound_local, "set via proxy |=")
+        self.assertEqual(cell_variable, "set via proxy |=")
+        self.assertEqual(proxy["extra_variable"], "set via proxy |=")
+
         self.fail("PEP 558 TODO: Implement proxy setdefault() test")
         self.fail("PEP 558 TODO: Implement proxy pop() test")
         self.fail("PEP 558 TODO: Implement proxy popitem() test")

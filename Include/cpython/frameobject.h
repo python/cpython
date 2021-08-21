@@ -84,8 +84,7 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 //       seems like a nice way to let folks write some useful debug assertions,
 //       though.
 PyAPI_DATA(PyTypeObject) _PyFastLocalsProxy_Type;
-#define _PyFastLocalsProxy_CheckExact(self) \
-    (Py_TYPE(self) == &_PyFastLocalsProxy_Type)
+#define _PyFastLocalsProxy_CheckExact(op) Py_IS_TYPE(op, &_PyFastLocalsProxy_Type)
 
 
 // Underlying implementation API supporting the stable PyLocals_*() APIs
