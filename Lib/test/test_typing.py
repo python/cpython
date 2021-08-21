@@ -4873,7 +4873,6 @@ class SpecialAttrsTests(BaseTestCase):
                 self.assertEqual(cls.__name__, name, str(cls))
                 self.assertEqual(cls.__qualname__, name, str(cls))
                 self.assertEqual(cls.__module__, 'typing', str(cls))
-                self.assertEqual(getattr(cls, '_name', name), name, str(cls))
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     s = pickle.dumps(cls, proto)
                     loaded = pickle.loads(s)
