@@ -4913,8 +4913,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.TypeVar: 'TypeVar',
             typing.Union: 'Union',
             # Subscribed special forms
-            # Annotated is special - it returns the contained type
-            typing.Annotated[Any, "Annotation"]: 'Any',
+            typing.Annotated[Any, "Annotation"]: 'Annotated',
             typing.ClassVar[Any]: 'ClassVar',
             typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',

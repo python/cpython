@@ -1603,6 +1603,11 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
     def __hash__(self):
         return hash((self.__origin__, self.__metadata__))
 
+    def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return 'Annotated'
+        return super().__getattr__(attr)
+
 
 class Annotated:
     """Add context specific metadata to a type.
