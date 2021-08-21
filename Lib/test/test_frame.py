@@ -372,10 +372,29 @@ class FastLocalsProxyTest(unittest.TestCase):
             popitem_exception()
 
         # With exactly one local variable, it should be popped
-        def popitem_result(arg="only proxy entry"):
+        def popitem_local(arg="only proxy entry"):
             return sys._getframe().f_locals.popitem(), list(sys._getframe().f_locals)
-        popped_item, remaining_vars = popitem_result()
+        popped_item, remaining_vars = popitem_local()
         self.assertEqual(popped_item, ("arg", "only proxy entry"))
+        self.assertEqual(remaining_vars, [])
+
+        # With exactly one cell variable, it should be popped
+        cell_variable = initial_cell_ref = "only proxy entry"
+        def popitem_cell():
+            return cell_variable, sys._getframe().f_locals.popitem(), list(sys._getframe().f_locals)
+        cell_ref, popped_item, remaining_vars = popitem_cell()
+        self.assertEqual(popped_item, ("cell_variable", "only proxy entry"))
+        self.assertEqual(remaining_vars, [])
+        self.assertIs(cell_ref, initial_cell_ref)
+        with self.assertRaises(UnboundLocalError):
+            cell_variable
+
+        # With exactly one extra variable, it should be popped
+        def popitem_extra():
+            sys._getframe().f_locals["extra_variable"] = "only proxy entry"
+            return sys._getframe().f_locals.popitem(), list(sys._getframe().f_locals)
+        popped_item, remaining_vars = popitem_extra()
+        self.assertEqual(popped_item, ("extra_variable", "only proxy entry"))
         self.assertEqual(remaining_vars, [])
 
     def test_sync_frame_cache(self):
