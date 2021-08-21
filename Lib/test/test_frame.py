@@ -250,7 +250,6 @@ class FastLocalsProxyTest(unittest.TestCase):
         # elsewhere using the `frame.f_locals` attribute and the locals() builtin
 
         # Test retrieval API behaviour in an optimised scope
-        print("Retrieving C locals cache for frame")
         c_locals_cache = PyEval_GetLocals()
         Py_IncRef(c_locals_cache) # Make the borrowed reference a real one
         Py_IncRef(c_locals_cache) # Account for next check's borrowed reference
