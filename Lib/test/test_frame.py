@@ -297,6 +297,25 @@ class FastLocalsProxyTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             proxy.pop("extra_variable")
 
+        # Check setdefault() on all 3 kinds of variable
+        expected_value = "set via setdefault()"
+        self.assertEqual(proxy.setdefault("unbound_local", expected_value), expected_value)
+        self.assertEqual(proxy.setdefault("unbound_local", "ignored"), expected_value)
+        del unbound_local
+        self.assertEqual(proxy.setdefault("unbound_local"), None)
+        self.assertIs(unbound_local, None)
+        self.assertEqual(proxy.setdefault("cell_variable", expected_value), expected_value)
+        self.assertEqual(proxy.setdefault("cell_variable", "ignored"), expected_value)
+        del cell_variable
+        self.assertEqual(proxy.setdefault("cell_variable"), None)
+        self.assertIs(cell_variable, None)
+        self.assertEqual(proxy.setdefault("extra_variable", expected_value), expected_value)
+        self.assertEqual(proxy.setdefault("extra_variable", "ignored"), expected_value)
+        del proxy["extra_variable"]
+        self.assertEqual(proxy.setdefault("extra_variable"), None)
+        self.assertIs(cell_variable, None)
+
+
         # Check updating all 3 kinds of variable via update()
         updated_keys = {
             "unbound_local": "set via proxy.update()",
@@ -352,11 +371,6 @@ class FastLocalsProxyTest(unittest.TestCase):
             self.fail("Inner proxy clearing iterator didn't stop")
         except StopIteration:
             pass
-
-
-
-        self.fail("PEP 558 TODO: Implement proxy setdefault() test")
-        self.fail("PEP 558 TODO: Implement proxy popitem() test")
 
     def test_popitem(self):
         # Check popitem() in a controlled inner frame

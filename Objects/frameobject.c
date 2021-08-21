@@ -1757,30 +1757,47 @@ fastlocalsproxy_richcompare(fastlocalsproxyobject *flp, PyObject *w, int op)
 /* setdefault() */
 
 PyDoc_STRVAR(fastlocalsproxy_setdefault__doc__,
-"flp.setdefault(k[, d=None]) -> v, Insert key with a value of default if key\n\
-        is not in the dictionary.\n\n\
-        Return the value for key if key is in the dictionary, else default.");
+"flp.setdefault(k[, d=None]) -> v, Bind key to given default if key\n\
+        is not already bound to a value.\n\n\
+        Return the value for key if key is already bound, else default.");
+
+
+static PyObject *
+_fastlocalsproxy_setdefault_impl(fastlocalsproxyobject *flp, PyObject *key, PyObject *failobj)
+{
+    assert(flp);
+    if (fastlocalsproxy_init_fast_refs(flp) != 0) {
+        return NULL;
+    }
+
+    PyObject *value = fastlocalsproxy_getitem(flp, key);
+    if (value == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        // Given key is currently unbound, so bind it to the specified default
+        // and return that object
+        PyErr_Clear();
+        value = failobj;
+        if (fastlocalsproxy_setitem(flp, key, value)) {
+            return NULL;
+        }
+        Py_INCREF(value);
+    }
+    return value;
+}
 
 static PyObject *
 fastlocalsproxy_setdefault(PyObject *flp, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"key", "default", 0};
-    PyObject *key, *failobj = NULL;
+    PyObject *key, *failobj = Py_None;
 
     /* borrowed */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:setdefault", kwlist,
                                      &key, &failobj)) {
         return NULL;
     }
 
-    PyObject *value = NULL;
-
-    // PEP 558 TODO: implement setdefault() on proxy objects
-    PyErr_Format(PyExc_NotImplementedError,
-                 "FastLocalsProxy does not yet implement setdefault()");
-    return value;
+    return _fastlocalsproxy_setdefault_impl((fastlocalsproxyobject *)flp, key, failobj);
 }
-
 
 /* pop() */
 
@@ -1790,7 +1807,7 @@ PyDoc_STRVAR(fastlocalsproxy_pop__doc__,
         is raised.");
 
 static PyObject *
-_fastlocalsproxy_popkey(fastlocalsproxyobject *flp, PyObject *key, PyObject *failobj)
+_fastlocalsproxy_pop_impl(fastlocalsproxyobject *flp, PyObject *key, PyObject *failobj)
 {
     // TODO: Similar to the odict implementation, the fast locals proxy
     // could benefit from an internal API that accepts already calculated
@@ -1828,17 +1845,17 @@ fastlocalsproxy_pop(PyObject *flp, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    return _fastlocalsproxy_popkey((fastlocalsproxyobject *)flp, key, failobj);
+    return _fastlocalsproxy_pop_impl((fastlocalsproxyobject *)flp, key, failobj);
 }
 
 /* popitem() */
 
 PyDoc_STRVAR(fastlocalsproxy_popitem__doc__,
-"flp.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
-        2-tuple; but raise KeyError if proxy has no bound values.");
+"flp.popitem() -> (k, v), unbind and return some (key, value) pair as a\n\
+        2-tuple; but raise KeyError if underlying frame has no bound values.");
 
 static PyObject *
-fastlocalsproxy_popitem(PyObject *flp, PyObject *Py_UNUSED(ignored))
+fastlocalsproxy_popitem(fastlocalsproxyobject *flp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(popitem);
     // Need values, so use the value cache on the frame
@@ -1904,7 +1921,6 @@ fastlocalsproxy_clear(register PyObject *flp, PyObject *Py_UNUSED(ignored))
         for (int i = 0; i < co->co_nlocalsplus; i++) {
             _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, i);
 
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *value = fast[i];
             if (kind & CO_FAST_FREE) {
                 // The cell was set by _PyEval_MakeFrameVector() from
