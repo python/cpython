@@ -594,14 +594,22 @@ class Fraction(numbers.Rational):
         """abs(a)"""
         return Fraction(abs(a._numerator), a._denominator, _normalize=False)
 
+    def __int__(a):
+        """int(a)"""
+        if a._numerator < 0:
+            return int(-(-a._numerator // a._denominator))
+        else:
+            return int(a._numerator // a._denominator)
+
     def __trunc__(a):
         """math.trunc(a)"""
+        # Note: this differs from __int__ - __int__ must return an int,
+        # while __trunc__ may return a non-int numbers.Integral object
+        # if that's more convenient or efficient.
         if a._numerator < 0:
             return -(-a._numerator // a._denominator)
         else:
             return a._numerator // a._denominator
-
-    __int__ = __trunc__
 
     def __floor__(a):
         """math.floor(a)"""
