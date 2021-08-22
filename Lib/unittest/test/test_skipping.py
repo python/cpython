@@ -7,6 +7,8 @@ class Test_TestSkipping(unittest.TestCase):
 
     def test_skipping(self):
         class Foo(unittest.TestCase):
+            def defaultTestResult(self):
+                return LoggingResult(events)
             def test_skip_me(self):
                 self.skipTest("skip")
         events = []
@@ -16,8 +18,15 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
         self.assertEqual(result.skipped, [(test, "skip")])
 
+        events = []
+        test.run()
+        self.assertEqual(events, ['startTestRun', 'startTest', 'addSkip',
+                                  'stopTest', 'stopTestRun'])
+
         # Try letting setUp skip the test now.
         class Foo(unittest.TestCase):
+            def defaultTestResult(self):
+                return LoggingResult(events)
             def setUp(self):
                 self.skipTest("testing")
             def test_nothing(self): pass
@@ -29,8 +38,15 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertEqual(result.skipped, [(test, "testing")])
         self.assertEqual(result.testsRun, 1)
 
+        events = []
+        test.run()
+        self.assertEqual(events, ['startTestRun', 'startTest', 'addSkip',
+                                  'stopTest', 'stopTestRun'])
+
     def test_skipping_subtests(self):
         class Foo(unittest.TestCase):
+            def defaultTestResult(self):
+                return LoggingResult(events)
             def test_skip_me(self):
                 with self.subTest(a=1):
                     with self.subTest(b=2):
@@ -54,11 +70,20 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertIsNot(subtest, test)
         self.assertEqual(result.skipped[2], (test, "skip 3"))
 
+        events = []
+        test.run()
+        self.assertEqual(events,
+                         ['startTestRun', 'startTest', 'addSkip', 'addSkip',
+                          'addSkip', 'stopTest', 'stopTestRun'])
+
     def test_skipping_decorators(self):
         op_table = ((unittest.skipUnless, False, True),
                     (unittest.skipIf, True, False))
         for deco, do_skip, dont_skip in op_table:
             class Foo(unittest.TestCase):
+                def defaultTestResult(self):
+                    return LoggingResult(events)
+
                 @deco(do_skip, "testing")
                 def test_skip(self): pass
 
@@ -66,6 +91,7 @@ class Test_TestSkipping(unittest.TestCase):
                 def test_dont_skip(self): pass
             test_do_skip = Foo("test_skip")
             test_dont_skip = Foo("test_dont_skip")
+
             suite = unittest.TestSuite([test_do_skip, test_dont_skip])
             events = []
             result = LoggingResult(events)
@@ -78,17 +104,39 @@ class Test_TestSkipping(unittest.TestCase):
             self.assertEqual(result.skipped, [(test_do_skip, "testing")])
             self.assertTrue(result.wasSuccessful())
 
+            events = []
+            test_do_skip.run()
+            self.assertEqual(len(result.skipped), 1)
+            self.assertEqual(events, ['startTestRun', 'startTest', 'addSkip',
+                                      'stopTest', 'stopTestRun'])
+
+            events = []
+            test_dont_skip.run()
+            self.assertEqual(len(result.skipped), 1)
+            self.assertEqual(events, ['startTestRun', 'startTest', 'addSuccess',
+                                      'stopTest', 'stopTestRun'])
+
     def test_skip_class(self):
         @unittest.skip("testing")
         class Foo(unittest.TestCase):
+            def defaultTestResult(self):
+                return LoggingResult(events)
             def test_1(self):
                 record.append(1)
+        events = []
         record = []
-        result = unittest.TestResult()
+        result = LoggingResult(events)
         test = Foo("test_1")
         suite = unittest.TestSuite([test])
         suite.run(result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
         self.assertEqual(result.skipped, [(test, "testing")])
+        self.assertEqual(record, [])
+
+        events = []
+        test.run()
+        self.assertEqual(events, ['startTestRun', 'startTest', 'addSkip',
+                                  'stopTest', 'stopTestRun'])
         self.assertEqual(record, [])
 
     def test_skip_non_unittest_class(self):
