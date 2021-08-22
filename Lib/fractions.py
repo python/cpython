@@ -603,9 +603,6 @@ class Fraction(numbers.Rational):
 
     def __trunc__(a):
         """math.trunc(a)"""
-        # Note: this differs from __int__ - __int__ must return an int,
-        # while __trunc__ may return a non-int numbers.Integral object
-        # if that's more convenient or efficient.
         if a._numerator < 0:
             return -(-a._numerator // a._denominator)
         else:
