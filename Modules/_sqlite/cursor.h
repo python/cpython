@@ -54,5 +54,4 @@ typedef struct
 
 int pysqlite_cursor_setup_types(PyObject *module);
 
-#define UNKNOWN (-1)
 #endif
