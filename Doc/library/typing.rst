@@ -1247,6 +1247,11 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.11
+      Protocols with data members annotated with :data:`ClassVar` now support
+      :func:`issubclass` checks. Subclasses must set these data members to pass.
+
+
 Other special directives
 """"""""""""""""""""""""
 

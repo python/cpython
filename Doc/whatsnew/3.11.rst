@@ -219,6 +219,14 @@ sqlite3
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
 
+typing
+------
+
+* Runtime protocols with data members now support :func:`issubclass` as long
+  as those members are annotated with :data:`typing.ClassVar`.
+  (Contributed by Ken Jin in :issue:`44975`).
+
+
 Removed
 =======
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without

@@ -1396,8 +1396,15 @@ def _get_protocol_attrs(cls):
 
 
 def _is_callable_members_only(cls):
+    attr_names = _get_protocol_attrs(cls)
+    annotations = getattr(cls, '__annotations__', {})
     # PEP 544 prohibits using issubclass() with protocols that have non-method members.
-    return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
+    for attr_name in attr_names:
+        attr = getattr(cls, attr_name, None)
+        if not (callable(attr)
+            or (getattr(annotations.get(attr_name), '__name__', None) == 'ClassVar')):
+            return False
+    return True
 
 
 def _no_init(self, *args, **kwargs):
@@ -1511,8 +1518,9 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             if not _is_callable_members_only(cls):
                 if _allow_reckless_class_checks():
                     return NotImplemented
-                raise TypeError("Protocols with non-method members"
-                                " don't support issubclass()")
+                raise TypeError("Protocol members must be methods or data"
+                                " attributes annotated with ClassVar to support"
+                                " issubclass()")
             if not isinstance(other, type):
                 # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')

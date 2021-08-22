@@ -1,0 +1,2 @@
+Runtime protocols with data members now support :func:`issubclass` as long
+as those members are annotated with :data:`typing.ClassVar`.

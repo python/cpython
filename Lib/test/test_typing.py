@@ -1610,6 +1610,18 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
 
+    def test_runtime_issubclass_with_classvar_data_members(self):
+        @runtime_checkable
+        class P(Protocol):
+            x: ClassVar[int] = 1
+
+        class C: pass
+
+        class D:
+            x = 1
+        self.assertNotIsSubclass(C, P)
+        self.assertIsSubclass(D, P)
+
 
 class GenericTests(BaseTestCase):
 
