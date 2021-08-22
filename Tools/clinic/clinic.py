@@ -2181,7 +2181,6 @@ __add__
 __and__
 __bytes__
 __call__
-__complex__
 __delitem__
 __divmod__
 __eq__
