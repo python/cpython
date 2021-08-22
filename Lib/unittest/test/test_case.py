@@ -309,21 +309,22 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
     def test_deprecation_of_return_val_from_test(self):
         # Issue 41322 - deprecate return of value!=None from a test
         class Foo(unittest.TestCase):
-            def test(self):
+            def test1(self):
                 return 1
             def test2(self):
                 yield 1
 
         with self.assertWarns(DeprecationWarning) as w:
-            Foo('test').run()
-            self.assertIn('It is deprecated to return a value!=None', w.warnings[0].message.args[0])
-            self.assertIn('test', w.warnings[0].message.args[0])
-            self.assertIn(w.warnings[0].filename, __file__)
+            Foo('test1').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
+        self.assertIn('test1', str(w.warnings[0].message))
+        self.assertEquals(w.warnings[0].filename, __file__)
+
         with self.assertWarns(DeprecationWarning) as w:
             Foo('test2').run()
-            self.assertIn('It is deprecated to return a value!=None', w.warnings[0].message.args[0])
-            self.assertIn('test2', w.warnings[0].message.args[0])
-            self.assertEqual(w.warnings[0].filename, __file__)
+        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
+        self.assertIn('test2', str(w.warnings[0].message))
+        self.assertEquals(w.warnings[0].filename, __file__)
 
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
