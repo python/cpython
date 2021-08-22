@@ -1703,6 +1703,12 @@ Deprecated
   requires a :ref:`debug build of Python <debug-build>`.
   (Contributed by Victor Stinner in :issue:`44584`.)
 
+* Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
+  :exc:`DeprecationWarning`.  These submodules will be removed in a future version
+  of Python.  Anything belonging to these submodules should be imported directly
+  from :mod:`typing` instead.
+  (Contributed by Sebastian Rittau in :issue:`38291`)
+
 .. _whatsnew310-removed:
 
 Removed
