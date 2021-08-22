@@ -395,3 +395,7 @@ Removed
   :func:`~gettext.install` are also removed, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
+
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the default ``None``
+  value), is now deprecated.
