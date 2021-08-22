@@ -538,6 +538,13 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
+    pysqlite_state *state = self->connection->state;
+    if (multiple && sqlite3_stmt_readonly(self->statement->st)) {
+        PyErr_SetString(state->ProgrammingError,
+                        "executemany() can only execute DML statements.");
+        goto error;
+    }
+
     if (self->statement->in_use) {
         Py_SETREF(self->statement,
                   pysqlite_statement_create(self->connection, operation));
@@ -558,7 +565,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
-    pysqlite_state *state = self->connection->state;
     while (1) {
         parameters = PyIter_Next(parameters_iter);
         if (!parameters) {
@@ -641,13 +647,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         if (rc == SQLITE_ROW) {
-            if (multiple) {
-                PyErr_SetString(state->ProgrammingError,
-                                "executemany() can only execute DML "
-                                "statements.");
-                goto error;
-            }
-
             self->next_row = _pysqlite_fetch_one_row(self);
             if (self->next_row == NULL)
                 goto error;
