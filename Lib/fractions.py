@@ -594,12 +594,12 @@ class Fraction(numbers.Rational):
         """abs(a)"""
         return Fraction(abs(a._numerator), a._denominator, _normalize=False)
 
-    def __int__(a):
+    def __int__(a, _index=operator.index):
         """int(a)"""
         if a._numerator < 0:
-            return int(-(-a._numerator // a._denominator))
+            return _index(-(-a._numerator // a._denominator))
         else:
-            return int(a._numerator // a._denominator)
+            return _index(a._numerator // a._denominator)
 
     def __trunc__(a):
         """math.trunc(a)"""
