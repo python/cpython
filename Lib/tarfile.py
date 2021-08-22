@@ -2353,7 +2353,7 @@ class TarFile(object):
                 try:
                     import zlib
                     if isinstance(e, zlib.error):
-                        raise ReadError(f'zlib error: {e}')
+                        raise ReadError(f'zlib error: {e}') from None
                     else:
                         raise e
                 except ImportError:
