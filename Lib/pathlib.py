@@ -1440,6 +1440,14 @@ class Path(PurePath):
 
         return self
 
+    @classmethod
+    def relative(cls, path, depth=1):
+        """
+        Return path that is constructed relatively to caller file.
+        """
+        base = Path(sys._getframe(depth).f_code.co_filename).parent
+        return (base / path).resolve()
+
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.

@@ -2429,6 +2429,10 @@ class _BasePathTest(object):
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
+    def test_relative(self):
+        p = self.cls.relative('..')
+        assert p.name == 'Lib', p.name
+
 
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path
