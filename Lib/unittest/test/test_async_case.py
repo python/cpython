@@ -167,6 +167,26 @@ class TestAsyncCase(unittest.TestCase):
         test.run()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
 
+    def test_deprecation_of_return_val_from_test(self):
+        # Issue 41322 - deprecate return of value!=None from a test
+        class Test(unittest.IsolatedAsyncioTestCase):
+            async def test1(self):
+                return 1
+            async def test2(self):
+                yield 1
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Test('test1').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
+        self.assertIn('test1', str(w.warnings[0].message))
+        self.assertEqual(w.warnings[0].filename, __file__)
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Test('test2').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
+        self.assertIn('test2', str(w.warnings[0].message))
+        self.assertEqual(w.warnings[0].filename, __file__)
+
     def test_cleanups_interleave_order(self):
         events = []
 
