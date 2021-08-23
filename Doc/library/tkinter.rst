@@ -112,7 +112,7 @@ i.e., Xlib on Unix/X11, Cocoa on macOS, GDI on Windows.
 When your Python application uses a class in Tkinter, e.g., to create a widget,
 the :mod:`tkinter` module first assembles a Tcl/Tk command string. It passes that
 Tcl command string to an internal :mod:`_tkinter` binary module, which then
-calls the Tcl library to evaluate it. The Tcl library will then call into the
+calls the Tcl interpreter to evaluate it. The Tcl interpreter will then call into the
 Tk and/or Ttk packages, which will in turn make calls to Xlib, Cocoa, or GDI.
 
 
