@@ -16,8 +16,8 @@
                 <CreateFolder Directory="Scripts" />
                 <RemoveFolder Id="Remove_Scripts_CU" Directory="Scripts" On="uninstall" />
                 
-                <Environment Id="PATH_CU" Action="set" Name="PATH" Part="first" Value="[InstallDirectory]" />
-                <Environment Id="SCRIPTS_PATH_CU" Action="set" Name="PATH" Part="first" Value="[Scripts]" />
+                <Environment Id="PATH_CU" Action="set" Name="PATH" Part="last" Value="[InstallDirectory]" />
+                <Environment Id="SCRIPTS_PATH_CU" Action="set" Name="PATH" Part="last" Value="[Scripts]" />
             </Component>
             <Component Id="AppendPath_LM" Directory="InstallDirectory" Guid="*">
                 <Condition>ALLUSERS=1</Condition>
