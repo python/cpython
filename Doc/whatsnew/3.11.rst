@@ -351,3 +351,7 @@ Removed
   :func:`~gettext.install` are also removed, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
+
+* New option *fold_space_newline* (default: ``False``) was added to
+  :class:`~textwrap.TextWrapper`. When set to true, newlines may be folded
+  into adjacent spaces; see class documentation for details.
