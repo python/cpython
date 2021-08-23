@@ -1,0 +1,1 @@
+protect asyncio.tasks._all_tasks WeakSet with a lock
