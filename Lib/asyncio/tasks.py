@@ -14,6 +14,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import threading
 import types
 import warnings
 import weakref
@@ -42,21 +43,11 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
-    # thread while we do so. Therefore we cast it to list prior to filtering. The list
-    # cast itself requires iteration, so we repeat it several times ignoring
-    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
-    # details.
-    i = 0
-    while True:
-        try:
-            tasks = list(_all_tasks)
-        except RuntimeError:
-            i += 1
-            if i >= 1000:
-                raise
-        else:
-            break
+    # Accessing a WeakSet (_all_tasks) isn't safe as it can be updated from
+    # another thread while we do so. Therefore we cast it to list prior to
+    # filtering. See issues 34970, 36607, and 44962 for details.
+    with _all_tasks_lock:
+        tasks = list(_all_tasks)
     return {t for t in tasks
             if futures._get_loop(t) is loop and not t.done()}
 
@@ -885,6 +876,7 @@ def run_coroutine_threadsafe(coro, loop):
 
 # WeakSet containing all alive tasks.
 _all_tasks = weakref.WeakSet()
+_all_tasks_lock = threading.Lock()
 
 # Dictionary containing tasks that are currently active in
 # all running event loops.  {EventLoop: Task}
@@ -893,7 +885,8 @@ _current_tasks = {}
 
 def _register_task(task):
     """Register a new task in asyncio as executed by loop."""
-    _all_tasks.add(task)
+    with _all_tasks_lock:
+        _all_tasks.add(task)
 
 
 def _enter_task(loop, task):
@@ -914,7 +907,8 @@ def _leave_task(loop, task):
 
 def _unregister_task(task):
     """Unregister a task."""
-    _all_tasks.discard(task)
+    with _all_tasks_lock:
+        _all_tasks.discard(task)
 
 
 _py_register_task = _register_task
