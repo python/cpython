@@ -57,6 +57,10 @@ class TextWrapper:
         compound words.
       drop_whitespace (default: true)
         Drop leading and trailing whitespace from lines.
+      fold_space_newline (default: false)
+        When replacing whitespace (replace_whitespace=True), fold newlines into
+        adjoining space character if present.  This option allows to perform stable
+        text wrapping when combined with drop_whitespace=False.
       max_lines (default: None)
         Truncate wrapped lines.
       placeholder (default: ' [...]')
