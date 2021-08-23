@@ -210,13 +210,14 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       (default: ``False``) If true, and *replace_whitespace* is also ``True``,
       newlines will be folded into adjacent spaces if present (if no adjacent
-      spaces, newlines are replaced by a spaces as normal).
+      spaces, newlines are replaced by a space as normal).
 
       .. note::
 
-         When combined with *drop_whitespace* set to ``True``, this option allows
+         When combined with *drop_whitespace* set to ``False``, this option allows
          for stable text wrapping, i.e. wrapping can be applied multiple times with
-         no changes after the first application.
+         no changes after the first application.  Stable wrapping is not guaranteed with any
+         other options in this class.
 
    .. attribute:: drop_whitespace
 
