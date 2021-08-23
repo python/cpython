@@ -1,0 +1,3 @@
+Allow :func:`~base64.b64encode` and :func:`~base64.b64decode` (as well as derived 
+:func:`~base64.urlsafe_b64encode` and :func:`~base64.urlsafe_b64decode`) from 
+:mod:`base64` module to produce or accept unpadded input or output.
