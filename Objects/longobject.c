@@ -40,6 +40,8 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
+/* To be valid the type of x must cover -PyLong_BASE to +PyLong_BASE.
+  int, long, Py_ssize_t are all ok */
 #define IS_MEDIUM_INT(x) (((twodigits)x)+PyLong_MASK <= 2*PyLong_MASK)
 
 static PyObject *
@@ -195,9 +197,10 @@ _PyLong_FromLarge(stwodigits ival)
         abs_ival = (twodigits)ival;
         sign = 1;
     }
-    /* Loop to determine number of digits */
-    twodigits t = abs_ival;
-    Py_ssize_t ndigits = 0;
+    /* Must be at least two digits */
+    assert(abs_ival >> PyLong_SHIFT != 0);
+    twodigits t = abs_ival >> (PyLong_SHIFT *2);
+    Py_ssize_t ndigits = 2;
     while (t) {
         ++ndigits;
         t >>= PyLong_SHIFT;
@@ -251,8 +254,44 @@ _PyLong_Negate(PyLongObject **x_p)
 PyObject *
 PyLong_FromLong(long ival)
 {
-    Py_BUILD_ASSERT(sizeof(stwodigits) >= sizeof(long));
-    return _PyLong_FromSTwoDigits(ival);
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+    unsigned long abs_ival;
+    int sign;
+    if (ival < 0) {
+        /* negate: can't write this as abs_ival = -ival since that
+           invokes undefined behaviour when ival is LONG_MIN */
+        abs_ival = 0U-(twodigits)ival;
+        sign = -1;
+    }
+    else {
+        abs_ival = (unsigned long)ival;
+        sign = 1;
+    }
+    /* Fast path for single-digit ints */
+    if (!(abs_ival >> PyLong_SHIFT)) {
+        return _PyLong_FromMedium((sdigit)ival);
+    }
+    /* Must be at least two digits */
+    unsigned long t = abs_ival >> (PyLong_SHIFT *2);
+    Py_ssize_t ndigits = 2;
+    while (t) {
+        ++ndigits;
+        t >>= PyLong_SHIFT;
+    }
+    PyLongObject *v = _PyLong_New(ndigits);
+    if (v != NULL) {
+        digit *p = v->ob_digit;
+        Py_SET_SIZE(v, ndigits * sign);
+        t = abs_ival;
+        while (t) {
+            *p++ = Py_SAFE_DOWNCAST(
+                t & PyLong_MASK, unsigned long, digit);
+            t >>= PyLong_SHIFT;
+        }
+    }
+    return (PyObject *)v;
 }
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
@@ -3554,7 +3593,7 @@ long_mul(PyLongObject *a, PyLongObject *b)
     /* fast path for single-digit multiplication */
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         stwodigits v = medium_value(a) * medium_value(b);
-        return PyLong_FromLongLong((long long)v);
+        return _PyLong_FromSTwoDigits(v);
     }
 
     z = k_mul(a, b);
