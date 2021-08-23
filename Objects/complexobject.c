@@ -693,8 +693,29 @@ complex___format___impl(PyComplexObject *self, PyObject *format_spec)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
+/*[clinic input]
+complex.__complex__
+
+Convert this value to exact type complex.
+[clinic start generated code]*/
+
+static PyObject *
+complex___complex___impl(PyComplexObject *self)
+/*[clinic end generated code: output=e6b35ba3d275dc9c input=3589ada9d27db854]*/
+{
+    if (PyComplex_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+    else {
+        return PyComplex_FromCComplex(self->cval);
+    }
+}
+
+
 static PyMethodDef complex_methods[] = {
     COMPLEX_CONJUGATE_METHODDEF
+    COMPLEX___COMPLEX___METHODDEF
     COMPLEX___GETNEWARGS___METHODDEF
     COMPLEX___FORMAT___METHODDEF
     {NULL,              NULL}           /* sentinel */
