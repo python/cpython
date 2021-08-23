@@ -1543,11 +1543,11 @@ class ProtocolTests(BaseTestCase):
 
     def test_supports_bytes(self):
 
-        # Note: bytes itself doesn't have __bytes__.
         class B:
             def __bytes__(self):
                 return b''
 
+        self.assertIsSubclass(bytes, typing.SupportsBytes)
         self.assertIsSubclass(B, typing.SupportsBytes)
         self.assertNotIsSubclass(str, typing.SupportsBytes)
 

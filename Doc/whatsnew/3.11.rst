@@ -169,6 +169,14 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
 
+Other CPython Implementation Changes
+====================================
+
+* Special methods :meth:`complex.__complex__` and :meth:`bytes.__bytes__` are implemented to
+  support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
+  (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
+
+
 New Modules
 ===========
 

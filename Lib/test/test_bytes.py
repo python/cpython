@@ -981,6 +981,18 @@ class BaseBytesTest:
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
+    def test__bytes__(self):
+        foo = b'foo'
+        self.assertEqual(foo.__bytes__(), foo)
+        self.assertEqual(type(foo.__bytes__()), self.type2test)
+
+        class bytes_subclass(bytes):
+            pass
+
+        bar = bytes_subclass(b'bar')
+        self.assertEqual(bar.__bytes__(), bar)
+        self.assertEqual(type(bar.__bytes__()), self.type2test)
+
     def test_getitem_error(self):
         b = b'python'
         msg = "byte indices must be integers or slices"
