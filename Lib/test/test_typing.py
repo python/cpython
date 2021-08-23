@@ -1622,6 +1622,29 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(C, P)
         self.assertIsSubclass(D, P)
 
+        # String / PEP 563 annotations.
+        @runtime_checkable
+        class P(Protocol):
+            x: "ClassVar[int]" = 1
+            y: "typing.ClassVar[int]" = 2
+            z: "typing_extensions.ClassVar[int]" = 3
+
+        class D:
+            x = 1
+            y = 2
+            z = 3
+        self.assertNotIsSubclass(C, P)
+        self.assertIsSubclass(D, P)
+
+        # Make sure mixed are forbidden.
+        @runtime_checkable
+        class P(Protocol):
+            x: "ClassVar[int]" = 1
+            y = 2
+
+        self.assertRaises(TypeError, issubclass, C, P)
+        self.assertRaises(TypeError, issubclass, D, P)
+
 
 class GenericTests(BaseTestCase):
 

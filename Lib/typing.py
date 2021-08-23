@@ -1395,15 +1395,25 @@ def _get_protocol_attrs(cls):
     return attrs
 
 
-def _is_callable_members_only(cls):
+def _is_callable_or_classvar_members_only(cls):
     attr_names = _get_protocol_attrs(cls)
     annotations = getattr(cls, '__annotations__', {})
     # PEP 544 prohibits using issubclass() with protocols that have non-method members.
     for attr_name in attr_names:
         attr = getattr(cls, attr_name, None)
-        if not (callable(attr)
-            or (getattr(annotations.get(attr_name), '__name__', None) == 'ClassVar')):
-            return False
+        if callable(attr):
+            continue
+        annotation = annotations.get(attr_name)
+        if getattr(annotation, '__name__', None) == 'ClassVar':
+            continue
+        # String / PEP 563 annotations
+        # Note: If PEP 649 is accepted, we can probably drop this.
+        if isinstance(annotation, str):
+            if (annotation.startswith('ClassVar[')
+               or annotation.startswith('typing.ClassVar[')
+               or annotation.startswith('typing_extensions.ClassVar[')):
+                continue
+        return False
     return True
 
 
@@ -1450,7 +1460,7 @@ class _ProtocolMeta(ABCMeta):
                             " @runtime_checkable protocols")
 
         if ((not getattr(cls, '_is_protocol', False) or
-                _is_callable_members_only(cls)) and
+             _is_callable_or_classvar_members_only(cls)) and
                 issubclass(instance.__class__, cls)):
             return True
         if cls._is_protocol:
@@ -1515,7 +1525,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
-            if not _is_callable_members_only(cls):
+            if not _is_callable_or_classvar_members_only(cls):
                 if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Protocol members must be methods or data"
