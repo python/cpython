@@ -273,8 +273,9 @@ PyLong_FromLong(long ival)
     if (!(abs_ival >> PyLong_SHIFT)) {
         return _PyLong_FromMedium((sdigit)ival);
     }
-    /* Must be at least two digits */
-    unsigned long t = abs_ival >> (PyLong_SHIFT *2);
+    /* Must be at least two digits.
+     * Do shift in two steps to avoid undefined behavior. */
+    unsigned long t = (abs_ival >> PyLong_SHIFT) >> PyLong_SHIFT;
     Py_ssize_t ndigits = 2;
     while (t) {
         ++ndigits;
