@@ -981,7 +981,6 @@ class BaseBytesTest:
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
-
     def test__bytes__(self):
         foo = b'foo'
         self.assertEqual(foo.__bytes__(), foo)
@@ -993,7 +992,6 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         bar = bytes_subclass(b'bar')
         self.assertEqual(bar.__bytes__(), bar)
         self.assertEqual(type(bar.__bytes__()), self.type2test)
-
 
     def test_getitem_error(self):
         b = b'python'
