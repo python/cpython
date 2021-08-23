@@ -233,6 +233,12 @@ library/tarfile,,:xz,'r:xz'
 library/tarfile,,:xz,'w:xz'
 library/time,,:mm,
 library/time,,:ss,
+library/tkinter,,::,ttk::frame .frm -padding 10
+library/tkinter,,::,"grid [ttk::label .frm.lbl -text ""Hello World!""] -column 0 -row 0"
+library/tkinter,,::,"grid [ttk::button .frm.btn -text ""Quit"" -command ""destroy .""] -column 1 -row 0"
+library/tkinter,,::,ttk::frame
+library/tkinter,,::,ttk::button
+library/tkinter,,::,ttk::widget
 library/tracemalloc,,:limit,"for index, stat in enumerate(top_stats[:limit], 1):"
 library/turtle,,::,Example::
 library/unittest,,:foo,"self.assertEqual(cm.output, ['INFO:foo:first message',"
