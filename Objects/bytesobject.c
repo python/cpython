@@ -1701,7 +1701,7 @@ bytes___bytes___impl(PyBytesObject *self)
         return (PyObject *)self;
     }
     else {
-        return PyBytes_FromString(self->ob_sval);
+        return PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
     }
 }
 
