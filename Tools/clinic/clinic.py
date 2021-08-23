@@ -2179,7 +2179,6 @@ unsupported_special_methods = set("""
 __abs__
 __add__
 __and__
-__bytes__
 __call__
 __delitem__
 __divmod__
