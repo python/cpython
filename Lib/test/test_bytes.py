@@ -982,14 +982,14 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
     def test__bytes__(self):
-        foo = b'foo'
+        foo = b'foo\x00bar'
         self.assertEqual(foo.__bytes__(), foo)
         self.assertEqual(type(foo.__bytes__()), self.type2test)
 
         class bytes_subclass(bytes):
             pass
 
-        bar = bytes_subclass(b'bar')
+        bar = bytes_subclass(b'bar\x00foo')
         self.assertEqual(bar.__bytes__(), bar)
         self.assertEqual(type(bar.__bytes__()), self.type2test)
 
