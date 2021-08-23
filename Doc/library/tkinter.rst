@@ -33,7 +33,7 @@ details that are unchanged.
 .. warning::
 
    Tcl/Tk 8.5 (2007) introduced a modern set of themed user interface components
-   along with a new API to use them. Both old and new API's are still available.
+   along with a new API to use them. Both old and new APIs are still available.
    Unfortunately, most documentation you will find online uses the old API and
    is woefully outdated.
 
