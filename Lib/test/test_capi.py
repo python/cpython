@@ -537,6 +537,18 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
+    def test_pyobject_repr_from_null(self):
+        s = _testcapi.pyobject_repr_from_null()
+        self.assertEqual(s, '<NULL>')
+
+    def test_pyobject_str_from_null(self):
+        s = _testcapi.pyobject_str_from_null()
+        self.assertEqual(s, '<NULL>')
+
+    def test_pyobject_bytes_from_null(self):
+        s = _testcapi.pyobject_bytes_from_null()
+        self.assertEqual(s, b'<NULL>')
+
 
 class TestPendingCalls(unittest.TestCase):
 
