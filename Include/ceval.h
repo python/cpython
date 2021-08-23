@@ -55,7 +55,8 @@ PyAPI_FUNC(PyObject *) PyLocals_GetView(void);
 typedef enum {
     PyLocals_UNDEFINED = -1,      // Indicates error (e.g. no thread state defined)
     PyLocals_DIRECT_REFERENCE = 0,
-    PyLocals_SHALLOW_COPY = 1
+    PyLocals_SHALLOW_COPY = 1,
+    _PyLocals_ENSURE_32BIT_ENUM = 2147483647
 } PyLocals_Kind;
 
 PyAPI_FUNC(PyLocals_Kind) PyLocals_GetKind(void);
