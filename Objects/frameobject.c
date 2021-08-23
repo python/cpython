@@ -800,7 +800,7 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_fast_refs);
     PyCodeObject *co = _PyFrame_GetCode(f);
-    /* locals */
+    /* fast locals */
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         Py_CLEAR(f->f_localsptr[i]);
     }
