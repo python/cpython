@@ -2342,16 +2342,22 @@ test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-/* Example passing NULLs to PyObject_Str(NULL). */
+static PyObject *
+pyobject_repr_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyObject_Repr(NULL);
+}
 
 static PyObject *
-test_null_strings(PyObject *self, PyObject *Py_UNUSED(ignored))
+pyobject_str_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Str(NULL);
-    PyObject *tuple = PyTuple_Pack(2, o1, o2);
-    Py_XDECREF(o1);
-    Py_XDECREF(o2);
-    return tuple;
+    return PyObject_Str(NULL);
+}
+
+static PyObject *
+pyobject_bytes_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyObject_Bytes(NULL);
 }
 
 static PyObject *
@@ -5653,7 +5659,9 @@ static PyMethodDef TestMethods[] = {
     {"test_k_code",             test_k_code,                     METH_NOARGS},
     {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords, METH_VARARGS},
-    {"test_null_strings",       test_null_strings,               METH_NOARGS},
+    {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
+    {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
+    {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
     {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
     {"test_with_docstring",     test_with_docstring,             METH_NOARGS,
      PyDoc_STR("This is a pretty normal docstring.")},
