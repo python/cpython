@@ -72,7 +72,7 @@ Architecture
 ------------
 
 Tcl/Tk is not a single library but rather consists of a few distinct
-modules, each with a separate functionality and its own official
+modules, each with separate functionality and its own official
 documentation. Python's binary releases also ship an add-on module
 together with it.
 
@@ -102,11 +102,14 @@ Ttk
    Ttk is distributed as part of Tk, starting with Tk version 8.5. Python
    bindings are provided in a separate module, :mod:`tkinter.ttk`.
 
-Tix
-   `Tix <https://core.tcl.tk/jenglish/gutter/packages/tix.html>`_ is an older
-   third-party Tcl package, an add-on for Tk that adds several new widgets.
-   Python bindings are found in the :mod:`tkinter.tix` module.
-   It's deprecated in favor of Ttk.
+Internally, Tk and Ttk use facilities of the underlying operating system,
+i.e., Xlib on Unix/X11, Cocoa on macOS, GDI on Windows.
+
+When your Python application uses a class in Tkinter, e.g., to create a widget,
+the :mod:`tkinter` module first assembles a Tcl/Tk command string. It passes that
+Tcl command string to an internal :mod:`_tkinter` binary module, which then
+calls the Tcl interpreter to evaluate it. The Tcl interpreter will then call into the
+Tk and/or Ttk packages, which will in turn make calls to Xlib, Cocoa, or GDI.
 
 
 Tkinter Modules
@@ -439,39 +442,6 @@ documentation for all of these in the
    the clipboard or the system bell. (They happen to be implemented as
    methods in the base :class:`Widget` class that all Tkinter widgets
    inherit from).
-
-
-How Tk and Tkinter are Related
-------------------------------
-
-From the top down:
-
-Your App Here (Python)
-   A Python application makes a :mod:`tkinter` call.
-
-tkinter (Python Package)
-   This call (say, for example, creating a button widget), is implemented in
-   the :mod:`tkinter` package, which is written in Python.  This Python
-   function will parse the commands and the arguments and convert them into a
-   form that makes them look as if they had come from a Tk script instead of
-   a Python script.
-
-_tkinter (C)
-   These commands and their arguments will be passed to a C function in the
-   :mod:`_tkinter` - note the underscore - extension module.
-
-Tk Widgets (C and Tcl)
-   This C function is able to make calls into other C modules, including the C
-   functions that make up the Tk library.  Tk is implemented in C and some Tcl.
-   The Tcl part of the Tk widgets is used to bind certain default behaviors to
-   widgets, and is executed once at the point where the Python :mod:`tkinter`
-   package is imported. (The user never sees this stage).
-
-Tk (C)
-   The Tk part of the Tk Widgets implement the final mapping to ...
-
-Xlib (C)
-   the Xlib library to draw graphics on the screen.
 
 
 Threading model
