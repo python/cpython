@@ -2121,7 +2121,7 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
             record_hit_inline(next_instr, oparg);
-            PyObject *sum = PyLong_Type.tp_as_number->nb_add(left, right);
+            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
             Py_DECREF(right);
             Py_DECREF(left);
@@ -4473,7 +4473,7 @@ check_eval_breaker:
                 oparg = cache->adaptive.original_oparg;
                 STAT_DEC(LOAD_METHOD, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_METHOD);
-            }            
+            }
         }
 
         TARGET(LOAD_METHOD_CACHED): {
@@ -4491,7 +4491,7 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
-            
+
             // inline version of _PyObject_GetDictPtr for offset >= 0
             PyObject *dict = self_cls->tp_dictoffset != 0 ?
                 *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
