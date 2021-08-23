@@ -1390,6 +1390,13 @@ subclasses with the :func:`runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`)
 
+Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
+:exc:`DeprecationWarning`.  These submodules have been deprecated since
+Python 3.8 and will be removed in a future version of Python.  Anything
+belonging to those submodules should be imported directly from
+:mod:`typing` instead.
+(Contributed by Sebastian Rittau in :issue:`38291`)
+
 unittest
 --------
 
@@ -1691,6 +1698,12 @@ Deprecated
   deprecated in Python 3.10 and will be removed in Python 3.12. This feature
   requires a :ref:`debug build of Python <debug-build>`.
   (Contributed by Victor Stinner in :issue:`44584`.)
+
+* Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
+  :exc:`DeprecationWarning`.  These submodules will be removed in a future version
+  of Python.  Anything belonging to these submodules should be imported directly
+  from :mod:`typing` instead.
+  (Contributed by Sebastian Rittau in :issue:`38291`)
 
 .. _whatsnew310-removed:
 
