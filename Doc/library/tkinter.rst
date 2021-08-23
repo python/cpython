@@ -381,7 +381,7 @@ or method that you need, you may still have a few places to look.
 While all operations in Tkinter are implemented as method calls on widget
 objects, you've seen that many Tcl/Tk operations appear as commands that
 take a widget pathname as its first parameter, followed by optional
-parameters, e.g. 
+parameters, e.g.
 
 ::
 
