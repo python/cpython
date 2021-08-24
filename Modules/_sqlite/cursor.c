@@ -465,9 +465,10 @@ error:
 static PyObject *
 get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
-    PyObject *args[] = { operation, };
+    PyObject *args[] = { NULL, operation, };
     PyObject *cache = self->connection->statement_cache;
-    return PyObject_Vectorcall(cache, args, 1, NULL);
+    return PyObject_Vectorcall(
+        cache, args + 1, 1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
 static PyObject *
