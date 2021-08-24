@@ -374,7 +374,10 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 if self._iterating:
                     self._pending_removals.append(k)
                 else:
-                    del self.data[k]
+                    try:
+                        del self.data[k]
+                    except KeyError:
+                        pass
         self._remove = remove
         # A list of dead weakrefs (keys to be removed)
         self._pending_removals = []
