@@ -32,6 +32,12 @@
 
 #include "sqlite3.h"
 
+typedef struct _callback_context
+{
+    PyObject *callable;
+    pysqlite_state *state;
+} callback_context;
+
 typedef struct
 {
     PyObject_HEAD
