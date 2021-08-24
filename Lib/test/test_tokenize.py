@@ -3,7 +3,7 @@ from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE)
+                     NEWLINE, _generate_tokens_from_c_tokenizer)
 from io import BytesIO, StringIO
 import unittest
 from unittest import TestCase, mock
@@ -11,7 +11,6 @@ from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 import os
 import token
-
 
 # Converts a source string into a list of textual representation
 # of the tokens such as:
@@ -1652,6 +1651,892 @@ class TestRoundtrip(TestCase):
         codelines = self.roundtrip(code).split('\n')
         self.assertEqual(codelines[1], codelines[2])
         self.check_roundtrip(code)
+
+
+class CTokenizeTest(TestCase):
+    def check_tokenize(self, s, expected):
+        # Format the tokens in s in a table format.
+        # The ENDMARKER and final NEWLINE are omitted.
+        with self.subTest(source=s):
+            result = stringify_tokens_from_source(
+                _generate_tokens_from_c_tokenizer(s), s
+            )
+            self.assertEqual(result, expected.rstrip().splitlines())
+
+    def test_int(self):
+
+        self.check_tokenize('0xff <= 255', """\
+    NUMBER     ''            (1, 0) (1, 4)
+    LESSEQUAL  ''            (1, 5) (1, 7)
+    NUMBER     ''            (1, 8) (1, 11)
+    """)
+
+        self.check_tokenize('0b10 <= 255', """\
+    NUMBER     ''            (1, 0) (1, 4)
+    LESSEQUAL  ''            (1, 5) (1, 7)
+    NUMBER     ''            (1, 8) (1, 11)
+    """)
+
+        self.check_tokenize('0o123 <= 0O123', """\
+    NUMBER     ''            (1, 0) (1, 5)
+    LESSEQUAL  ''            (1, 6) (1, 8)
+    NUMBER     ''            (1, 9) (1, 14)
+    """)
+
+        self.check_tokenize('1234567 > ~0x15', """\
+    NUMBER     ''            (1, 0) (1, 7)
+    GREATER    ''            (1, 8) (1, 9)
+    TILDE      ''            (1, 10) (1, 11)
+    NUMBER     ''            (1, 11) (1, 15)
+    """)
+
+        self.check_tokenize('2134568 != 1231515', """\
+    NUMBER     ''            (1, 0) (1, 7)
+    NOTEQUAL   ''            (1, 8) (1, 10)
+    NUMBER     ''            (1, 11) (1, 18)
+    """)
+
+        self.check_tokenize('(-124561-1) & 200000000', """\
+    LPAR       ''            (1, 0) (1, 1)
+    MINUS      ''            (1, 1) (1, 2)
+    NUMBER     ''            (1, 2) (1, 8)
+    MINUS      ''            (1, 8) (1, 9)
+    NUMBER     ''            (1, 9) (1, 10)
+    RPAR       ''            (1, 10) (1, 11)
+    AMPER      ''            (1, 12) (1, 13)
+    NUMBER     ''            (1, 14) (1, 23)
+    """)
+
+        self.check_tokenize('0xdeadbeef != -1', """\
+    NUMBER     ''            (1, 0) (1, 10)
+    NOTEQUAL   ''            (1, 11) (1, 13)
+    MINUS      ''            (1, 14) (1, 15)
+    NUMBER     ''            (1, 15) (1, 16)
+    """)
+
+        self.check_tokenize('0xdeadc0de & 12345', """\
+    NUMBER     ''            (1, 0) (1, 10)
+    AMPER      ''            (1, 11) (1, 12)
+    NUMBER     ''            (1, 13) (1, 18)
+    """)
+
+        self.check_tokenize('0xFF & 0x15 | 1234', """\
+    NUMBER     ''            (1, 0) (1, 4)
+    AMPER      ''            (1, 5) (1, 6)
+    NUMBER     ''            (1, 7) (1, 11)
+    VBAR       ''            (1, 12) (1, 13)
+    NUMBER     ''            (1, 14) (1, 18)
+    """)
+
+    def test_long(self):
+
+        self.check_tokenize('x = 0', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 5)
+    """)
+
+        self.check_tokenize('x = 0xfffffffffff', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 17)
+    """)
+
+        self.check_tokenize('x = 123141242151251616110', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 25)
+    """)
+
+        self.check_tokenize('x = -15921590215012591', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    MINUS      ''            (1, 4) (1, 5)
+    NUMBER     ''            (1, 5) (1, 22)
+    """)
+
+    def test_float(self):
+
+        self.check_tokenize('x = 3.14159', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 11)
+    """)
+
+        self.check_tokenize('x = 314159.', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 11)
+    """)
+
+        self.check_tokenize('x = .314159', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 11)
+    """)
+
+        self.check_tokenize('x = 3e14159', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 11)
+    """)
+
+        self.check_tokenize('x = 3E123', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 9)
+    """)
+
+        self.check_tokenize('x+y = 3e-1230', """\
+    NAME       ''            (1, 0) (1, 1)
+    PLUS       ''            (1, 1) (1, 2)
+    NAME       ''            (1, 2) (1, 3)
+    EQUAL      ''            (1, 4) (1, 5)
+    NUMBER     ''            (1, 6) (1, 13)
+    """)
+
+        self.check_tokenize('x = 3.14e159', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 12)
+    """)
+
+    def test_string(self):
+
+        self.check_tokenize('x = \'\'; y = ""', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 6)
+    SEMI       ''            (1, 6) (1, 7)
+    NAME       ''            (1, 8) (1, 9)
+    EQUAL      ''            (1, 10) (1, 11)
+    STRING     ''            (1, 12) (1, 14)
+    """)
+
+        self.check_tokenize('x = \'"\'; y = "\'"', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 7)
+    SEMI       ''            (1, 7) (1, 8)
+    NAME       ''            (1, 9) (1, 10)
+    EQUAL      ''            (1, 11) (1, 12)
+    STRING     ''            (1, 13) (1, 16)
+    """)
+
+        self.check_tokenize('x = "doesn\'t "shrink", does it"', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 14)
+    NAME       ''            (1, 14) (1, 20)
+    STRING     ''            (1, 20) (1, 31)
+    """)
+
+        self.check_tokenize("x = 'abc' + 'ABC'", """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 9)
+    PLUS       ''            (1, 10) (1, 11)
+    STRING     ''            (1, 12) (1, 17)
+    """)
+
+        self.check_tokenize('y = "ABC" + "ABC"', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 9)
+    PLUS       ''            (1, 10) (1, 11)
+    STRING     ''            (1, 12) (1, 17)
+    """)
+
+        self.check_tokenize("x = r'abc' + r'ABC' + R'ABC' + R'ABC'", """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 10)
+    PLUS       ''            (1, 11) (1, 12)
+    STRING     ''            (1, 13) (1, 19)
+    PLUS       ''            (1, 20) (1, 21)
+    STRING     ''            (1, 22) (1, 28)
+    PLUS       ''            (1, 29) (1, 30)
+    STRING     ''            (1, 31) (1, 37)
+    """)
+
+        self.check_tokenize('y = r"abc" + r"ABC" + R"ABC" + R"ABC"', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    STRING     ''            (1, 4) (1, 10)
+    PLUS       ''            (1, 11) (1, 12)
+    STRING     ''            (1, 13) (1, 19)
+    PLUS       ''            (1, 20) (1, 21)
+    STRING     ''            (1, 22) (1, 28)
+    PLUS       ''            (1, 29) (1, 30)
+    STRING     ''            (1, 31) (1, 37)
+    """)
+
+        self.check_tokenize("u'abc' + U'abc'", """\
+    STRING     ''            (1, 0) (1, 6)
+    PLUS       ''            (1, 7) (1, 8)
+    STRING     ''            (1, 9) (1, 15)
+    """)
+
+        self.check_tokenize('u"abc" + U"abc"', """\
+    STRING     ''            (1, 0) (1, 6)
+    PLUS       ''            (1, 7) (1, 8)
+    STRING     ''            (1, 9) (1, 15)
+    """)
+
+        self.check_tokenize("b'abc' + B'abc'", """\
+    STRING     ''            (1, 0) (1, 6)
+    PLUS       ''            (1, 7) (1, 8)
+    STRING     ''            (1, 9) (1, 15)
+    """)
+
+        self.check_tokenize('b"abc" + B"abc"', """\
+    STRING     ''            (1, 0) (1, 6)
+    PLUS       ''            (1, 7) (1, 8)
+    STRING     ''            (1, 9) (1, 15)
+    """)
+
+        self.check_tokenize("br'abc' + bR'abc' + Br'abc' + BR'abc'", """\
+    STRING     ''            (1, 0) (1, 7)
+    PLUS       ''            (1, 8) (1, 9)
+    STRING     ''            (1, 10) (1, 17)
+    PLUS       ''            (1, 18) (1, 19)
+    STRING     ''            (1, 20) (1, 27)
+    PLUS       ''            (1, 28) (1, 29)
+    STRING     ''            (1, 30) (1, 37)
+    """)
+
+        self.check_tokenize('br"abc" + bR"abc" + Br"abc" + BR"abc"', """\
+    STRING     ''            (1, 0) (1, 7)
+    PLUS       ''            (1, 8) (1, 9)
+    STRING     ''            (1, 10) (1, 17)
+    PLUS       ''            (1, 18) (1, 19)
+    STRING     ''            (1, 20) (1, 27)
+    PLUS       ''            (1, 28) (1, 29)
+    STRING     ''            (1, 30) (1, 37)
+    """)
+
+        self.check_tokenize("rb'abc' + rB'abc' + Rb'abc' + RB'abc'", """\
+    STRING     ''            (1, 0) (1, 7)
+    PLUS       ''            (1, 8) (1, 9)
+    STRING     ''            (1, 10) (1, 17)
+    PLUS       ''            (1, 18) (1, 19)
+    STRING     ''            (1, 20) (1, 27)
+    PLUS       ''            (1, 28) (1, 29)
+    STRING     ''            (1, 30) (1, 37)
+    """)
+
+        self.check_tokenize('rb"abc" + rB"abc" + Rb"abc" + RB"abc"', """\
+    STRING     ''            (1, 0) (1, 7)
+    PLUS       ''            (1, 8) (1, 9)
+    STRING     ''            (1, 10) (1, 17)
+    PLUS       ''            (1, 18) (1, 19)
+    STRING     ''            (1, 20) (1, 27)
+    PLUS       ''            (1, 28) (1, 29)
+    STRING     ''            (1, 30) (1, 37)
+    """)
+
+        self.check_tokenize('"a\\\nde\\\nfg"', """\
+    STRING     ''            (1, 0) (3, 3)
+    """)
+
+        self.check_tokenize('u"a\\\nde"', """\
+    STRING     ''            (1, 0) (2, 3)
+    """)
+
+        self.check_tokenize('rb"a\\\nd"', """\
+    STRING     ''            (1, 0) (2, 2)
+    """)
+
+        self.check_tokenize('"""a\\\nb"""', """\
+    STRING     ''            (1, 0) (2, 4)
+    """)
+
+        self.check_tokenize('u"""a\\\nb"""', """\
+    STRING     ''            (1, 0) (2, 4)
+    """)
+
+        self.check_tokenize('rb"""a\\\nb\\\nc"""', """\
+    STRING     ''            (1, 0) (3, 4)
+    """)
+
+        self.check_tokenize('f"abc"', """\
+    STRING     ''            (1, 0) (1, 6)
+    """)
+
+        self.check_tokenize('fR"a{b}c"', """\
+    STRING     ''            (1, 0) (1, 9)
+    """)
+
+        self.check_tokenize('f"""abc"""', """\
+    STRING     ''            (1, 0) (1, 10)
+    """)
+
+        self.check_tokenize('f"abc\\\ndef"', """\
+    STRING     ''            (1, 0) (2, 4)
+    """)
+
+        self.check_tokenize('Rf"abc\\\ndef"', """\
+    STRING     ''            (1, 0) (2, 4)
+    """)
+
+    def test_function(self):
+
+        self.check_tokenize('def d22(a, b, c=2, d=2, *k): pass', """\
+    NAME       ''            (1, 0) (1, 3)
+    NAME       ''            (1, 4) (1, 7)
+    LPAR       ''            (1, 7) (1, 8)
+    NAME       ''            (1, 8) (1, 9)
+    COMMA      ''            (1, 9) (1, 10)
+    NAME       ''            (1, 11) (1, 12)
+    COMMA      ''            (1, 12) (1, 13)
+    NAME       ''            (1, 14) (1, 15)
+    EQUAL      ''            (1, 15) (1, 16)
+    NUMBER     ''            (1, 16) (1, 17)
+    COMMA      ''            (1, 17) (1, 18)
+    NAME       ''            (1, 19) (1, 20)
+    EQUAL      ''            (1, 20) (1, 21)
+    NUMBER     ''            (1, 21) (1, 22)
+    COMMA      ''            (1, 22) (1, 23)
+    STAR       ''            (1, 24) (1, 25)
+    NAME       ''            (1, 25) (1, 26)
+    RPAR       ''            (1, 26) (1, 27)
+    COLON      ''            (1, 27) (1, 28)
+    NAME       ''            (1, 29) (1, 33)
+    """)
+
+        self.check_tokenize('def d01v_(a=1, *k, **w): pass', """\
+    NAME       ''            (1, 0) (1, 3)
+    NAME       ''            (1, 4) (1, 9)
+    LPAR       ''            (1, 9) (1, 10)
+    NAME       ''            (1, 10) (1, 11)
+    EQUAL      ''            (1, 11) (1, 12)
+    NUMBER     ''            (1, 12) (1, 13)
+    COMMA      ''            (1, 13) (1, 14)
+    STAR       ''            (1, 15) (1, 16)
+    NAME       ''            (1, 16) (1, 17)
+    COMMA      ''            (1, 17) (1, 18)
+    DOUBLESTAR ''            (1, 19) (1, 21)
+    NAME       ''            (1, 21) (1, 22)
+    RPAR       ''            (1, 22) (1, 23)
+    COLON      ''            (1, 23) (1, 24)
+    NAME       ''            (1, 25) (1, 29)
+    """)
+
+        self.check_tokenize('def d23(a: str, b: int=3) -> int: pass', """\
+    NAME       ''            (1, 0) (1, 3)
+    NAME       ''            (1, 4) (1, 7)
+    LPAR       ''            (1, 7) (1, 8)
+    NAME       ''            (1, 8) (1, 9)
+    COLON      ''            (1, 9) (1, 10)
+    NAME       ''            (1, 11) (1, 14)
+    COMMA      ''            (1, 14) (1, 15)
+    NAME       ''            (1, 16) (1, 17)
+    COLON      ''            (1, 17) (1, 18)
+    NAME       ''            (1, 19) (1, 22)
+    EQUAL      ''            (1, 22) (1, 23)
+    NUMBER     ''            (1, 23) (1, 24)
+    RPAR       ''            (1, 24) (1, 25)
+    RARROW     ''            (1, 26) (1, 28)
+    NAME       ''            (1, 29) (1, 32)
+    COLON      ''            (1, 32) (1, 33)
+    NAME       ''            (1, 34) (1, 38)
+    """)
+
+    def test_comparison(self):
+
+        self.check_tokenize("if 1 < 1 > 1 == 1 >= 5 <= 0x15 <= 0x12 != "
+                            "1 and 5 in 1 not in 1 is 1 or 5 is not 1: pass", """\
+    NAME       ''            (1, 0) (1, 2)
+    NUMBER     ''            (1, 3) (1, 4)
+    LESS       ''            (1, 5) (1, 6)
+    NUMBER     ''            (1, 7) (1, 8)
+    GREATER    ''            (1, 9) (1, 10)
+    NUMBER     ''            (1, 11) (1, 12)
+    EQEQUAL    ''            (1, 13) (1, 15)
+    NUMBER     ''            (1, 16) (1, 17)
+    GREATEREQUAL ''            (1, 18) (1, 20)
+    NUMBER     ''            (1, 21) (1, 22)
+    LESSEQUAL  ''            (1, 23) (1, 25)
+    NUMBER     ''            (1, 26) (1, 30)
+    LESSEQUAL  ''            (1, 31) (1, 33)
+    NUMBER     ''            (1, 34) (1, 38)
+    NOTEQUAL   ''            (1, 39) (1, 41)
+    NUMBER     ''            (1, 42) (1, 43)
+    NAME       ''            (1, 44) (1, 47)
+    NUMBER     ''            (1, 48) (1, 49)
+    NAME       ''            (1, 50) (1, 52)
+    NUMBER     ''            (1, 53) (1, 54)
+    NAME       ''            (1, 55) (1, 58)
+    NAME       ''            (1, 59) (1, 61)
+    NUMBER     ''            (1, 62) (1, 63)
+    NAME       ''            (1, 64) (1, 66)
+    NUMBER     ''            (1, 67) (1, 68)
+    NAME       ''            (1, 69) (1, 71)
+    NUMBER     ''            (1, 72) (1, 73)
+    NAME       ''            (1, 74) (1, 76)
+    NAME       ''            (1, 77) (1, 80)
+    NUMBER     ''            (1, 81) (1, 82)
+    COLON      ''            (1, 82) (1, 83)
+    NAME       ''            (1, 84) (1, 88)
+    """)
+
+    def test_additive(self):
+
+        self.check_tokenize('x = 1 - y + 15 - 1 + 0x124 + z + a[5]', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 5)
+    MINUS      ''            (1, 6) (1, 7)
+    NAME       ''            (1, 8) (1, 9)
+    PLUS       ''            (1, 10) (1, 11)
+    NUMBER     ''            (1, 12) (1, 14)
+    MINUS      ''            (1, 15) (1, 16)
+    NUMBER     ''            (1, 17) (1, 18)
+    PLUS       ''            (1, 19) (1, 20)
+    NUMBER     ''            (1, 21) (1, 26)
+    PLUS       ''            (1, 27) (1, 28)
+    NAME       ''            (1, 29) (1, 30)
+    PLUS       ''            (1, 31) (1, 32)
+    NAME       ''            (1, 33) (1, 34)
+    LSQB       ''            (1, 34) (1, 35)
+    NUMBER     ''            (1, 35) (1, 36)
+    RSQB       ''            (1, 36) (1, 37)
+    """)
+
+    def test_multiplicative(self):
+
+        self.check_tokenize('x = 1//1*1/5*12%0x12@42', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 4) (1, 5)
+    DOUBLESLASH ''            (1, 5) (1, 7)
+    NUMBER     ''            (1, 7) (1, 8)
+    STAR       ''            (1, 8) (1, 9)
+    NUMBER     ''            (1, 9) (1, 10)
+    SLASH      ''            (1, 10) (1, 11)
+    NUMBER     ''            (1, 11) (1, 12)
+    STAR       ''            (1, 12) (1, 13)
+    NUMBER     ''            (1, 13) (1, 15)
+    PERCENT    ''            (1, 15) (1, 16)
+    NUMBER     ''            (1, 16) (1, 20)
+    AT         ''            (1, 20) (1, 21)
+    NUMBER     ''            (1, 21) (1, 23)
+    """)
+
+    def test_unary(self):
+
+        self.check_tokenize('~1 ^ 1 & 1 |1 ^ -1', """\
+    TILDE      ''            (1, 0) (1, 1)
+    NUMBER     ''            (1, 1) (1, 2)
+    CIRCUMFLEX ''            (1, 3) (1, 4)
+    NUMBER     ''            (1, 5) (1, 6)
+    AMPER      ''            (1, 7) (1, 8)
+    NUMBER     ''            (1, 9) (1, 10)
+    VBAR       ''            (1, 11) (1, 12)
+    NUMBER     ''            (1, 12) (1, 13)
+    CIRCUMFLEX ''            (1, 14) (1, 15)
+    MINUS      ''            (1, 16) (1, 17)
+    NUMBER     ''            (1, 17) (1, 18)
+    """)
+
+        self.check_tokenize('-1*1/1+1*1//1 - ---1**1', """\
+    MINUS      ''            (1, 0) (1, 1)
+    NUMBER     ''            (1, 1) (1, 2)
+    STAR       ''            (1, 2) (1, 3)
+    NUMBER     ''            (1, 3) (1, 4)
+    SLASH      ''            (1, 4) (1, 5)
+    NUMBER     ''            (1, 5) (1, 6)
+    PLUS       ''            (1, 6) (1, 7)
+    NUMBER     ''            (1, 7) (1, 8)
+    STAR       ''            (1, 8) (1, 9)
+    NUMBER     ''            (1, 9) (1, 10)
+    DOUBLESLASH ''            (1, 10) (1, 12)
+    NUMBER     ''            (1, 12) (1, 13)
+    MINUS      ''            (1, 14) (1, 15)
+    MINUS      ''            (1, 16) (1, 17)
+    MINUS      ''            (1, 17) (1, 18)
+    MINUS      ''            (1, 18) (1, 19)
+    NUMBER     ''            (1, 19) (1, 20)
+    DOUBLESTAR ''            (1, 20) (1, 22)
+    NUMBER     ''            (1, 22) (1, 23)
+    """)
+
+    def test_selector(self):
+
+        self.check_tokenize("import sys, time\nx = sys.modules['time'].time()", """\
+    NAME       ''            (1, 0) (1, 6)
+    NAME       ''            (1, 7) (1, 10)
+    COMMA      ''            (1, 10) (1, 11)
+    NAME       ''            (1, 12) (1, 16)
+    NEWLINE    ''            (1, 16) (1, 16)
+    NAME       ''            (2, 0) (2, 1)
+    EQUAL      ''            (2, 2) (2, 3)
+    NAME       ''            (2, 4) (2, 7)
+    DOT        ''            (2, 7) (2, 8)
+    NAME       ''            (2, 8) (2, 15)
+    LSQB       ''            (2, 15) (2, 16)
+    STRING     ''            (2, 16) (2, 22)
+    RSQB       ''            (2, 22) (2, 23)
+    DOT        ''            (2, 23) (2, 24)
+    NAME       ''            (2, 24) (2, 28)
+    LPAR       ''            (2, 28) (2, 29)
+    RPAR       ''            (2, 29) (2, 30)
+    """)
+
+    def test_method(self):
+
+        self.check_tokenize('@staticmethod\ndef foo(x,y): pass', """\
+    AT         ''            (1, 0) (1, 1)
+    NAME       ''            (1, 1) (1, 13)
+    NEWLINE    ''            (1, 13) (1, 13)
+    NAME       ''            (2, 0) (2, 3)
+    NAME       ''            (2, 4) (2, 7)
+    LPAR       ''            (2, 7) (2, 8)
+    NAME       ''            (2, 8) (2, 9)
+    COMMA      ''            (2, 9) (2, 10)
+    NAME       ''            (2, 10) (2, 11)
+    RPAR       ''            (2, 11) (2, 12)
+    COLON      ''            (2, 12) (2, 13)
+    NAME       ''            (2, 14) (2, 18)
+    """)
+
+    def test_tabs(self):
+
+        self.check_tokenize('def f():\n\tif x\n        \tpass', """\
+    NAME       ''            (1, 0) (1, 3)
+    NAME       ''            (1, 4) (1, 5)
+    LPAR       ''            (1, 5) (1, 6)
+    RPAR       ''            (1, 6) (1, 7)
+    COLON      ''            (1, 7) (1, 8)
+    NEWLINE    ''            (1, 8) (1, 8)
+    INDENT     ''            (2, -1) (2, -1)
+    NAME       ''            (2, 1) (2, 3)
+    NAME       ''            (2, 4) (2, 5)
+    NEWLINE    ''            (2, 5) (2, 5)
+    INDENT     ''            (3, -1) (3, -1)
+    NAME       ''            (3, 9) (3, 13)
+    DEDENT     ''            (3, -1) (3, -1)
+    DEDENT     ''            (3, -1) (3, -1)
+    """)
+
+    def test_async(self):
+
+        self.check_tokenize('async = 1', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    EQUAL      ''            (1, 6) (1, 7)
+    NUMBER     ''            (1, 8) (1, 9)
+    """)
+
+        self.check_tokenize('a = (async = 1)', """\
+    NAME       ''            (1, 0) (1, 1)
+    EQUAL      ''            (1, 2) (1, 3)
+    LPAR       ''            (1, 4) (1, 5)
+    ASYNC      ''            (1, 5) (1, 10)
+    EQUAL      ''            (1, 11) (1, 12)
+    NUMBER     ''            (1, 13) (1, 14)
+    RPAR       ''            (1, 14) (1, 15)
+    """)
+
+        self.check_tokenize('async()', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    LPAR       ''            (1, 5) (1, 6)
+    RPAR       ''            (1, 6) (1, 7)
+    """)
+
+        self.check_tokenize('class async(Bar):pass', """\
+    NAME       ''            (1, 0) (1, 5)
+    ASYNC      ''            (1, 6) (1, 11)
+    LPAR       ''            (1, 11) (1, 12)
+    NAME       ''            (1, 12) (1, 15)
+    RPAR       ''            (1, 15) (1, 16)
+    COLON      ''            (1, 16) (1, 17)
+    NAME       ''            (1, 17) (1, 21)
+    """)
+
+        self.check_tokenize('class async:pass', """\
+    NAME       ''            (1, 0) (1, 5)
+    ASYNC      ''            (1, 6) (1, 11)
+    COLON      ''            (1, 11) (1, 12)
+    NAME       ''            (1, 12) (1, 16)
+    """)
+
+        self.check_tokenize('await = 1', """\
+    AWAIT      ''            (1, 0) (1, 5)
+    EQUAL      ''            (1, 6) (1, 7)
+    NUMBER     ''            (1, 8) (1, 9)
+    """)
+
+        self.check_tokenize('foo.async', """\
+    NAME       ''            (1, 0) (1, 3)
+    DOT        ''            (1, 3) (1, 4)
+    ASYNC      ''            (1, 4) (1, 9)
+    """)
+
+        self.check_tokenize('async for a in b: pass', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 9)
+    NAME       ''            (1, 10) (1, 11)
+    NAME       ''            (1, 12) (1, 14)
+    NAME       ''            (1, 15) (1, 16)
+    COLON      ''            (1, 16) (1, 17)
+    NAME       ''            (1, 18) (1, 22)
+    """)
+
+        self.check_tokenize('async with a as b: pass', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 10)
+    NAME       ''            (1, 11) (1, 12)
+    NAME       ''            (1, 13) (1, 15)
+    NAME       ''            (1, 16) (1, 17)
+    COLON      ''            (1, 17) (1, 18)
+    NAME       ''            (1, 19) (1, 23)
+    """)
+
+        self.check_tokenize('async.foo', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    DOT        ''            (1, 5) (1, 6)
+    NAME       ''            (1, 6) (1, 9)
+    """)
+
+        self.check_tokenize('async', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    """)
+
+        self.check_tokenize('async\n#comment\nawait', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NEWLINE    ''            (1, 5) (1, 5)
+    AWAIT      ''            (3, 0) (3, 5)
+    """)
+
+        self.check_tokenize('async\n...\nawait', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NEWLINE    ''            (1, 5) (1, 5)
+    ELLIPSIS   ''            (2, 0) (2, 3)
+    NEWLINE    ''            (2, 3) (2, 3)
+    AWAIT      ''            (3, 0) (3, 5)
+    """)
+
+        self.check_tokenize('async\nawait', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NEWLINE    ''            (1, 5) (1, 5)
+    AWAIT      ''            (2, 0) (2, 5)
+    """)
+
+        self.check_tokenize('foo.async + 1', """\
+    NAME       ''            (1, 0) (1, 3)
+    DOT        ''            (1, 3) (1, 4)
+    ASYNC      ''            (1, 4) (1, 9)
+    PLUS       ''            (1, 10) (1, 11)
+    NUMBER     ''            (1, 12) (1, 13)
+    """)
+
+        self.check_tokenize('async def foo(): pass', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 9)
+    NAME       ''            (1, 10) (1, 13)
+    LPAR       ''            (1, 13) (1, 14)
+    RPAR       ''            (1, 14) (1, 15)
+    COLON      ''            (1, 15) (1, 16)
+    NAME       ''            (1, 17) (1, 21)
+    """)
+
+        self.check_tokenize('''\
+async def foo():
+  def foo(await):
+    await = 1
+  if 1:
+    await
+async += 1
+''', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 9)
+    NAME       ''            (1, 10) (1, 13)
+    LPAR       ''            (1, 13) (1, 14)
+    RPAR       ''            (1, 14) (1, 15)
+    COLON      ''            (1, 15) (1, 16)
+    NEWLINE    ''            (1, 16) (1, 16)
+    INDENT     ''            (2, -1) (2, -1)
+    NAME       ''            (2, 2) (2, 5)
+    NAME       ''            (2, 6) (2, 9)
+    LPAR       ''            (2, 9) (2, 10)
+    AWAIT      ''            (2, 10) (2, 15)
+    RPAR       ''            (2, 15) (2, 16)
+    COLON      ''            (2, 16) (2, 17)
+    NEWLINE    ''            (2, 17) (2, 17)
+    INDENT     ''            (3, -1) (3, -1)
+    AWAIT      ''            (3, 4) (3, 9)
+    EQUAL      ''            (3, 10) (3, 11)
+    NUMBER     ''            (3, 12) (3, 13)
+    NEWLINE    ''            (3, 13) (3, 13)
+    DEDENT     ''            (4, -1) (4, -1)
+    NAME       ''            (4, 2) (4, 4)
+    NUMBER     ''            (4, 5) (4, 6)
+    COLON      ''            (4, 6) (4, 7)
+    NEWLINE    ''            (4, 7) (4, 7)
+    INDENT     ''            (5, -1) (5, -1)
+    AWAIT      ''            (5, 4) (5, 9)
+    NEWLINE    ''            (5, 9) (5, 9)
+    DEDENT     ''            (6, -1) (6, -1)
+    DEDENT     ''            (6, -1) (6, -1)
+    ASYNC      ''            (6, 0) (6, 5)
+    PLUSEQUAL  ''            (6, 6) (6, 8)
+    NUMBER     ''            (6, 9) (6, 10)
+    NEWLINE    ''            (6, 10) (6, 10)
+    """)
+
+        self.check_tokenize('async def foo():\n  async for i in 1: pass', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 9)
+    NAME       ''            (1, 10) (1, 13)
+    LPAR       ''            (1, 13) (1, 14)
+    RPAR       ''            (1, 14) (1, 15)
+    COLON      ''            (1, 15) (1, 16)
+    NEWLINE    ''            (1, 16) (1, 16)
+    INDENT     ''            (2, -1) (2, -1)
+    ASYNC      ''            (2, 2) (2, 7)
+    NAME       ''            (2, 8) (2, 11)
+    NAME       ''            (2, 12) (2, 13)
+    NAME       ''            (2, 14) (2, 16)
+    NUMBER     ''            (2, 17) (2, 18)
+    COLON      ''            (2, 18) (2, 19)
+    NAME       ''            (2, 20) (2, 24)
+    DEDENT     ''            (2, -1) (2, -1)
+    """)
+
+        self.check_tokenize('async def foo(async): await', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 9)
+    NAME       ''            (1, 10) (1, 13)
+    LPAR       ''            (1, 13) (1, 14)
+    ASYNC      ''            (1, 14) (1, 19)
+    RPAR       ''            (1, 19) (1, 20)
+    COLON      ''            (1, 20) (1, 21)
+    AWAIT      ''            (1, 22) (1, 27)
+    """)
+
+        self.check_tokenize('''\
+def f():
+
+  def baz(): pass
+  async def bar(): pass
+
+  await = 2''', """\
+    NAME       ''            (1, 0) (1, 3)
+    NAME       ''            (1, 4) (1, 5)
+    LPAR       ''            (1, 5) (1, 6)
+    RPAR       ''            (1, 6) (1, 7)
+    COLON      ''            (1, 7) (1, 8)
+    NEWLINE    ''            (1, 8) (1, 8)
+    INDENT     ''            (3, -1) (3, -1)
+    NAME       ''            (3, 2) (3, 5)
+    NAME       ''            (3, 6) (3, 9)
+    LPAR       ''            (3, 9) (3, 10)
+    RPAR       ''            (3, 10) (3, 11)
+    COLON      ''            (3, 11) (3, 12)
+    NAME       ''            (3, 13) (3, 17)
+    NEWLINE    ''            (3, 17) (3, 17)
+    ASYNC      ''            (4, 2) (4, 7)
+    NAME       ''            (4, 8) (4, 11)
+    NAME       ''            (4, 12) (4, 15)
+    LPAR       ''            (4, 15) (4, 16)
+    RPAR       ''            (4, 16) (4, 17)
+    COLON      ''            (4, 17) (4, 18)
+    NAME       ''            (4, 19) (4, 23)
+    NEWLINE    ''            (4, 23) (4, 23)
+    AWAIT      ''            (6, 2) (6, 7)
+    EQUAL      ''            (6, 8) (6, 9)
+    NUMBER     ''            (6, 10) (6, 11)
+    DEDENT     ''            (6, -1) (6, -1)
+    """)
+
+        self.check_tokenize('''\
+async def f():
+
+  def baz(): pass
+  async def bar(): pass
+
+  await = 2''', """\
+    ASYNC      ''            (1, 0) (1, 5)
+    NAME       ''            (1, 6) (1, 9)
+    NAME       ''            (1, 10) (1, 11)
+    LPAR       ''            (1, 11) (1, 12)
+    RPAR       ''            (1, 12) (1, 13)
+    COLON      ''            (1, 13) (1, 14)
+    NEWLINE    ''            (1, 14) (1, 14)
+    INDENT     ''            (3, -1) (3, -1)
+    NAME       ''            (3, 2) (3, 5)
+    NAME       ''            (3, 6) (3, 9)
+    LPAR       ''            (3, 9) (3, 10)
+    RPAR       ''            (3, 10) (3, 11)
+    COLON      ''            (3, 11) (3, 12)
+    NAME       ''            (3, 13) (3, 17)
+    NEWLINE    ''            (3, 17) (3, 17)
+    ASYNC      ''            (4, 2) (4, 7)
+    NAME       ''            (4, 8) (4, 11)
+    NAME       ''            (4, 12) (4, 15)
+    LPAR       ''            (4, 15) (4, 16)
+    RPAR       ''            (4, 16) (4, 17)
+    COLON      ''            (4, 17) (4, 18)
+    NAME       ''            (4, 19) (4, 23)
+    NEWLINE    ''            (4, 23) (4, 23)
+    AWAIT      ''            (6, 2) (6, 7)
+    EQUAL      ''            (6, 8) (6, 9)
+    NUMBER     ''            (6, 10) (6, 11)
+    DEDENT     ''            (6, -1) (6, -1)
+    """)
+
+
+    def test_unicode(self):
+
+        self.check_tokenize("Örter = u'places'\ngrün = U'green'", """\
+    NAME       ''            (1, 0) (1, 6)
+    EQUAL      ''            (1, 7) (1, 8)
+    STRING     ''            (1, 9) (1, 18)
+    NEWLINE    ''            (1, 18) (1, 18)
+    NAME       ''            (2, 0) (2, 5)
+    EQUAL      ''            (2, 6) (2, 7)
+    STRING     ''            (2, 8) (2, 16)
+    """)
+
+    def test_invalid_syntax(self):
+        def get_tokens(string):
+            return list(_generate_tokens_from_c_tokenizer(string))
+
+        self.assertRaises(SyntaxError, get_tokens, "(1+2]")
+        self.assertRaises(SyntaxError, get_tokens, "(1+2}")
+        self.assertRaises(SyntaxError, get_tokens, "{1+2]")
+
+        self.assertRaises(SyntaxError, get_tokens, "1_")
+        self.assertRaises(SyntaxError, get_tokens, "1.2_")
+        self.assertRaises(SyntaxError, get_tokens, "1e2_")
+        self.assertRaises(SyntaxError, get_tokens, "1e+")
+
+        self.assertRaises(SyntaxError, get_tokens, "\xa0")
+        self.assertRaises(SyntaxError, get_tokens, "€")
+
+        self.assertRaises(SyntaxError, get_tokens, "0b12")
+        self.assertRaises(SyntaxError, get_tokens, "0b1_2")
+        self.assertRaises(SyntaxError, get_tokens, "0b2")
+        self.assertRaises(SyntaxError, get_tokens, "0b1_")
+        self.assertRaises(SyntaxError, get_tokens, "0b")
+        self.assertRaises(SyntaxError, get_tokens, "0o18")
+        self.assertRaises(SyntaxError, get_tokens, "0o1_8")
+        self.assertRaises(SyntaxError, get_tokens, "0o8")
+        self.assertRaises(SyntaxError, get_tokens, "0o1_")
+        self.assertRaises(SyntaxError, get_tokens, "0o")
+        self.assertRaises(SyntaxError, get_tokens, "0x1_")
+        self.assertRaises(SyntaxError, get_tokens, "0x")
+        self.assertRaises(SyntaxError, get_tokens, "1_")
+        self.assertRaises(SyntaxError, get_tokens, "012")
+        self.assertRaises(SyntaxError, get_tokens, "1.2_")
+        self.assertRaises(SyntaxError, get_tokens, "1e2_")
+        self.assertRaises(SyntaxError, get_tokens, "1e+")
+
+        self.assertRaises(SyntaxError, get_tokens, "'sdfsdf")
+        self.assertRaises(SyntaxError, get_tokens, "'''sdfsdf''")
+
+        self.assertRaises(SyntaxError, get_tokens, "("*1000+"a"+")"*1000)
+        self.assertRaises(SyntaxError, get_tokens, "]")
 
 
 if __name__ == "__main__":
