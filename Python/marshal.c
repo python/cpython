@@ -532,9 +532,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             goto anyset_done;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *pair = PyList_GET_ITEM(pairs, i);
-            PyObject *value = PyTuple_GET_ITEM(pair, 1);
+            pair = PyList_GET_ITEM(pairs, i);
+            value = PyTuple_GET_ITEM(pair, 1);
             w_object(value, p);
+            pair = NULL;
         }
     anyset_done:
         Py_XDECREF(pairs);
