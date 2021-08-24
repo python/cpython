@@ -503,10 +503,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_TYPE(TYPE_SET, p);
         n = PySet_GET_SIZE(v);
         W_SIZE(n, p);
-        // bpo-37596: We need to write the elements in a deterministic order!
-        // Since we know that they all need marshal support anyways, this can
-        // be conveniently accomplished by using their marshal serializations
-        // as sort keys:
+        // bpo-37596: To support reproducible builds, sets and frozensets need
+        // to have their elements serialized in a consistent order (even when
+        // they have been scrambled by hash randomization). To ensure this, we
+        // use an order equivalent to sorted(v, key=marshal.dumps):
         PyObject *pairs = PyList_New(0);
         if (pairs == NULL) {
             p->error = WFERR_NOMEMORY;
@@ -520,15 +520,15 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             }
             PyObject *pair = PyTuple_Pack(2, dump, value);
             Py_DECREF(dump);
-            int error = pair == NULL || PyList_Append(pairs, pair);
-            Py_XDECREF(pair);
-            if (error) {
+            if (pair == NULL || PyList_Append(pairs, pair)) {
                 p->error = WFERR_NOMEMORY;
+                Py_XDECREF(pair);
                 goto anyset_done;
             }
+            Py_DECREF(pair);
         }
         if (PyList_Sort(pairs)) {
-            p->error = WFERR_UNMARSHALLABLE;
+            p->error = WFERR_NOMEMORY;
             goto anyset_done;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
