@@ -1627,7 +1627,7 @@ class ProtocolTests(BaseTestCase):
         class P(Protocol):
             x: "ClassVar[int]" = 1
             y: "typing.ClassVar[int]" = 2
-            z: "typing_extensions.ClassVar[int]" = 3
+            z: "t.ClassVar[int]" = 3
 
         class D:
             x = 1
