@@ -3,8 +3,7 @@
 
 static struct PyModuleDef _tokenizemodule;
 
-typedef struct
-{
+typedef struct {
     PyTypeObject* TokenizerIter;
 } tokenize_state;
 
@@ -25,9 +24,9 @@ class _tokenizer.tokenizeriter "tokenizeriterobject *" "_tokenize_get_state_by_t
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=96d98ee2fef7a8bc]*/
 
-typedef struct
-{
-    PyObject_HEAD struct tok_state* tok;
+typedef struct {
+    PyObject_HEAD
+    struct tok_state* tok;
 } tokenizeriterobject;
 
 /*[clinic input]
