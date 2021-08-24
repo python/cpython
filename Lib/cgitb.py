@@ -181,8 +181,8 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
 
 <!-- The above is a description of an error in a Python program, formatted
-     for a Web browser because the 'cgitb' module was enabled.  In case you
-     are not reading this in a Web browser, here is the original traceback:
+     for a web browser because the 'cgitb' module was enabled.  In case you
+     are not reading this in a web browser, here is the original traceback:
 
 %s
 -->

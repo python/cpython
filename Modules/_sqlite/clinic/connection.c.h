@@ -722,13 +722,14 @@ PyDoc_STRVAR(pysqlite_connection_create_collation__doc__,
 
 static PyObject *
 pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
-                                          PyObject *name, PyObject *callable);
+                                          const char *name,
+                                          PyObject *callable);
 
 static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *name;
+    const char *name;
     PyObject *callable;
 
     if (!_PyArg_CheckPositional("create_collation", nargs, 2, 2)) {
@@ -738,10 +739,15 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyObject *const 
         _PyArg_BadArgument("create_collation", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
         goto exit;
     }
-    name = args[0];
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
     callable = args[1];
     return_value = pysqlite_connection_create_collation_impl(self, name, callable);
 
@@ -811,4 +817,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=30f11f2d8f09bdf0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7a899c4e41381ac input=a9049054013a1b77]*/

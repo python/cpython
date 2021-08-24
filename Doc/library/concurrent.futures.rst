@@ -350,7 +350,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        If the future is cancelled before completing then :exc:`.CancelledError`
        will be raised.
 
-       If the call raised, this method will raise the same exception.
+       If the call raised an exception, this method will raise the same exception.
 
     .. method:: exception(timeout=None)
 
