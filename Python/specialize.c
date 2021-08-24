@@ -908,7 +908,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
             goto fail;
     }
-    
+
     assert(kind == METHOD);
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
@@ -943,15 +943,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
         // Fall through.
     } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-        
+
     /* `descr` is borrowed. Just check tp_version_tag before accessing in case
     *  it's deleted.  This is safe for methods (even inherited ones from super
     *  classes!) as long as tp_version_tag is validated for two main reasons:
-    * 
+    *
     *  1. The class will always hold a reference to the method so it will
     *  usually not be GC-ed. Should it be deleted in Python, e.g.
     *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
-    * 
+    *
     *  2. The pre-existing type method cache (MCACHE) uses the same principles
     *  of caching a borrowed descriptor. It does all the heavy lifting for us.
     *  E.g. it invalidates on any MRO modification, on any type object
@@ -1087,23 +1087,16 @@ success:
 }
 
 
-int
+void
 specialize_unicode_add(_Py_CODEUNIT *instr)
 {
     int next_opcode = _Py_OPCODE(instr[1]);
-    switch (next_opcode) {
-        case STORE_FAST:
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
-            return 0;
-        case STORE_DEREF:
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_DEREF, saturating_start());
-            return 0;
-        default:
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+    if (next_opcode == STORE_FAST) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
     }
-
-    SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_NON_FUNCTION_SCOPE);
-    return -1;
+    else {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+    }
 }
 
 int
@@ -1115,9 +1108,12 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
         goto fail;
     }
     if (left_type == &PyUnicode_Type) {
-        int err = specialize_unicode_add(instr);
-        if (err) {
-            goto fail;
+        int next_opcode = _Py_OPCODE(instr[1]);
+        if (next_opcode == STORE_FAST) {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+        }
+        else {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
         }
         goto success;
     }

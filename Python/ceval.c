@@ -2045,8 +2045,8 @@ check_eval_breaker:
             int next_oparg = _Py_OPARG(*next_instr);
             assert(_Py_OPCODE(*next_instr) == STORE_FAST);
             /* In the common case, there are 2 references to the value
-            * stored in 'variable' when the += is performed: one on the
-            * value stack (in 'v') and one still stored in the
+            * stored in 'variable' when the v = v + ... is performed: one
+            * on the value stack (in 'v') and one still stored in the
             * 'variable'.  We try to delete the variable now to reduce
             * the refcnt to 1.
             */
@@ -2055,36 +2055,7 @@ check_eval_breaker:
             STAT_INC(BINARY_ADD, hit);
             record_hit_inline(next_instr, oparg);
             GETLOCAL(next_oparg) = NULL;
-            Py_DECREF(left);
-            STACK_SHRINK(1);
-            PyUnicode_Append(&TOP(), right);
-            Py_DECREF(right);
-            if (TOP() == NULL) {
-                goto error;
-            }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_ADD_UNICODE_INPLACE_DEREF): {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_ADD);
-            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
-            int next_oparg = _Py_OPARG(*next_instr);
-            assert(_Py_OPCODE(*next_instr) == STORE_DEREF);
-            /* In the common case, there are 2 references to the value
-            * stored in 'variable' when the += is performed: one on the
-            * value stack (in 'v') and one still stored in the
-            * 'variable'.  We try to delete the variable now to reduce
-            * the refcnt to 1.
-            */
-            PyObject *cell = GETLOCAL(next_oparg);
-            DEOPT_IF(PyCell_GET(cell) != left, BINARY_ADD);
-            STAT_INC(BINARY_ADD, hit);
-            record_hit_inline(next_instr, oparg);
-            PyCell_SET(cell, NULL);
-            Py_DECREF(left);
+            Py_SET_REFCNT(left, 1);
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
             Py_DECREF(right);
