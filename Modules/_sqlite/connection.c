@@ -1081,8 +1081,13 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
                                             0, 0, 0, 0, 0, 0);
     }
     else {
+        callback_context *ctx = create_callback_context(self->state,
+                                                        aggregate_class);
+        if (ctx == NULL) {
+            return NULL;
+        }
         rc = sqlite3_create_window_function(self->db, name, num_params, flags,
-                                            Py_NewRef(aggregate_class),
+                                            ctx,
                                             &_pysqlite_step_callback,
                                             &_pysqlite_final_callback,
                                             &value_callback,
