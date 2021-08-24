@@ -35,16 +35,24 @@ typedef struct _interpreter_frame {
     PyObject *stack[1];
 } InterpreterFrame;
 
-static inline int _PyFrame_IsRunnable(InterpreterFrame *f) {
+static inline int
+_PyFrame_IsRunnable(InterpreterFrame *f) {
     return f->f_state < FRAME_EXECUTING;
 }
 
-static inline int _PyFrame_IsExecuting(InterpreterFrame *f) {
+static inline int
+_PyFrame_IsExecuting(InterpreterFrame *f) {
     return f->f_state == FRAME_EXECUTING;
 }
 
-static inline int _PyFrameHasCompleted(InterpreterFrame *f) {
+static inline int
+_PyFrameHasCompleted(InterpreterFrame *f) {
     return f->f_state > FRAME_EXECUTING;
+}
+
+static inline PyObject **
+_PyFrame_Stackbase(InterpreterFrame *f) {
+    return &f->stack[0];
 }
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
@@ -76,6 +84,18 @@ static inline PyObject**
 _PyFrame_GetLocalsArray(InterpreterFrame *frame)
 {
     return ((PyObject **)frame) - frame->nlocalsplus;
+}
+
+static inline PyObject**
+_PyFrame_GetStackPointer(InterpreterFrame *frame)
+{
+    return frame->stack+frame->stackdepth;
+}
+
+static inline void
+_PyFrame_SetStackPointer(InterpreterFrame *frame, PyObject **stack_pointer)
+{
+    frame->stackdepth = (int)(stack_pointer - frame->stack);
 }
 
 /* For use by _PyFrame_GetFrameObject

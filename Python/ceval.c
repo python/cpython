@@ -1367,7 +1367,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()     ((int)(stack_pointer - frame->stack))
+#define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1578,7 +1578,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     */
     assert(frame->f_lasti >= -1);
     _Py_CODEUNIT *next_instr = first_instr + frame->f_lasti + 1;
-    PyObject **stack_pointer = frame->stack + frame->stackdepth;
+    PyObject **stack_pointer = _PyFrame_GetStackPointer(frame);
     /* Set stackdepth to -1.
      * Update when returning or calling trace function.
        Having f_stackdepth <= 0 ensures that invalid
@@ -1668,7 +1668,7 @@ check_eval_breaker:
             int err;
             /* see maybe_call_line_trace()
                for expository comments */
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1679,7 +1679,8 @@ check_eval_breaker:
             }
             /* Reload possibly changed frame fields */
             JUMPTO(frame->f_lasti);
-            stack_pointer = frame->stack+frame->stackdepth;
+
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             frame->stackdepth = -1;
             TRACING_NEXTOPARG();
         }
@@ -2439,7 +2440,7 @@ check_eval_breaker:
             retval = POP();
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
-            frame->stackdepth = 0;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -2627,7 +2628,7 @@ check_eval_breaker:
             assert(frame->f_lasti > 0);
             frame->f_lasti -= 1;
             frame->f_state = FRAME_SUSPENDED;
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -2644,7 +2645,7 @@ check_eval_breaker:
                 retval = w;
             }
             frame->f_state = FRAME_SUSPENDED;
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -4346,7 +4347,7 @@ check_eval_breaker:
                 oparg = cache->adaptive.original_oparg;
                 STAT_DEC(LOAD_METHOD, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_METHOD);
-            }            
+            }
         }
 
         TARGET(LOAD_METHOD_CACHED): {
@@ -4364,7 +4365,7 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
-            
+
             // inline version of _PyObject_GetDictPtr for offset >= 0
             PyObject *dict = self_cls->tp_dictoffset != 0 ?
                 *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
@@ -4821,13 +4822,15 @@ exception_unwind:
                 PyObject *o = POP();
                 Py_XDECREF(o);
             }
-            frame->stackdepth = 0;
+            assert(STACK_LEVEL() == 0);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
             goto exiting;
         }
 
         assert(STACK_LEVEL() >= level);
-        while (STACK_LEVEL() > level) {
+        PyObject **new_top = _PyFrame_Stackbase(frame) + level;
+        while (stack_pointer > new_top) {
             PyObject *v = POP();
             Py_XDECREF(v);
         }
