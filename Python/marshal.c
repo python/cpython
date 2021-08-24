@@ -512,34 +512,32 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             p->error = WFERR_NOMEMORY;
             return;
         }
-        PyObject *pair = NULL;
         while (_PySet_NextEntry(v, &pos, &value, &hash)) {
             PyObject *dump = PyMarshal_WriteObjectToString(value, p->version);
             if (dump == NULL) {
                 p->error = WFERR_UNMARSHALLABLE;
                 goto anyset_done;
             }
-            pair = PyTuple_Pack(2, dump, value);
+            PyObject *pair = PyTuple_Pack(2, dump, value);
             Py_DECREF(dump);
-            if (pair == NULL || PyList_Append(pairs, pair)) {
+            int error = pair == NULL || PyList_Append(pairs, pair);
+            Py_XDECREF(pair);
+            if (error) {
                 p->error = WFERR_NOMEMORY;
                 goto anyset_done;
             }
-            Py_CLEAR(pair);
         }
         if (PyList_Sort(pairs)) {
             p->error = WFERR_UNMARSHALLABLE;
             goto anyset_done;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
-            pair = PyList_GET_ITEM(pairs, i);
+            PyObject *pair = PyList_GET_ITEM(pairs, i);
             value = PyTuple_GET_ITEM(pair, 1);
             w_object(value, p);
-            pair = NULL;
         }
     anyset_done:
-        Py_XDECREF(pairs);
-        Py_XDECREF(pair);
+        Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
         PyCodeObject *co = (PyCodeObject *)v;
