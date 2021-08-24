@@ -789,11 +789,11 @@ create_callback_context(pysqlite_state *state, PyObject *callable)
 {
     PyGILState_STATE gstate = PyGILState_Ensure();
     callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
-    PyGILState_Release(gstate);
     if (ctx != NULL) {
         ctx->callable = Py_NewRef(callable);
         ctx->state = state;
     }
+    PyGILState_Release(gstate);
     return ctx;
 }
 
