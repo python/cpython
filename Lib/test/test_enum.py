@@ -3255,6 +3255,10 @@ class TestIntFlag(unittest.TestCase):
                 repr(HeadlightsK(2**0 + 2**2 + 2**3)),
                 '%(m)s.LOW_BEAM_K|%(m)s.FOG_K|0x8' % {'m': SHORT_MODULE},
                 )
+        self.assertEqual(
+                repr(HeadlightsK(2**3)),
+                '%(m)s.HeadlightsK(0x8)' % {'m': SHORT_MODULE},
+                )
 
     def test_global_repr_conform1(self):
         self.assertEqual(
@@ -3264,6 +3268,10 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(
                 repr(HeadlightsC(2**0 + 2**2 + 2**3)),
                 '%(m)s.LOW_BEAM_C|%(m)s.FOG_C' % {'m': SHORT_MODULE},
+                )
+        self.assertEqual(
+                repr(HeadlightsC(2**3)),
+                '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
 
     def test_format(self):
