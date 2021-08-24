@@ -1,8 +1,9 @@
-:mod:`__main__` --- CLIs, import-time behavior, and ``__name__ == '__main__'``
-==============================================================================
+:mod:`__main__` --- Top-level code environment
+==============================================
 
 .. module:: __main__
-   :synopsis: Command-line interfaces, import-time behavior, and ``__name__ == '__main__'``
+   :synopsis: The environment where top-level code is run. Covers command-line
+              interfaces, import-time behavior, and ``__name__ == '__main__'``.
 
 --------------
 
