@@ -39,7 +39,12 @@ package's path::
     >>> process.__name__
     'concurrent.futures.process'
 
-In some circumstances, ``__name__`` is set to the string ``'__main__'``.
+However, if the module is executed in the top-level code environment,
+its ``__name__`` is set to the string ``'__main__'``.
+
+What is the "top-level code environment"?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 ``__main__`` is the name of the environment where top-level code is run.
 "Top-level code" is the first user-specified Python module that starts running.
 It's "top-level" because it imports all other modules that the program needs.
