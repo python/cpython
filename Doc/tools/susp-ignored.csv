@@ -110,6 +110,7 @@ howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:password,"""joe:password@example.com"""
+library/__main__,,`,
 library/ast,,:upper,lower:upper
 library/ast,,:step,lower:upper:step
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
