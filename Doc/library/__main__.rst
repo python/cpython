@@ -56,38 +56,38 @@ The top-level code environment can be:
 
     .. code-block:: shell-session
 
-        $ python3 helloworld.py
-        Hello, world!
+       $ python3 helloworld.py
+       Hello, world!
 
 * the Python module or package passed to the Python interpreter with the
   :option:`-m` argument:
 
     .. code-block:: shell-session
 
-        $ python3 -m tarfile
-        usage: tarfile.py [-h] [-v] (...)
+       $ python3 -m tarfile
+       usage: tarfile.py [-h] [-v] (...)
 
 * Python code read by the Python interpreter from standard input:
 
     .. code-block:: shell-session
 
-        $ echo "import this" | python3
-        The Zen of Python, by Tim Peters
+       $ echo "import this" | python3
+       The Zen of Python, by Tim Peters
 
-        Beautiful is better than ugly.
-        Explicit is better than implicit.
-        ...
+       Beautiful is better than ugly.
+       Explicit is better than implicit.
+       ...
 
 * Python code passed to the Python interpreter with the :option:`-c` argument:
 
     .. code-block:: shell-session
 
-        $ python3 -c "import this"
-        The Zen of Python, by Tim Peters
+       $ python3 -c "import this"
+       The Zen of Python, by Tim Peters
 
-        Beautiful is better than ugly.
-        Explicit is better than implicit.
-        ...
+       Beautiful is better than ugly.
+       Explicit is better than implicit.
+       ...
 
 In each of these situations, the top-level module's ``__name__`` is set to
 ``'__main__'``.
@@ -103,8 +103,8 @@ an import statement::
 
 .. seealso::
 
-    For a more detailed look at how ``__name__`` is set in all situations, see
-    the tutorial section :ref:`tut-modules`.
+   For a more detailed look at how ``__name__`` is set in all situations, see
+   the tutorial section :ref:`tut-modules`.
 
 
 Idiomatic Usage
@@ -185,9 +185,9 @@ earlier exemplifies using the ``sys.exit(main())`` convention.
 
 .. seealso::
 
-    `Python Packaging User Guide <https://packaging.python.org/>`_
-    contains a collection of tutorials and references on how to distribute and
-    install Python packages with modern tools.
+   `Python Packaging User Guide <https://packaging.python.org/>`_
+   contains a collection of tutorials and references on how to distribute and
+   install Python packages with modern tools.
 
 
 ``__main__.py`` in Python Packages
@@ -210,7 +210,7 @@ directly from the command line using the :option:`-m` flag. For example:
 
 .. code-block:: shell-session
 
-    $ python3 -m bandclass
+   $ python3 -m bandclass
 
 This command will cause ``__main__.py`` to run. How you utilize this mechanism
 will depend on the nature of the package you are writing, but in this
@@ -252,16 +252,16 @@ one mentioned above are preferred.
 
 .. seealso::
 
-    See :mod:`venv` for an example of a package with a minimal ``__main__.py``
-    in the standard library. It doesn't contain a ``if __name__ == '__main__'``
-    block. You can invoke it with ``python3 -m venv [directory]``.
+   See :mod:`venv` for an example of a package with a minimal ``__main__.py``
+   in the standard library. It doesn't contain a ``if __name__ == '__main__'``
+   block. You can invoke it with ``python3 -m venv [directory]``.
 
-    See :mod:`runpy` for more details on the :option:`-m` flag to the
-    interpreter executable.
+   See :mod:`runpy` for more details on the :option:`-m` flag to the
+   interpreter executable.
 
-    See :mod:`zipapp` for how to run applications packaged as *.zip* files. In
-    this case Python looks for a ``__main__.py`` file in the root directory of
-    the archive.
+   See :mod:`zipapp` for how to run applications packaged as *.zip* files. In
+   this case Python looks for a ``__main__.py`` file in the root directory of
+   the archive.
 
 
 
@@ -315,8 +315,8 @@ Now, if we started our program, the result would look like this:
 
 .. code-block:: shell-session
 
-    $ python3 start.py
-    Define the variable `my_name`!
+   $ python3 start.py
+   Define the variable `my_name`!
 
 The exit code of the program would be 1, indicating an error. Uncommenting the
 line with ``my_name = "Dinsdale"`` fixes the program and now it exits with
@@ -324,8 +324,8 @@ status code 0, indicating success:
 
 .. code-block:: shell-session
 
-    $ python3 start.py
-    Dinsdale found in file /path/to/start.py
+   $ python3 start.py
+   Dinsdale found in file /path/to/start.py
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally
 running top-level code meant for script use which is put in the
