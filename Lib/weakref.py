@@ -120,13 +120,17 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         self.update(other, **kw)
 
     def _commit_removals(self):
-        l = self._pending_removals
+        pop = self._pending_removals.pop
         d = self.data
         # We shouldn't encounter any KeyError, because this method should
         # always be called *before* mutating the dict.
-        while l:
-            key = l.pop()
-            _remove_dead_weakref(d, key)
+        while True:
+            try:
+                key = pop()
+            except IndexError:
+                return
+            else:
+                _remove_dead_weakref(d, key)
 
     def __getitem__(self, key):
         if self._pending_removals:
@@ -384,13 +388,18 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         # because a dead weakref never compares equal to a live weakref,
         # even if they happened to refer to equal objects.
         # However, it means keys may already have been removed.
-        l = self._pending_removals
+        pop = self._pending_removals.pop
         d = self.data
-        while l:
+        while True:
             try:
-                del d[l.pop()]
-            except KeyError:
-                pass
+                key = pop()
+            except IndexError:
+                return
+            else:
+                try:
+                    del d[key]
+                except KeyError:
+                    pass
 
     def _scrub_removals(self):
         d = self.data
