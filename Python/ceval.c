@@ -4818,7 +4818,8 @@ exception_unwind:
             assert(_PyErr_Occurred(tstate));
 
             /* Pop remaining stack entries. */
-            while (!EMPTY()) {
+            PyObject **stackbase = _PyFrame_Stackbase(frame);
+            while (stack_pointer > stackbase) {
                 PyObject *o = POP();
                 Py_XDECREF(o);
             }

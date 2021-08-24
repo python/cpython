@@ -15,10 +15,7 @@ _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
-    for (; i < frame->nlocalsplus; i++) {
-        Py_VISIT(locals[i]);
-    }
-    /* stack */
+    /* locals and stack */
     for (; i <frame->stacktop; i++) {
         Py_VISIT(locals[i]);
     }
@@ -48,7 +45,7 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
 static InterpreterFrame *
 copy_frame_to_heap(InterpreterFrame *frame)
 {
-    assert(frame->stacktop >= frame->nlocalsplus);
+    assert(frame->stacktop >= frame->f_code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
     InterpreterFrame *copy = PyMem_Malloc(size);
     if (copy == NULL) {

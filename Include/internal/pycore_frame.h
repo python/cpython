@@ -30,7 +30,6 @@ typedef struct _interpreter_frame {
     struct _interpreter_frame *previous;
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
-    int nlocalsplus;
     PyFrameState f_state;  /* What state the frame is in */
     PyObject *localsplus[1];
 } InterpreterFrame;
@@ -52,18 +51,18 @@ _PyFrameHasCompleted(InterpreterFrame *f) {
 
 static inline PyObject **
 _PyFrame_Stackbase(InterpreterFrame *f) {
-    return f->localsplus + f->nlocalsplus;
+    return f->localsplus + f->f_code->co_nlocalsplus;
 }
 
 static inline PyObject *
 _PyFrame_StackPeek(InterpreterFrame *f) {
-    assert(f->stacktop > f->nlocalsplus);
+    assert(f->stacktop > f->f_code->co_nlocalsplus);
     return f->localsplus[f->stacktop-1];
 }
 
 static inline PyObject *
 _PyFrame_StackPop(InterpreterFrame *f) {
-    assert(f->stacktop > f->nlocalsplus);
+    assert(f->stacktop > f->f_code->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
@@ -88,7 +87,6 @@ _PyFrame_InitializeSpecials(
     frame->f_builtins = Py_NewRef(con->fc_builtins);
     frame->f_globals = Py_NewRef(con->fc_globals);
     frame->f_locals = Py_XNewRef(locals);
-    frame->nlocalsplus = nlocalsplus;
     frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
     frame->generator = NULL;
