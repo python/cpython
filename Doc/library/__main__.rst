@@ -41,11 +41,56 @@ package's path::
 
 In some circumstances, ``__name__`` is set to the string ``'__main__'``.
 ``__main__`` is the name of the environment where top-level code is run.
-"Top-level code" means when a Python module is initialized from an interactive
-prompt, from standard input, from a file argument, with the :option:`-c`
-argument, or with the :option:`-m` argument, but **not** when it is initialized
-from an import statement.  In any of these situations, the module's
-``__name__`` is set to ``'__main__'``.
+"Top-level code" is the first user-specified Python module that starts running.
+It's "top-level" because it imports all other modules that the program needs.
+Sometimes "top-level code" is called an *entry point* to the application.
+
+The top-level code environment can be:
+
+* the scope of an interactive prompt::
+
+    >>> __name__
+    '__main__'
+
+* the Python module passed to the Python interpreter as a file argument:
+
+    .. code-block:: shell-session
+
+        $ python3 helloworld.py
+        Hello, world!
+
+* the Python module or package passed to the Python interpreter with the
+  :option:`-m` argument:
+
+    .. code-block:: shell-session
+
+        $ python3 -m tarfile
+        usage: tarfile.py [-h] [-v] (...)
+
+* Python code read by the Python interpreter from standard input:
+
+    .. code-block:: shell-session
+
+        $ echo "import this" | python3
+        The Zen of Python, by Tim Peters
+
+        Beautiful is better than ugly.
+        Explicit is better than implicit.
+        ...
+
+* Python code passed to the Python interpreter with the :option:`-c` argument:
+
+    .. code-block:: shell-session
+
+        $ python3 -c "import this"
+        The Zen of Python, by Tim Peters
+
+        Beautiful is better than ugly.
+        Explicit is better than implicit.
+        ...
+
+In each of these situations, the top-level module's ``__name__`` is set to
+``'__main__'``.
 
 As a result, a module can discover whether or not it is running in the
 top-level environment by checking its own ``__name__``, which allows a common
@@ -161,9 +206,11 @@ package, "bandclass":
      └── student.py
 
 ``__main__.py`` will be executed when the package itself is invoked
-directly from the command line using the :option:`-m` flag. For example::
+directly from the command line using the :option:`-m` flag. For example:
 
-    python3 -m bandclass
+.. code-block:: shell-session
+
+    $ python3 -m bandclass
 
 This command will cause ``__main__.py`` to run. How you utilize this mechanism
 will depend on the nature of the package you are writing, but in this
@@ -266,7 +313,7 @@ Example usage of this module could be as follows::
 
 Now, if we started our program, the result would look like this:
 
-.. code-block:: text
+.. code-block:: shell-session
 
     $ python3 start.py
     Define the variable `my_name`!
@@ -275,7 +322,7 @@ The exit code of the program would be 1, indicating an error. Uncommenting the
 line with ``my_name = "Dinsdale"`` fixes the program and now it exits with
 status code 0, indicating success:
 
-.. code-block:: text
+.. code-block:: shell-session
 
     $ python3 start.py
     Dinsdale found in file /path/to/start.py
