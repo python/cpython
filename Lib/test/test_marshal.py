@@ -344,6 +344,20 @@ class BugsTestCase(unittest.TestCase):
         for i in range(len(data)):
             self.assertRaises(EOFError, marshal.loads, data[0: i])
 
+    def test_deterministic_sets(self):
+        # bpo-37596: sets and frozensets must always marshal deterministically!
+        # Test this by seeding string hashes:
+        elements = "(float('nan'), b'a', b'b', b'c', 'x', 'y', 'z')"
+        for kind in ("set", "frozenset"):
+            script = f"import marshal; print(marshal.dumps({kind}({elements})))"
+            with self.subTest(kind):
+                # {nan, b"b", "x", b'a', b'c', 'y', 'z'}
+                _, a, _ = assert_python_ok("-c", script, PYTHONHASHSEED="0")
+                # {nan, 'x', b'a', 'z', b'b', 'y', b'c'}
+                _, b, _ = assert_python_ok("-c", script, PYTHONHASHSEED="1")
+                self.assertEqual(a, b)
+
+
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
 
