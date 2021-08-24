@@ -626,13 +626,11 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
 static void
 _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
+    PyGILState_STATE threadstate = PyGILState_Ensure();
+
     PyObject* args;
     PyObject* py_retval = NULL;
     int ok;
-
-    PyGILState_STATE threadstate;
-
-    threadstate = PyGILState_Ensure();
 
     args = _pysqlite_build_py_params(context, argc, argv);
     if (args) {
@@ -656,14 +654,12 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
 
 static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_value** params)
 {
+    PyGILState_STATE threadstate = PyGILState_Ensure();
+
     PyObject* args;
     PyObject* function_result = NULL;
     PyObject** aggregate_instance;
     PyObject* stepmethod = NULL;
-
-    PyGILState_STATE threadstate;
-
-    threadstate = PyGILState_Ensure();
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
 
@@ -706,15 +702,13 @@ error:
 static void
 _pysqlite_final_callback(sqlite3_context *context)
 {
+    PyGILState_STATE threadstate = PyGILState_Ensure();
+
     PyObject* function_result;
     PyObject** aggregate_instance;
     _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
-
-    PyGILState_STATE threadstate;
-
-    threadstate = PyGILState_Ensure();
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, 0);
     if (aggregate_instance == NULL) {
@@ -914,11 +908,10 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
 
 static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2 , const char* dbname, const char* access_attempt_source)
 {
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
     PyObject *ret;
     int rc;
-    PyGILState_STATE gilstate;
-
-    gilstate = PyGILState_Ensure();
 
     ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
@@ -959,11 +952,10 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
 
 static int _progress_handler(void* user_arg)
 {
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
     int rc;
     PyObject *ret;
-    PyGILState_STATE gilstate;
-
-    gilstate = PyGILState_Ensure();
     ret = _PyObject_CallNoArg((PyObject*)user_arg);
 
     if (!ret) {
@@ -1000,18 +992,16 @@ static int _trace_callback(unsigned int type, void* user_arg, void* prepared_sta
 static void _trace_callback(void* user_arg, const char* statement_string)
 #endif
 {
-    PyObject *py_statement = NULL;
-    PyObject *ret = NULL;
-
-    PyGILState_STATE gilstate;
-
 #ifdef HAVE_TRACE_V2
     if (type != SQLITE_TRACE_STMT) {
         return 0;
     }
 #endif
 
-    gilstate = PyGILState_Ensure();
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
+    PyObject *py_statement = NULL;
+    PyObject *ret = NULL;
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     if (py_statement) {
@@ -1461,13 +1451,13 @@ pysqlite_collation_callback(
         int text1_length, const void* text1_data,
         int text2_length, const void* text2_data)
 {
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
     PyObject* string1 = 0;
     PyObject* string2 = 0;
-    PyGILState_STATE gilstate;
     PyObject* retval = NULL;
     long longval;
     int result = 0;
-    gilstate = PyGILState_Ensure();
 
     if (PyErr_Occurred()) {
         goto finally;
