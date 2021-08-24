@@ -587,7 +587,7 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
         # This is faster and with less overhead.
         return zlib.compress(data, level=compresslevel, wbits=31)
     header = _create_simple_gzip_header(compresslevel, mtime)
-    trailer = struct.pack("LL", zlib.crc32(data), (len(data) & 0xffffffff))
+    trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
     # Wbits=-15 creates a raw deflate block.
     return b"".join([header, zlib.compress(data, wbits=-15), trailer])
 
