@@ -29,6 +29,13 @@ make the experience more pythonic. This documentation will concentrate on these
 additions and changes, and refer to the official Tcl/Tk documentation for
 details that are unchanged.
 
+.. note::
+
+   Tcl/Tk 8.5 (2007) introduced a modern set of themed user interface components
+   along with a new API to use them. Both old and new APIs are still available.
+   Most documentation you will find online still uses the old API and
+   can be woefully outdated.
+
 .. seealso::
 
    * `TkDocs <http://tkdocs.com/>`_
@@ -65,7 +72,7 @@ Architecture
 ------------
 
 Tcl/Tk is not a single library but rather consists of a few distinct
-modules, each with a separate functionality and its own official
+modules, each with separate functionality and its own official
 documentation. Python's binary releases also ship an add-on module
 together with it.
 
@@ -95,11 +102,14 @@ Ttk
    Ttk is distributed as part of Tk, starting with Tk version 8.5. Python
    bindings are provided in a separate module, :mod:`tkinter.ttk`.
 
-Tix
-   `Tix <https://core.tcl.tk/jenglish/gutter/packages/tix.html>`_ is an older
-   third-party Tcl package, an add-on for Tk that adds several new widgets.
-   Python bindings are found in the :mod:`tkinter.tix` module.
-   It's deprecated in favor of Ttk.
+Internally, Tk and Ttk use facilities of the underlying operating system,
+i.e., Xlib on Unix/X11, Cocoa on macOS, GDI on Windows.
+
+When your Python application uses a class in Tkinter, e.g., to create a widget,
+the :mod:`tkinter` module first assembles a Tcl/Tk command string. It passes that
+Tcl command string to an internal :mod:`_tkinter` binary module, which then
+calls the Tcl interpreter to evaluate it. The Tcl interpreter will then call into the
+Tk and/or Ttk packages, which will in turn make calls to Xlib, Cocoa, or GDI.
 
 
 Tkinter Modules
@@ -197,243 +207,241 @@ Additional modules:
 Tkinter Life Preserver
 ----------------------
 
-.. sectionauthor:: Matt Conway
-
-
 This section is not designed to be an exhaustive tutorial on either Tk or
-Tkinter.  Rather, it is intended as a stop gap, providing some introductory
-orientation on the system.
+Tkinter.  For that, refer to one of the external resources noted earlier.
+Instead, this section provides a very quick orientation to what a Tkinter
+application looks like, identifies foundational Tk concepts, and
+explains how the Tkinter wrapper is structured.
 
-Credits:
-
-* Tk was written by John Ousterhout while at Berkeley.
-
-* Tkinter was written by Steen Lumholt and Guido van Rossum.
-
-* This Life Preserver was written by Matt Conway at the University of Virginia.
-
-* The HTML rendering, and some liberal editing, was produced from a FrameMaker
-  version by Ken Manheimer.
-
-* Fredrik Lundh elaborated and revised the class interface descriptions, to get
-  them current with Tk 4.2.
-
-* Mike Clarkson converted the documentation to LaTeX, and compiled the  User
-  Interface chapter of the reference manual.
+The remainder of this section will help you to identify the classes,
+methods, and options you'll need in your Tkinter application, and where to
+find more detailed documentation on them, including in the official Tcl/Tk
+reference manual.
 
 
-How To Use This Section
-^^^^^^^^^^^^^^^^^^^^^^^
+A Hello World Program
+^^^^^^^^^^^^^^^^^^^^^
 
-This section is designed in two parts: the first half (roughly) covers
-background material, while the second half can be taken to the keyboard as a
-handy reference.
-
-When trying to answer questions of the form "how do I do blah", it is often best
-to find out how to do "blah" in straight Tk, and then convert this back into the
-corresponding :mod:`tkinter` call. Python programmers can often guess at the
-correct Python command by looking at the Tk documentation. This means that in
-order to use Tkinter, you will have to know a little bit about Tk. This document
-can't fulfill that role, so the best we can do is point you to the best
-documentation that exists. Here are some hints:
-
-* The authors strongly suggest getting a copy of the Tk man pages.
-  Specifically, the man pages in the ``manN`` directory are most useful.
-  The ``man3`` man pages describe the C interface to the Tk library and thus
-  are not especially helpful for script writers.
-
-* Addison-Wesley publishes a book called Tcl and the Tk Toolkit by John
-  Ousterhout (ISBN 0-201-63337-X) which is a good introduction to Tcl and Tk for
-  the novice.  The book is not exhaustive, and for many details it defers to the
-  man pages.
-
-* :file:`tkinter/__init__.py` is a last resort for most, but can be a good
-  place to go when nothing else makes sense.
-
-
-A Simple Hello World Program
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We'll start by walking through a "Hello World" application in Tkinter. This
+isn't the smallest one we could write, but has enough to illustrate some
+key concepts you'll need to know.
 
 ::
 
-    import tkinter as tk
-
-    class Application(tk.Frame):
-        def __init__(self, master=None):
-            super().__init__(master)
-            self.master = master
-            self.pack()
-            self.create_widgets()
-
-        def create_widgets(self):
-            self.hi_there = tk.Button(self)
-            self.hi_there["text"] = "Hello World\n(click me)"
-            self.hi_there["command"] = self.say_hi
-            self.hi_there.pack(side="top")
-
-            self.quit = tk.Button(self, text="QUIT", fg="red",
-                                  command=self.master.destroy)
-            self.quit.pack(side="bottom")
-
-        def say_hi(self):
-            print("hi there, everyone!")
-
-    root = tk.Tk()
-    app = Application(master=root)
-    app.mainloop()
+    from tkinter import *
+    from tkinter import ttk
+    root = Tk()
+    frm = ttk.Frame(root, padding=10)
+    frm.grid()
+    ttk.Label(frm, text="Hello World!").grid(column=0, row=0)
+    ttk.Button(frm, text="Quit", command=root.destroy).grid(column=1, row=0)
+    root.mainloop()
 
 
-A (Very) Quick Look at Tcl/Tk
------------------------------
+After the imports, the next line creates an instance of the :class:`Tk` class,
+which initializes Tk and creates its associated Tcl interpreter. It also
+creates a toplevel window, known as the root window, which serves as the main
+window of the application.
 
-The class hierarchy looks complicated, but in actual practice, application
-programmers almost always refer to the classes at the very bottom of the
-hierarchy.
+The following line creates a frame widget, which in this case will contain
+a label and a button we'll create next. The frame is fit inside the root
+window.
 
-Notes:
+The next line creates a label widget holding a static text string. The
+:meth:`grid` method is used to specify the relative layout (position) of the
+label within its containing frame widget, similar to how tables in HTML work.
 
-* These classes are provided for the purposes of organizing certain functions
-  under one namespace. They aren't meant to be instantiated independently.
+A button widget is then created, and placed to the right of the label. When
+pressed, it will call the :meth:`destroy` method of the root window.
 
-* The :class:`Tk` class is meant to be instantiated only once in an application.
-  Application programmers need not instantiate one explicitly, the system creates
-  one whenever any of the other classes are instantiated.
-
-* The :class:`Widget` class is not meant to be instantiated, it is meant only
-  for subclassing to make "real" widgets (in C++, this is called an 'abstract
-  class').
-
-To make use of this reference material, there will be times when you will need
-to know how to read short passages of Tk and how to identify the various parts
-of a Tk command.   (See section :ref:`tkinter-basic-mapping` for the
-:mod:`tkinter` equivalents of what's below.)
-
-Tk scripts are Tcl programs.  Like all Tcl programs, Tk scripts are just lists
-of tokens separated by spaces.  A Tk widget is just its *class*, the *options*
-that help configure it, and the *actions* that make it do useful things.
-
-To make a widget in Tk, the command is always of the form::
-
-   classCommand newPathname options
-
-*classCommand*
-   denotes which kind of widget to make (a button, a label, a menu...)
-
-.. index:: single: . (dot); in Tkinter
-
-*newPathname*
-   is the new name for this widget.  All names in Tk must be unique.  To help
-   enforce this, widgets in Tk are named with *pathnames*, just like files in a
-   file system.  The top level widget, the *root*, is called ``.`` (period) and
-   children are delimited by more periods.  For example,
-   ``.myApp.controlPanel.okButton`` might be the name of a widget.
-
-*options*
-   configure the widget's appearance and in some cases, its behavior.  The options
-   come in the form of a list of flags and values. Flags are preceded by a '-',
-   like Unix shell command flags, and values are put in quotes if they are more
-   than one word.
-
-For example::
-
-   button   .fred   -fg red -text "hi there"
-      ^       ^     \______________________/
-      |       |                |
-    class    new            options
-   command  widget  (-opt val -opt val ...)
-
-Once created, the pathname to the widget becomes a new command.  This new
-*widget command* is the programmer's handle for getting the new widget to
-perform some *action*.  In C, you'd express this as someAction(fred,
-someOptions), in C++, you would express this as fred.someAction(someOptions),
-and in Tk, you say::
-
-   .fred someAction someOptions
-
-Note that the object name, ``.fred``, starts with a dot.
-
-As you'd expect, the legal values for *someAction* will depend on the widget's
-class: ``.fred disable`` works if fred is a button (fred gets greyed out), but
-does not work if fred is a label (disabling of labels is not supported in Tk).
-
-The legal values of *someOptions* is action dependent.  Some actions, like
-``disable``, require no arguments, others, like a text-entry box's ``delete``
-command, would need arguments to specify what range of text to delete.
+Finally, the :meth:`mainloop` method puts everything on the display, and
+responds to user input until the program terminates.
 
 
-.. _tkinter-basic-mapping:
 
-Mapping Basic Tk into Tkinter
------------------------------
+Important Tk Concepts
+^^^^^^^^^^^^^^^^^^^^^
 
-Class commands in Tk correspond to class constructors in Tkinter. ::
+Even this simple program illustrates the following key Tk concepts:
 
-   button .fred                =====>  fred = Button()
+widgets
+  A Tkinter user interface is made up of individual *widgets*. Each widget is
+  represented as a Python object, instantiated from classes like
+  :class:`ttk.Frame`, :class:`ttk.Label`, and :class:`ttk.Button`.
 
-The master of an object is implicit in the new name given to it at creation
-time.  In Tkinter, masters are specified explicitly. ::
+widget hierarchy
+  Widgets are arranged in a *hierarchy*. The label and button were contained
+  within a frame, which in turn was contained within the root window. When
+  creating each *child* widget, its *parent* widget is passed as the first
+  argument to the widget constructor.
 
-   button .panel.fred          =====>  fred = Button(panel)
+configuration options
+  Widgets have *configuration options*, which modify their appearance and
+  behavior, such as the text to display in a label or button. Different
+  classes of widgets will have different sets of options.
 
-The configuration options in Tk are given in lists of hyphened tags followed by
-values.  In Tkinter, options are specified as keyword-arguments in the instance
-constructor, and keyword-args for configure calls or as instance indices, in
-dictionary style, for established instances.  See section
-:ref:`tkinter-setting-options` on setting options. ::
+geometry management
+  Widgets aren't automatically added to the user interface when they are
+  created. A *geometry manager* like ``grid`` controls where in the
+  user interface they are placed.
 
-   button .fred -fg red        =====>  fred = Button(panel, fg="red")
-   .fred configure -fg red     =====>  fred["fg"] = red
-                               OR ==>  fred.config(fg="red")
-
-In Tk, to perform an action on a widget, use the widget name as a command, and
-follow it with an action name, possibly with arguments (options).  In Tkinter,
-you call methods on the class instance to invoke actions on the widget.  The
-actions (methods) that a given widget can perform are listed in
-:file:`tkinter/__init__.py`. ::
-
-   .fred invoke                =====>  fred.invoke()
-
-To give a widget to the packer (geometry manager), you call pack with optional
-arguments.  In Tkinter, the Pack class holds all this functionality, and the
-various forms of the pack command are implemented as methods.  All widgets in
-:mod:`tkinter` are subclassed from the Packer, and so inherit all the packing
-methods. See the :mod:`tkinter.tix` module documentation for additional
-information on the Form geometry manager. ::
-
-   pack .fred -side left       =====>  fred.pack(side="left")
+event loop
+  Tkinter reacts to user input, changes from your program, and even refreshes
+  the display only when actively running an *event loop*. If your program
+  isn't running the event loop, your user interface won't update.
 
 
-How Tk and Tkinter are Related
-------------------------------
+Understanding How Tkinter Wraps Tcl/Tk
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-From the top down:
+When your application uses Tkinter's classes and methods, internally Tkinter
+is assembling strings representing Tcl/Tk commands, and executing those
+commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+instance.
 
-Your App Here (Python)
-   A Python application makes a :mod:`tkinter` call.
+Whether it's trying to navigate reference documentation, trying to find
+the right method or option, adapting some existing code, or debugging your
+Tkinter application, there are times that it will be useful to understand
+what those underlying Tcl/Tk commands look like.
 
-tkinter (Python Package)
-   This call (say, for example, creating a button widget), is implemented in
-   the :mod:`tkinter` package, which is written in Python.  This Python
-   function will parse the commands and the arguments and convert them into a
-   form that makes them look as if they had come from a Tk script instead of
-   a Python script.
+To illustrate, here is the Tcl/Tk equivalent of the main part of the Tkinter
+script above.
 
-_tkinter (C)
-   These commands and their arguments will be passed to a C function in the
-   :mod:`_tkinter` - note the underscore - extension module.
+::
 
-Tk Widgets (C and Tcl)
-   This C function is able to make calls into other C modules, including the C
-   functions that make up the Tk library.  Tk is implemented in C and some Tcl.
-   The Tcl part of the Tk widgets is used to bind certain default behaviors to
-   widgets, and is executed once at the point where the Python :mod:`tkinter`
-   package is imported. (The user never sees this stage).
+    ttk::frame .frm -padding 10
+    grid .frm
+    grid [ttk::label .frm.lbl -text "Hello World!"] -column 0 -row 0
+    grid [ttk::button .frm.btn -text "Quit" -command "destroy ."] -column 1 -row 0
 
-Tk (C)
-   The Tk part of the Tk Widgets implement the final mapping to ...
 
-Xlib (C)
-   the Xlib library to draw graphics on the screen.
+Tcl's syntax is similar to many shell languages, where the first word is the
+command to be executed, with arguments to that command following it, separated
+by spaces. Without getting into too many details, notice the following:
+
+* The commands used to create widgets (like ``ttk::frame``) correspond to
+  widget classes in Tkinter.
+
+* Tcl widget options (like ``-text``) correspond to keyword arguments in
+  Tkinter.
+
+* Widgets are referred to by a *pathname* in Tcl (like ``.frm.btn``),
+  whereas Tkinter doesn't use names but object references.
+
+* A widget's place in the widget hierarchy is encoded in its (hierarchical)
+  pathname, which uses a ``.`` (dot) as a path separator. The pathname for
+  the root window is just ``.`` (dot). In Tkinter, the hierarchy is defined
+  not by pathname but by specifying the parent widget when creating each
+  child widget.
+
+* Operations which are implemented as separate *commands* in Tcl (like
+  ``grid`` or ``destroy``) are represented as *methods* on Tkinter widget
+  objects. As you'll see shortly, at other times Tcl uses what appear to be
+  method calls on widget objects, which more closely mirror what would is
+  used in Tkinter.
+
+
+How do I...? What option does...?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you're not sure how to do something in Tkinter, and you can't immediately
+find it in the tutorial or reference documentation you're using, there are a
+few strategies that can be helpful.
+
+First, remember that the details of how individual widgets work may vary
+across different versions of both Tkinter and Tcl/Tk. If you're searching
+documentation, make sure it corresponds to the Python and Tcl/Tk versions
+installed on your system.
+
+When searching for how to use an API, it helps to know the exact name of the
+class, option, or method that you're using. Introspection, either in an
+interactive Python shell or with :func:`print`, can help you identify what
+you need.
+
+To find out what configuration options are available on any widget, call its
+:meth:`configure` method, which returns a dictionary containing a variety of
+information about each object, including its default and current values. Use
+:meth:`keys` to get just the names of each option.
+
+::
+
+    btn = ttk.Button(frm, ...)
+    print(btn.configure().keys())
+
+As most widgets have many configuration options in common, it can be useful
+to find out which are specific to a particular widget class. Comparing the
+list of options to that of a simpler widget, like a frame, is one way to
+do that.
+
+::
+
+    print(set(btn.configure().keys()) - set(frm.configure().keys()))
+
+Similarly, you can find the available methods for a widget object using the
+standard :func:`dir` function. If you try it, you'll see there are over 200
+common widget methods, so again identifying those specific to a widget class
+is helpful.
+
+::
+
+    print(dir(btn))
+    print(set(dir(btn)) - set(dir(frm)))
+
+
+Navigating the Tcl/Tk Reference Manual
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As noted, the official `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+reference manual (man pages) is often the most accurate description of what
+specific operations on widgets do. Even when you know the name of the option
+or method that you need, you may still have a few places to look.
+
+While all operations in Tkinter are implemented as method calls on widget
+objects, you've seen that many Tcl/Tk operations appear as commands that
+take a widget pathname as its first parameter, followed by optional
+parameters, e.g.
+
+::
+
+    destroy .
+    grid .frm.btn -column 0 -row 0
+
+Others, however, look more like methods called on a widget object (in fact,
+when you create a widget in Tcl/Tk, it creates a Tcl command with the name
+of the widget pathname, with the first parameter to that command being the
+name of a method to call).
+
+::
+
+    .frm.btn invoke
+    .frm.lbl configure -text "Goodbye"
+
+
+In the official Tcl/Tk reference documentation, you'll find most operations
+that look like method calls on the man page for a specific widget (e.g.,
+you'll find the :meth:`invoke` method on the
+`ttk::button <https://www.tcl.tk/man/tcl8.6/TkCmd/ttk_button.htm>`_
+man page), while functions that take a widget as a parameter often have
+their own man page (e.g.,
+`grid <https://www.tcl.tk/man/tcl8.6/TkCmd/grid.htm>`_).
+
+You'll find many common options and methods in the
+`options <https://www.tcl.tk/man/tcl8.6/TkCmd/options.htm>`_ or
+`ttk::widget <https://www.tcl.tk/man/tcl8.6/TkCmd/ttk_widget.htm>`_ man
+pages, while others are found in the man page for a specific widget class.
+
+You'll also find that many Tkinter methods have compound names, e.g.,
+:func:`winfo_x`, :func:`winfo_height`, :func:`winfo_viewable`. You'd find
+documentation for all of these in the
+`winfo <https://www.tcl.tk/man/tcl8.6/TkCmd/winfo.htm>`_ man page.
+
+.. note::
+   Somewhat confusingly, there are also methods on all Tkinter widgets
+   that don't actually operate on the widget, but operate at a global
+   scope, independent of any widget. Examples are methods for accessing
+   the clipboard or the system bell. (They happen to be implemented as
+   methods in the base :class:`Widget` class that all Tkinter widgets
+   inherit from).
 
 
 Threading model
