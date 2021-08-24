@@ -2,7 +2,7 @@
 ==============================================================================
 
 .. module:: __main__
-   :synopsis: Command line interfaces, import-time behavior, and ``__name__ == '__main__'``
+   :synopsis: Command-line interfaces, import-time behavior, and ``__name__ == '__main__'``
 
 --------------
 
@@ -114,7 +114,7 @@ Packaging Considerations
 For detailed documentation on Python packaging, see the
 `Python Packaging User Guide. <https://packaging.python.org/>`_
 
-``main`` functions are often used to create command line tools by specifying
+``main`` functions are often used to create command-line tools by specifying
 them as entry points for console scripts.  When this is done,
 `pip <https://pip.pypa.io/>`_ inserts the function call into a template script,
 where the return value of ``main`` is passed into :func:`sys.exit`.
@@ -144,7 +144,7 @@ earlier exemplifies using the ``sys.exit(main())`` convention.
 
 If you are not familiar with Python packages, see section :ref:`tut-packages`
 of the tutorial.  Most commonly, the ``__main__.py`` file is used to provide
-a command line interface for a package. Consider the following hypothetical
+a command-line interface for a package. Consider the following hypothetical
 package, "bandclass":
 
 .. code-block:: text
