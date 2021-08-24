@@ -106,6 +106,7 @@ tokenizeriter_dealloc(tokenizeriterobject* it)
     PyTypeObject* tp = Py_TYPE(it);
     PyTokenizer_Free(it->tok);
     tp->tp_free(it);
+    Py_DECREF(tp);
 }
 
 static PyType_Slot tokenizeriter_slots[] = {
