@@ -605,9 +605,8 @@ def decompress(data):
         do = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
         # Read all the data except the header
         decompressed = do.decompress(data[fp.tell():])
-        checksum, length = struct.unpack("<II", do.unused_data[:8])
-        crc = zlib.crc32(decompressed)
-        if crc != checksum:
+        crc, length = struct.unpack("<II", do.unused_data[:8])
+        if crc != zlib.crc32(decompressed):
             raise BadGzipFile("CRC check failed")
         if length != (len(block) & 0xffffffff):
             raise BadGzipFile("Incorrect length of data produced")
