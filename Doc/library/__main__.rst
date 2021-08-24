@@ -139,12 +139,66 @@ string will be written to :data:`sys.stderr`.  The ``echo.py`` example from
 earlier exemplifies using the ``sys.exit(main())`` convention.
 
 
+``__main__.py`` in Python Packages
+----------------------------------
+
+If you are not familiar with Python packages, see section :ref:`tut-packages`
+of the tutorial.  Most commonly, the ``__main__.py`` file is used to provide
+a command line interface for a package. Consider the following hypothetical
+package, "bandclass":
+
+.. code-block:: text
+
+   bandclass
+     ├── __init__.py
+     ├── __main__.py
+     └── student.py
+
+``__main__.py`` will be executed when the package itself is invoked
+directly from the command line using the :option:`-m` flag. For example::
+
+    python3 -m bandclass
+
+This command will cause ``__main__.py`` to run. For more details about the
+:option:`-m` flag, see :mod:`runpy`. How you utilize this mechanism will depend
+on the nature of the package you are writing, but in this hypothetical case, it
+might make sense to allow the teacher to search for students::
+
+    # bandclass/__main__.py
+
+    import sys
+    from .student import search_students
+
+    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
+    print(f'Found student: {search_students(student_name)}')
+
+Note that ``from .student import search_students`` is an example of a relative
+import.  This import style must be used when referencing modules within a
+package.  For more details, see :ref:`intra-package-references` in the
+:ref:`tut-modules` section of the tutorial.
+
+For an example of a package using ``__main__.py`` in our standard library, see
+:mod:`venv`, and its invocation via ``python3 -m venv [directory]``.
+
+Idiomatic Usage
+^^^^^^^^^^^^^^^
+
+Note that ``__main__.py`` files in Python packages cannot use the
+``if __name__ == '__main__'`` idiom because the name of the module is *always*
+``'__main__'``.  This is why the example above doesn't use the block.  More
+importantly, this is why ``__main__.py`` files should be minimal, importing
+functions to execute from other modules.  Those other modules can then be
+easily unit-tested, and are properly reusable.
+
+
 ``import __main__``
 -------------------
 
 Regardless of which module a Python program was started with, other modules
 running within that same program can import the top-level environment's scope
-(:term:`namespace`) by importing the ``__main__`` module.
+(:term:`namespace`) by importing the ``__main__`` module.  This doesn't import
+a ``__main__.py`` file but rather whichever module that received the special
+name ``'__main__'``.
 
 Here is an example module that consumes the ``__main__`` namespace::
 
@@ -226,55 +280,3 @@ attribute as it's interactive.
 
 The ``__main__`` scope is used in the implementation of :mod:`pdb` and
 :mod:`rlcompleter`.
-
-
-``__main__.py`` in Python Packages
-----------------------------------
-
-If you are not familiar with Python packages, see section :ref:`tut-packages`
-of the tutorial.  Most commonly, the ``__main__.py`` file is used to provide
-a command line interface for a package. Consider the following hypothetical
-package, "bandclass":
-
-.. code-block:: text
-
-   bandclass
-     ├── __init__.py
-     ├── __main__.py
-     └── student.py
-
-``__main__.py`` will be executed when the package itself is invoked
-directly from the command line using the :option:`-m` flag. For example::
-
-    python3 -m bandclass
-
-This command will cause ``__main__.py`` to run. For more details about the
-:option:`-m` flag, see :mod:`runpy`. How you utilize this mechanism will depend
-on the nature of the package you are writing, but in this hypothetical case, it
-might make sense to allow the teacher to search for students::
-
-    # bandclass/__main__.py
-
-    import sys
-    from .student import search_students
-
-    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
-    print(f'Found student: {search_students(student_name)}')
-
-Note that ``from .student import search_students`` is an example of a relative
-import.  This import style must be used when referencing modules within a
-package.  For more details, see :ref:`intra-package-references` in the
-:ref:`tut-modules` section of the tutorial.
-
-For an example of a package using ``__main__.py`` in our standard library, see
-:mod:`venv`, and its invocation via ``python3 -m venv [directory]``.
-
-Idiomatic Usage
-^^^^^^^^^^^^^^^
-
-Note that ``__main__.py`` files in Python packages cannot use the
-``if __name__ == '__main__'`` idiom because the name of the module is *always*
-``'__main__'``.  This is why the example above doesn't use the block.  More
-importantly, this is why ``__main__.py`` files should be minimal, importing
-functions to execute from other modules.  Those other modules can then be
-easily unit-tested, and are properly reusable.
