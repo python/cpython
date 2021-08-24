@@ -1581,11 +1581,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     PyObject **stack_pointer = _PyFrame_GetStackPointer(frame);
     /* Set stackdepth to -1.
      * Update when returning or calling trace function.
-       Having f_stackdepth <= 0 ensures that invalid
+       Having stackdepth <= 0 ensures that invalid
        values are not visible to the cycle GC.
        We choose -1 rather than 0 to assist debugging.
      */
-    frame->stackdepth = -1;
+    frame->stacktop = -1;
     frame->f_state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
@@ -1681,7 +1681,7 @@ check_eval_breaker:
             JUMPTO(frame->f_lasti);
 
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            frame->stackdepth = -1;
+            frame->stacktop = -1;
             TRACING_NEXTOPARG();
         }
         PRE_DISPATCH_GOTO();
@@ -5410,18 +5410,17 @@ make_coro_frame(PyThreadState *tstate,
     assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    PyObject **localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
-    if (localsarray == NULL) {
+    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
+    if (frame == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
-        localsarray[i] = NULL;
+        frame->localsplus[i] = NULL;
     }
-    InterpreterFrame *frame = (InterpreterFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     assert(frame->frame_obj == NULL);
-    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, con, frame->localsplus, args, argcount, kwnames)) {
         _PyFrame_Clear(frame, 1);
         return NULL;
     }
@@ -5500,7 +5499,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     }
     assert (tstate->interp->eval_frame != NULL);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
-    assert(frame->stackdepth == 0);
+    assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
         retval = NULL;
     }
