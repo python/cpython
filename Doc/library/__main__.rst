@@ -39,9 +39,6 @@ package's path::
     >>> process.__name__
     'concurrent.futures.process'
 
-For a more detailed look at how ``__name__`` is set in all situations, see the
-tutorial section :ref:`tut-modules`.
-
 In some circumstances, ``__name__`` is set to the string ``'__main__'``.
 ``__main__`` is the name of the environment where top-level code is run.
 "Top-level code" means when a Python module is initialized from an interactive
@@ -58,6 +55,11 @@ an import statement::
     if __name__ == '__main__':
         # Execute when the module is not initialized from an import statement.
         ...
+
+.. seealso::
+
+    For a more detailed look at how ``__name__`` is set in all situations, see
+    the tutorial section :ref:`tut-modules`.
 
 
 Idiomatic Usage
@@ -112,9 +114,6 @@ called, because ``__name__ != '__main__'``.
 Packaging Considerations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-For detailed documentation on Python packaging, see the
-`Python Packaging User Guide. <https://packaging.python.org/>`_
-
 ``main`` functions are often used to create command-line tools by specifying
 them as entry points for console scripts.  When this is done,
 `pip <https://pip.pypa.io/>`_ inserts the function call into a template script,
@@ -139,6 +138,12 @@ your program will have an exit code of ``1``, indicating failure, and the
 string will be written to :data:`sys.stderr`.  The ``echo.py`` example from
 earlier exemplifies using the ``sys.exit(main())`` convention.
 
+.. seealso::
+
+    `Python Packaging User Guide <https://packaging.python.org/>`_
+    contains a collection of tutorials and references on how to distribute and
+    install Python packages with modern tools.
+
 
 ``__main__.py`` in Python Packages
 ----------------------------------
@@ -160,10 +165,10 @@ directly from the command line using the :option:`-m` flag. For example::
 
     python3 -m bandclass
 
-This command will cause ``__main__.py`` to run. For more details about the
-:option:`-m` flag, see :mod:`runpy`. How you utilize this mechanism will depend
-on the nature of the package you are writing, but in this hypothetical case, it
-might make sense to allow the teacher to search for students::
+This command will cause ``__main__.py`` to run. How you utilize this mechanism
+will depend on the nature of the package you are writing, but in this
+hypothetical case, it might make sense to allow the teacher to search for
+students::
 
     # bandclass/__main__.py
 
@@ -177,9 +182,6 @@ Note that ``from .student import search_students`` is an example of a relative
 import.  This import style must be used when referencing modules within a
 package.  For more details, see :ref:`intra-package-references` in the
 :ref:`tut-modules` section of the tutorial.
-
-For an example of a package using ``__main__.py`` in our standard library, see
-:mod:`venv`, and its invocation via ``python3 -m venv [directory]``.
 
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
@@ -197,8 +199,23 @@ attribute will include the package's path if imported::
     >>> asyncio.__main__.__name__
     'asyncio.__main__'
 
-That being said, minimal ``__main__.py`` like the :mod:`venv` one mentioned
-above are preferred.
+This won't work for ``__main__.py`` files in the root directory of a .zip file
+though.  Hence, for consistency, minimal ``__main__.py`` like the :mod:`venv`
+one mentioned above are preferred.
+
+.. seealso::
+
+    See :mod:`venv` for an example of a package with a minimal ``__main__.py``
+    in the standard library. It doesn't contain a ``if __name__ == '__main__'``
+    block. You can invoke it with ``python3 -m venv [directory]``.
+
+    See :mod:`runpy` for more details on the :option:`-m` flag to the
+    interpreter executable.
+
+    See :mod:`zipapp` for how to run applications packaged as *.zip* files. In
+    this case Python looks for a ``__main__.py`` file in the root directory of
+    the archive.
+
 
 
 ``import __main__``
