@@ -32,13 +32,13 @@
 #include "Python.h"
 
 /* Includes for frozen modules: */
-
 /* importlib */
 #include "frozen_importlib__bootstrap.h"
 #include "frozen_importlib__bootstrap_external.h"
 #include "frozen_zipimport.h"
 /* Test module */
 #include "frozen_hello.h"
+/* End includes */
 
 static const struct _frozen _PyImport_FrozenModules[] = {
     /* importlib */
@@ -53,7 +53,6 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     /* Test package (negative size indicates package-ness) */
     {"__phello__", _Py_M__hello, -(int)sizeof(_Py_M__hello)},
     {"__phello__.spam", _Py_M__hello, (int)sizeof(_Py_M__hello)},
-
     {0, 0, 0} /* sentinel */
 };
 

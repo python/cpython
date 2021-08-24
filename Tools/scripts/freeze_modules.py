@@ -198,7 +198,7 @@ def iter_submodules(pkgname, pkgdir=None, match='*'):
     match_modname = _resolve_modname_matcher(match, pkgdir)
 
     def _iter_submodules(pkgname, pkgdir):
-        for entry in os.scandir(pkgdir):
+        for entry in sorted(os.scandir(pkgdir), key=lambda e: e.name):
             matched, recursive = match_modname(entry.name)
             if not matched:
                 continue
@@ -275,6 +275,24 @@ def _freeze_module(frozenid, pyfile, frozenfile):
 #######################################
 # regenerating dependent files
 
+def find_marker(lines, marker, file):
+    for pos, line in enumerate(lines):
+        if marker in line:
+            return pos
+    raise Exception(f"Can't find {marker!r} in file {file}")
+
+
+def replace_block(lines, start_marker, end_marker, replacements, file):
+    start_pos = find_marker(lines, start_marker, file)
+    end_pos = find_marker(lines, end_marker, file)
+    if end_pos <= start_pos:
+        raise Exception(f"End marker {end_marker!r} "
+                        f"occurs before start marker {start_marker!r} "
+                        f"in file {file}")
+    replacements = [line.rstrip() + os.linesep for line in replacements]
+    return lines[:start_pos + 1] + replacements + lines[end_pos:]
+
+
 def regen_frozen(headers, definitions):
     headerlines = []
     for row in headers:
@@ -286,7 +304,6 @@ def regen_frozen(headers, definitions):
         headerlines.append(row)
 
     deflines = []
-    sentinel = '{0, 0, 0} /* sentinel */'
     indent = '    '
     for definition in definitions:
         if isinstance(definition, str):
@@ -294,69 +311,50 @@ def regen_frozen(headers, definitions):
             continue
         modname, frozenid, ispkg = definition
         # This matches what we do in Programs/_freeze_module.c:
-        symbol = '_Py_M__' + frozenid.replace('.', '_')
+        name = frozenid.replace('.', '_')
+        symbol = '_Py_M__' + name
         pkg = '-' if ispkg else ''
-        line = '{"%s", %s, %s(int)sizeof(%s)},' % (modname, symbol, pkg, symbol)
+        line = ('{"%s", %s, %s(int)sizeof(%s)},'
+                % (modname, symbol, pkg, symbol))
+        # TODO: Consider not folding lines
         if len(line) < 80:
             deflines.append(line)
         else:
             line1, _, line2 = line.rpartition(' ')
             deflines.append(line1)
             deflines.append(indent + line2)
+
     if not deflines[0]:
         del deflines[0]
-    deflines.extend(['', sentinel])
     for i, line in enumerate(deflines):
         if line:
             deflines[i] = indent + line
 
     with updating_file_with_tmpfile(FROZEN_FILE) as (infile, outfile):
-        lines = iter(infile)
-        # Get to the frozen includes.
-        for line in lines:
-            outfile.write(line)
-            if line.rstrip() == '/* Includes for frozen modules: */':
-                break
-        else:
-            raise Exception("did you delete a line you shouldn't have?")
-        # Pop off the existing values.
-        blank_before = next(lines)
-        assert blank_before.strip() == ''
-        for line in lines:
-            if not line.strip():
-                blank_after = line
-                break
-        else:
-            raise Exception("did you delete a line you shouldn't have?")
-        # Add the frozen includes.
-        outfile.write(blank_before)
-        for line in headerlines:
-            outfile.write(line + os.linesep)
-        outfile.write(blank_after)
-        # Get to the modules array.
-        for line in lines:
-            outfile.write(line)
-            if line.rstrip() == 'static const struct _frozen _PyImport_FrozenModules[] = {':
-                break
-        else:
-            raise Exception("did you delete a line you shouldn't have?")
-        # Pop off the existing values.
-        for line in lines:
-            if line.strip() == sentinel:
-                break
-        else:
-            raise Exception("did you delete a line you shouldn't have?")
-        # Add the modules.
-        for line in deflines:
-            outfile.write(line + os.linesep)
-        # Keep the rest of the file.
-        for line in lines:
-            outfile.write(line)
+        lines = infile.readlines()
+        # TODO: Use more obvious markers, e.g.
+        # $START GENERATED FOOBAR$ / $END GENERATED FOOBAR$
+        lines = replace_block(
+            lines,
+            "/* Includes for frozen modules: */",
+            "/* End includes */",
+            headerlines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
+            "static const struct _frozen _PyImport_FrozenModules[] =",
+            "/* sentinel */",
+            deflines,
+            FROZEN_FILE,
+        )
+        outfile.writelines(lines)
 
 
 def regen_makefile(headers, destdir=MODULES_DIR):
     reldir = os.path.relpath(destdir, ROOT_DIR)
     assert destdir.endswith(reldir), destdir
+
     frozenfiles = []
     for row in headers:
         if not row.startswith('/*'):
@@ -364,32 +362,21 @@ def regen_makefile(headers, destdir=MODULES_DIR):
             assert header.endswith('.h'), header
             assert os.path.basename(header) == header, header
             relfile = f'{reldir}/{header}'.replace('\\', '/')
-            frozenfiles.append(f'$(srcdir)/{relfile}')
+            frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
+            cgfile = relfile.replace("/frozen", "/codegen")
+            cgfile = cgfile[:-2] + ".o"
+    frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
-        lines = iter(infile)
-        # Get to $FROZEN_FILES.
-        for line in lines:
-            outfile.write(line)
-            if line.rstrip() == 'FROZEN_FILES = \\':
-                break
-        else:
-            raise Exception("did you delete a line you shouldn't have?")
-        # Pop off the existing values.
-        for line in lines:
-            if line.rstrip() == 'Python/frozen.o: $(FROZEN_FILES)':
-                break
-        else:
-            raise Exception("did you delete a line you shouldn't have?")
-        # Add the regen'ed values.
-        for header in frozenfiles[:-1]:
-            outfile.write(f'\t\t{header} \\{os.linesep}')
-        outfile.write(f'\t\t{frozenfiles[-1]}{os.linesep}')
-        # Keep the rest of the file.
-        outfile.write(os.linesep)
-        outfile.write('Python/frozen.o: $(FROZEN_FILES)' + os.linesep)
-        for line in lines:
-            outfile.write(line)
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            "FROZEN_FILES =",
+            "# End FROZEN_FILES",
+            frozenfiles,
+            MAKEFILE,
+        )
+        outfile.writelines(lines)
 
 
 #######################################

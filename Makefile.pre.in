@@ -981,6 +981,7 @@ FROZEN_FILES = \
 		$(srcdir)/Python/frozen_importlib__bootstrap_external.h \
 		$(srcdir)/Python/frozen_zipimport.h \
 		$(srcdir)/Python/frozen_hello.h
+# End FROZEN_FILES
 
 Python/frozen.o: $(FROZEN_FILES)
 
