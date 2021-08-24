@@ -23,6 +23,8 @@ TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
 
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
+PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
+PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
 
 # These are modules that get frozen.
 FROZEN = [
@@ -400,6 +402,47 @@ def regen_makefile(frozenids, frozen):
         outfile.writelines(lines)
 
 
+def regen_pcbuild(frozenids, frozen):
+    projlines = []
+    filterlines = []
+    for frozenid in frozenids:
+        pyfile, frozenfile = frozen[frozenid]
+
+        _pyfile = os.path.relpath(pyfile, ROOT_DIR).replace('/', '\\')
+        header = os.path.relpath(frozenfile, ROOT_DIR).replace('/', '\\')
+        intfile = header.split('\\')[-1].strip('.h') + '.g.h'
+        projlines.append(f'    <None Include="..\\{_pyfile}">')
+        projlines.append(f'      <ModName>{frozenid}</ModName>')
+        projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
+        projlines.append(f'      <OutFile>$(PySourcePath){header}</OutFile>')
+        projlines.append(f'    </None>')
+
+        filterlines.append(f'    <None Include="..\\{_pyfile}">')
+        filterlines.append('      <Filter>Python Files</Filter>')
+        filterlines.append('    </None>')
+
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN frozen modules -->',
+            '<!-- END frozen modules -->',
+            projlines,
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_FILTERS) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN frozen modules -->',
+            '<!-- END frozen modules -->',
+            filterlines,
+            PCBUILD_FILTERS,
+        )
+        outfile.writelines(lines)
+
+
 #######################################
 # freezing modules
 
@@ -444,6 +487,7 @@ def main(*, regen=True, freeze=True):
     if regen:
         regen_frozen(specs, (frozenids, frozen))
         regen_makefile(frozenids, frozen)
+        regen_pcbuild(frozenids, frozen)
     if freeze:
         for frozenid in frozenids:
             pyfile, frozenfile = frozen[frozenid]
