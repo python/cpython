@@ -334,14 +334,14 @@ status code 0, indicating success:
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally
 running top-level code meant for script use which is put in the
-``if __name__ == "__main__"`` block of ``start.py``. Why does this work?
+``if __name__ == "__main__"`` block of the ``start`` module. Why does this work?
 
 Python inserts an empty ``__main__`` module in :attr:`sys.modules` at
 interpreter startup, and populates it by running top-level code. In our example
-this is the ``start.py`` file which runs line by line and imports ``namely``.
-In turn, ``namely.py`` imports ``__main__`` (which is ``start.py``). That's an
+this is the ``start`` module which runs line by line and imports ``namely``.
+In turn, ``namely`` imports ``__main__`` (which is really ``start``). That's an
 import cycle! Fortunately, since the partially populated ``__main__``
-module is present in :attr:`sys.modules`, Python passes that to ``namely.py``.
+module is present in :attr:`sys.modules`, Python passes that to ``namely``.
 See :ref:`Special considerations for __main__ <import-dunder-main>` in the
 import system's reference for details on how this works.
 
