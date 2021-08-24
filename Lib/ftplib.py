@@ -561,7 +561,7 @@ class FTP:
         LIST command.  (This *should* only be used for a pathname.)'''
         cmd = 'LIST'
         func = None
-        if args[-1:] and type(args[-1]) != str:
+        if args[-1:] and type(args[-1]) is not str:
             args, func = args[:-1], args[-1]
         for arg in args:
             if arg:
