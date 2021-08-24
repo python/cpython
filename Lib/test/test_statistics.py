@@ -2263,6 +2263,22 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
 
+    def test_mixed_int_and_float(self):
+        # Regression test for b.p.o. issue #28327
+        geometric_mean = statistics.geometric_mean
+        expected_mean = 3.80675409583932
+        values = [
+            [2, 3, 5, 7],
+            [2, 3, 5, 7.0],
+            [2, 3, 5.0, 7.0],
+            [2, 3.0, 5.0, 7.0],
+            [2.0, 3.0, 5.0, 7.0],
+        ]
+        for v in values:
+            with self.subTest(v=v):
+                actual_mean = geometric_mean(v)
+                self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
 
 class TestQuantiles(unittest.TestCase):
 

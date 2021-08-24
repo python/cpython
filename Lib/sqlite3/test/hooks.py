@@ -24,7 +24,7 @@ import unittest
 import sqlite3 as sqlite
 
 from test.support.os_helper import TESTFN, unlink
-
+from .userfunctions import with_tracebacks
 
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):
@@ -145,7 +145,6 @@ class ProgressTests(unittest.TestCase):
             """)
         self.assertTrue(progress_calls)
 
-
     def test_opcode_count(self):
         """
         Test that the opcode argument is respected.
@@ -197,6 +196,32 @@ class ProgressTests(unittest.TestCase):
         con.set_progress_handler(None, 1)
         con.execute("select 1 union select 2 union select 3").fetchall()
         self.assertEqual(action, 0, "progress handler was not cleared")
+
+    @with_tracebacks(['bad_progress', 'ZeroDivisionError'])
+    def test_error_in_progress_handler(self):
+        con = sqlite.connect(":memory:")
+        def bad_progress():
+            1 / 0
+        con.set_progress_handler(bad_progress, 1)
+        with self.assertRaises(sqlite.OperationalError):
+            con.execute("""
+                create table foo(a, b)
+                """)
+
+    @with_tracebacks(['__bool__', 'ZeroDivisionError'])
+    def test_error_in_progress_handler_result(self):
+        con = sqlite.connect(":memory:")
+        class BadBool:
+            def __bool__(self):
+                1 / 0
+        def bad_progress():
+            return BadBool()
+        con.set_progress_handler(bad_progress, 1)
+        with self.assertRaises(sqlite.OperationalError):
+            con.execute("""
+                create table foo(a, b)
+                """)
+
 
 class TraceCallbackTests(unittest.TestCase):
     def test_trace_callback_used(self):
