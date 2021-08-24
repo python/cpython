@@ -351,7 +351,7 @@ class BugsTestCase(unittest.TestCase):
         for kind in ("set", "frozenset"):
             script = f"import marshal; print(marshal.dumps({kind}({elements})))"
             with self.subTest(kind):
-                # {nan, b"b", "x", b'a', b'c', 'y', 'z'}
+                # {nan, b'b', 'x', b'a', b'c', 'y', 'z'}
                 _, a, _ = assert_python_ok("-c", script, PYTHONHASHSEED="0")
                 # {nan, 'x', b'a', 'z', b'b', 'y', b'c'}
                 _, b, _ = assert_python_ok("-c", script, PYTHONHASHSEED="1")
