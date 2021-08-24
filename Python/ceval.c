@@ -1413,7 +1413,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Local variable macros */
 
-#define GETLOCAL(i)     (localsplus[i])
+#define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
    then store the new value; it must copy the old value to a temporary
@@ -1559,7 +1559,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     PyObject *names = co->co_names;
     PyObject *consts = co->co_consts;
-    PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
     _Py_CODEUNIT *first_instr = co->co_firstinstr;
     /*
        frame->f_lasti refers to the index of the last instruction,
@@ -4985,7 +4984,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (GETLOCAL(i) == NULL) {
+        if (localsplus[i] == NULL) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -5014,7 +5013,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (GETLOCAL(i) != NULL) {
+        if (localsplus[i] != NULL) {
             kwonly_given++;
         }
     }
@@ -5221,7 +5220,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        SETLOCAL(i, kwdict);
+        assert(localsplus[i] == NULL);
+        localsplus[i] = kwdict;
     }
     else {
         kwdict = NULL;
@@ -5238,7 +5238,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     for (j = 0; j < n; j++) {
         PyObject *x = args[j];
         Py_INCREF(x);
-        SETLOCAL(j, x);
+        assert(localsplus[j] == NULL);
+        localsplus[j] = x;
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -5247,7 +5248,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (u == NULL) {
             goto fail;
         }
-        SETLOCAL(total_args, u);
+        assert(localsplus[total_args] == NULL);
+        localsplus[total_args] = u;
     }
 
     /* Handle keyword arguments */
@@ -5311,14 +5313,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             continue;
 
         kw_found:
-            if (GETLOCAL(j) != NULL) {
+            if (localsplus[j] != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           con->fc_qualname, keyword);
                 goto fail;
             }
             Py_INCREF(value);
-            SETLOCAL(j, value);
+            localsplus[j] = value;
         }
     }
 
@@ -5335,7 +5337,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (GETLOCAL(i) == NULL) {
+            if (localsplus[i] == NULL) {
                 missing++;
             }
         }
@@ -5351,10 +5353,10 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(con->fc_defaults, 0);
             for (; i < defcount; i++) {
-                if (GETLOCAL(m+i) == NULL) {
+                if (localsplus[m+i] == NULL) {
                     PyObject *def = defs[i];
                     Py_INCREF(def);
-                    SETLOCAL(m+i, def);
+                    localsplus[m+i] = def;
                 }
             }
         }
@@ -5364,14 +5366,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (GETLOCAL(i) != NULL)
+            if (localsplus[i] != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (con->fc_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
                 if (def) {
                     Py_INCREF(def);
-                    SETLOCAL(i, def);
+                    localsplus[i] = def;
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
@@ -6767,7 +6769,6 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         switch (opcode) {
         case STORE_FAST:
         {
-            PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
             break;
