@@ -411,7 +411,7 @@ def _read_exact(fp, n):
     '''
     data = fp.read(n)
     while len(data) < n:
-        b = self._fp.read(n - len(data))
+        b = fp.read(n - len(data))
         if not b:
             raise EOFError("Compressed file ended before the "
                            "end-of-stream marker was reached")
@@ -436,22 +436,22 @@ def _read_gzip_header(fp):
 
     if flag & FEXTRA:
         # Read & discard the extra field, if present
-        extra_len, = struct.unpack("<H", read_exact(fp, 2))
+        extra_len, = struct.unpack("<H", _read_exact(fp, 2))
         _read_exact(fp, extra_len)
     if flag & FNAME:
         # Read and discard a null-terminated string containing the filename
         while True:
-            s = self._fp.read(1)
+            s = fp.read(1)
             if not s or s==b'\000':
                 break
     if flag & FCOMMENT:
         # Read and discard a null-terminated string containing a comment
         while True:
-            s = self._fp.read(1)
+            s = fp.read(1)
             if not s or s==b'\000':
                 break
     if flag & FHCRC:
-        _read_exact(self._fp, 2)     # Read & discard the 16-bit header CRC
+        _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
     return last_mtime
 
 
@@ -468,7 +468,7 @@ class _GzipReader(_compression.DecompressReader):
         self._stream_size = 0  # Decompressed size of unconcatenated stream
 
     def _read_gzip_header(self):
-        last_mtime = _read_gzip_header(self.fp)
+        last_mtime = _read_gzip_header(self._fp)
         if last_mtime is None:
             return False
         self._last_mtime = last_mtime
@@ -597,8 +597,8 @@ def decompress(data):
     Return the decompressed string.
     """
     decompressed_members = []
-    fp = io.BytesIO(data)
     while True:
+        fp = io.BytesIO(data)
         if _read_gzip_header(fp) is None:
             return b"".join(decompressed_members)
         # Use a zlib raw deflate compressor
@@ -608,10 +608,10 @@ def decompress(data):
         crc, length = struct.unpack("<II", do.unused_data[:8])
         if crc != zlib.crc32(decompressed):
             raise BadGzipFile("CRC check failed")
-        if length != (len(block) & 0xffffffff):
+        if length != (len(decompressed) & 0xffffffff):
             raise BadGzipFile("Incorrect length of data produced")
         decompressed_members.append(decompressed)
-        data = do.unused_data[8:].lstrip()
+        data = do.unused_data[8:].lstrip(b"\x00")
 
 
 def main():
