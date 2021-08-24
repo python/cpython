@@ -401,6 +401,7 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Common */
 
+#define SPEC_FAIL_OTHER 0
 #define SPEC_FAIL_NO_DICT 1
 #define SPEC_FAIL_OVERRIDDEN 2
 #define SPEC_FAIL_OUT_OF_VERSIONS 3
@@ -432,9 +433,13 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Binary subscr */
 
-#define SPEC_FAIL_LIST_NON_INT_SUBSCRIPT 8
-#define SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT 9
-#define SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT 10
+#define SPEC_FAIL_LIST_OTHER 8
+#define SPEC_FAIL_TUPLE_OTHER 9
+#define SPEC_FAIL_LIST_SLICE 10
+#define SPEC_FAIL_TUPLE_SLICE 11
+#define SPEC_FAIL_STRING_INT 12
+#define SPEC_FAIL_STRING_SLICE 13
+#define SPEC_FAIL_STRING_OTHER 14
 
 
 static int
@@ -898,7 +903,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
             goto fail;
     }
-    
+
     assert(kind == METHOD);
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
@@ -933,15 +938,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
         // Fall through.
     } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-        
+
     /* `descr` is borrowed. Just check tp_version_tag before accessing in case
     *  it's deleted.  This is safe for methods (even inherited ones from super
     *  classes!) as long as tp_version_tag is validated for two main reasons:
-    * 
+    *
     *  1. The class will always hold a reference to the method so it will
     *  usually not be GC-ed. Should it be deleted in Python, e.g.
     *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
-    * 
+    *
     *  2. The pre-existing type method cache (MCACHE) uses the same principles
     *  of caching a borrowed descriptor. It does all the heavy lifting for us.
     *  E.g. it invalidates on any MRO modification, on any type object
@@ -1045,25 +1050,36 @@ _Py_Specialize_BinarySubscr(
         if (PyLong_CheckExact(sub)) {
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
             goto success;
-        } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_LIST_NON_INT_SUBSCRIPT);
-            goto fail;
         }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_LIST_SLICE : SPEC_FAIL_LIST_OTHER);
+        goto fail;
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
             goto success;
-        } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT);
-            goto fail;
         }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_TUPLE_SLICE : SPEC_FAIL_TUPLE_OTHER);
+        goto fail;
     }
     if (container_type == &PyDict_Type) {
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
         goto success;
     }
-    SPECIALIZATION_FAIL(BINARY_SUBSCR,SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT);
+    SPECIALIZATION_FAIL(BINARY_SUBSCR,
+        container_type == &PyUnicode_Type ?
+        (
+            PyLong_CheckExact(sub) ?
+            SPEC_FAIL_STRING_INT :
+            (
+                PySlice_Check(sub) ?
+                SPEC_FAIL_STRING_SLICE :
+                SPEC_FAIL_STRING_OTHER
+            )
+        ) : SPEC_FAIL_OTHER
+    );
     goto fail;
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);
