@@ -970,6 +970,8 @@ should expose ``XXX.YYY.ZZZ`` as a usable expression, but .moduleY is
 not a valid expression.
 
 
+.. _import-dunder-main:
+
 Special considerations for __main__
 ===================================
 
