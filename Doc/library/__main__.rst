@@ -62,7 +62,7 @@ an import statement::
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
-Some modules contain code which is intended for script use only, like parsing
+Some modules contain code that is intended for script use only, like parsing
 command-line arguments or fetching data from standard input.  When a module
 like this were to be imported from a different module, for example to unit test
 it, the script code would unintentionally execute as well.
@@ -183,12 +183,21 @@ For an example of a package using ``__main__.py`` in our standard library, see
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
-Note that ``__main__.py`` files in Python packages cannot use the
-``if __name__ == '__main__'`` idiom because the name of the module is *always*
-``'__main__'``.  This is why the example above doesn't use the block.  More
-importantly, this is why ``__main__.py`` files should be minimal, importing
+The contents of ``__main__.py`` typically isn't fenced with
+``if __name__ == '__main__'`` blocks.  Instead, those files are kept short,
 functions to execute from other modules.  Those other modules can then be
-easily unit-tested, and are properly reusable.
+easily unit-tested and are properly reusable.
+
+If used, an ``if __name__ == '__main__'`` block will still work as expected
+for a ``__main__.py`` file within a package, because its ``__name__``
+attribute will include the package's path if imported::
+
+    >>> import asyncio.__main__
+    >>> asyncio.__main__.__name__
+    'asyncio.__main__'
+
+That being said, minimal ``__main__.py`` like the :mod:`venv` one mentioned
+above are preferred.
 
 
 ``import __main__``
