@@ -1622,7 +1622,7 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(C, P)
         self.assertIsSubclass(D, P)
 
-        # String / PEP 563 annotations.
+        # String annotations (forward references).
         @runtime_checkable
         class P(Protocol):
             x: "ClassVar[int]" = 1

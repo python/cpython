@@ -1394,6 +1394,7 @@ def _get_protocol_attrs(cls):
                 attrs.add(attr)
     return attrs
 
+_classvar_prefixes = ("typing.ClassVar[", "t.ClassVar[", "ClassVar[")
 
 def _is_callable_or_classvar_members_only(cls):
     attr_names = _get_protocol_attrs(cls)
@@ -1406,13 +1407,9 @@ def _is_callable_or_classvar_members_only(cls):
         annotation = annotations.get(attr_name)
         if getattr(annotation, '__name__', None) == 'ClassVar':
             continue
-        # String / PEP 563 annotations
-        # Note: If PEP 649 is accepted, we can probably drop this.
-        if isinstance(annotation, str):
-            if (annotation.startswith('ClassVar[')
-               or annotation.startswith('typing.ClassVar[')
-               or annotation.startswith('typing_extensions.ClassVar[')):
-                continue
+        # String annotations (forward references).
+        if isinstance(annotation, str) and annotation.startswith(_classvar_prefixes):
+            continue
         return False
     return True
 
