@@ -573,8 +573,8 @@ coverage-lcov:
 	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
 	@echo
 
-# Force regeneration of parser and importlib
-coverage-report: regen-token regen-importlib regen-frozen-stdlib
+# Force regeneration of parser and frozen modules
+coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
