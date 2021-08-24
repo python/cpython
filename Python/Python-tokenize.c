@@ -72,9 +72,9 @@ tokenizeriter_next(tokenizeriterobject* it)
     }
     PyObject* str = NULL;
     if (start == NULL || end == NULL) {
-        str = PyUnicode_FromStringAndSize(start, end - start);
-    } else {
         str = PyUnicode_FromString("");
+    } else {
+        str = PyUnicode_FromStringAndSize(start, end - start);
     }
     if (str == NULL) {
         return NULL;
