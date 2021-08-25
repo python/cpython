@@ -192,9 +192,13 @@ improving entry point loading performance by ~10x.
 .. nonce: XXCVAp
 .. section: Library
 
-Improve :mod:`sqlite3` error handling: ``sqlite3_value_text()`` errors that
-set ``SQLITE_NOMEM`` now raise :exc:`MemoryError`. Patch by Erlend E.
-Aasland.
+Improved string handling for :mod:`sqlite3` user-defined functions and
+aggregates:
+
+* It is now possible to pass strings with embedded null characters to UDFs
+* Conversion failures now correctly raise :exc:`MemoryError`
+
+Patch by Erlend E. Aasland.
 
 ..
 
