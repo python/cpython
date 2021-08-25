@@ -2022,7 +2022,7 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
             record_hit_inline(next_instr, oparg);
             PyObject *res = PyUnicode_Concat(left, right);
@@ -2040,7 +2040,7 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
             int next_oparg = _Py_OPARG(*next_instr);
             assert(_Py_OPCODE(*next_instr) == STORE_FAST);
@@ -2069,7 +2069,7 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
             record_hit_inline(next_instr, oparg);
             double dsum = ((PyFloatObject *)left)->ob_fval +
@@ -2089,7 +2089,7 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
             record_hit_inline(next_instr, oparg);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
