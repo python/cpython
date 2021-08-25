@@ -1555,7 +1555,7 @@ class PyBuildExt(build_ext):
 
             f = os.path.join(d, "sqlite3.h")
             if os.path.exists(f):
-                if sqlite_setup_debug: print("sqlite: found %s"%f)
+                if sqlite_setup_debug: print(f"sqlite: found {f}")
                 with open(f) as file:
                     incf = file.read()
                 m = re.search(
@@ -1565,17 +1565,16 @@ class PyBuildExt(build_ext):
                     sqlite_version_tuple = tuple([int(x)
                                         for x in sqlite_version.split(".")])
                     if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
-                        # we win!
+                        # We win!
                         if sqlite_setup_debug:
-                            print("%s/sqlite3.h: version %s"%(d, sqlite_version))
+                            print(f"{d}/sqlite3.h: version {sqlite_version}")
                         sqlite_incdir = d
                         break
                     else:
                         if sqlite_setup_debug:
-                            print("%s: version %s is too old, need >= %s"%(d,
-                                        sqlite_version, MIN_SQLITE_VERSION))
+                            print(f"{d}: version {sqlite_version} is too old, need >= {MIN_SQLITE_VERSION}")
                 elif sqlite_setup_debug:
-                    print("sqlite: %s had no SQLITE_VERSION"%(f,))
+                    print(f"sqlite: {f} had no SQLITE_VERSION")
 
         if sqlite_incdir:
             sqlite_dirs_to_check = [
@@ -1784,7 +1783,7 @@ class PyBuildExt(build_ext):
 
             cc = sysconfig.get_config_var('CC').split()[0]
             ret = run_command(
-                      '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
+                      f'"{cc}" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1')
             if ret == 0:
                 extra_compile_args.append('-Wno-unreachable-code')
 
@@ -1816,8 +1815,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_multibytecodec',
                            ['cjkcodecs/multibytecodec.c']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-            self.add(Extension('_codecs_%s' % loc,
-                               ['cjkcodecs/_codecs_%s.c' % loc]))
+            self.add(Extension(f'_codecs_{loc}',
+                               [f'cjkcodecs/_codecs_{loc}.c']))
 
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
@@ -2044,7 +2043,7 @@ class PyBuildExt(build_ext):
             os.makedirs(self.build_temp)
 
         run_command(
-            "file {}/Tk.framework/Tk | grep 'for architecture' > {}".format(F, tmpfile)
+            f"file {F}/Tk.framework/Tk | grep 'for architecture' > {tmpfile}"
         )
         with open(tmpfile) as fp:
             detected_archs = []
@@ -2279,7 +2278,7 @@ class PyBuildExt(build_ext):
             ffi_h = ffi_inc + '/ffi.h'
             if not os.path.exists(ffi_h):
                 ffi_inc = None
-                print('Header file {} does not exist'.format(ffi_h))
+                print(f'Header file {ffi_h} does not exist')
         if ffi_lib is None and ffi_inc:
             for lib_name in ('ffi', 'ffi_pic'):
                 if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
@@ -2656,22 +2655,22 @@ class PyBuildInstallLib(install_lib):
             if os.path.islink(filename): continue
             mode = defaultMode
             if filename.endswith(self.shlib_suffix): mode = sharedLibMode
-            log.info("changing mode of %s to %o", filename, mode)
+            log.info(f"changing mode of {filename} to {mode:o}")
             if not self.dry_run: os.chmod(filename, mode)
 
     def set_dir_modes(self, dirname, mode):
         for dirpath, dirnames, fnames in os.walk(dirname):
             if os.path.islink(dirpath):
                 continue
-            log.info("changing mode of %s to %o", dirpath, mode)
+            log.info(f"changing mode of {dirpath} to {mode:o}")
             if not self.dry_run: os.chmod(dirpath, mode)
 
 
 class PyBuildScripts(build_scripts):
     def copy_scripts(self):
         outfiles, updated_files = build_scripts.copy_scripts(self)
-        fullversion = '-{0[0]}.{0[1]}'.format(sys.version_info)
-        minoronly = '.{0[1]}'.format(sys.version_info)
+        fullversion = f'-{sys.version_info[0]}.{sys.version_info[1]}'
+        minoronly = f'{sys.version_info[1]}'
         newoutfiles = []
         newupdated_files = []
         for filename in outfiles:
