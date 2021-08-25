@@ -82,8 +82,7 @@ typedef struct
      */
     PyObject* text_factory;
 
-    /* Remember callback contexts used by the trace_callback, progress_handler,
-     * and authorizer_cb handlers */
+    // Remember contexts used by the trace, progress, and authoriser callbacks
     callback_context *trace_ctx;
     callback_context *progress_ctx;
     callback_context *authorizer_ctx;
