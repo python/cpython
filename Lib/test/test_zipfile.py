@@ -3196,6 +3196,19 @@ class TestPath(unittest.TestCase):
             file = cls(alpharep).joinpath('some dir').parent
             assert isinstance(file, cls)
 
+    def test_dataoffset(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w', compression=zipfile.ZIP_STORED) as zfp:
+            zfp.writestr("a/b/c.txt", "random data for c")
+            zfp.writestr("a/b/b.txt", "random data for b")
+            zfp.writestr("a/b/c/d.txt", "random data for d")
+            zfp.writestr("a.txt", "random data for a")
+        zip_content = data.getvalue()
+        with zipfile.ZipFile(data, 'r') as zfp:
+            for entry in zfp.infolist():
+                expected_offset = zip_content.index(zfp.read(entry))
+                self.assertEqual(entry.data_offset, expected_offset)
+
 
 if __name__ == "__main__":
     unittest.main()
