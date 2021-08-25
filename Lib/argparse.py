@@ -627,7 +627,7 @@ class HelpFormatter(object):
         for param, value in params.items():
             if f'%({param})s' in expanded_help:
                 expanded_help = expanded_help.replace(f'%({param})s', str(value))
-        return expanded_help
+        return expanded_help.replace('%%','%')
 
     def _iter_indented_subactions(self, action):
         try:

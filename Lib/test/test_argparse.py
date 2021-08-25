@@ -3901,7 +3901,7 @@ class TestHelpVariableExpansion(HelpTestCase):
     parser_signature = Sig(prog='PROG')
     argument_signatures = [
         Sig('-x', type=int,
-            help='x %(prog)s %(default)s %(type)s %'),
+            help='x %(prog)s %(default)s %(type)s %%'),
         Sig('-y', action='store_const', default=42, const='XXX',
             help='y %(prog)s %(default)s %(const)s'),
         Sig('--foo', choices='abc',
