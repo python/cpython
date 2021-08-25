@@ -1,0 +1,1 @@
+Use ignore mode instead strict for headers enconding in order to encode headers with special chars like emojis
