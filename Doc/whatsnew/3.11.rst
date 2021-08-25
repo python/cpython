@@ -176,6 +176,10 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
+* if user try to delete :const:`__debug__`, CPython now raises :exc:`SyntaxError` instead of
+  :exc:`NameError`.
+  (Contributed by Dong-hee Na in :issue:`45000`.)
+
 
 New Modules
 ===========
