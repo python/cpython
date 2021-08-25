@@ -1,2 +1,2 @@
-Raise a :exc:`SyntaxError` when try to deleting `__debug__`. Patch by
+Raise a :exc:`SyntaxError` when try to delete `__debug__`. Patch by
 Dong-hee Na.
