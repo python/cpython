@@ -34,41 +34,34 @@ typedef struct _interpreter_frame {
     PyObject *localsplus[1];
 } InterpreterFrame;
 
-static inline int
-_PyFrame_IsRunnable(InterpreterFrame *f) {
+static inline int _PyFrame_IsRunnable(InterpreterFrame *f) {
     return f->f_state < FRAME_EXECUTING;
 }
 
-static inline int
-_PyFrame_IsExecuting(InterpreterFrame *f) {
+static inline int _PyFrame_IsExecuting(InterpreterFrame *f) {
     return f->f_state == FRAME_EXECUTING;
 }
 
-static inline int
-_PyFrameHasCompleted(InterpreterFrame *f) {
+static inline int _PyFrameHasCompleted(InterpreterFrame *f) {
     return f->f_state > FRAME_EXECUTING;
 }
 
-static inline PyObject **
-_PyFrame_Stackbase(InterpreterFrame *f) {
+static inline PyObject **_PyFrame_Stackbase(InterpreterFrame *f) {
     return f->localsplus + f->f_code->co_nlocalsplus;
 }
 
-static inline PyObject *
-_PyFrame_StackPeek(InterpreterFrame *f) {
+static inline PyObject *_PyFrame_StackPeek(InterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
     return f->localsplus[f->stacktop-1];
 }
 
-static inline PyObject *
-_PyFrame_StackPop(InterpreterFrame *f) {
+static inline PyObject *_PyFrame_StackPop(InterpreterFrame *f) {
     assert(f->stacktop > f->f_code->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
 
-static inline void
-_PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
+static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
     f->localsplus[f->stacktop] = value;
     f->stacktop++;
 }
