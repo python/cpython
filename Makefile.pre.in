@@ -748,29 +748,29 @@ regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
 
 # BEGIN: freezing modules
 
-Python/frozen_importlib__bootstrap.h: Programs/_freeze_module Lib/importlib/_bootstrap.py
+Python/frozen_importlib__bootstrap.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap.py
 	$(srcdir)/Programs/_freeze_module importlib._bootstrap \
 		$(srcdir)/Lib/importlib/_bootstrap.py \
-		$(srcdir)/Lib/importlib/_bootstrap.py.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_importlib__bootstrap.h Lib/importlib/_bootstrap.py.new
+		$(srcdir)/Python/frozen_importlib__bootstrap.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_importlib__bootstrap.h Python/frozen_importlib__bootstrap.h.new
 
-Python/frozen_importlib__bootstrap_external.h: Programs/_freeze_module Lib/importlib/_bootstrap_external.py
+Python/frozen_importlib__bootstrap_external.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap_external.py
 	$(srcdir)/Programs/_freeze_module importlib._bootstrap_external \
 		$(srcdir)/Lib/importlib/_bootstrap_external.py \
-		$(srcdir)/Lib/importlib/_bootstrap_external.py.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_importlib__bootstrap_external.h Lib/importlib/_bootstrap_external.py.new
+		$(srcdir)/Python/frozen_importlib__bootstrap_external.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_importlib__bootstrap_external.h Python/frozen_importlib__bootstrap_external.h.new
 
-Python/frozen_zipimport.h: Programs/_freeze_module Lib/zipimport.py
+Python/frozen_zipimport.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/zipimport.py
 	$(srcdir)/Programs/_freeze_module zipimport \
 		$(srcdir)/Lib/zipimport.py \
-		$(srcdir)/Lib/zipimport.py.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_zipimport.h Lib/zipimport.py.new
+		$(srcdir)/Python/frozen_zipimport.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_zipimport.h Python/frozen_zipimport.h.new
 
-Python/frozen_hello.h: Programs/_freeze_module Tools/freeze/flag.py
+Python/frozen_hello.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Tools/freeze/flag.py
 	$(srcdir)/Programs/_freeze_module hello \
 		$(srcdir)/Tools/freeze/flag.py \
-		$(srcdir)/Tools/freeze/flag.py.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h Tools/freeze/flag.py.new
+		$(srcdir)/Python/frozen_hello.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h Python/frozen_hello.h.new
 
 # END: freezing modules
 

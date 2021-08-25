@@ -370,7 +370,7 @@ def regen_makefile(frozenids, frozen):
         frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
 
         _pyfile = os.path.relpath(pyfile, ROOT_DIR)
-        tmpfile = f'{_pyfile}.new'
+        tmpfile = f'{header}.new'
         rules.append(f'{header}: $(srcdir)/Programs/_freeze_module $(srcdir)/{_pyfile}')
         rules.append(f'\t$(srcdir)/Programs/_freeze_module {frozenid} \\')
         rules.append(f'\t\t$(srcdir)/{_pyfile} \\')
