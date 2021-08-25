@@ -1,6 +1,7 @@
 import inspect
 import types
 import unittest
+import contextlib
 
 from test.support.import_helper import import_module
 asyncio = import_module("asyncio")
@@ -403,6 +404,26 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             return "completed"
 
         result = self.loop.run_until_complete(test_2())
+        self.assertEqual(result, "completed")
+
+        def test_send():
+            p = ait_class()
+            obj = anext(p, "completed")
+            try:
+                with contextlib.closing(obj.__await__()) as g:
+                    g.send(None)
+            except StopIteration:
+                pass
+
+        test_send()
+
+        async def test_throw():
+            p = ait_class()
+            obj = anext(p, "completed")
+            self.assertRaises(SyntaxError, obj.throw, SyntaxError)
+            return "completed"
+
+        result = self.loop.run_until_complete(test_throw())
         self.assertEqual(result, "completed")
 
     def test_async_generator_anext(self):

@@ -371,6 +371,47 @@ anextawaitable_iternext(anextawaitableobject *obj)
     return NULL;
 }
 
+
+static PyObject *
+anextawaitable_send(anextawaitableobject *obj, PyObject *arg) {
+    return PyObject_CallMethod(obj->wrapped, "send", "O", arg);
+}
+
+
+static PyObject *
+anextawaitable_throw(anextawaitableobject *obj, PyObject *arg) {
+    return PyObject_CallMethod(obj->wrapped, "throw", "O", arg);
+}
+
+
+static PyObject *
+anextawaitable_close(anextawaitableobject *obj, PyObject *arg) {
+    return PyObject_CallMethod(obj->wrapped, "close", "O", arg);
+}
+
+
+PyDoc_STRVAR(send_doc,
+"send(arg) -> send 'arg' into the wrapped iterator,\n\
+return next yielded value or raise StopIteration.");
+
+
+PyDoc_STRVAR(throw_doc,
+"throw(typ[,val[,tb]]) -> raise exception in the wrapped iterator,\n\
+return next yielded value or raise StopIteration.");
+
+
+PyDoc_STRVAR(close_doc,
+"close() -> raise GeneratorExit inside generator.");
+
+
+static PyMethodDef anextawaitable_methods[] = {
+    {"send",(PyCFunction)anextawaitable_send, METH_O, send_doc},
+    {"throw",(PyCFunction)anextawaitable_throw, METH_VARARGS, throw_doc},
+    {"close",(PyCFunction)anextawaitable_close, METH_VARARGS, close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+
 static PyAsyncMethods anextawaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
@@ -407,7 +448,7 @@ PyTypeObject _PyAnextAwaitable_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (unaryfunc)anextawaitable_iternext,         /* tp_iternext */
-    0,                                          /* tp_methods */
+    anextawaitable_methods,                     /* tp_methods */
 };
 
 PyObject *
