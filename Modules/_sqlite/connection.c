@@ -1771,22 +1771,35 @@ pysqlite_connection_enter(pysqlite_Connection* self, PyObject* args)
 static PyObject *
 pysqlite_connection_exit(pysqlite_Connection* self, PyObject* args)
 {
-    PyObject* exc_type, *exc_value, *exc_tb;
-    const char* method_name;
-    PyObject* result;
-
+    PyObject *exc_type, *exc_value, *exc_tb;
     if (!PyArg_ParseTuple(args, "OOO", &exc_type, &exc_value, &exc_tb)) {
         return NULL;
     }
 
+    int commit = 0;
+    PyObject *result;
     if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
-        method_name = "commit";
-    } else {
-        method_name = "rollback";
+        commit = 1;
+        result = pysqlite_connection_commit(self, NULL);
+    }
+    else {
+        result = pysqlite_connection_rollback(self, NULL);
     }
 
-    result = PyObject_CallMethod((PyObject*)self, method_name, NULL);
-    if (!result) {
+    if (result == NULL) {
+        if (commit) {
+            /* Commit failed; try to rollback in order to unlock the database.
+             * If rollback also fails, chain the exceptions. */
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            result = pysqlite_connection_rollback(self, NULL);
+            if (result == NULL) {
+                _PyErr_ChainExceptions(exc, val, tb);
+            }
+            else {
+                PyErr_Restore(exc, val, tb);
+            }
+        }
         return NULL;
     }
     Py_DECREF(result);
