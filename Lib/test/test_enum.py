@@ -3132,8 +3132,6 @@ class TestFlag(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
 
-
-
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
 
