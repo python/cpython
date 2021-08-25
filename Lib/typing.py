@@ -1573,7 +1573,7 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
             origin = origin.__origin__
-        super().__init__(origin, origin, name="Annotated")
+        super().__init__(origin, origin)
         self.__metadata__ = metadata
 
     def copy_with(self, params):
@@ -1600,6 +1600,11 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
 
     def __hash__(self):
         return hash((self.__origin__, self.__metadata__))
+
+    def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return 'Annotated'
+        return super().__getattr__(attr)
 
 
 class Annotated:
