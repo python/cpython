@@ -1463,8 +1463,8 @@ float_fromhex(PyTypeObject *type, PyObject *string)
        bits lsb, lsb-2, lsb-3, lsb-4, ... is 1. */
     if ((digit & half_eps) != 0) {
         round_up = 0;
-        if ((digit & (3*half_eps-1)) != 0 ||
-            (half_eps == 8 && (HEX_DIGIT(key_digit+1) & 1) != 0))
+        if ((digit & (3*half_eps-1)) != 0 || (half_eps == 8 &&
+                key_digit+1 < ndigits && (HEX_DIGIT(key_digit+1) & 1) != 0))
             round_up = 1;
         else
             for (i = key_digit-1; i >= 0; i--)
