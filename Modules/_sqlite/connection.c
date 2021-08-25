@@ -77,6 +77,14 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
+
+#define SET_CALLBACK_CONTEXT(ctx_ptr, ctx) \
+do {                                       \
+    callback_context *tmp = ctx_ptr;       \
+    ctx_ptr = ctx;                         \
+    free_callback_context(tmp);            \
+} while (0)
+
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
@@ -169,9 +177,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->thread_ident = PyThread_get_thread_ident();
     self->check_same_thread = check_same_thread;
 
-    self->trace_ctx = NULL;
-    self->progress_ctx = NULL;
-    self->authorizer_ctx = NULL;
+    SET_CALLBACK_CONTEXT(self->trace_ctx, NULL);
+    SET_CALLBACK_CONTEXT(self->progress_ctx, NULL);
+    SET_CALLBACK_CONTEXT(self->authorizer_ctx, NULL);
 
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
@@ -1051,14 +1059,6 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     return 0;
 #endif
 }
-
-
-#define SET_CALLBACK_CONTEXT(ctx_ptr, ctx) \
-do {                                       \
-    callback_context *tmp = ctx_ptr;       \
-    ctx_ptr = ctx;                         \
-    free_callback_context(tmp);            \
-} while (0)
 
 /*[clinic input]
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
