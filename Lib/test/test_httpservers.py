@@ -126,6 +126,14 @@ class BaseHTTPServerTestCase(BaseTestCase):
             body = self.headers['x-special-incoming'].encode('utf-8')
             self.wfile.write(body)
 
+        def do_LATINONEEMOJIHEADER(self):
+            self.send_response(999)
+            self.send_header('X-Special', 'Emoji Dängerous Mind🛒')
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            body = self.headers['x-special-incoming'].encode('utf-8')
+            self.wfile.write(body)
+
         def do_SEND_ERROR(self):
             self.send_error(int(self.path[1:]))
 
@@ -242,6 +250,14 @@ class BaseHTTPServerTestCase(BaseTestCase):
         })
         res = self.con.getresponse()
         self.assertEqual(res.getheader('X-Special'), 'Dängerous Mind')
+        self.assertEqual(res.read(), 'Ärger mit Unicode'.encode('utf-8'))
+
+    def test_latin1_header_with_emoji(self):
+        self.con.request('LATINONEEMOJIHEADER', '/', headers={
+            'X-Special-Incoming':       'Ärger mit Unicode'
+        })
+        res = self.con.getresponse()
+        self.assertEqual(res.getheader('X-Special'), 'Emoji Dängerous Mind')
         self.assertEqual(res.read(), 'Ärger mit Unicode'.encode('utf-8'))
 
     def test_error_content_length(self):
