@@ -27,23 +27,24 @@ MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 # These are modules that get frozen.
 FROZEN = [
     # See parse_frozen_spec() for the format.
-    # The comments are added to Python/frozen.c at the relative position.
     # In cases where the frozenid is duplicated, the first one is re-used.
-
-    '# [importlib]',
-    'importlib._bootstrap : _frozen_importlib',
-    'importlib._bootstrap_external : _frozen_importlib_external',
-    'zipimport',
-
-    '# [Test module]',
-    'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
-    '# Test package (negative size indicates package-ness)',
-    'hello : <__phello__>',
-    'hello : __phello__.spam',
+    ('importlib', [
+        'importlib._bootstrap : _frozen_importlib',
+        'importlib._bootstrap_external : _frozen_importlib_external',
+        'zipimport',
+        ]),
+    ('Test module', [
+        'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
+        'hello : <__phello__>',
+        'hello : __phello__.spam',
+        ]),
 ]
 
 
-def parse_frozen_spec(spec, known=None):
+#######################################
+# specs
+
+def parse_frozen_spec(rawspec, knownids=None, section=None):
     """Yield (frozenid, pyfile, modname, ispkg) for the corresponding modules.
 
     Supported formats:
@@ -71,83 +72,131 @@ def parse_frozen_spec(spec, known=None):
     Also, if "modname" has brackets then "frozenid" should not,
     and "pyfile" should have been provided..
     """
-    frozenid, _, remainder = spec.partition(':')
+    frozenid, _, remainder = rawspec.partition(':')
     modname, _, pyfile = remainder.partition('=')
     frozenid = frozenid.strip()
     modname = modname.strip()
     pyfile = pyfile.strip()
 
+    submodules = None
     if modname.startswith('<') and modname.endswith('>'):
-        assert check_modname(frozenid), spec
+        assert check_modname(frozenid), rawspec
         modname = modname[1:-1]
-        assert check_modname(modname), spec
-        if known and frozenid in known:
-            assert not pyfile, spec
+        assert check_modname(modname), rawspec
+        if frozenid in knownids:
+            pass
         elif pyfile:
-            assert not os.path.isdir(pyfile), spec
+            assert not os.path.isdir(pyfile), rawspec
         else:
             pyfile = _resolve_module(frozenid, ispkg=False)
-        yield frozenid, pyfile or None, modname, True
+        ispkg = True
     elif pyfile:
-        assert check_modname(frozenid), spec
-        assert not known or frozenid not in known, spec
-        assert check_modname(modname), spec
-        assert not os.path.isdir(pyfile), spec
-        yield frozenid, pyfile, modname, False
-    elif known and frozenid in known:
-        assert check_modname(frozenid), spec
-        assert check_modname(modname), spec
-        yield frozenid, None, modname, False
+        assert check_modname(frozenid), rawspec
+        assert not knownids or frozenid not in knownids, rawspec
+        assert check_modname(modname), rawspec
+        assert not os.path.isdir(pyfile), rawspec
+        ispkg = False
+    elif knownids and frozenid in knownids:
+        assert check_modname(frozenid), rawspec
+        assert check_modname(modname), rawspec
+        ispkg = False
     else:
-        assert not modname or check_modname(modname), spec
+        assert not modname or check_modname(modname), rawspec
         resolved = iter(resolve_modules(frozenid))
         frozenid, pyfile, ispkg = next(resolved)
-        yield frozenid, pyfile, modname or frozenid, ispkg
+        if not modname:
+            modname = frozenid
         if ispkg:
-            pkgid = frozenid
-            pkgname = modname
-            for frozenid, pyfile, ispkg in resolved:
-                assert not known or frozenid not in known, (frozenid, spec)
-                if pkgname:
-                    modname = frozenid.replace(pkgid, pkgname, 1)
-                else:
-                    modname = frozenid
-                yield frozenid, pyfile, modname, ispkg
+            def iter_subs():
+                pkgid = frozenid
+                pkgname = modname
+                for frozenid, pyfile, ispkg in resolved:
+                    assert not knownids or frozenid not in knownids, (frozenid, rawspec)
+                    if pkgname:
+                        modname = frozenid.replace(pkgid, pkgname, 1)
+                    else:
+                        modname = frozenid
+                    yield frozenid, section, pyfile, modname, ispkg
+            submodules = iter_subs()
+
+    spec = (frozenid, pyfile or None, modname, ispkg, section)
+    return spec, submodules
 
 
-def expand_frozen(destdir=MODULES_DIR):
+def parse_frozen_specs(rawspecs=FROZEN):
+    seen = set()
+    for section, _specs in rawspecs:
+        for spec in _parse_frozen_specs(_specs, section, seen):
+            frozenid = spec[0]
+            yield spec
+            seen.add(frozenid)
+
+
+def _parse_frozen_specs(rawspecs, section, seen):
+    for rawspec in rawspecs:
+        spec, subs = parse_frozen_spec(rawspec, seen, section)
+        yield spec
+        for spec in subs or ():
+            yield spec
+
+
+def resolve_frozen_file(spec, destdir=MODULES_DIR):
+    if isinstance(spec, str):
+        modname = spec
+    else:
+        _, frozenid, _, _, _= spec
+        modname = frozenid
+    # We use a consistent naming convention for all frozen modules.
+    return os.path.join(destdir, 'frozen_' + modname.replace('.', '_')) + '.h'
+
+
+def resolve_frozen_files(specs, destdir=MODULES_DIR):
     frozen = {}
     frozenids = []
-    headers = []
-    definitions = []
-    for spec in FROZEN:
-        if spec.startswith('#'):
-            comment = spec[2:]
-            if comment.startswith('['):
-                line = f'/* {comment[1:-1]} */'
-                headers.append(line)
-                definitions.extend(['', line])
+    lastsection = None
+    for spec in specs:
+        frozenid, pyfile, *_, section = spec
+        if frozenid in frozen:
+            if section is None:
+                lastsection = None
             else:
-                definitions.append(f'/* {comment} */')
-        else:
-            for frozenid, pyfile, modname, ispkg in parse_frozen_spec(spec, frozen):
-                if frozenid not in frozen:
-                    assert pyfile, spec
-                    frozenfile = _resolve_frozen(frozenid, destdir)
-#                    assert frozenfile.startswith(destdir), (frozenfile, destdir)
-                    frozen[frozenid] = (pyfile, frozenfile)
-                    frozenids.append(frozenid)
-                else:
-                    assert not pyfile, spec
+                assert section == lastsection
+            continue
+        lastsection = section
+        frozenfile = resolve_frozen_file(frozenid, destdir)
+        frozen[frozenid] = (pyfile, frozenfile)
+        frozenids.append(frozenid)
+    return frozen, frozenids
 
-                header = os.path.relpath(frozenfile, destdir)
-                if header not in headers:
-                    headers.append(header)
 
-                definition = (modname, frozenid, ispkg)
-                definitions.append(definition)
-    return frozen, frozenids, headers, definitions
+#def expand_frozen(destdir=MODULES_DIR):
+#    frozen = {}
+#    frozenids = []
+#    headers = []
+#    definitions = []
+#    for section, specs in FROZEN:
+#        for spec in specs:
+#            for frozenid, pyfile, modname, ispkg in parse_frozen_spec(spec, frozen):
+#                if frozenid not in frozen:
+#                    assert pyfile, spec
+#                    frozenfile = _resolve_frozen(frozenid, destdir)
+##                    assert frozenfile.startswith(destdir), (frozenfile, destdir)
+#                    frozen[frozenid] = (pyfile, frozenfile)
+#                    frozenids.append(frozenid)
+#                else:
+#                    assert not pyfile, spec
+#
+#                header = os.path.relpath(frozenfile, destdir)
+#                if header not in headers:
+#                    headers.append((section, header))
+#
+#                definition = (section, modname, frozenid, ispkg)
+#                definitions.append(definition)
+#    return frozen, frozenids, headers, definitions
 
+
+#######################################
+# generic helpers
 
 def resolve_modules(modname, pyfile=None):
     if modname.startswith('<') and modname.endswith('>'):
@@ -247,11 +296,6 @@ def _resolve_module(modname, pathentry=STDLIB_DIR, ispkg=False):
     return os.path.join(pathentry, *modname.split('.')) + '.py'
 
 
-def _resolve_frozen(modname, destdir):
-    # We use a consistent naming convention for frozen modules.
-    return os.path.join(destdir, 'frozen_' + modname.replace('.', '_')) + '.h'
-
-
 #######################################
 # freezing modules
 
@@ -293,23 +337,32 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(headers, definitions):
+def regen_frozen(specs, dest=MODULES_DIR):
+    if isinstance(dest, str):
+        frozen, frozenids = resolve_frozen_files(specs, destdir)
+    else:
+        frozenids, frozen = dest
+
     headerlines = []
-    for row in headers:
-        assert isinstance(row, str), row
-        if not row.startswith('/*'):
-            assert row.endswith('.h')
-            assert os.path.basename(row) == row, row
-            row = f'#include "{row}"'
-        headerlines.append(row)
+    parentdir = os.path.dirname(FROZEN_FILE)
+    for frozenid in frozenids:
+        # Adding a comment to separate sections here doesn't add much,
+        # so we don't.
+        _, frozenfile = frozen[frozenid]
+        header = os.path.relpath(frozenfile, parentdir)
+        headerlines.append(f'#include "{header}"')
 
     deflines = []
     indent = '    '
-    for definition in definitions:
-        if isinstance(definition, str):
-            deflines.append(definition)
-            continue
-        modname, frozenid, ispkg = definition
+    lastsection = None
+    for spec in specs:
+        frozenid, _, modname, ispkg, section = spec
+        if section != lastsection:
+            if lastsection is not None:
+                deflines.append('')
+            deflines.append(f'/* {section} */')
+        lastsection = section
+
         # This matches what we do in Programs/_freeze_module.c:
         name = frozenid.replace('.', '_')
         symbol = '_Py_M__' + name
@@ -351,20 +404,15 @@ def regen_frozen(headers, definitions):
         outfile.writelines(lines)
 
 
-def regen_makefile(headers, destdir=MODULES_DIR):
-    reldir = os.path.relpath(destdir, ROOT_DIR)
-    assert destdir.endswith(reldir), destdir
-
+def regen_makefile(frozenids, frozen):
     frozenfiles = []
-    for row in headers:
-        if not row.startswith('/*'):
-            header = row
-            assert header.endswith('.h'), header
-            assert os.path.basename(header) == header, header
-            relfile = f'{reldir}/{header}'.replace('\\', '/')
-            frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
-            cgfile = relfile.replace("/frozen", "/codegen")
-            cgfile = cgfile[:-2] + ".o"
+    for frozenid in frozenids:
+        _pyfile, frozenfile = frozen[frozenid]
+        header = os.path.relpath(frozenfile, ROOT_DIR)
+        # Adding a comment to separate sections here doesn't add much,
+        # so we don't.
+        relfile = header.replace('\\', '/')
+        frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
@@ -394,7 +442,9 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
 
 
 def main(*, regen=True):
-    frozen, frozenids, headers, definitions = expand_frozen(MODULES_DIR)
+    # Expand the raw specs, preserving order.
+    specs = list(parse_frozen_specs())
+    frozen, frozenids = resolve_frozen_files(specs, MODULES_DIR)
 
     # First, freeze the modules.
     # (We use a consistent order: that of FROZEN above.)
@@ -404,8 +454,8 @@ def main(*, regen=True):
 
     if regen:
         # Then regen frozen.c and Makefile.pre.in.
-        regen_frozen(headers, definitions)
-        regen_makefile(headers, MODULES_DIR)
+        regen_frozen(specs, (frozenids, frozen))
+        regen_makefile(frozenids, frozen)
 
 
 if __name__ == '__main__':
