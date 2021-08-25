@@ -1807,6 +1807,7 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
                 _PyErr_ChainExceptions(exc, val, tb);
             }
             else {
+                Py_DECREF(result);
                 PyErr_Restore(exc, val, tb);
             }
         }
