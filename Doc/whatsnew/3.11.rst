@@ -169,6 +169,14 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
 
+Other CPython Implementation Changes
+====================================
+
+* Special methods :meth:`complex.__complex__` and :meth:`bytes.__bytes__` are implemented to
+  support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
+  (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
+
+
 New Modules
 ===========
 
@@ -395,3 +403,7 @@ Removed
   :func:`~gettext.install` are also removed, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
+
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the default ``None``
+  value), is now deprecated.

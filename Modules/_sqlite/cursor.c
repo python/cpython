@@ -53,7 +53,6 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
-    Py_CLEAR(self->next_row);
     Py_CLEAR(self->row_cast_map);
 
     Py_INCREF(Py_None);
@@ -94,7 +93,6 @@ cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
     Py_VISIT(self->lastrowid);
     Py_VISIT(self->row_factory);
     Py_VISIT(self->statement);
-    Py_VISIT(self->next_row);
     return 0;
 }
 
@@ -107,8 +105,6 @@ cursor_clear(pysqlite_Cursor *self)
     Py_CLEAR(self->lastrowid);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->statement);
-    Py_CLEAR(self->next_row);
-
     return 0;
 }
 
@@ -488,8 +484,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     self->locked = 1;
     self->reset = 0;
 
-    Py_CLEAR(self->next_row);
-
     if (multiple) {
         if (PyIter_Check(second_argument)) {
             /* iterator */
@@ -646,11 +640,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             }
         }
 
-        if (rc == SQLITE_ROW) {
-            self->next_row = _pysqlite_fetch_one_row(self);
-            if (self->next_row == NULL)
-                goto error;
-        } else if (rc == SQLITE_DONE && !multiple) {
+        if (rc == SQLITE_DONE && !multiple) {
             Py_CLEAR(self->statement);
         }
 
@@ -805,10 +795,6 @@ error:
 static PyObject *
 pysqlite_cursor_iternext(pysqlite_Cursor *self)
 {
-    PyObject* next_row_tuple;
-    PyObject* next_row;
-    int rc;
-
     if (!check_cursor(self)) {
         return NULL;
     }
@@ -819,47 +805,39 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         return NULL;
     }
 
-    if (!self->next_row) {
+    if (self->statement == NULL) {
+        return NULL;
+    }
+
+    sqlite3_stmt *stmt = self->statement->st;
+    assert(stmt != NULL);
+    if (sqlite3_data_count(stmt) == 0) {
         Py_CLEAR(self->statement);
         return NULL;
     }
 
-    next_row_tuple = self->next_row;
-    assert(next_row_tuple != NULL);
-    self->next_row = NULL;
-
-    if (self->row_factory != Py_None) {
-        next_row = PyObject_CallFunction(self->row_factory, "OO", self, next_row_tuple);
-        if (next_row == NULL) {
-            self->next_row = next_row_tuple;
-            return NULL;
-        }
-        Py_DECREF(next_row_tuple);
-    } else {
-        next_row = next_row_tuple;
+    PyObject *row = _pysqlite_fetch_one_row(self);
+    if (row == NULL) {
+        return NULL;
     }
-
-    if (self->statement) {
-        rc = pysqlite_step(self->statement->st);
-        if (PyErr_Occurred()) {
-            Py_DECREF(next_row);
-            return NULL;
-        }
-        if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-            Py_DECREF(next_row);
-            _pysqlite_seterror(self->connection->state, self->connection->db);
-            return NULL;
-        }
-
-        if (rc == SQLITE_ROW) {
-            self->next_row = _pysqlite_fetch_one_row(self);
-            if (self->next_row == NULL) {
-                return NULL;
-            }
-        }
+    int rc = pysqlite_step(stmt);
+    if (rc == SQLITE_DONE) {
+        Py_CLEAR(self->statement);
     }
-
-    return next_row;
+    else if (rc != SQLITE_ROW) {
+        (void)_pysqlite_seterror(self->connection->state,
+                                 self->connection->db);
+        Py_DECREF(row);
+        return NULL;
+    }
+    if (!Py_IsNone(self->row_factory)) {
+        PyObject *factory = self->row_factory;
+        PyObject *args[] = { (PyObject *)self, row, };
+        PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
+        Py_DECREF(row);
+        row = new_row;
+    }
+    return row;
 }
 
 /*[clinic input]

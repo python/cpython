@@ -1533,21 +1533,21 @@ class ProtocolTests(BaseTestCase):
 
     def test_supports_complex(self):
 
-        # Note: complex itself doesn't have __complex__.
         class C:
             def __complex__(self):
                 return 0j
 
+        self.assertIsSubclass(complex, typing.SupportsComplex)
         self.assertIsSubclass(C, typing.SupportsComplex)
         self.assertNotIsSubclass(str, typing.SupportsComplex)
 
     def test_supports_bytes(self):
 
-        # Note: bytes itself doesn't have __bytes__.
         class B:
             def __bytes__(self):
                 return b''
 
+        self.assertIsSubclass(bytes, typing.SupportsBytes)
         self.assertIsSubclass(B, typing.SupportsBytes)
         self.assertNotIsSubclass(str, typing.SupportsBytes)
 
