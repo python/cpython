@@ -360,11 +360,12 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-int pysqlite_statement_reset(pysqlite_Statement* self)
+void
+pysqlite_statement_reset(pysqlite_Statement *self)
 {
     sqlite3_stmt *stmt = self->st;
     if (stmt == NULL || self->in_use == 0) {
-        return SQLITE_OK;
+        return;
     }
 
 #if SQLITE_VERSION_NUMBER >= 3020000
@@ -372,7 +373,7 @@ int pysqlite_statement_reset(pysqlite_Statement* self)
      * called at least once). Third parameter is non-zero in order to reset the
      * run count. */
     if (sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, 1) == 0) {
-        return SQLITE_OK;
+        return;
     }
 #endif
 
@@ -384,7 +385,6 @@ int pysqlite_statement_reset(pysqlite_Statement* self)
     if (rc == SQLITE_OK) {
         self->in_use = 0;
     }
-    return rc;
 }
 
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
