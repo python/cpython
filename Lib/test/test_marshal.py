@@ -344,6 +344,31 @@ class BugsTestCase(unittest.TestCase):
         for i in range(len(data)):
             self.assertRaises(EOFError, marshal.loads, data[0: i])
 
+    def test_deterministic_sets(self):
+        # bpo-37596: To support reproducible builds, sets and frozensets need to
+        # have their elements serialized in a consistent order (even when they
+        # have been scrambled by hash randomization):
+        for kind in ("set", "frozenset"):
+            for elements in (
+                "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
+                # Also test for bad interactions with backreferencing:
+                "('string', 1), ('string', 2), ('string', 3)",
+            ):
+                s = f"{kind}([{elements}])"
+                with self.subTest(s):
+                    # First, make sure that our test case still has different
+                    # orders under hash seeds 0 and 1. If this check fails, we
+                    # need to update this test with different elements:
+                    args = ["-c", f"print({s})"]
+                    _, repr_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
+                    _, repr_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
+                    self.assertNotEqual(repr_0, repr_1)
+                    # Then, perform the actual test:
+                    args = ["-c", f"import marshal; print(marshal.dumps({s}))"]
+                    _, dump_0, _ = assert_python_ok(*args, PYTHONHASHSEED="0")
+                    _, dump_1, _ = assert_python_ok(*args, PYTHONHASHSEED="1")
+                    self.assertEqual(dump_0, dump_1)
+
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
 
