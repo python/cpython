@@ -42,8 +42,7 @@ medium_value(PyLongObject *x)
 
 static inline int is_medium_int(stwodigits x)
 {
-    /* We have to take care here to make sure that we are
-     * comparing unsigned values. */
+    /* Take care that we are comparing unsigned values. */
     twodigits x_plus_mask = ((twodigits)x) + PyLong_MASK;
     return x_plus_mask < ((twodigits)PyLong_MASK) + PyLong_BASE;
 }
