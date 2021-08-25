@@ -284,10 +284,10 @@ connection_dealloc(pysqlite_Connection *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tp->tp_clear((PyObject *)self);
-    free_callback_contexts(self);
 
     /* Clean up if user has not called .close() explicitly. */
     connection_close(self);
+    free_callback_contexts(self);
 
     tp->tp_free(self);
     Py_DECREF(tp);
