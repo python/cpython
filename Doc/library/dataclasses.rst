@@ -205,7 +205,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING):
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that

@@ -1533,21 +1533,21 @@ class ProtocolTests(BaseTestCase):
 
     def test_supports_complex(self):
 
-        # Note: complex itself doesn't have __complex__.
         class C:
             def __complex__(self):
                 return 0j
 
+        self.assertIsSubclass(complex, typing.SupportsComplex)
         self.assertIsSubclass(C, typing.SupportsComplex)
         self.assertNotIsSubclass(str, typing.SupportsComplex)
 
     def test_supports_bytes(self):
 
-        # Note: bytes itself doesn't have __bytes__.
         class B:
             def __bytes__(self):
                 return b''
 
+        self.assertIsSubclass(bytes, typing.SupportsBytes)
         self.assertIsSubclass(B, typing.SupportsBytes)
         self.assertNotIsSubclass(str, typing.SupportsBytes)
 
@@ -2424,6 +2424,22 @@ class GenericTests(BaseTestCase):
         self.assertEqual(c.from_b, 'b')
         self.assertEqual(c.from_c, 'c')
 
+    def test_subclass_special_form(self):
+        for obj in (
+            ClassVar[int],
+            Final[int],
+            Union[int, float],
+            Optional[int],
+            Literal[1, 2],
+            Concatenate[int, ParamSpec("P")],
+            TypeGuard[int],
+        ):
+            with self.subTest(msg=obj):
+                with self.assertRaisesRegex(
+                        TypeError, f'^{re.escape(f"Cannot subclass {obj!r}")}$'
+                ):
+                    class Foo(obj):
+                        pass
 
 class ClassVarTests(BaseTestCase):
 
@@ -4913,7 +4929,6 @@ class SpecialAttrsTests(BaseTestCase):
                 self.assertEqual(cls.__name__, name, str(cls))
                 self.assertEqual(cls.__qualname__, name, str(cls))
                 self.assertEqual(cls.__module__, 'typing', str(cls))
-                self.assertEqual(getattr(cls, '_name', name), name, str(cls))
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     s = pickle.dumps(cls, proto)
                     loaded = pickle.loads(s)
