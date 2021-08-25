@@ -978,6 +978,7 @@ fail:
     return 0;
 
 }
+
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
@@ -1045,7 +1046,6 @@ success:
     return 0;
 }
 
-
 int
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
@@ -1084,19 +1084,6 @@ success:
     STAT_INC(BINARY_SUBSCR, specialization_success);
     assert(!PyErr_Occurred());
     return 0;
-}
-
-
-void
-specialize_unicode_add(_Py_CODEUNIT *instr)
-{
-    int next_opcode = _Py_OPCODE(instr[1]);
-    if (next_opcode == STORE_FAST) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
-    }
-    else {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
-    }
 }
 
 int
