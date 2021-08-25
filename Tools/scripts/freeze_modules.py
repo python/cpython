@@ -297,26 +297,6 @@ def _resolve_module(modname, pathentry=STDLIB_DIR, ispkg=False):
 
 
 #######################################
-# freezing modules
-
-def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
-    """Generate the frozen module .h file for the given module."""
-    for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
-        frozenfile = _resolve_frozen(modname, destdir)
-        _freeze_module(modname, pyfile, frozenfile)
-
-
-def _freeze_module(frozenid, pyfile, frozenfile):
-    tmpfile = frozenfile + '.new'
-
-    argv = [TOOL, frozenid, pyfile, tmpfile]
-    print('#', ' '.join(argv))
-    subprocess.run(argv, check=True)
-
-    os.replace(tmpfile, frozenfile)
-
-
-#######################################
 # regenerating dependent files
 
 def find_marker(lines, marker, file):
@@ -406,13 +386,24 @@ def regen_frozen(specs, dest=MODULES_DIR):
 
 def regen_makefile(frozenids, frozen):
     frozenfiles = []
+    rules = ['']
     for frozenid in frozenids:
-        _pyfile, frozenfile = frozen[frozenid]
+        pyfile, frozenfile = frozen[frozenid]
         header = os.path.relpath(frozenfile, ROOT_DIR)
         # Adding a comment to separate sections here doesn't add much,
         # so we don't.
         relfile = header.replace('\\', '/')
         frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
+
+        _pyfile = os.path.relpath(pyfile, ROOT_DIR)
+        tmpfile = f'{_pyfile}.new'
+        rules.append(f'{header}: Programs/_freeze_module {_pyfile}')
+        rules.append(f'\t$(srcdir)/Programs/_freeze_module {frozenid} \\')
+        rules.append(f'\t\t$(srcdir)/{_pyfile} \\')
+        rules.append(f'\t\t$(srcdir)/{tmpfile}')
+        rules.append(f'\t$(UPDATE_FILE) $(srcdir)/{header} {tmpfile}')
+        rules.append('')
+
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
@@ -424,7 +415,34 @@ def regen_makefile(frozenids, frozen):
             frozenfiles,
             MAKEFILE,
         )
+        lines = replace_block(
+            lines,
+            "# BEGIN: freezing modules",
+            "# END: freezing modules",
+            rules,
+            MAKEFILE,
+        )
         outfile.writelines(lines)
+
+
+#######################################
+# freezing modules
+
+def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
+    """Generate the frozen module .h file for the given module."""
+    for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
+        frozenfile = _resolve_frozen(modname, destdir)
+        _freeze_module(modname, pyfile, frozenfile)
+
+
+def _freeze_module(frozenid, pyfile, frozenfile):
+    tmpfile = frozenfile + '.new'
+
+    argv = [TOOL, frozenid, pyfile, tmpfile]
+    print('#', ' '.join(argv))
+    subprocess.run(argv, check=True)
+
+    os.replace(tmpfile, frozenfile)
 
 
 #######################################
@@ -434,6 +452,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     import argparse
     parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument('--no-regen', dest='regen', action='store_false')
+    parser.add_argument('--no-freeze', dest='freeze', action='store_false')
 
     args = parser.parse_args(argv)
     ns = vars(args)
@@ -441,21 +460,19 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
     return ns
 
 
-def main(*, regen=True):
+def main(*, regen=True, freeze=True):
     # Expand the raw specs, preserving order.
     specs = list(parse_frozen_specs())
     frozen, frozenids = resolve_frozen_files(specs, MODULES_DIR)
 
-    # First, freeze the modules.
     # (We use a consistent order: that of FROZEN above.)
-    for frozenid in frozenids:
-        pyfile, frozenfile = frozen[frozenid]
-        _freeze_module(frozenid, pyfile, frozenfile)
-
     if regen:
-        # Then regen frozen.c and Makefile.pre.in.
         regen_frozen(specs, (frozenids, frozen))
         regen_makefile(frozenids, frozen)
+    if freeze:
+        for frozenid in frozenids:
+            pyfile, frozenfile = frozen[frozenid]
+            _freeze_module(frozenid, pyfile, frozenfile)
 
 
 if __name__ == '__main__':

@@ -743,8 +743,36 @@ Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
 Tools/scripts/freeze_modules.py: Programs/_freeze_module
 
 .PHONY: regen-frozen
-regen-frozen: Tools/scripts/freeze_modules.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py --no-freeze
+
+# BEGIN: freezing modules
+
+Python/frozen_importlib__bootstrap.h: Programs/_freeze_module Lib/importlib/_bootstrap.py
+	$(srcdir)/Programs/_freeze_module importlib._bootstrap \
+		$(srcdir)/Lib/importlib/_bootstrap.py \
+		$(srcdir)/Lib/importlib/_bootstrap.py.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_importlib__bootstrap.h Lib/importlib/_bootstrap.py.new
+
+Python/frozen_importlib__bootstrap_external.h: Programs/_freeze_module Lib/importlib/_bootstrap_external.py
+	$(srcdir)/Programs/_freeze_module importlib._bootstrap_external \
+		$(srcdir)/Lib/importlib/_bootstrap_external.py \
+		$(srcdir)/Lib/importlib/_bootstrap_external.py.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_importlib__bootstrap_external.h Lib/importlib/_bootstrap_external.py.new
+
+Python/frozen_zipimport.h: Programs/_freeze_module Lib/zipimport.py
+	$(srcdir)/Programs/_freeze_module zipimport \
+		$(srcdir)/Lib/zipimport.py \
+		$(srcdir)/Lib/zipimport.py.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_zipimport.h Lib/zipimport.py.new
+
+Python/frozen_hello.h: Programs/_freeze_module Tools/freeze/flag.py
+	$(srcdir)/Programs/_freeze_module hello \
+		$(srcdir)/Tools/freeze/flag.py \
+		$(srcdir)/Tools/freeze/flag.py.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h Tools/freeze/flag.py.new
+
+# END: freezing modules
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
