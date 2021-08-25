@@ -169,32 +169,6 @@ def resolve_frozen_files(specs, destdir=MODULES_DIR):
     return frozen, frozenids
 
 
-#def expand_frozen(destdir=MODULES_DIR):
-#    frozen = {}
-#    frozenids = []
-#    headers = []
-#    definitions = []
-#    for section, specs in FROZEN:
-#        for spec in specs:
-#            for frozenid, pyfile, modname, ispkg in parse_frozen_spec(spec, frozen):
-#                if frozenid not in frozen:
-#                    assert pyfile, spec
-#                    frozenfile = _resolve_frozen(frozenid, destdir)
-##                    assert frozenfile.startswith(destdir), (frozenfile, destdir)
-#                    frozen[frozenid] = (pyfile, frozenfile)
-#                    frozenids.append(frozenid)
-#                else:
-#                    assert not pyfile, spec
-#
-#                header = os.path.relpath(frozenfile, destdir)
-#                if header not in headers:
-#                    headers.append((section, header))
-#
-#                definition = (section, modname, frozenid, ispkg)
-#                definitions.append(definition)
-#    return frozen, frozenids, headers, definitions
-
-
 #######################################
 # generic helpers
 
