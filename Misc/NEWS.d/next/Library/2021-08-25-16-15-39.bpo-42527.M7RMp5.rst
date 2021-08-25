@@ -1,0 +1,1 @@
+Use utf-8 instead of latin-1
