@@ -2264,6 +2264,10 @@ forbidden_name(struct compiler *c, identifier name, expr_context_ty ctx)
         compiler_error(c, "cannot assign to __debug__");
         return 1;
     }
+    if (ctx == Del && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        compiler_error(c, "cannot delete __debug__");
+        return 1;
+    }
     return 0;
 }
 
