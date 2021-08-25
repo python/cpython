@@ -1,0 +1,2 @@
+Ensure that :class:`set` and :class:`frozenset` objects are always
+:mod:`marshalled <marshal>` reproducibly.
