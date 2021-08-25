@@ -107,16 +107,16 @@ def parse_frozen_spec(rawspec, knownids=None, section=None):
         if not modname:
             modname = frozenid
         if ispkg:
+            pkgid = frozenid
+            pkgname = modname
             def iter_subs():
-                pkgid = frozenid
-                pkgname = modname
                 for frozenid, pyfile, ispkg in resolved:
                     assert not knownids or frozenid not in knownids, (frozenid, rawspec)
                     if pkgname:
                         modname = frozenid.replace(pkgid, pkgname, 1)
                     else:
                         modname = frozenid
-                    yield frozenid, section, pyfile, modname, ispkg
+                    yield frozenid, pyfile, modname, ispkg, section
             submodules = iter_subs()
 
     spec = (frozenid, pyfile or None, modname, ispkg, section)
