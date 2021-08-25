@@ -624,6 +624,19 @@ error:
     return NULL;
 }
 
+static void
+print_or_clear_traceback(callback_context *ctx)
+{
+    assert(ctx != NULL);
+    assert(ctx->state != NULL);
+    if (ctx->state->enable_callback_tracebacks) {
+        PyErr_Print();
+    }
+    else {
+        PyErr_Clear();
+    }
+}
+
 // Checks the Python exception and sets the appropriate SQLite error code.
 static void
 set_sqlite_error(sqlite3_context *context, const char *msg)
@@ -639,14 +652,7 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
         sqlite3_result_error(context, msg, -1);
     }
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-    assert(ctx != NULL);
-    assert(ctx->state != NULL);
-    if (ctx->state->enable_callback_tracebacks) {
-        PyErr_Print();
-    }
-    else {
-        PyErr_Clear();
-    }
+    print_or_clear_traceback(ctx);
 }
 
 static void
@@ -952,26 +958,14 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
                                 dbname, access_attempt_source);
 
     if (ret == NULL) {
-        assert(ctx->state != NULL);
-        if (ctx->state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
-
+        print_or_clear_traceback(ctx);
         rc = SQLITE_DENY;
     }
     else {
         if (PyLong_Check(ret)) {
             rc = _PyLong_AsInt(ret);
             if (rc == -1 && PyErr_Occurred()) {
-                if (ctx->state->enable_callback_tracebacks) {
-                    PyErr_Print();
-                }
-                else {
-                    PyErr_Clear();
-                }
+                print_or_clear_traceback(ctx);
                 rc = SQLITE_DENY;
             }
         }
@@ -1006,13 +1000,7 @@ static int _progress_handler(void* user_arg)
         Py_DECREF(ret);
     }
     if (rc < 0) {
-        assert(ctx->state != NULL);
-        if (ctx->state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
+        print_or_clear_traceback(ctx);
     }
 
     PyGILState_Release(gilstate);
@@ -1055,13 +1043,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     if (ret) {
         Py_DECREF(ret);
     } else {
-        assert(ctx->state != NULL);
-        if (ctx->state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
+        print_or_clear_traceback(ctx);
     }
 
     PyGILState_Release(gilstate);
