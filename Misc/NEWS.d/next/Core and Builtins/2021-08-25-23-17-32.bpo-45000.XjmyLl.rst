@@ -1,2 +1,2 @@
-Raise a :exc:`SyntaxError` when try to delete :const:`__debug__`.
+A :exc:`SyntaxError` is now raised when trying to delete :const:`__debug__`.
 Patch by Dong-hee Na.
