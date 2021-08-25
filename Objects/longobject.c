@@ -40,9 +40,13 @@ medium_value(PyLongObject *x)
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
-/* To be valid the type of x must cover -PyLong_BASE to +PyLong_BASE.
-  int, long, Py_ssize_t are all ok */
-#define IS_MEDIUM_INT(x) (((twodigits)x)+PyLong_MASK <= 2*PyLong_MASK)
+static inline int is_medium_int(stwodigits x)
+{
+    /* We have to take care here to make sure that we are
+     * comparing unsigned values. */
+    twodigits x_plus_mask = ((twodigits)x) + PyLong_MASK;
+    return x_plus_mask < ((twodigits)PyLong_MASK) + PyLong_BASE;
+}
 
 static PyObject *
 get_small_int(sdigit ival)
@@ -166,7 +170,7 @@ static PyObject *
 _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
-    assert(IS_MEDIUM_INT(x));
+    assert(is_medium_int(x));
     /* We could use a freelist here */
     PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
     if (v == NULL) {
@@ -185,7 +189,7 @@ _PyLong_FromLarge(stwodigits ival)
 {
     twodigits abs_ival;
     int sign;
-    assert(!IS_MEDIUM_INT(ival));
+    assert(!is_medium_int(ival));
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
@@ -199,7 +203,7 @@ _PyLong_FromLarge(stwodigits ival)
     }
     /* Must be at least two digits */
     assert(abs_ival >> PyLong_SHIFT != 0);
-    twodigits t = abs_ival >> (PyLong_SHIFT *2);
+    twodigits t = abs_ival >> (PyLong_SHIFT * 2);
     Py_ssize_t ndigits = 2;
     while (t) {
         ++ndigits;
@@ -227,7 +231,7 @@ _PyLong_FromSTwoDigits(stwodigits x)
         return get_small_int((sdigit)x);
     }
     assert(x != 0);
-    if (IS_MEDIUM_INT(x)) {
+    if (is_medium_int(x)) {
         return _PyLong_FromMedium((sdigit)x);
     }
     return _PyLong_FromLarge(x);
