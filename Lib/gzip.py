@@ -576,7 +576,7 @@ def _create_simple_gzip_header(compresslevel: int,
     return struct.pack("<BBBBLBB", 0x1f, 0x8b, 8, 0, int(mtime), xfl, 255)
 
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
+def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     """Compress data in one shot and return the compressed string.
     Optional argument is the compression level, in range of 0-9.
     mtime can be used to set the modification time. 0 is default,
