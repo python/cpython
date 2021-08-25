@@ -36,6 +36,7 @@ pysqlite_step(sqlite3_stmt *statement)
     return rc;
 }
 
+// Returns non-NULL if a new exception should be raised
 static PyObject *
 get_exception_class(pysqlite_state *state, int errorcode)
 {
@@ -133,6 +134,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
     int errorcode = sqlite3_errcode(db);
     PyObject *exc_class = get_exception_class(state, errorcode);
     if (exc_class == NULL) {
+        // No new exception need be raised; just pass the error code
         return errorcode;
     }
 
