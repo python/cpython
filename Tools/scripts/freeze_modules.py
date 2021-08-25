@@ -371,11 +371,12 @@ def regen_makefile(frozenids, frozen):
 
         _pyfile = os.path.relpath(pyfile, ROOT_DIR)
         tmpfile = f'{header}.new'
+        # Note that we freeze the module to the target .h file
+        # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: $(srcdir)/Programs/_freeze_module $(srcdir)/{_pyfile}')
         rules.append(f'\t$(srcdir)/Programs/_freeze_module {frozenid} \\')
         rules.append(f'\t\t$(srcdir)/{_pyfile} \\')
-        rules.append(f'\t\t$(srcdir)/{tmpfile}')
-        rules.append(f'\t$(UPDATE_FILE) $(srcdir)/{header} {tmpfile}')
+        rules.append(f'\t\t$(srcdir)/{header}')
         rules.append('')
 
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
