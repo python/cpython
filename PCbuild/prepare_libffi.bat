@@ -179,9 +179,9 @@ if "%LIBFFI_TEST%" EQU "1" (
 
 echo copying files to %_LIBFFI_OUT%
 if not exist %_LIBFFI_OUT%\include (md %_LIBFFI_OUT%\include)
-copy %ARTIFACTS%\.libs\libffi-7.dll %_LIBFFI_OUT%
-copy %ARTIFACTS%\.libs\libffi-7.lib %_LIBFFI_OUT%
-copy %ARTIFACTS%\.libs\libffi-7.pdb %_LIBFFI_OUT%
+copy %ARTIFACTS%\.libs\libffi-*.dll %_LIBFFI_OUT%
+copy %ARTIFACTS%\.libs\libffi-*.lib %_LIBFFI_OUT%
+copy %ARTIFACTS%\.libs\libffi-*.pdb %_LIBFFI_OUT%
 copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include
 copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include
 
