@@ -278,6 +278,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         # No garbage is left if SSL is closed uncleanly
         client_context = weakref.ref(client_context)
+        support.gc_collect()
         self.assertIsNone(client_context())
 
     def test_create_connection_memory_leak(self):
@@ -341,6 +342,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
         client_context = weakref.ref(client_context)
+        support.gc_collect()
         self.assertIsNone(client_context())
 
     def test_start_tls_client_buf_proto_1(self):
