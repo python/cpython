@@ -1,0 +1,1 @@
+improve handling and reporting of unsigned win32 error codes
