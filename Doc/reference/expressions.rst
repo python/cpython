@@ -1251,7 +1251,7 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`__div__` and
+This operation can be customized using the special :meth:`__truediv__` and
 :meth:`__floordiv__` methods.
 
 .. index::
