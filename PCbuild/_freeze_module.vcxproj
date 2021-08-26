@@ -111,23 +111,23 @@
     <!-- BEGIN frozen modules -->
     <None Include="..\Lib\importlib\_bootstrap.py">
       <ModName>importlib._bootstrap</ModName>
-      <IntFile>$(IntDir)frozen_importlib__bootstrap.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_importlib__bootstrap.h</OutFile>
+      <IntFile>$(IntDir)importlib__bootstrap.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib__bootstrap.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
       <ModName>importlib._bootstrap_external</ModName>
-      <IntFile>$(IntDir)frozen_importlib__bootstrap_external.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_importlib__bootstrap_external.h</OutFile>
+      <IntFile>$(IntDir)importlib__bootstrap_external.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib__bootstrap_external.h</OutFile>
     </None>
     <None Include="..\Lib\zipimport.py">
       <ModName>zipimport</ModName>
-      <IntFile>$(IntDir)frozen_zipimport.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_zipimport.h</OutFile>
+      <IntFile>$(IntDir)zipimport.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
     <None Include="..\Tools\freeze\flag.py">
       <ModName>hello</ModName>
-      <IntFile>$(IntDir)frozen_hello.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_hello.h</OutFile>
+      <IntFile>$(IntDir)ello.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\hello.h</OutFile>
     </None>
     <!-- END frozen modules -->
   </ItemGroup>

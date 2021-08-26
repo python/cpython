@@ -18,7 +18,7 @@ ROOT_DIR = os.path.dirname(TOOLS_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # XXX It may make more sense to put frozen modules in Modules/ or Lib/...
-MODULES_DIR = os.path.join(ROOT_DIR, 'Python')
+MODULES_DIR = os.path.join(ROOT_DIR, 'Python/frozen_modules')
 TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
 
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
@@ -149,7 +149,7 @@ def resolve_frozen_file(spec, destdir=MODULES_DIR):
         _, frozenid, _, _, _= spec
         modname = frozenid
     # We use a consistent naming convention for all frozen modules.
-    return os.path.join(destdir, 'frozen_' + modname.replace('.', '_')) + '.h'
+    return os.path.join(destdir, modname.replace('.', '_')) + '.h'
 
 
 def resolve_frozen_files(specs, destdir=MODULES_DIR):

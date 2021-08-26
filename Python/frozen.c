@@ -32,10 +32,10 @@
 #include "Python.h"
 
 /* Includes for frozen modules: */
-#include "frozen_importlib__bootstrap.h"
-#include "frozen_importlib__bootstrap_external.h"
-#include "frozen_zipimport.h"
-#include "frozen_hello.h"
+#include "frozen_modules/importlib__bootstrap.h"
+#include "frozen_modules/importlib__bootstrap_external.h"
+#include "frozen_modules/zipimport.h"
+#include "frozen_modules/hello.h"
 /* End includes */
 
 /* Note that a negative size indicates a package. */
