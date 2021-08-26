@@ -2055,7 +2055,7 @@ check_eval_breaker:
             STAT_INC(BINARY_ADD, hit);
             record_hit_inline(next_instr, oparg);
             GETLOCAL(next_oparg) = NULL;
-            Py_SET_REFCNT(left, 1);
+            Py_DECREF(left);
             STACK_SHRINK(1);
             PyUnicode_Append(&TOP(), right);
             Py_DECREF(right);

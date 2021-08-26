@@ -1105,11 +1105,11 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
         goto success;
     }
     else if (left_type == &PyLong_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
         goto success;
     }
     else if (left_type == &PyFloat_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
         goto success;
 
     }
