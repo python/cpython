@@ -328,7 +328,7 @@ static const struct {
 static int
 add_error_constants(PyObject *module)
 {
-    for (int i = 0; error_codes[i].name != 0; i++) {
+    for (int i = 0; error_codes[i].name != NULL; i++) {
         const char *name = error_codes[i].name;
         const long value = error_codes[i].value;
         if (PyModule_AddIntConstant(module, name, value) < 0) {
@@ -341,7 +341,7 @@ add_error_constants(PyObject *module)
 const char *
 pysqlite_error_name(int rc)
 {
-    for (int i = 0; error_codes[i].name != 0; i++) {
+    for (int i = 0; error_codes[i].name != NULL; i++) {
         if (error_codes[i].value == rc) {
             return error_codes[i].name;
         }
