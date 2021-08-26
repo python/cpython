@@ -684,10 +684,8 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
 
     stepmethod = PyObject_GetAttrString(*aggregate_instance, "step");
     if (!stepmethod) {
-        sqlite3_result_error(context,
-                             "user-defined aggregate's 'step' method "
-                             "not defined",
-                             -1);
+        set_sqlite_error(context,
+                         "user-defined aggregate's 'step' method not defined");
         goto error;
     }
 
