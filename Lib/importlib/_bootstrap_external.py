@@ -1171,8 +1171,21 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
     """
 
-    def __init__(self, name, path):
-        self.name = name
+    def __init__(self, path, fullname=None, name=None):
+        if name is not None and fullname is not None:
+            raise TypeError("ExtensionFileLoader received both name and fullname")
+        elif fullname is not None:
+            self.id = fullname
+        elif name is not None:
+            warnings.warn("name is deprecated; use fullname", DeprecationWarning, 2)
+            self.id = name
+        else:
+            raise TypeError("ExtensionFileLoader missing fullname argument")
+        if not _path_isabs(path):
+            try:
+                path = _path_join(_os.getcwd(), path)
+            except OSError:
+                pass
         self.path = path
 
     def __eq__(self, other):
