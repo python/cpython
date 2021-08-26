@@ -424,12 +424,11 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Methods */
 
-#define SPEC_FAIL_NEGATIVE_DICTOFFSET 14
 #define SPEC_FAIL_IS_ATTR 15
 #define SPEC_FAIL_DICT_SUBCLASS 16
 #define SPEC_FAIL_BUILTIN_CLASS_METHOD 17
 #define SPEC_FAIL_CLASS_METHOD_OBJ 18
-#define SPEC_FAIL_NOT_METHOD 19
+#define SPEC_FAIL_OBJECT_SLOT 19
 
 /* Binary subscr */
 
@@ -440,7 +439,8 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_STRING_INT 12
 #define SPEC_FAIL_STRING_SLICE 13
 #define SPEC_FAIL_STRING_OTHER 14
-
+#define SPEC_FAIL_OTHER_INT 15
+#define SPEC_FAIL_OTHER_SLICE 16
 
 static int
 specialize_module_load_attr(
@@ -865,7 +865,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     // Technically this is fine for bound method calls, but it's uncommon and
     // slightly slower at runtime to get dict.
     if (owner_cls->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
@@ -891,16 +891,43 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
 
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     switch (kind) {
+        case OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
+            goto fail;
         case METHOD:
             break;
+        case PROPERTY:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_PROPERTY);
+            goto fail;
+        case OBJECT_SLOT:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OBJECT_SLOT);
+            goto fail;
+        case OTHER_SLOT:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NON_OBJECT_SLOT);
+            goto fail;
+        case DUNDER_CLASS:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
+            goto fail;
+        case MUTABLE:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_MUTABLE_CLASS);
+            goto fail;
+        case GETSET_OVERRIDDEN:
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
+            goto fail;
         case BUILTIN_CLASSMETHOD:
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
             goto fail;
         case PYTHON_CLASSMETHOD:
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
             goto fail;
-        default:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
+        case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR);
+            goto fail;
+        case NON_DESCRIPTOR:
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_DESCRIPTOR);
+            goto fail;
+        case ABSENT:
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_EXPECTED_ERROR);
             goto fail;
     }
 
@@ -1078,7 +1105,16 @@ _Py_Specialize_BinarySubscr(
                 SPEC_FAIL_STRING_SLICE :
                 SPEC_FAIL_STRING_OTHER
             )
-        ) : SPEC_FAIL_OTHER
+        ) :
+        (
+            PyLong_CheckExact(sub) ?
+            SPEC_FAIL_OTHER_INT :
+            (
+                PySlice_Check(sub) ?
+                SPEC_FAIL_OTHER_SLICE :
+                SPEC_FAIL_OTHER
+            )
+        )
     );
     goto fail;
 fail:
