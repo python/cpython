@@ -374,26 +374,28 @@ class RangeTest(unittest.TestCase):
                                      list(r))
 
     def test_iterator_pickling(self):
-        testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
-                     (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
+        testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1), (13, 21, 3),
+                     (-2, 2, 2), (2**31-3, 2**31-1), (2**33, 2**33+2),
+                     (2**63-3, 2**63-1), (2**65, 2**65+2)]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
-                it = itorg = iter(range(*t))
-                data = list(range(*t))
+                with self.subTest(proto=proto, t=t):
+                    it = itorg = iter(range(*t))
+                    data = list(range(*t))
 
-                d = pickle.dumps(it, proto)
-                it = pickle.loads(d)
-                self.assertEqual(type(itorg), type(it))
-                self.assertEqual(list(it), data)
+                    d = pickle.dumps(it, proto)
+                    it = pickle.loads(d)
+                    self.assertEqual(type(itorg), type(it))
+                    self.assertEqual(list(it), data)
 
-                it = pickle.loads(d)
-                try:
-                    next(it)
-                except StopIteration:
-                    continue
-                d = pickle.dumps(it, proto)
-                it = pickle.loads(d)
-                self.assertEqual(list(it), data[1:])
+                    it = pickle.loads(d)
+                    try:
+                        next(it)
+                    except StopIteration:
+                        continue
+                    d = pickle.dumps(it, proto)
+                    it = pickle.loads(d)
+                    self.assertEqual(list(it), data[1:])
 
     def test_exhausted_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
