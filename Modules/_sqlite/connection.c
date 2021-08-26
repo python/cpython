@@ -712,11 +712,7 @@ error:
 static void
 _pysqlite_final_callback(sqlite3_context *context)
 {
-    PyObject* function_result;
     PyObject** aggregate_instance;
-    _Py_IDENTIFIER(finalize);
-    int ok;
-    PyObject *exception, *value, *tb;
 
     PyGILState_STATE threadstate;
 
@@ -735,25 +731,31 @@ _pysqlite_final_callback(sqlite3_context *context)
     }
 
     /* Keep the exception (if any) of the last call to step() */
+    PyObject *exception, *value, *tb;
     PyErr_Fetch(&exception, &value, &tb);
 
-    function_result = _PyObject_CallMethodIdNoArgs(*aggregate_instance, &PyId_finalize);
-
+    _Py_IDENTIFIER(finalize);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(*aggregate_instance,
+                                                 &PyId_finalize);
     Py_DECREF(*aggregate_instance);
-
-    ok = 0;
-    if (function_result) {
-        ok = _pysqlite_set_result(context, function_result) == 0;
-        Py_DECREF(function_result);
-    }
-    if (!ok) {
+    if (res == NULL) {
         set_sqlite_error(context,
                 "user-defined aggregate's 'finalize' method raised error");
+        goto error;
     }
 
     /* Restore the exception (if any) of the last call to step(),
        but clear also the current exception if finalize() failed */
     PyErr_Restore(exception, value, tb);
+
+    int rc = _pysqlite_set_result(context, res);
+    Py_DECREF(res);
+    if (rc < 0) {
+        set_sqlite_error(context,
+                         "unable to set result from user-defined aggregate's "
+                         "'value' method");
+        goto error;
+    }
 
 error:
     PyGILState_Release(threadstate);
@@ -944,14 +946,13 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
 static void
 inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
-    PyObject *method = NULL;
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context,
-                                                            sizeof(PyObject *));
+    void *agg_ctx = sqlite3_aggregate_context(context, sizeof(PyObject *));
+    PyObject **cls = (PyObject **)agg_ctx;
     assert(cls != NULL);
     assert(*cls != NULL);
-    method = PyObject_GetAttrString(*cls, "inverse");
+    PyObject *method = PyObject_GetAttrString(*cls, "inverse");
     if (method == NULL) {
         set_sqlite_error(context,
                          "user-defined aggregate's 'inverse' method "
@@ -961,6 +962,7 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 
     PyObject *args = _pysqlite_build_py_params(context, argc, params);
     if (args == NULL) {
+        Py_DECREF(method);
         set_sqlite_error(context,
                          "unable to build arguments for user-defined "
                          "aggregate's 'inverse' method");
@@ -968,6 +970,7 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     }
 
     PyObject *res = PyObject_CallObject(method, args);
+    Py_DECREF(method);
     Py_DECREF(args);
     if (res == NULL) {
         set_sqlite_error(context,
@@ -978,7 +981,6 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     Py_DECREF(res);
 
 exit:
-    Py_XDECREF(method);
     PyGILState_Release(gilstate);
 }
 
@@ -991,7 +993,6 @@ exit:
 static void
 value_callback(sqlite3_context *context)
 {
-    _Py_IDENTIFIER(value);
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     PyObject **cls = NULL;  // Aggregate class instance.
@@ -999,6 +1000,7 @@ value_callback(sqlite3_context *context)
     assert(cls != NULL);
     assert(*cls != NULL);
 
+    _Py_IDENTIFIER(value);
     PyObject *res = _PyObject_CallMethodIdNoArgs(*cls, &PyId_value);
     if (res == NULL) {
         set_sqlite_error(context,
