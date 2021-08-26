@@ -729,7 +729,7 @@ def _ss(data, c=None):
     """
     if c is None:
         c = mean(data)
-    T, total, count = _sum((y := x - c) * y for x in data)
+    T, total, count = _sum((d := x - c) * d for x in data)
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
