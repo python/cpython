@@ -812,6 +812,7 @@ The :mod:`socket` module also offers various network-related services:
    it is returned unchanged.  If *name* was empty or equal to ``'0.0.0.0'``,
    the hostname from :func:`gethostname` is returned.
 
+
 .. function:: gethostbyname(hostname)
 
    Translate a host name to IPv4 address format.  The IPv4 address is returned as a
