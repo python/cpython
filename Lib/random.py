@@ -233,7 +233,7 @@ class Random(_random.Random):
                 break
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Returns 0 if n==0."
+        """Return a random int in the range [0,n).  Returns 0 if n==0."""
 
         if not n:
             return 0
@@ -360,9 +360,7 @@ class Random(_random.Random):
         return istart + istep * self._randbelow(n)
 
     def randint(self, a, b):
-        """Return random integer in range [a, b], including both end points.
-        """
-
+        """Return random integer in range [a, b], including both end points."""
         return self.randrange(a, b+1)
 
 
@@ -518,7 +516,7 @@ class Random(_random.Random):
     ## -------------------- real-valued distributions  -------------------
 
     def uniform(self, a, b):
-        "Get a random number in the range [a, b) or [a, b] depending on rounding."
+        """Get a random number in the range [a, b) or [a, b] depending on rounding."""
         return a + (b - a) * self.random()
 
     def triangular(self, low=0.0, high=1.0, mode=None):
@@ -812,11 +810,11 @@ class SystemRandom(Random):
         return _urandom(n)
 
     def seed(self, *args, **kwds):
-        "Stub method.  Not used for a system random number generator."
+        """Stub method.  Not used for a system random number generator."""
         return None
 
     def _notimplemented(self, *args, **kwds):
-        "Method should not be called for a system random number generator."
+        """Method should not be called for a system random number generator."""
         raise NotImplementedError('System entropy source does not have state.')
     getstate = setstate = _notimplemented
 
