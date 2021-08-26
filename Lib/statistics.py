@@ -727,9 +727,20 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is None:
-        c = mean(data)
+    if c is not None:
+        T, total, count = _sum((d := x - c) * d for x in data)
+        return (T, total)
+    # Compute the mean accurate to within 1/2 ulp
+    c = mean(data)
+    # Initial computation for the sum of square deviations
     T, total, count = _sum((d := x - c) * d for x in data)
+    # Correct any remaining inaccuracy in the mean c.
+    # The following sum should mathematically equal zero,
+    # but due to the final rounding of the mean, it may not.
+    U, error, count2 = _sum((x - c) for x in data)
+    assert T == U and count == count2
+    correction = error * error / len(data)
+    total -= correction
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
