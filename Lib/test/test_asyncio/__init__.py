@@ -28,6 +28,7 @@ class AsyncioTestSuite(unittest.TestSuite):
             ignore("asyncio.runners", like=r".*loop argument.*"),
             ignore("asyncio.subprocess", like=r".*loop argument.*"),
             ignore("asyncio.tasks", like=r".*loop argument.*"),
+            ignore("test.test_asyncio.test_events", like=r".*loop argument.*"),
             ignore("test.test_asyncio.test_queues", like=r".*loop argument.*"),
             ignore("test.test_asyncio.test_tasks", like=r".*loop argument.*"),
         }
