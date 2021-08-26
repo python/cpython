@@ -469,7 +469,9 @@ if _os.name == "nt":
 
     def WinError(code=None, descr=None):
         if code is None:
-            code = GetLastError()
+            # GetLastError returns a DWORD, cast large error codes
+            # to unsigned
+            code = GetLastError() & 0xffffffff
         if descr is None:
             descr = FormatError(code).strip()
         return OSError(None, descr, None, code)

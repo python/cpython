@@ -368,6 +368,14 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.strerror, 'foo')
             self.assertEqual(w.filename, None)
             self.assertEqual(w.filename2, None)
+            # DWORD error code (issue #28474)
+            E_POINTER = 0x80000005
+            w = OSError(E_POINTER, 'foo', 'bar', E_POINTER)
+            self.assertEqual(w.errno, E_POINTER)
+            self.assertEqual(w.winerror, E_POINTER)
+            self.assertEqual(w.strerror, 'foo')
+            self.assertEqual(w.filename, 'bar')
+            self.assertEqual(w.filename2, None)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows')

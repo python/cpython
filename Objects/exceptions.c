@@ -845,22 +845,28 @@ oserror_parse_args(PyObject **p_args,
             return -1;
 #ifdef MS_WINDOWS
         if (*winerror && PyLong_Check(*winerror)) {
-            long errcode, winerrcode;
+            long long errcode, winerrcode;
             PyObject *newargs;
             Py_ssize_t i;
 
-            winerrcode = PyLong_AsLong(*winerror);
+            winerrcode = PyLong_AsLongLong(*winerror);
             if (winerrcode == -1 && PyErr_Occurred())
                 return -1;
+
+            if(winerrcode < LONG_MIN || winerrcode > ULONG_MAX) {
+                PyErr_SetString(PyExc_OverflowError, "int doesn't fit in long");
+                return -1;
+            }
+
             /* Set errno to the corresponding POSIX errno (overriding
                first argument).  Windows Socket error codes (>= 10000)
                have the same value as their POSIX counterparts.
             */
             if (winerrcode < 10000)
-                errcode = winerror_to_errno(winerrcode);
+                errcode = (long long)winerror_to_errno((int)winerrcode);
             else
                 errcode = winerrcode;
-            *myerrno = PyLong_FromLong(errcode);
+            *myerrno = PyLong_FromLongLong(errcode);
             if (!*myerrno)
                 return -1;
             newargs = PyTuple_New(nargs);

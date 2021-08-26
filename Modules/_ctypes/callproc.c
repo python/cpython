@@ -1321,12 +1321,19 @@ static PyObject *format_error(PyObject *self, PyObject *args)
 {
     PyObject *result;
     wchar_t *lpMsgBuf;
-    DWORD code = 0;
-    if (!PyArg_ParseTuple(args, "|i:FormatError", &code))
+    long long code = 0;
+
+    if (!PyArg_ParseTuple(args, "|L:FormatError", &code))
         return NULL;
+
+    if(code < LONG_MIN || code > ULONG_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "int doesn't fit in long");
+        return NULL;
+    }
+
     if (code == 0)
         code = GetLastError();
-    lpMsgBuf = FormatError(code);
+    lpMsgBuf = FormatError((DWORD)code);
     if (lpMsgBuf) {
         result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
         LocalFree(lpMsgBuf);
