@@ -1405,7 +1405,7 @@ def _is_callable_or_classvar_members_only(cls):
         if callable(attr):
             continue
         annotation = annotations.get(attr_name)
-        if getattr(annotation, '__name__', None) == 'ClassVar':
+        if getattr(annotation, '__origin__', None) is ClassVar:
             continue
         # String annotations (forward references).
         if isinstance(annotation, str) and annotation.startswith(_classvar_prefixes):
