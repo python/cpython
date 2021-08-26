@@ -917,8 +917,8 @@ def correlation(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
-    syy = fsum((yi - ybar) ** 2.0 for yi in y)
+    sxx = fsum((d := xi - xbar) * d for xi in x)
+    syy = fsum((d := yi - ybar) * d for yi in y)
     try:
         return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
@@ -961,7 +961,7 @@ def linear_regression(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
+    sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
