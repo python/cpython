@@ -2307,6 +2307,7 @@ class BaseTaskTests:
                 self.new_task(self.loop, gen)
             finally:
                 gen.close()
+        gc.collect()
 
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
