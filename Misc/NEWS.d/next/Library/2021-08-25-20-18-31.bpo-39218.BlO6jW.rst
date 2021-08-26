@@ -1,2 +1,1 @@
 Improve accuracy of variance calculations by using x*x instead of x**2.
-Simplify code by removing a rounding correction that did not make sense.
