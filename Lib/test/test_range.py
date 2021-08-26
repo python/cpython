@@ -401,7 +401,11 @@ class RangeTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
                 it = iter(range(2**32 + 2))
+                _, _, idx = it.__reduce__()
+                self.assertEqual(idx, 0)
                 it.__setstate__(2**32 + 1)  # undocumented way to set r->index
+                _, _, idx = it.__reduce__()
+                self.assertEqual(idx, 2**32)
                 d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(next(it), 2**32 + 1)
