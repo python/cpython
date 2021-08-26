@@ -883,6 +883,8 @@ Other Language Changes
   collisions when creating dictionaries and sets containing multiple NaNs.
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
+*  A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting the :const:`__debug__` constant. (Contributed by Dong-hee Na in :issue:`45000`.)
+
 New Modules
 ===========
 
