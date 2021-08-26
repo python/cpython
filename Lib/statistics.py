@@ -738,7 +738,7 @@ def _ss(data, c=None):
     # The following sum should mathematically equal zero,
     # but due to the final rounding of the mean, it may not.
     U, error, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
+    assert count == count2
     correction = error * error / len(data)
     total -= correction
     assert not total < 0, 'negative sum of square deviations: %f' % total
