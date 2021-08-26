@@ -798,11 +798,17 @@ frame_tp_clear(PyFrameObject *f)
     f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
-    Py_CLEAR(f->f_fast_refs);
     PyCodeObject *co = _PyFrame_GetCode(f);
     /* fast locals */
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         Py_CLEAR(f->f_localsptr[i]);
+        if (f->f_fast_refs != NULL) {
+            // Keep a record of the names defined on the code object,
+            // but don't keep any cells alive and discard the slot locations
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            assert(name);
+            PyDict_SetItem(f->f_fast_refs, name, Py_None);
+        }
     }
 
     /* stack */
@@ -1195,45 +1201,48 @@ _PyFrame_BuildFastRefs(PyFrameObject *f)
         return NULL;
     }
 
-    if (f->f_state != FRAME_CLEARED) {
-        for (int i = 0; i < co->co_nlocalsplus; i++) {
-            _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, i);
-            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-            PyObject *target = NULL;
-            if (kind & CO_FAST_FREE) {
-                // Reference to closure cell, save it as the proxy target
-                target = fast_locals[i];
-                assert(target != NULL && PyCell_Check(target));
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        _PyLocal_VarKind kind = _PyLocal_GetVarKind(co->co_localspluskinds, i);
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        assert(name);
+        PyObject *target = NULL;
+        if (f->f_state == FRAME_CLEARED) {
+            // Frame is cleared, map all names defined on the frame to None
+            target = Py_None;
+            Py_INCREF(target);
+        } else if (kind & CO_FAST_FREE) {
+            // Reference to closure cell, save it as the proxy target
+            target = fast_locals[i];
+            assert(target != NULL && PyCell_Check(target));
+            Py_INCREF(target);
+        } else if (kind & CO_FAST_CELL) {
+            // Closure cell referenced from nested scopes
+            // Save it as the proxy target if the cell already exists,
+            // otherwise save the index and fix it up later on access
+            target = fast_locals[i];
+            if (target != NULL && PyCell_Check(target) &&
+                    _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
+                // MAKE_CELL built the cell, so use it as the proxy target
                 Py_INCREF(target);
-            } else if (kind & CO_FAST_CELL) {
-                // Closure cell referenced from nested scopes
-                // Save it as the proxy target if the cell already exists,
-                // otherwise save the index and fix it up later on access
-                target = fast_locals[i];
-                if (target != NULL && PyCell_Check(target) &&
-                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
-                    // MAKE_CELL built the cell, so use it as the proxy target
-                    Py_INCREF(target);
-                } else {
-                    // MAKE_CELL hasn't run yet, so just store the lookup index
-                    // The proxy will check the kind on access, and switch over
-                    // to using the cell once MAKE_CELL creates it
-                    target = PyLong_FromSsize_t(i);
-                }
-            } else if (kind & CO_FAST_LOCAL) {
-                // Ordinary fast local variable. Save index as the proxy target
-                target = PyLong_FromSsize_t(i);
             } else {
-                PyErr_SetString(PyExc_SystemError,
-                    "unknown local variable kind while building fast refs lookup table");
+                // MAKE_CELL hasn't run yet, so just store the lookup index
+                // The proxy will check the kind on access, and switch over
+                // to using the cell once MAKE_CELL creates it
+                target = PyLong_FromSsize_t(i);
             }
-            if (target == NULL) {
-                Py_DECREF(fast_refs);
-                return NULL;
-            }
-            if (set_fast_ref(fast_refs, name, target) != 0) {
-                return NULL;
-            }
+        } else if (kind & CO_FAST_LOCAL) {
+            // Ordinary fast local variable. Save index as the proxy target
+            target = PyLong_FromSsize_t(i);
+        } else {
+            PyErr_SetString(PyExc_SystemError,
+                "unknown local variable kind while building fast refs lookup table");
+        }
+        if (target == NULL) {
+            Py_DECREF(fast_refs);
+            return NULL;
+        }
+        if (set_fast_ref(fast_refs, name, target) != 0) {
+            return NULL;
         }
     }
     return fast_refs;
