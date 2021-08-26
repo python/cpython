@@ -405,7 +405,7 @@ class RangeTest(unittest.TestCase):
                 self.assertEqual(idx, 0)
                 it.__setstate__(2**32 + 1)  # undocumented way to set r->index
                 _, _, idx = it.__reduce__()
-                self.assertEqual(idx, 2**32)
+                self.assertEqual(idx, 2**32 + 1)
                 d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(next(it), 2**32 + 1)
