@@ -783,7 +783,7 @@ def getfqdn(name=''):
 
     First the hostname returned by gethostbyaddr() is checked, then
     possibly existing aliases.  If that logic fails and `name` is empty or is
-    '0.0.0.0', hostname from gethostname() is returned.  Otherwise, *name* is
+    '0.0.0.0', hostname from gethostname() is returned.  Otherwise, `name` is
     returned unchanged.
     """
     name = name.strip()
