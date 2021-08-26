@@ -640,6 +640,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # The 10s handshake timeout should be cancelled to free related
         # objects without really waiting for 10s
         client_sslctx = weakref.ref(client_sslctx)
+        support.gc_collect()
         self.assertIsNone(client_sslctx())
 
     def test_create_connection_ssl_slow_handshake(self):
