@@ -727,16 +727,9 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is not None:
-        T, total, count = _sum((x-c)**2 for x in data)
-        return (T, total)
-    c = mean(data)
-    T, total, count = _sum((x-c)**2 for x in data)
-    # The following sum should mathematically equal zero, but due to rounding
-    # error may not.
-    U, total2, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
-    total -= total2 ** 2 / len(data)
+    if c is None:
+        c = mean(data)
+    T, total, count = _sum((y := x - c) * y for x in data)
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
