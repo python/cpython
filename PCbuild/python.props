@@ -60,8 +60,8 @@
     <sqlite3Dir>$(ExternalsDir)sqlite-3.35.5.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <libffiDir>$(ExternalsDir)libffi\</libffiDir>
-    <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
+    <libffiDir>$(ExternalsDir)libffi-3.3.0\</libffiDir>
+    <libffiOutDir>$(ExternalsDir)libffi-3.3.0\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
     <opensslDir>$(ExternalsDir)openssl-1.1.1k\</opensslDir>
     <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1k-1\$(ArchName)\</opensslOutDir>
