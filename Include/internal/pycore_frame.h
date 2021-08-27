@@ -29,10 +29,9 @@ typedef struct _interpreter_frame {
     PyObject *generator;
     struct _interpreter_frame *previous;
     int f_lasti;       /* Last instruction if called */
-    int stackdepth;  /* Depth of value stack */
-    int nlocalsplus;
-    PyFrameState f_state;       /* What state the frame is in */
-    PyObject *stack[1];
+    int stacktop;     /* Offset of TOS from localsplus  */
+    PyFrameState f_state;  /* What state the frame is in */
+    PyObject *localsplus[1];
 } InterpreterFrame;
 
 static inline int _PyFrame_IsRunnable(InterpreterFrame *f) {
@@ -45,6 +44,26 @@ static inline int _PyFrame_IsExecuting(InterpreterFrame *f) {
 
 static inline int _PyFrameHasCompleted(InterpreterFrame *f) {
     return f->f_state > FRAME_EXECUTING;
+}
+
+static inline PyObject **_PyFrame_Stackbase(InterpreterFrame *f) {
+    return f->localsplus + f->f_code->co_nlocalsplus;
+}
+
+static inline PyObject *_PyFrame_StackPeek(InterpreterFrame *f) {
+    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    return f->localsplus[f->stacktop-1];
+}
+
+static inline PyObject *_PyFrame_StackPop(InterpreterFrame *f) {
+    assert(f->stacktop > f->f_code->co_nlocalsplus);
+    f->stacktop--;
+    return f->localsplus[f->stacktop];
+}
+
+static inline void _PyFrame_StackPush(InterpreterFrame *f, PyObject *value) {
+    f->localsplus[f->stacktop] = value;
+    f->stacktop++;
 }
 
 #define FRAME_SPECIALS_SIZE ((sizeof(InterpreterFrame)-1)/sizeof(PyObject *))
@@ -61,8 +80,7 @@ _PyFrame_InitializeSpecials(
     frame->f_builtins = Py_NewRef(con->fc_builtins);
     frame->f_globals = Py_NewRef(con->fc_globals);
     frame->f_locals = Py_XNewRef(locals);
-    frame->nlocalsplus = nlocalsplus;
-    frame->stackdepth = 0;
+    frame->stacktop = nlocalsplus;
     frame->frame_obj = NULL;
     frame->generator = NULL;
     frame->f_lasti = -1;
@@ -75,7 +93,19 @@ _PyFrame_InitializeSpecials(
 static inline PyObject**
 _PyFrame_GetLocalsArray(InterpreterFrame *frame)
 {
-    return ((PyObject **)frame) - frame->nlocalsplus;
+    return frame->localsplus;
+}
+
+static inline PyObject**
+_PyFrame_GetStackPointer(InterpreterFrame *frame)
+{
+    return frame->localsplus+frame->stacktop;
+}
+
+static inline void
+_PyFrame_SetStackPointer(InterpreterFrame *frame, PyObject **stack_pointer)
+{
+    frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
 
 /* For use by _PyFrame_GetFrameObject

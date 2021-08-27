@@ -169,6 +169,14 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
 
+Other CPython Implementation Changes
+====================================
+
+* Special methods :meth:`complex.__complex__` and :meth:`bytes.__bytes__` are implemented to
+  support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
+  (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
+
+
 New Modules
 ===========
 
@@ -298,11 +306,55 @@ C API Changes
 * Add a new :c:func:`PyType_GetName` function to get type's short name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
+* Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
+  (Contributed by Hai Shi in :issue:`42035`.)
+
 New Features
 ------------
 
 Porting to Python 3.11
 ----------------------
+
+* The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
+  are now deprecated. They should be replaced by the new macros
+  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.
+
+  A tp_dealloc function that has the old macros, such as::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_SAFE_BEGIN(p);
+        ...
+        Py_TRASHCAN_SAFE_END
+    }
+
+  should migrate to the new macros as follows::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
+        ...
+        Py_TRASHCAN_END
+    }
+
+  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
+  should be the deallocation function it is in.
+
+  To support older Python versions in the same codebase, you
+  can define the following macros and use them throughout
+  the code (credit: these were copied from the ``mypy`` codebase)::
+
+    #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 8
+    #  define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN(op, dealloc)
+    #  define CPy_TRASHCAN_END(op) Py_TRASHCAN_END
+    #else
+    #  define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_SAFE_BEGIN(op)
+    #  define CPy_TRASHCAN_END(op) Py_TRASHCAN_SAFE_END(op)
+    #endif
 
 * The :c:func:`PyType_Ready` function now raises an error if a type is defined
   with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
@@ -351,3 +403,7 @@ Removed
   :func:`~gettext.install` are also removed, since they are only used for
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
+
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the default ``None``
+  value), is now deprecated.

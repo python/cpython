@@ -212,7 +212,7 @@ class CodeTest(unittest.TestCase):
         CodeType = type(co)
 
         # test code constructor
-        return CodeType(co.co_argcount,
+        CodeType(co.co_argcount,
                         co.co_posonlyargcount,
                         co.co_kwonlyargcount,
                         co.co_nlocals,
@@ -319,6 +319,15 @@ class CodeTest(unittest.TestCase):
             co.replace(co_nlocals=co.co_nlocals - 1)
         with self.assertRaises(ValueError):
             co.replace(co_nlocals=co.co_nlocals + 1)
+
+    def test_shrinking_localsplus(self):
+        # Check that PyCode_NewWithPosOnlyArgs resizes both
+        # localsplusnames and localspluskinds, if an argument is a cell.
+        def func(arg):
+            return lambda: arg
+        code = func.__code__
+        newcode = code.replace(co_name="func")  # Should not raise SystemError
+        self.assertEqual(code, newcode)
 
     def test_empty_linetable(self):
         def func():

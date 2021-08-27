@@ -1266,16 +1266,21 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define PRE_DISPATCH_GOTO() do { LLTRACE_INSTR();  RECORD_DXPROFILE(); } while (0)
 #endif
 
+#define NOTRACE_DISPATCH() \
+    { \
+        frame->f_lasti = INSTR_OFFSET(); \
+        NEXTOPARG(); \
+        PRE_DISPATCH_GOTO(); \
+        DISPATCH_GOTO(); \
+    }
+
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
         if (cframe.use_tracing OR_DTRACE_LINE) { \
             goto tracing_dispatch; \
         } \
-        frame->f_lasti = INSTR_OFFSET(); \
-        NEXTOPARG(); \
-        PRE_DISPATCH_GOTO(); \
-        DISPATCH_GOTO(); \
+        NOTRACE_DISPATCH(); \
     }
 
 #define CHECK_EVAL_BREAKER() \
@@ -1362,7 +1367,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()     ((int)(stack_pointer - frame->stack))
+#define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1408,7 +1413,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Local variable macros */
 
-#define GETLOCAL(i)     (localsplus[i])
+#define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
    then store the new value; it must copy the old value to a temporary
@@ -1433,6 +1438,27 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
+
+/* Shared opcode macros */
+
+// shared by LOAD_ATTR_MODULE and LOAD_METHOD_MODULE
+#define LOAD_MODULE_ATTR_OR_METHOD(attr_or_method) \
+    SpecializedCacheEntry *caches = GET_CACHE(); \
+    _PyAdaptiveEntry *cache0 = &caches[0].adaptive; \
+    _PyAttrCache *cache1 = &caches[-1].attr; \
+    DEOPT_IF(!PyModule_CheckExact(owner), LOAD_##attr_or_method); \
+    PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict; \
+    assert(dict != NULL); \
+    DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, \
+        LOAD_##attr_or_method); \
+    assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE); \
+    assert(cache0->index < dict->ma_keys->dk_nentries); \
+    PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index; \
+    res = ep->me_value; \
+    DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
+    STAT_INC(LOAD_##attr_or_method, hit); \
+    record_cache_hit(cache0); \
+    Py_INCREF(res);
 
 static int
 trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
@@ -1533,7 +1559,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     PyObject *names = co->co_names;
     PyObject *consts = co->co_consts;
-    PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
     _Py_CODEUNIT *first_instr = co->co_firstinstr;
     /*
        frame->f_lasti refers to the index of the last instruction,
@@ -1552,14 +1577,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     */
     assert(frame->f_lasti >= -1);
     _Py_CODEUNIT *next_instr = first_instr + frame->f_lasti + 1;
-    PyObject **stack_pointer = frame->stack + frame->stackdepth;
+    PyObject **stack_pointer = _PyFrame_GetStackPointer(frame);
     /* Set stackdepth to -1.
      * Update when returning or calling trace function.
-       Having f_stackdepth <= 0 ensures that invalid
+       Having stackdepth <= 0 ensures that invalid
        values are not visible to the cycle GC.
        We choose -1 rather than 0 to assist debugging.
      */
-    frame->stackdepth = -1;
+    frame->stacktop = -1;
     frame->f_state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
@@ -1642,7 +1667,7 @@ check_eval_breaker:
             int err;
             /* see maybe_call_line_trace()
                for expository comments */
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1653,8 +1678,9 @@ check_eval_breaker:
             }
             /* Reload possibly changed frame fields */
             JUMPTO(frame->f_lasti);
-            stack_pointer = frame->stack+frame->stackdepth;
-            frame->stackdepth = -1;
+
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            frame->stacktop = -1;
             TRACING_NEXTOPARG();
         }
         PRE_DISPATCH_GOTO();
@@ -1682,11 +1708,7 @@ check_eval_breaker:
         TARGET(LOAD_FAST): {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
-                format_exc_check_arg(tstate, PyExc_UnboundLocalError,
-                                     UNBOUNDLOCAL_ERROR_MSG,
-                                     PyTuple_GetItem(co->co_localsplusnames,
-                                                     oparg));
-                goto error;
+                goto unbound_local_error;
             }
             Py_INCREF(value);
             PUSH(value);
@@ -1706,6 +1728,73 @@ check_eval_breaker:
             PyObject *value = POP();
             SETLOCAL(oparg, value);
             DISPATCH();
+        }
+
+        TARGET(LOAD_FAST__LOAD_FAST): {
+            PyObject *value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            NEXTOPARG();
+            Py_INCREF(value);
+            PUSH(value);
+            value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_FAST__LOAD_CONST): {
+            PyObject *value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            NEXTOPARG();
+            Py_INCREF(value);
+            PUSH(value);
+            value = GETITEM(consts, oparg);
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(STORE_FAST__LOAD_FAST): {
+            PyObject *value = POP();
+            SETLOCAL(oparg, value);
+            NEXTOPARG();
+            value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(STORE_FAST__STORE_FAST): {
+            PyObject *value = POP();
+            SETLOCAL(oparg, value);
+            NEXTOPARG();
+            value = POP();
+            SETLOCAL(oparg, value);
+            NOTRACE_DISPATCH();
+        }
+
+        TARGET(LOAD_CONST__LOAD_FAST): {
+            PyObject *value = GETITEM(consts, oparg);
+            NEXTOPARG();
+            Py_INCREF(value);
+            PUSH(value);
+            value = GETLOCAL(oparg);
+            if (value == NULL) {
+                goto unbound_local_error;
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            NOTRACE_DISPATCH();
         }
 
         TARGET(POP_TOP): {
@@ -2350,7 +2439,7 @@ check_eval_breaker:
             retval = POP();
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
-            frame->stackdepth = 0;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -2538,7 +2627,7 @@ check_eval_breaker:
             assert(frame->f_lasti > 0);
             frame->f_lasti -= 1;
             frame->f_state = FRAME_SUSPENDED;
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -2555,7 +2644,7 @@ check_eval_breaker:
                 retval = w;
             }
             frame->f_state = FRAME_SUSPENDED;
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -3443,23 +3532,10 @@ check_eval_breaker:
 
         TARGET(LOAD_ATTR_MODULE): {
             assert(cframe.use_tracing == 0);
+            // shared with LOAD_METHOD_MODULE
             PyObject *owner = TOP();
             PyObject *res;
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyAttrCache *cache1 = &caches[-1].attr;
-            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
-            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
-            assert(dict != NULL);
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
-            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(cache0->index < dict->ma_keys->dk_nentries);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
-            res = ep->me_value;
-            DEOPT_IF(res == NULL, LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
-            Py_INCREF(res);
+            LOAD_MODULE_ATTR_OR_METHOD(ATTR);
             SET_TOP(res);
             Py_DECREF(owner);
             DISPATCH();
@@ -4214,6 +4290,8 @@ check_eval_breaker:
         }
 
         TARGET(LOAD_METHOD): {
+            PREDICTED(LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, unquickened);
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
@@ -4247,6 +4325,107 @@ check_eval_breaker:
                 Py_DECREF(obj);
                 PUSH(meth);
             }
+            DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_ADAPTIVE): {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *owner = TOP();
+                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+                next_instr--;
+                if (_Py_Specialize_LoadMethod(owner, next_instr, name, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(LOAD_METHOD, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                STAT_DEC(LOAD_METHOD, unquickened);
+                JUMP_TO_INSTRUCTION(LOAD_METHOD);
+            }
+        }
+
+        TARGET(LOAD_METHOD_CACHED): {
+            /* LOAD_METHOD, with cached method object */
+            assert(cframe.use_tracing == 0);
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(cache1->dk_version_or_hint != 0);
+            assert(cache1->tp_version != 0);
+            assert(self_cls->tp_dictoffset >= 0);
+            assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
+
+            // inline version of _PyObject_GetDictPtr for offset >= 0
+            PyObject *dict = self_cls->tp_dictoffset != 0 ?
+                *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
+
+            // Ensure self.__dict__ didn't modify keys.
+            // Don't care if self has no dict, it could be builtin or __slots__.
+            DEOPT_IF(dict != NULL &&
+                ((PyDictObject *)dict)->ma_keys->dk_version !=
+                cache1->dk_version_or_hint, LOAD_METHOD);
+
+            STAT_INC(LOAD_METHOD, hit);
+            record_cache_hit(cache0);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_MODULE): {
+            assert(cframe.use_tracing == 0);
+            PyObject *owner = TOP();
+            PyObject *res;
+            LOAD_MODULE_ATTR_OR_METHOD(METHOD);
+            SET_TOP(NULL);
+            Py_DECREF(owner);
+            PUSH(res);
+            DISPATCH();
+        }
+
+        TARGET(LOAD_METHOD_CLASS): {
+            /* LOAD_METHOD, for class methods */
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+
+            PyObject *cls = TOP();
+            PyTypeObject *cls_type = Py_TYPE(cls);
+            assert(cls_type->tp_dictoffset > 0);
+            PyObject *dict = *(PyObject **) ((char *)cls + cls_type->tp_dictoffset);
+            // Don't care if no dict -- tp_version_tag should catch anything wrong.
+            DEOPT_IF(dict != NULL && ((PyDictObject *)dict)->ma_keys->dk_version !=
+                cache1->dk_version_or_hint, LOAD_METHOD);
+            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
+                LOAD_METHOD);
+            assert(cache1->dk_version_or_hint != 0);
+            assert(cache1->tp_version != 0);
+
+            STAT_INC(LOAD_METHOD, hit);
+            record_cache_hit(cache0);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(NULL);
+            Py_DECREF(cls);
+            PUSH(res);
             DISPATCH();
         }
 
@@ -4580,6 +4759,7 @@ opname ## _miss: \
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
+MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 
 binary_subscr_dict_error:
@@ -4589,6 +4769,15 @@ binary_subscr_dict_error:
                 _PyErr_SetKeyError(sub);
             }
             Py_DECREF(sub);
+            goto error;
+        }
+
+unbound_local_error:
+        {
+            format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+                UNBOUNDLOCAL_ERROR_MSG,
+                PyTuple_GetItem(co->co_localsplusnames, oparg)
+            );
             goto error;
         }
 
@@ -4628,17 +4817,20 @@ exception_unwind:
             assert(_PyErr_Occurred(tstate));
 
             /* Pop remaining stack entries. */
-            while (!EMPTY()) {
+            PyObject **stackbase = _PyFrame_Stackbase(frame);
+            while (stack_pointer > stackbase) {
                 PyObject *o = POP();
                 Py_XDECREF(o);
             }
-            frame->stackdepth = 0;
+            assert(STACK_LEVEL() == 0);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
             goto exiting;
         }
 
         assert(STACK_LEVEL() >= level);
-        while (STACK_LEVEL() > level) {
+        PyObject **new_top = _PyFrame_Stackbase(frame) + level;
+        while (stack_pointer > new_top) {
             PyObject *v = POP();
             Py_XDECREF(v);
         }
@@ -4792,7 +4984,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (GETLOCAL(i) == NULL) {
+        if (localsplus[i] == NULL) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -4821,7 +5013,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (GETLOCAL(i) != NULL) {
+        if (localsplus[i] != NULL) {
             kwonly_given++;
         }
     }
@@ -5028,7 +5220,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        SETLOCAL(i, kwdict);
+        assert(localsplus[i] == NULL);
+        localsplus[i] = kwdict;
     }
     else {
         kwdict = NULL;
@@ -5045,7 +5238,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     for (j = 0; j < n; j++) {
         PyObject *x = args[j];
         Py_INCREF(x);
-        SETLOCAL(j, x);
+        assert(localsplus[j] == NULL);
+        localsplus[j] = x;
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -5054,7 +5248,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (u == NULL) {
             goto fail;
         }
-        SETLOCAL(total_args, u);
+        assert(localsplus[total_args] == NULL);
+        localsplus[total_args] = u;
     }
 
     /* Handle keyword arguments */
@@ -5118,14 +5313,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             continue;
 
         kw_found:
-            if (GETLOCAL(j) != NULL) {
+            if (localsplus[j] != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           con->fc_qualname, keyword);
                 goto fail;
             }
             Py_INCREF(value);
-            SETLOCAL(j, value);
+            localsplus[j] = value;
         }
     }
 
@@ -5142,7 +5337,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (GETLOCAL(i) == NULL) {
+            if (localsplus[i] == NULL) {
                 missing++;
             }
         }
@@ -5158,10 +5353,10 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(con->fc_defaults, 0);
             for (; i < defcount; i++) {
-                if (GETLOCAL(m+i) == NULL) {
+                if (localsplus[m+i] == NULL) {
                     PyObject *def = defs[i];
                     Py_INCREF(def);
-                    SETLOCAL(m+i, def);
+                    localsplus[m+i] = def;
                 }
             }
         }
@@ -5171,14 +5366,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (GETLOCAL(i) != NULL)
+            if (localsplus[i] != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (con->fc_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
                 if (def) {
                     Py_INCREF(def);
-                    SETLOCAL(i, def);
+                    localsplus[i] = def;
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
@@ -5218,18 +5413,17 @@ make_coro_frame(PyThreadState *tstate,
     assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    PyObject **localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
-    if (localsarray == NULL) {
+    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
+    if (frame == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
-        localsarray[i] = NULL;
+        frame->localsplus[i] = NULL;
     }
-    InterpreterFrame *frame = (InterpreterFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     assert(frame->frame_obj == NULL);
-    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, con, frame->localsplus, args, argcount, kwnames)) {
         _PyFrame_Clear(frame, 1);
         return NULL;
     }
@@ -5308,7 +5502,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     }
     assert (tstate->interp->eval_frame != NULL);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
-    assert(frame->stackdepth == 0);
+    assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
         retval = NULL;
     }
@@ -6575,7 +6769,6 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         switch (opcode) {
         case STORE_FAST:
         {
-            PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
             break;

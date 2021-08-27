@@ -156,11 +156,15 @@ print("History length:", readline.get_current_history_length())
 
     def test_auto_history_enabled(self):
         output = run_pty(self.auto_history_script.format(True))
-        self.assertIn(b"History length: 1\r\n", output)
+        # bpo-44949: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"History length: 1", output)
 
     def test_auto_history_disabled(self):
         output = run_pty(self.auto_history_script.format(False))
-        self.assertIn(b"History length: 0\r\n", output)
+        # bpo-44949: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"History length: 0", output)
 
     def test_nonascii(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
