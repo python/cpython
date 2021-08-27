@@ -80,7 +80,7 @@ The module defines the following functions:
    descriptor *fd*. Requires :const:`termios.TIOCGWINSZ` or
    :const:`termios.TIOCGSIZE`.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 
 .. function:: tcsetwinsize(fd, winsize)
@@ -91,7 +91,7 @@ The module defines the following functions:
     (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`);
     (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
 
-   .. versionadded: 3.11
+   .. versionadded:: 3.11
 
 
 .. seealso::
