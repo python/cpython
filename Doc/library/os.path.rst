@@ -304,12 +304,13 @@ the :mod:`glob` module.)
 
 .. function:: join(path, *paths)
 
-   Join one or more path components intelligently.  The return value is the
-   concatenation of *path* and any members of *\*paths* with exactly one
-   directory separator following each non-empty part except the last, meaning
-   that the result will only end in a separator if the last part is empty.  If
-   a component is an absolute path, all previous components are thrown away
-   and joining continues from the absolute path component.
+   Join one or more path components intelligently. The return value is the
+   concatenation of path and any members of *\*paths* so that there is a
+   directory separator (os.sep) following each part except the last.
+   An empty part is ignored unless it is the last part, in which case the result
+   will end in a separator.  If a component is an absolute path, all previous
+   components are thrown away and joining continues from the absolute path
+   component.
 
    On Windows, the drive letter is not reset when an absolute path component
    (e.g., ``r'\foo'``) is encountered.  If a component contains a drive
