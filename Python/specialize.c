@@ -1079,7 +1079,7 @@ success:
 }
 
 #if COLLECT_SPECIALIZATION_STATS_DETAILED
-int
+static int
 binary_subscr_faiL_kind(PyTypeObject *container_type, PyObject *sub)
 {
     if (container_type == &PyUnicode_Type) {
