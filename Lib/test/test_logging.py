@@ -4799,29 +4799,39 @@ class BasicConfigTest(unittest.TestCase):
         fun_io = io.StringIO()
         fun_handlers = [logging.StreamHandler(fun_io)]
 
-        # Test that logger=None is equivalent to not passing it
-        fun_io.truncate(0)
-        logging.basicConfig(level=logging.INFO, handlers=fun_handlers,
-                            logger=None)
-        self.assertEqual(logging.root.handlers, fun_handlers)
-        logger.root.info('hello!')
-        self.assertEqual(fun_io.getvalue().strip(), 'INFO:root:hello!')
+        fun_message = 'hello!!'
 
-        # Test that it works by name
-        fun_io.truncate(0)
-        fun_logger.handlers.clear()
-        logging.basicConfig(handlers=fun_handlers, logger=fun_logger_name)
-        selfassertEqual(fun_logger.handlers, fun_handlers)
-        fun_logger.info('hello!')
-        self.assertEqual(fun_io.getvalue().strip(), 'INFO:root:hello!')
+        def _reset_test():
+            fun_io.seek(0)
+            fun_io.truncate(0)
+            logging.root.handlers.clear()
+            fun_logger.handlers.clear()
 
-        # Test that it works with an actual logger object
-        fun_io.truncate(0)
-        fun_logger.handlers.clear()
-        logging.basicConfig(handlers=fun_handlers, logger=fun_logger)
-        selfassertEqual(fun_logger.handlers, fun_handlers)
-        fun_logger.info('hello!')
-        self.assertEqual(fun_io.getvalue().strip(), 'INFO:root:hello!')
+        with self.subTest('Test that logger=None is equivalent to no arg.'):
+            _reset_test()
+            logging.basicConfig(level=logging.INFO, handlers=fun_handlers,
+                                logger=None)
+            self.assertEqual(logging.root.handlers, fun_handlers)
+            logging.root.info(fun_message)
+            self.assertEqual(fun_io.getvalue().strip(),
+                             f'INFO:root:{fun_message}')
+
+        with self.subTest('Test that logger= works with a logger name (str)'):
+            fun_logger.handlers.clear()
+            _reset_test()
+            logging.basicConfig(handlers=fun_handlers, logger=fun_logger_name)
+            self.assertEqual(fun_logger.handlers, fun_handlers)
+            fun_logger.info(fun_message)
+            self.assertEqual(fun_io.getvalue().strip(),
+                             f'INFO:{fun_logger_name}:{fun_message}')
+
+        with self.subTest('Test that logger= works with a logger object'):
+            _reset_test()
+            logging.basicConfig(handlers=fun_handlers, logger=fun_logger)
+            self.assertEqual(fun_logger.handlers, fun_handlers)
+            fun_logger.info(fun_message)
+            self.assertEqual(fun_io.getvalue().strip(),
+                             f'INFO:{fun_logger_name}:{fun_message}')
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
