@@ -427,7 +427,7 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     w.ws_row = (unsigned short) winsz_0;
     w.ws_col = (unsigned short) winsz_1;
-    if (((long)w.ws_row) != winsz_0) || (((long)w.ws_col) != winsz_1) {
+    if ((((long)w.ws_row) != winsz_0) || (((long)w.ws_col) != winsz_1)) {
         PyErr_SetString(PyExc_OverflowError,
                         "winsize value(s) out of range.");
         return NULL;
@@ -447,7 +447,7 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     s.ts_lines = (int) winsz_0;
     s.ts_cols = (int) winsz_1;
-    if (((long)s.ts_lines) != winsz_0) || (((long)s.ts_cols) != winsz_1) {
+    if ((((long)s.ts_lines) != winsz_0) || (((long)s.ts_cols) != winsz_1)) {
         PyErr_SetString(PyExc_OverflowError,
                         "winsize value(s) out of range.");
         return NULL;
