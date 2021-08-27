@@ -854,7 +854,7 @@ oserror_parse_args(PyObject **p_args,
                 return -1;
 
             if(winerrcode < LONG_MIN || winerrcode > ULONG_MAX) {
-                PyErr_SetString(PyExc_OverflowError, "int doesn't fit in long");
+                PyErr_Format(PyExc_OverflowError, "error code %lld too big for int", winerrcode);
                 return -1;
             }
 

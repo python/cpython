@@ -1326,8 +1326,8 @@ static PyObject *format_error(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|L:FormatError", &code))
         return NULL;
 
-    if(code < LONG_MIN || code > ULONG_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "int doesn't fit in long");
+    if((DWORD)code != code) {
+        PyErr_Format(PyExc_OverflowError, "error code %lld too big for int", code);
         return NULL;
     }
 
