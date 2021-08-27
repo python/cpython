@@ -1367,7 +1367,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
-#define STACK_LEVEL()     ((int)(stack_pointer - frame->stack))
+#define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -1413,7 +1413,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 /* Local variable macros */
 
-#define GETLOCAL(i)     (localsplus[i])
+#define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
    then store the new value; it must copy the old value to a temporary
@@ -1434,6 +1434,12 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
+
+static inline void
+record_hit_inline(_Py_CODEUNIT *next_instr, int oparg)
+{
+    UPDATE_PREV_INSTR_OPARG(next_instr, saturating_increment(oparg));
+}
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
@@ -1559,7 +1565,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
 
     PyObject *names = co->co_names;
     PyObject *consts = co->co_consts;
-    PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
     _Py_CODEUNIT *first_instr = co->co_firstinstr;
     /*
        frame->f_lasti refers to the index of the last instruction,
@@ -1578,14 +1583,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     */
     assert(frame->f_lasti >= -1);
     _Py_CODEUNIT *next_instr = first_instr + frame->f_lasti + 1;
-    PyObject **stack_pointer = frame->stack + frame->stackdepth;
+    PyObject **stack_pointer = _PyFrame_GetStackPointer(frame);
     /* Set stackdepth to -1.
      * Update when returning or calling trace function.
-       Having f_stackdepth <= 0 ensures that invalid
+       Having stackdepth <= 0 ensures that invalid
        values are not visible to the cycle GC.
        We choose -1 rather than 0 to assist debugging.
      */
-    frame->stackdepth = -1;
+    frame->stacktop = -1;
     frame->f_state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
@@ -1668,7 +1673,7 @@ check_eval_breaker:
             int err;
             /* see maybe_call_line_trace()
                for expository comments */
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1679,8 +1684,9 @@ check_eval_breaker:
             }
             /* Reload possibly changed frame fields */
             JUMPTO(frame->f_lasti);
-            stack_pointer = frame->stack+frame->stackdepth;
-            frame->stackdepth = -1;
+
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            frame->stacktop = -1;
             TRACING_NEXTOPARG();
         }
         PRE_DISPATCH_GOTO();
@@ -1980,28 +1986,120 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_ADD): {
+            PREDICTED(BINARY_ADD);
+            STAT_INC(BINARY_ADD, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *sum;
-            /* NOTE(vstinner): Please don't try to micro-optimize int+int on
-               CPython using bytecode, it is simply worthless.
-               See http://bugs.python.org/issue21955 and
-               http://bugs.python.org/issue10044 for the discussion. In short,
-               no patch shown any impact on a realistic benchmark, only a minor
-               speedup on microbenchmarks. */
-            if (PyUnicode_CheckExact(left) &&
-                     PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
-                /* unicode_concatenate consumed the ref to left */
+            PyObject *sum = PyNumber_Add(left, right);
+            SET_TOP(sum);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_ADAPTIVE): {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_BinaryAdd(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
             }
             else {
-                sum = PyNumber_Add(left, right);
-                Py_DECREF(left);
+                STAT_INC(BINARY_ADD, deferred);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(BINARY_ADD, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_ADD);
             }
+        }
+
+        TARGET(BINARY_ADD_UNICODE): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *res = PyUnicode_Concat(left, right);
+            STACK_SHRINK(1);
+            SET_TOP(res);
+            Py_DECREF(left);
             Py_DECREF(right);
-            SET_TOP(sum);
-            if (sum == NULL)
+            if (TOP() == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_UNICODE_INPLACE_FAST): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
+            int next_oparg = _Py_OPARG(*next_instr);
+            assert(_Py_OPCODE(*next_instr) == STORE_FAST);
+            /* In the common case, there are 2 references to the value
+            * stored in 'variable' when the v = v + ... is performed: one
+            * on the value stack (in 'v') and one still stored in the
+            * 'variable'.  We try to delete the variable now to reduce
+            * the refcnt to 1.
+            */
+            PyObject *var = GETLOCAL(next_oparg);
+            DEOPT_IF(var != left, BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            GETLOCAL(next_oparg) = NULL;
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            PyUnicode_Append(&TOP(), right);
+            Py_DECREF(right);
+            if (TOP() == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_FLOAT): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            double dsum = ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *sum = PyFloat_FromDouble(dsum);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_INT): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -2439,7 +2537,7 @@ check_eval_breaker:
             retval = POP();
             assert(EMPTY());
             frame->f_state = FRAME_RETURNED;
-            frame->stackdepth = 0;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -2627,7 +2725,7 @@ check_eval_breaker:
             assert(frame->f_lasti > 0);
             frame->f_lasti -= 1;
             frame->f_state = FRAME_SUSPENDED;
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -2644,7 +2742,7 @@ check_eval_breaker:
                 retval = w;
             }
             frame->f_state = FRAME_SUSPENDED;
-            frame->stackdepth = (int)(stack_pointer - frame->stack);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             goto exiting;
         }
 
@@ -4346,7 +4444,7 @@ check_eval_breaker:
                 oparg = cache->adaptive.original_oparg;
                 STAT_DEC(LOAD_METHOD, unquickened);
                 JUMP_TO_INSTRUCTION(LOAD_METHOD);
-            }            
+            }
         }
 
         TARGET(LOAD_METHOD_CACHED): {
@@ -4364,7 +4462,7 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             assert(self_cls->tp_dictoffset >= 0);
             assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
-            
+
             // inline version of _PyObject_GetDictPtr for offset >= 0
             PyObject *dict = self_cls->tp_dictoffset != 0 ?
                 *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
@@ -4761,6 +4859,7 @@ MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
+MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 
 binary_subscr_dict_error:
         {
@@ -4817,17 +4916,20 @@ exception_unwind:
             assert(_PyErr_Occurred(tstate));
 
             /* Pop remaining stack entries. */
-            while (!EMPTY()) {
+            PyObject **stackbase = _PyFrame_Stackbase(frame);
+            while (stack_pointer > stackbase) {
                 PyObject *o = POP();
                 Py_XDECREF(o);
             }
-            frame->stackdepth = 0;
+            assert(STACK_LEVEL() == 0);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->f_state = FRAME_RAISED;
             goto exiting;
         }
 
         assert(STACK_LEVEL() >= level);
-        while (STACK_LEVEL() > level) {
+        PyObject **new_top = _PyFrame_Stackbase(frame) + level;
+        while (stack_pointer > new_top) {
             PyObject *v = POP();
             Py_XDECREF(v);
         }
@@ -4981,7 +5083,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (GETLOCAL(i) == NULL) {
+        if (localsplus[i] == NULL) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -5010,7 +5112,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (GETLOCAL(i) != NULL) {
+        if (localsplus[i] != NULL) {
             kwonly_given++;
         }
     }
@@ -5217,7 +5319,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        SETLOCAL(i, kwdict);
+        assert(localsplus[i] == NULL);
+        localsplus[i] = kwdict;
     }
     else {
         kwdict = NULL;
@@ -5234,7 +5337,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     for (j = 0; j < n; j++) {
         PyObject *x = args[j];
         Py_INCREF(x);
-        SETLOCAL(j, x);
+        assert(localsplus[j] == NULL);
+        localsplus[j] = x;
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -5243,7 +5347,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (u == NULL) {
             goto fail;
         }
-        SETLOCAL(total_args, u);
+        assert(localsplus[total_args] == NULL);
+        localsplus[total_args] = u;
     }
 
     /* Handle keyword arguments */
@@ -5307,14 +5412,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             continue;
 
         kw_found:
-            if (GETLOCAL(j) != NULL) {
+            if (localsplus[j] != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           con->fc_qualname, keyword);
                 goto fail;
             }
             Py_INCREF(value);
-            SETLOCAL(j, value);
+            localsplus[j] = value;
         }
     }
 
@@ -5331,7 +5436,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (GETLOCAL(i) == NULL) {
+            if (localsplus[i] == NULL) {
                 missing++;
             }
         }
@@ -5347,10 +5452,10 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(con->fc_defaults, 0);
             for (; i < defcount; i++) {
-                if (GETLOCAL(m+i) == NULL) {
+                if (localsplus[m+i] == NULL) {
                     PyObject *def = defs[i];
                     Py_INCREF(def);
-                    SETLOCAL(m+i, def);
+                    localsplus[m+i] = def;
                 }
             }
         }
@@ -5360,14 +5465,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (GETLOCAL(i) != NULL)
+            if (localsplus[i] != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (con->fc_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
                 if (def) {
                     Py_INCREF(def);
-                    SETLOCAL(i, def);
+                    localsplus[i] = def;
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
@@ -5407,18 +5512,17 @@ make_coro_frame(PyThreadState *tstate,
     assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-    PyObject **localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
-    if (localsarray == NULL) {
+    InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
+    if (frame == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
-        localsarray[i] = NULL;
+        frame->localsplus[i] = NULL;
     }
-    InterpreterFrame *frame = (InterpreterFrame *)(localsarray + code->co_nlocalsplus);
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     assert(frame->frame_obj == NULL);
-    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, con, frame->localsplus, args, argcount, kwnames)) {
         _PyFrame_Clear(frame, 1);
         return NULL;
     }
@@ -5497,7 +5601,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     }
     assert (tstate->interp->eval_frame != NULL);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
-    assert(frame->stackdepth == 0);
+    assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
         retval = NULL;
     }
@@ -6764,7 +6868,6 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         switch (opcode) {
         case STORE_FAST:
         {
-            PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
             break;

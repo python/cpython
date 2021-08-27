@@ -121,7 +121,8 @@ _Py_GetSpecializationStats(void) {
     int err = 0;
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
-    err += add_stat_dict(stats, LOAD_GLOBAL, "load_method");
+    err += add_stat_dict(stats, LOAD_METHOD, "load_method");
+    err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     if (err < 0) {
@@ -177,6 +178,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
+    print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     if (out != stderr) {
@@ -226,6 +228,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
+    [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
@@ -235,6 +238,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
+    [BINARY_ADD] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -440,6 +444,13 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_STRING_SLICE 13
 #define SPEC_FAIL_OTHER_INT 15
 #define SPEC_FAIL_OTHER_SLICE 16
+
+/* Binary add */
+
+#define SPEC_FAIL_NON_FUNCTION_SCOPE 11
+#define SPEC_FAIL_DIFFERENT_TYPES 12
+#define SPEC_FAIL_OTHER_TYPE 13
+
 
 static int
 specialize_module_load_attr(
@@ -999,6 +1010,7 @@ fail:
     return 0;
 
 }
+
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
@@ -1097,7 +1109,6 @@ binary_subscr_faiL_kind(PyTypeObject *container_type, PyObject *sub)
     return SPEC_FAIL_OTHER;
 }
 #endif
-
 int
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
@@ -1139,3 +1150,43 @@ success:
     return 0;
 }
 
+int
+_Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *left_type = Py_TYPE(left);
+    if (left_type != Py_TYPE(right)) {
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_DIFFERENT_TYPES);
+        goto fail;
+    }
+    if (left_type == &PyUnicode_Type) {
+        int next_opcode = _Py_OPCODE(instr[1]);
+        if (next_opcode == STORE_FAST) {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+        }
+        else {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+        }
+        goto success;
+    }
+    else if (left_type == &PyLong_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
+        goto success;
+    }
+    else if (left_type == &PyFloat_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
+        goto success;
+
+    }
+    else {
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OTHER_TYPE);
+    }
+fail:
+    STAT_INC(BINARY_ADD, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(BINARY_ADD, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}

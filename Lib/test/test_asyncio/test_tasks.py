@@ -2875,15 +2875,18 @@ class GenericTaskTests(test_utils.TestCase):
     def test_future_subclass(self):
         self.assertTrue(issubclass(asyncio.Task, asyncio.Future))
 
+    @support.cpython_only
     def test_asyncio_module_compiled(self):
         # Because of circular imports it's easy to make _asyncio
         # module non-importable.  This is a simple test that will
         # fail on systems where C modules were successfully compiled
-        # (hence the test for _functools), but _asyncio somehow didn't.
+        # (hence the test for _functools etc), but _asyncio somehow didn't.
         try:
             import _functools
+            import _json
+            import _pickle
         except ImportError:
-            pass
+            self.skipTest('C modules are not available')
         else:
             try:
                 import _asyncio

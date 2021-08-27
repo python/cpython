@@ -28,6 +28,9 @@ def load_tests(loader, tests, ignore):
                 ))
     return tests
 
+MODULE = ('test.test_enum', '__main__')[__name__=='__main__']
+SHORT_MODULE = MODULE.split('.')[-1]
+
 # for pickle tests
 try:
     class Stooges(Enum):
@@ -142,6 +145,23 @@ class classproperty:
 
     def __get__(self, instance, ownerclass):
         return self.fget(ownerclass)
+
+# for global repr tests
+
+@enum.global_enum
+class HeadlightsK(IntFlag, boundary=enum.KEEP):
+    OFF_K = 0
+    LOW_BEAM_K = auto()
+    HIGH_BEAM_K = auto()
+    FOG_K = auto()
+
+
+@enum.global_enum
+class HeadlightsC(IntFlag, boundary=enum.CONFORM):
+    OFF_C = 0
+    LOW_BEAM_C = auto()
+    HIGH_BEAM_C = auto()
+    FOG_C = auto()
 
 
 # tests
@@ -3224,6 +3244,34 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(repr(Open(~4)), '-5')
 
+    def test_global_repr_keep(self):
+        self.assertEqual(
+                repr(HeadlightsK(0)),
+                '%s.OFF_K' % SHORT_MODULE,
+                )
+        self.assertEqual(
+                repr(HeadlightsK(2**0 + 2**2 + 2**3)),
+                '%(m)s.LOW_BEAM_K|%(m)s.FOG_K|0x8' % {'m': SHORT_MODULE},
+                )
+        self.assertEqual(
+                repr(HeadlightsK(2**3)),
+                '%(m)s.HeadlightsK(0x8)' % {'m': SHORT_MODULE},
+                )
+
+    def test_global_repr_conform1(self):
+        self.assertEqual(
+                repr(HeadlightsC(0)),
+                '%s.OFF_C' % SHORT_MODULE,
+                )
+        self.assertEqual(
+                repr(HeadlightsC(2**0 + 2**2 + 2**3)),
+                '%(m)s.LOW_BEAM_C|%(m)s.FOG_C' % {'m': SHORT_MODULE},
+                )
+        self.assertEqual(
+                repr(HeadlightsC(2**3)),
+                '%(m)s.OFF_C' % {'m': SHORT_MODULE},
+                )
+
     def test_format(self):
         Perm = self.Perm
         self.assertEqual(format(Perm.R, ''), '4')
@@ -4085,7 +4133,7 @@ class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
@@ -4095,7 +4143,7 @@ class TestIntEnumConvert(unittest.TestCase):
     def test_convert(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_TEST_NAME_F,
@@ -4115,7 +4163,7 @@ class TestIntEnumConvert(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             enum.IntEnum._convert(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     @unittest.skipUnless(python_version >= (3, 9),
@@ -4124,16 +4172,15 @@ class TestIntEnumConvert(unittest.TestCase):
         with self.assertRaises(AttributeError):
             enum.IntEnum._convert(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
-        module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                module,
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
-        self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % module)
+        self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
         self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
 
@@ -4151,7 +4198,7 @@ class TestStrEnumConvert(unittest.TestCase):
     def test_convert(self):
         test_type = enum.StrEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_STR_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
@@ -4162,12 +4209,11 @@ class TestStrEnumConvert(unittest.TestCase):
                          [], msg='Names other than CONVERT_STR_* found.')
 
     def test_convert_repr_and_str(self):
-        module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.StrEnum._convert_(
                 'UnittestConvert',
-                module,
+                MODULE,
                 filter=lambda x: x.startswith('CONVERT_STR_'))
-        self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % module)
+        self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STR_TEST_2), 'goodbye')
         self.assertEqual(format(test_type.CONVERT_STR_TEST_1), 'hello')
 
