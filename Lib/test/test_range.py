@@ -421,6 +421,24 @@ class RangeTest(unittest.TestCase):
             self.assertEqual(list(i), [])
             self.assertEqual(list(i2), [])
 
+    def test_iterator_unpickle_compat(self):
+        testcases = [
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(I10\nI20\nI2\ntRtRI2\nb.',
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(K\nK\x14K\x02tRtRK\x02b.',
+            b'\x80\x02c__builtin__\niter\nc__builtin__\nxrange\nK\nK\x14K\x02\x87R\x85RK\x02b.',
+            b'\x80\x03cbuiltins\niter\ncbuiltins\nrange\nK\nK\x14K\x02\x87R\x85RK\x02b.',
+            b'\x80\x04\x951\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x8c\x04iter\x93\x8c\x08builtins\x8c\x05range\x93K\nK\x14K\x02\x87R\x85RK\x02b.',
+
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(L-36893488147419103232L\nI20\nI2\ntRtRL18446744073709551623L\nb.',
+            b'c__builtin__\niter\n(c__builtin__\nxrange\n(L-36893488147419103232L\nK\x14K\x02tRtRL18446744073709551623L\nb.',
+            b'\x80\x02c__builtin__\niter\nc__builtin__\nxrange\n\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+            b'\x80\x03cbuiltins\niter\ncbuiltins\nrange\n\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+            b'\x80\x04\x95C\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x8c\x04iter\x93\x8c\x08builtins\x8c\x05range\x93\x8a\t\x00\x00\x00\x00\x00\x00\x00\x00\xfeK\x14K\x02\x87R\x85R\x8a\t\x07\x00\x00\x00\x00\x00\x00\x00\x01b.',
+        ]
+        for t in testcases:
+            it = pickle.loads(t)
+            self.assertEqual(list(it), [14, 16, 18])
+
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
         # because the range validation step was eating the exception
