@@ -442,14 +442,14 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_TUPLE_SLICE 11
 #define SPEC_FAIL_STRING_INT 12
 #define SPEC_FAIL_STRING_SLICE 13
-#define SPEC_FAIL_OTHER_INT 15
-#define SPEC_FAIL_OTHER_SLICE 16
+#define SPEC_FAIL_BUFFER_INT 15
+#define SPEC_FAIL_BUFFER_SLICE 16
+#define SPEC_FAIL_SEQUENCE_INT 17
 
 /* Binary add */
 
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
-#define SPEC_FAIL_OTHER_TYPE 13
 
 
 static int
@@ -1100,11 +1100,19 @@ binary_subscr_faiL_kind(PyTypeObject *container_type, PyObject *sub)
         }
         return SPEC_FAIL_OTHER;
     }
-    if (PyLong_CheckExact(sub)) {
-        return SPEC_FAIL_OTHER_INT;
+    else if (container_type->tp_as_buffer) {
+        if (PyLong_CheckExact(sub)) {
+            return SPEC_FAIL_BUFFER_INT;
+        }
+        if (PySlice_Check(sub)) {
+            return SPEC_FAIL_BUFFER_SLICE;
+        }
+        return SPEC_FAIL_OTHER;
     }
-    if (PySlice_Check(sub)) {
-        return SPEC_FAIL_OTHER_SLICE;
+    else if (container_type->tp_as_sequence) {
+        if (PyLong_CheckExact(sub) && container_type->tp_as_sequence->sq_item) {
+            return SPEC_FAIL_SEQUENCE_INT;
+        }
     }
     return SPEC_FAIL_OTHER;
 }
@@ -1178,7 +1186,7 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
 
     }
     else {
-        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OTHER_TYPE);
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OTHER);
     }
 fail:
     STAT_INC(BINARY_ADD, specialization_failure);
