@@ -1948,17 +1948,20 @@ def basicConfig(**kwargs):
     """
     Do basic configuration for the logging system.
 
-    This function does nothing if the root logger already has handlers
-    configured, unless the keyword argument *force* is set to ``True``.
-    It is a convenience method intended for use by simple scripts
-    to do one-shot configuration of the logging package.
+    This is a convenience method intended for use in simple scripts, for
+    one-shot configuration of the logging package.
 
-    The default behaviour is to create a StreamHandler which writes to
-    sys.stderr, set a formatter using the BASIC_FORMAT format string, and
-    add the handler to the root logger.
+    By default, this function configures the root logger.
 
-    A number of optional keyword arguments may be specified, which can alter
-    the default behaviour.
+    If the logger already has handlers configured, this function does nothing,
+    unless the keyword argument *force* is set to ``True``.  Otherwise, the
+    default behaviour is:
+
+       1. Create a StreamHandler that writes to sys.stderr.
+       2. Set a formatter using the BASIC_FORMAT format string.
+       3. Add the handler to the logger.
+
+    The following optional keyword arguments will modify this behavior:
 
     filename  Specifies that a FileHandler be created, using the specified
               filename, rather than a StreamHandler.
@@ -1989,12 +1992,16 @@ def basicConfig(**kwargs):
               created FileHandler, causing it to be used when the file is
               opened in text mode. If not specified, the default value is
               `backslashreplace`.
+    logger    Specify which logger to use. If this is ``None`` or not
+              specified, it uses the root logger. Otherwise, it can be a string
+              denoting the name of a logger, or an instance of
+              :class:`logging.Logger`.
 
-    Note that you could specify a stream created using open(filename, mode)
-    rather than passing the filename and mode in. However, it should be
-    remembered that StreamHandler does not close its stream (since it may be
-    using sys.stdout or sys.stderr), whereas FileHandler closes its stream
-    when the handler is closed.
+    Note that you could specify a stream created with ``open(filename, mode)``
+    rather than passing the filename and mode. However, :class:`StreamHandler`
+    does not close its stream (because it might be using ``sys.stdout`` or
+    ``sys.stderr``). :class:`FileHandler` closes its stream when the handler is
+    closed, so it might be safer than to a raw stream.
 
     .. versionchanged:: 3.2
        Added the ``style`` parameter.
@@ -2011,19 +2018,28 @@ def basicConfig(**kwargs):
 
     .. versionchanged:: 3.9
        Added the ``encoding`` and ``errors`` parameters.
+
+    .. versionchanged:: 3.11
+       Added the ``logger`` parameter.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
     _acquireLock()
     try:
+        logger = kwargs.pop('logger', None)
+        if not logger:
+            logger = root
+        elif isinstance(logger, str):
+            logger = getLogger(logger)
+
         force = kwargs.pop('force', False)
         encoding = kwargs.pop('encoding', None)
         errors = kwargs.pop('errors', 'backslashreplace')
         if force:
-            for h in root.handlers[:]:
-                root.removeHandler(h)
+            for h in logger.handlers[:]:
+                logger.removeHandler(h)
                 h.close()
-        if len(root.handlers) == 0:
+        if len(logger.handlers) == 0:
             handlers = kwargs.pop("handlers", None)
             if handlers is None:
                 if "stream" in kwargs and "filename" in kwargs:
@@ -2057,10 +2073,10 @@ def basicConfig(**kwargs):
             for h in handlers:
                 if h.formatter is None:
                     h.setFormatter(fmt)
-                root.addHandler(h)
+                logger.addHandler(h)
             level = kwargs.pop("level", None)
             if level is not None:
-                root.setLevel(level)
+                logger.setLevel(level)
             if kwargs:
                 keys = ', '.join(kwargs.keys())
                 raise ValueError('Unrecognised argument(s): %s' % keys)

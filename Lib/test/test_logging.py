@@ -4513,6 +4513,7 @@ class LogRecordTest(BaseTest):
             logging.logProcesses = log_processes
             logging.logMultiprocessing = log_multiprocessing
 
+
 class BasicConfigTest(unittest.TestCase):
 
     """Test suite for logging.basicConfig."""
@@ -4790,6 +4791,37 @@ class BasicConfigTest(unittest.TestCase):
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
 
+    def test_nonroot(self):
+        fun_logger_name = 'ham.spam.in_a_can'
+        fun_logger = logging.getLogger(fun_logger_name)
+        fun_logger.setLevel(logging.INFO)
+
+        fun_io = io.StringIO()
+        fun_handlers = [logging.StreamHandler(fun_io)]
+
+        # Test that logger=None is equivalent to not passing it
+        fun_io.truncate(0)
+        logging.basicConfig(level=logging.INFO, handlers=fun_handlers,
+                            logger=None)
+        self.assertEqual(logging.root.handlers, fun_handlers)
+        logger.root.info('hello!')
+        self.assertEqual(fun_io.getvalue().strip(), 'INFO:root:hello!')
+
+        # Test that it works by name
+        fun_io.truncate(0)
+        fun_logger.handlers.clear()
+        logging.basicConfig(handlers=fun_handlers, logger=fun_logger_name)
+        selfassertEqual(fun_logger.handlers, fun_handlers)
+        fun_logger.info('hello!')
+        self.assertEqual(fun_io.getvalue().strip(), 'INFO:root:hello!')
+
+        # Test that it works with an actual logger object
+        fun_io.truncate(0)
+        fun_logger.handlers.clear()
+        logging.basicConfig(handlers=fun_handlers, logger=fun_logger)
+        selfassertEqual(fun_logger.handlers, fun_handlers)
+        fun_logger.info('hello!')
+        self.assertEqual(fun_io.getvalue().strip(), 'INFO:root:hello!')
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
