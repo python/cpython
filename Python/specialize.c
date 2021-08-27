@@ -121,7 +121,8 @@ _Py_GetSpecializationStats(void) {
     int err = 0;
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
-    err += add_stat_dict(stats, LOAD_GLOBAL, "load_method");
+    err += add_stat_dict(stats, LOAD_METHOD, "load_method");
+    err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     if (err < 0) {
@@ -177,6 +178,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
+    print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     if (out != stderr) {
@@ -226,6 +228,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
+    [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
@@ -235,6 +238,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
+    [BINARY_ADD] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -435,6 +439,12 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_LIST_NON_INT_SUBSCRIPT 8
 #define SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT 9
 #define SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT 10
+
+/* Binary add */
+
+#define SPEC_FAIL_NON_FUNCTION_SCOPE 11
+#define SPEC_FAIL_DIFFERENT_TYPES 12
+#define SPEC_FAIL_OTHER_TYPE 13
 
 
 static int
@@ -898,7 +908,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
             goto fail;
     }
-    
+
     assert(kind == METHOD);
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
@@ -933,15 +943,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
         // Fall through.
     } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-        
+
     /* `descr` is borrowed. Just check tp_version_tag before accessing in case
     *  it's deleted.  This is safe for methods (even inherited ones from super
     *  classes!) as long as tp_version_tag is validated for two main reasons:
-    * 
+    *
     *  1. The class will always hold a reference to the method so it will
     *  usually not be GC-ed. Should it be deleted in Python, e.g.
     *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
-    * 
+    *
     *  2. The pre-existing type method cache (MCACHE) uses the same principles
     *  of caching a borrowed descriptor. It does all the heavy lifting for us.
     *  E.g. it invalidates on any MRO modification, on any type object
@@ -968,6 +978,7 @@ fail:
     return 0;
 
 }
+
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
@@ -1035,7 +1046,6 @@ success:
     return 0;
 }
 
-
 int
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
@@ -1076,3 +1086,43 @@ success:
     return 0;
 }
 
+int
+_Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *left_type = Py_TYPE(left);
+    if (left_type != Py_TYPE(right)) {
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_DIFFERENT_TYPES);
+        goto fail;
+    }
+    if (left_type == &PyUnicode_Type) {
+        int next_opcode = _Py_OPCODE(instr[1]);
+        if (next_opcode == STORE_FAST) {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+        }
+        else {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+        }
+        goto success;
+    }
+    else if (left_type == &PyLong_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
+        goto success;
+    }
+    else if (left_type == &PyFloat_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
+        goto success;
+
+    }
+    else {
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OTHER_TYPE);
+    }
+fail:
+    STAT_INC(BINARY_ADD, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(BINARY_ADD, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}
