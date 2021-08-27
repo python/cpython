@@ -998,7 +998,7 @@ as internal buffering of data.
 
    .. availability:: Unix.
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.11
 
 
 .. function:: lseek(fd, pos, how)
