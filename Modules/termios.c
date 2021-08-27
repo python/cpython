@@ -392,14 +392,32 @@ static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 /*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
 {
-#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
-    if (!PyTuple_Check(winsz) || PyTuple_Size(winsz) != 2) {
+    if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,
-                     "tcsetwinsize, arg 2: must be a two-item tuple");
+                     "tcsetwinsize, arg 2: must be a two-item sequence");
         return NULL;
     }
 
+    PyObject *tmp_item;
+    long winsz_0, winsz_1;
+    tmp_item = PySequence_GetItem(winsz, 0);
+    winsz_0 = PyLong_AsLong(tmp_item);
+    if (winsz_0 == -1 && PyErr_Occurred()) {
+        Py_XDECREF(tmp_item);
+        return NULL;
+    }
+    Py_XDECREF(tmp_item);
+    tmp_item = PySequence_GetItem(winsz, 1);
+    winsz_1 = PyLong_AsLong(tmp_item);                             
+    if (winsz_1 == -1 && PyErr_Occurred()) {
+        Py_XDECREF(tmp_item);
+        return NULL;
+    }
+    Py_XDECREF(tmp_item);
+
     termiosmodulestate *state = PyModule_GetState(module);
+
+#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
     struct winsize w;
     /* Get the old winsize because it might have
        more fields such as xpixel, ypixel. */
@@ -407,9 +425,11 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    w.ws_row = (unsigned short) PyLong_AsLong(PyTuple_GetItem(winsz, 0));
-    w.ws_col = (unsigned short) PyLong_AsLong(PyTuple_GetItem(winsz, 1));
-    if (PyErr_Occurred()) {
+    w.ws_row = (unsigned short) winsz_0;
+    w.ws_col = (unsigned short) winsz_1;
+    if (((long)w.ws_row) != winsz_0) || (((long)w.ws_col) != winsz_1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "winsize value(s) out of range.");
         return NULL;
     }
 
@@ -419,22 +439,17 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     Py_RETURN_NONE;
 #elif defined(TIOCGSIZE) && defined(TIOCSSIZE)
-    if (!PyTuple_Check(winsz) || PyTuple_Size(winsz) != 2) {
-        PyErr_SetString(PyExc_TypeError,
-                     "tcsetwinsize, arg 2: must be a two-item tuple");
-        return NULL;
-    }
-
-    termiosmodulestate *state = PyModule_GetState(module);
     struct ttysize s;
     /* Get the old ttysize because it might have more fields. */
     if (ioctl(fd, TIOCGSIZE, &s) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    s.ts_lines = (int) PyLong_AsLong(PyTuple_GetItem(winsz, 0));
-    s.ts_cols = (int) PyLong_AsLong(PyTuple_GetItem(winsz, 1));
-    if (PyErr_Occurred()) {
+    s.ts_lines = (int) winsz_0;
+    s.ts_cols = (int) winsz_1;
+    if (((long)s.ts_lines) != winsz_0) || (((long)s.ts_cols) != winsz_1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "winsize value(s) out of range.");
         return NULL;
     }
 
