@@ -1507,7 +1507,7 @@ Other concrete types
    :func:`open`.
 
    .. deprecated-removed:: 3.8 3.12
-      The ``typing.io`` namespaces is deprecated and will be removed.
+      The ``typing.io`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
 .. class:: Pattern
