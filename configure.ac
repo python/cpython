@@ -128,21 +128,21 @@ VERSION=PYTHON_VERSION
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-# The later defininition of _XOPEN_SOURCE disables certain features
+# The later definition of _XOPEN_SOURCE disables certain features
 # on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
 AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
 # them.
 AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
@@ -1360,16 +1360,34 @@ fi
 
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [enable Link-Time-Optimization in any build (default is no)]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto=@<:@full|thin|no|yes@:>@], [enable Link-Time-Optimization in any build (default is no)]),
 [
-if test "$withval" != no
-then
-  Py_LTO='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_LTO='false'
-  AC_MSG_RESULT(no);
-fi],
+case "$withval" in
+    full)
+        Py_LTO='true'
+        Py_LTO_POLICY='full'
+        AC_MSG_RESULT(yes)
+        ;;
+    thin)
+        Py_LTO='true'
+        Py_LTO_POLICY='thin'
+        AC_MSG_RESULT(yes)
+        ;;
+    yes)
+        Py_LTO='true'
+        Py_LTO_POLICY='default'
+        AC_MSG_RESULT(yes)
+        ;;
+    no)
+        Py_LTO='false'
+        AC_MSG_RESULT(no)
+        ;;
+    *)
+        Py_LTO='false'
+        AC_MSG_ERROR([unknown lto option: '$withval'])
+        ;;
+esac
+],
 [AC_MSG_RESULT(no)])
 if test "$Py_LTO" = 'true' ; then
   case $CC in
@@ -1405,15 +1423,30 @@ if test "$Py_LTO" = 'true' ; then
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          LTOCFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOCFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOCFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
         *)
-          LTOFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
       esac
       ;;
     *gcc*)
+      if test $Py_LTO_POLICY = thin
+      then
+        AC_MSG_ERROR([thin lto is not supported under gcc compiler.])
+      fi
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"

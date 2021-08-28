@@ -178,6 +178,10 @@ extern int _Py_CheckSlotResult(
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
+extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+
+extern int _PyObject_InitializeDict(PyObject *obj);
+
 #ifdef __cplusplus
 }
 #endif

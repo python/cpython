@@ -681,19 +681,23 @@ Constants
 
    .. deprecated:: 3.10
 
+      TLS clients and servers require different default settings for secure
+      communication. The generic TLS protocol constant is deprecated in
+      favor of :data:`PROTOCOL_TLS_CLIENT` and :data:`PROTOCOL_TLS_SERVER`.
+
 .. data:: PROTOCOL_TLS_CLIENT
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
-   but only support client-side :class:`SSLSocket` connections. The protocol
-   enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
-   default.
+   Auto-negotiate the highest protocol version that both the client and
+   server support, and configure the context client-side connections. The
+   protocol enables :data:`CERT_REQUIRED` and
+   :attr:`~SSLContext.check_hostname` by default.
 
    .. versionadded:: 3.6
 
 .. data:: PROTOCOL_TLS_SERVER
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
-   but only support server-side :class:`SSLSocket` connections.
+   Auto-negotiate the highest protocol version that both the client and
+   server support, and configure the context server-side connections.
 
    .. versionadded:: 3.6
 
@@ -1052,7 +1056,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web servers (therefore, it will
+   context may be used to authenticate web servers (therefore, it will
    be used to create client-side sockets).
 
    .. versionadded:: 3.4
@@ -1061,7 +1065,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web clients (therefore, it will
+   context may be used to authenticate web clients (therefore, it will
    be used to create server-side sockets).
 
    .. versionadded:: 3.4
@@ -1866,7 +1870,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
     .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslsocket_class`
+      The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
 .. attribute:: SSLContext.sslsocket_class
@@ -1892,7 +1896,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
    .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslobject_class`
+      The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
 
 .. attribute:: SSLContext.sslobject_class

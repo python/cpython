@@ -50,10 +50,22 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string)
+.. function:: a2b_base64(string, strict_mode=False)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
+
+   If *strict_mode* is true, only valid base64 data will be converted. Invalid base64
+   data will raise :exc:`binascii.Error`.
+
+   Valid base64:
+      * Conforms to :rfc:`3548`.
+      * Contains only characters from the base64 alphabet.
+      * Contains no excess data after padding (including excess padding, newlines, etc.).
+      * Does not start with a padding.
+
+   .. versionchanged:: 3.11
+      Added the *strict_mode* parameter.
 
 
 .. function:: b2a_base64(data, *, newline=True)

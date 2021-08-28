@@ -149,7 +149,7 @@ access internal read-only data of Unicode objects:
       ``PyUnicode_WCHAR_KIND`` is deprecated.
 
 
-.. c:function:: int PyUnicode_KIND(PyObject *o)
+.. c:function:: unsigned int PyUnicode_KIND(PyObject *o)
 
    Return one of the PyUnicode kind constants (see above) that indicate how many
    bytes per character this Unicode object uses to store its data.  *o* has to
@@ -420,6 +420,12 @@ APIs:
    :c:macro:`PyUnicode_1BYTE_KIND` etc., as returned by
    :c:func:`PyUnicode_KIND`).  The *buffer* must point to an array of *size*
    units of 1, 2 or 4 bytes per character, as given by the kind.
+
+   If necessary, the input *buffer* is copied and transformed into the
+   canonical representation.  For example, if the *buffer* is a UCS4 string
+   (:c:macro:`PyUnicode_4BYTE_KIND`) and it consists only of codepoints in
+   the UCS1 range, it will be transformed into UCS1
+   (:c:macro:`PyUnicode_1BYTE_KIND`).
 
    .. versionadded:: 3.3
 

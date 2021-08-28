@@ -20,12 +20,31 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import contextlib
+import sqlite3 as sqlite
+import subprocess
+import sys
 import threading
 import unittest
-import sqlite3 as sqlite
-import sys
 
+from test.support import (
+    bigmemtest,
+    check_disallow_instantiation,
+    threading_helper,
+    SHORT_TIMEOUT,
+)
 from test.support.os_helper import TESTFN, unlink
+
+
+# Helper for tests using TESTFN
+@contextlib.contextmanager
+def managed_connect(*args, **kwargs):
+    cx = sqlite.connect(*args, **kwargs)
+    try:
+        yield cx
+    finally:
+        cx.close()
+        unlink(TESTFN)
 
 
 class ModuleTests(unittest.TestCase):
@@ -92,6 +111,14 @@ class ModuleTests(unittest.TestCase):
                 sqlite.enable_shared_cache(enable)
             self.assertIn("dbapi.py", cm.filename)
 
+    def test_disallow_instantiation(self):
+        cx = sqlite.connect(":memory:")
+        check_disallow_instantiation(self, type(cx("select 1")))
+
+    def test_complete_statement(self):
+        self.assertFalse(sqlite.complete_statement("select t"))
+        self.assertTrue(sqlite.complete_statement("create table t(t);"))
+
 
 class ConnectionTests(unittest.TestCase):
 
@@ -135,6 +162,26 @@ class ConnectionTests(unittest.TestCase):
     def test_close(self):
         self.cx.close()
 
+    def test_use_after_close(self):
+        sql = "select 1"
+        cu = self.cx.cursor()
+        res = cu.execute(sql)
+        self.cx.close()
+        self.assertRaises(sqlite.ProgrammingError, res.fetchall)
+        self.assertRaises(sqlite.ProgrammingError, cu.execute, sql)
+        self.assertRaises(sqlite.ProgrammingError, cu.executemany, sql, [])
+        self.assertRaises(sqlite.ProgrammingError, cu.executescript, sql)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.execute, sql)
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.cx.executemany, sql, [])
+        self.assertRaises(sqlite.ProgrammingError, self.cx.executescript, sql)
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.cx.create_function, "t", 1, lambda x: x)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.cursor)
+        with self.assertRaises(sqlite.ProgrammingError):
+            with self.cx:
+                pass
+
     def test_exceptions(self):
         # Optional DB-API extension.
         self.assertEqual(self.cx.Warning, sqlite.Warning)
@@ -170,26 +217,83 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+    def test_connection_exceptions(self):
+        exceptions = [
+            "DataError",
+            "DatabaseError",
+            "Error",
+            "IntegrityError",
+            "InterfaceError",
+            "NotSupportedError",
+            "OperationalError",
+            "ProgrammingError",
+            "Warning",
+        ]
+        for exc in exceptions:
+            with self.subTest(exc=exc):
+                self.assertTrue(hasattr(self.cx, exc))
+                self.assertIs(getattr(sqlite, exc), getattr(self.cx, exc))
+
+    def test_interrupt_on_closed_db(self):
+        cx = sqlite.connect(":memory:")
+        cx.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            cx.interrupt()
+
+    def test_interrupt(self):
+        self.assertIsNone(self.cx.interrupt())
+
+    def test_drop_unused_refs(self):
+        for n in range(500):
+            cu = self.cx.execute(f"select {n}")
+            self.assertEqual(cu.fetchone()[0], n)
+
+
+class UninitialisedConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.cx = sqlite.Connection.__new__(sqlite.Connection)
+
+    def test_uninit_operations(self):
+        funcs = (
+            lambda: self.cx.isolation_level,
+            lambda: self.cx.total_changes,
+            lambda: self.cx.in_transaction,
+            lambda: self.cx.iterdump(),
+            lambda: self.cx.cursor(),
+            lambda: self.cx.close(),
+        )
+        for func in funcs:
+            with self.subTest(func=func):
+                self.assertRaisesRegex(sqlite.ProgrammingError,
+                                       "Base Connection.__init__ not called",
+                                       func)
+
+
+class OpenTests(unittest.TestCase):
+    _sql = "create table test(id integer)"
+
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        self.addCleanup(unlink, TESTFN)
         class Path:
             def __fspath__(self):
                 return TESTFN
         path = Path()
-        with sqlite.connect(path) as cx:
-            cx.execute('create table test(id integer)')
+        with managed_connect(path) as cx:
+            cx.execute(self._sql)
 
     def test_open_uri(self):
-        self.addCleanup(unlink, TESTFN)
-        with sqlite.connect(TESTFN) as cx:
-            cx.execute('create table test(id integer)')
-        with sqlite.connect('file:' + TESTFN, uri=True) as cx:
-            cx.execute('insert into test(id) values(0)')
-        with sqlite.connect('file:' + TESTFN + '?mode=ro', uri=True) as cx:
-            with self.assertRaises(sqlite.OperationalError):
-                cx.execute('insert into test(id) values(1)')
+        with managed_connect(TESTFN) as cx:
+            cx.execute(self._sql)
+        with managed_connect(f"file:{TESTFN}", uri=True) as cx:
+            cx.execute(self._sql)
+        with self.assertRaises(sqlite.OperationalError):
+            with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
+                cx.execute(self._sql)
+
+    def test_database_keyword(self):
+        with sqlite.connect(database=":memory:") as cx:
+            self.assertEqual(type(cx), sqlite.Connection)
 
 
 class CursorTests(unittest.TestCase):
@@ -522,163 +626,92 @@ class CursorTests(unittest.TestCase):
         ]
         self.assertEqual(results, expected)
 
+    def test_column_count(self):
+        # Check that column count is updated correctly for cached statements
+        select = "select * from test"
+        res = self.cu.execute(select)
+        old_count = len(res.description)
+        # Add a new column and execute the cached select query again
+        self.cu.execute("alter table test add newcol")
+        res = self.cu.execute(select)
+        new_count = len(res.description)
+        self.assertEqual(new_count - old_count, 1)
+
+    def test_same_query_in_multiple_cursors(self):
+        cursors = [self.cx.execute("select 1") for _ in range(3)]
+        for cu in cursors:
+            self.assertEqual(cu.fetchall(), [(1,)])
+
 
 class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
         self.cur = self.con.cursor()
-        self.cur.execute("create table test(id integer primary key, name text, bin binary, ratio number, ts timestamp)")
+        self.cur.execute("create table test(name text)")
 
     def tearDown(self):
         self.cur.close()
         self.con.close()
 
-    def test_con_cursor(self):
-        def run(con, errors):
+    @threading_helper.reap_threads
+    def _run_test(self, fn, *args, **kwds):
+        def run(err):
             try:
-                cur = con.cursor()
-                errors.append("did not raise ProgrammingError")
-                return
+                fn(*args, **kwds)
+                err.append("did not raise ProgrammingError")
             except sqlite.ProgrammingError:
-                return
+                pass
             except:
-                errors.append("raised wrong exception")
+                err.append("raised wrong exception")
 
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
+        err = []
+        t = threading.Thread(target=run, kwargs={"err": err})
         t.start()
         t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        if err:
+            self.fail("\n".join(err))
 
-    def test_con_commit(self):
-        def run(con, errors):
+    def test_check_connection_thread(self):
+        fns = [
+            lambda: self.con.cursor(),
+            lambda: self.con.commit(),
+            lambda: self.con.rollback(),
+            lambda: self.con.close(),
+            lambda: self.con.set_trace_callback(None),
+            lambda: self.con.set_authorizer(None),
+            lambda: self.con.create_collation("foo", None),
+        ]
+        for fn in fns:
+            with self.subTest(fn=fn):
+                self._run_test(fn)
+
+    def test_check_cursor_thread(self):
+        fns = [
+            lambda: self.cur.execute("insert into test(name) values('a')"),
+            lambda: self.cur.close(),
+            lambda: self.cur.execute("select name from test"),
+            lambda: self.cur.fetchone(),
+        ]
+        for fn in fns:
+            with self.subTest(fn=fn):
+                self._run_test(fn)
+
+
+    @threading_helper.reap_threads
+    def test_dont_check_same_thread(self):
+        def run(con, err):
             try:
-                con.commit()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
+                con.execute("select 1")
+            except sqlite.Error:
+                err.append("multi-threading not allowed")
 
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
+        con = sqlite.connect(":memory:", check_same_thread=False)
+        err = []
+        t = threading.Thread(target=run, kwargs={"con": con, "err": err})
         t.start()
         t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self.assertEqual(len(err), 0, "\n".join(err))
 
-    def test_con_rollback(self):
-        def run(con, errors):
-            try:
-                con.rollback()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
-
-    def test_con_close(self):
-        def run(con, errors):
-            try:
-                con.close()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
-
-    def test_cur_implicit_begin(self):
-        def run(cur, errors):
-            try:
-                cur.execute("insert into test(name) values ('a')")
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
-
-    def test_cur_close(self):
-        def run(cur, errors):
-            try:
-                cur.close()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
-
-    def test_cur_execute(self):
-        def run(cur, errors):
-            try:
-                cur.execute("select name from test")
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        self.cur.execute("insert into test(name) values ('a')")
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
-
-    def test_cur_iter_next(self):
-        def run(cur, errors):
-            try:
-                row = cur.fetchone()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        self.cur.execute("insert into test(name) values ('a')")
-        self.cur.execute("select name from test")
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
 
 class ConstructorTests(unittest.TestCase):
     def test_date(self):
@@ -731,9 +764,35 @@ class ExtensionTests(unittest.TestCase):
     def test_cursor_executescript_as_bytes(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(TypeError):
             cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
-        self.assertEqual(str(cm.exception), 'script argument must be unicode.')
+
+    def test_cursor_executescript_with_null_characters(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(ValueError):
+            cur.executescript("""
+                create table a(i);\0
+                insert into a(i) values (5);
+                """)
+
+    def test_cursor_executescript_with_surrogates(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(UnicodeEncodeError):
+            cur.executescript("""
+                create table a(s);
+                insert into a(s) values ('\ud8ff');
+                """)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=2**31, memuse=3, dry_run=False)
+    def test_cursor_executescript_too_large_script(self, maxsize):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        for size in 2**31-1, 2**31:
+            with self.assertRaises(sqlite.DataError):
+                cur.executescript("create table a(s);".ljust(size))
 
     def test_connection_execute(self):
         con = sqlite.connect(":memory:")
@@ -933,6 +992,77 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
 
 
+class MultiprocessTests(unittest.TestCase):
+    CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_ctx_mgr_rollback_if_commit_failed(self):
+        # bpo-27334: ctx manager does not rollback if commit fails
+        SCRIPT = f"""if 1:
+            import sqlite3
+            def wait():
+                print("started")
+                assert "database is locked" in input()
+
+            cx = sqlite3.connect("{TESTFN}", timeout={self.CONNECTION_TIMEOUT})
+            cx.create_function("wait", 0, wait)
+            with cx:
+                cx.execute("create table t(t)")
+            try:
+                # execute two transactions; both will try to lock the db
+                cx.executescript('''
+                    -- start a transaction and wait for parent
+                    begin transaction;
+                    select * from t;
+                    select wait();
+                    rollback;
+
+                    -- start a new transaction; would fail if parent holds lock
+                    begin transaction;
+                    select * from t;
+                    rollback;
+                ''')
+            finally:
+                cx.close()
+        """
+
+        # spawn child process
+        proc = subprocess.Popen(
+            [sys.executable, "-c", SCRIPT],
+            encoding="utf-8",
+            bufsize=0,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        self.addCleanup(proc.communicate)
+
+        # wait for child process to start
+        self.assertEqual("started", proc.stdout.readline().strip())
+
+        cx = sqlite.connect(TESTFN, timeout=self.CONNECTION_TIMEOUT)
+        try:  # context manager should correctly release the db lock
+            with cx:
+                cx.execute("insert into t values('test')")
+        except sqlite.OperationalError as exc:
+            proc.stdin.write(str(exc))
+        else:
+            proc.stdin.write("no error")
+        finally:
+            cx.close()
+
+        # terminate child process
+        self.assertIsNone(proc.returncode)
+        try:
+            proc.communicate(input="end", timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            raise
+        self.assertEqual(proc.returncode, 0)
+
+
 def suite():
     tests = [
         ClosedConTests,
@@ -942,8 +1072,11 @@ def suite():
         CursorTests,
         ExtensionTests,
         ModuleTests,
+        MultiprocessTests,
+        OpenTests,
         SqliteOnConflictTests,
         ThreadTests,
+        UninitialisedConnectionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]

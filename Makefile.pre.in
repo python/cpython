@@ -339,6 +339,7 @@ PARSER_HEADERS= \
 PYTHON_OBJS=	\
 		Python/_warnings.o \
 		Python/Python-ast.o \
+		Python/Python-tokenize.o \
 		Python/asdl.o \
 		Python/ast.o \
 		Python/ast_opt.o \
@@ -350,6 +351,7 @@ PYTHON_OBJS=	\
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/frame.o \
 		Python/frozenmain.o \
 		Python/future.o \
 		Python/getargs.o \
@@ -378,6 +380,7 @@ PYTHON_OBJS=	\
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
+		Python/specialize.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -978,8 +981,7 @@ Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
-Objects/odictobject.o: $(srcdir)/Objects/dict-common.h
-Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h $(srcdir)/Objects/dict-common.h
+Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
 .PHONY: regen-opcode-targets
@@ -1155,6 +1157,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_compile.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_format.h \
@@ -1472,6 +1475,8 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
 		test/test_import/data/circular_imports/subpkg \
+		test/test_import/data/circular_imports/subpkg2 \
+		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
 		test/test_import/data/unwritable \
@@ -1512,6 +1517,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
 		test/test_importlib/namespacedata01 \
 		test/test_importlib/partial \
+		test/test_importlib/resources \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
