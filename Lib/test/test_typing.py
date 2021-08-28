@@ -2418,6 +2418,22 @@ class GenericTests(BaseTestCase):
         self.assertEqual(c.from_b, 'b')
         self.assertEqual(c.from_c, 'c')
 
+    def test_subclass_special_form(self):
+        for obj in (
+            ClassVar[int],
+            Final[int],
+            Union[int, float],
+            Optional[int],
+            Literal[1, 2],
+            Concatenate[int, ParamSpec("P")],
+            TypeGuard[int],
+        ):
+            with self.subTest(msg=obj):
+                with self.assertRaisesRegex(
+                        TypeError, f'^{re.escape(f"Cannot subclass {obj!r}")}$'
+                ):
+                    class Foo(obj):
+                        pass
 
 class ClassVarTests(BaseTestCase):
 
