@@ -119,7 +119,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         self.data = {}
         self.update(other, **kw)
 
-    def _commit_removals(self):
+    def _commit_removals(self, _atomic_removal=_remove_dead_weakref):
         pop = self._pending_removals.pop
         d = self.data
         # We shouldn't encounter any KeyError, because this method should
@@ -130,7 +130,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             except IndexError:
                 return
             else:
-                _remove_dead_weakref(d, key)
+                _atomic_removal(d, key)
 
     def __getitem__(self, key):
         if self._pending_removals:
