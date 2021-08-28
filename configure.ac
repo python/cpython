@@ -2201,7 +2201,7 @@ sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
 sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
-sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
+sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h utmp.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
@@ -3988,12 +3988,18 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [AC_MSG_RESULT(no)
 ])
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS(openpty,,
    AC_CHECK_LIB(util,openpty,
      [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
      AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
+   )
+)
+AC_CHECK_FUNCS(login_tty,,
+   AC_CHECK_LIB(util,login_tty,
+     [AC_DEFINE(HAVE_LOGIN_TTY) LIBS="$LIBS -lutil"],
+     AC_CHECK_LIB(bsd,login_tty, [AC_DEFINE(HAVE_LOGIN_TTY) LIBS="$LIBS -lbsd"])
    )
 )
 AC_CHECK_FUNCS(forkpty,,
