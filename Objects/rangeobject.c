@@ -813,7 +813,7 @@ rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)i", _PyEval_GetBuiltinId(&PyId_iter),
+    return Py_BuildValue("N(N)l", _PyEval_GetBuiltinId(&PyId_iter),
                          range, r->index);
 err:
     Py_XDECREF(start);
