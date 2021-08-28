@@ -129,8 +129,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 key = pop()
             except IndexError:
                 return
-            else:
-                _atomic_removal(d, key)
+            _atomic_removal(d, key)
 
     def __getitem__(self, key):
         if self._pending_removals:

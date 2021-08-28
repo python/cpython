@@ -58,8 +58,7 @@ class WeakSet:
                 item = pop()
             except IndexError:
                 return
-            else:
-                discard(item)
+            discard(item)
 
     def __iter__(self):
         with _IterationGuard(self):
