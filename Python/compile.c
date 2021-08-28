@@ -1821,7 +1821,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
     ADDOP_I(c, CALL_FUNCTION, 3);
@@ -5226,7 +5226,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     if(!compiler_call_exit_with_nones(c))
         return 0;
     ADDOP(c, GET_AWAITABLE);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
     ADDOP(c, POP_TOP);
