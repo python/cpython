@@ -398,11 +398,11 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 key = pop()
             except IndexError:
                 return
-            else:
-                try:
-                    del d[key]
-                except KeyError:
-                    pass
+
+            try:
+                del d[key]
+            except KeyError:
+                pass
 
     def _scrub_removals(self):
         d = self.data
