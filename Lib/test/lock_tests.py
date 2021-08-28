@@ -222,7 +222,7 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         ref = weakref.ref(lock)
         del lock
-        gc.collect()
+        gc.collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 

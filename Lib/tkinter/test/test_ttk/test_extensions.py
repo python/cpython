@@ -18,7 +18,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x = ttk.LabeledScale(self.root)
         var = x._variable._name
         x.destroy()
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(tkinter.TclError, x.tk.globalgetvar, var)
 
         # manually created variable
@@ -31,7 +31,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         else:
             self.assertEqual(float(x.tk.globalgetvar(name)), myvar.get())
         del myvar
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(tkinter.TclError, x.tk.globalgetvar, name)
 
         # checking that the tracing callback is properly removed
@@ -173,7 +173,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_resize(self):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         x.update()
 
         width, height = x.master.winfo_width(), x.master.winfo_height()
@@ -209,7 +209,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         optmenu.destroy()
         self.assertEqual(optmenu.tk.globalgetvar(name), var.get())
         del var
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(tkinter.TclError, optmenu.tk.globalgetvar, name)
 
 
@@ -255,7 +255,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
 
         # check that variable is updated correctly
         optmenu.pack()
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         optmenu['menu'].invoke(0)
         self.assertEqual(optmenu._variable.get(), items[0])
 

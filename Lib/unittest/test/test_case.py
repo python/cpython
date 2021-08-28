@@ -1967,7 +1967,7 @@ test case
         for method_name in ('test1', 'test2'):
             testcase = TestCase(method_name)
             testcase.run()
-            gc_collect()
+            gc_collect()  # For PyPy or other GCs.
             self.assertEqual(MyException.ninstance, 0)
 
 

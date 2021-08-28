@@ -839,7 +839,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(conv(self.scale.get()), var.get())
         self.assertEqual(conv(self.scale.get()), max + 5)
         del var
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
 
         # the same happens with the value option
         self.scale['value'] = max + 10

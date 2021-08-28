@@ -2191,7 +2191,7 @@ And finalization:
 
 >>> g = f()
 >>> next(g)
->>> del g; gc_collect()
+>>> del g; gc_collect()  # For PyPy or other GCs.
 exiting
 
 
@@ -2206,7 +2206,7 @@ GeneratorExit is not caught by except Exception:
 
 >>> g = f()
 >>> next(g)
->>> del g; gc_collect()
+>>> del g; gc_collect()  # For PyPy or other GCs.
 finally
 
 

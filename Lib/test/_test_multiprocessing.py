@@ -612,7 +612,7 @@ class _TestProcess(BaseTestCase):
         p.start()
         p.join()
         for i in range(3):
-            gc.collect()
+            gc.collect()  # For PyPy or other GCs.
         self.assertIs(wr(), None)
         self.assertEqual(q.get(), 5)
         close_queue(q)
@@ -2670,7 +2670,7 @@ class _TestPool(BaseTestCase):
 
         del objs
         for i in range(3):
-            gc.collect()
+            gc.collect()  # For PyPy or other GCs.
         time.sleep(DELTA)  # let threaded cleanup code run
         self.assertEqual(set(wr() for wr in refs), {None})
         # With a process pool, copies of the objects are returned, check
@@ -4203,7 +4203,7 @@ class _TestFinalize(BaseTestCase):
 
     def tearDown(self):
         for i in range(3):
-            gc.collect()
+            gc.collect()  # For PyPy or other GCs.
         self.assertFalse(util._finalizer_registry)
         util._finalizer_registry.update(self.registry_backup)
 
@@ -4215,14 +4215,14 @@ class _TestFinalize(BaseTestCase):
         a = Foo()
         util.Finalize(a, conn.send, args=('a',))
         del a           # triggers callback for a
-        gc.collect()
+        gc.collect()  # For PyPy or other GCs.
 
         b = Foo()
         close_b = util.Finalize(b, conn.send, args=('b',))
         close_b()       # triggers callback for b
         close_b()       # does nothing because callback has already been called
         del b           # does nothing because callback has already been called
-        gc.collect()
+        gc.collect()  # For PyPy or other GCs.
 
         c = Foo()
         util.Finalize(c, conn.send, args=('c',))

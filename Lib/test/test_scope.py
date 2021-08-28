@@ -474,7 +474,7 @@ class ScopeTests(unittest.TestCase):
         for i in range(100):
             f1()
 
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(Foo.count, 0)
 
     def testClassAndGlobal(self):
@@ -807,7 +807,7 @@ class ScopeTests(unittest.TestCase):
         tester.dig()
         ref = weakref.ref(tester)
         del tester
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 

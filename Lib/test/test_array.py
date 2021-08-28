@@ -1097,7 +1097,7 @@ class BaseTest:
         p = weakref.proxy(s)
         self.assertEqual(p.tobytes(), s.tobytes())
         s = None
-        support.gc_collect()
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, len, p)
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),

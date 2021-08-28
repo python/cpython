@@ -4395,7 +4395,7 @@ class SignalsTest(unittest.TestCase):
 
         # Fortunately, a little gc.collect() seems to be enough to
         # work around all these issues.
-        support.gc_collect()
+        support.gc_collect()  # For PyPy or other GCs.
 
         read_results = []
         def _read():

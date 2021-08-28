@@ -125,10 +125,10 @@ class Test_Assertions(unittest.TestCase):
                     self.foo()
 
         Foo("test_functional").run()
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
         Foo("test_with").run()
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(wr())
 
     def testAssertNotRegex(self):

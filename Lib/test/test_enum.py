@@ -2073,7 +2073,7 @@ class TestEnum(unittest.TestCase):
         # The exception raised by Enum creates a reference loop and thus
         # Class2 instances will stick around until the next garbage collection
         # cycle, unlike Class1.
-        gc.collect()
+        gc.collect()  # For PyPy or other GCs.
         self.assertIs(class_1_ref(), None)
         self.assertIs(class_2_ref(), None)
 

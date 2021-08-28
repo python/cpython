@@ -591,7 +591,7 @@ class BaseSimpleQueueTest:
             q.put(C())
         for i in range(N):
             wr = weakref.ref(q.get())
-            gc_collect()
+            gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
 

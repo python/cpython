@@ -656,7 +656,7 @@ class ExceptionTests(unittest.TestCase):
         except MyException as e:
             pass
         obj = None
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -668,7 +668,7 @@ class ExceptionTests(unittest.TestCase):
         except MyException:
             pass
         obj = None
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -680,7 +680,7 @@ class ExceptionTests(unittest.TestCase):
         except:
             pass
         obj = None
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -693,7 +693,7 @@ class ExceptionTests(unittest.TestCase):
             except:
                 break
         obj = None
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -712,7 +712,7 @@ class ExceptionTests(unittest.TestCase):
             # must clear the latter manually for our test to succeed.
             e.__context__ = None
             obj = None
-            gc_collect()
+            gc_collect()  # For PyPy or other GCs.
             obj = wr()
             # guarantee no ref cycles on CPython (don't gc_collect)
             if check_impl_detail(cpython=False):
@@ -903,7 +903,7 @@ class ExceptionTests(unittest.TestCase):
         next(g)
         testfunc(g)
         g = obj = None
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -957,7 +957,7 @@ class ExceptionTests(unittest.TestCase):
             raise Exception(MyObject())
         except:
             pass
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(e, (None, None, None))
 
     def test_raise_does_not_create_context_chain_cycle(self):
@@ -1420,7 +1420,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertNotEqual(wr(), None)
         else:
             self.fail("MemoryError not raised")
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
     @no_tracing
@@ -1441,7 +1441,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertNotEqual(wr(), None)
         else:
             self.fail("RecursionError not raised")
-        gc_collect()
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
     def test_errno_ENOTDIR(self):
@@ -1462,7 +1462,7 @@ class ExceptionTests(unittest.TestCase):
         with support.catch_unraisable_exception() as cm:
             del obj
 
-            gc_collect()
+            gc_collect()  # For PyPy or other GCs.
             self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
