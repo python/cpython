@@ -2839,18 +2839,18 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-		# Note: This matches the value of THREAD_STACK_SIZE in
-		# thread_pthread.h
-    stack_size="1000000"
+    stack_size="1000000"  # 16 MB
     if test "$with_ubsan" == "yes"
     then
         # Undefined behavior sanitizer requires an even deeper stack
-        stack_size="4000000"
-        AC_DEFINE_UNQUOTED(THREAD_STACK_SIZE,
-            0x$stack_size,
-            [Custom thread stack size to fit the undefined behavior sanitizer runtime.])
+        stack_size="4000000"  # 64 MB
     fi
+
     LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+    AC_DEFINE_UNQUOTED(THREAD_STACK_SIZE,
+        0x$stack_size,
+        [Custom thread stack size depending on chosen sanitizer runtimes.])
 
 		if test "$enable_framework"
 		then
