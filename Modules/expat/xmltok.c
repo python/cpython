@@ -48,11 +48,9 @@
 
 #ifdef _WIN32
 #  include "winconfig.h"
-#else
-#  ifdef HAVE_EXPAT_CONFIG_H
-#    include <expat_config.h>
-#  endif
-#endif /* ndef _WIN32 */
+#endif
+
+#include <expat_config.h>
 
 #include "expat_external.h"
 #include "internal.h"
