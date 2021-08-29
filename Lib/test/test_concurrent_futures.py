@@ -448,6 +448,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         executor.map(abs, range(-5, 5))
         threads = executor._threads
         del executor
+        support.gc_collect()  # For PyPy or other GCs.
 
         for t in threads:
             self.assertRegex(t.name, r'^SpecialPool_[0-4]$')
@@ -458,6 +459,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         executor.map(abs, range(-5, 5))
         threads = executor._threads
         del executor
+        support.gc_collect()  # For PyPy or other GCs.
 
         for t in threads:
             # Ensure that our default name is reasonably sane and unique when
@@ -520,6 +522,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         call_queue = executor._call_queue
         executor_manager_thread = executor._executor_manager_thread
         del executor
+        support.gc_collect()  # For PyPy or other GCs.
 
         # Make sure that all the executor resources were properly cleaned by
         # the shutdown process
@@ -744,6 +747,7 @@ class AsCompletedTests:
                 futures_list.remove(future)
                 wr = weakref.ref(future)
                 del future
+                support.gc_collect()  # For PyPy or other GCs.
                 self.assertIsNone(wr())
 
         futures_list[0].set_result("test")
@@ -751,6 +755,7 @@ class AsCompletedTests:
             futures_list.remove(future)
             wr = weakref.ref(future)
             del future
+            support.gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
             if futures_list:
                 futures_list[0].set_result("test")
@@ -850,6 +855,7 @@ class ExecutorTest:
         for obj in self.executor.map(make_dummy_object, range(10)):
             wr = weakref.ref(obj)
             del obj
+            support.gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
 
