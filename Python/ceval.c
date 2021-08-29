@@ -846,7 +846,9 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
     _Py_IDENTIFIER(get);
-    PyObject *get = _PyObject_GetAttrId(map, &PyId_get);
+    PyObject *get_name = _PyUnicode_FromId(&PyId_get); // borrowed
+    PyObject *get = NULL;
+    int meth_found = _PyObject_GetMethod(map, get_name, &get);
     if (get == NULL) {
         goto fail;
     }
@@ -873,8 +875,14 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *args[] = { key, dummy };
-        PyObject *value = PyObject_Vectorcall(get, args, 2, NULL);
+        PyObject *args[] = { map, key, dummy };
+        PyObject *value = NULL;
+        if (meth_found) {
+            value = PyObject_Vectorcall(get, args, 3, NULL);
+        }
+        else {
+            value = PyObject_Vectorcall(get, &args[1], 2, NULL);
+        }
         if (value == NULL) {
             goto fail;
         }
