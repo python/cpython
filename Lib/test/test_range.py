@@ -450,6 +450,20 @@ class RangeTest(unittest.TestCase):
             it = pickle.loads(t)
             self.assertEqual(list(it), [14, 16, 18])
 
+    def test_iterator_setstate(self):
+        it = iter(range(10, 20, 2))
+        it.__setstate__(2)
+        self.assertEqual(list(it), [14, 16, 18])
+        it = reversed(range(10, 20, 2))
+        it.__setstate__(3)
+        self.assertEqual(list(it), [12, 10])
+        it = iter(range(-2**65, 20, 2))
+        it.__setstate__(2**64 + 7)
+        self.assertEqual(list(it), [14, 16, 18])
+        it = reversed(range(10, 2**65, 2))
+        it.__setstate__(2**64 - 7)
+        self.assertEqual(list(it), [12, 10])
+
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
         # because the range validation step was eating the exception
