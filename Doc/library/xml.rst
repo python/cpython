@@ -60,18 +60,20 @@ circumvent firewalls.
 The following table gives an overview of the known attacks and whether
 the various modules are vulnerable to them.
 
-=========================  ==============   ===============   ==============   ==============   ==============
-kind                       sax              etree             minidom          pulldom          xmlrpc
-=========================  ==============   ===============   ==============   ==============   ==============
-billion laughs             Safe (1)         Safe (1)          Safe (1)         Safe (1)         Safe (1)
-quadratic blowup           **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-external entity expansion  Safe (5)         Safe    (2)       Safe    (3)      Safe (5)         Safe    (4)
-`DTD`_ retrieval           Safe (5)         Safe              Safe             Safe (5)         Safe
-decompression bomb         Safe             Safe              Safe             Safe             **Vulnerable**
-=========================  ==============   ===============   ==============   ==============   ==============
+=========================  ==================  ==================  ==================  ==================  ==================
+kind                       sax                 etree               minidom             pulldom             xmlrpc
+=========================  ==================  ==================  ==================  ==================  ==================
+billion laughs             **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
+quadratic blowup           **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable** (1)
+external entity expansion  Safe (5)            Safe (2)            Safe (3)            Safe (5)            Safe (4)
+`DTD`_ retrieval           Safe (5)            Safe                Safe                Safe (5)            Safe
+decompression bomb         Safe                Safe                Safe                Safe                **Vulnerable**
+=========================  ==================  ==================  ==================  ==================  ==================
 
-1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs"
-   vulnerability: check :data:`pyexpat.EXPAT_VERSION`.
+1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
+   "quadratic blowup" vulnerabilities. Items still listed as vulnerable due to
+   potential reliance on system-provided libraries. Check
+   :data:`pyexpat.EXPAT_VERSION`.
 2. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
    :exc:`ParserError` when an entity occurs.
 3. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
