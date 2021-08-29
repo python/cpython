@@ -3119,16 +3119,14 @@ x_sub(PyLongObject *a, PyLongObject *b)
     return maybe_small_long(long_normalize(z));
 }
 
-static PyObject *
-long_add(PyLongObject *a, PyLongObject *b)
+PyObject *
+_PyLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    PyLongObject *z;
-
-    CHECK_BINOP(a, b);
-
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
         return _PyLong_FromSTwoDigits(medium_value(a) + medium_value(b));
     }
+
+    PyLongObject *z;
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
             z = x_add(a, b);
@@ -3152,6 +3150,14 @@ long_add(PyLongObject *a, PyLongObject *b)
     }
     return (PyObject *)z;
 }
+
+static PyObject *
+long_add(PyLongObject *a, PyLongObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Add(a, b);
+}
+
 
 static PyObject *
 long_sub(PyLongObject *a, PyLongObject *b)
