@@ -289,7 +289,7 @@ class DebuggingServerTests(unittest.TestCase):
     def test_issue43124_putcmd_escapes_newline(self):
         # see: https://bugs.python.org/issue43124
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                            timeout=support.LOOPBACK_TIMEOUT)
+                            timeout=10)  # support.LOOPBACK_TIMEOUT in newer Pythons
         self.addCleanup(smtp.close)
         with self.assertRaises(ValueError) as exc:
             smtp.putcmd('helo\nX-INJECTED')
@@ -370,7 +370,7 @@ class DebuggingServerTests(unittest.TestCase):
         # connect and send mail
         m = 'wazzuuup\nlinetwo'
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='hi\nX-INJECTED',
-                            timeout=support.LOOPBACK_TIMEOUT)
+                            timeout=10)  # support.LOOPBACK_TIMEOUT in newer Pythons
         self.addCleanup(smtp.close)
         with self.assertRaises(ValueError) as exc:
             smtp.sendmail("hi@me.com", "you@me.com", m)
@@ -391,7 +391,7 @@ class DebuggingServerTests(unittest.TestCase):
         m = 'wazzuuup\nlinetwo'
         smtp = smtplib.SMTP(
             HOST, self.port, local_hostname='localhost',
-            timeout=support.LOOPBACK_TIMEOUT)
+            timeout=10)  # support.LOOPBACK_TIMEOUT in newer Pythons
 
         self.addCleanup(smtp.close)
         smtp.sendmail("hi@me.com", "you@me.com", m)
