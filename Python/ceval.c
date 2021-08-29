@@ -859,7 +859,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (dummy == NULL) {
         goto fail;
     }
-    values = PyList_New(0);
+    values = PyTuple_New(nkeys);
     if (values == NULL) {
         goto fail;
     }
@@ -873,7 +873,8 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
+        PyObject *args[] = { key, dummy };
+        PyObject *value = PyObject_Vectorcall(get, args, 2, NULL);
         if (value == NULL) {
             goto fail;
         }
@@ -886,10 +887,8 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             values = Py_None;
             goto done;
         }
-        PyList_Append(values, value);
-        Py_DECREF(value);
+        PyTuple_SET_ITEM(values, i, value);
     }
-    Py_SETREF(values, PyList_AsTuple(values));
     // Success:
 done:
     Py_DECREF(get);
