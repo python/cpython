@@ -1,0 +1,3 @@
+Optimize the :class:`range` object iterator. It is now smaller, faster
+iteration of ranges containing large numbers. Smaller pickles, faster
+unpickling.
