@@ -143,12 +143,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-<<<<<<< HEAD
-      OPENSSL_VER: 1.1.1k
-=======
       OPENSSL_VER: 1.1.1l
-      PYTHONSTRICTEXTENSIONBUILD: 1
->>>>>>> d3bdbbf9a4 (bpo-45007: Update to OpenSSL 1.1.1l in Windows build and CI (GH-28009))
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
