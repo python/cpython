@@ -7,6 +7,7 @@ import time
 import unittest
 import weakref
 from test import support
+from test.support import gc_collect
 
 py_queue = support.import_fresh_module('queue', blocked=['_queue'])
 c_queue = support.import_fresh_module('queue', fresh=['_queue'])
@@ -588,6 +589,7 @@ class BaseSimpleQueueTest:
             q.put(C())
         for i in range(N):
             wr = weakref.ref(q.get())
+            gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
 

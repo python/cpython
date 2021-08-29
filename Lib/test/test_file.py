@@ -7,7 +7,7 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
-from test.support import TESTFN
+from test.support import TESTFN, gc_collect
 from test import support
 from collections import UserList
 
@@ -29,6 +29,7 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testAttributes(self):
