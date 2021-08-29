@@ -60,7 +60,8 @@ The module defines the following exception and functions:
    Pack the values *v1*, *v2*, ... according to the format string *format* and
    write the packed bytes into the writable buffer *buffer* starting at
    position *offset*.  Note that *offset* is a required argument.
-
+.. note::
+   'x' padding inserts null bytes to pad bytes.
 
 .. function:: unpack(format, buffer)
 
