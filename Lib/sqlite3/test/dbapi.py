@@ -880,6 +880,13 @@ class ExtensionTests(unittest.TestCase):
             with self.assertRaises(sqlite.DataError):
                 cur.executescript("create table a(s);".ljust(size))
 
+    def test_cursor_executescript_tx_control(self):
+        con = sqlite.connect(":memory:")
+        con.execute("begin")
+        self.assertTrue(con.in_transaction)
+        con.executescript("select 1")
+        self.assertFalse(con.in_transaction)
+
     def test_connection_execute(self):
         con = sqlite.connect(":memory:")
         result = con.execute("select 5").fetchone()[0]
