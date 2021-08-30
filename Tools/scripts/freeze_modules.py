@@ -339,6 +339,7 @@ def regen_frozen(specs, dest=MODULES_DIR):
         if line:
             deflines[i] = indent + line
 
+    print(f'# Updating {os.path.relpath(FROZEN_FILE)}')
     with updating_file_with_tmpfile(FROZEN_FILE) as (infile, outfile):
         lines = infile.readlines()
         # TODO: Use more obvious markers, e.g.
@@ -383,6 +384,7 @@ def regen_makefile(frozenids, frozen):
 
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
+    print(f'# Updating {os.path.relpath(MAKEFILE)}')
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
         lines = infile.readlines()
         lines = replace_block(
@@ -421,6 +423,7 @@ def regen_pcbuild(frozenids, frozen):
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
 
+    print(f'# Updating {os.path.relpath(PCBUILD_PROJECT)}')
     with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
         lines = infile.readlines()
         lines = replace_block(
@@ -431,6 +434,7 @@ def regen_pcbuild(frozenids, frozen):
             PCBUILD_PROJECT,
         )
         outfile.writelines(lines)
+    print(f'# Updating {os.path.relpath(PCBUILD_FILTERS)}')
     with updating_file_with_tmpfile(PCBUILD_FILTERS) as (infile, outfile):
         lines = infile.readlines()
         lines = replace_block(
@@ -457,8 +461,13 @@ def _freeze_module(frozenid, pyfile, frozenfile):
     tmpfile = frozenfile + '.new'
 
     argv = [TOOL, frozenid, pyfile, tmpfile]
-    print('#', ' '.join(argv))
-    subprocess.run(argv, check=True)
+    print('#', '  '.join(os.path.relpath(a) for a in argv))
+    try:
+        subprocess.run(argv, check=True)
+    except subprocess.CalledProcessError:
+        if not os.path.exists(TOOL):
+            sys.exit(f'ERROR: missing {TOOL}; you need to run "make regen-frozen"')
+        raise  # re-raise
 
     os.replace(tmpfile, frozenfile)
 
