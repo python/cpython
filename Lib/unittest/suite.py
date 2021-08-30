@@ -149,8 +149,9 @@ class TestSuite(BaseTestSuite):
         if getattr(currentClass, "__unittest_skip__", False):
             return
 
+        failed = False
         try:
-            failed = currentClass._classSetupFailed = False
+            currentClass._classSetupFailed = False
         except TypeError:
             # test may actually be a function
             # so its class will be a builtin-type
@@ -166,8 +167,9 @@ class TestSuite(BaseTestSuite):
                 except Exception as e:
                     if isinstance(result, _DebugResult):
                         raise
+                    failed = True
                     try:
-                        failed = currentClass._classSetupFailed = True
+                        currentClass._classSetupFailed = True
                     except TypeError:
                         pass
                     className = util.strclass(currentClass)
