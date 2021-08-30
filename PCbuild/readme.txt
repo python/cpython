@@ -116,7 +116,7 @@ _testembed
 These are miscellaneous sub-projects that don't really fit the other
 categories:
 _freeze_module
-    _freeze_module.exe, used to regenerate frozen modules in Python\
+    _freeze_module.exe, used to regenerate frozen modules in Python
     after changes have been made to the corresponding source files
     (e.g. Lib\importlib\_bootstrap.py).
 pyshellext

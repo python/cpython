@@ -1,8 +1,8 @@
 /* This is built as a stand-alone executable by the Makefile, and helps turn
    modules into frozen modules (like Lib/importlib/_bootstrap.py
-   into Python/importlib.h)
+   into Python/importlib.h).
 
-   This is used directly by Tools/scripts/freeze_modules.py, and indirectly by "make regen-frozen-*".
+   This is used directly by Tools/scripts/freeze_modules.py, and indirectly by "make regen-frozen".
 
    See Python/frozen.c for more info.
 */
