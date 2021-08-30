@@ -832,11 +832,12 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
         for wbits in (-15, 15, 31):
-            self.assertEqual(
-                zlib.decompress(
+            with self.subTest(wbits=wbits):
+                expected = HAMLET_SCENE
+                actual = zlib.decompress(
                     zlib.compress(HAMLET_SCENE, wbits=wbits), wbits=wbits
-                ), HAMLET_SCENE)
-
+                )
+                self.assertEqual(expected, actual)
 
 def choose_lines(source, number, seed=None, generator=random):
     """Return a list of number lines randomly chosen from the source"""
