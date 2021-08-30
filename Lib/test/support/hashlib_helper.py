@@ -21,30 +21,31 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
     ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
     ValueError: unsupported hash type md4
     """
-    try:
-        if openssl and _hashlib is not None:
-            _hashlib.new(digestname, usedforsecurity=usedforsecurity)
-        else:
-            hashlib.new(digestname, usedforsecurity=usedforsecurity)
-    except ValueError:
-        should_be_skipped = True
-    else:
-        should_be_skipped = False
-
-    def maybe_skip():
-        if should_be_skipped:
-            raise unittest.SkipTest(
-                f"hash digest '{digestname}' is not available."
-            )
-
     def decorator(func_or_class):
-        if isinstance(func_or_class, type):  # The whole `class`
-            maybe_skip()
-            return func_or_class
-
-        @functools.wraps(func_or_class)  # Just a single function
+        @functools.wraps(func_or_class)
         def wrapper(*args, **kwargs):
-            maybe_skip()
+            try:
+                if openssl and _hashlib is not None:
+                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                else:
+                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
+            except ValueError:
+                raise unittest.SkipTest(
+                    f"hash digest '{digestname}' is not available."
+                )
             return func_or_class(*args, **kwargs)
+
+        if isinstance(func_or_class, type):
+            setUpClass = func_or_class.__dict__.get('setUpClass')
+            if setUpClass is None:
+                def setUpClass(cls):
+                    super(func_or_class, cls).setUpClass()
+                setUpClass.__qualname__ = func_or_class.__qualname__ + '.setUpClass'
+                setUpClass.__module__ = func_or_class.__module__
+            else:
+                setUpClass = setUpClass.__func__
+            setUpClass = classmethod(decorator(setUpClass))
+            func_or_class.setUpClass = setUpClass
+            return func_or_class
         return wrapper
     return decorator
