@@ -270,12 +270,17 @@ class ModuleTests(unittest.TestCase):
 
     def test_error_code_on_exception(self):
         err_msg = "unable to open database file"
+        if sys.platform.startswith("win"):
+            err_code = SQLITE_CANTOPEN_ISDIR
+        else:
+            err_code = SQLITE_CANTOPEN
+
         with temp_dir() as db:
             with self.assertRaisesRegex(sqlite.Error, err_msg) as cm:
                 sqlite.connect(db)
             e = cm.exception
-            self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
-            self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
+            self.assertEqual(e.sqlite_errorcode, err_code)
+            self.assertTrue(e.sqlite_errorname.startswith("SQLITE_CANTOPEN"))
 
     @unittest.skipIf(sqlite.sqlite_version_info <= (3, 10, 0),
                      "Requires SQLite 3.10.0 or newer")
