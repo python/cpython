@@ -473,34 +473,24 @@ def _freeze_module(frozenid, pyfile, frozenfile):
 #######################################
 # the script
 
-def parse_args(argv=sys.argv[1:], prog=sys.argv[0]):
-    import argparse
-    parser = argparse.ArgumentParser(prog=prog)
-    parser.add_argument('--no-regen', dest='regen', action='store_false')
-    parser.add_argument('--no-freeze', dest='freeze', action='store_false')
-
-    args = parser.parse_args(argv)
-    ns = vars(args)
-
-    return ns
-
-
-def main(*, regen=True, freeze=True):
+def main():
     # Expand the raw specs, preserving order.
     specs = list(parse_frozen_specs())
     frozen, frozenids = resolve_frozen_files(specs, MODULES_DIR)
 
-    # (We use a consistent order: that of FROZEN above.)
-    if regen:
-        regen_frozen(specs, (frozenids, frozen))
-        regen_makefile(frozenids, frozen)
-        regen_pcbuild(frozenids, frozen)
-    if freeze:
-        for frozenid in frozenids:
-            pyfile, frozenfile = frozen[frozenid]
-            _freeze_module(frozenid, pyfile, frozenfile)
+    # Regen build-related files.
+    regen_frozen(specs, (frozenids, frozen))
+    regen_makefile(frozenids, frozen)
+    regen_pcbuild(frozenids, frozen)
+
+    # Freeze the target modules.
+    for frozenid in frozenids:
+        pyfile, frozenfile = frozen[frozenid]
+        _freeze_module(frozenid, pyfile, frozenfile)
 
 
 if __name__ == '__main__':
-    kwargs = parse_args()
-    main(**kwargs)
+    argv = sys.argv[1:]
+    if argv:
+        sys.exit('ERROR: got unexpected args {argv}')
+    main()
