@@ -520,6 +520,8 @@ def Union(self, parameters):
     parameters = _remove_dups_flatten(parameters)
     if len(parameters) == 1:
         return parameters[0]
+    if len(parameters) == 2 and type(None) in parameters:
+        return _UnionGenericAlias(self, parameters, name="Optional")
     return _UnionGenericAlias(self, parameters)
 
 @_SpecialForm
@@ -957,7 +959,7 @@ class _BaseGenericAlias(_Final, _root=True):
 
     def __getattr__(self, attr):
         if attr in {'__name__', '__qualname__'}:
-            return self._name
+            return self._name or self.__origin__.__name__
 
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
@@ -1081,6 +1083,9 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return operator.getitem, (origin, args)
 
     def __mro_entries__(self, bases):
+        if isinstance(self.__origin__, _SpecialForm):
+            raise TypeError(f"Cannot subclass {self!r}")
+
         if self._name:  # generic version of an ABC or built-in class
             return super().__mro_entries__(bases)
         if self.__origin__ is Generic:
@@ -1236,6 +1241,10 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
         for arg in self.__args__:
             if issubclass(cls, arg):
                 return True
+
+    def __reduce__(self):
+        func, (origin, args) = super().__reduce__()
+        return func, (Union, args)
 
 
 def _value_and_type_iter(parameters):
@@ -1593,6 +1602,11 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
 
     def __hash__(self):
         return hash((self.__origin__, self.__metadata__))
+
+    def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return 'Annotated'
+        return super().__getattr__(attr)
 
 
 class Annotated:

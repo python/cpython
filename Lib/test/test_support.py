@@ -11,6 +11,8 @@ import tempfile
 import textwrap
 import time
 import unittest
+import warnings
+
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -22,6 +24,33 @@ TESTFN = os_helper.TESTFN
 
 
 class TestSupport(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        orig_filter_len = len(warnings.filters)
+        cls._warnings_helper_token = support.ignore_deprecations_from(
+            "test.support.warnings_helper", like=".*used in test_support.*"
+        )
+        cls._test_support_token = support.ignore_deprecations_from(
+            "test.test_support", like=".*You should NOT be seeing this.*"
+        )
+        assert len(warnings.filters) == orig_filter_len + 2
+
+    @classmethod
+    def tearDownClass(cls):
+        orig_filter_len = len(warnings.filters)
+        support.clear_ignored_deprecations(
+            cls._warnings_helper_token,
+            cls._test_support_token,
+        )
+        assert len(warnings.filters) == orig_filter_len - 2
+
+    def test_ignored_deprecations_are_silent(self):
+        """Test support.ignore_deprecations_from() silences warnings"""
+        with warnings.catch_warnings(record=True) as warning_objs:
+            warnings_helper._warn_about_deprecation()
+            warnings.warn("You should NOT be seeing this.", DeprecationWarning)
+            messages = [str(w.message) for w in warning_objs]
+        self.assertEqual(len(messages), 0, messages)
 
     def test_import_module(self):
         import_helper.import_module("ftplib")
