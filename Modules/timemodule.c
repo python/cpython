@@ -60,6 +60,10 @@
 #  define HAVE_CLOCK_GETTIME_RUNTIME 1
 #endif
 
+#if (!defined(MS_WINDOWS) && defined(__linux__) && defined(_POSIX_VERSION)) && (_POSIX_VERSION >= 200112L)
+#  define HAVE_CLOCK_NANOSLEEP 1
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -2044,6 +2048,23 @@ PyInit_time(void)
     return PyModuleDef_Init(&timemodule);
 }
 
+#ifndef MS_WINDOWS
+static int
+sleep_unix(struct timeval timeout)
+{
+    int ret = 0;
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec request;
+    request.tv_sec = timeout.tv_sec;
+    request.tv_nsec = (long)(timeout.tv_usec) * 1000;
+    ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &request, NULL);
+#else
+    ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+#endif
+    return ret;
+}
+#endif
+
 /* Implement pysleep() for various platforms.
    When interrupted (or when another error occurs), return -1 and
    set an exception; else return 0. */
@@ -2073,7 +2094,7 @@ pysleep(_PyTime_t secs)
             return -1;
 
         Py_BEGIN_ALLOW_THREADS
-        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+        err = sleep_unix(timeout);
         Py_END_ALLOW_THREADS
 
         if (err == 0)
