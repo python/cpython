@@ -1,0 +1,59 @@
+From cef404f1e7a598166cbc2fd2e0048f7e2d752ad5 Mon Sep 17 00:00:00 2001
+From: David Carlier <devnexen@gmail.com>
+Date: Tue, 24 Aug 2021 22:40:14 +0100
+Subject: [PATCH] Darwin platform allows to build on releases before
+ Yosemite/ios 8.
+
+issue #16407 #16408
+---
+ crypto/rand/rand_unix.c |  5 +----
+ include/crypto/rand.h   | 10 ++++++++++
+ 2 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/crypto/rand/rand_unix.c b/crypto/rand/rand_unix.c
+index 43f1069d15..0f4525106a 100644
+--- a/crypto/rand/rand_unix.c
++++ b/crypto/rand/rand_unix.c
+@@ -34,9 +34,6 @@
+ #if defined(__OpenBSD__)
+ # include <sys/param.h>
+ #endif
+-#if defined(__APPLE__)
+-# include <CommonCrypto/CommonRandom.h>
+-#endif
+ 
+ #if defined(OPENSSL_SYS_UNIX) || defined(__DJGPP__)
+ # include <sys/types.h>
+@@ -381,7 +378,7 @@ static ssize_t syscall_random(void *buf, size_t buflen)
+         if (errno != ENOSYS)
+             return -1;
+     }
+-#  elif defined(__APPLE__)
++#  elif defined(OPENSSL_APPLE_CRYPTO_RANDOM)
+     if (CCRandomGenerateBytes(buf, buflen) == kCCSuccess)
+ 	    return (ssize_t)buflen;
+ 
+diff --git a/include/crypto/rand.h b/include/crypto/rand.h
+index 5350d3a931..674f840fd1 100644
+--- a/include/crypto/rand.h
++++ b/include/crypto/rand.h
+@@ -20,6 +20,16 @@
+ 
+ # include <openssl/rand.h>
+ 
++# if defined(__APPLE__) && !defined(OPENSSL_NO_APPLE_CRYPTO_RANDOM)
++#  include <Availability.h>
++#  if (defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101000) || \
++     (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000)
++#   define OPENSSL_APPLE_CRYPTO_RANDOM 1
++#   include <CommonCrypto/CommonCryptoError.h>
++#   include <CommonCrypto/CommonRandom.h>
++#  endif
++# endif
++
+ /* forward declaration */
+ typedef struct rand_pool_st RAND_POOL;
+ 
+-- 
+2.33.0
+
