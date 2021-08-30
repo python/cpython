@@ -975,3 +975,12 @@ Debug-mode variables
    shutting down the interpreter.
 
    Need Python configured with the :option:`--with-trace-refs` build option.
+
+.. envvar:: PYTHONDUMPREFSFILE=FILENAME
+
+   If set, Python will dump objects and reference counts still alive
+   after shutting down the interpreter into a file called *FILENAME*.
+
+   Need Python configured with the :option:`--with-trace-refs` build option.
+
+   .. versionadded:: 3.11

@@ -222,4 +222,68 @@ termios_tcflow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a129179f1e2545cc input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(termios_tcgetwinsize__doc__,
+"tcgetwinsize($module, fd, /)\n"
+"--\n"
+"\n"
+"Get the tty winsize for file descriptor fd.\n"
+"\n"
+"Returns a tuple (ws_row, ws_col).");
+
+#define TERMIOS_TCGETWINSIZE_METHODDEF    \
+    {"tcgetwinsize", (PyCFunction)termios_tcgetwinsize, METH_O, termios_tcgetwinsize__doc__},
+
+static PyObject *
+termios_tcgetwinsize_impl(PyObject *module, int fd);
+
+static PyObject *
+termios_tcgetwinsize(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = termios_tcgetwinsize_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(termios_tcsetwinsize__doc__,
+"tcsetwinsize($module, fd, winsize, /)\n"
+"--\n"
+"\n"
+"Set the tty winsize for file descriptor fd.\n"
+"\n"
+"The winsize to be set is taken from the winsize argument, which\n"
+"is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().");
+
+#define TERMIOS_TCSETWINSIZE_METHODDEF    \
+    {"tcsetwinsize", (PyCFunction)(void(*)(void))termios_tcsetwinsize, METH_FASTCALL, termios_tcsetwinsize__doc__},
+
+static PyObject *
+termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz);
+
+static PyObject *
+termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    PyObject *winsz;
+
+    if (!_PyArg_CheckPositional("tcsetwinsize", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    winsz = args[1];
+    return_value = termios_tcsetwinsize_impl(module, fd, winsz);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=db808d31296f6643 input=a9049054013a1b77]*/
