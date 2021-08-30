@@ -10,19 +10,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Programs\_freeze_importlib.c">
+    <ClCompile Include="..\Programs\_freeze_module.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <!-- BEGIN frozen modules -->
     <None Include="..\Lib\importlib\_bootstrap.py">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="..\Lib\zipimport.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\zipimport.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Tools\freeze\flag.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <!-- END frozen modules -->
   </ItemGroup>
 </Project>
