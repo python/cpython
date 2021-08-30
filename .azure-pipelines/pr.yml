@@ -1,14 +1,14 @@
 variables:
   coverage: false
 
-pr: ['master', '3.10', '3.9', '3.8', '3.7']
+pr: ['main', '3.10', '3.9', '3.8', '3.7']
 
 jobs:
 - job: Prebuild
   displayName: Pre-build checks
 
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
 
   steps:
   - template: ./prebuild-checks.yml
@@ -20,7 +20,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['docs.run'], 'true'))
 
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
 
   steps:
   - template: ./docs-steps.yml
@@ -38,7 +38,7 @@ jobs:
     testRunPlatform: macos
 
   pool:
-    vmImage: macos-10.14
+    vmImage: macos-10.15
 
   steps:
   - template: ./macos-steps.yml
@@ -52,12 +52,12 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
 
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-linux'
     testRunPlatform: linux
-    openssl_version: 1.1.1k
+    openssl_version: 1.1.1l
 
   steps:
   - template: ./posix-steps.yml
@@ -78,12 +78,12 @@ jobs:
     )
 
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
 
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
     testRunPlatform: linux-coverage
-    openssl_version: 1.1.1k
+    openssl_version: 1.1.1l
 
   steps:
   - template: ./posix-steps.yml
