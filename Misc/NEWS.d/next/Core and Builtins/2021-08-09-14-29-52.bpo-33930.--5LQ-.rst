@@ -1,2 +1,0 @@
-Fix segmentation fault with deep recursion when cleaning method objects.
-Patch by Augusto Goulart and Pablo Galindo.

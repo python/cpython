@@ -1,1 +1,0 @@
-Fix crash when using passing a non-exception to a generator's ``throw()`` method. Patch by Noah Oxer
