@@ -4294,6 +4294,18 @@ class TypedDictTests(BaseTestCase):
             {'a': typing.Optional[int], 'b': int}
         )
 
+    def test_custom_metaclass(self):
+        class _Foo(TypedDict):
+            pass
+
+        class _CustomTypedDictMeta(type(_Foo)):
+            pass
+
+        class _NewTypedDict(_Foo, metaclass=_CustomTypedDictMeta):
+            pass
+
+        self.assertIsInstance(_NewTypedDict, _CustomTypedDictMeta)
+
 
 class IOTests(BaseTestCase):
 

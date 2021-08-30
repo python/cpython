@@ -2287,10 +2287,10 @@ class _TypedDictMeta(type):
         Subclasses and instances of TypedDict return actual dictionaries.
         """
         for base in bases:
-            if type(base) is not _TypedDictMeta:
+            if not issubclass(type(base), _TypedDictMeta):
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
-        tp_dict = type.__new__(_TypedDictMeta, name, (dict,), ns)
+        tp_dict = type.__new__(cls, name, (dict,), ns)
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
