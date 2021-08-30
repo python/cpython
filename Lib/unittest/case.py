@@ -573,7 +573,7 @@ class TestCase(object):
                 skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
                             or getattr(testMethod, '__unittest_skip_why__', ''))
                 self._addSkip(result, self, skip_why)
-                return
+                return result
 
             expecting_failure = (
                 getattr(self, "__unittest_expecting_failure__", False) or
