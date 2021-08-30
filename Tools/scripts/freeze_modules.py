@@ -367,8 +367,6 @@ def regen_makefile(frozenids, frozen):
     for frozenid in frozenids:
         pyfile, frozenfile = frozen[frozenid]
         header = os.path.relpath(frozenfile, ROOT_DIR)
-        # Adding a comment to separate sections here doesn't add much,
-        # so we don't.
         relfile = header.replace('\\', '/')
         frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
 
