@@ -1645,7 +1645,7 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 
 /* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
-    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST */ \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
         Py_DECREF((O)); \
         return 0; \
