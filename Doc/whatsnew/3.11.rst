@@ -226,6 +226,12 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
+* :mod:`sqlite3` exceptions now include the SQLite error code as
+  :attr:`~sqlite3.Error.sqlite_errorcode` and the SQLite error name as
+  :attr:`~sqlite3.Error.sqlite_errorname`.
+  (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
+  :issue:`16379`.)
+
 
 Removed
 =======
