@@ -421,7 +421,7 @@ def _read_exact(fp, n):
 
 def _read_gzip_header(fp):
     '''Read a gzip header from `fp` and progress to the end of the header.
-    
+
     Returns last mtime if header was present or None otherwise.
     '''
     magic = fp.read(2)
@@ -579,9 +579,10 @@ def _create_simple_gzip_header(compresslevel: int,
 
 def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     """Compress data in one shot and return the compressed string.
-    Optional argument is the compression level, in range of 0-9.
-    mtime can be used to set the modification time. 0 is default,
-    use 'None' for current time.
+
+    compresslevel sets the compression level in range of 0-9.
+    mtime can be used to set the modification time. The modification time is
+    set to the current time by default.
     """
     if mtime == 0:
         # Use zlib as it creates the header with 0 mtime by default.
