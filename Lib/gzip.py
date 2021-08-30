@@ -420,9 +420,10 @@ def _read_exact(fp, n):
 
 
 def _read_gzip_header(fp):
-    '''Read a gzip header from a filestream and progresses the stream to
-    the end of the header. Returns last mtime if header was present or None
-    if no header was present'''
+    '''Read a gzip header from `fp` and progress to the end of the header.
+    
+    Returns last mtime if header was present or None otherwise.
+    '''
     magic = fp.read(2)
     if magic == b'':
         return None
