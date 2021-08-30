@@ -836,6 +836,20 @@ Exceptions
    The base class of the other exceptions in this module.  It is a subclass
    of :exc:`Exception`.
 
+   .. attribute:: sqlite_errorcode
+
+      The numeric error code from the
+      `SQLite API <https://sqlite.org/rescode.html>`_
+
+      .. versionadded:: 3.11
+
+   .. attribute:: sqlite_errorname
+
+      The symbolic name of the numeric error code
+      from the `SQLite API <https://sqlite.org/rescode.html>`_
+
+      .. versionadded:: 3.11
+
 .. exception:: DatabaseError
 
    Exception raised for errors that are related to the database.

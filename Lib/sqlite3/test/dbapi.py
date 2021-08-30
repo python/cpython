@@ -28,12 +28,12 @@ import threading
 import unittest
 
 from test.support import (
+    SHORT_TIMEOUT,
     bigmemtest,
     check_disallow_instantiation,
     threading_helper,
-    SHORT_TIMEOUT,
 )
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, temp_dir
 
 
 # Helper for tests using TESTFN
@@ -101,6 +101,89 @@ class ModuleTests(unittest.TestCase):
         self.assertTrue(issubclass(sqlite.NotSupportedError,
                                    sqlite.DatabaseError),
                         "NotSupportedError is not a subclass of DatabaseError")
+
+    def test_module_constants(self):
+        consts = [
+            "SQLITE_ABORT",
+            "SQLITE_ALTER_TABLE",
+            "SQLITE_ANALYZE",
+            "SQLITE_ATTACH",
+            "SQLITE_AUTH",
+            "SQLITE_BUSY",
+            "SQLITE_CANTOPEN",
+            "SQLITE_CONSTRAINT",
+            "SQLITE_CORRUPT",
+            "SQLITE_CREATE_INDEX",
+            "SQLITE_CREATE_TABLE",
+            "SQLITE_CREATE_TEMP_INDEX",
+            "SQLITE_CREATE_TEMP_TABLE",
+            "SQLITE_CREATE_TEMP_TRIGGER",
+            "SQLITE_CREATE_TEMP_VIEW",
+            "SQLITE_CREATE_TRIGGER",
+            "SQLITE_CREATE_VIEW",
+            "SQLITE_CREATE_VTABLE",
+            "SQLITE_DELETE",
+            "SQLITE_DENY",
+            "SQLITE_DETACH",
+            "SQLITE_DONE",
+            "SQLITE_DROP_INDEX",
+            "SQLITE_DROP_TABLE",
+            "SQLITE_DROP_TEMP_INDEX",
+            "SQLITE_DROP_TEMP_TABLE",
+            "SQLITE_DROP_TEMP_TRIGGER",
+            "SQLITE_DROP_TEMP_VIEW",
+            "SQLITE_DROP_TRIGGER",
+            "SQLITE_DROP_VIEW",
+            "SQLITE_DROP_VTABLE",
+            "SQLITE_EMPTY",
+            "SQLITE_ERROR",
+            "SQLITE_FORMAT",
+            "SQLITE_FULL",
+            "SQLITE_FUNCTION",
+            "SQLITE_IGNORE",
+            "SQLITE_INSERT",
+            "SQLITE_INTERNAL",
+            "SQLITE_INTERRUPT",
+            "SQLITE_IOERR",
+            "SQLITE_LOCKED",
+            "SQLITE_MISMATCH",
+            "SQLITE_MISUSE",
+            "SQLITE_NOLFS",
+            "SQLITE_NOMEM",
+            "SQLITE_NOTADB",
+            "SQLITE_NOTFOUND",
+            "SQLITE_OK",
+            "SQLITE_PERM",
+            "SQLITE_PRAGMA",
+            "SQLITE_PROTOCOL",
+            "SQLITE_READ",
+            "SQLITE_READONLY",
+            "SQLITE_REINDEX",
+            "SQLITE_ROW",
+            "SQLITE_SAVEPOINT",
+            "SQLITE_SCHEMA",
+            "SQLITE_SELECT",
+            "SQLITE_TOOBIG",
+            "SQLITE_TRANSACTION",
+            "SQLITE_UPDATE",
+        ]
+        if sqlite.version_info >= (3, 7, 17):
+            consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
+        if sqlite.version_info >= (3, 8, 3):
+            consts.append("SQLITE_RECURSIVE")
+        consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
+        for const in consts:
+            with self.subTest(const=const):
+                self.assertTrue(hasattr(sqlite, const))
+
+    def test_error_code_on_exception(self):
+        err_msg = "unable to open database file"
+        with temp_dir() as db:
+            with self.assertRaisesRegex(sqlite.Error, err_msg) as cm:
+                sqlite.connect(db)
+            e = cm.exception
+            self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
+            self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
 
     # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
     # OperationalError on some buildbots.
