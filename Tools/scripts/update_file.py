@@ -28,16 +28,10 @@ def updating_file_with_tmpfile(filename, tmpfile=None):
     elif os.path.isdir(tmpfile):
         tmpfile = os.path.join(tmpfile, filename + '.tmp')
 
-    outfile = open(tmpfile, 'w')
-    infile = open(filename)
-    try:
-        yield infile, outfile
-    finally:
-        try:
-            outfile.close()
-        finally:
-            infile.close()
-        update_file_with_tmpfile(filename, tmpfile)
+    with open(tmpfile, 'w') as outfile:
+        with open(filename) as infile:
+            yield infile, outfile
+    update_file_with_tmpfile(filename, tmpfile)
 
 
 def update_file_with_tmpfile(filename, tmpfile):
