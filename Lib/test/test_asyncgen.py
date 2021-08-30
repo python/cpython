@@ -3,6 +3,7 @@ import types
 import unittest
 
 from test.support.import_helper import import_module
+from test.support import gc_collect
 asyncio = import_module("asyncio")
 
 
@@ -871,6 +872,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             await g.__anext__()
             await g.__anext__()
             del g
+            gc_collect()  # For PyPy or other GCs.
 
             await asyncio.sleep(0.1)
 
