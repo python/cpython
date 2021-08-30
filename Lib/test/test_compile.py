@@ -659,7 +659,7 @@ if 1:
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (42,))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -953,7 +953,7 @@ if 1:
                     y)
         genexp_lines = [None, 1, 3, 1]
 
-        genexp_code = return_genexp.__code__.co_consts[1]
+        genexp_code = return_genexp.__code__.co_consts[0]
         code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
                       for (_, _, line) in genexp_code.co_lines() ]
         self.assertEqual(genexp_lines, code_lines)
