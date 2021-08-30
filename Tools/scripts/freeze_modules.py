@@ -17,7 +17,7 @@ TOOLS_DIR = os.path.dirname(SCRIPTS_DIR)
 ROOT_DIR = os.path.dirname(TOOLS_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
-# XXX It may make more sense to put frozen modules in Modules/ or Lib/...
+# If MODULES_DIR is changed then the .gitattributes file needs to be updated.
 MODULES_DIR = os.path.join(ROOT_DIR, 'Python/frozen_modules')
 TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
 
