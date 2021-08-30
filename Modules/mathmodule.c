@@ -3592,6 +3592,7 @@ static PyMethodDef math_methods[] = {
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
+    {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
