@@ -532,17 +532,14 @@ class WindowFunctionTests(unittest.TestCase):
             def __init__(self): pass
             def step(self, x): pass
             def inverse(self, x): pass
-            def finalize(self): return 42
         class MissingInverse:
             def __init__(self): pass
             def step(self, x): pass
             def value(self): return 42
-            def finalize(self): return 42
         class MissingStep:
             def __init__(self): pass
             def value(self): return 42
             def inverse(self, x): pass
-            def finalize(self): return 42
         class MissingFinalize:
             def __init__(self): pass
             def step(self, x): pass
@@ -554,7 +551,7 @@ class WindowFunctionTests(unittest.TestCase):
             ("step", MissingStep, "not defined"),
             ("value", MissingValue, "raised error"),
             ("inverse", MissingInverse, "not defined"),
-            ("finalize", MissingFinalize, "raised error"),
+            #("finalize", MissingFinalize),
         )
         for meth, cls, err in dataset:
             with self.subTest(meth=meth, cls=cls, err=err):
