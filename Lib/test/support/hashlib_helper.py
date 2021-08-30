@@ -22,19 +22,6 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
     ValueError: unsupported hash type md4
     """
     def decorator(func_or_class):
-        @functools.wraps(func_or_class)
-        def wrapper(*args, **kwargs):
-            try:
-                if openssl and _hashlib is not None:
-                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
-                else:
-                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
-            except ValueError:
-                raise unittest.SkipTest(
-                    f"hash digest '{digestname}' is not available."
-                )
-            return func_or_class(*args, **kwargs)
-
         if isinstance(func_or_class, type):
             setUpClass = func_or_class.__dict__.get('setUpClass')
             if setUpClass is None:
@@ -47,5 +34,18 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
             setUpClass = classmethod(decorator(setUpClass))
             func_or_class.setUpClass = setUpClass
             return func_or_class
+
+        @functools.wraps(func_or_class)
+        def wrapper(*args, **kwargs):
+            try:
+                if openssl and _hashlib is not None:
+                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                else:
+                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
+            except ValueError:
+                raise unittest.SkipTest(
+                    f"hash digest '{digestname}' is not available."
+                )
+            return func_or_class(*args, **kwargs)
         return wrapper
     return decorator

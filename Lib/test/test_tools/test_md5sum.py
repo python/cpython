@@ -33,6 +33,7 @@ class MD5SumTests(unittest.TestCase):
             out.startswith(b'd41d8cd98f00b204e9800998ecf8427e <stdin>'))
         self.assertFalse(err)
 
+    @unittest.skipIf(sys.platform == "win32", "test is broken on Windows")
     def test_checksum_fodder(self):
         rc, out, err = assert_python_ok(self.script, self.fodder)
         self.assertEqual(rc, 0)
