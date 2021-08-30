@@ -8,14 +8,14 @@
  * These files must be regenerated any time the corresponding .pyc
  * file would change (including with changes to the compiler, bytecode
  * format, marshal format).  This can be done with "make regen-frozen".
- * That make target normally does nothing more than run
- * Programs/_freeze_module on each of the modules set to be frozen.
+ * That make target just runs Tools/scripts/freeze_modules.py.
  *
- * Additional modules can be frozen by updating the list at the top of
- * Tools/scripts/freeze_modules.py and then run the script
+ * The freeze_modules.py script also determines which modules get
+ * frozen.  Update the list at the top of the script to add, remove,
+ * or modify the target modules.  Then run the script
  * (or run "make regen-frozen").
  *
- * The script does the following (by default):
+ * The script does the following:
  *
  * 1. run Programs/_freeze_module on the target modules
  * 2. update the includes and _PyImport_FrozenModules[] in this file
