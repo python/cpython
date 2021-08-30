@@ -64,6 +64,7 @@ PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
 PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_NewWithQualName(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_NewWithDoc(PyObject *, PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetCode(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);

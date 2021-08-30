@@ -1196,7 +1196,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -1 - ((oparg & 0x01) != 0);
         case MAKE_FUNCTION:
             return 0 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
-                ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
+                ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0) -
+                ((oparg & 0x10) != 0);
         case BUILD_SLICE:
             if (oparg == 3)
                 return -2;
@@ -2088,7 +2089,7 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 
 static int
 compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
-                      PyObject *qualname)
+                      PyObject *qualname, PyObject *docstring)
 {
     if (qualname == NULL)
         qualname = co->co_name;
@@ -2138,6 +2139,10 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
         }
         flags |= 0x08;
         ADDOP_I(c, BUILD_TUPLE, co->co_nfreevars);
+    }
+    if (docstring != NULL) {
+        flags |= 0x10;
+        ADDOP_LOAD_CONST(c, docstring);
     }
     ADDOP_LOAD_CONST(c, (PyObject*)co);
     ADDOP_I(c, MAKE_FUNCTION, flags);
@@ -2459,10 +2464,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
     }
+    /*
     if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
         return 0;
     }
+    */
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
@@ -2480,7 +2487,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    if (!compiler_make_closure(c, co, funcflags, qualname)) {
+    if (!compiler_make_closure(c, co, funcflags, qualname, docstring)) {
         Py_DECREF(qualname);
         Py_DECREF(co);
         return 0;
@@ -2609,7 +2616,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    if (!compiler_make_closure(c, co, 0, NULL)) {
+    if (!compiler_make_closure(c, co, 0, NULL, NULL)) {
         Py_DECREF(co);
         return 0;
     }
@@ -2890,7 +2897,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    if (!compiler_make_closure(c, co, funcflags, qualname)) {
+    if (!compiler_make_closure(c, co, funcflags, qualname, NULL)) {
         Py_DECREF(qualname);
         Py_DECREF(co);
         return 0;
@@ -5017,7 +5024,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (co == NULL)
         goto error;
 
-    if (!compiler_make_closure(c, co, 0, qualname)) {
+    if (!compiler_make_closure(c, co, 0, qualname, NULL)) {
         goto error;
     }
     Py_DECREF(qualname);
