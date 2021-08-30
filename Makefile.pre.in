@@ -744,7 +744,8 @@ Tools/scripts/freeze_modules.py: Programs/_freeze_module
 
 .PHONY: regen-frozen
 regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py --no-freeze
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+	@echo "The Makefile was updated, you may need to re-run make."
 
 # BEGIN: freezing modules
 
