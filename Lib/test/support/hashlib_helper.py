@@ -21,18 +21,30 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
     ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
     ValueError: unsupported hash type md4
     """
-    def decorator(func):
-        @functools.wraps(func)
+    try:
+        if openssl and _hashlib is not None:
+            _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+        else:
+            hashlib.new(digestname, usedforsecurity=usedforsecurity)
+    except ValueError:
+        should_be_skipped = True
+    else:
+        should_be_skipped = False
+
+    def maybe_skip():
+        if should_be_skipped:
+            raise unittest.SkipTest(
+                f"hash digest '{digestname}' is not available."
+            )
+
+    def decorator(func_or_class):
+        if isinstance(func_or_class, type):  # The whole `class`
+            maybe_skip()
+            return func_or_class
+
+        @functools.wraps(func_or_class)  # Just a single function
         def wrapper(*args, **kwargs):
-            try:
-                if openssl and _hashlib is not None:
-                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
-                else:
-                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
-            except ValueError:
-                raise unittest.SkipTest(
-                    f"hash digest '{digestname}' is not available."
-                )
-            return func(*args, **kwargs)
+            maybe_skip()
+            return func_or_class(*args, **kwargs)
         return wrapper
     return decorator
