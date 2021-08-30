@@ -69,7 +69,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{19C0C13F-47CA-4432-AFF3-799A296A4DDC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>_freeze_importlib</RootNamespace>
+    <RootNamespace>_freeze_module</RootNamespace>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
@@ -95,7 +95,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Programs\_freeze_importlib.c" />
+    <ClCompile Include="..\Programs\_freeze_module.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
@@ -108,31 +108,33 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <!-- BEGIN frozen modules -->
     <None Include="..\Lib\importlib\_bootstrap.py">
       <ModName>importlib._bootstrap</ModName>
-      <IntFile>$(IntDir)importlib.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\importlib.h</OutFile>
+      <IntFile>$(IntDir)importlib__bootstrap.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib__bootstrap.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
       <ModName>importlib._bootstrap_external</ModName>
-      <IntFile>$(IntDir)importlib_external.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\importlib_external.h</OutFile>
+      <IntFile>$(IntDir)importlib__bootstrap_external.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib__bootstrap_external.h</OutFile>
     </None>
     <None Include="..\Lib\zipimport.py">
       <ModName>zipimport</ModName>
-      <IntFile>$(IntDir)importlib_zipimport.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\importlib_zipimport.h</OutFile>
+      <IntFile>$(IntDir)zipimport.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
     <None Include="..\Tools\freeze\flag.py">
       <ModName>hello</ModName>
-      <IntFile>$(IntDir)frozen_hello.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_hello.h</OutFile>
+      <IntFile>$(IntDir)ello.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\hello.h</OutFile>
     </None>
+    <!-- END frozen modules -->
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="_RebuildImportLib">
+  <Target Name="_RebuildFrozen">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
     
     <Copy SourceFiles="%(None.IntFile)"
@@ -143,15 +145,18 @@
 
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
-    <Warning Text="Frozen importlib files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
+    <Warning Text="Frozen modules (e.g. importlib) were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
              Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
-    <Error Text="Frozen importlib files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
+    <Error Text="Frozen (e.g. importlib) files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
            Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
   </Target>
-  <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
-          DependsOnTargets="_RebuildImportLib">
+  <Target Name="RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
+          DependsOnTargets="_RebuildFrozen">
   </Target>
-  <Target Name="_CleanImportLib" BeforeTargets="CoreClean">
+  <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
+          DependsOnTargets="_RebuildFrozen">
+  </Target>
+  <Target Name="_CleanFrozen" BeforeTargets="CoreClean">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
     </ItemGroup>
