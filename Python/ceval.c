@@ -841,13 +841,17 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     PyObject *seen = NULL;
     PyObject *dummy = NULL;
     PyObject *values = NULL;
+    PyObject *get_name = NULL;
+    PyObject *get = NULL;
     // We use the two argument form of map.get(key, default) for two reasons:
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
     _Py_IDENTIFIER(get);
-    PyObject *get_name = _PyUnicode_FromId(&PyId_get); // borrowed
-    PyObject *get = NULL;
+    get_name = _PyUnicode_FromId(&PyId_get); // borrowed
+    if (get_name == NULL) {
+        return NULL;
+    }
     int meth_found = _PyObject_GetMethod(map, get_name, &get);
     if (get == NULL) {
         goto fail;
