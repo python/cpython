@@ -81,6 +81,8 @@ pysqlite_get_state_by_type(PyTypeObject *Py_UNUSED(tp))
     return &pysqlite_global_state;
 }
 
+extern const char *pysqlite_error_name(int rc);
+
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2
 #endif
