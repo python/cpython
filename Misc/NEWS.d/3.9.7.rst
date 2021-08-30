@@ -622,17 +622,6 @@ frameworks in the FAQ. In their place I've added links to the Python Wiki
 
 ..
 
-.. bpo: 44756
-.. date: 2021-08-06-19-36-21
-.. nonce: 1Ngzon
-.. section: Documentation
-
-Reverted automated virtual environment creation on ``make html`` when
-building documentation. It turned out to be disruptive for downstream
-distributors.
-
-..
-
 .. bpo: 44693
 .. date: 2021-07-25-23-04-15
 .. nonce: JuCbNq
@@ -909,17 +898,3 @@ even if Python is built on an older version of macOS.  Previously, when
 built on older macOS systems, ``find_library`` was not able to find  macOS
 system libraries when running on Big Sur due to changes in  how system
 libraries are stored.
-
-..
-
-.. bpo: 44756
-.. date: 2021-07-28-00-51-55
-.. nonce: pvAajB
-.. section: Tools/Demos
-
-In the Makefile for documentation (:file:`Doc/Makefile`), the ``build`` rule
-is dependent on the ``venv`` rule. Therefore, ``html``, ``latex``, and other
-build-dependent rules are also now dependent on ``venv``. The ``venv`` rule
-only performs an action if ``$(VENVDIR)`` does not exist.
-:file:`Doc/README.rst` was updated; most users now only need to type ``make
-html``.
