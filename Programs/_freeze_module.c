@@ -102,9 +102,11 @@ read_text(const char *inpath)
 static PyObject *
 compile_and_marshal(const char *name, const char *text)
 {
-    char buf[100];
-    sprintf(buf, "<frozen %s>", name);
-    PyObject *code = Py_CompileStringExFlags(text, buf, Py_file_input, NULL, 0);
+    char *filename = (char *) malloc(strlen(name) + 10);
+    sprintf(filename, "<frozen %s>", name);
+    PyObject *code = Py_CompileStringExFlags(text, filename,
+                                             Py_file_input, NULL, 0);
+    free(filename);
     if (code == NULL) {
         return NULL;
     }
@@ -119,20 +121,22 @@ compile_and_marshal(const char *name, const char *text)
     return marshalled;
 }
 
-static void
-get_varname(const char *name, char *buf)
+static char *
+get_varname(const char *name, const char *prefix)
 {
-    (void)strcpy(buf, "_Py_M__");
-    size_t n = 7;
+    size_t n = strlen(prefix);
+    char *varname = (char *) malloc(strlen(name) + n + 1);
+    (void)strcpy(varname, prefix);
     for (size_t i = 0; name[i] != '\0'; i++) {
         if (name[i] == '.') {
-            buf[n++] = '_';
+            varname[n++] = '_';
         }
         else {
-            buf[n++] = name[i];
+            varname[n++] = name[i];
         }
     }
-    buf[n] = '\0';
+    varname[n] = '\0';
+    return varname;
 }
 
 static void
@@ -165,10 +169,10 @@ write_frozen(const char *outpath, const char *inpath, const char *name,
         return -1;
     }
 
-    char buf[100];
     fprintf(outfile, "%s\n", header);
-    get_varname(name, buf);
-    write_code(outfile, marshalled, buf);
+    char *arrayname = get_varname(name, "_Py_M__");
+    write_code(outfile, marshalled, arrayname);
+    free(arrayname);
 
     if (ferror(outfile)) {
         fprintf(stderr, "error when writing to '%s'\n", outpath);
