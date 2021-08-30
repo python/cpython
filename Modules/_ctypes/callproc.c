@@ -1447,7 +1447,7 @@ copy_com_pointer(PyObject *self, PyObject *args)
 #define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
     __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 #else
-// Support the deprecated case of compiling on an older MacOS version
+// Support the deprecated case of compiling on an older macOS version
 static void *libsystem_b_handle;
 static bool (*_dyld_shared_cache_contains_path)(const char *path);
 
