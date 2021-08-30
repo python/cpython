@@ -841,12 +841,18 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     PyObject *seen = NULL;
     PyObject *dummy = NULL;
     PyObject *values = NULL;
+    PyObject *get_name = NULL;
+    PyObject *get = NULL;
     // We use the two argument form of map.get(key, default) for two reasons:
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
     //   collections.defaultdict that define __missing__ (or similar).
     _Py_IDENTIFIER(get);
-    PyObject *get = _PyObject_GetAttrId(map, &PyId_get);
+    get_name = _PyUnicode_FromId(&PyId_get); // borrowed
+    if (get_name == NULL) {
+        return NULL;
+    }
+    int meth_found = _PyObject_GetMethod(map, get_name, &get);
     if (get == NULL) {
         goto fail;
     }
@@ -859,7 +865,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (dummy == NULL) {
         goto fail;
     }
-    values = PyList_New(0);
+    values = PyTuple_New(nkeys);
     if (values == NULL) {
         goto fail;
     }
@@ -873,7 +879,14 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
+        PyObject *args[] = { map, key, dummy };
+        PyObject *value = NULL;
+        if (meth_found) {
+            value = PyObject_Vectorcall(get, args, 3, NULL);
+        }
+        else {
+            value = PyObject_Vectorcall(get, &args[1], 2, NULL);
+        }
         if (value == NULL) {
             goto fail;
         }
@@ -886,10 +899,8 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             values = Py_None;
             goto done;
         }
-        PyList_Append(values, value);
-        Py_DECREF(value);
+        PyTuple_SET_ITEM(values, i, value);
     }
-    Py_SETREF(values, PyList_AsTuple(values));
     // Success:
 done:
     Py_DECREF(get);
@@ -1434,6 +1445,12 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
+
+static inline void
+record_hit_inline(_Py_CODEUNIT *next_instr, int oparg)
+{
+    UPDATE_PREV_INSTR_OPARG(next_instr, saturating_increment(oparg));
+}
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
@@ -1980,28 +1997,120 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_ADD): {
+            PREDICTED(BINARY_ADD);
+            STAT_INC(BINARY_ADD, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *sum;
-            /* NOTE(vstinner): Please don't try to micro-optimize int+int on
-               CPython using bytecode, it is simply worthless.
-               See http://bugs.python.org/issue21955 and
-               http://bugs.python.org/issue10044 for the discussion. In short,
-               no patch shown any impact on a realistic benchmark, only a minor
-               speedup on microbenchmarks. */
-            if (PyUnicode_CheckExact(left) &&
-                     PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
-                /* unicode_concatenate consumed the ref to left */
+            PyObject *sum = PyNumber_Add(left, right);
+            SET_TOP(sum);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_ADAPTIVE): {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_BinaryAdd(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
             }
             else {
-                sum = PyNumber_Add(left, right);
-                Py_DECREF(left);
+                STAT_INC(BINARY_ADD, deferred);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(BINARY_ADD, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_ADD);
             }
+        }
+
+        TARGET(BINARY_ADD_UNICODE): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *res = PyUnicode_Concat(left, right);
+            STACK_SHRINK(1);
+            SET_TOP(res);
+            Py_DECREF(left);
             Py_DECREF(right);
-            SET_TOP(sum);
-            if (sum == NULL)
+            if (TOP() == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_UNICODE_INPLACE_FAST): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            DEOPT_IF(Py_REFCNT(left) != 2, BINARY_ADD);
+            int next_oparg = _Py_OPARG(*next_instr);
+            assert(_Py_OPCODE(*next_instr) == STORE_FAST);
+            /* In the common case, there are 2 references to the value
+            * stored in 'variable' when the v = v + ... is performed: one
+            * on the value stack (in 'v') and one still stored in the
+            * 'variable'.  We try to delete the variable now to reduce
+            * the refcnt to 1.
+            */
+            PyObject *var = GETLOCAL(next_oparg);
+            DEOPT_IF(var != left, BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            GETLOCAL(next_oparg) = NULL;
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            PyUnicode_Append(&TOP(), right);
+            Py_DECREF(right);
+            if (TOP() == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_FLOAT): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            double dsum = ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *sum = PyFloat_FromDouble(dsum);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_ADD_INT): {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sum);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -4761,6 +4870,7 @@ MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
+MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 
 binary_subscr_dict_error:
         {
