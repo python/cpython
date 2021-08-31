@@ -700,8 +700,6 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         if (cpathobj == NULL)
             goto error;
     }
-    else
-        cpathobj = NULL;
 
     if (pathname != NULL) {
         pathobj = PyUnicode_DecodeFSDefault(pathname);
