@@ -1,6 +1,6 @@
-#include <Python.h>
-#include <internal/pycore_gc.h>
-#include <internal/pycore_code.h>
+#include "Python.h"
+#include "internal/pycore_gc.h"
+#include "internal/pycore_code.h"
 
 static
     struct {

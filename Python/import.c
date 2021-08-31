@@ -1084,6 +1084,9 @@ get_frozen_object(PyObject *name)
                      name);
         return NULL;
     }
+    if (p->get_code != NULL) {
+        return p->get_code();
+    }
     size = p->size;
     if (size < 0)
         size = -size;

@@ -2,7 +2,7 @@
 /* Frozen modules bootstrap */
 
 /* This file is linked with "bootstrap Python"
-   which is used (only) to run Tools/codegen/codegen.py. */
+   which is used (only) to run Tools/scripts/deepfreeze.py. */
 
 #include "Python.h"
 

@@ -88,9 +88,9 @@ class Printer:
         self.cache: dict[tuple[type, object], str] = {}
         self.hits, self.misses = 0, 0
         self.patchups: list[str] = []
-        self.write("#include <Python.h>")
-        self.write("#include <internal/pycore_gc.h>")
-        self.write("#include <internal/pycore_code.h>")
+        self.write('#include "Python.h"')
+        self.write('#include "internal/pycore_gc.h"')
+        self.write('#include "internal/pycore_code.h"')
         self.write("")
 
     @contextlib.contextmanager
