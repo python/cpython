@@ -426,6 +426,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
+        'use_frozen_modules': GET_DEFAULT_CONFIG,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({

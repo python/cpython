@@ -100,6 +100,8 @@ static const char usage_3[] = "\
             instruction in code objects. This is useful when smaller code objects and pyc \n\
             files are desired as well as supressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
+         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+            The default is \"on\" (or \"off\" if you are running a local build).\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -949,6 +951,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
+    COPY_ATTR(use_frozen_modules);
     COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
@@ -982,6 +985,10 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
 #define SET_ITEM_UINT(ATTR) \
     SET_ITEM(#ATTR, PyLong_FromUnsignedLong(config->ATTR))
+#define SET_ITEM_BOOL(ATTR) \
+    SET_ITEM(#ATTR, ( \
+               Py_INCREF(config->ATTR ? Py_True : Py_False), \
+               (config->ATTR ? Py_True : Py_False)))
 #define FROM_WSTRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromWideChar(STR, -1) \
@@ -1052,6 +1059,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
+    SET_ITEM_BOOL(use_frozen_modules);
 
     return dict;
 
@@ -1063,6 +1071,7 @@ fail:
 #undef SET_ITEM
 #undef SET_ITEM_INT
 #undef SET_ITEM_UINT
+#undef SET_ITEM_BOOL
 #undef SET_ITEM_WSTR
 #undef SET_ITEM_WSTRLIST
 }
@@ -1134,6 +1143,23 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
         return -1;
     }
     *result = value;
+    return 0;
+}
+
+
+static int
+config_dict_get_bool(PyObject *dict, const char *name, bool *result)
+{
+    PyObject *item = config_dict_get(dict, name);
+    if (item == NULL) {
+        return -1;
+    }
+    int value = PyObject_IsTrue(item);
+    if (value < 0) {
+        config_dict_invalid_value(name);
+        return -1;
+    }
+    *result = value == 0 ? false : true;
     return 0;
 }
 
@@ -1241,6 +1267,12 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         } \
         CHECK_VALUE(#KEY, config->KEY >= 0); \
     } while (0)
+#define GET_BOOL(KEY) \
+    do { \
+        if (config_dict_get_bool(dict, #KEY, &config->KEY) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 #define GET_WSTR(KEY) \
     do { \
         if (config_dict_get_wstr(dict, #KEY, config, &config->KEY) < 0) { \
@@ -1334,9 +1366,11 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
+    GET_BOOL(use_frozen_modules);
 
 #undef CHECK_VALUE
 #undef GET_UINT
+#undef GET_BOOL
 #undef GET_WSTR
 #undef GET_WSTR_OPT
     return 0;
@@ -1588,6 +1622,17 @@ static const wchar_t*
 config_get_xoption(const PyConfig *config, wchar_t *name)
 {
     return _Py_get_xoption(&config->xoptions, name);
+}
+
+static const wchar_t*
+config_get_xoption_value(const PyConfig *config, wchar_t *name)
+{
+    const wchar_t *xoption = config_get_xoption(config, name);
+    if (xoption == NULL) {
+        return NULL;
+    }
+    const wchar_t *sep = wcschr(xoption, L'=');
+    return sep ? sep + 1 : L"";
 }
 
 
@@ -2066,6 +2111,34 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 
 
 static PyStatus
+config_init_imports(PyConfig *config)
+{
+    /* -X frozen_modules=[on|off] */
+    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+    if (value == NULL) {
+        // XXX Set default to false if in development.
+        config->use_frozen_modules = true;
+    }
+    else if (wcscmp(value, L"on") == 0) {
+        config->use_frozen_modules = true;
+    }
+    else if (wcscmp(value, L"off") == 0) {
+        config->use_frozen_modules = false;
+    }
+    else if (wcslen(value) == 0) {
+        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+        config->use_frozen_modules = true;
+    }
+    else {
+        return PyStatus_Error("bad value for option -X frozen_modules "
+                              "(expected \"on\" or \"off\")");
+    }
+
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
 config_read(PyConfig *config, int compute_path_config)
 {
     PyStatus status;
@@ -2112,6 +2185,10 @@ config_read(PyConfig *config, int compute_path_config)
 
     if (config->_install_importlib) {
         status = _PyConfig_InitPathConfig(config, compute_path_config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+        status = config_init_imports(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
