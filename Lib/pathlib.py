@@ -940,6 +940,20 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
+def _unpickle_real_path(tp, args):
+    """Helper for cross-platform Path unpickling.
+
+    Unpickling a PosixPath on Windows will yield a PurePosixPath; unpickling a
+    WindowsPath on POSIX will yield a PureWindowsPath
+    """
+    if tp == PosixPath and type(Path()) == WindowsPath:
+        return PurePosixPath(*args)
+    elif tp == WindowsPath and type(Path()) == PosixPath:
+        return PureWindowsPath(*args)
+    else:
+        return tp(*args)
+
+
 class Path(PurePath):
     """PurePath subclass that can make system calls.
 
@@ -960,6 +974,12 @@ class Path(PurePath):
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
         return self
+
+    def __reduce__(self):
+        # See _unpickle_real_path.
+        return ((_unpickle_real_path, (type(self), tuple(self._parts)))
+                if type(self) in [PosixPath, WindowsPath] else
+                super().__reduce__())
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be

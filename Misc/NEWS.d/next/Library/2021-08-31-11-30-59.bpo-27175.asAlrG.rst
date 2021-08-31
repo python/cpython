@@ -1,0 +1,4 @@
+``pathlib.PosixPath`` is now unpickled as ``PurePosixPath`` on Windows, and
+conversely, ``WindowsPath`` is now unpickled as ``PureWindowsPath`` on
+POSIX. (Previously, concrete path classes were not unpicklable at all on the
+"opposite" OS.)

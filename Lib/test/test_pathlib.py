@@ -2367,6 +2367,23 @@ class _BasePathTest(object):
             pp = pickle.loads(dumped)
             self.assertEqual(pp.stat(), p.stat())
 
+    def test_pickling_cross_platform(self):
+        if os.name == 'nt':
+            other_cls = pathlib.PosixPath
+            other_pure_cls = pathlib.PurePosixPath
+        else:
+            other_cls = pathlib.WindowsPath
+            other_pure_cls = pathlib.PureWindowsPath
+        try:
+            other_cls._flavour.is_supported = True
+            p = other_cls(BASE, 'fileA')
+            for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+                dumped = pickle.dumps(p, proto)
+                pp = pickle.loads(dumped)
+                self.assertEqual(pp, other_pure_cls(BASE, 'fileA'))
+        finally:
+            other_cls._flavour.is_supported = False
+
     def test_parts_interning(self):
         P = self.cls
         p = P('/usr/bin/foo')
