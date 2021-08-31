@@ -306,7 +306,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.__starttag_text = rawdata[i:endpos]
 
         # Now parse the data between i+1 and j into a tag and attrs
-        attrs = []
+        attrs = dict()
         match = tagfind_tolerant.match(rawdata, i+1)
         assert match, 'unexpected call to parse_starttag()'
         k = match.end()
@@ -323,7 +323,7 @@ class HTMLParser(_markupbase.ParserBase):
                 attrvalue = attrvalue[1:-1]
             if attrvalue:
                 attrvalue = unescape(attrvalue)
-            attrs.append((attrname.lower(), attrvalue))
+            attrs[attrname.lower()] = attrvalue
             k = m.end()
 
         end = rawdata[k:endpos].strip()
