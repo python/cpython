@@ -82,7 +82,9 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
 do {                                       \
     callback_context *tmp = ctx_ptr;       \
     ctx_ptr = ctx;                         \
-    free_callback_context(tmp);            \
+    if (tmp) {                             \
+        free_callback_context(tmp);        \
+    }                                      \
 } while (0)
 
 /*[clinic input]
@@ -281,9 +283,9 @@ connection_close(pysqlite_Connection *self)
 static void
 free_callback_contexts(pysqlite_Connection *self)
 {
-    free_callback_context(self->trace_ctx);
-    free_callback_context(self->progress_ctx);
-    free_callback_context(self->authorizer_ctx);
+    SET_CALLBACK_CONTEXT(self->trace_ctx, NULL);
+    SET_CALLBACK_CONTEXT(self->progress_ctx, NULL);
+    SET_CALLBACK_CONTEXT(self->authorizer_ctx, NULL);
 }
 
 static void
@@ -666,13 +668,11 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
 static void
 _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
+    PyGILState_STATE threadstate = PyGILState_Ensure();
+
     PyObject* args;
     PyObject* py_retval = NULL;
     int ok;
-
-    PyGILState_STATE threadstate;
-
-    threadstate = PyGILState_Ensure();
 
     args = _pysqlite_build_py_params(context, argc, argv);
     if (args) {
@@ -696,14 +696,12 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
 
 static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_value** params)
 {
+    PyGILState_STATE threadstate = PyGILState_Ensure();
+
     PyObject* args;
     PyObject* function_result = NULL;
     PyObject** aggregate_instance;
     PyObject* stepmethod = NULL;
-
-    PyGILState_STATE threadstate;
-
-    threadstate = PyGILState_Ensure();
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
 
@@ -746,15 +744,13 @@ error:
 static void
 _pysqlite_final_callback(sqlite3_context *context)
 {
+    PyGILState_STATE threadstate = PyGILState_Ensure();
+
     PyObject* function_result;
     PyObject** aggregate_instance;
     _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
-
-    PyGILState_STATE threadstate;
-
-    threadstate = PyGILState_Ensure();
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, 0);
     if (aggregate_instance == NULL) {
@@ -827,32 +823,32 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 static callback_context *
 create_callback_context(pysqlite_state *state, PyObject *callable)
 {
-    PyGILState_STATE gstate = PyGILState_Ensure();
     callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
     if (ctx != NULL) {
         ctx->callable = Py_NewRef(callable);
         ctx->state = state;
     }
-    PyGILState_Release(gstate);
     return ctx;
 }
 
 static void
 free_callback_context(callback_context *ctx)
 {
+    assert(ctx != NULL);
+    Py_XDECREF(ctx->callable);
+    PyMem_Free(ctx);
+}
+
+static void
+_destructor(void *ctx)
+{
     if (ctx != NULL) {
         // This function may be called without the GIL held, so we need to
         // ensure that we destroy 'ctx' with the GIL held.
         PyGILState_STATE gstate = PyGILState_Ensure();
-        Py_XDECREF(ctx->callable);
-        PyMem_Free(ctx);
+        free_callback_context((callback_context *)ctx);
         PyGILState_Release(gstate);
     }
-}
-
-static void _destructor(void* args)
-{
-    free_callback_context((callback_context *)args);
 }
 
 /*[clinic input]
@@ -954,11 +950,10 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
 
 static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2 , const char* dbname, const char* access_attempt_source)
 {
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
     PyObject *ret;
     int rc;
-    PyGILState_STATE gilstate;
-
-    gilstate = PyGILState_Ensure();
 
     callback_context *ctx = (callback_context *)user_arg;
     assert(ctx != NULL);
@@ -989,16 +984,14 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
 
 static int _progress_handler(void* user_arg)
 {
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
     int rc;
     PyObject *ret;
-    PyGILState_STATE gilstate;
-
-    gilstate = PyGILState_Ensure();
 
     callback_context *ctx = (callback_context *)user_arg;
     assert(ctx != NULL);
     ret = _PyObject_CallNoArg(ctx->callable);
-
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;
@@ -1027,18 +1020,16 @@ static int _trace_callback(unsigned int type, void* user_arg, void* prepared_sta
 static void _trace_callback(void* user_arg, const char* statement_string)
 #endif
 {
-    PyObject *py_statement = NULL;
-    PyObject *ret = NULL;
-
-    PyGILState_STATE gilstate;
-
 #ifdef HAVE_TRACE_V2
     if (type != SQLITE_TRACE_STMT) {
         return 0;
     }
 #endif
 
-    gilstate = PyGILState_Ensure();
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
+    PyObject *py_statement = NULL;
+    PyObject *ret = NULL;
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     callback_context *ctx = (callback_context *)user_arg;
@@ -1185,8 +1176,6 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 
     Py_RETURN_NONE;
 }
-
-#undef SET_CALLBACK_CONTEXT
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*[clinic input]
@@ -1499,14 +1488,16 @@ pysqlite_collation_callback(
         int text1_length, const void* text1_data,
         int text2_length, const void* text2_data)
 {
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
     PyObject* string1 = 0;
     PyObject* string2 = 0;
-    PyGILState_STATE gilstate;
     PyObject* retval = NULL;
     long longval;
     int result = 0;
-    gilstate = PyGILState_Ensure();
 
+    /* This callback may be executed multiple times per sqlite3_step(). Bail if
+     * the previous call failed */
     if (PyErr_Occurred()) {
         goto finally;
     }
@@ -1823,17 +1814,32 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *exc_tb)
 /*[clinic end generated code: output=0705200e9321202a input=bd66f1532c9c54a7]*/
 {
-    const char* method_name;
+    int commit = 0;
     PyObject* result;
 
     if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
-        method_name = "commit";
-    } else {
-        method_name = "rollback";
+        commit = 1;
+        result = pysqlite_connection_commit_impl(self);
+    }
+    else {
+        result = pysqlite_connection_rollback_impl(self);
     }
 
-    result = PyObject_CallMethod((PyObject*)self, method_name, NULL);
-    if (!result) {
+    if (result == NULL) {
+        if (commit) {
+            /* Commit failed; try to rollback in order to unlock the database.
+             * If rollback also fails, chain the exceptions. */
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            result = pysqlite_connection_rollback_impl(self);
+            if (result == NULL) {
+                _PyErr_ChainExceptions(exc, val, tb);
+            }
+            else {
+                Py_DECREF(result);
+                PyErr_Restore(exc, val, tb);
+            }
+        }
         return NULL;
     }
     Py_DECREF(result);

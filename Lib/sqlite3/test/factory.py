@@ -24,9 +24,6 @@ import unittest
 import sqlite3 as sqlite
 from collections.abc import Sequence
 
-class MyConnection(sqlite.Connection):
-    def __init__(self, *args, **kwargs):
-        sqlite.Connection.__init__(self, *args, **kwargs)
 
 def dict_factory(cursor, row):
     d = {}
@@ -40,14 +37,19 @@ class MyCursor(sqlite.Cursor):
         self.row_factory = dict_factory
 
 class ConnectionFactoryTests(unittest.TestCase):
-    def setUp(self):
-        self.con = sqlite.connect(":memory:", factory=MyConnection)
+    def test_connection_factories(self):
+        class DefectFactory(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                return None
+        class OkFactory(sqlite.Connection):
+            def __init__(self, *args, **kwargs):
+                sqlite.Connection.__init__(self, *args, **kwargs)
 
-    def tearDown(self):
-        self.con.close()
+        for factory in DefectFactory, OkFactory:
+            with self.subTest(factory=factory):
+                con = sqlite.connect(":memory:", factory=factory)
+                self.assertIsInstance(con, factory)
 
-    def test_is_instance(self):
-        self.assertIsInstance(self.con, MyConnection)
 
 class CursorFactoryTests(unittest.TestCase):
     def setUp(self):
