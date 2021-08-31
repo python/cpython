@@ -64,16 +64,16 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
         return NULL;
     }
     PyObject *lru_cache = self->state->lru_cache;
-    PyObject *inner = PyObject_Vectorcall(
-        lru_cache, args + 1, 1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *inner = PyObject_Vectorcall(lru_cache, args + 1, nargsf, NULL);
     Py_DECREF(args[1]);
     if (inner == NULL) {
         return NULL;
     }
 
     args[1] = (PyObject *)self;  // Borrowed ref.
-    PyObject *res = PyObject_Vectorcall(
-        inner, args + 1, 1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *res = PyObject_Vectorcall(inner, args + 1, nargsf, NULL);
     Py_DECREF(inner);
     return res;
 }
@@ -1485,8 +1485,8 @@ pysqlite_collation_callback(
     callback_context *ctx = (callback_context *)context;
     assert(ctx != NULL);
     PyObject *args[] = { NULL, string1, string2 };  // Borrowed refs.
-    retval = PyObject_Vectorcall(
-        ctx->callable, args + 1, 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    retval = PyObject_Vectorcall(ctx->callable, args + 1, nargsf, NULL);
     if (retval == NULL) {
         /* execution failed */
         goto finally;

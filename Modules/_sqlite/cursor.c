@@ -467,8 +467,8 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
     PyObject *args[] = { NULL, operation, };  // Borrowed ref.
     PyObject *cache = self->connection->statement_cache;
-    return PyObject_Vectorcall(
-        cache, args + 1, 1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
 static PyObject *
