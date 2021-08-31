@@ -357,7 +357,8 @@ capture data for later printing in a lightweight fashion.
 
       Returns a string for printing one of the frames involved in the stack.
       This method gets called for each frame object to be printed in the
-      :class:`StackSummary`.
+      :class:`StackSummary`. If it returns ``None``, the frame is omitted
+      from the output.
 
       .. versionadded:: 3.11
 
