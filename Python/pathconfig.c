@@ -6,6 +6,7 @@
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _Py_GetMainConfig()
 #include <wchar.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
@@ -582,10 +583,19 @@ Py_GetPath(void)
 }
 
 
-wchar_t *
-_Py_GetStdlibDir(void)
+const wchar_t *
+_Py_GetStdlibDir(const PyConfig *fallback)
 {
-    return _Py_path_config.stdlib_dir;
+    if (_Py_path_config.stdlib_dir != NULL) {
+        return _Py_path_config.stdlib_dir;
+    }
+    if (fallback == NULL) {
+        fallback = _Py_GetMainConfig();
+        if (fallback == NULL) {
+            return NULL;
+        }
+    }
+    return fallback->stdlib_dir;
 }
 
 
