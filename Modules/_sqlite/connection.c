@@ -953,7 +953,7 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     PyObject *ret;
-    int rc;
+    int rc = SQLITE_DENY;
 
     callback_context *ctx = (callback_context *)user_arg;
     assert(ctx != NULL);
