@@ -781,32 +781,32 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 static callback_context *
 create_callback_context(pysqlite_state *state, PyObject *callable)
 {
-    PyGILState_STATE gstate = PyGILState_Ensure();
     callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
     if (ctx != NULL) {
         ctx->callable = Py_NewRef(callable);
         ctx->state = state;
     }
-    PyGILState_Release(gstate);
     return ctx;
 }
 
 static void
 free_callback_context(callback_context *ctx)
 {
+    assert(ctx != NULL);
+    Py_DECREF(ctx->callable);
+    PyMem_Free(ctx);
+}
+
+static void
+_destructor(void *ctx)
+{
     if (ctx != NULL) {
         // This function may be called without the GIL held, so we need to
         // ensure that we destroy 'ctx' with the GIL held.
         PyGILState_STATE gstate = PyGILState_Ensure();
-        Py_DECREF(ctx->callable);
-        PyMem_Free(ctx);
+        free_callback_context((callback_context *)ctx);
         PyGILState_Release(gstate);
     }
-}
-
-static void _destructor(void* args)
-{
-    free_callback_context((callback_context *)args);
 }
 
 /*[clinic input]
