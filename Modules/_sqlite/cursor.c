@@ -465,7 +465,7 @@ error:
 static PyObject *
 get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
-    PyObject *args[] = { NULL, operation, };
+    PyObject *args[] = { NULL, operation, };  // Borrowed ref.
     PyObject *cache = self->connection->statement_cache;
     return PyObject_Vectorcall(
         cache, args + 1, 1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
