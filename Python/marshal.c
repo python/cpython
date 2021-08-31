@@ -507,36 +507,39 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         // to have their elements serialized in a consistent order (even when
         // they have been scrambled by hash randomization). To ensure this, we
         // use an order equivalent to sorted(v, key=marshal.dumps):
-        PyObject *pairs = PyList_New(0);
+        PyObject *pairs = PyList_New(n);
         if (pairs == NULL) {
             p->error = WFERR_NOMEMORY;
             return;
         }
+        Py_ssize_t i = 0;
         while (_PySet_NextEntry(v, &pos, &value, &hash)) {
             PyObject *dump = PyMarshal_WriteObjectToString(value, p->version);
             if (dump == NULL) {
                 p->error = WFERR_UNMARSHALLABLE;
-                goto anyset_done;
+                Py_DECREF(pairs);
+                return;
             }
             PyObject *pair = PyTuple_Pack(2, dump, value);
             Py_DECREF(dump);
-            if (pair == NULL || PyList_Append(pairs, pair)) {
+            if (pair == NULL) {
                 p->error = WFERR_NOMEMORY;
-                Py_XDECREF(pair);
-                goto anyset_done;
+                Py_DECREF(pairs);
+                return;
             }
-            Py_DECREF(pair);
+            PyList_SET_ITEM(pairs, i++, pair);
         }
+        assert(i == n);
         if (PyList_Sort(pairs)) {
             p->error = WFERR_NOMEMORY;
-            goto anyset_done;
+            Py_DECREF(pairs);
+            return;
         }
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *pair = PyList_GET_ITEM(pairs, i);
             value = PyTuple_GET_ITEM(pair, 1);
             w_object(value, p);
         }
-    anyset_done:
         Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
