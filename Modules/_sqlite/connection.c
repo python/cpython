@@ -223,6 +223,7 @@ pysqlite_do_all_statements(pysqlite_Connection *self)
 do {                                \
     if (ctx) {                      \
         Py_VISIT(ctx->callable);    \
+        Py_VISIT(ctx->connection);  \
     }                               \
 } while (0)
 
@@ -247,6 +248,7 @@ clear_callback_context(callback_context *ctx)
 {
     if (ctx != NULL) {
         Py_CLEAR(ctx->callable);
+        Py_CLEAR(ctx->connection);
     }
 }
 
@@ -816,12 +818,13 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 }
 
 static callback_context *
-create_callback_context(pysqlite_state *state, PyObject *callable)
+create_callback_context(pysqlite_Connection *con, PyObject *callable)
 {
     callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
     if (ctx != NULL) {
         ctx->callable = Py_NewRef(callable);
-        ctx->state = state;
+        ctx->state = con->state;
+        ctx->connection = Py_NewRef(con);
     }
     return ctx;
 }
@@ -831,6 +834,7 @@ free_callback_context(callback_context *ctx)
 {
     assert(ctx != NULL);
     Py_XDECREF(ctx->callable);
+    Py_XDECREF(ctx->connection);
     PyMem_Free(ctx);
 }
 
@@ -896,7 +900,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         flags |= SQLITE_DETERMINISTIC;
 #endif
     }
-    callback_context *ctx = create_callback_context(self->state, func);
+    callback_context *ctx = create_callback_context(self, func);
     if (ctx == NULL) {
         return NULL;
     }
@@ -936,8 +940,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    callback_context *ctx = create_callback_context(self->state,
-                                                    aggregate_class);
+    callback_context *ctx = create_callback_context(self, aggregate_class);
     if (ctx == NULL) {
         return NULL;
     }
@@ -1088,7 +1091,7 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
         set_callback_context(&self->authorizer_ctx, NULL);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state, callable);
+        callback_context *ctx = create_callback_context(self, callable);
         if (ctx == NULL) {
             return NULL;
         }
@@ -1128,7 +1131,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
         set_callback_context(&self->progress_ctx, NULL);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state, callable);
+        callback_context *ctx = create_callback_context(self, callable);
         if (ctx == NULL) {
             return NULL;
         }
@@ -1173,7 +1176,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
         set_callback_context(&self->trace_ctx, NULL);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state, callable);
+        callback_context *ctx = create_callback_context(self, callable);
         if (ctx == NULL) {
             return NULL;
         }
@@ -1766,7 +1769,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
             PyErr_SetString(PyExc_TypeError, "parameter must be callable");
             return NULL;
         }
-        ctx = create_callback_context(self->state, callable);
+        ctx = create_callback_context(self, callable);
         if (ctx == NULL) {
             return NULL;
         }
