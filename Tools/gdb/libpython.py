@@ -958,9 +958,11 @@ class PyFramePtr:
         if self.is_optimized_out():
             return
 
+
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
-        base = self._gdbval.cast(obj_ptr_ptr)
-        localsplus = base - self._f_nlocalsplus()
+
+        localsplus = self._gdbval["localsplus"].cast(obj_ptr_ptr)
+
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
             if pyop_value.is_null():

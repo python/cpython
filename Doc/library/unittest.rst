@@ -151,6 +151,10 @@ The above examples show the most commonly used :mod:`unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
 
+.. versionchanged:: 3.11
+   The behavior of returning a value from a test method (other than the default
+   ``None`` value), is now deprecated.
+
 
 .. _unittest-command-line-interface:
 

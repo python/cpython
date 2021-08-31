@@ -1,0 +1,2 @@
+Remove support of special method ``__div__`` in :mod:`unittest.mock`. It is
+not used in Python 3.

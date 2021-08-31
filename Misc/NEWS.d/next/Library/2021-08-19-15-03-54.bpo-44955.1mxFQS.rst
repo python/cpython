@@ -1,0 +1,5 @@
+Method :meth:`~unittest.TestResult.stopTestRun` is now always called in pair
+with method :meth:`~unittest.TestResult.startTestRun` for
+:class:`~unittest.TestResult` objects implicitly created in
+:meth:`~unittest.TestCase.run`. Previously it was not called for test
+methods and classes decorated with a skipping decorator.

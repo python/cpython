@@ -54,6 +54,8 @@ lots of shared  sub-objects.  The keys are ordinary strings.
           with shelve.open('spam') as db:
               db['eggs'] = 'eggs'
 
+.. _shelve-security:
+
 .. warning::
 
    Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure

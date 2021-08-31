@@ -22,12 +22,18 @@
 
 import contextlib
 import sqlite3 as sqlite
+import subprocess
 import sys
 import threading
 import unittest
 
-from test.support import check_disallow_instantiation, threading_helper, bigmemtest
-from test.support.os_helper import TESTFN, unlink
+from test.support import (
+    SHORT_TIMEOUT,
+    bigmemtest,
+    check_disallow_instantiation,
+    threading_helper,
+)
+from test.support.os_helper import TESTFN, unlink, temp_dir
 
 
 # Helper for tests using TESTFN
@@ -95,6 +101,89 @@ class ModuleTests(unittest.TestCase):
         self.assertTrue(issubclass(sqlite.NotSupportedError,
                                    sqlite.DatabaseError),
                         "NotSupportedError is not a subclass of DatabaseError")
+
+    def test_module_constants(self):
+        consts = [
+            "SQLITE_ABORT",
+            "SQLITE_ALTER_TABLE",
+            "SQLITE_ANALYZE",
+            "SQLITE_ATTACH",
+            "SQLITE_AUTH",
+            "SQLITE_BUSY",
+            "SQLITE_CANTOPEN",
+            "SQLITE_CONSTRAINT",
+            "SQLITE_CORRUPT",
+            "SQLITE_CREATE_INDEX",
+            "SQLITE_CREATE_TABLE",
+            "SQLITE_CREATE_TEMP_INDEX",
+            "SQLITE_CREATE_TEMP_TABLE",
+            "SQLITE_CREATE_TEMP_TRIGGER",
+            "SQLITE_CREATE_TEMP_VIEW",
+            "SQLITE_CREATE_TRIGGER",
+            "SQLITE_CREATE_VIEW",
+            "SQLITE_CREATE_VTABLE",
+            "SQLITE_DELETE",
+            "SQLITE_DENY",
+            "SQLITE_DETACH",
+            "SQLITE_DONE",
+            "SQLITE_DROP_INDEX",
+            "SQLITE_DROP_TABLE",
+            "SQLITE_DROP_TEMP_INDEX",
+            "SQLITE_DROP_TEMP_TABLE",
+            "SQLITE_DROP_TEMP_TRIGGER",
+            "SQLITE_DROP_TEMP_VIEW",
+            "SQLITE_DROP_TRIGGER",
+            "SQLITE_DROP_VIEW",
+            "SQLITE_DROP_VTABLE",
+            "SQLITE_EMPTY",
+            "SQLITE_ERROR",
+            "SQLITE_FORMAT",
+            "SQLITE_FULL",
+            "SQLITE_FUNCTION",
+            "SQLITE_IGNORE",
+            "SQLITE_INSERT",
+            "SQLITE_INTERNAL",
+            "SQLITE_INTERRUPT",
+            "SQLITE_IOERR",
+            "SQLITE_LOCKED",
+            "SQLITE_MISMATCH",
+            "SQLITE_MISUSE",
+            "SQLITE_NOLFS",
+            "SQLITE_NOMEM",
+            "SQLITE_NOTADB",
+            "SQLITE_NOTFOUND",
+            "SQLITE_OK",
+            "SQLITE_PERM",
+            "SQLITE_PRAGMA",
+            "SQLITE_PROTOCOL",
+            "SQLITE_READ",
+            "SQLITE_READONLY",
+            "SQLITE_REINDEX",
+            "SQLITE_ROW",
+            "SQLITE_SAVEPOINT",
+            "SQLITE_SCHEMA",
+            "SQLITE_SELECT",
+            "SQLITE_TOOBIG",
+            "SQLITE_TRANSACTION",
+            "SQLITE_UPDATE",
+        ]
+        if sqlite.version_info >= (3, 7, 17):
+            consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
+        if sqlite.version_info >= (3, 8, 3):
+            consts.append("SQLITE_RECURSIVE")
+        consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
+        for const in consts:
+            with self.subTest(const=const):
+                self.assertTrue(hasattr(sqlite, const))
+
+    def test_error_code_on_exception(self):
+        err_msg = "unable to open database file"
+        with temp_dir() as db:
+            with self.assertRaisesRegex(sqlite.Error, err_msg) as cm:
+                sqlite.connect(db)
+            e = cm.exception
+            self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
+            self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
 
     # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
     # OperationalError on some buildbots.
@@ -528,6 +617,9 @@ class CursorTests(unittest.TestCase):
             def __init__(self):
                 self.value = 5
 
+            def __iter__(self):
+                return self
+
             def __next__(self):
                 if self.value == 10:
                     raise StopIteration
@@ -849,6 +941,13 @@ class ExtensionTests(unittest.TestCase):
             with self.assertRaises(sqlite.DataError):
                 cur.executescript("create table a(s);".ljust(size))
 
+    def test_cursor_executescript_tx_control(self):
+        con = sqlite.connect(":memory:")
+        con.execute("begin")
+        self.assertTrue(con.in_transaction)
+        con.executescript("select 1")
+        self.assertFalse(con.in_transaction)
+
     def test_connection_execute(self):
         con = sqlite.connect(":memory:")
         result = con.execute("select 5").fetchone()[0]
@@ -1047,6 +1146,77 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
 
 
+class MultiprocessTests(unittest.TestCase):
+    CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_ctx_mgr_rollback_if_commit_failed(self):
+        # bpo-27334: ctx manager does not rollback if commit fails
+        SCRIPT = f"""if 1:
+            import sqlite3
+            def wait():
+                print("started")
+                assert "database is locked" in input()
+
+            cx = sqlite3.connect("{TESTFN}", timeout={self.CONNECTION_TIMEOUT})
+            cx.create_function("wait", 0, wait)
+            with cx:
+                cx.execute("create table t(t)")
+            try:
+                # execute two transactions; both will try to lock the db
+                cx.executescript('''
+                    -- start a transaction and wait for parent
+                    begin transaction;
+                    select * from t;
+                    select wait();
+                    rollback;
+
+                    -- start a new transaction; would fail if parent holds lock
+                    begin transaction;
+                    select * from t;
+                    rollback;
+                ''')
+            finally:
+                cx.close()
+        """
+
+        # spawn child process
+        proc = subprocess.Popen(
+            [sys.executable, "-c", SCRIPT],
+            encoding="utf-8",
+            bufsize=0,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        self.addCleanup(proc.communicate)
+
+        # wait for child process to start
+        self.assertEqual("started", proc.stdout.readline().strip())
+
+        cx = sqlite.connect(TESTFN, timeout=self.CONNECTION_TIMEOUT)
+        try:  # context manager should correctly release the db lock
+            with cx:
+                cx.execute("insert into t values('test')")
+        except sqlite.OperationalError as exc:
+            proc.stdin.write(str(exc))
+        else:
+            proc.stdin.write("no error")
+        finally:
+            cx.close()
+
+        # terminate child process
+        self.assertIsNone(proc.returncode)
+        try:
+            proc.communicate(input="end", timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            raise
+        self.assertEqual(proc.returncode, 0)
+
+
 def suite():
     tests = [
         ClosedConTests,
@@ -1056,6 +1226,7 @@ def suite():
         CursorTests,
         ExtensionTests,
         ModuleTests,
+        MultiprocessTests,
         OpenTests,
         SerializeTests,
         SqliteOnConflictTests,
