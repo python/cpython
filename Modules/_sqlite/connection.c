@@ -1041,7 +1041,8 @@ static void _trace_callback(void* user_arg, const char* statement_string)
 
     if (ret) {
         Py_DECREF(ret);
-    } else {
+    }
+    else {
         print_or_clear_traceback(ctx);
     }
 
