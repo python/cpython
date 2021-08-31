@@ -58,15 +58,17 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
+static void connection_close(pysqlite_Connection *self);
 
 static PyObject *
-new_statement_cache(pysqlite_Connection *self, int maxsize)
+new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
+                    int maxsize)
 {
     PyObject *args[] = { NULL, PyLong_FromLong(maxsize), };
     if (args[1] == NULL) {
         return NULL;
     }
-    PyObject *lru_cache = self->state->lru_cache;
+    PyObject *lru_cache = state->lru_cache;
     size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *inner = PyObject_Vectorcall(lru_cache, args + 1, nargsf, NULL);
     Py_DECREF(args[1]);
@@ -102,76 +104,63 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                               int cached_statements, int uri)
 /*[clinic end generated code: output=dc19df1c0e2b7b77 input=aa1f21bf12fe907a]*/
 {
-    int rc;
-
     if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+        Py_DECREF(database_obj);  // needed bco. the AC FSConverter
         return -1;
     }
 
-    pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
-    self->state = state;
+    if (self->initialized) {
+        connection_close(self);
+        self->initialized = 0;
+    }
 
+    // Create and configure SQLite database object
+    sqlite3 *db;
     const char *database = PyBytes_AsString(database_obj);
-
-    self->begin_statement = NULL;
-
-    Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->cursors);
-
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->row_factory, Py_None);
-
-    Py_INCREF(&PyUnicode_Type);
-    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
-
+    int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(database, &self->db,
+    rc = sqlite3_open_v2(database, &db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
+    if (rc == SQLITE_OK) {
+        (void)sqlite3_busy_timeout(db, (int)(timeout*1000));
+    }
     Py_END_ALLOW_THREADS
 
     Py_DECREF(database_obj);  // needed bco. the AC FSConverter
 
+    pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(state, self->db);
+        _pysqlite_seterror(state, db);
         return -1;
     }
 
-    if (!isolation_level) {
-        isolation_level = PyUnicode_FromString("");
-        if (!isolation_level) {
-            return -1;
-        }
-    } else {
-        Py_INCREF(isolation_level);
-    }
-    Py_CLEAR(self->isolation_level);
-    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
-        Py_DECREF(isolation_level);
-        return -1;
-    }
-    Py_DECREF(isolation_level);
-
-    self->statement_cache = new_statement_cache(self, cached_statements);
-    if (self->statement_cache == NULL) {
-        return -1;
-    }
-    if (PyErr_Occurred()) {
+    // Create cursor weak ref list and statement cache
+    PyObject *cursors = PyList_New(0);
+    if (cursors == NULL) {
         return -1;
     }
 
+    PyObject *cache = new_statement_cache(self, state, cached_statements);
+    if (cache == NULL) {
+        Py_DECREF(cursors);
+        return -1;
+    }
+
+    // Init connection state members
+    self->db = db;
+    self->state = state;
+    self->detect_types = detect_types;
+    self->begin_statement = NULL;
+    self->check_same_thread = check_same_thread;
+    self->thread_ident = PyThread_get_thread_ident();
     self->created_cursors = 0;
 
-    /* Create list of weak references to cursors */
-    self->cursors = PyList_New(0);
-    if (self->cursors == NULL) {
-        return -1;
-    }
-
-    self->detect_types = detect_types;
-    (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
-    self->thread_ident = PyThread_get_thread_ident();
-    self->check_same_thread = check_same_thread;
+    Py_CLEAR(self->isolation_level);
+    Py_XSETREF(self->statement_cache, cache);
+    Py_XSETREF(self->cursors, cursors);
+    Py_XSETREF(self->row_factory, Py_NewRef(Py_None));
+    Py_XSETREF(self->text_factory, Py_NewRef(&PyUnicode_Type));
 
     set_callback_context(&self->trace_ctx, NULL);
     set_callback_context(&self->progress_ctx, NULL);
@@ -188,12 +177,27 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->ProgrammingError      = state->ProgrammingError;
     self->NotSupportedError     = state->NotSupportedError;
 
+    // Set isolation level at last, since it may trigger a COMMIT
+    if (isolation_level == NULL) {
+        isolation_level = PyUnicode_FromString("");
+        if (isolation_level == NULL) {
+            return -1;
+        }
+    }
+    else {
+        Py_INCREF(isolation_level);
+    }
+    rc = pysqlite_connection_set_isolation_level(self, isolation_level, NULL);
+    Py_DECREF(isolation_level);
+    if (rc < 0) {
+        return -1;
+    }
+
     if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
         return -1;
     }
 
     self->initialized = 1;
-
     return 0;
 }
 
@@ -265,9 +269,22 @@ connection_clear(pysqlite_Connection *self)
 }
 
 static void
+clear_sqlite_callbacks(pysqlite_Connection *self)
+{
+    (void)sqlite3_set_authorizer(self->db, NULL, NULL);
+    sqlite3_progress_handler(self->db, 0, NULL, NULL);
+#ifdef HAVE_TRACE_V2
+    sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, NULL, NULL);
+#else
+    sqlite3_trace(self->db, NULL, NULL);
+#endif
+}
+
+static void
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
+        clear_sqlite_callbacks(self);
         int rc = sqlite3_close_v2(self->db);
         assert(rc == SQLITE_OK), (void)rc;
         self->db = NULL;
