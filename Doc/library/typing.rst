@@ -1507,8 +1507,8 @@ Other concrete types
    :func:`open`.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.io`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.io`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
 .. class:: Pattern
            Match
@@ -1521,8 +1521,8 @@ Other concrete types
    ``Match[bytes]``.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.re`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.re`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
