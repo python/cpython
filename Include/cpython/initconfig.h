@@ -2,6 +2,8 @@
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
 
+#include <stdbool.h>
+
 /* --- PyStatus ----------------------------------------------- */
 
 typedef struct {
@@ -192,6 +194,7 @@ typedef struct PyConfig {
     int write_bytecode;
     int user_site_directory;
     wchar_t *check_hash_pycs_mode;
+    bool use_frozen_modules;
 
     /* --- Parameter only used by Py_Main() ---------- */
     int skip_source_first_line;
