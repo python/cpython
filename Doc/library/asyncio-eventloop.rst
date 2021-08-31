@@ -211,6 +211,10 @@ Scheduling callbacks
    A thread-safe variant of :meth:`call_soon`.  Must be used to
    schedule callbacks *from another thread*.
 
+   Raises :exc:`RuntimeError` if called on a loop that's been closed.
+   This can happen on a secondary thread when the main application is
+   shutting down.
+
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
@@ -440,7 +444,7 @@ Opening network connections
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
-     to bind the socket to locally.  The *local_host* and *local_port*
+     to bind the socket locally.  The *local_host* and *local_port*
      are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
 
    * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds
@@ -518,7 +522,7 @@ Opening network connections
    Other arguments:
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
-     to bind the socket to locally.  The *local_host* and *local_port*
+     to bind the socket locally.  The *local_host* and *local_port*
      are looked up using :meth:`getaddrinfo`.
 
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used

@@ -95,6 +95,13 @@ __all__ = [
     'NamedTuple',  # Not really a type.
     'TypedDict',  # Not really a type.
     'Generator',
+ 
+    # Other concrete types.
+    'BinaryIO',
+    'IO',
+    'Match',
+    'Pattern',
+    'TextIO',
 
     # One-off things.
     'AnyStr',
@@ -118,16 +125,16 @@ __all__ = [
 # legitimate imports of those modules.
 
 
-def _type_convert(arg):
+def _type_convert(arg, module=None):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg)
+        return ForwardRef(arg, module=module)
     return arg
 
 
-def _type_check(arg, msg, is_argument=True):
+def _type_check(arg, msg, is_argument=True, module=None):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -143,7 +150,7 @@ def _type_check(arg, msg, is_argument=True):
     if is_argument:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
-    arg = _type_convert(arg)
+    arg = _type_convert(arg, module=module)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -510,9 +517,9 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__')
+                 '__forward_is_argument__', '__forward_module__')
 
-    def __init__(self, arg, is_argument=True):
+    def __init__(self, arg, is_argument=True, module=None):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -524,6 +531,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
+        self.__forward_module__ = module
 
     def _evaluate(self, globalns, localns, recursive_guard):
         if self.__forward_arg__ in recursive_guard:
@@ -535,6 +543,10 @@ class ForwardRef(_Final, _root=True):
                 globalns = localns
             elif localns is None:
                 localns = globalns
+            if self.__forward_module__ is not None:
+                globalns = getattr(
+                    sys.modules.get(self.__forward_module__, None), '__dict__', globalns
+                )
             type_ =_type_check(
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
@@ -1068,8 +1080,7 @@ def _is_callable_members_only(cls):
 
 
 def _no_init(self, *args, **kwargs):
-    if type(self)._is_protocol:
-        raise TypeError('Protocols cannot be instantiated')
+    raise TypeError('Protocols cannot be instantiated')
 
 
 def _allow_reckless_class_cheks():
@@ -1198,6 +1209,15 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
+            if cls.__init__ == _no_init:
+                for base in cls.__mro__:
+                    init = base.__dict__.get('__init__', _no_init)
+                    if init != _no_init:
+                        cls.__init__ = init
+                        break
+                else:
+                    # should not happen
+                    cls.__init__ = object.__init__
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.
@@ -1905,7 +1925,8 @@ class _TypedDictMeta(type):
         own_annotation_keys = set(own_annotations.keys())
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_annotations = {
-            n: _type_check(tp, msg) for n, tp in own_annotations.items()
+            n: _type_check(tp, msg, module=tp_dict.__module__)
+            for n, tp in own_annotations.items()
         }
         required_keys = set()
         optional_keys = set()

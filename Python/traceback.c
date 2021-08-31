@@ -147,7 +147,7 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
+    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|READ_RESTRICTED},
     {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
     {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
     {NULL}      /* Sentinel */
@@ -799,7 +799,10 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = PyThreadState_GetFrame(tstate);
+    // Use a borrowed reference. Avoid Py_INCREF/Py_DECREF, since this function
+    // can be called in a signal handler by the faulthandler module which must
+    // not modify Python objects.
+    frame = tstate->frame;
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;
@@ -808,17 +811,14 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
-            Py_DECREF(frame);
             PUTS(fd, "  ...\n");
             break;
         }
         if (!PyFrame_Check(frame)) {
-            Py_DECREF(frame);
             break;
         }
         dump_frame(fd, frame);
-        PyFrameObject *back = PyFrame_GetBack(frame);
-        Py_DECREF(frame);
+        PyFrameObject *back = frame->f_back;
 
         if (back == NULL) {
             break;

@@ -1,4 +1,4 @@
-This is Python version 3.9.4
+This is Python version 3.9.7
 ============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.9
@@ -114,12 +114,12 @@ The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
 
 An instrumented version of the interpreter is built, using suitable compiler
-flags for each flavour. Note that this is just an intermediary step.  The
-binary resulting from this step is not good for real life workloads as it has
+flags for each flavor. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
-workload.  This is necessary in order to profile the interpreter execution.
+workload.  This is necessary in order to profile the interpreter's execution.
 Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
@@ -233,12 +233,13 @@ Proposals for enhancement
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
-comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
+`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 `python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
+.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule

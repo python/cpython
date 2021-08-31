@@ -727,6 +727,8 @@ def _get_action_name(argument):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
+    elif argument.choices:
+        return '{' + ','.join(argument.choices) + '}'
     else:
         return None
 
@@ -873,7 +875,7 @@ class BooleanOptionalAction(Action):
                 _option_strings.append(option_string)
 
         if help is not None and default is not None:
-            help += f" (default: {default})"
+            help += " (default: %(default)s)"
 
         super().__init__(
             option_strings=_option_strings,

@@ -405,28 +405,30 @@ SyntaxError: invalid syntax
 ...   290, 291, 292, 293, 294, 295, 296, 297, 298, 299)  # doctest: +ELLIPSIS
 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ..., 297, 298, 299)
 
-# >>> f(lambda x: x[0] = 3)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(lambda x: x[0] = 3)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+
+# Check that this error doesn't trigger for names:
+>>> f(a={x: for x in {}})
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
-# >>> f(x()=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(a or b=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(x.y=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f((x)=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(True=2)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> f(x()=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(a or b=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(x.y=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f((x)=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -528,38 +530,6 @@ isn't, there should be a syntax error.
    Traceback (most recent call last):
      ...
    SyntaxError: 'break' outside loop
-
-This raises a SyntaxError, it used to raise a SystemError.
-Context for this change can be found on issue #27514
-
-In 2.5 there was a missing exception and an assert was triggered in a debug
-build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
-
-   >>> while 1:
-   ...  while 2:
-   ...   while 3:
-   ...    while 4:
-   ...     while 5:
-   ...      while 6:
-   ...       while 8:
-   ...        while 9:
-   ...         while 10:
-   ...          while 11:
-   ...           while 12:
-   ...            while 13:
-   ...             while 14:
-   ...              while 15:
-   ...               while 16:
-   ...                while 17:
-   ...                 while 18:
-   ...                  while 19:
-   ...                   while 20:
-   ...                    while 21:
-   ...                     while 22:
-   ...                      break
-   Traceback (most recent call last):
-     ...
-   SyntaxError: too many statically nested blocks
 
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
@@ -724,6 +694,13 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 >>> from t import x,y,
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
+
+# Check that we dont raise the "trailing comma" error if there is more
+# input to the left of the valid part that we parsed.
+
+>>> from t import x,y, and 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> (): int
 Traceback (most recent call last):
@@ -976,7 +953,7 @@ def func2():
     def test_invalid_line_continuation_error_position(self):
         self._check_error(r"a = 3 \ 4",
                           "unexpected character after line continuation character",
-                          lineno=1, offset=9)
+                          lineno=1, offset=(10 if support.use_old_parser() else 9))
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
@@ -985,6 +962,42 @@ def func2():
                           "unexpected character after line continuation character")
         self._check_error("A.\u03bc\\\n",
                           "unexpected EOF while parsing")
+
+    @support.cpython_only
+    def test_syntax_error_on_deeply_nested_blocks(self):
+        # This raises a SyntaxError, it used to raise a SystemError. Context
+        # for this change can be found on issue #27514
+
+        # In 2.5 there was a missing exception and an assert was triggered in a
+        # debug build.  The number of blocks must be greater than CO_MAXBLOCKS.
+        # SF #1565514
+
+        source = """
+while 1:
+ while 2:
+  while 3:
+   while 4:
+    while 5:
+     while 6:
+      while 8:
+       while 9:
+        while 10:
+         while 11:
+          while 12:
+           while 13:
+            while 14:
+             while 15:
+              while 16:
+               while 17:
+                while 18:
+                 while 19:
+                  while 20:
+                   while 21:
+                    while 22:
+                     break
+"""
+        self._check_error(source, "too many statically nested blocks")
+
 
 def test_main():
     support.run_unittest(SyntaxTestCase)

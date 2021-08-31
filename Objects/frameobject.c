@@ -13,7 +13,7 @@
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
-    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
+    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY|READ_RESTRICTED},
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
     {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
@@ -575,7 +575,7 @@ frame_dealloc(PyFrameObject *f)
     if (_PyObject_GC_IS_TRACKED(f))
         _PyObject_GC_UNTRACK(f);
 
-    Py_TRASHCAN_SAFE_BEGIN(f)
+    Py_TRASHCAN_BEGIN(f, frame_dealloc);
     /* Kill all local variables */
     valuestack = f->f_valuestack;
     for (p = f->f_localsplus; p < valuestack; p++)
@@ -609,7 +609,7 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_DECREF(co);
-    Py_TRASHCAN_SAFE_END(f)
+    Py_TRASHCAN_END;
 }
 
 static inline Py_ssize_t

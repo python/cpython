@@ -3002,6 +3002,8 @@ class TestMiscellaneous(TestEmailBase):
     def test_parsedate_returns_None_for_invalid_strings(self):
         self.assertIsNone(utils.parsedate(''))
         self.assertIsNone(utils.parsedate_tz(''))
+        self.assertIsNone(utils.parsedate(' '))
+        self.assertIsNone(utils.parsedate_tz(' '))
         self.assertIsNone(utils.parsedate('0'))
         self.assertIsNone(utils.parsedate_tz('0'))
         self.assertIsNone(utils.parsedate('A Complete Waste of Time'))
@@ -3261,6 +3263,11 @@ Foo
         eq = self.assertEqual
         addrs = utils.getaddresses(['User ((nested comment)) <foo@bar.com>'])
         eq(addrs[0][1], 'foo@bar.com')
+
+    def test_getaddresses_header_obj(self):
+        """Test the handling of a Header object."""
+        addrs = utils.getaddresses([Header('Al Person <aperson@dom.ain>')])
+        self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads

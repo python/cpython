@@ -1,4 +1,0 @@
-The header files for :mod:`ssl` error codes are now OpenSSL
-version-specific. Exceptions will now show correct reason and library
-codes. The ``make_ssl_data.py`` script has been rewritten to use OpenSSL's
-text file with error codes.

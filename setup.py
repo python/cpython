@@ -210,11 +210,11 @@ def macosx_sdk_specified():
 
 def is_macosx_sdk_path(path):
     """
-    Returns True if 'path' can be located in an OSX SDK
+    Returns True if 'path' can be located in a macOS SDK
     """
     return ( (path.startswith('/usr/') and not path.startswith('/usr/local'))
-                or path.startswith('/System/')
-                or path.startswith('/Library/') )
+                or path.startswith('/System/Library')
+                or path.startswith('/System/iOSSupport') )
 
 
 def grep_headers_for(function, headers):
@@ -539,6 +539,9 @@ class PyBuildExt(build_ext):
             print("LibreSSL 2.6.4 and earlier do not provide the necessary "
                   "APIs, https://github.com/libressl-portable/portable/issues/381")
             print()
+
+        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (self.failed or self.failed_on_import):
+            raise RuntimeError("Failed to build some stdlib modules")
 
     def build_extension(self, ext):
 
@@ -950,7 +953,7 @@ class PyBuildExt(build_ext):
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
 
-        # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
+        # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
         self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
@@ -1150,7 +1153,7 @@ class PyBuildExt(build_ext):
         # similar functionality (but slower of course) implemented in Python.
 
         # Sleepycat^WOracle Berkeley DB interface.
-        #  http://www.oracle.com/database/berkeley-db/db/index.html
+        #  https://www.oracle.com/database/technologies/related/berkeleydb.html
         #
         # This requires the Sleepycat^WOracle DB code. The supported versions
         # are set below.  Visit the URL above to download
@@ -1192,7 +1195,7 @@ class PyBuildExt(build_ext):
             '/usr/include/db3',
             '/usr/local/include/db3',
             '/opt/sfw/include/db3',
-            # Fink defaults (http://fink.sourceforge.net/)
+            # Fink defaults (https://www.finkproject.org/)
             '/sw/include/db4',
             '/sw/include/db3',
         ]
@@ -1204,7 +1207,7 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/usr/local/include/db4%d' % x)
             db_inc_paths.append('/pkg/db-4.%d/include' % x)
             db_inc_paths.append('/opt/db-4.%d/include' % x)
-            # MacPorts default (http://www.macports.org/)
+            # MacPorts default (https://www.macports.org/)
             db_inc_paths.append('/opt/local/include/db4%d' % x)
         # 3.x minor number specific paths
         for x in gen_db_minor_ver_nums(3):
@@ -1521,6 +1524,8 @@ class PyBuildExt(build_ext):
             # if --enable-loadable-sqlite-extensions configure option is used.
             if '--enable-loadable-sqlite-extensions' not in sysconfig.get_config_var("CONFIG_ARGS"):
                 sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))
+            elif MACOS and sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include"):
+                raise DistutilsError("System version of SQLite does not support loadable extensions")
 
             if MACOS:
                 # In every directory on the search path search for a dynamic
@@ -2287,12 +2292,12 @@ class PyBuildExt(build_ext):
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):
             # Some versions of gcc miscompile inline asm:
-            # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-            # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
             extra_compile_args.append('-fno-ipa-pure-const')
         if sysconfig.get_config_var('HAVE_GLIBC_MEMMOVE_BUG'):
             # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-            # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
             undef_macros.append('_FORTIFY_SOURCE')
 
         # Uncomment for extra functionality:
@@ -2567,7 +2572,7 @@ def main():
     setup(# PyPI Metadata (PEP 301)
           name = "Python",
           version = sys.version.split()[0],
-          url = "http://www.python.org/%d.%d" % sys.version_info[:2],
+          url = "https://www.python.org/%d.%d" % sys.version_info[:2],
           maintainer = "Guido van Rossum and the Python community",
           maintainer_email = "python-dev@python.org",
           description = "A high-level object-oriented programming language",

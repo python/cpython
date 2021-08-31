@@ -600,11 +600,6 @@ del_t_atom[expr_ty]:
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
 
-targets[asdl_seq*]: a=','.target+ [','] { a }
-target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
-    | t_atom
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _Py_Attribute(a, b->v.Name.id, Load, EXTRA) }
     | a=t_primary '[' b=slices ']' &t_lookahead { _Py_Subscript(a, b, Load, EXTRA) }
@@ -616,12 +611,6 @@ t_primary[expr_ty]:
                  EXTRA) }
     | a=atom &t_lookahead { a }
 t_lookahead: '(' | '[' | '.'
-t_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=target ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' b=[targets] ')' { _Py_Tuple(b, Store, EXTRA) }
-    | '[' b=[targets] ']' { _Py_List(b, Store, EXTRA) }
-
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
@@ -633,7 +622,7 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | a=expression '=' {
+    | !(NAME '=') a=expression b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "expression cannot contain assignment, perhaps you meant \"==\"?") }
 invalid_named_expression:
@@ -703,5 +692,5 @@ invalid_group:
     | '(' a=starred_expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use starred expression here") }
 invalid_import_from_targets:
-    | import_from_as_names ',' {
+    | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }

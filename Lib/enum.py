@@ -242,8 +242,32 @@ class EnumMeta(type):
                 methods = ('__getnewargs_ex__', '__getnewargs__',
                         '__reduce_ex__', '__reduce__')
                 if not any(m in member_type.__dict__ for m in methods):
-                    _make_class_unpicklable(enum_class)
-
+                    if '__new__' in classdict:
+                        # too late, sabotage
+                        _make_class_unpicklable(enum_class)
+                    else:
+                        # final attempt to verify that pickling would work:
+                        # travel mro until __new__ is found, checking for
+                        # __reduce__ and friends along the way -- if any of them
+                        # are found before/when __new__ is found, pickling should
+                        # work
+                        sabotage = None
+                        for chain in bases:
+                            for base in chain.__mro__:
+                                if base is object:
+                                    continue
+                                elif any(m in base.__dict__ for m in methods):
+                                    # found one, we're good
+                                    sabotage = False
+                                    break
+                                elif '__new__' in base.__dict__:
+                                    # not good
+                                    sabotage = True
+                                    break
+                            if sabotage is not None:
+                                break
+                        if sabotage:
+                            _make_class_unpicklable(enum_class)
         # instantiate them, checking for duplicates as we go
         # we instantiate first instead of checking for duplicates first in case
         # a custom __new__ is doing something funky with the values -- such as
@@ -556,7 +580,7 @@ class EnumMeta(type):
             return object, Enum
 
         def _find_data_type(bases):
-            data_types = []
+            data_types = set()
             for chain in bases:
                 candidate = None
                 for base in chain.__mro__:
@@ -564,19 +588,19 @@ class EnumMeta(type):
                         continue
                     elif issubclass(base, Enum):
                         if base._member_type_ is not object:
-                            data_types.append(base._member_type_)
+                            data_types.add(base._member_type_)
                             break
                     elif '__new__' in base.__dict__:
                         if issubclass(base, Enum):
                             continue
-                        data_types.append(candidate or base)
+                        data_types.add(candidate or base)
                         break
                     else:
-                        candidate = base
+                        candidate = candidate or base
             if len(data_types) > 1:
                 raise TypeError('%r: too many data types: %r' % (class_name, data_types))
             elif data_types:
-                return data_types[0]
+                return data_types.pop()
             else:
                 return None
 

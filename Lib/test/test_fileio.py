@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
-                          make_bad_fd, cpython_only, swap_attr)
+                          make_bad_fd, cpython_only, swap_attr, gc_collect)
 from collections import UserList
 
 import _io  # C implementation of io
@@ -35,6 +35,7 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testSeekTell(self):

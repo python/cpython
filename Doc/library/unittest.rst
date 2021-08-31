@@ -331,8 +331,9 @@ the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
    Test discovery supports :term:`namespace packages <namespace package>`
-   for start directory. Note that you need to the top level directory too.
-   (e.g. ``python -m unittest discover -s root/namespace -t root``).
+   for the start directory. Note that you need to specify the top level
+   directory too (e.g.
+   ``python -m unittest discover -s root/namespace -t root``).
 
 
 .. _organizing-tests:
@@ -596,8 +597,9 @@ The following decorators and exception implement test skipping and expected fail
 .. decorator:: expectedFailure
 
    Mark the test as an expected failure or error.  If the test fails or errors
-   it will be considered a success.  If the test passes, it will be considered
-   a failure.
+   in the test function itself (rather than in one of the :dfn:`test fixture`
+   methods) then it will be considered a success.  If the test passes, it will
+   be considered a failure.
 
 .. exception:: SkipTest(reason)
 

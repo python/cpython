@@ -467,12 +467,17 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     /* Initialize Slots */
     slots[0] = (PyType_Slot){Py_tp_dealloc, (destructor)structseq_dealloc};
     slots[1] = (PyType_Slot){Py_tp_repr, (reprfunc)structseq_repr};
-    slots[2] = (PyType_Slot){Py_tp_doc, (void *)desc->doc};
-    slots[3] = (PyType_Slot){Py_tp_methods, structseq_methods};
-    slots[4] = (PyType_Slot){Py_tp_new, structseq_new};
-    slots[5] = (PyType_Slot){Py_tp_members, members};
-    slots[6] = (PyType_Slot){Py_tp_traverse, (traverseproc)structseq_traverse};
-    slots[7] = (PyType_Slot){0, 0};
+    slots[2] = (PyType_Slot){Py_tp_methods, structseq_methods};
+    slots[3] = (PyType_Slot){Py_tp_new, structseq_new};
+    slots[4] = (PyType_Slot){Py_tp_members, members};
+    slots[5] = (PyType_Slot){Py_tp_traverse, (traverseproc)structseq_traverse};
+    if (desc->doc) {
+        slots[6] = (PyType_Slot){Py_tp_doc, (void *)desc->doc};
+        slots[7] = (PyType_Slot){0, 0};
+    }
+    else {
+        slots[6] = (PyType_Slot){0, 0};
+    }
 
     /* Initialize Spec */
     /* The name in this PyType_Spec is statically allocated so it is */

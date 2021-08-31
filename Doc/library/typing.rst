@@ -656,10 +656,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.9.1
-      ``Literal`` now de-duplicates parameters.  Equality comparison of
+      ``Literal`` now de-duplicates parameters.  Equality comparisons of
       ``Literal`` objects are no longer order dependent. ``Literal`` objects
       will now raise a :exc:`TypeError` exception during equality comparisons
-      if one of their parameters are not :term:`immutable`.
+      if one of their parameters are not :term:`hashable`.
 
 .. data:: ClassVar
 
@@ -1179,7 +1179,11 @@ Other concrete types
    Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`. These types are also in the ``typing.io`` namespace.
+   :func:`open`.
+
+   .. deprecated-removed:: 3.8 3.12
+      These types are also in the ``typing.io`` namespace, which was
+      never supported by type checkers and will be removed.
 
 .. class:: Pattern
            Match
@@ -1189,7 +1193,11 @@ Other concrete types
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``. These types are also in the ``typing.re`` namespace.
+   ``Match[bytes]``.
+
+   .. deprecated-removed:: 3.8 3.12
+      These types are also in the ``typing.re`` namespace, which was
+      never supported by type checkers and will be removed.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.

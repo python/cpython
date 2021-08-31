@@ -718,11 +718,6 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 pass
     else:
         location = _os.fspath(location)
-        if not _path_isabs(location):
-            try:
-                location = _path_join(_os.getcwd(), location)
-            except OSError:
-                pass
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not
@@ -1159,6 +1154,11 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
     def __init__(self, name, path):
         self.name = name
+        if not _path_isabs(path):
+            try:
+                path = _path_join(_os.getcwd(), path)
+            except OSError:
+                pass
         self.path = path
 
     def __eq__(self, other):

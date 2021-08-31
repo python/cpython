@@ -537,6 +537,18 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
+    def test_pyobject_repr_from_null(self):
+        s = _testcapi.pyobject_repr_from_null()
+        self.assertEqual(s, '<NULL>')
+
+    def test_pyobject_str_from_null(self):
+        s = _testcapi.pyobject_str_from_null()
+        self.assertEqual(s, '<NULL>')
+
+    def test_pyobject_bytes_from_null(self):
+        s = _testcapi.pyobject_bytes_from_null()
+        self.assertEqual(s, b'<NULL>')
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -553,11 +565,11 @@ class TestPendingCalls(unittest.TestCase):
             #unsuccessful.
             while True:
                 if _testcapi._pending_threadfunc(callback):
-                    break;
+                    break
 
     def pendingcalls_wait(self, l, n, context = None):
         #now, stick around until l[0] has grown to 10
-        count = 0;
+        count = 0
         while len(l) != n:
             #this busy loop is where we expect to be interrupted to
             #run our callbacks.  Note that callbacks are only run on the

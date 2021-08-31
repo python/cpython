@@ -476,29 +476,38 @@ class TracebackException:
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
-            and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
+        self._truncated = False
+        try:
+            if (exc_value and exc_value.__cause__ is not None
+                and id(exc_value.__cause__) not in _seen):
+                cause = TracebackException(
+                    type(exc_value.__cause__),
+                    exc_value.__cause__,
+                    exc_value.__cause__.__traceback__,
+                    limit=limit,
+                    lookup_lines=False,
+                    capture_locals=capture_locals,
+                    _seen=_seen)
+            else:
+                cause = None
+            if (exc_value and exc_value.__context__ is not None
+                and id(exc_value.__context__) not in _seen):
+                context = TracebackException(
+                    type(exc_value.__context__),
+                    exc_value.__context__,
+                    exc_value.__context__.__traceback__,
+                    limit=limit,
+                    lookup_lines=False,
+                    capture_locals=capture_locals,
+                    _seen=_seen)
+            else:
+                context = None
+        except RecursionError:
+            # The recursive call to the constructors above
+            # may result in a stack overflow for long exception chains,
+            # so we must truncate.
+            self._truncated = True
             cause = None
-        if (exc_value and exc_value.__context__ is not None
-            and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
             context = None
         self.__cause__ = cause
         self.__context__ = context
@@ -620,6 +629,10 @@ class TracebackException:
                 not self.__suppress_context__):
                 yield from self.__context__.format(chain=chain)
                 yield _context_message
+            if self._truncated:
+                yield (
+                    'Chained exceptions have been truncated to avoid '
+                    'stack overflow in traceback formatting:\n')
         if self.stack:
             yield 'Traceback (most recent call last):\n'
             yield from self.stack.format()

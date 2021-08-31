@@ -75,8 +75,27 @@ class CompileallTestsBase:
         with open(self.bc_path, 'rb') as file:
             data = file.read(12)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
+        compare = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER, 0,
+                              mtime & 0xFFFF_FFFF)
         return data, compare
+
+    def test_year_2038_mtime_compilation(self):
+        # Test to make sure we can handle mtimes larger than what a 32-bit
+        # signed number can hold as part of bpo-34990
+        try:
+            os.utime(self.source_path, (2**32 - 1, 2**32 - 1))
+        except (OverflowError, OSError):
+            self.skipTest("filesystem doesn't support timestamps near 2**32")
+        self.assertTrue(compileall.compile_file(self.source_path))
+
+    def test_larger_than_32_bit_times(self):
+        # This is similar to the test above but we skip it if the OS doesn't
+        # support modification times larger than 32-bits.
+        try:
+            os.utime(self.source_path, (2**35, 2**35))
+        except (OverflowError, OSError):
+            self.skipTest("filesystem doesn't support large timestamps")
+        self.assertTrue(compileall.compile_file(self.source_path))
 
     def recreation_check(self, metadata):
         """Check that compileall recreates bytecode when the new metadata is
@@ -96,7 +115,7 @@ class CompileallTestsBase:
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
+        self.recreation_check(struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
                                           0, 1))
 
     def test_magic_number(self):
@@ -163,6 +182,14 @@ class CompileallTestsBase:
             pass
         compileall.compile_file(data_file)
         self.assertFalse(os.path.exists(os.path.join(data_dir, '__pycache__')))
+
+
+    def test_compile_file_encoding_fallback(self):
+        # Bug 44666 reported that compile_file failed when sys.stdout.encoding is None
+        self.add_bad_source_file()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertFalse(compileall.compile_file(self.bad_source_path))
+
 
     def test_optimize(self):
         # make sure compiling with different optimization settings than the

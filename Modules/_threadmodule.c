@@ -1056,7 +1056,10 @@ t_bootstrap(void *boot_raw)
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
-    PyThread_exit_thread();
+
+    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
+    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
+    // to open the libgcc_s.so library (ex: EMFILE error).
 }
 
 static PyObject *

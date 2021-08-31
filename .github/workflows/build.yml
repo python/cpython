@@ -93,7 +93,7 @@ jobs:
           # Check for changes in regenerated files
           if ! test -z "$changes"
           then
-            echo "Generated files not up to date. Perhaps you forgot to run make regen-all ;)"
+            echo "Generated files not up to date. Perhaps you forgot to run make regen-all or build.bat --regen ;)"
             echo "$changes"
             exit 1
           fi
@@ -133,6 +133,8 @@ jobs:
     runs-on: macos-latest
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    env:
+      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
     - name: Configure CPython
@@ -150,7 +152,8 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1k
+      OPENSSL_VER: 1.1.1l
+      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
@@ -184,14 +187,14 @@ jobs:
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_ubuntu_ssltests:
-    name: 'Ubuntu SSL tests with OpenSSL ${{ matrix.openssl_ver }}'
+    name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ubuntu-20.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_ssl_tests == 'true'
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1k, 3.0.0-alpha14]
+        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1l, 3.0.0-beta1]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl

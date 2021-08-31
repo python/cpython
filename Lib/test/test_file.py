@@ -7,7 +7,7 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
-from test.support import TESTFN
+from test.support import TESTFN, gc_collect
 from test import support
 from collections import UserList
 
@@ -29,6 +29,7 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testAttributes(self):
@@ -152,6 +153,22 @@ class OtherFileTests:
             else:
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
+
+    def testStdin(self):
+        if sys.platform == 'osf1V5':
+            # This causes the interpreter to exit on OSF1 v5.1.
+            self.skipTest(
+                ' sys.stdin.seek(-1) may crash the interpreter on OSF1.'
+                ' Test manually.')
+
+        if not sys.stdin.isatty():
+            # Issue 14853: stdin becomes seekable when redirected to a file
+            self.skipTest('stdin must be a TTY in this test')
+
+        with self.assertRaises((IOError, ValueError)):
+            sys.stdin.seek(-1)
+        with self.assertRaises((IOError, ValueError)):
+            sys.stdin.truncate()
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument

@@ -53,7 +53,7 @@ programs, however, and result in error messages as shown here::
    >>> '2' + 2
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: Can't convert 'int' object to str implicitly
+   TypeError: can only concatenate str (not "int") to str
 
 The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
@@ -272,7 +272,7 @@ re-raise the exception::
 Exception Chaining
 ==================
 
-The :keyword:`raise` statement allows an optional :keyword:`from` which enables
+The :keyword:`raise` statement allows an optional :keyword:`from<raise>` which enables
 chaining exceptions. For example::
 
     # exc must be exception instance or None.
@@ -305,7 +305,7 @@ disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
-    ... except IOError:
+    ... except OSError:
     ...     raise RuntimeError from None
     ...
     Traceback (most recent call last):
@@ -404,6 +404,10 @@ points discuss more complex cases when an exception occurs:
 * An exception could occur during execution of an :keyword:`!except`
   or :keyword:`!else` clause. Again, the exception is re-raised after
   the :keyword:`!finally` clause has been executed.
+
+* If the :keyword:`!finally` clause executes a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, exceptions are not
+  re-raised.
 
 * If the :keyword:`!try` statement reaches a :keyword:`break`,
   :keyword:`continue` or :keyword:`return` statement, the
