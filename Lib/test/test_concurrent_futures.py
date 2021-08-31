@@ -568,6 +568,19 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         # shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
+    def test_hang_issue45021(self):
+        """https://bugs.python.org/issue45021"""
+        def submit(pool):
+            pool.submit(submit, pool)
+
+        if hasattr(os, 'register_at_fork'):
+            with futures.ThreadPoolExecutor(1) as pool:
+                pool.submit(submit, pool)
+
+                for _ in range(50):
+                    with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
+                        workers.submit(tuple)
+
 
 create_executor_tests(ProcessPoolShutdownTest,
                       executor_mixins=(ProcessPoolForkMixin,
