@@ -1057,9 +1057,18 @@ list_frozen_module_names(bool force)
     if (names == NULL) {
         return NULL;
     }
+    const PyConfig *config = _Py_GetConfig();
     for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
             break;
+        }
+        if (!config->use_frozen_modules) {
+            /* These modules are necessary to bootstrap the import system. */
+            if (!strcmp(p->name, "_frozen_importlib") &&
+                !strcmp(p->name, "_frozen_importlib_external"))
+            {
+                continue;
+            }
         }
         PyObject *name = PyUnicode_FromString(p->name);
         if (name == NULL) {
@@ -1083,6 +1092,16 @@ find_frozen(PyObject *name)
 
     if (name == NULL)
         return NULL;
+
+    const PyConfig *config = _Py_GetConfig();
+    if (!config->use_frozen_modules) {
+        /* These modules are necessary to bootstrap the import system. */
+        if (!_PyUnicode_EqualToASCIIString(name, "_frozen_importlib") &&
+            !_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external"))
+        {
+            return NULL;
+        }
+    }
 
     for (p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL)
