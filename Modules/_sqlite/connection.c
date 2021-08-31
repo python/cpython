@@ -952,7 +952,8 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     return rc;
 }
 
-static int _progress_handler(void* user_arg)
+static int
+progress_callback(void *user_arg)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
@@ -1089,7 +1090,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
         Py_XSETREF(self->function_pinboard_progress_handler, NULL);
     } else {
-        sqlite3_progress_handler(self->db, n, _progress_handler, progress_handler);
+        sqlite3_progress_handler(self->db, n, progress_callback, progress_handler);
         Py_INCREF(progress_handler);
         Py_XSETREF(self->function_pinboard_progress_handler, progress_handler);
     }
