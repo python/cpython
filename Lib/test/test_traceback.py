@@ -1514,6 +1514,34 @@ class TestStack(unittest.TestCase):
             s.format(),
             [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
 
+    def test_dropping_frames(self):
+         def f():
+             1/0
+
+         def g():
+             try:
+                 f()
+             except:
+                 return sys.exc_info()
+
+         exc_info = g()
+
+         class Skip_G(traceback.StackSummary):
+             def format_frame(self, frame):
+                 if frame.name == 'g':
+                     return None
+                 return super().format_frame(frame)
+
+         stack = Skip_G.extract(
+             traceback.walk_tb(exc_info[2])).format()
+
+         self.assertEqual(len(stack), 1)
+         lno = f.__code__.co_firstlineno + 1
+         self.assertEqual(
+             stack[0],
+             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
+         )
+
 
 class TestTracebackException(unittest.TestCase):
 
