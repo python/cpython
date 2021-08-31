@@ -869,6 +869,17 @@ class ExecutorTest:
 
 
 class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
+
+    def wait_for_idle_count(self, executor, expected_count):
+        t1 = time.monotonic()
+        while executor._idle_count < expected_count:
+            if time.monotonic() - t1 > 5:
+                self.fail("idle count not increased after 5 s.")
+            time.sleep(0.01)
+        # Make sure it doesn't change again
+        time.sleep(0.01)
+        self.assertEqual(executor._idle_count, expected_count)
+
     def test_map_submits_without_iteration(self):
         """Tests verifying issue 11777."""
         finished = []
@@ -885,23 +896,47 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.assertEqual(executor._max_workers, expected)
 
     def test_saturation(self):
+        """Test adjusting the number of running workers depending on idleness"""
         executor = self.executor_type(4)
-        submissions_done = threading.Semaphore(0)
+        self.assertEqual(len(executor._threads), 0)
+
         def acquire_lock(lock):
             lock.acquire()
-            submissions_done.release()
 
         sem = threading.Semaphore(0)
+
+        for i in range(3):
+            # Launch a single task that will block on `sem`
+            executor.submit(acquire_lock, sem)
+            self.assertEqual(len(executor._threads), 1)
+            self.assertEqual(executor._idle_count, 0)
+            sem.release()
+            self.wait_for_idle_count(executor, 1)
+            self.assertEqual(len(executor._threads), 1)
+
+        # Launch many tasks that will all block on `sem`
         for i in range(15 * executor._max_workers):
             executor.submit(acquire_lock, sem)
+        # As many workers as desired were launched, and none is idle
         self.assertEqual(len(executor._threads), executor._max_workers)
+        self.assertLess(executor._idle_count, 0)  # oversubscription
+        # Allow all tasks to finish
         for i in range(15 * executor._max_workers):
             sem.release()
-        for i in range(15 * executor._max_workers):
-            submissions_done.acquire(blocking=True)
-        executor.submit(acquire_lock, sem)
-        self.assertEqual(executor._idle_semaphore._value, executor._max_workers - 1)
-        sem.release()
+        # At some point, the idle count will reach the expected value
+        self.wait_for_idle_count(executor, executor._max_workers)
+
+        # Launch a bunch of blocking tasks again
+        for i in range(2):
+            executor.submit(acquire_lock, sem)
+        self.assertEqual(executor._idle_count, executor._max_workers - 2)
+        for i in range(executor._max_workers):
+            executor.submit(acquire_lock, sem)
+        self.assertLess(executor._idle_count, 0)  # oversubscription
+        for i in range(executor._max_workers + 2):
+            sem.release()
+        self.wait_for_idle_count(executor, executor._max_workers)
+
         executor.shutdown(wait=True)
 
     def test_idle_thread_reuse(self):

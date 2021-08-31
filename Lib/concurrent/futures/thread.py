@@ -61,14 +61,24 @@ class _WorkItem(object):
 
 
 def _worker(executor_reference, work_queue, initializer, initargs):
+    def run_with_executor(func):
+        """
+        Call the given callable with the executor as argument, if it
+        is still alive.
+        """
+        executor = executor_reference()
+        if executor is not None:
+            try:
+                func(executor)
+            finally:
+                executor = None
+
     if initializer is not None:
         try:
             initializer(*initargs)
         except BaseException:
             _base.LOGGER.critical('Exception in initializer:', exc_info=True)
-            executor = executor_reference()
-            if executor is not None:
-                executor._initializer_failed()
+            run_with_executor(lambda executor: executor._initializer_failed())
             return
     try:
         while True:
@@ -78,11 +88,9 @@ def _worker(executor_reference, work_queue, initializer, initargs):
                 # Delete references to object. See issue16284
                 del work_item
 
-                # attempt to increment idle count
-                executor = executor_reference()
-                if executor is not None:
-                    executor._idle_semaphore.release()
-                del executor
+                # increment idle thread count
+                run_with_executor(
+                    lambda executor: executor._increase_idle_count())
                 continue
 
             executor = executor_reference()
@@ -142,8 +150,9 @@ class ThreadPoolExecutor(_base.Executor):
 
         self._max_workers = max_workers
         self._work_queue = queue.SimpleQueue()
-        self._idle_semaphore = threading.Semaphore(0)
-        self._idle_overcount = 0
+        # An atomic counter would have been sufficient, but we don't have one
+        self._idle_lock = threading.Lock()
+        self._idle_count = 0
         self._threads = set()
         self._broken = False
         self._shutdown = False
@@ -173,11 +182,8 @@ class ThreadPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):
-        # consume overcounts first, issue #44188
-        while self._idle_overcount > 0 and self._idle_semaphore.acquire(timeout=0):
-            self._idle_overcount -= 1
-        # if idle threads are available, don't spin new threads
-        if self._idle_semaphore.acquire(timeout=0):
+        # If idle threads are available, don't spin new threads
+        if self._decrease_idle_count():
             return
 
         # When the executor gets lost, the weakref callback will wake up
@@ -187,6 +193,8 @@ class ThreadPoolExecutor(_base.Executor):
 
         num_threads = len(self._threads)
         if num_threads < self._max_workers:
+            # Immediately register an idle thread
+            self._increase_idle_count()
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
                                      num_threads)
             t = threading.Thread(name=thread_name, target=_worker,
@@ -197,8 +205,6 @@ class ThreadPoolExecutor(_base.Executor):
             t.start()
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
-        else:
-            self._idle_overcount += 1
 
     def _initializer_failed(self):
         with self._shutdown_lock:
@@ -212,6 +218,16 @@ class ThreadPoolExecutor(_base.Executor):
                     break
                 if work_item is not None:
                     work_item.future.set_exception(BrokenThreadPool(self._broken))
+
+    def _decrease_idle_count(self):
+        with self._idle_lock:
+            old_idle = self._idle_count
+            self._idle_count = old_idle - 1
+            return old_idle > 0
+
+    def _increase_idle_count(self):
+        with self._idle_lock:
+            self._idle_count += 1
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
