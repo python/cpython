@@ -1,0 +1,5 @@
+Freeze all the modules that are imported during Python startup.  This gives
+us meaningful performance improvements to startup.  Also add a new command
+line option, "-X frozen_modules=[on|off]" to opt out of (or into) using
+frozen modules.  This defaults to "on" (or "off" if running in a local
+development environment, saving contributors some frustration).
