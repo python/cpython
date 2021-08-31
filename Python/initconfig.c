@@ -2085,9 +2085,16 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 }
 
 
-static PyStatus
-config_init_imports(PyConfig *config)
+PyStatus
+_PyConfig_InitImportConfig(PyConfig *config)
 {
+    PyStatus status;
+
+    status = _PyConfig_InitPathConfig(config, 1);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     /* -X frozen_modules=[on|off] */
     const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
     if (value == NULL) {
@@ -2159,11 +2166,12 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     if (config->_install_importlib) {
-        status = _PyConfig_InitPathConfig(config, compute_path_config);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
+        if (compute_path_config) {
+            status = _PyConfig_InitImportConfig(config);
         }
-        status = config_init_imports(config);
+        else {
+            status = _PyConfig_InitPathConfig(config, 0);
+        }
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
