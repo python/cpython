@@ -1459,6 +1459,8 @@ pysqlite_collation_callback(
     long longval;
     int result = 0;
 
+    /* This callback may be executed multiple times per sqlite3_step(). Bail if
+     * the previous call failed */
     if (PyErr_Occurred()) {
         goto finally;
     }
