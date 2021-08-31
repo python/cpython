@@ -870,6 +870,7 @@ class GeneralModuleTests(unittest.TestCase):
             p = proxy(s)
             self.assertEqual(p.fileno(), s.fileno())
         s = None
+        support.gc_collect()  # For PyPy or other GCs.
         try:
             p.fileno()
         except ReferenceError:

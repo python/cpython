@@ -14,12 +14,10 @@ _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_code);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
-    for (int i = 0; i < frame->nlocalsplus; i++) {
+    int i = 0;
+    /* locals and stack */
+    for (; i <frame->stacktop; i++) {
         Py_VISIT(locals[i]);
-    }
-    /* stack */
-    for (int i = 0; i <frame->stackdepth; i++) {
-        Py_VISIT(frame->stack[i]);
     }
     return 0;
 }
@@ -47,17 +45,15 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
 static InterpreterFrame *
 copy_frame_to_heap(InterpreterFrame *frame)
 {
-
-    Py_ssize_t size = ((char*)&frame->stack[frame->stackdepth]) - (char *)_PyFrame_GetLocalsArray(frame);
-    PyObject **copy = PyMem_Malloc(size);
+    assert(frame->stacktop >= frame->f_code->co_nlocalsplus);
+    Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
+    InterpreterFrame *copy = PyMem_Malloc(size);
     if (copy == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
-    memcpy(copy, locals, size);
-    InterpreterFrame *res = (InterpreterFrame *)(copy + frame->nlocalsplus);
-    return res;
+    memcpy(copy, frame, size);
+    return copy;
 }
 
 static inline void
@@ -103,7 +99,6 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 int
 _PyFrame_Clear(InterpreterFrame * frame, int take)
 {
-    PyObject **localsarray = ((PyObject **)frame)-frame->nlocalsplus;
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
@@ -120,16 +115,13 @@ _PyFrame_Clear(InterpreterFrame * frame, int take)
         }
         Py_DECREF(f);
     }
-    for (int i = 0; i < frame->nlocalsplus; i++) {
-        Py_XDECREF(localsarray[i]);
-    }
-    assert(frame->stackdepth >= 0);
-    for (int i = 0; i < frame->stackdepth; i++) {
-        Py_DECREF(frame->stack[i]);
+    assert(_PyFrame_GetStackPointer(frame) >= _PyFrame_Stackbase(frame));
+    for (int i = 0; i < frame->stacktop; i++) {
+        Py_XDECREF(frame->localsplus[i]);
     }
     clear_specials(frame);
     if (take) {
-        PyMem_Free(_PyFrame_GetLocalsArray(frame));
+        PyMem_Free(frame);
     }
     return 0;
 }

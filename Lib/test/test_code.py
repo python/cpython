@@ -137,7 +137,8 @@ try:
 except ImportError:
     ctypes = None
 from test.support import (run_doctest, run_unittest, cpython_only,
-                          check_impl_detail, requires_debug_ranges)
+                          check_impl_detail, requires_debug_ranges,
+                          gc_collect)
 from test.support.script_helper import assert_python_ok
 
 
@@ -212,7 +213,7 @@ class CodeTest(unittest.TestCase):
         CodeType = type(co)
 
         # test code constructor
-        return CodeType(co.co_argcount,
+        CodeType(co.co_argcount,
                         co.co_posonlyargcount,
                         co.co_kwonlyargcount,
                         co.co_nlocals,
@@ -510,6 +511,7 @@ class CodeWeakRefTest(unittest.TestCase):
         coderef = weakref.ref(f.__code__, callback)
         self.assertTrue(bool(coderef()))
         del f
+        gc_collect()  # For PyPy or other GCs.
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
 
