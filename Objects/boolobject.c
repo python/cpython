@@ -156,8 +156,8 @@ static PyNumberMethods bool_as_number = {
 static void _Py_NO_RETURN
 bool_dealloc(PyObject* Py_UNUSED(ignore))
 {
-    Py_FatalError("deallocating True or False likely caused by refcount bug "
-                  "in a C extension");
+    Py_FatalError("deallocating True or False likely caused by "
+                  "a refcount bug in a C extension");
 }
 
 /* The type object for bool.  Note that this cannot be subclassed! */
