@@ -427,7 +427,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': GET_DEFAULT_CONFIG,
+        'use_frozen_modules': True,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -1247,7 +1247,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'pythonpath_env': paths_str,
         }
         self.default_program_name(config)
-        env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
+        env = {'TESTHOME': home,
+               'PYTHONPATH': paths_str,
+               '_PYTHONTESTFROZENMODULES': '1'}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
 
