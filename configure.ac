@@ -1314,6 +1314,7 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
+  CFLAGS="$CFLAGS -D_Py_OPT"
   case $CC in
     *gcc*)
       AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
