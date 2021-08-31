@@ -916,7 +916,7 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects or a :ref:`types-union`, in which case return True if *class* is a
+   objects or a :ref:`types-union`, in which case return ``True`` if *class* is a
    subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
    exception is raised.
 
