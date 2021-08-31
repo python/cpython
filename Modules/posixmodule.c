@@ -13489,8 +13489,10 @@ _Py_COMP_DIAG_POP
     if (self->dir_fd != DEFAULT_DIR_FD) {
 #ifdef HAVE_FSTATAT
       if (HAVE_FSTATAT_RUNTIME) {
+        Py_BEGIN_ALLOW_THREADS
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+        Py_END_ALLOW_THREADS
       } else
 
 #endif /* HAVE_FSTATAT */
@@ -13503,10 +13505,14 @@ _Py_COMP_DIAG_POP
     else
 #endif
     {
-        if (follow_symlinks)
+        Py_BEGIN_ALLOW_THREADS
+        if (follow_symlinks) {
             result = STAT(path, &st);
-        else
+        }
+        else {
             result = LSTAT(path, &st);
+        }
+        Py_END_ALLOW_THREADS
     }
 #if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(path);
