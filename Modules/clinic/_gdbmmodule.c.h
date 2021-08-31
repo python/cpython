@@ -161,7 +161,7 @@ PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
 "to create a list in memory that contains them all:\n"
 "\n"
 "      k = db.firstkey()\n"
-"      while k != None:\n"
+"      while k is not None:\n"
 "          print(k)\n"
 "          k = db.nextkey(k)");
 
@@ -340,4 +340,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e84bc6ac82fcb6d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b88446433e43d96 input=a9049054013a1b77]*/
