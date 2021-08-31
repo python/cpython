@@ -280,6 +280,11 @@ class ModuleTests(unittest.TestCase):
             ]
         if sqlite.version_info >= (3, 34, 0):
             const.append("SQLITE_IOERR_CORRUPTFS")
+        if sqlite.version_info >= (3, 37, 0):
+            consts += [
+                "SQLITE_CANTOPEN_EXISTS",
+                "SQLITE_CONSTRAINT_DATATYPE",
+            ]
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
