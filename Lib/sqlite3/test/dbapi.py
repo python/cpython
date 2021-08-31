@@ -173,64 +173,80 @@ class ModuleTests(unittest.TestCase):
             consts.append("SQLITE_RECURSIVE")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         # Extended result codes
-        if sqlite.version_info >= (3, 10, 0):
+        consts += [
+            "SQLITE_ABORT_ROLLBACK",
+            "SQLITE_BUSY_RECOVERY",
+            "SQLITE_CANTOPEN_FULLPATH",
+            "SQLITE_CANTOPEN_ISDIR",
+            "SQLITE_CANTOPEN_NOTEMPDIR",
+            "SQLITE_CORRUPT_VTAB",
+            "SQLITE_IOERR_ACCESS",
+            "SQLITE_IOERR_BLOCKED",
+            "SQLITE_IOERR_CHECKRESERVEDLOCK",
+            "SQLITE_IOERR_CLOSE",
+            "SQLITE_IOERR_DELETE",
+            "SQLITE_IOERR_DELETE_NOENT",
+            "SQLITE_IOERR_DIR_CLOSE",
+            "SQLITE_IOERR_DIR_FSYNC",
+            "SQLITE_IOERR_FSTAT",
+            "SQLITE_IOERR_FSYNC",
+            "SQLITE_IOERR_LOCK",
+            "SQLITE_IOERR_NOMEM",
+            "SQLITE_IOERR_RDLOCK",
+            "SQLITE_IOERR_READ",
+            "SQLITE_IOERR_SEEK",
+            "SQLITE_IOERR_SHMLOCK",
+            "SQLITE_IOERR_SHMMAP",
+            "SQLITE_IOERR_SHMOPEN",
+            "SQLITE_IOERR_SHMSIZE",
+            "SQLITE_IOERR_SHORT_READ",
+            "SQLITE_IOERR_TRUNCATE",
+            "SQLITE_IOERR_UNLOCK",
+            "SQLITE_IOERR_WRITE",
+            "SQLITE_LOCKED_SHAREDCACHE",
+            "SQLITE_READONLY_CANTLOCK",
+            "SQLITE_READONLY_RECOVERY",
+        ]
+        if sqlite.version_info >= (3, 7, 16):
             consts += [
-                "SQLITE_ABORT_ROLLBACK",
-                "SQLITE_AUTH_USER",
-                "SQLITE_BUSY_RECOVERY",
-                "SQLITE_BUSY_SNAPSHOT",
-                "SQLITE_CANTOPEN_CONVPATH",
-                "SQLITE_CANTOPEN_FULLPATH",
-                "SQLITE_CANTOPEN_ISDIR",
-                "SQLITE_CANTOPEN_NOTEMPDIR",
                 "SQLITE_CONSTRAINT_CHECK",
                 "SQLITE_CONSTRAINT_COMMITHOOK",
                 "SQLITE_CONSTRAINT_FOREIGNKEY",
                 "SQLITE_CONSTRAINT_FUNCTION",
                 "SQLITE_CONSTRAINT_NOTNULL",
                 "SQLITE_CONSTRAINT_PRIMARYKEY",
-                "SQLITE_CONSTRAINT_ROWID",
                 "SQLITE_CONSTRAINT_TRIGGER",
                 "SQLITE_CONSTRAINT_UNIQUE",
                 "SQLITE_CONSTRAINT_VTAB",
-                "SQLITE_CORRUPT_VTAB",
-                "SQLITE_IOERR_ACCESS",
-                "SQLITE_IOERR_AUTH",
-                "SQLITE_IOERR_BLOCKED",
-                "SQLITE_IOERR_CHECKRESERVEDLOCK",
-                "SQLITE_IOERR_CLOSE",
-                "SQLITE_IOERR_CONVPATH",
-                "SQLITE_IOERR_DELETE",
-                "SQLITE_IOERR_DELETE_NOENT",
-                "SQLITE_IOERR_DIR_CLOSE",
-                "SQLITE_IOERR_DIR_FSYNC",
-                "SQLITE_IOERR_FSTAT",
-                "SQLITE_IOERR_FSYNC",
-                "SQLITE_IOERR_GETTEMPPATH",
-                "SQLITE_IOERR_LOCK",
+                "SQLITE_READONLY_ROLLBACK",
+            ]
+        if sqlite.version_info >= (3, 7, 17):
+            consts += [
                 "SQLITE_IOERR_MMAP",
-                "SQLITE_IOERR_NOMEM",
-                "SQLITE_IOERR_RDLOCK",
-                "SQLITE_IOERR_READ",
-                "SQLITE_IOERR_SEEK",
-                "SQLITE_IOERR_SHMLOCK",
-                "SQLITE_IOERR_SHMMAP",
-                "SQLITE_IOERR_SHMOPEN",
-                "SQLITE_IOERR_SHMSIZE",
-                "SQLITE_IOERR_SHORT_READ",
-                "SQLITE_IOERR_TRUNCATE",
-                "SQLITE_IOERR_UNLOCK",
-                "SQLITE_IOERR_VNODE",
-                "SQLITE_IOERR_WRITE",
-                "SQLITE_LOCKED_SHAREDCACHE",
                 "SQLITE_NOTICE_RECOVER_ROLLBACK",
                 "SQLITE_NOTICE_RECOVER_WAL",
-                "SQLITE_READONLY_CANTLOCK",
-                "SQLITE_READONLY_DBMOVED",
-                "SQLITE_READONLY_RECOVERY",
-                "SQLITE_READONLY_ROLLBACK",
+            ]
+        if sqlite.version_info >= (3, 8, 0):
+            consts += [
+                "SQLITE_BUSY_SNAPSHOT",
+                "SQLITE_IOERR_GETTEMPPATH",
                 "SQLITE_WARNING_AUTOINDEX",
             ]
+        if sqlite.version_info >= (3, 8, 1):
+            consts += [
+                "SQLITE_CANTOPEN_CONVPATH",
+                "SQLITE_IOERR_CONVPATH",
+            ]
+        if sqlite.version_info >= (3, 8, 10):
+            consts += [
+                "SQLITE_AUTH_USER",
+                "SQLITE_CONSTRAINT_ROWID",
+                "SQLITE_READONLY_DBMOVED",
+            ]
+        if sqlite.version_info >= (3, 9, 0):
+            consts.append("SQLITE_IOERR_VNODE")
+        if sqlite.version_info >= (3, 10, 0):
+            consts.append("SQLITE_IOERR_AUTH")
         if sqlite.version_info >= (3, 14, 1):
             consts.append("SQLITE_OK_LOAD_PERMANENTLY")
         if sqlite.version_info >= (3, 21, 0):
