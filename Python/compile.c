@@ -1568,12 +1568,14 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define ADDOP_O(C, OP, O, TYPE) { \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
         return 0; \
 }
 
 /* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
         Py_DECREF((O)); \
         return 0; \
@@ -1751,7 +1753,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
     ADDOP_I(c, CALL_FUNCTION, 3);
@@ -5062,7 +5064,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     if(!compiler_call_exit_with_nones(c))
         return 0;
     ADDOP(c, GET_AWAITABLE);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
     ADDOP(c, POP_TOP);
