@@ -139,7 +139,6 @@ typedef struct PyConfig {
     unsigned long hash_seed;
     int faulthandler;
     int tracemalloc;
-    int import_time;
     int no_debug_ranges;
     int show_ref_count;
     int dump_refs;
@@ -147,23 +146,19 @@ typedef struct PyConfig {
     int malloc_stats;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
-    wchar_t *pycache_prefix;
     int parse_argv;
     PyWideStringList orig_argv;
     PyWideStringList argv;
     PyWideStringList xoptions;
     PyWideStringList warnoptions;
-    int site_import;
     int bytes_warning;
     int warn_default_encoding;
     int inspect;
     int interactive;
     int optimization_level;
     int parser_debug;
-    int write_bytecode;
     int verbose;
     int quiet;
-    int user_site_directory;
     int configure_c_stdio;
     int buffered_stdio;
     wchar_t *stdio_encoding;
@@ -171,7 +166,6 @@ typedef struct PyConfig {
 #ifdef MS_WINDOWS
     int legacy_windows_stdio;
 #endif
-    wchar_t *check_hash_pycs_mode;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -189,6 +183,15 @@ typedef struct PyConfig {
     wchar_t *base_prefix;
     wchar_t *exec_prefix;
     wchar_t *base_exec_prefix;
+
+    /* --- Other import configuration ----------- */
+    // XXX Split these into inputs and outputs.
+    int import_time;
+    wchar_t *pycache_prefix;
+    int site_import;
+    int write_bytecode;
+    int user_site_directory;
+    wchar_t *check_hash_pycs_mode;
 
     /* --- Parameter only used by Py_Main() ---------- */
     int skip_source_first_line;
