@@ -34,7 +34,7 @@ class InitTktypeTest(unittest.TestCase):
         for platform, types in ('darwin', alltypes), ('other', nontypes):
             with self.subTest(platform=platform):
                 macosx.platform = platform
-                macosx._tk_type == None
+                macosx._tk_type = None
                 macosx._init_tk_type()
                 self.assertIn(macosx._tk_type, types)
 
