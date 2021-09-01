@@ -1026,11 +1026,10 @@ progress_callback(void *ctx)
  * to ensure future compatibility.
  */
 static int
-trace_callback(unsigned int type, void *ctx, void *prepared_statement,
-               void *statement_string)
+trace_callback(unsigned int type, void *ctx, void *stmt, void *Py_UNUSED(sql))
 #else
 static void
-trace_callback(void *ctx, const char *statement_string)
+trace_callback(void *ctx, const char *sql)
 #endif
 {
 #ifdef HAVE_TRACE_V2
@@ -1041,11 +1040,33 @@ trace_callback(void *ctx, const char *statement_string)
 
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    PyObject *py_statement = NULL;
-    PyObject *ret = NULL;
-    py_statement = PyUnicode_DecodeUTF8(statement_string,
-            strlen(statement_string), "replace");
     assert(ctx != NULL);
+    PyObject *py_statement = NULL;
+#ifdef HAVE_TRACE_V2
+    assert(stmt != NULL);
+    const char *expanded_sql = sqlite3_expanded_sql((sqlite3_stmt *)stmt);
+    if (expanded_sql == NULL) {
+        sqlite3 *db = sqlite3_db_handle((sqlite3_stmt *)stmt);
+        if (sqlite3_errcode(db) == SQLITE_NOMEM) {
+            (void)PyErr_NoMemory();
+            goto exit;
+        }
+        else {
+            pysqlite_state *state = ((callback_context *)ctx)->state;
+            assert(state != NULL);
+            PyErr_SetString(state->DataError,
+                            "Expanded SQL string exceeds the maximum string "
+                            "length");
+        }
+    }
+    else {
+        py_statement = PyUnicode_FromString(expanded_sql);
+        sqlite3_free((void *)expanded_sql);
+    }
+#else
+    py_statement = PyUnicode_FromString(sql);
+#endif
+    PyObject *ret = NULL;
     if (py_statement) {
         PyObject *callable = ((callback_context *)ctx)->callable;
         ret = PyObject_CallOneArg(callable, py_statement);
@@ -1056,9 +1077,17 @@ trace_callback(void *ctx, const char *statement_string)
         Py_DECREF(ret);
     }
     else {
-        print_or_clear_traceback(ctx);
+        pysqlite_state *state = ((callback_context *)ctx)->state;
+        assert(state != NULL);
+        if (state->enable_callback_tracebacks) {
+            PyErr_Print();
+        }
+        else {
+            PyErr_Clear();
+        }
     }
 
+exit:
     PyGILState_Release(gilstate);
 #ifdef HAVE_TRACE_V2
     return 0;

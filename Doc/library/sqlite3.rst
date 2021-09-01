@@ -468,7 +468,13 @@ Connection Objects
 
       Passing :const:`None` as *trace_callback* will disable the trace callback.
 
+      For SQLite 3.14.0 and newer, bound parameters are expanded in the passed
+      statement string.
+
       .. versionadded:: 3.3
+
+      .. versionchanged:: 3.11
+         Added support for expanded SQL statements.
 
 
    .. method:: enable_load_extension(enabled)

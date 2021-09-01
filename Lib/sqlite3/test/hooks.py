@@ -20,8 +20,8 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import unittest
 import sqlite3 as sqlite
+import unittest
 
 from test.support.os_helper import TESTFN, unlink
 from .userfunctions import with_tracebacks
@@ -288,6 +288,31 @@ class TraceCallbackTests(unittest.TestCase):
             con1.close()
             con2.close()
         self.assertEqual(traced_statements, queries)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 14, 0),
+                     "Requires SQLite 3.14.0 or newer")
+    def test_trace_expanded_sql(self):
+        cx = sqlite.connect(":memory:")
+        traced = []
+        cx.set_trace_callback(lambda stmt: traced.append(stmt))
+        with cx:
+            cx.execute("create table t(t)")
+            cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
+        expected = [
+            "create table t(t)",
+            "BEGIN ",
+            "insert into t values(0)",
+            "insert into t values(1)",
+            "insert into t values(2)",
+            "COMMIT",
+        ]
+        self.assertEqual(traced, expected)
+
+    @with_tracebacks(["ZeroDivisionError", "5/0"])
+    def test_trace_bad_handler(self):
+        cx = sqlite.connect(":memory:")
+        cx.set_trace_callback(lambda stmt: 5/0)
+        cx.execute("select 1")
 
 
 def suite():
