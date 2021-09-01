@@ -2072,14 +2072,18 @@ pysleep(_PyTime_t secs)
     deadline = monotonic + secs;
 #ifdef HAVE_CLOCK_NANOSLEEP
     if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0)
+    {
         return -1;
+    }
 #endif
 
     do {
 #ifndef MS_WINDOWS
 #ifndef HAVE_CLOCK_NANOSLEEP
         if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0)
+        {
             return -1;
+        }
 #endif
 
         Py_BEGIN_ALLOW_THREADS
