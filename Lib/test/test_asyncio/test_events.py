@@ -17,6 +17,7 @@ import subprocess
 import sys
 import threading
 import time
+import types
 import errno
 import unittest
 from unittest import mock
@@ -1970,10 +1971,11 @@ class SubprocessTestsMixin:
                         functools.partial(MySubprocessProtocol, self.loop),
                         'exit 7', stdin=None, stdout=None, stderr=None,
                         start_new_session=True)
-        _, proto = yield self.loop.run_until_complete(connect)
+        transp, proto = self.loop.run_until_complete(connect)
         self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
+        transp.close()
 
     def test_subprocess_exec_invalid_args(self):
         async def connect(**kwds):
@@ -2163,8 +2165,7 @@ class HandleTests(test_utils.TestCase):
                         '<Handle cancelled>')
 
         # decorated function
-        with self.assertWarns(DeprecationWarning):
-            cb = asyncio.coroutine(noop)
+        cb = types.coroutine(noop)
         h = asyncio.Handle(cb, (), self.loop)
         self.assertEqual(repr(h),
                         '<Handle noop() at %s:%s>'

@@ -86,11 +86,15 @@ def_op('MATCH_MAPPING', 31)
 def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
 def_op('COPY_DICT_WITHOUT_KEYS', 34)
+def_op('PUSH_EXC_INFO', 35)
+
+def_op('POP_EXCEPT_AND_RERAISE', 37)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
 def_op('BEFORE_ASYNC_WITH', 52)
+def_op('BEFORE_WITH', 53)
 
 def_op('END_ASYNC_FOR', 54)
 def_op('INPLACE_ADD', 55)
@@ -124,7 +128,6 @@ def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
-def_op('POP_BLOCK', 87)
 
 def_op('POP_EXCEPT', 89)
 
@@ -139,7 +142,7 @@ name_op('STORE_ATTR', 95)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
-
+def_op('ROT_N', 99)
 def_op('LOAD_CONST', 100)       # Index in const list
 hasconst.append(100)
 name_op('LOAD_NAME', 101)       # Index in name list
@@ -164,7 +167,6 @@ def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
-jrel_op('SETUP_FINALLY', 122)   # Distance to target address
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -179,18 +181,20 @@ def_op('CALL_FUNCTION', 131)    # #args
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
-def_op('LOAD_CLOSURE', 135)
+def_op('MAKE_CELL', 135)
 hasfree.append(135)
-def_op('LOAD_DEREF', 136)
+def_op('LOAD_CLOSURE', 136)
 hasfree.append(136)
-def_op('STORE_DEREF', 137)
+def_op('LOAD_DEREF', 137)
 hasfree.append(137)
-def_op('DELETE_DEREF', 138)
+def_op('STORE_DEREF', 138)
 hasfree.append(138)
+def_op('DELETE_DEREF', 139)
+hasfree.append(139)
 
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
-jrel_op('SETUP_WITH', 143)
+
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
@@ -201,7 +205,6 @@ hasfree.append(148)
 
 def_op('MATCH_CLASS', 152)
 
-jrel_op('SETUP_ASYNC_WITH', 154)
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
@@ -212,5 +215,50 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
+def_op('CALL_METHOD_KW', 166)
 
 del def_op, name_op, jrel_op, jabs_op
+
+_specialized_instructions = [
+    "BINARY_ADD_ADAPTIVE",
+    "BINARY_ADD_INT",
+    "BINARY_ADD_FLOAT",
+    "BINARY_ADD_UNICODE",
+    "BINARY_ADD_UNICODE_INPLACE_FAST",
+    "BINARY_SUBSCR_ADAPTIVE",
+    "BINARY_SUBSCR_LIST_INT",
+    "BINARY_SUBSCR_TUPLE_INT",
+    "BINARY_SUBSCR_DICT",
+    "JUMP_ABSOLUTE_QUICK",
+    "LOAD_ATTR_ADAPTIVE",
+    "LOAD_ATTR_SPLIT_KEYS",
+    "LOAD_ATTR_WITH_HINT",
+    "LOAD_ATTR_SLOT",
+    "LOAD_ATTR_MODULE",
+    "LOAD_GLOBAL_ADAPTIVE",
+    "LOAD_GLOBAL_MODULE",
+    "LOAD_GLOBAL_BUILTIN",
+    "LOAD_METHOD_ADAPTIVE",
+    "LOAD_METHOD_CACHED",
+    "LOAD_METHOD_CLASS",
+    "LOAD_METHOD_MODULE",
+    "STORE_ATTR_ADAPTIVE",
+    "STORE_ATTR_SPLIT_KEYS",
+    "STORE_ATTR_SLOT",
+    "STORE_ATTR_WITH_HINT",
+    # Super instructions
+    "LOAD_FAST__LOAD_FAST",
+    "STORE_FAST__LOAD_FAST",
+    "LOAD_FAST__LOAD_CONST",
+    "LOAD_CONST__LOAD_FAST",
+    "STORE_FAST__STORE_FAST",
+]
+_specialization_stats = [
+    "specialization_success",
+    "specialization_failure",
+    "hit",
+    "deferred",
+    "miss",
+    "deopt",
+    "unquickened",
+]

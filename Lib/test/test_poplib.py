@@ -4,8 +4,6 @@
 # a real test suite
 
 import poplib
-import asyncore
-import asynchat
 import socket
 import os
 import errno
@@ -16,6 +14,12 @@ from test import support as test_support
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asynchat
+    import asyncore
 
 HOST = socket_helper.HOST
 PORT = 0

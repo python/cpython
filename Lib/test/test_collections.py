@@ -1801,6 +1801,18 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(f1 != l1)
         self.assertTrue(f1 != l2)
 
+    def test_Set_hash_matches_frozenset(self):
+        sets = [
+            {}, {1}, {None}, {-1}, {0.0}, {"abc"}, {1, 2, 3},
+            {10**100, 10**101}, {"a", "b", "ab", ""}, {False, True},
+            {object(), object(), object()}, {float("nan")},  {frozenset()},
+            {*range(1000)}, {*range(1000)} - {100, 200, 300},
+            {*range(sys.maxsize - 10, sys.maxsize + 10)},
+        ]
+        for s in sets:
+            fs = frozenset(s)
+            self.assertEqual(hash(fs), Set._hash(fs), msg=s)
+
     def test_Mapping(self):
         for sample in [dict]:
             self.assertIsInstance(sample(), Mapping)
@@ -1967,6 +1979,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertEqual(len(mss), len(mss2))
         self.assertEqual(list(mss), list(mss2))
 
+    def test_illegal_patma_flags(self):
+        with self.assertRaises(TypeError):
+            class Both(Collection):
+                __abc_tpflags__ = (Sequence.__flags__ | Mapping.__flags__)
+
+
 
 ################################################################################
 ### Counter
@@ -2059,6 +2077,10 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, 42)
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
+
+    def test_total(self):
+        c = Counter(a=10, b=5, c=0)
+        self.assertEqual(c.total(), 15)
 
     def test_order_preservation(self):
         # Input order dictates items() order

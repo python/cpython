@@ -1687,6 +1687,25 @@ static PyBufferProcs bytes_as_buffer = {
 };
 
 
+/*[clinic input]
+bytes.__bytes__
+Convert this value to exact type bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes___bytes___impl(PyBytesObject *self)
+/*[clinic end generated code: output=63a306a9bc0caac5 input=34ec5ddba98bd6bb]*/
+{
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+    else {
+        return PyBytes_FromStringAndSize(self->ob_sval, Py_SIZE(self));
+    }
+}
+
+
 #define LEFTSTRIP 0
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
@@ -2474,6 +2493,7 @@ bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
 static PyMethodDef
 bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
     STRINGLIB_CENTER_METHODDEF

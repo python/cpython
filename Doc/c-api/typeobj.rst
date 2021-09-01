@@ -710,7 +710,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    .. warning::
 
-      It is not recommended for :ref:`heap types <heap-types>` to implement
+      It is not recommended for :ref:`mutable heap types <heap-types>` to implement
       the vectorcall protocol.
       When a user sets :attr:`__call__` in Python code, only *tp_call* is updated,
       likely making it inconsistent with the vectorcall function.
@@ -734,8 +734,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    always inherited. If it's not, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
-   This is in particular the case for :ref:`heap types <heap-types>`
-   (including subclasses defined in Python).
+   This is in particular the case for types without the
+   :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set (including subclasses defined in
+   Python).
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -1097,8 +1098,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This is a bitmask of all the bits that pertain to the existence of certain
       fields in the type object and its extension structures. Currently, it includes
-      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`,
-      :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
+      the following bits: :const:`Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`.
 
       **Inheritance:**
 
@@ -1125,9 +1125,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This flag is never inherited by :ref:`heap types <heap-types>`.
-      For extension types, it is inherited whenever
-      :c:member:`~PyTypeObject.tp_descr_get` is inherited.
+      This flag is never inherited by types without the
+      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  For extension types, it is
+      inherited whenever :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
 
    .. XXX Document more flags here?
@@ -1172,19 +1172,11 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for :ref:`static subtypes <static-types>` if
+      This bit is inherited for types with the
+      :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set, if
       :c:member:`~PyTypeObject.tp_call` is also inherited.
-      :ref:`Heap types <heap-types>` do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. versionadded:: 3.9
-
-
-   .. data:: Py_TPFLAGS_HAVE_AM_SEND
-
-      This bit is set when the :c:member:`~PyAsyncMethods.am_send` entry is present in the
-      :c:member:`~PyTypeObject.tp_as_async` slot of type structure.
-
-      .. versionadded:: 3.10
 
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
@@ -1196,6 +1188,69 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       **Inheritance:**
 
       This flag is not inherited.
+
+      .. versionadded:: 3.10
+
+   .. data:: Py_TPFLAGS_DISALLOW_INSTANTIATION
+
+      Disallow creating instances of the type: set
+      :c:member:`~PyTypeObject.tp_new` to NULL and don't create the ``__new__``
+      key in the type dictionary.
+
+      The flag must be set before creating the type, not after. For example, it
+      must be set before :c:func:`PyType_Ready` is called on the type.
+
+      The flag is set automatically on :ref:`static types <static-types>` if
+      :c:member:`~PyTypeObject.tp_base` is NULL or ``&PyBaseObject_Type`` and
+      :c:member:`~PyTypeObject.tp_new` is NULL.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_MAPPING
+
+      This bit indicates that instances of the class may match mapping patterns
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Mapping`, and
+      unset when registering :class:`collections.abc.Sequence`.
+
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error enable both flags simultaneously.
+
+      **Inheritance:**
+
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_SEQUENCE`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_SEQUENCE
+
+      This bit indicates that instances of the class may match sequence patterns
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Sequence`, and
+      unset when registering :class:`collections.abc.Mapping`.
+
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error enable both flags simultaneously.
+
+      **Inheritance:**
+
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_MAPPING`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
 
@@ -1325,6 +1380,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    it's important that the pointer to the contained object be ``NULL`` at that time,
    so that *self* knows the contained object can no longer be used.  The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
+
+   Note that :c:member:`~PyTypeObject.tp_clear` is not *always* called
+   before an instance is deallocated. For example, when reference counting
+   is enough to determine that an object is no longer used, the cyclic garbage
+   collector is not involved and :c:member:`~PyTypeObject.tp_dealloc` is
+   called directly.
 
    Because the goal of :c:member:`~PyTypeObject.tp_clear` functions is to break reference cycles,
    it's not necessary to clear contained objects like Python strings or Python
@@ -1760,6 +1821,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    rule of thumb is that for immutable types, all initialization should take place
    in :c:member:`~PyTypeObject.tp_new`, while for mutable types, most initialization should be
    deferred to :c:member:`~PyTypeObject.tp_init`.
+
+   Set the :const:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag to disallow creating
+   instances of the type in Python.
 
    **Inheritance:**
 
@@ -2387,6 +2451,8 @@ Async Object Structures
    See :c:func:`PyIter_Send` for details.
    This slot may be set to ``NULL``.
 
+   .. versionadded:: 3.10
+
 
 .. _slot-typedefs:
 
@@ -2596,7 +2662,8 @@ A type that supports weakrefs, instance dicts, and hashing::
    };
 
 A str subclass that cannot be subclassed and cannot be called
-to create instances (e.g. uses a separate factory func)::
+to create instances (e.g. uses a separate factory func) using
+:c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag::
 
    typedef struct {
        PyUnicodeObject raw;
@@ -2609,8 +2676,7 @@ to create instances (e.g. uses a separate factory func)::
        .tp_basicsize = sizeof(MyStr),
        .tp_base = NULL,  // set to &PyUnicode_Type in module init
        .tp_doc = "my custom str",
-       .tp_flags = Py_TPFLAGS_DEFAULT,
-       .tp_new = NULL,
+       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
        .tp_repr = (reprfunc)myobj_repr,
    };
 

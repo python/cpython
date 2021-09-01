@@ -1210,6 +1210,9 @@ class UnivariateTypeMixin:
             def __add__(self, other):
                 return type(self)(super().__add__(other))
             __radd__ = __add__
+            def __mul__(self, other):
+                return type(self)(super().__mul__(other))
+            __rmul__ = __mul__
         return (float, Decimal, Fraction, MyFloat)
 
     def test_types_conserved(self):
@@ -1972,6 +1975,27 @@ class TestFMean(unittest.TestCase):
         with self.assertRaises(ValueError):
             fmean([Inf, -Inf])
 
+    def test_weights(self):
+        fmean = statistics.fmean
+        StatisticsError = statistics.StatisticsError
+        self.assertEqual(
+            fmean([10, 10, 10, 50], [0.25] * 4),
+            fmean([10, 10, 10, 50]))
+        self.assertEqual(
+            fmean([10, 10, 20], [0.25, 0.25, 0.50]),
+            fmean([10, 10, 20, 20]))
+        self.assertEqual(                           # inputs are iterators
+            fmean(iter([10, 10, 20]), iter([0.25, 0.25, 0.50])),
+            fmean([10, 10, 20, 20]))
+        with self.assertRaises(StatisticsError):
+            fmean([10, 20, 30], [1, 2])             # unequal lengths
+        with self.assertRaises(StatisticsError):
+            fmean(iter([10, 20, 30]), iter([1, 2])) # unequal lengths
+        with self.assertRaises(StatisticsError):
+            fmean([10, 20], [-1, 1])                # sum of weights is zero
+        with self.assertRaises(StatisticsError):
+            fmean(iter([10, 20]), iter([-1, 1]))    # sum of weights is zero
+
 
 # === Tests for variances and standard deviations ===
 
@@ -2242,6 +2266,22 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
 
+    def test_mixed_int_and_float(self):
+        # Regression test for b.p.o. issue #28327
+        geometric_mean = statistics.geometric_mean
+        expected_mean = 3.80675409583932
+        values = [
+            [2, 3, 5, 7],
+            [2, 3, 5, 7.0],
+            [2, 3, 5.0, 7.0],
+            [2, 3.0, 5.0, 7.0],
+            [2.0, 3.0, 5.0, 7.0],
+        ]
+        for v in values:
+            with self.subTest(v=v):
+                actual_mean = geometric_mean(v)
+                self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
 
 class TestQuantiles(unittest.TestCase):
 
@@ -2480,7 +2520,7 @@ class TestLinearRegression(unittest.TestCase):
             ([1, 2, 3], [21, 22, 23], 20, 1),
             ([1, 2, 3], [5.1, 5.2, 5.3], 5, 0.1),
         ]:
-            intercept, slope = statistics.linear_regression(x, y)
+            slope, intercept = statistics.linear_regression(x, y)
             self.assertAlmostEqual(intercept, true_intercept)
             self.assertAlmostEqual(slope, true_slope)
 

@@ -735,7 +735,7 @@ PyTypeObject PyRange_Type = {
         PyObject_GenericGetAttr,  /* tp_getattro */
         0,                      /* tp_setattro */
         0,                      /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT,     /* tp_flags */
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
         range_doc,              /* tp_doc */
         0,                      /* tp_traverse */
         0,                      /* tp_clear */
@@ -813,7 +813,7 @@ rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)i", _PyEval_GetBuiltinId(&PyId_iter),
+    return Py_BuildValue("N(N)l", _PyEval_GetBuiltinId(&PyId_iter),
                          range, r->index);
 err:
     Py_XDECREF(start);

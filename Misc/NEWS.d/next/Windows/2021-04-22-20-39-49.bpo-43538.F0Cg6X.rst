@@ -1,2 +1,0 @@
-Avoid raising errors from :meth:`pathlib.Path.exists()` when passed an
-invalid filename.

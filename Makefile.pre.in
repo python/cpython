@@ -189,6 +189,9 @@ STRIPFLAG=-s
 # Flags to lipo to produce a 32-bit-only universal executable
 LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 
+# Flags to lipo to produce an intel-64-only universal executable
+LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
+
 # Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
 OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
@@ -336,6 +339,7 @@ PARSER_HEADERS= \
 PYTHON_OBJS=	\
 		Python/_warnings.o \
 		Python/Python-ast.o \
+		Python/Python-tokenize.o \
 		Python/asdl.o \
 		Python/ast.o \
 		Python/ast_opt.o \
@@ -347,6 +351,7 @@ PYTHON_OBJS=	\
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/frame.o \
 		Python/frozenmain.o \
 		Python/future.o \
 		Python/getargs.o \
@@ -375,6 +380,7 @@ PYTHON_OBJS=	\
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
+		Python/specialize.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -568,8 +574,8 @@ coverage-lcov:
 	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
 	@echo
 
-# Force regeneration of parser and importlib
-coverage-report: regen-token regen-importlib
+# Force regeneration of parser and frozen modules
+coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -717,50 +723,71 @@ Makefile Modules/config.c: Makefile.pre \
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
+.PHONY: regen-test-frozenmain
+regen-test-frozenmain: $(BUILDPYTHON)
+	# Regenerate Programs/test_frozenmain.h
+	# from Programs/test_frozenmain.py
+	# using Programs/freeze_test_frozenmain.py
+	$(RUNSHARED) ./$(BUILDPYTHON) Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
-# Importlib
+# frozen modules (including importlib)
 
-Programs/_freeze_importlib.o: Programs/_freeze_importlib.c Makefile
+Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
-Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
+Tools/scripts/freeze_modules.py: Programs/_freeze_module
+
+.PHONY: regen-frozen
+regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+	@echo "The Makefile was updated, you may need to re-run make."
+
+# BEGIN: freezing modules
+
+Python/frozen_modules/importlib__bootstrap.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap.py
+	$(srcdir)/Programs/_freeze_module importlib._bootstrap \
+		$(srcdir)/Lib/importlib/_bootstrap.py \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap.h
+
+Python/frozen_modules/importlib__bootstrap_external.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap_external.py
+	$(srcdir)/Programs/_freeze_module importlib._bootstrap_external \
+		$(srcdir)/Lib/importlib/_bootstrap_external.py \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h
+
+Python/frozen_modules/zipimport.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/zipimport.py
+	$(srcdir)/Programs/_freeze_module zipimport \
+		$(srcdir)/Lib/zipimport.py \
+		$(srcdir)/Python/frozen_modules/zipimport.h
+
+Python/frozen_modules/hello.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Tools/freeze/flag.py
+	$(srcdir)/Programs/_freeze_module hello \
+		$(srcdir)/Tools/freeze/flag.py \
+		$(srcdir)/Python/frozen_modules/hello.h
+
+# END: freezing modules
+
+# We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
-regen-importlib: Programs/_freeze_importlib
-	# Regenerate Python/importlib_external.h
-	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap_external \
-	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
-	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap \
-	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
-	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib zipimport \
-	    $(srcdir)/Lib/zipimport.py \
-	    $(srcdir)/Python/importlib_zipimport.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
+regen-importlib: regen-frozen
 
+############################################################################
+# ABI
 
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
-
 
 ############################################################################
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen
+	regen-token regen-ast regen-keyword regen-frozen clinic \
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
@@ -791,7 +818,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 Programs/python.o: $(srcdir)/Programs/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
 
-Programs/_testembed.o: $(srcdir)/Programs/_testembed.c
+Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
 Modules/_sre.o: $(srcdir)/Modules/_sre.c $(srcdir)/Modules/sre.h $(srcdir)/Modules/sre_constants.h $(srcdir)/Modules/sre_lib.h
@@ -871,15 +898,6 @@ regen-opcode:
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
-
-.PHONY: regen-frozen
-regen-frozen: Programs/_freeze_importlib
-	# Regenerate code for frozen module "__hello__".
-	./Programs/_freeze_importlib hello \
-		$(srcdir)/Tools/freeze/flag.py \
-		$(srcdir)/Python/frozen_hello.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
-		$(srcdir)/Python/frozen_hello.h.new
 
 .PHONY: regen-token
 regen-token:
@@ -969,8 +987,7 @@ Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
-Objects/odictobject.o: $(srcdir)/Objects/dict-common.h
-Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h $(srcdir)/Objects/dict-common.h
+Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
 .PHONY: regen-opcode-targets
@@ -984,8 +1001,15 @@ regen-opcode-targets:
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
 		$(srcdir)/Python/condvar.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
-		$(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/frozen_hello.h
+# FROZEN_FILES is auto-generated by Tools/scripts/freeze_modules.py.
+FROZEN_FILES = \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap.h \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h \
+		$(srcdir)/Python/frozen_modules/zipimport.h \
+		$(srcdir)/Python/frozen_modules/hello.h
+# End FROZEN_FILES
+
+Python/frozen.o: $(FROZEN_FILES)
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -1146,6 +1170,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_compile.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_format.h \
@@ -1168,6 +1193,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
@@ -1344,6 +1370,12 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
+	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
+		rm -f $(DESTDIR)$(BINDIR)python$(VERSION)-intel64$(EXE); \
+		lipo $(LIPO_INTEL64_FLAGS) \
+			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
+			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+	fi
 
 bininstall: altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
@@ -1378,6 +1410,10 @@ bininstall: altbininstall
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
 		rm -f $(DESTDIR)$(BINDIR)/python3-32$(EXE); \
 		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-32$(EXE) python3-32$(EXE)) \
+	fi
+	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
+		rm -f $(DESTDIR)$(BINDIR)/python3-intel64$(EXE); \
+		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-intel64$(EXE) python3-intel64$(EXE)) \
 	fi
 
 # Install the versioned manual page
@@ -1452,6 +1488,8 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
 		test/test_import/data/circular_imports/subpkg \
+		test/test_import/data/circular_imports/subpkg2 \
+		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
 		test/test_import/data/unwritable \
@@ -1492,6 +1530,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
 		test/test_importlib/namespacedata01 \
 		test/test_importlib/partial \
+		test/test_importlib/resources \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
@@ -1674,7 +1713,7 @@ LIBPL=		@LIBPL@
 LIBPC=		$(LIBDIR)/pkgconfig
 
 libainstall:	@DEF_MAKE_RULE@ python-config
-	@for i in $(LIBDIR) $(LIBPL) $(LIBPC); \
+	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
@@ -1892,7 +1931,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f Programs/_testembed Programs/_freeze_importlib
+	-rm -f Programs/_testembed Programs/_freeze_module
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp

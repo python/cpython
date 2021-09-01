@@ -270,6 +270,32 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_except_throw_bad_exception(self):
+        class E(Exception):
+            def __new__(cls, *args, **kwargs):
+                return cls
+
+        def boring_generator():
+            yield
+
+        gen = boring_generator()
+
+        err_msg = 'should have returned an instance of BaseException'
+
+        with self.assertRaisesRegex(TypeError, err_msg):
+            gen.throw(E)
+
+        self.assertRaises(StopIteration, next, gen)
+
+        def generator():
+            with self.assertRaisesRegex(TypeError, err_msg):
+                yield
+
+        gen = generator()
+        next(gen)
+        with self.assertRaises(StopIteration):
+            gen.throw(E)
+
     def test_stopiteration_error(self):
         # See also PEP 479.
 
@@ -1940,6 +1966,8 @@ True
 """
 
 coroutine_tests = """\
+>>> from test.support import gc_collect
+
 Sending a value into a started generator:
 
 >>> def f():
@@ -2163,7 +2191,7 @@ And finalization:
 
 >>> g = f()
 >>> next(g)
->>> del g
+>>> del g; gc_collect()  # For PyPy or other GCs.
 exiting
 
 
@@ -2178,7 +2206,7 @@ GeneratorExit is not caught by except Exception:
 
 >>> g = f()
 >>> next(g)
->>> del g
+>>> del g; gc_collect()  # For PyPy or other GCs.
 finally
 
 

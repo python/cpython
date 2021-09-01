@@ -94,7 +94,7 @@ for two inputs:
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
 >>> linear_regression(x, y)  #doctest:
-LinearRegression(intercept=1.5, slope=0.1)
+LinearRegression(slope=0.1, intercept=1.5)
 
 
 Exceptions
@@ -107,9 +107,12 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [
     'NormalDist',
     'StatisticsError',
+    'correlation',
+    'covariance',
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'linear_regression',
     'mean',
     'median',
     'median_grouped',
@@ -122,9 +125,6 @@ __all__ = [
     'quantiles',
     'stdev',
     'variance',
-    'correlation',
-    'covariance',
-    'linear_regression',
 ]
 
 import math
@@ -136,7 +136,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter
+from operator import itemgetter, mul
 from collections import Counter, namedtuple
 
 # === Exceptions ===
@@ -345,7 +345,7 @@ def mean(data):
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -363,13 +363,24 @@ def fmean(data):
             nonlocal n
             for n, x in enumerate(iterable, start=1):
                 yield x
-        total = fsum(count(data))
-    else:
+        data = count(data)
+    if weights is None:
         total = fsum(data)
-    try:
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
         return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+    try:
+        num_weights = len(weights)
+    except TypeError:
+        weights = list(weights)
+        num_weights = len(weights)
+    num = fsum(map(mul, data, weights))
+    if n != num_weights:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
+    return num / den
 
 
 def geometric_mean(data):
@@ -717,15 +728,19 @@ def _ss(data, c=None):
     lead to garbage results.
     """
     if c is not None:
-        T, total, count = _sum((x-c)**2 for x in data)
+        T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
+    # Compute the mean accurate to within 1/2 ulp
     c = mean(data)
-    T, total, count = _sum((x-c)**2 for x in data)
-    # The following sum should mathematically equal zero, but due to rounding
-    # error may not.
-    U, total2, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
-    total -= total2 ** 2 / len(data)
+    # Initial computation for the sum of square deviations
+    T, total, count = _sum((d := x - c) * d for x in data)
+    # Correct any remaining inaccuracy in the mean c.
+    # The following sum should mathematically equal zero,
+    # but due to the final rounding of the mean, it may not.
+    U, error, count2 = _sum((x - c) for x in data)
+    assert count == count2
+    correction = error * error / len(data)
+    total -= correction
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
@@ -882,10 +897,10 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
-    xbar = mean(x)
-    ybar = mean(y)
-    total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    return total / (n - 1)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return sxy / (n - 1)
 
 
 def correlation(x, y, /):
@@ -910,54 +925,60 @@ def correlation(x, y, /):
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    cov = covariance(x, y)
-    stdx = stdev(x)
-    stdy = stdev(y)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxx = fsum((d := xi - xbar) * d for xi in x)
+    syy = fsum((d := yi - ybar) * d for yi in y)
     try:
-        return cov / (stdx * stdy)
+        return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
 
-LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(regressor, dependent_variable, /):
-    """Intercept and slope for simple linear regression
+def linear_regression(x, y, /):
+    """Slope and intercept for simple linear regression.
 
-    Return the intercept and slope of simple linear regression
+    Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between *regressor* and
-    *dependent variable* in terms of linear function::
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of linear function:
 
-        dependent_variable = intercept + slope * regressor + noise
+        y = slope * x + intercept + noise
 
-    where ``intercept`` and ``slope`` are the regression parameters that are
-    estimated, and noise term is an unobserved random variable, for the
-    variability of the data that was not explained by the linear regression
-    (it is equal to the difference between prediction and the actual values
-    of dependent variable).
+    where *slope* and *intercept* are the regression parameters that are
+    estimated, and noise represents the variability of the data that was
+    not explained by the linear regression (it is equal to the
+    difference between predicted and actual values of the dependent
+    variable).
 
     The parameters are returned as a named tuple.
 
-    >>> regressor = [1, 2, 3, 4, 5]
+    >>> x = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
-    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
-    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
     """
-    n = len(regressor)
-    if len(dependent_variable) != n:
+    n = len(x)
+    if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
-        slope = covariance(regressor, dependent_variable) / variance(regressor)
+        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
-        raise StatisticsError('regressor is constant')
-    intercept = mean(dependent_variable) - slope * mean(regressor)
-    return LinearRegression(intercept=intercept, slope=slope)
+        raise StatisticsError('x is constant')
+    intercept = ybar - slope * xbar
+    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################
@@ -1077,10 +1098,11 @@ class NormalDist:
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
-        variance = self._sigma ** 2.0
+        variance = self._sigma * self._sigma
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
+        diff = x - self._mu
+        return exp(diff * diff / (-2.0 * variance)) / sqrt(tau * variance)
 
     def cdf(self, x):
         "Cumulative distribution function.  P(X <= x)"
@@ -1144,7 +1166,7 @@ class NormalDist:
         if not dv:
             return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
         a = X._mu * Y_var - Y._mu * X_var
-        b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+        b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
@@ -1187,7 +1209,7 @@ class NormalDist:
     @property
     def variance(self):
         "Square of the standard deviation."
-        return self._sigma ** 2.0
+        return self._sigma * self._sigma
 
     def __add__(x1, x2):
         """Add a constant or another NormalDist instance.

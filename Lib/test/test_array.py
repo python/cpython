@@ -41,6 +41,13 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(ValueError, array.array, 'x')
 
     @support.cpython_only
+    def test_disallow_instantiation(self):
+        my_array = array.array("I")
+        support.check_disallow_instantiation(
+            self, type(iter(my_array)), my_array
+        )
+
+    @support.cpython_only
     def test_immutable(self):
         # bpo-43908: check that array.array is immutable
         with self.assertRaises(TypeError):
@@ -1090,6 +1097,7 @@ class BaseTest:
         p = weakref.proxy(s)
         self.assertEqual(p.tobytes(), s.tobytes())
         s = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, len, p)
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),

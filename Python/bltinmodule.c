@@ -72,6 +72,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             /* If this is a first successful replacement, create new_bases list and
                copy previously encountered bases. */
             if (!(new_bases = PyList_New(i))) {
+                Py_DECREF(new_base);
                 goto error;
             }
             for (j = 0; j < i; j++) {
@@ -82,6 +83,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
         }
         j = PyList_GET_SIZE(new_bases);
         if (PyList_SetSlice(new_bases, j, j, new_base) < 0) {
+            Py_DECREF(new_base);
             goto error;
         }
         Py_DECREF(new_base);
@@ -103,8 +105,9 @@ static PyObject *
 builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         PyObject *kwnames)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *orig_bases;
-    PyObject *cls = NULL, *cell = NULL;
+    PyObject *func, *name, *winner, *prep;
+    PyObject *cls = NULL, *cell = NULL, *ns = NULL, *meta = NULL, *orig_bases = NULL;
+    PyObject *mkw = NULL, *bases = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
 
     if (nargs < 2) {
@@ -141,26 +144,20 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     else {
         mkw = _PyStack_AsDict(args + nargs, kwnames);
         if (mkw == NULL) {
-            Py_DECREF(bases);
-            return NULL;
+            goto error;
         }
 
         meta = _PyDict_GetItemIdWithError(mkw, &PyId_metaclass);
         if (meta != NULL) {
             Py_INCREF(meta);
             if (_PyDict_DelItemId(mkw, &PyId_metaclass) < 0) {
-                Py_DECREF(meta);
-                Py_DECREF(mkw);
-                Py_DECREF(bases);
-                return NULL;
+                goto error;
             }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
         }
         else if (PyErr_Occurred()) {
-            Py_DECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
+            goto error;
         }
     }
     if (meta == NULL) {
@@ -183,10 +180,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         winner = (PyObject *)_PyType_CalculateMetaclass((PyTypeObject *)meta,
                                                         bases);
         if (winner == NULL) {
-            Py_DECREF(meta);
-            Py_XDECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
+            goto error;
         }
         if (winner != meta) {
             Py_DECREF(meta);
@@ -208,10 +202,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         Py_DECREF(prep);
     }
     if (ns == NULL) {
-        Py_DECREF(meta);
-        Py_XDECREF(mkw);
-        Py_DECREF(bases);
-        return NULL;
+        goto error;
     }
     if (!PyMapping_Check(ns)) {
         PyErr_Format(PyExc_TypeError,
@@ -252,13 +243,13 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
 error:
     Py_XDECREF(cell);
-    Py_DECREF(ns);
-    Py_DECREF(meta);
+    Py_XDECREF(ns);
+    Py_XDECREF(meta);
     Py_XDECREF(mkw);
-    Py_DECREF(bases);
     if (bases != orig_bases) {
         Py_DECREF(orig_bases);
     }
+    Py_DECREF(bases);
     return cls;
 }
 
@@ -1631,13 +1622,16 @@ anext as builtin_anext
     default: object = NULL
     /
 
-Return the next item from the async iterator.
+async anext(aiterator[, default])
+
+Return the next item from the async iterator.  If default is given and the async
+iterator is exhausted, it is returned instead of raising StopAsyncIteration.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=8f63f4f78590bb4c]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -1949,24 +1943,31 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
     return PyNumber_Power(base, exp, mod);
 }
 
+/*[clinic input]
+print as builtin_print
 
-/* AC: cannot convert yet, waiting for *args support */
+    *args: object
+    sep: object(c_default="Py_None") = ' '
+        string inserted between values, default a space.
+    end: object(c_default="Py_None") = '\n'
+        string appended after the last value, default a newline.
+    file: object = None
+        a file-like object (stream); defaults to the current sys.stdout.
+    flush: bool = False
+        whether to forcibly flush the stream.
+
+Prints the values to a stream, or to sys.stdout by default.
+
+[clinic start generated code]*/
+
 static PyObject *
-builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
+                   PyObject *end, PyObject *file, int flush)
+/*[clinic end generated code: output=3cfc0940f5bc237b input=c143c575d24fe665]*/
 {
-    static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
-    static struct _PyArg_Parser _parser = {"|OOOp:print", _keywords, 0};
-    PyObject *sep = NULL, *end = NULL, *file = NULL;
-    int flush = 0;
     int i, err;
 
-    if (kwnames != NULL &&
-            !_PyArg_ParseStackAndKeywords(args + nargs, 0, kwnames, &_parser,
-                                          &sep, &end, &file, &flush)) {
-        return NULL;
-    }
-
-    if (file == NULL || file == Py_None) {
+    if (file == Py_None) {
         file = _PySys_GetObjectId(&PyId_stdout);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
@@ -1974,8 +1975,9 @@ builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         }
 
         /* sys.stdout may be None when FILE* stdout isn't connected */
-        if (file == Py_None)
+        if (file == Py_None) {
             Py_RETURN_NONE;
+        }
     }
 
     if (sep == Py_None) {
@@ -1997,47 +1999,44 @@ builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         return NULL;
     }
 
-    for (i = 0; i < nargs; i++) {
+    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
         if (i > 0) {
-            if (sep == NULL)
+            if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
-            else
-                err = PyFile_WriteObject(sep, file,
-                                         Py_PRINT_RAW);
-            if (err)
+            }
+            else {
+                err = PyFile_WriteObject(sep, file, Py_PRINT_RAW);
+            }
+            if (err) {
                 return NULL;
+            }
         }
-        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
-        if (err)
+        err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
+        if (err) {
             return NULL;
+        }
     }
 
-    if (end == NULL)
+    if (end == NULL) {
         err = PyFile_WriteString("\n", file);
-    else
+    }
+    else {
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
-    if (err)
+    }
+    if (err) {
         return NULL;
+    }
 
     if (flush) {
         PyObject *tmp = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
-        if (tmp == NULL)
+        if (tmp == NULL) {
             return NULL;
+        }
         Py_DECREF(tmp);
     }
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(print_doc,
-"print(value, ..., sep=' ', end='\\n', file=sys.stdout, flush=False)\n\
-\n\
-Prints the values to a stream, or to sys.stdout by default.\n\
-Optional keyword arguments:\n\
-file:  a file-like object (stream); defaults to the current sys.stdout.\n\
-sep:   string inserted between values, default a space.\n\
-end:   string appended after the last value, default a newline.\n\
-flush: whether to forcibly flush the stream.");
 
 
 /*[clinic input]
@@ -2641,7 +2640,6 @@ builtin_issubclass_impl(PyObject *module, PyObject *cls,
     return PyBool_FromLong(retval);
 }
 
-
 typedef struct {
     PyObject_HEAD
     Py_ssize_t tuplesize;
@@ -2952,7 +2950,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
-    {"print",           (PyCFunction)(void(*)(void))builtin_print,      METH_FASTCALL | METH_KEYWORDS, print_doc},
+    BUILTIN_PRINT_METHODDEF
     BUILTIN_REPR_METHODDEF
     BUILTIN_ROUND_METHODDEF
     BUILTIN_SETATTR_METHODDEF

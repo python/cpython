@@ -20,6 +20,7 @@ FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKIDENTIFIER=@PYTHONFRAMEWORKIDENTIFIER@
 LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
+LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
 CC=@CC@
 MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 export MACOSX_DEPLOYMENT_TARGET
@@ -92,6 +93,16 @@ installunixtools:
 			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
 		done ;\
 	fi
+	-if test "x$(LIPO_INTEL64_FLAGS)" != "x"; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				python3-intel64 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 	-if test "x$(ENSUREPIP)" != "xno"  ; then \
 		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 		for fn in \
@@ -136,6 +147,16 @@ altinstallunixtools:
 		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 		for fn in \
 				python$(VERSION)-32 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
+	-if test "x$(LIPO_INTEL64_FLAGS)" != "x"; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				python$(VERSION)-intel64 \
 				; \
 		do \
 			rm -f $${fn} ;\

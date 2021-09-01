@@ -59,6 +59,10 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
+>>> del __debug__
+Traceback (most recent call last):
+SyntaxError: cannot delete __debug__
+
 >>> f() = 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
@@ -93,7 +97,7 @@ SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> ... = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to Ellipsis here. Maybe you meant '==' instead of '='?
+SyntaxError: cannot assign to ellipsis here. Maybe you meant '==' instead of '='?
 
 >>> `1` = 1
 Traceback (most recent call last):
@@ -139,6 +143,26 @@ SyntaxError: cannot assign to expression
 >>> a if 1 else b = 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to conditional expression
+
+>>> a = 42 if True
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> a = (42 if True)
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> a = [1, 42 if True, 4]
+Traceback (most recent call last):
+SyntaxError: expected 'else' after 'if' expression
+
+>>> if True:
+...     print("Hello"
+...
+... if 2:
+...    print(123))
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> True = True = 3
 Traceback (most recent call last):
@@ -267,7 +291,7 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 # Make sure soft keywords constructs don't raise specialized
-# errors regarding missing commas
+# errors regarding missing commas or other spezialiced errors
 
 >>> match x:
 ...     y = 3
@@ -277,6 +301,24 @@ SyntaxError: invalid syntax
 >>> match x:
 ...     case y:
 ...        3 $ 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match x:
+...     case $:
+...        ...
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match ...:
+...     case {**rest, "key": value}:
+...        ...
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match ...:
+...     case {**_}:
+...        ...
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
@@ -458,28 +500,33 @@ SyntaxError: expected ':'
 ...   290, 291, 292, 293, 294, 295, 296, 297, 298, 299)  # doctest: +ELLIPSIS
 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ..., 297, 298, 299)
 
-# >>> f(lambda x: x[0] = 3)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(lambda x: x[0] = 3)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+
+# Check that this error doesn't trigger for names:
+>>> f(a={x: for x in {}})
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
-# >>> f(x()=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(a or b=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(x.y=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f((x)=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(True=2)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True here. Maybe you meant '==' instead of '='?
+>>> f(x()=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(a or b=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(x.y=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f((x)=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(True=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -581,38 +628,6 @@ isn't, there should be a syntax error.
    Traceback (most recent call last):
      ...
    SyntaxError: 'break' outside loop
-
-This raises a SyntaxError, it used to raise a SystemError.
-Context for this change can be found on issue #27514
-
-In 2.5 there was a missing exception and an assert was triggered in a debug
-build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
-
-   >>> while 1:
-   ...  while 2:
-   ...   while 3:
-   ...    while 4:
-   ...     while 5:
-   ...      while 6:
-   ...       while 8:
-   ...        while 9:
-   ...         while 10:
-   ...          while 11:
-   ...           while 12:
-   ...            while 13:
-   ...             while 14:
-   ...              while 15:
-   ...               while 16:
-   ...                while 17:
-   ...                 while 18:
-   ...                  while 19:
-   ...                   while 20:
-   ...                    while 21:
-   ...                     while 22:
-   ...                      break
-   Traceback (most recent call last):
-     ...
-   SyntaxError: too many statically nested blocks
 
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
@@ -877,6 +892,14 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
+Custom error messages for try blocks that are not followed by except/finally
+
+   >>> try:
+   ...    x = 34
+   ...
+   Traceback (most recent call last):
+   SyntaxError: expected 'except' or 'finally' block
+
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
@@ -1068,7 +1091,7 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
-Check that an exception group with missing parentheses
+Check that an multiple exception types with missing parentheses
 raise a custom exception
 
    >>> try:
@@ -1076,21 +1099,21 @@ raise a custom exception
    ... except A, B:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
@@ -1099,7 +1122,7 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
 
 >>> f(a=23, a=234)
@@ -1123,6 +1146,26 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
+>>> (x, y, z=3, d, e)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> [x, y, z=3, d, e]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> [z=3]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> {x, y, z=3, d, e}
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> {z=3}
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
 >>> from t import x,
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
@@ -1130,6 +1173,13 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 >>> from t import x,y,
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
+
+# Check that we dont raise the "trailing comma" error if there is more
+# input to the left of the valid part that we parsed.
+
+>>> from t import x,y, and 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> (): int
 Traceback (most recent call last):
@@ -1175,6 +1225,44 @@ Corner-cases that used to crash:
     >>> import ä £
     Traceback (most recent call last):
     SyntaxError: invalid character '£' (U+00A3)
+
+  Invalid pattern matching constructs:
+
+    >>> match ...:
+    ...   case 42 as _:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use '_' as a target
+
+    >>> match ...:
+    ...   case 42 as 1+2+4:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: invalid pattern target
+
+    >>> match ...:
+    ...   case Foo(z=1, y=2, x):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case Foo(a, z=1, y=2, x):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case Foo(z=1, x, y=2):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case C(a=b, c, d=e, f, g=h, i, j=k, ...):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
 """
 
 import re
@@ -1216,7 +1304,7 @@ class SyntaxTestCase(unittest.TestCase):
         )
 
     def test_curly_brace_after_primary_raises_immediately(self):
-        self._check_error("f{", "invalid syntax", mode="single")
+        self._check_error("f{}", "invalid syntax", mode="single")
 
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
@@ -1422,6 +1510,48 @@ def case(x):
 case(34)
 """
         compile(code, "<string>", "exec")
+
+    def test_multiline_compiler_error_points_to_the_end(self):
+        self._check_error(
+            "call(\na=1,\na=1\n)",
+            "keyword argument repeated",
+            lineno=3
+        )
+
+    @support.cpython_only
+    def test_syntax_error_on_deeply_nested_blocks(self):
+        # This raises a SyntaxError, it used to raise a SystemError. Context
+        # for this change can be found on issue #27514
+
+        # In 2.5 there was a missing exception and an assert was triggered in a
+        # debug build.  The number of blocks must be greater than CO_MAXBLOCKS.
+        # SF #1565514
+
+        source = """
+while 1:
+ while 2:
+  while 3:
+   while 4:
+    while 5:
+     while 6:
+      while 8:
+       while 9:
+        while 10:
+         while 11:
+          while 12:
+           while 13:
+            while 14:
+             while 15:
+              while 16:
+               while 17:
+                while 18:
+                 while 19:
+                  while 20:
+                   while 21:
+                    while 22:
+                     break
+"""
+        self._check_error(source, "too many statically nested blocks")
 
 
 def test_main():

@@ -553,7 +553,10 @@ Callable types
       |                         | the dict are the parameter    |           |
       |                         | names, and ``'return'`` for   |           |
       |                         | the return annotation, if     |           |
-      |                         | provided.                     |           |
+      |                         | provided.  For more           |           |
+      |                         | information on working with   |           |
+      |                         | this attribute, see           |           |
+      |                         | :ref:`annotations-howto`.     |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
       |                         | for keyword-only parameters.  |           |
@@ -748,16 +751,29 @@ Modules
       single: __annotations__ (module attribute)
       pair: module; namespace
 
-   Predefined (writable) attributes: :attr:`__name__` is the module's name;
-   :attr:`__doc__` is the module's documentation string, or ``None`` if
-   unavailable; :attr:`__annotations__` (optional) is a dictionary containing
-   :term:`variable annotations <variable annotation>` collected during module
-   body execution; :attr:`__file__` is the pathname of the file from which the
-   module was loaded, if it was loaded from a file. The :attr:`__file__`
-   attribute may be missing for certain types of modules, such as C modules
-   that are statically linked into the interpreter; for extension modules
-   loaded dynamically from a shared library, it is the pathname of the shared
-   library file.
+   Predefined (writable) attributes:
+
+      :attr:`__name__`
+         The module's name.
+
+      :attr:`__doc__`
+         The module's documentation string, or ``None`` if
+         unavailable.
+
+      :attr:`__file__`
+         The pathname of the file from which the
+         module was loaded, if it was loaded from a file.
+         The :attr:`__file__`
+         attribute may be missing for certain types of modules, such as C modules
+         that are statically linked into the interpreter.  For extension modules
+         loaded dynamically from a shared library, it's the pathname of the shared
+         library file.
+
+      :attr:`__annotations__`
+         A dictionary containing
+         :term:`variable annotations <variable annotation>` collected during
+         module body execution.  For best practices on working
+         with :attr:`__annotations__`, please see :ref:`annotations-howto`.
 
    .. index:: single: __dict__ (module attribute)
 
@@ -821,14 +837,30 @@ Custom classes
       single: __doc__ (class attribute)
       single: __annotations__ (class attribute)
 
-   Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
-   the module name in which the class was defined; :attr:`~object.__dict__` is the
-   dictionary containing the class's namespace; :attr:`~class.__bases__` is a
-   tuple containing the base classes, in the order of their occurrence in the
-   base class list; :attr:`__doc__` is the class's documentation string,
-   or ``None`` if undefined; :attr:`__annotations__` (optional) is a dictionary
-   containing :term:`variable annotations <variable annotation>` collected during
-   class body execution.
+   Special attributes:
+
+      :attr:`~definition.__name__`
+         The class name.
+
+      :attr:`__module__`
+         The name of the module in which the class was defined.
+
+      :attr:`~object.__dict__`
+         The dictionary containing the class's namespace.
+
+      :attr:`~class.__bases__`
+         A tuple containing the base classes, in the order of
+         their occurrence in the base class list.
+
+      :attr:`__doc__`
+         The class's documentation string, or ``None`` if undefined.
+
+      :attr:`__annotations__`
+         A dictionary containing
+         :term:`variable annotations <variable annotation>`
+         collected during class body execution.  For best practices on
+         working with :attr:`__annotations__`, please see
+         :ref:`annotations-howto`.
 
 Class instances
    .. index::
@@ -937,8 +969,10 @@ Internal types
          single: co_varnames (code object attribute)
          single: co_cellvars (code object attribute)
          single: co_freevars (code object attribute)
+         single: co_qualname (code object attribute)
 
       Special read-only attributes: :attr:`co_name` gives the function name;
+      :attr:`co_qualname` gives the fully qualified function name;
       :attr:`co_argcount` is the total number of positional arguments
       (including positional-only arguments and arguments with default values);
       :attr:`co_posonlyargcount` is the number of positional-only arguments
@@ -981,6 +1015,39 @@ Internal types
       If a code object represents a function, the first item in :attr:`co_consts` is
       the documentation string of the function, or ``None`` if undefined.
 
+      .. method:: codeobject.co_positions()
+
+         Returns an iterable over the source code positions of each bytecode
+         instruction in the code object.
+
+         The iterator returns tuples containing the ``(start_line, end_line,
+         start_column, end_column)``. The *i-th* tuple corresponds to the
+         position of the source code that compiled to the *i-th* instruction.
+         Column information is 0-indexed utf-8 byte offsets on the given source
+         line.
+
+         This positional information can be missing. A non-exhaustive lists of
+         cases where this may happen:
+
+         - Running the interpreter with :option:`-X` ``no_debug_ranges``.
+         - Loading a pyc file compiled while using :option:`-X` ``no_debug_ranges``.
+         - Position tuples corresponding to artificial instructions.
+         - Line and column numbers that can't be represented due to
+           implementation specific limitations.
+
+         When this occurs, some or all of the tuple elements can be
+         :const:`None`.
+
+         .. versionadded:: 3.11
+
+         .. note::
+            This feature requires storing column positions in code objects which may
+            result in a small increase of disk usage of compiled Python files or
+            interpreter memory usage. To avoid storing the extra information and/or
+            deactivate printing the extra traceback information, the
+            :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
+            environment variable can be used.
+
    .. _frame-objects:
 
    Frame objects
@@ -1004,6 +1071,9 @@ Internal types
       global variables; :attr:`f_builtins` is used for built-in (intrinsic) names;
       :attr:`f_lasti` gives the precise instruction (this is an index into the
       bytecode string of the code object).
+
+      Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
 
       .. index::
          single: f_trace (frame attribute)
@@ -1088,6 +1158,9 @@ Internal types
       line number of its frame object if the exception occurred in a
       :keyword:`try` statement with no matching except clause or with a
       finally clause.
+
+      Accessing ``tb_frame`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"tb_frame"``.
 
       .. index::
          single: tb_next (traceback attribute)
@@ -2366,7 +2439,7 @@ left undefined.
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``).  For instance, to
    evaluate the expression ``x + y``, where *x* is an instance of a class that
-   has an :meth:`__add__` method, ``x.__add__(y)`` is called.  The
+   has an :meth:`__add__` method, ``type(x).__add__(x, y)`` is called.  The
    :meth:`__divmod__` method should be the equivalent to using
    :meth:`__floordiv__` and :meth:`__mod__`; it should not be related to
    :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined to accept
@@ -2402,8 +2475,9 @@ left undefined.
    (swapped) operands.  These functions are only called if the left operand does
    not support the corresponding operation [#]_ and the operands are of different
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
-   an instance of a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)``
-   is called if ``x.__sub__(y)`` returns *NotImplemented*.
+   an instance of a class that has an :meth:`__rsub__` method,
+   ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
+   *NotImplemented*.
 
    .. index:: builtin: pow
 
@@ -2676,7 +2750,7 @@ are awaitable.
 .. note::
 
    The :term:`generator iterator` objects returned from generators
-   decorated with :func:`types.coroutine` or :func:`asyncio.coroutine`
+   decorated with :func:`types.coroutine`
    are also awaitable, but they do not implement :meth:`__await__`.
 
 .. method:: object.__await__(self)

@@ -85,17 +85,29 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
 }
 
 static PyObject*
-_PyErr_CreateException(PyObject *exception, PyObject *value)
+_PyErr_CreateException(PyObject *exception_type, PyObject *value)
 {
+    PyObject *exc;
+
     if (value == NULL || value == Py_None) {
-        return _PyObject_CallNoArg(exception);
+        exc = _PyObject_CallNoArg(exception_type);
     }
     else if (PyTuple_Check(value)) {
-        return PyObject_Call(exception, value, NULL);
+        exc = PyObject_Call(exception_type, value, NULL);
     }
     else {
-        return PyObject_CallOneArg(exception, value);
+        exc = PyObject_CallOneArg(exception_type, value);
     }
+
+    if (exc != NULL && !PyExceptionInstance_Check(exc)) {
+        PyErr_Format(PyExc_TypeError,
+                     "calling %R should have returned an instance of "
+                     "BaseException, not %s",
+                     exception_type, Py_TYPE(exc)->tp_name);
+        Py_CLEAR(exc);
+    }
+
+    return exc;
 }
 
 void
@@ -136,12 +148,16 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             value = fixed_value;
         }
 
-        /* Avoid reference cycles through the context chain.
+        /* Avoid creating new reference cycles through the
+           context chain, while taking care not to hang on
+           pre-existing ones.
            This is O(chain length) but context chains are
            usually very short. Sensitive readers may try
            to inline the call to PyException_GetContext. */
         if (exc_value != value) {
             PyObject *o = exc_value, *context;
+            PyObject *slow_o = o;  /* Floyd's cycle detection algo */
+            int slow_update_toggle = 0;
             while ((context = PyException_GetContext(o))) {
                 Py_DECREF(context);
                 if (context == value) {
@@ -149,6 +165,16 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
                     break;
                 }
                 o = context;
+                if (o == slow_o) {
+                    /* pre-existing cycle - all exceptions on the
+                       path were visited and checked.  */
+                    break;
+                }
+                if (slow_update_toggle) {
+                    slow_o = PyException_GetContext(slow_o);
+                    Py_DECREF(slow_o);
+                }
+                slow_update_toggle = !slow_update_toggle;
             }
             PyException_SetContext(value, exc_value);
         }
@@ -776,17 +802,6 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
     return result;
 }
 
-#ifdef MS_WINDOWS
-PyObject *
-PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, const Py_UNICODE *filename)
-{
-    PyObject *name = filename ? PyUnicode_FromWideChar(filename, -1) : NULL;
-    PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, NULL);
-    Py_XDECREF(name);
-    return result;
-}
-#endif /* MS_WINDOWS */
-
 PyObject *
 PyErr_SetFromErrno(PyObject *exc)
 {
@@ -887,20 +902,6 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
     return ret;
 }
 
-PyObject *PyErr_SetExcFromWindowsErrWithUnicodeFilename(
-    PyObject *exc,
-    int ierr,
-    const Py_UNICODE *filename)
-{
-    PyObject *name = filename ? PyUnicode_FromWideChar(filename, -1) : NULL;
-    PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObjects(exc,
-                                                                 ierr,
-                                                                 name,
-                                                                 NULL);
-    Py_XDECREF(name);
-    return ret;
-}
-
 PyObject *PyErr_SetExcFromWindowsErr(PyObject *exc, int ierr)
 {
     return PyErr_SetExcFromWindowsErrWithFilename(exc, ierr, NULL);
@@ -924,17 +925,6 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
     return result;
 }
 
-PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
-    int ierr,
-    const Py_UNICODE *filename)
-{
-    PyObject *name = filename ? PyUnicode_FromWideChar(filename, -1) : NULL;
-    PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObjects(
-                                                  PyExc_OSError,
-                                                  ierr, name, NULL);
-    Py_XDECREF(name);
-    return result;
-}
 #endif /* MS_WINDOWS */
 
 PyObject *
@@ -1442,12 +1432,13 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
     }
 
     if (exc_tb == NULL) {
-        PyFrameObject *frame = tstate->frame;
+        PyFrameObject *frame = PyThreadState_GetFrame(tstate);
         if (frame != NULL) {
             exc_tb = _PyTraceBack_FromFrame(NULL, frame);
             if (exc_tb == NULL) {
                 _PyErr_Clear(tstate);
             }
+            Py_DECREF(frame);
         }
     }
 

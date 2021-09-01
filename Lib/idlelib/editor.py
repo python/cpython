@@ -311,7 +311,7 @@ class EditorWindow:
 
         # Former extension bindings depends on frame.text being packed
         # (called from self.ResetColorizer()).
-        autocomplete = self.AutoComplete(self)
+        autocomplete = self.AutoComplete(self, self.user_input_insert_tags)
         text.bind("<<autocomplete>>", autocomplete.autocomplete_event)
         text.bind("<<try-open-completions>>",
                   autocomplete.try_open_completions_event)
