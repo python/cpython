@@ -1,0 +1,4 @@
+Force a default thread stack size value for all platforms instead of
+assuming that they all have enough for Python threads. This makes it so too
+many recursions are caught by the interpreter instead of stack overflowing
+on musl libc.
