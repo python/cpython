@@ -1057,12 +1057,7 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_all(self):
         expected = []
-        undocumented = {
-            'splitattr', 'splithost', 'splitnport', 'splitpasswd',
-            'splitport', 'splitquery', 'splittag', 'splittype', 'splituser',
-            'splitvalue',
-            'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
-        }
+        undocumented = {'ResultBase', 'clear_cache', 'unwrap'}
         for name in dir(urllib.parse):
             if name.startswith('_') or name in undocumented:
                 continue
@@ -1103,7 +1098,6 @@ class UrlParseTestCase(unittest.TestCase):
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
-    # In Python 2 this test class was in test_urllib.
 
     def test_splittype(self):
         splittype = urllib.parse._splittype
@@ -1184,18 +1178,6 @@ class Utility_Tests(unittest.TestCase):
         self.assertEqual(splitport('[::1]'), ('[::1]', None))
         self.assertEqual(splitport(':88'), ('', '88'))
 
-    def test_splitnport(self):
-        splitnport = urllib.parse._splitnport
-        self.assertEqual(splitnport('parrot:88'), ('parrot', 88))
-        self.assertEqual(splitnport('parrot'), ('parrot', -1))
-        self.assertEqual(splitnport('parrot', 55), ('parrot', 55))
-        self.assertEqual(splitnport('parrot:'), ('parrot', -1))
-        self.assertEqual(splitnport('parrot:', 55), ('parrot', 55))
-        self.assertEqual(splitnport('127.0.0.1'), ('127.0.0.1', -1))
-        self.assertEqual(splitnport('127.0.0.1', 55), ('127.0.0.1', 55))
-        self.assertEqual(splitnport('parrot:cheese'), ('parrot', None))
-        self.assertEqual(splitnport('parrot:cheese', 55), ('parrot', None))
-
     def test_splitquery(self):
         # Normal cases are exercised by other tests; ensure that we also
         # catch cases with no port specified (testcase ensuring coverage)
@@ -1259,82 +1241,6 @@ class DeprecationTest(unittest.TestCase):
             old_class = urllib.parse.Quoter
             self.assertIs(old_class, urllib.parse._Quoter)
         self.assertIn('Quoter will be removed', str(cm.warning))
-
-    def test_splittype_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splittype('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splittype() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splithost_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splithost('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splithost() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splituser_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splituser('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splituser() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splitpasswd_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splitpasswd('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splitpasswd() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splitport_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splitport('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splitport() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splitnport_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splitnport('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splitnport() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splitquery_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splitquery('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splitquery() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splittag_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splittag('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splittag() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splitattr_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splitattr('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splitattr() is deprecated as of 3.8, '
-                         'use urllib.parse.urlparse() instead')
-
-    def test_splitvalue_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.splitvalue('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.splitvalue() is deprecated as of 3.8, '
-                         'use urllib.parse.parse_qsl() instead')
-
-    def test_to_bytes_deprecation(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            urllib.parse.to_bytes('')
-        self.assertEqual(str(cm.warning),
-                         'urllib.parse.to_bytes() is deprecated as of 3.8')
 
 
 if __name__ == "__main__":

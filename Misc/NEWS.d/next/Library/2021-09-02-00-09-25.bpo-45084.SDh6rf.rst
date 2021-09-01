@@ -1,0 +1,16 @@
+Remove the following undocumented functions of the :mod:`urllib.parse`
+module, deprecated in Python 3.8:
+
+* ``splitattr()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splithost()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splitnport()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splitpasswd()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splitport()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splitquery()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splittag()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splittype()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splituser()``: use :func:`~urllib.parse.urlparse` instead;
+* ``splitvalue()``: use :func:`~urllib.parse.parse_qsl` instead;
+* ``to_bytes()``: use Unicode instead.
+
+Patch by Victor Stinner.
