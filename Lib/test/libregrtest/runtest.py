@@ -297,9 +297,13 @@ def _runtest_inner2(ns: Namespace, test_name: str) -> bool:
                 test_runner()
                 refleak = False
     finally:
-        cleanup_test_droppings(test_name, ns.verbose)
+        # First kill any dangling references to open files etc.
+        # This can also issue some ResourceWarnings which would otherwise get
+        # triggered during the following test run, and possibly produce
+        # failures.
+        support.gc_collect()
 
-    support.gc_collect()
+        cleanup_test_droppings(test_name, ns.verbose)
 
     if gc.garbage:
         support.environment_altered = True
@@ -330,6 +334,7 @@ def _runtest_inner(
 
     try:
         clear_caches()
+        support.gc_collect()
 
         with save_env(ns, test_name):
             refleak = _runtest_inner2(ns, test_name)
@@ -373,11 +378,6 @@ def _runtest_inner(
 
 
 def cleanup_test_droppings(test_name: str, verbose: int) -> None:
-    # First kill any dangling references to open files etc.
-    # This can also issue some ResourceWarnings which would otherwise get
-    # triggered during the following test run, and possibly produce failures.
-    support.gc_collect()
-
     # Try to clean up junk commonly left behind.  While tests shouldn't leave
     # any files or directories behind, when a test fails that can be tedious
     # for it to arrange.  The consequences can be especially nasty on Windows,
