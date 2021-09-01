@@ -800,7 +800,7 @@ free_callback_context(callback_context *ctx)
 }
 
 static void
-_destructor(void *ctx)
+destructor_callback(void *ctx)
 {
     if (ctx != NULL) {
         // This function may be called without the GIL held, so we need to
@@ -858,7 +858,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                     _pysqlite_func_callback,
                                     NULL,
                                     NULL,
-                                    &_destructor);  // will decref func
+                                    &destructor_callback);  // will decref func
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
@@ -899,7 +899,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                     0,
                                     &_pysqlite_step_callback,
                                     &_pysqlite_final_callback,
-                                    &_destructor); // will decref func
+                                    &destructor_callback); // will decref func
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(self->OperationalError, "Error creating aggregate");
@@ -1727,7 +1727,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
         }
         rc = sqlite3_create_collation_v2(self->db, name, flags, ctx,
                                          &pysqlite_collation_callback,
-                                         &_destructor);
+                                         &destructor_callback);
     }
 
     if (rc != SQLITE_OK) {
