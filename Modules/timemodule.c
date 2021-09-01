@@ -2095,7 +2095,8 @@ pysleep(_PyTime_t secs)
         if (err == 0)
             break;
 
-        if (errno != EINTR) {
+        if (err != EINTR) {
+            errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
