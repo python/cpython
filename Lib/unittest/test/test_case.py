@@ -197,8 +197,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 raise RuntimeError('raised by Foo.test')
 
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addError', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addError', 'tearDown', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -216,7 +216,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 raise RuntimeError('raised by Foo.test')
 
         expected = ['startTestRun', 'startTest', 'setUp', 'test',
-                    'tearDown', 'addError', 'stopTest', 'stopTestRun']
+                    'addError', 'tearDown', 'stopTest', 'stopTestRun']
         Foo(events).run()
         self.assertEqual(events, expected)
 
@@ -236,8 +236,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 super(Foo, self).test()
                 self.fail('raised by Foo.test')
 
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addFailure', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addFailure', 'tearDown', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
@@ -252,7 +252,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 self.fail('raised by Foo.test')
 
         expected = ['startTestRun', 'startTest', 'setUp', 'test',
-                    'tearDown', 'addFailure', 'stopTest', 'stopTestRun']
+                    'addFailure', 'tearDown', 'stopTest', 'stopTestRun']
         events = []
         Foo(events).run()
         self.assertEqual(events, expected)
@@ -353,10 +353,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
     def test_run_call_order__subtests(self):
         events = []
         result = LoggingResult(events)
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
+        expected = ['startTest', 'setUp', 'test',
                     'addSubTestFailure', 'addSubTestSuccess',
                     'addSubTestFailure', 'addSubTestFailure',
-                    'addSubTestSuccess', 'addError', 'stopTest']
+                    'addSubTestSuccess', 'addError', 'tearDown', 'stopTest']
         self._check_call_order__subtests(result, events, expected)
 
     def test_run_call_order__subtests_legacy(self):
@@ -364,8 +364,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         # text execution stops after the first subtest failure.
         events = []
         result = LegacyLoggingResult(events)
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addFailure', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addFailure', 'tearDown', 'stopTest']
         self._check_call_order__subtests(result, events, expected)
 
     def _check_call_order__subtests_success(self, result, events, expected_events):
@@ -386,9 +386,9 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         result = LoggingResult(events)
         # The 6 subtest successes are individually recorded, in addition
         # to the whole test success.
-        expected = (['startTest', 'setUp', 'test', 'tearDown']
+        expected = (['startTest', 'setUp', 'test']
                     + 6 * ['addSubTestSuccess']
-                    + ['addSuccess', 'stopTest'])
+                    + ['tearDown', 'addSuccess', 'stopTest'])
         self._check_call_order__subtests_success(result, events, expected)
 
     def test_run_call_order__subtests_success_legacy(self):
@@ -413,8 +413,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                     self.fail('failure')
                 self.fail('failure')
 
-        expected = ['startTest', 'setUp', 'test', 'tearDown',
-                    'addSubTestFailure', 'stopTest']
+        expected = ['startTest', 'setUp', 'test',
+                    'addSubTestFailure', 'tearDown', 'stopTest']
         Foo(events).run(result)
         self.assertEqual(events, expected)
 
