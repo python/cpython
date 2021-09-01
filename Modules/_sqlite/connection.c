@@ -248,12 +248,13 @@ connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
     return 0;
 }
 
-#define CLEAR_CALLBACK_CONTEXT(ctx) \
-do {                                \
-    if (ctx) {                      \
-        Py_CLEAR(ctx->callable);    \
-    }                               \
-} while (0)
+static inline void
+clear_callback_context(callback_context *ctx)
+{
+    if (ctx != NULL) {
+        Py_CLEAR(ctx->callable);
+    }
+}
 
 static int
 connection_clear(pysqlite_Connection *self)
@@ -263,10 +264,9 @@ connection_clear(pysqlite_Connection *self)
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
     Py_CLEAR(self->text_factory);
-    CLEAR_CALLBACK_CONTEXT(self->trace_ctx);
-    CLEAR_CALLBACK_CONTEXT(self->progress_ctx);
-    CLEAR_CALLBACK_CONTEXT(self->authorizer_ctx);
-#undef CLEAR_CALLBACK_CONTEXT
+    clear_callback_context(self->trace_ctx);
+    clear_callback_context(self->progress_ctx);
+    clear_callback_context(self->authorizer_ctx);
     return 0;
 }
 
