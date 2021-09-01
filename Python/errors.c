@@ -1287,12 +1287,13 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     }
 
     assert(PyExceptionClass_Check(exc_type));
-    const char *className = PyExceptionClass_Name(exc_type);
-    if (className != NULL) {
-        const char *dot = strrchr(className, '.');
-        if (dot != NULL) {
-            className = dot+1;
-        }
+    PyObject *qualName = PyType_GetQualName((PyTypeObject *)exc_type);
+    if (!qualName) {
+        return -1;
+    }
+    const char *className = PyUnicode_AsUTF8(qualName);
+    if (!className) {
+        return -1;
     }
 
     PyObject *moduleName = _PyObject_GetAttrId(exc_type, &PyId___module__);
