@@ -1057,6 +1057,16 @@ find_frozen(PyObject *name)
     if (name == NULL)
         return NULL;
 
+    const PyConfig *config = _Py_GetConfig();
+    if (!config->use_frozen_modules) {
+        /* These modules are necessary to bootstrap the import system. */
+        if (!_PyUnicode_EqualToASCIIString(name, "_frozen_importlib") &&
+            !_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external"))
+        {
+            return NULL;
+        }
+    }
+
     for (p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL)
             return NULL;

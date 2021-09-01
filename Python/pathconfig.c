@@ -6,7 +6,9 @@
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _Py_GetMainConfig()
 #include <wchar.h>
+#include <stdbool.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #endif
@@ -54,6 +56,7 @@ pathconfig_clear(_PyPathConfig *config)
     CLEAR(config->program_full_path);
     CLEAR(config->prefix);
     CLEAR(config->exec_prefix);
+    CLEAR(config->stdlib_dir);
     CLEAR(config->module_search_path);
     CLEAR(config->program_name);
     CLEAR(config->home);
@@ -83,6 +86,7 @@ pathconfig_copy(_PyPathConfig *config, const _PyPathConfig *config2)
     COPY_ATTR(prefix);
     COPY_ATTR(exec_prefix);
     COPY_ATTR(module_search_path);
+    COPY_ATTR(stdlib_dir);
     COPY_ATTR(program_name);
     COPY_ATTR(home);
 #ifdef MS_WINDOWS
@@ -167,6 +171,7 @@ pathconfig_set_from_config(_PyPathConfig *pathconfig, const PyConfig *config)
     COPY_CONFIG(program_full_path, executable);
     COPY_CONFIG(prefix, prefix);
     COPY_CONFIG(exec_prefix, exec_prefix);
+    COPY_CONFIG(stdlib_dir, stdlib_dir);
     COPY_CONFIG(program_name, program_name);
     COPY_CONFIG(home, home);
 #ifdef MS_WINDOWS
@@ -218,6 +223,7 @@ _PyPathConfig_AsDict(void)
     SET_ITEM_STR(prefix);
     SET_ITEM_STR(exec_prefix);
     SET_ITEM_STR(module_search_path);
+    SET_ITEM_STR(stdlib_dir);
     SET_ITEM_STR(program_name);
     SET_ITEM_STR(home);
 #ifdef MS_WINDOWS
@@ -311,6 +317,7 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
 
    - exec_prefix
    - module_search_path
+   - stdlib_dir
    - prefix
    - program_full_path
 
@@ -401,6 +408,7 @@ config_init_pathconfig(PyConfig *config, int compute_path_config)
     COPY_ATTR(program_full_path, executable);
     COPY_ATTR(prefix, prefix);
     COPY_ATTR(exec_prefix, exec_prefix);
+    COPY_ATTR(stdlib_dir, stdlib_dir);
 
 #undef COPY_ATTR
 
@@ -486,16 +494,20 @@ Py_SetPath(const wchar_t *path)
 
     PyMem_RawFree(_Py_path_config.prefix);
     PyMem_RawFree(_Py_path_config.exec_prefix);
+    PyMem_RawFree(_Py_path_config.stdlib_dir);
     PyMem_RawFree(_Py_path_config.module_search_path);
 
     _Py_path_config.prefix = _PyMem_RawWcsdup(L"");
     _Py_path_config.exec_prefix = _PyMem_RawWcsdup(L"");
+    // XXX Copy this from the new module_search_path?
+    _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(L"");
     _Py_path_config.module_search_path = _PyMem_RawWcsdup(path);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_Py_path_config.prefix == NULL
         || _Py_path_config.exec_prefix == NULL
+        || _Py_path_config.stdlib_dir == NULL
         || _Py_path_config.module_search_path == NULL)
     {
         path_out_of_memory(__func__);
@@ -572,6 +584,22 @@ Py_GetPath(void)
 }
 
 
+const wchar_t *
+_Py_GetStdlibDir(const PyConfig *fallback)
+{
+    if (_Py_path_config.stdlib_dir != NULL) {
+        return _Py_path_config.stdlib_dir;
+    }
+    if (fallback == NULL) {
+        fallback = _Py_GetMainConfig();
+        if (fallback == NULL) {
+            return NULL;
+        }
+    }
+    return fallback->stdlib_dir;
+}
+
+
 wchar_t *
 Py_GetPrefix(void)
 {
@@ -605,6 +633,48 @@ Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;
 }
+
+
+static const wchar_t *
+get_executable(const PyConfig *fallback)
+{
+    const wchar_t *executable = Py_GetProgramFullPath();
+    if (executable != NULL) {
+        return executable;
+    }
+    if (fallback == NULL) {
+        fallback = _Py_GetMainConfig();
+        if (fallback == NULL) {
+            return NULL;
+        }
+    }
+    return fallback->executable;
+}
+
+bool
+_Py_IsInstalled(const PyConfig *fallback)
+{
+    /* If the stdlib dir is *not* in the same dir as the executable
+       then we consider it an installed Python. */
+    const wchar_t *stdlib = _Py_GetStdlibDir(fallback);
+    if (stdlib != NULL) {
+        size_t i = wcslen(stdlib);
+        while (i > 0 && stdlib[i] != SEP) {
+            --i;
+        }
+        const wchar_t *executable = get_executable(fallback);
+        if (executable != NULL) {
+            if (wcslen(executable) > i) {
+                /* If they share a parent dir then it is a local (dev)
+                   build and therefore not installed. */
+                return wcsncmp(stdlib, executable, i + 1) != 0;
+            }
+        }
+    }
+    /* We fall back to assuming this is an installed Python. */
+    return true;
+}
+
 
 /* Compute module search path from argv[0] or the current working
    directory ("-m module" case) which will be prepended to sys.argv:

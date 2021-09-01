@@ -100,6 +100,8 @@ static const char usage_3[] = "\
             instruction in code objects. This is useful when smaller code objects and pyc \n\
             files are desired as well as supressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
+         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+            The default is \"on\" (or \"off\" if you are running a local build).\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -672,6 +674,7 @@ PyConfig_Clear(PyConfig *config)
     _PyWideStringList_Clear(&config->xoptions);
     _PyWideStringList_Clear(&config->module_search_paths);
     config->module_search_paths_set = 0;
+    CLEAR(config->stdlib_dir);
 
     CLEAR(config->executable);
     CLEAR(config->base_executable);
@@ -912,6 +915,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(xoptions);
     COPY_WSTRLIST(module_search_paths);
     COPY_ATTR(module_search_paths_set);
+    COPY_WSTR_ATTR(stdlib_dir);
 
     COPY_WSTR_ATTR(executable);
     COPY_WSTR_ATTR(base_executable);
@@ -934,21 +938,24 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(user_site_directory);
     COPY_ATTR(configure_c_stdio);
     COPY_ATTR(buffered_stdio);
-    COPY_WSTR_ATTR(filesystem_encoding);
-    COPY_WSTR_ATTR(filesystem_errors);
-    COPY_WSTR_ATTR(stdio_encoding);
-    COPY_WSTR_ATTR(stdio_errors);
 #ifdef MS_WINDOWS
     COPY_ATTR(legacy_windows_stdio);
 #endif
     COPY_ATTR(skip_source_first_line);
+    COPY_ATTR(pathconfig_warnings);
+    COPY_ATTR(_init_main);
+    COPY_ATTR(_isolated_interpreter);
+    COPY_ATTR(use_frozen_modules);
+
+    COPY_WSTR_ATTR(filesystem_encoding);
+    COPY_WSTR_ATTR(filesystem_errors);
+    COPY_WSTR_ATTR(stdio_encoding);
+    COPY_WSTR_ATTR(stdio_errors);
     COPY_WSTR_ATTR(run_command);
     COPY_WSTR_ATTR(run_module);
     COPY_WSTR_ATTR(run_filename);
     COPY_WSTR_ATTR(check_hash_pycs_mode);
-    COPY_ATTR(pathconfig_warnings);
-    COPY_ATTR(_init_main);
-    COPY_ATTR(_isolated_interpreter);
+
     COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
@@ -1017,6 +1024,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_INT(module_search_paths_set);
     SET_ITEM_WSTRLIST(module_search_paths);
+    SET_ITEM_WSTR(stdlib_dir);
     SET_ITEM_WSTR(executable);
     SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
@@ -1319,6 +1327,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     // Path configuration output
     GET_UINT(module_search_paths_set);
     GET_WSTRLIST(module_search_paths);
+    GET_WSTR_OPT(stdlib_dir);
     GET_WSTR_OPT(executable);
     GET_WSTR_OPT(base_executable);
     GET_WSTR_OPT(prefix);
@@ -1588,6 +1597,17 @@ static const wchar_t*
 config_get_xoption(const PyConfig *config, wchar_t *name)
 {
     return _Py_get_xoption(&config->xoptions, name);
+}
+
+static const wchar_t*
+config_get_xoption_value(const PyConfig *config, wchar_t *name)
+{
+    const wchar_t *xoption = config_get_xoption(config, name);
+    if (xoption == NULL) {
+        return NULL;
+    }
+    const wchar_t *sep = wcschr(xoption, L'=');
+    return sep ? sep + 1 : L"";
 }
 
 
@@ -2065,6 +2085,45 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 }
 
 
+PyStatus
+_PyConfig_InitImportConfig(PyConfig *config)
+{
+    PyStatus status;
+
+    status = _PyConfig_InitPathConfig(config, 1);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* -X frozen_modules=[on|off] */
+    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+    if (value == NULL) {
+        /* PGO builds always default to using frozen modules. */
+#ifdef _Py_OPT  // configure --enable-optimizations
+        config->use_frozen_modules = true;
+#else
+        config->use_frozen_modules = _Py_IsInstalled(config);
+#endif
+    }
+    else if (wcscmp(value, L"on") == 0) {
+        config->use_frozen_modules = true;
+    }
+    else if (wcscmp(value, L"off") == 0) {
+        config->use_frozen_modules = false;
+    }
+    else if (wcslen(value) == 0) {
+        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+        config->use_frozen_modules = true;
+    }
+    else {
+        return PyStatus_Error("bad value for option -X frozen_modules "
+                              "(expected \"on\" or \"off\")");
+    }
+
+    return _PyStatus_OK();
+}
+
+
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
 {
@@ -2111,7 +2170,12 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     if (config->_install_importlib) {
-        status = _PyConfig_InitPathConfig(config, compute_path_config);
+        if (compute_path_config) {
+            status = _PyConfig_InitImportConfig(config);
+        }
+        else {
+            status = _PyConfig_InitPathConfig(config, 0);
+        }
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -3041,6 +3105,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
+    DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \
