@@ -6,7 +6,7 @@ import sys
 import unittest
 import warnings
 
-from .os_helper import unlink
+from .os_helper import unlink, EnvironmentVarGuard
 
 
 @contextlib.contextmanager
@@ -109,7 +109,18 @@ def _save_and_block_module(name, orig_modules):
     return saved
 
 
-def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
+@contextlib.contextmanager
+def frozen_modules(*, disabled=False):
+    with EnvironmentVarGuard() as env:
+        os.environ = env
+        os.environ['_PYTHONTESTFROZENMODULES'] = '' if disabled else '1'
+        yield
+
+
+def import_fresh_module(name, fresh=(), blocked=(), *,
+                        deprecated=False,
+                        usefrozen=False,
+                        ):
     """Import and return a module, deliberately bypassing sys.modules.
 
     This function imports and returns a fresh copy of the named Python module
@@ -148,7 +159,8 @@ def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
             for blocked_name in blocked:
                 if not _save_and_block_module(blocked_name, orig_modules):
                     names_to_remove.append(blocked_name)
-            fresh_module = importlib.import_module(name)
+            with frozen_modules(disabled=not usefrozen):
+                fresh_module = importlib.import_module(name)
         except ImportError:
             fresh_module = None
         finally:

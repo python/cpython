@@ -6,6 +6,8 @@ machinery = util.import_importlib('importlib.machinery')
 import unittest
 import warnings
 
+from test.support import import_helper
+
 
 class FindSpecTests(abc.FinderTests):
 
@@ -13,7 +15,8 @@ class FindSpecTests(abc.FinderTests):
 
     def find(self, name, path=None):
         finder = self.machinery.FrozenImporter
-        return finder.find_spec(name, path)
+        with import_helper.frozen_modules():
+            return finder.find_spec(name, path)
 
     def test_module(self):
         name = '__hello__'
@@ -52,7 +55,8 @@ class FinderTests(abc.FinderTests):
         finder = self.machinery.FrozenImporter
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            return finder.find_module(name, path)
+            with import_helper.frozen_modules():
+                return finder.find_module(name, path)
 
     def test_module(self):
         name = '__hello__'
