@@ -1,0 +1,2 @@
+configure fails if libasan is not installed when the
+--with-address-sanitizer is enabled. Contributed by Stéphane Wirtel

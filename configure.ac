@@ -3054,8 +3054,19 @@ BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
+with_sanitizer="yes"
 ],
 [AC_MSG_RESULT(no)])
+
+if test "$with_sanitizer" = "yes";
+then
+    AC_CHECK_LIB(
+	[asan],
+	[malloc],
+	[LDFLAGS="-lasan $LDFLAGS"],
+	AC_MSG_ERROR([libasan is not installed.])
+    )
+fi
 
 AC_MSG_CHECKING(for --with-memory-sanitizer)
 AC_ARG_WITH(memory_sanitizer,
