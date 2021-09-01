@@ -52,12 +52,12 @@
 #endif
 
 /* Start extern declarations */
-extern PyObject *GET_CODE(importlib__bootstrap)(void);
-extern PyObject *GET_CODE(importlib__bootstrap_external)(void);
-extern PyObject *GET_CODE(zipimport)(void);
-extern PyObject *GET_CODE(hello)(void);
-extern PyObject *GET_CODE(hello)(void);
-extern PyObject *GET_CODE(hello)(void);
+extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
+extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
+extern PyObject *_Py_get_zipimport_toplevel(void);
+extern PyObject *_Py_get_hello_toplevel(void);
+extern PyObject *_Py_get_hello_toplevel(void);
+extern PyObject *_Py_get_hello_toplevel(void);
 /* End extern declarations */
 
 /* Note that a negative size indicates a package. */

@@ -320,7 +320,7 @@ def regen_frozen(specs, dest=MODULES_DIR):
             deflines.append(f'/* {section} */')
         lastsection = section
 
-        # This matches what we do in Programs/_freeze_module.c:
+        # Emit the initializer.
         name = frozenid.replace('.', '_')
         symbol = '_Py_M__' + name
         pkg = '-' if ispkg else ''
@@ -331,7 +331,7 @@ def regen_frozen(specs, dest=MODULES_DIR):
         # Also add a extern declaration for the corresponding
         # codegen-generated function.
         externlines.append(
-            "extern PyObject *GET_CODE(%s)(void);" % name)
+            "extern PyObject *_Py_get_%s_toplevel(void);" % name)
 
     if not deflines[0]:
         del deflines[0]
