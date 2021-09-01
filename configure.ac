@@ -4086,12 +4086,6 @@ AC_CHECK_FUNCS(clock_gettime, [], [
     ])
 ])
 
-AC_CHECK_FUNCS(clock_nanosleep, [], [
-    AC_CHECK_LIB(rt, clock_nanosleep, [
-        AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1)
-    ])
-])
-
 AC_CHECK_FUNCS(clock_getres, [], [
     AC_CHECK_LIB(rt, clock_getres, [
         AC_DEFINE(HAVE_CLOCK_GETRES, 1)
@@ -4101,6 +4095,12 @@ AC_CHECK_FUNCS(clock_getres, [], [
 AC_CHECK_FUNCS(clock_settime, [], [
     AC_CHECK_LIB(rt, clock_settime, [
         AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+    ])
+])
+
+AC_CHECK_FUNCS(clock_nanosleep, [], [
+    AC_CHECK_LIB(rt, clock_nanosleep, [
+        AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1)
     ])
 ])
 
