@@ -5,7 +5,7 @@ whether it is a version with a known issue.
 
 import sys
 
-from ctypes import (c_buffer, POINTER, byref, create_unicode_buffer,
+from ctypes import (create_string_buffer, POINTER, byref, create_unicode_buffer,
                     Structure, WinDLL)
 from ctypes.wintypes import DWORD, HANDLE
 
@@ -60,7 +60,7 @@ if not size:
     print('Failed to get size of version info.')
     sys.exit(2)
 
-ver_block = c_buffer(size)
+ver_block = create_string_buffer(size)
 if (not version.GetFileVersionInfoW(name, None, size, ver_block) or
     not ver_block):
     print('Failed to get version info.')

@@ -1,0 +1,4 @@
+Deprecate the :func:`ctypes.c_buffer` alias to the
+:func:`ctypes.create_string_buffer`: use directly
+:func:`ctypes.create_string_buffer` instead.
+Patch by Victor Stinner.

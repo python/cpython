@@ -1,6 +1,8 @@
+import ctypes
 import unittest
 from ctypes import *
 from ctypes.test import need_symbol
+from test.support import warnings_helper
 
 class StringArrayTestCase(unittest.TestCase):
     def test(self):
@@ -25,8 +27,8 @@ class StringArrayTestCase(unittest.TestCase):
         self.assertRaises(ValueError, setattr, buf, "value", b"aaaaaaaa")
         self.assertRaises(TypeError, setattr, buf, "value", 42)
 
-    def test_c_buffer_value(self):
-        buf = c_buffer(32)
+    def test_c_string_buffer_value(self):
+        buf = ctypes.create_string_buffer(32)
 
         buf.value = b"Hello, World"
         self.assertEqual(buf.value, b"Hello, World")
@@ -35,8 +37,8 @@ class StringArrayTestCase(unittest.TestCase):
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", memoryview(b"x" * 100))
 
-    def test_c_buffer_raw(self):
-        buf = c_buffer(32)
+    def test_c_string_buffer_raw(self):
+        buf = ctypes.create_string_buffer(32)
 
         buf.raw = memoryview(b"Hello, World")
         self.assertEqual(buf.value, b"Hello, World")
@@ -59,6 +61,10 @@ class StringArrayTestCase(unittest.TestCase):
         buf = BUF()
         with self.assertRaises(AttributeError):
             del buf.raw
+
+    def test_c_buffer_deprecation(self):
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
+            ctypes.c_buffer(32)
 
 
 @need_symbol('c_wchar')

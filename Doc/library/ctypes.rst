@@ -330,11 +330,11 @@ property::
    10 b'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
-The :func:`create_string_buffer` function replaces the :func:`c_buffer` function
-(which is still available as an alias), as well as the :func:`c_string` function
-from earlier ctypes releases.  To create a mutable memory block containing
-unicode characters of the C type :c:type:`wchar_t` use the
-:func:`create_unicode_buffer` function.
+To create a mutable memory block containing unicode characters of the C type
+:c:type:`wchar_t` use the :func:`create_unicode_buffer` function.
+
+The :func:`c_buffer` alias to the :func:`create_string_buffer` function is
+deprecated in Python 3.11.
 
 
 .. _ctypes-calling-functions-continued:
