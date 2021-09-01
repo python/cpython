@@ -433,7 +433,7 @@ The following code prints every key in the database db, without having
 to create a list in memory that contains them all:
 
       k = db.firstkey()
-      while k != None:
+      while k is not None:
           print(k)
           k = db.nextkey(k)
 [clinic start generated code]*/
@@ -441,7 +441,7 @@ to create a list in memory that contains them all:
 static PyObject *
 _gdbm_gdbm_nextkey_impl(dbmobject *self, const char *key,
                         Py_ssize_clean_t key_length)
-/*[clinic end generated code: output=192ab892de6eb2f6 input=1f1606943614e36f]*/
+/*[clinic end generated code: output=192ab892de6eb2f6 input=b7b0949c520d730c]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;
