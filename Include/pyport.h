@@ -504,8 +504,9 @@ extern "C" {
  *    Py_DEPRECATED(3.4) typedef int T1;
  *    Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
  */
-#if defined(__GNUC__) \
-    && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
+#if (defined(__GNUC__) \
+    && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))) ||\
+    defined(__xlc__)
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
 #elif defined(_MSC_VER)
 #define Py_DEPRECATED(VERSION) __declspec(deprecated( \
@@ -566,7 +567,7 @@ extern "C" {
  */
 #if defined(_MSC_VER)
 #  define _Py_NO_INLINE __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__GNUC__) || defined(__clang__) || defined(__xlc__)
 #  define _Py_NO_INLINE __attribute__ ((noinline))
 #else
 #  define _Py_NO_INLINE
@@ -759,7 +760,7 @@ extern char * _getpty(int *, int, mode_t, int);
 /*
  * Specify alignment on compilers that support it.
  */
-#if defined(__GNUC__) && __GNUC__ >= 3
+#if (defined(__GNUC__) && __GNUC__ >= 3) || defined(__xlc__)
 #define Py_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define Py_ALIGNED(x)
