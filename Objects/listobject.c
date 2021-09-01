@@ -1139,12 +1139,11 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
            if (k)
 
 /* The maximum number of entries in a MergeState's pending-runs stack.
- * This is enough to sort arrays of size up to about
- *     32 * phi ** MAX_MERGE_PENDING
- * where phi ~= 1.618.  85 is ridiculouslylarge enough, good for an array
- * with 2**64 elements.
+ * For a list with n elements, thia needs at most floor(log2(n)) + 1 entries
+ * even if we didn't force runs to a minimal length.  So the number of bits
+ * in a Py_ssize_t is plenty large enough for all cases.
  */
-#define MAX_MERGE_PENDING 85
+#define MAX_MERGE_PENDING (SIZEOF_SIZE_T * 8)
 
 /* When we get into galloping mode, we stay there until both runs win less
  * often than MIN_GALLOP consecutive times.  See listsort.txt for more info.
@@ -1171,7 +1170,7 @@ struct s_MergeState {
      */
     Py_ssize_t min_gallop;
 
-    Py_ssize_t listlen;     /* len(input_list) - read only*/
+    Py_ssize_t listlen;     /* len(input_list) - read only */
     PyObject **basekeys;    /* base address of keys array - read only */
 
     /* 'a' is temp storage to help with merges.  It contains room for
@@ -1927,6 +1926,11 @@ merge_at(MergeState *ms, Py_ssize_t i)
         return merge_hi(ms, ssa, na, ssb, nb);
 }
 
+/* Two adjacent runs begin at index s1. The first run has length n1, and
+ * the second run (starting at index s1+n1) has length n2. The list has total
+ * length n.
+ * Compute the "power" of the first run. See listsort.txt for details.
+ */
 static int
 powerloop(Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2, Py_ssize_t n)
 {
@@ -1959,10 +1963,7 @@ powerloop(Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2, Py_ssize_t n)
 }
 
 /* Examine the stack of runs waiting to be merged, merging adjacent runs
- * until the stack invariants are re-established:
- *
- * 1. len[-3] > len[-2] + len[-1]
- * 2. len[-2] > len[-1]
+ * according to the "powersort" merge strategy.
  *
  * See listsort.txt for more info.
  *
@@ -1975,13 +1976,16 @@ merge_collapse(MergeState *ms)
     if (ms->n <= 1)
         return 0;
     struct s_slice *p = ms->pending;
+    /* The most recent run is never merged here, because we can't know its
+     * power before we see the run that follows it. So pop it off the stack
+     * and restore it later.
+     */
     --ms->n;
     struct s_slice ss2 = p[ms->n];
-    Py_ssize_t s2 = ss2.base.keys - ms->basekeys;
-    Py_ssize_t n2 = ss2.len;
-    Py_ssize_t s1 = p[ms->n - 1].base.keys - ms->basekeys;
+    Py_ssize_t s1 = p[ms->n - 1].base.keys - ms->basekeys; /* start index */
     Py_ssize_t n1 = p[ms->n - 1].len;
-    assert(s1 + n1 == s2);
+    Py_ssize_t n2 = ss2.len;
+    assert(s1 + n1 == ss2.base.keys - ms->basekeys);
     int power = powerloop(s1, n1, n2, ms->listlen);
     while (ms->n > 1 && p[ms->n - 2].power > power) {
         if (merge_at(ms, ms->n - 2) < 0)
