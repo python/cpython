@@ -233,10 +233,7 @@ class ModuleTests(unittest.TestCase):
                 "SQLITE_WARNING_AUTOINDEX",
             ]
         if sqlite.version_info >= (3, 8, 1):
-            consts += [
-                "SQLITE_CANTOPEN_CONVPATH",
-                "SQLITE_IOERR_CONVPATH",
-            ]
+            consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
         if sqlite.version_info >= (3, 8, 10):
             consts += [
                 "SQLITE_AUTH_USER",
@@ -281,10 +278,7 @@ class ModuleTests(unittest.TestCase):
         if sqlite.version_info >= (3, 34, 0):
             const.append("SQLITE_IOERR_CORRUPTFS")
         if sqlite.version_info >= (3, 37, 0):
-            consts += [
-                "SQLITE_CANTOPEN_EXISTS",
-                "SQLITE_CONSTRAINT_DATATYPE",
-            ]
+            consts += ["SQLITE_CANTOPEN_EXISTS", "SQLITE_CONSTRAINT_DATATYPE"]
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
