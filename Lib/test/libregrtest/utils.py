@@ -217,5 +217,3 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
-
-    support.gc_collect()
