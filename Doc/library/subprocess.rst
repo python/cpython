@@ -1150,8 +1150,8 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   If :func:`check_call` was unable to start the process it will return the error
-   occurred. If :func:`check_call` managed to launch a program but the program
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised. If :func:`check_call` managed to launch a program but the program
    failed and returned a non-zero error code then :exc:`CalledProcessError` will be
    thrown with the actual return code.
 
