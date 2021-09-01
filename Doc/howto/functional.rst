@@ -66,7 +66,7 @@ output must only depend on its input.
 Some languages are very strict about purity and don't even have assignment
 statements such as ``a=3`` or ``c = a + b``, but it's difficult to avoid all
 side effects be it printing to the screen or writing to a disk file. Another
-example is a call to the :func:`print` or :func:`time.sleep` function both return
+example is a call to the :func:`print` or :func:`time.sleep` function as both return
 no useful value; they're only called for their side effects of sending some text
 to the screen or pausing execution for a second.
 
