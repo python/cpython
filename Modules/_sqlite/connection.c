@@ -654,7 +654,8 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
     PyGILState_Release(threadstate);
 }
 
-static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_value** params)
+static void
+step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
     PyGILState_STATE threadstate = PyGILState_Ensure();
 
@@ -702,7 +703,7 @@ error:
 }
 
 static void
-_pysqlite_final_callback(sqlite3_context *context)
+final_callback(sqlite3_context *context)
 {
     PyGILState_STATE threadstate = PyGILState_Ensure();
 
@@ -897,8 +898,8 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
     }
     rc = sqlite3_create_function_v2(self->db, name, n_arg, SQLITE_UTF8, ctx,
                                     0,
-                                    &_pysqlite_step_callback,
-                                    &_pysqlite_final_callback,
+                                    &step_callback,
+                                    &final_callback,
                                     &destructor_callback); // will decref func
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
@@ -908,14 +909,18 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
-static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2 , const char* dbname, const char* access_attempt_source)
+static int
+authorizer_callback(void *ctx, int action, const char *arg1,
+                    const char *arg2 , const char *dbname,
+                    const char *access_attempt_source)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     PyObject *ret;
     int rc;
 
-    ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
+    ret = PyObject_CallFunction((PyObject*)ctx, "issss", action, arg1, arg2,
+                                dbname, access_attempt_source);
 
     if (ret == NULL) {
         pysqlite_state *state = pysqlite_get_state(NULL);
@@ -953,13 +958,13 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
 }
 
 static int
-progress_callback(void *user_arg)
+progress_callback(void *ctx)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     int rc;
     PyObject *ret;
-    ret = _PyObject_CallNoArg((PyObject*)user_arg);
+    ret = _PyObject_CallNoArg((PyObject*)ctx);
 
     if (!ret) {
         /* abort query if error occurred */
@@ -990,9 +995,12 @@ progress_callback(void *user_arg)
  * may change in future releases. Callback implementations should return zero
  * to ensure future compatibility.
  */
-static int _trace_callback(unsigned int type, void* user_arg, void* prepared_statement, void* statement_string)
+static int
+trace_callback(unsigned int type, void *ctx, void *prepared_statement,
+               void *statement_string)
 #else
-static void _trace_callback(void* user_arg, const char* statement_string)
+static void
+trace_callback(void *ctx, const char *statement_string)
 #endif
 {
 #ifdef HAVE_TRACE_V2
@@ -1008,7 +1016,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     if (py_statement) {
-        ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
+        ret = PyObject_CallOneArg((PyObject*)ctx, py_statement);
         Py_DECREF(py_statement);
     }
 
@@ -1033,29 +1041,29 @@ static void _trace_callback(void* user_arg, const char* statement_string)
 /*[clinic input]
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
-    authorizer_callback as authorizer_cb: object
+    authorizer_callback as callable: object
 
 Sets authorizer callback. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
-                                        PyObject *authorizer_cb)
-/*[clinic end generated code: output=f18ba575d788b35c input=df079724c020d2f2]*/
+                                        PyObject *callable)
+/*[clinic end generated code: output=c193601e9e8a5116 input=ec104f130b82050b]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
     int rc;
-    if (authorizer_cb == Py_None) {
+    if (callable == Py_None) {
         rc = sqlite3_set_authorizer(self->db, NULL, NULL);
         Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
     }
     else {
-        Py_INCREF(authorizer_cb);
-        Py_XSETREF(self->function_pinboard_authorizer_cb, authorizer_cb);
-        rc = sqlite3_set_authorizer(self->db, _authorizer_callback, authorizer_cb);
+        Py_INCREF(callable);
+        Py_XSETREF(self->function_pinboard_authorizer_cb, callable);
+        rc = sqlite3_set_authorizer(self->db, authorizer_callback, callable);
     }
     if (rc != SQLITE_OK) {
         PyErr_SetString(self->OperationalError,
@@ -1069,7 +1077,7 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
 
-    progress_handler: object
+    progress_handler as callable: object
     n: int
 
 Sets progress handler callback. Non-standard.
@@ -1077,22 +1085,21 @@ Sets progress handler callback. Non-standard.
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
-                                              PyObject *progress_handler,
-                                              int n)
-/*[clinic end generated code: output=35a7c10364cb1b04 input=857696c25f964c64]*/
+                                              PyObject *callable, int n)
+/*[clinic end generated code: output=ba14008a483d7a53 input=3cf56d045f130a84]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    if (progress_handler == Py_None) {
+    if (callable == Py_None) {
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
         Py_XSETREF(self->function_pinboard_progress_handler, NULL);
     } else {
-        sqlite3_progress_handler(self->db, n, progress_callback, progress_handler);
-        Py_INCREF(progress_handler);
-        Py_XSETREF(self->function_pinboard_progress_handler, progress_handler);
+        sqlite3_progress_handler(self->db, n, progress_callback, callable);
+        Py_INCREF(callable);
+        Py_XSETREF(self->function_pinboard_progress_handler, callable);
     }
     Py_RETURN_NONE;
 }
@@ -1100,7 +1107,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
 
-    trace_callback: object
+    trace_callback as callable: object
 
 Sets a trace callback called for each SQL statement (passed as unicode).
 
@@ -1109,14 +1116,14 @@ Non-standard.
 
 static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
-                                            PyObject *trace_callback)
-/*[clinic end generated code: output=fb0e307b9924d454 input=56d60fd38d763679]*/
+                                            PyObject *callable)
+/*[clinic end generated code: output=c9fd551e359165d3 input=d76eabbb633057bc]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    if (trace_callback == Py_None) {
+    if (callable == Py_None) {
         /*
          * None clears the trace callback previously set
          *
@@ -1132,12 +1139,12 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
         Py_XSETREF(self->function_pinboard_trace_callback, NULL);
     } else {
 #ifdef HAVE_TRACE_V2
-        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, _trace_callback, trace_callback);
+        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, trace_callback, callable);
 #else
-        sqlite3_trace(self->db, _trace_callback, trace_callback);
+        sqlite3_trace(self->db, trace_callback, callable);
 #endif
-        Py_INCREF(trace_callback);
-        Py_XSETREF(self->function_pinboard_trace_callback, trace_callback);
+        Py_INCREF(callable);
+        Py_XSETREF(self->function_pinboard_trace_callback, callable);
     }
 
     Py_RETURN_NONE;
