@@ -1159,11 +1159,15 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
  */
 struct s_slice {
     sortslice base;
-    Py_ssize_t len;
+    Py_ssize_t len;   /* length of run */
+    Py_ssize_t start; /* starting index of run */
+    int power; /* node "level" for powersort merge strategy */
 };
 
 typedef struct s_MergeState MergeState;
 struct s_MergeState {
+    Py_ssize_t listlen; /* len(input_list) */
+
     /* This controls when we get *into* galloping mode.  It's initialized
      * to MIN_GALLOP.  merge_lo and merge_hi tend to nudge it higher for
      * random data, and lower for highly structured data.
@@ -1538,6 +1542,7 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc)
     ms->a.keys = ms->temparray;
     ms->n = 0;
     ms->min_gallop = MIN_GALLOP;
+    ms->listlen = list_size;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -1920,6 +1925,36 @@ merge_at(MergeState *ms, Py_ssize_t i)
         return merge_hi(ms, ssa, na, ssb, nb);
 }
 
+static int
+powerloop(MergeState *ms, Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2)
+{
+    int result = 0;
+    assert(s1 >= 0);
+    assert(n1 > 0 && n2 > 0);
+    assert(s1 + n1 + n2 <= ms->listlen);
+    /* midpoints a and b:
+     * a = s1 + n1/2
+     * b = s1 + n1 + n2/2 = a + (n1 + n2)/2
+     */
+    Py_ssize_t a = 2 * s1 + n1;  /* 2*a */
+    Py_ssize_t b = a + n1 + n2;  /* 2*b */
+    for (;;) {
+        ++result;
+        if (a >= ms->listlen) {
+            assert(b >= a);
+            a -= ms->listlen;
+            b -= ms->listlen;
+        }
+        else if (b >= ms->listlen) {
+            break;
+        }
+        assert(a < b && b < ms->listlen);
+        a <<= 1;
+        b <<= 1;
+    }
+    return result;
+}
+
 /* Examine the stack of runs waiting to be merged, merging adjacent runs
  * until the stack invariants are re-established:
  *
@@ -1933,25 +1968,26 @@ merge_at(MergeState *ms, Py_ssize_t i)
 static int
 merge_collapse(MergeState *ms)
 {
-    struct s_slice *p = ms->pending;
-
     assert(ms);
-    while (ms->n > 1) {
-        Py_ssize_t n = ms->n - 2;
-        if ((n > 0 && p[n-1].len <= p[n].len + p[n+1].len) ||
-            (n > 1 && p[n-2].len <= p[n-1].len + p[n].len)) {
-            if (p[n-1].len < p[n+1].len)
-                --n;
-            if (merge_at(ms, n) < 0)
-                return -1;
-        }
-        else if (p[n].len <= p[n+1].len) {
-            if (merge_at(ms, n) < 0)
-                return -1;
-        }
-        else
-            break;
+    if (ms->n <= 1)
+        return 0;
+    struct s_slice *p = ms->pending;
+    --ms->n;
+    struct s_slice ss2 = p[ms->n];
+    Py_ssize_t s2 = ss2.start;
+    Py_ssize_t n2 = ss2.len;
+    Py_ssize_t s1 = p[ms->n - 1].start;
+    Py_ssize_t n1 = p[ms->n - 1].len;
+    assert(s1 + n1 == s2);
+    int power = powerloop(ms, s1, n1, n2);
+    while (ms->n > 1 && p[ms->n - 2].power > power) {
+        if (merge_at(ms, ms->n - 2) < 0)
+            return -1;
     }
+    assert(ms->n < 2 || p[ms->n - 2].power < power);
+    p[ms->n - 1].power = power;
+    p[ms->n] = ss2;
+    ++ms->n;
     return 0;
 }
 
@@ -2375,6 +2411,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
      * and extending short natural runs to minrun elements.
      */
     minrun = merge_compute_minrun(nremaining);
+    Py_ssize_t start_index = 0;
     do {
         int descending;
         Py_ssize_t n;
@@ -2396,6 +2433,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         /* Push run onto pending-runs stack, and maybe merge. */
         assert(ms.n < MAX_MERGE_PENDING);
         ms.pending[ms.n].base = lo;
+        ms.pending[ms.n].start = start_index;
         ms.pending[ms.n].len = n;
         ++ms.n;
         if (merge_collapse(&ms) < 0)
@@ -2403,6 +2441,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         /* Advance to find next run. */
         sortslice_advance(&lo, n);
         nremaining -= n;
+        start_index += n;
     } while (nremaining);
 
     if (merge_force_collapse(&ms) < 0)
