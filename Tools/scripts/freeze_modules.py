@@ -39,7 +39,7 @@ FROZEN = [
         # without site (python -S)
         'abc',
         'codecs',
-        '<encodings.*>',
+        # '<encodings.*>',
         'io',
         # with site
         '_collections_abc',

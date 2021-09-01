@@ -453,6 +453,139 @@ DEEPFREEZE_OBJS = \
 		Python/deepfreeze/importlib__bootstrap.o \
 		Python/deepfreeze/importlib__bootstrap_external.o \
 		Python/deepfreeze/zipimport.o \
+		Python/deepfreeze/abc.o \
+		Python/deepfreeze/codecs.o \
+		Python/deepfreeze/encodings.o \
+		Python/deepfreeze/encodings___init__.o \
+		Python/deepfreeze/encodings_aliases.o \
+		Python/deepfreeze/encodings_ascii.o \
+		Python/deepfreeze/encodings_base64_codec.o \
+		Python/deepfreeze/encodings_big5.o \
+		Python/deepfreeze/encodings_big5hkscs.o \
+		Python/deepfreeze/encodings_bz2_codec.o \
+		Python/deepfreeze/encodings_charmap.o \
+		Python/deepfreeze/encodings_cp037.o \
+		Python/deepfreeze/encodings_cp1006.o \
+		Python/deepfreeze/encodings_cp1026.o \
+		Python/deepfreeze/encodings_cp1125.o \
+		Python/deepfreeze/encodings_cp1140.o \
+		Python/deepfreeze/encodings_cp1250.o \
+		Python/deepfreeze/encodings_cp1251.o \
+		Python/deepfreeze/encodings_cp1252.o \
+		Python/deepfreeze/encodings_cp1253.o \
+		Python/deepfreeze/encodings_cp1254.o \
+		Python/deepfreeze/encodings_cp1255.o \
+		Python/deepfreeze/encodings_cp1256.o \
+		Python/deepfreeze/encodings_cp1257.o \
+		Python/deepfreeze/encodings_cp1258.o \
+		Python/deepfreeze/encodings_cp273.o \
+		Python/deepfreeze/encodings_cp424.o \
+		Python/deepfreeze/encodings_cp437.o \
+		Python/deepfreeze/encodings_cp500.o \
+		Python/deepfreeze/encodings_cp720.o \
+		Python/deepfreeze/encodings_cp737.o \
+		Python/deepfreeze/encodings_cp775.o \
+		Python/deepfreeze/encodings_cp850.o \
+		Python/deepfreeze/encodings_cp852.o \
+		Python/deepfreeze/encodings_cp855.o \
+		Python/deepfreeze/encodings_cp856.o \
+		Python/deepfreeze/encodings_cp857.o \
+		Python/deepfreeze/encodings_cp858.o \
+		Python/deepfreeze/encodings_cp860.o \
+		Python/deepfreeze/encodings_cp861.o \
+		Python/deepfreeze/encodings_cp862.o \
+		Python/deepfreeze/encodings_cp863.o \
+		Python/deepfreeze/encodings_cp864.o \
+		Python/deepfreeze/encodings_cp865.o \
+		Python/deepfreeze/encodings_cp866.o \
+		Python/deepfreeze/encodings_cp869.o \
+		Python/deepfreeze/encodings_cp874.o \
+		Python/deepfreeze/encodings_cp875.o \
+		Python/deepfreeze/encodings_cp932.o \
+		Python/deepfreeze/encodings_cp949.o \
+		Python/deepfreeze/encodings_cp950.o \
+		Python/deepfreeze/encodings_euc_jis_2004.o \
+		Python/deepfreeze/encodings_euc_jisx0213.o \
+		Python/deepfreeze/encodings_euc_jp.o \
+		Python/deepfreeze/encodings_euc_kr.o \
+		Python/deepfreeze/encodings_gb18030.o \
+		Python/deepfreeze/encodings_gb2312.o \
+		Python/deepfreeze/encodings_gbk.o \
+		Python/deepfreeze/encodings_hex_codec.o \
+		Python/deepfreeze/encodings_hp_roman8.o \
+		Python/deepfreeze/encodings_hz.o \
+		Python/deepfreeze/encodings_idna.o \
+		Python/deepfreeze/encodings_iso2022_jp.o \
+		Python/deepfreeze/encodings_iso2022_jp_1.o \
+		Python/deepfreeze/encodings_iso2022_jp_2.o \
+		Python/deepfreeze/encodings_iso2022_jp_2004.o \
+		Python/deepfreeze/encodings_iso2022_jp_3.o \
+		Python/deepfreeze/encodings_iso2022_jp_ext.o \
+		Python/deepfreeze/encodings_iso2022_kr.o \
+		Python/deepfreeze/encodings_iso8859_1.o \
+		Python/deepfreeze/encodings_iso8859_10.o \
+		Python/deepfreeze/encodings_iso8859_11.o \
+		Python/deepfreeze/encodings_iso8859_13.o \
+		Python/deepfreeze/encodings_iso8859_14.o \
+		Python/deepfreeze/encodings_iso8859_15.o \
+		Python/deepfreeze/encodings_iso8859_16.o \
+		Python/deepfreeze/encodings_iso8859_2.o \
+		Python/deepfreeze/encodings_iso8859_3.o \
+		Python/deepfreeze/encodings_iso8859_4.o \
+		Python/deepfreeze/encodings_iso8859_5.o \
+		Python/deepfreeze/encodings_iso8859_6.o \
+		Python/deepfreeze/encodings_iso8859_7.o \
+		Python/deepfreeze/encodings_iso8859_8.o \
+		Python/deepfreeze/encodings_iso8859_9.o \
+		Python/deepfreeze/encodings_johab.o \
+		Python/deepfreeze/encodings_koi8_r.o \
+		Python/deepfreeze/encodings_koi8_t.o \
+		Python/deepfreeze/encodings_koi8_u.o \
+		Python/deepfreeze/encodings_kz1048.o \
+		Python/deepfreeze/encodings_latin_1.o \
+		Python/deepfreeze/encodings_mac_arabic.o \
+		Python/deepfreeze/encodings_mac_croatian.o \
+		Python/deepfreeze/encodings_mac_cyrillic.o \
+		Python/deepfreeze/encodings_mac_farsi.o \
+		Python/deepfreeze/encodings_mac_greek.o \
+		Python/deepfreeze/encodings_mac_iceland.o \
+		Python/deepfreeze/encodings_mac_latin2.o \
+		Python/deepfreeze/encodings_mac_roman.o \
+		Python/deepfreeze/encodings_mac_romanian.o \
+		Python/deepfreeze/encodings_mac_turkish.o \
+		Python/deepfreeze/encodings_mbcs.o \
+		Python/deepfreeze/encodings_oem.o \
+		Python/deepfreeze/encodings_palmos.o \
+		Python/deepfreeze/encodings_ptcp154.o \
+		Python/deepfreeze/encodings_punycode.o \
+		Python/deepfreeze/encodings_quopri_codec.o \
+		Python/deepfreeze/encodings_raw_unicode_escape.o \
+		Python/deepfreeze/encodings_rot_13.o \
+		Python/deepfreeze/encodings_shift_jis.o \
+		Python/deepfreeze/encodings_shift_jis_2004.o \
+		Python/deepfreeze/encodings_shift_jisx0213.o \
+		Python/deepfreeze/encodings_tis_620.o \
+		Python/deepfreeze/encodings_undefined.o \
+		Python/deepfreeze/encodings_unicode_escape.o \
+		Python/deepfreeze/encodings_utf_16.o \
+		Python/deepfreeze/encodings_utf_16_be.o \
+		Python/deepfreeze/encodings_utf_16_le.o \
+		Python/deepfreeze/encodings_utf_32.o \
+		Python/deepfreeze/encodings_utf_32_be.o \
+		Python/deepfreeze/encodings_utf_32_le.o \
+		Python/deepfreeze/encodings_utf_7.o \
+		Python/deepfreeze/encodings_utf_8.o \
+		Python/deepfreeze/encodings_utf_8_sig.o \
+		Python/deepfreeze/encodings_uu_codec.o \
+		Python/deepfreeze/encodings_zlib_codec.o \
+		Python/deepfreeze/io.o \
+		Python/deepfreeze/_collections_abc.o \
+		Python/deepfreeze/_sitebuiltins.o \
+		Python/deepfreeze/genericpath.o \
+		Python/deepfreeze/posixpath.o \
+		Python/deepfreeze/os.o \
+		Python/deepfreeze/site.o \
+		Python/deepfreeze/stat.o \
 		Python/deepfreeze/hello.o
 # End DEEPFREEZE_OBJS
 
@@ -784,6 +917,937 @@ Python/deepfreeze/zipimport.c: Lib/zipimport.py Tools/scripts/deepfreeze.py $(BO
 		$(srcdir)/Lib/zipimport.py \
 		-m zipimport \
 		-o $(srcdir)/Python/deepfreeze/zipimport.c
+
+Python/deepfreeze/abc.c: Lib/abc.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/abc.py \
+		-m abc \
+		-o $(srcdir)/Python/deepfreeze/abc.c
+
+Python/deepfreeze/codecs.c: Lib/codecs.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/codecs.py \
+		-m codecs \
+		-o $(srcdir)/Python/deepfreeze/codecs.c
+
+Python/deepfreeze/encodings.c: Lib/encodings/__init__.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/__init__.py \
+		-m encodings \
+		-o $(srcdir)/Python/deepfreeze/encodings.c
+
+Python/deepfreeze/encodings___init__.c: Lib/encodings/__init__.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/__init__.py \
+		-m encodings.__init__ \
+		-o $(srcdir)/Python/deepfreeze/encodings___init__.c
+
+Python/deepfreeze/encodings_aliases.c: Lib/encodings/aliases.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/aliases.py \
+		-m encodings.aliases \
+		-o $(srcdir)/Python/deepfreeze/encodings_aliases.c
+
+Python/deepfreeze/encodings_ascii.c: Lib/encodings/ascii.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/ascii.py \
+		-m encodings.ascii \
+		-o $(srcdir)/Python/deepfreeze/encodings_ascii.c
+
+Python/deepfreeze/encodings_base64_codec.c: Lib/encodings/base64_codec.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/base64_codec.py \
+		-m encodings.base64_codec \
+		-o $(srcdir)/Python/deepfreeze/encodings_base64_codec.c
+
+Python/deepfreeze/encodings_big5.c: Lib/encodings/big5.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/big5.py \
+		-m encodings.big5 \
+		-o $(srcdir)/Python/deepfreeze/encodings_big5.c
+
+Python/deepfreeze/encodings_big5hkscs.c: Lib/encodings/big5hkscs.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/big5hkscs.py \
+		-m encodings.big5hkscs \
+		-o $(srcdir)/Python/deepfreeze/encodings_big5hkscs.c
+
+Python/deepfreeze/encodings_bz2_codec.c: Lib/encodings/bz2_codec.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/bz2_codec.py \
+		-m encodings.bz2_codec \
+		-o $(srcdir)/Python/deepfreeze/encodings_bz2_codec.c
+
+Python/deepfreeze/encodings_charmap.c: Lib/encodings/charmap.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/charmap.py \
+		-m encodings.charmap \
+		-o $(srcdir)/Python/deepfreeze/encodings_charmap.c
+
+Python/deepfreeze/encodings_cp037.c: Lib/encodings/cp037.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp037.py \
+		-m encodings.cp037 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp037.c
+
+Python/deepfreeze/encodings_cp1006.c: Lib/encodings/cp1006.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1006.py \
+		-m encodings.cp1006 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1006.c
+
+Python/deepfreeze/encodings_cp1026.c: Lib/encodings/cp1026.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1026.py \
+		-m encodings.cp1026 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1026.c
+
+Python/deepfreeze/encodings_cp1125.c: Lib/encodings/cp1125.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1125.py \
+		-m encodings.cp1125 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1125.c
+
+Python/deepfreeze/encodings_cp1140.c: Lib/encodings/cp1140.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1140.py \
+		-m encodings.cp1140 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1140.c
+
+Python/deepfreeze/encodings_cp1250.c: Lib/encodings/cp1250.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1250.py \
+		-m encodings.cp1250 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1250.c
+
+Python/deepfreeze/encodings_cp1251.c: Lib/encodings/cp1251.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1251.py \
+		-m encodings.cp1251 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1251.c
+
+Python/deepfreeze/encodings_cp1252.c: Lib/encodings/cp1252.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1252.py \
+		-m encodings.cp1252 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1252.c
+
+Python/deepfreeze/encodings_cp1253.c: Lib/encodings/cp1253.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1253.py \
+		-m encodings.cp1253 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1253.c
+
+Python/deepfreeze/encodings_cp1254.c: Lib/encodings/cp1254.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1254.py \
+		-m encodings.cp1254 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1254.c
+
+Python/deepfreeze/encodings_cp1255.c: Lib/encodings/cp1255.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1255.py \
+		-m encodings.cp1255 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1255.c
+
+Python/deepfreeze/encodings_cp1256.c: Lib/encodings/cp1256.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1256.py \
+		-m encodings.cp1256 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1256.c
+
+Python/deepfreeze/encodings_cp1257.c: Lib/encodings/cp1257.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1257.py \
+		-m encodings.cp1257 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1257.c
+
+Python/deepfreeze/encodings_cp1258.c: Lib/encodings/cp1258.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp1258.py \
+		-m encodings.cp1258 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp1258.c
+
+Python/deepfreeze/encodings_cp273.c: Lib/encodings/cp273.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp273.py \
+		-m encodings.cp273 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp273.c
+
+Python/deepfreeze/encodings_cp424.c: Lib/encodings/cp424.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp424.py \
+		-m encodings.cp424 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp424.c
+
+Python/deepfreeze/encodings_cp437.c: Lib/encodings/cp437.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp437.py \
+		-m encodings.cp437 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp437.c
+
+Python/deepfreeze/encodings_cp500.c: Lib/encodings/cp500.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp500.py \
+		-m encodings.cp500 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp500.c
+
+Python/deepfreeze/encodings_cp720.c: Lib/encodings/cp720.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp720.py \
+		-m encodings.cp720 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp720.c
+
+Python/deepfreeze/encodings_cp737.c: Lib/encodings/cp737.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp737.py \
+		-m encodings.cp737 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp737.c
+
+Python/deepfreeze/encodings_cp775.c: Lib/encodings/cp775.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp775.py \
+		-m encodings.cp775 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp775.c
+
+Python/deepfreeze/encodings_cp850.c: Lib/encodings/cp850.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp850.py \
+		-m encodings.cp850 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp850.c
+
+Python/deepfreeze/encodings_cp852.c: Lib/encodings/cp852.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp852.py \
+		-m encodings.cp852 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp852.c
+
+Python/deepfreeze/encodings_cp855.c: Lib/encodings/cp855.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp855.py \
+		-m encodings.cp855 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp855.c
+
+Python/deepfreeze/encodings_cp856.c: Lib/encodings/cp856.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp856.py \
+		-m encodings.cp856 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp856.c
+
+Python/deepfreeze/encodings_cp857.c: Lib/encodings/cp857.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp857.py \
+		-m encodings.cp857 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp857.c
+
+Python/deepfreeze/encodings_cp858.c: Lib/encodings/cp858.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp858.py \
+		-m encodings.cp858 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp858.c
+
+Python/deepfreeze/encodings_cp860.c: Lib/encodings/cp860.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp860.py \
+		-m encodings.cp860 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp860.c
+
+Python/deepfreeze/encodings_cp861.c: Lib/encodings/cp861.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp861.py \
+		-m encodings.cp861 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp861.c
+
+Python/deepfreeze/encodings_cp862.c: Lib/encodings/cp862.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp862.py \
+		-m encodings.cp862 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp862.c
+
+Python/deepfreeze/encodings_cp863.c: Lib/encodings/cp863.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp863.py \
+		-m encodings.cp863 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp863.c
+
+Python/deepfreeze/encodings_cp864.c: Lib/encodings/cp864.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp864.py \
+		-m encodings.cp864 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp864.c
+
+Python/deepfreeze/encodings_cp865.c: Lib/encodings/cp865.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp865.py \
+		-m encodings.cp865 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp865.c
+
+Python/deepfreeze/encodings_cp866.c: Lib/encodings/cp866.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp866.py \
+		-m encodings.cp866 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp866.c
+
+Python/deepfreeze/encodings_cp869.c: Lib/encodings/cp869.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp869.py \
+		-m encodings.cp869 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp869.c
+
+Python/deepfreeze/encodings_cp874.c: Lib/encodings/cp874.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp874.py \
+		-m encodings.cp874 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp874.c
+
+Python/deepfreeze/encodings_cp875.c: Lib/encodings/cp875.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp875.py \
+		-m encodings.cp875 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp875.c
+
+Python/deepfreeze/encodings_cp932.c: Lib/encodings/cp932.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp932.py \
+		-m encodings.cp932 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp932.c
+
+Python/deepfreeze/encodings_cp949.c: Lib/encodings/cp949.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp949.py \
+		-m encodings.cp949 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp949.c
+
+Python/deepfreeze/encodings_cp950.c: Lib/encodings/cp950.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/cp950.py \
+		-m encodings.cp950 \
+		-o $(srcdir)/Python/deepfreeze/encodings_cp950.c
+
+Python/deepfreeze/encodings_euc_jis_2004.c: Lib/encodings/euc_jis_2004.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/euc_jis_2004.py \
+		-m encodings.euc_jis_2004 \
+		-o $(srcdir)/Python/deepfreeze/encodings_euc_jis_2004.c
+
+Python/deepfreeze/encodings_euc_jisx0213.c: Lib/encodings/euc_jisx0213.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/euc_jisx0213.py \
+		-m encodings.euc_jisx0213 \
+		-o $(srcdir)/Python/deepfreeze/encodings_euc_jisx0213.c
+
+Python/deepfreeze/encodings_euc_jp.c: Lib/encodings/euc_jp.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/euc_jp.py \
+		-m encodings.euc_jp \
+		-o $(srcdir)/Python/deepfreeze/encodings_euc_jp.c
+
+Python/deepfreeze/encodings_euc_kr.c: Lib/encodings/euc_kr.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/euc_kr.py \
+		-m encodings.euc_kr \
+		-o $(srcdir)/Python/deepfreeze/encodings_euc_kr.c
+
+Python/deepfreeze/encodings_gb18030.c: Lib/encodings/gb18030.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/gb18030.py \
+		-m encodings.gb18030 \
+		-o $(srcdir)/Python/deepfreeze/encodings_gb18030.c
+
+Python/deepfreeze/encodings_gb2312.c: Lib/encodings/gb2312.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/gb2312.py \
+		-m encodings.gb2312 \
+		-o $(srcdir)/Python/deepfreeze/encodings_gb2312.c
+
+Python/deepfreeze/encodings_gbk.c: Lib/encodings/gbk.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/gbk.py \
+		-m encodings.gbk \
+		-o $(srcdir)/Python/deepfreeze/encodings_gbk.c
+
+Python/deepfreeze/encodings_hex_codec.c: Lib/encodings/hex_codec.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/hex_codec.py \
+		-m encodings.hex_codec \
+		-o $(srcdir)/Python/deepfreeze/encodings_hex_codec.c
+
+Python/deepfreeze/encodings_hp_roman8.c: Lib/encodings/hp_roman8.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/hp_roman8.py \
+		-m encodings.hp_roman8 \
+		-o $(srcdir)/Python/deepfreeze/encodings_hp_roman8.c
+
+Python/deepfreeze/encodings_hz.c: Lib/encodings/hz.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/hz.py \
+		-m encodings.hz \
+		-o $(srcdir)/Python/deepfreeze/encodings_hz.c
+
+Python/deepfreeze/encodings_idna.c: Lib/encodings/idna.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/idna.py \
+		-m encodings.idna \
+		-o $(srcdir)/Python/deepfreeze/encodings_idna.c
+
+Python/deepfreeze/encodings_iso2022_jp.c: Lib/encodings/iso2022_jp.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_jp.py \
+		-m encodings.iso2022_jp \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_jp.c
+
+Python/deepfreeze/encodings_iso2022_jp_1.c: Lib/encodings/iso2022_jp_1.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_jp_1.py \
+		-m encodings.iso2022_jp_1 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_jp_1.c
+
+Python/deepfreeze/encodings_iso2022_jp_2.c: Lib/encodings/iso2022_jp_2.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_jp_2.py \
+		-m encodings.iso2022_jp_2 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_jp_2.c
+
+Python/deepfreeze/encodings_iso2022_jp_2004.c: Lib/encodings/iso2022_jp_2004.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_jp_2004.py \
+		-m encodings.iso2022_jp_2004 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_jp_2004.c
+
+Python/deepfreeze/encodings_iso2022_jp_3.c: Lib/encodings/iso2022_jp_3.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_jp_3.py \
+		-m encodings.iso2022_jp_3 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_jp_3.c
+
+Python/deepfreeze/encodings_iso2022_jp_ext.c: Lib/encodings/iso2022_jp_ext.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_jp_ext.py \
+		-m encodings.iso2022_jp_ext \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_jp_ext.c
+
+Python/deepfreeze/encodings_iso2022_kr.c: Lib/encodings/iso2022_kr.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso2022_kr.py \
+		-m encodings.iso2022_kr \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso2022_kr.c
+
+Python/deepfreeze/encodings_iso8859_1.c: Lib/encodings/iso8859_1.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_1.py \
+		-m encodings.iso8859_1 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_1.c
+
+Python/deepfreeze/encodings_iso8859_10.c: Lib/encodings/iso8859_10.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_10.py \
+		-m encodings.iso8859_10 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_10.c
+
+Python/deepfreeze/encodings_iso8859_11.c: Lib/encodings/iso8859_11.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_11.py \
+		-m encodings.iso8859_11 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_11.c
+
+Python/deepfreeze/encodings_iso8859_13.c: Lib/encodings/iso8859_13.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_13.py \
+		-m encodings.iso8859_13 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_13.c
+
+Python/deepfreeze/encodings_iso8859_14.c: Lib/encodings/iso8859_14.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_14.py \
+		-m encodings.iso8859_14 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_14.c
+
+Python/deepfreeze/encodings_iso8859_15.c: Lib/encodings/iso8859_15.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_15.py \
+		-m encodings.iso8859_15 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_15.c
+
+Python/deepfreeze/encodings_iso8859_16.c: Lib/encodings/iso8859_16.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_16.py \
+		-m encodings.iso8859_16 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_16.c
+
+Python/deepfreeze/encodings_iso8859_2.c: Lib/encodings/iso8859_2.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_2.py \
+		-m encodings.iso8859_2 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_2.c
+
+Python/deepfreeze/encodings_iso8859_3.c: Lib/encodings/iso8859_3.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_3.py \
+		-m encodings.iso8859_3 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_3.c
+
+Python/deepfreeze/encodings_iso8859_4.c: Lib/encodings/iso8859_4.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_4.py \
+		-m encodings.iso8859_4 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_4.c
+
+Python/deepfreeze/encodings_iso8859_5.c: Lib/encodings/iso8859_5.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_5.py \
+		-m encodings.iso8859_5 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_5.c
+
+Python/deepfreeze/encodings_iso8859_6.c: Lib/encodings/iso8859_6.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_6.py \
+		-m encodings.iso8859_6 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_6.c
+
+Python/deepfreeze/encodings_iso8859_7.c: Lib/encodings/iso8859_7.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_7.py \
+		-m encodings.iso8859_7 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_7.c
+
+Python/deepfreeze/encodings_iso8859_8.c: Lib/encodings/iso8859_8.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_8.py \
+		-m encodings.iso8859_8 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_8.c
+
+Python/deepfreeze/encodings_iso8859_9.c: Lib/encodings/iso8859_9.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/iso8859_9.py \
+		-m encodings.iso8859_9 \
+		-o $(srcdir)/Python/deepfreeze/encodings_iso8859_9.c
+
+Python/deepfreeze/encodings_johab.c: Lib/encodings/johab.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/johab.py \
+		-m encodings.johab \
+		-o $(srcdir)/Python/deepfreeze/encodings_johab.c
+
+Python/deepfreeze/encodings_koi8_r.c: Lib/encodings/koi8_r.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/koi8_r.py \
+		-m encodings.koi8_r \
+		-o $(srcdir)/Python/deepfreeze/encodings_koi8_r.c
+
+Python/deepfreeze/encodings_koi8_t.c: Lib/encodings/koi8_t.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/koi8_t.py \
+		-m encodings.koi8_t \
+		-o $(srcdir)/Python/deepfreeze/encodings_koi8_t.c
+
+Python/deepfreeze/encodings_koi8_u.c: Lib/encodings/koi8_u.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/koi8_u.py \
+		-m encodings.koi8_u \
+		-o $(srcdir)/Python/deepfreeze/encodings_koi8_u.c
+
+Python/deepfreeze/encodings_kz1048.c: Lib/encodings/kz1048.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/kz1048.py \
+		-m encodings.kz1048 \
+		-o $(srcdir)/Python/deepfreeze/encodings_kz1048.c
+
+Python/deepfreeze/encodings_latin_1.c: Lib/encodings/latin_1.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/latin_1.py \
+		-m encodings.latin_1 \
+		-o $(srcdir)/Python/deepfreeze/encodings_latin_1.c
+
+Python/deepfreeze/encodings_mac_arabic.c: Lib/encodings/mac_arabic.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_arabic.py \
+		-m encodings.mac_arabic \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_arabic.c
+
+Python/deepfreeze/encodings_mac_croatian.c: Lib/encodings/mac_croatian.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_croatian.py \
+		-m encodings.mac_croatian \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_croatian.c
+
+Python/deepfreeze/encodings_mac_cyrillic.c: Lib/encodings/mac_cyrillic.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_cyrillic.py \
+		-m encodings.mac_cyrillic \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_cyrillic.c
+
+Python/deepfreeze/encodings_mac_farsi.c: Lib/encodings/mac_farsi.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_farsi.py \
+		-m encodings.mac_farsi \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_farsi.c
+
+Python/deepfreeze/encodings_mac_greek.c: Lib/encodings/mac_greek.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_greek.py \
+		-m encodings.mac_greek \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_greek.c
+
+Python/deepfreeze/encodings_mac_iceland.c: Lib/encodings/mac_iceland.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_iceland.py \
+		-m encodings.mac_iceland \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_iceland.c
+
+Python/deepfreeze/encodings_mac_latin2.c: Lib/encodings/mac_latin2.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_latin2.py \
+		-m encodings.mac_latin2 \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_latin2.c
+
+Python/deepfreeze/encodings_mac_roman.c: Lib/encodings/mac_roman.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_roman.py \
+		-m encodings.mac_roman \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_roman.c
+
+Python/deepfreeze/encodings_mac_romanian.c: Lib/encodings/mac_romanian.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_romanian.py \
+		-m encodings.mac_romanian \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_romanian.c
+
+Python/deepfreeze/encodings_mac_turkish.c: Lib/encodings/mac_turkish.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mac_turkish.py \
+		-m encodings.mac_turkish \
+		-o $(srcdir)/Python/deepfreeze/encodings_mac_turkish.c
+
+Python/deepfreeze/encodings_mbcs.c: Lib/encodings/mbcs.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/mbcs.py \
+		-m encodings.mbcs \
+		-o $(srcdir)/Python/deepfreeze/encodings_mbcs.c
+
+Python/deepfreeze/encodings_oem.c: Lib/encodings/oem.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/oem.py \
+		-m encodings.oem \
+		-o $(srcdir)/Python/deepfreeze/encodings_oem.c
+
+Python/deepfreeze/encodings_palmos.c: Lib/encodings/palmos.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/palmos.py \
+		-m encodings.palmos \
+		-o $(srcdir)/Python/deepfreeze/encodings_palmos.c
+
+Python/deepfreeze/encodings_ptcp154.c: Lib/encodings/ptcp154.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/ptcp154.py \
+		-m encodings.ptcp154 \
+		-o $(srcdir)/Python/deepfreeze/encodings_ptcp154.c
+
+Python/deepfreeze/encodings_punycode.c: Lib/encodings/punycode.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/punycode.py \
+		-m encodings.punycode \
+		-o $(srcdir)/Python/deepfreeze/encodings_punycode.c
+
+Python/deepfreeze/encodings_quopri_codec.c: Lib/encodings/quopri_codec.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/quopri_codec.py \
+		-m encodings.quopri_codec \
+		-o $(srcdir)/Python/deepfreeze/encodings_quopri_codec.c
+
+Python/deepfreeze/encodings_raw_unicode_escape.c: Lib/encodings/raw_unicode_escape.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/raw_unicode_escape.py \
+		-m encodings.raw_unicode_escape \
+		-o $(srcdir)/Python/deepfreeze/encodings_raw_unicode_escape.c
+
+Python/deepfreeze/encodings_rot_13.c: Lib/encodings/rot_13.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/rot_13.py \
+		-m encodings.rot_13 \
+		-o $(srcdir)/Python/deepfreeze/encodings_rot_13.c
+
+Python/deepfreeze/encodings_shift_jis.c: Lib/encodings/shift_jis.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/shift_jis.py \
+		-m encodings.shift_jis \
+		-o $(srcdir)/Python/deepfreeze/encodings_shift_jis.c
+
+Python/deepfreeze/encodings_shift_jis_2004.c: Lib/encodings/shift_jis_2004.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/shift_jis_2004.py \
+		-m encodings.shift_jis_2004 \
+		-o $(srcdir)/Python/deepfreeze/encodings_shift_jis_2004.c
+
+Python/deepfreeze/encodings_shift_jisx0213.c: Lib/encodings/shift_jisx0213.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/shift_jisx0213.py \
+		-m encodings.shift_jisx0213 \
+		-o $(srcdir)/Python/deepfreeze/encodings_shift_jisx0213.c
+
+Python/deepfreeze/encodings_tis_620.c: Lib/encodings/tis_620.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/tis_620.py \
+		-m encodings.tis_620 \
+		-o $(srcdir)/Python/deepfreeze/encodings_tis_620.c
+
+Python/deepfreeze/encodings_undefined.c: Lib/encodings/undefined.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/undefined.py \
+		-m encodings.undefined \
+		-o $(srcdir)/Python/deepfreeze/encodings_undefined.c
+
+Python/deepfreeze/encodings_unicode_escape.c: Lib/encodings/unicode_escape.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/unicode_escape.py \
+		-m encodings.unicode_escape \
+		-o $(srcdir)/Python/deepfreeze/encodings_unicode_escape.c
+
+Python/deepfreeze/encodings_utf_16.c: Lib/encodings/utf_16.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_16.py \
+		-m encodings.utf_16 \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_16.c
+
+Python/deepfreeze/encodings_utf_16_be.c: Lib/encodings/utf_16_be.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_16_be.py \
+		-m encodings.utf_16_be \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_16_be.c
+
+Python/deepfreeze/encodings_utf_16_le.c: Lib/encodings/utf_16_le.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_16_le.py \
+		-m encodings.utf_16_le \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_16_le.c
+
+Python/deepfreeze/encodings_utf_32.c: Lib/encodings/utf_32.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_32.py \
+		-m encodings.utf_32 \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_32.c
+
+Python/deepfreeze/encodings_utf_32_be.c: Lib/encodings/utf_32_be.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_32_be.py \
+		-m encodings.utf_32_be \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_32_be.c
+
+Python/deepfreeze/encodings_utf_32_le.c: Lib/encodings/utf_32_le.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_32_le.py \
+		-m encodings.utf_32_le \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_32_le.c
+
+Python/deepfreeze/encodings_utf_7.c: Lib/encodings/utf_7.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_7.py \
+		-m encodings.utf_7 \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_7.c
+
+Python/deepfreeze/encodings_utf_8.c: Lib/encodings/utf_8.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_8.py \
+		-m encodings.utf_8 \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_8.c
+
+Python/deepfreeze/encodings_utf_8_sig.c: Lib/encodings/utf_8_sig.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/utf_8_sig.py \
+		-m encodings.utf_8_sig \
+		-o $(srcdir)/Python/deepfreeze/encodings_utf_8_sig.c
+
+Python/deepfreeze/encodings_uu_codec.c: Lib/encodings/uu_codec.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/uu_codec.py \
+		-m encodings.uu_codec \
+		-o $(srcdir)/Python/deepfreeze/encodings_uu_codec.c
+
+Python/deepfreeze/encodings_zlib_codec.c: Lib/encodings/zlib_codec.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/encodings/zlib_codec.py \
+		-m encodings.zlib_codec \
+		-o $(srcdir)/Python/deepfreeze/encodings_zlib_codec.c
+
+Python/deepfreeze/io.c: Lib/io.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/io.py \
+		-m io \
+		-o $(srcdir)/Python/deepfreeze/io.c
+
+Python/deepfreeze/_collections_abc.c: Lib/_collections_abc.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/_collections_abc.py \
+		-m _collections_abc \
+		-o $(srcdir)/Python/deepfreeze/_collections_abc.c
+
+Python/deepfreeze/_sitebuiltins.c: Lib/_sitebuiltins.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/_sitebuiltins.py \
+		-m _sitebuiltins \
+		-o $(srcdir)/Python/deepfreeze/_sitebuiltins.c
+
+Python/deepfreeze/genericpath.c: Lib/genericpath.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/genericpath.py \
+		-m genericpath \
+		-o $(srcdir)/Python/deepfreeze/genericpath.c
+
+Python/deepfreeze/posixpath.c: Lib/posixpath.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/posixpath.py \
+		-m posixpath \
+		-o $(srcdir)/Python/deepfreeze/posixpath.c
+
+Python/deepfreeze/os.c: Lib/os.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/os.py \
+		-m os \
+		-o $(srcdir)/Python/deepfreeze/os.c
+
+Python/deepfreeze/site.c: Lib/site.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/site.py \
+		-m site \
+		-o $(srcdir)/Python/deepfreeze/site.c
+
+Python/deepfreeze/stat.c: Lib/stat.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
+	$(BOOTSTRAP) \
+		$(srcdir)/Tools/scripts/deepfreeze.py \
+		$(srcdir)/Lib/stat.py \
+		-m stat \
+		-o $(srcdir)/Python/deepfreeze/stat.c
 
 Python/deepfreeze/hello.c: Tools/freeze/flag.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	$(BOOTSTRAP) \

@@ -188,6 +188,139 @@
 extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
 extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
 extern PyObject *_Py_get_zipimport_toplevel(void);
+extern PyObject *_Py_get_abc_toplevel(void);
+extern PyObject *_Py_get_codecs_toplevel(void);
+extern PyObject *_Py_get_encodings_toplevel(void);
+extern PyObject *_Py_get_encodings___init___toplevel(void);
+extern PyObject *_Py_get_encodings_aliases_toplevel(void);
+extern PyObject *_Py_get_encodings_ascii_toplevel(void);
+extern PyObject *_Py_get_encodings_base64_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_big5_toplevel(void);
+extern PyObject *_Py_get_encodings_big5hkscs_toplevel(void);
+extern PyObject *_Py_get_encodings_bz2_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_charmap_toplevel(void);
+extern PyObject *_Py_get_encodings_cp037_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1006_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1026_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1125_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1140_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1250_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1251_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1252_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1253_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1254_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1255_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1256_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1257_toplevel(void);
+extern PyObject *_Py_get_encodings_cp1258_toplevel(void);
+extern PyObject *_Py_get_encodings_cp273_toplevel(void);
+extern PyObject *_Py_get_encodings_cp424_toplevel(void);
+extern PyObject *_Py_get_encodings_cp437_toplevel(void);
+extern PyObject *_Py_get_encodings_cp500_toplevel(void);
+extern PyObject *_Py_get_encodings_cp720_toplevel(void);
+extern PyObject *_Py_get_encodings_cp737_toplevel(void);
+extern PyObject *_Py_get_encodings_cp775_toplevel(void);
+extern PyObject *_Py_get_encodings_cp850_toplevel(void);
+extern PyObject *_Py_get_encodings_cp852_toplevel(void);
+extern PyObject *_Py_get_encodings_cp855_toplevel(void);
+extern PyObject *_Py_get_encodings_cp856_toplevel(void);
+extern PyObject *_Py_get_encodings_cp857_toplevel(void);
+extern PyObject *_Py_get_encodings_cp858_toplevel(void);
+extern PyObject *_Py_get_encodings_cp860_toplevel(void);
+extern PyObject *_Py_get_encodings_cp861_toplevel(void);
+extern PyObject *_Py_get_encodings_cp862_toplevel(void);
+extern PyObject *_Py_get_encodings_cp863_toplevel(void);
+extern PyObject *_Py_get_encodings_cp864_toplevel(void);
+extern PyObject *_Py_get_encodings_cp865_toplevel(void);
+extern PyObject *_Py_get_encodings_cp866_toplevel(void);
+extern PyObject *_Py_get_encodings_cp869_toplevel(void);
+extern PyObject *_Py_get_encodings_cp874_toplevel(void);
+extern PyObject *_Py_get_encodings_cp875_toplevel(void);
+extern PyObject *_Py_get_encodings_cp932_toplevel(void);
+extern PyObject *_Py_get_encodings_cp949_toplevel(void);
+extern PyObject *_Py_get_encodings_cp950_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_jis_2004_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_jisx0213_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_jp_toplevel(void);
+extern PyObject *_Py_get_encodings_euc_kr_toplevel(void);
+extern PyObject *_Py_get_encodings_gb18030_toplevel(void);
+extern PyObject *_Py_get_encodings_gb2312_toplevel(void);
+extern PyObject *_Py_get_encodings_gbk_toplevel(void);
+extern PyObject *_Py_get_encodings_hex_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_hp_roman8_toplevel(void);
+extern PyObject *_Py_get_encodings_hz_toplevel(void);
+extern PyObject *_Py_get_encodings_idna_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_1_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_2_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_2004_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_3_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_jp_ext_toplevel(void);
+extern PyObject *_Py_get_encodings_iso2022_kr_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_1_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_10_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_11_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_13_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_14_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_15_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_16_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_2_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_3_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_4_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_5_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_6_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_7_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_8_toplevel(void);
+extern PyObject *_Py_get_encodings_iso8859_9_toplevel(void);
+extern PyObject *_Py_get_encodings_johab_toplevel(void);
+extern PyObject *_Py_get_encodings_koi8_r_toplevel(void);
+extern PyObject *_Py_get_encodings_koi8_t_toplevel(void);
+extern PyObject *_Py_get_encodings_koi8_u_toplevel(void);
+extern PyObject *_Py_get_encodings_kz1048_toplevel(void);
+extern PyObject *_Py_get_encodings_latin_1_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_arabic_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_croatian_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_cyrillic_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_farsi_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_greek_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_iceland_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_latin2_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_roman_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_romanian_toplevel(void);
+extern PyObject *_Py_get_encodings_mac_turkish_toplevel(void);
+extern PyObject *_Py_get_encodings_mbcs_toplevel(void);
+extern PyObject *_Py_get_encodings_oem_toplevel(void);
+extern PyObject *_Py_get_encodings_palmos_toplevel(void);
+extern PyObject *_Py_get_encodings_ptcp154_toplevel(void);
+extern PyObject *_Py_get_encodings_punycode_toplevel(void);
+extern PyObject *_Py_get_encodings_quopri_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_raw_unicode_escape_toplevel(void);
+extern PyObject *_Py_get_encodings_rot_13_toplevel(void);
+extern PyObject *_Py_get_encodings_shift_jis_toplevel(void);
+extern PyObject *_Py_get_encodings_shift_jis_2004_toplevel(void);
+extern PyObject *_Py_get_encodings_shift_jisx0213_toplevel(void);
+extern PyObject *_Py_get_encodings_tis_620_toplevel(void);
+extern PyObject *_Py_get_encodings_undefined_toplevel(void);
+extern PyObject *_Py_get_encodings_unicode_escape_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_16_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_16_be_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_16_le_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_32_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_32_be_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_32_le_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_7_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_8_toplevel(void);
+extern PyObject *_Py_get_encodings_utf_8_sig_toplevel(void);
+extern PyObject *_Py_get_encodings_uu_codec_toplevel(void);
+extern PyObject *_Py_get_encodings_zlib_codec_toplevel(void);
+extern PyObject *_Py_get_io_toplevel(void);
+extern PyObject *_Py_get__collections_abc_toplevel(void);
+extern PyObject *_Py_get__sitebuiltins_toplevel(void);
+extern PyObject *_Py_get_genericpath_toplevel(void);
+extern PyObject *_Py_get_posixpath_toplevel(void);
+extern PyObject *_Py_get_os_toplevel(void);
+extern PyObject *_Py_get_site_toplevel(void);
+extern PyObject *_Py_get_stat_toplevel(void);
 extern PyObject *_Py_get_hello_toplevel(void);
 extern PyObject *_Py_get_hello_toplevel(void);
 extern PyObject *_Py_get_hello_toplevel(void);
@@ -202,256 +335,139 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), GET_CODE(zipimport)},
 
     /* stdlib */
-    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
-    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs)},
-    {"encodings", _Py_M__encodings, -(int)sizeof(_Py_M__encodings)},
-    {"encodings.__init__", _Py_M__encodings___init__,
-        (int)sizeof(_Py_M__encodings___init__)},
-    {"encodings.aliases", _Py_M__encodings_aliases,
-        (int)sizeof(_Py_M__encodings_aliases)},
-    {"encodings.ascii", _Py_M__encodings_ascii,
-        (int)sizeof(_Py_M__encodings_ascii)},
-    {"encodings.base64_codec", _Py_M__encodings_base64_codec,
-        (int)sizeof(_Py_M__encodings_base64_codec)},
-    {"encodings.big5", _Py_M__encodings_big5, (int)sizeof(_Py_M__encodings_big5)},
-    {"encodings.big5hkscs", _Py_M__encodings_big5hkscs,
-        (int)sizeof(_Py_M__encodings_big5hkscs)},
-    {"encodings.bz2_codec", _Py_M__encodings_bz2_codec,
-        (int)sizeof(_Py_M__encodings_bz2_codec)},
-    {"encodings.charmap", _Py_M__encodings_charmap,
-        (int)sizeof(_Py_M__encodings_charmap)},
-    {"encodings.cp037", _Py_M__encodings_cp037,
-        (int)sizeof(_Py_M__encodings_cp037)},
-    {"encodings.cp1006", _Py_M__encodings_cp1006,
-        (int)sizeof(_Py_M__encodings_cp1006)},
-    {"encodings.cp1026", _Py_M__encodings_cp1026,
-        (int)sizeof(_Py_M__encodings_cp1026)},
-    {"encodings.cp1125", _Py_M__encodings_cp1125,
-        (int)sizeof(_Py_M__encodings_cp1125)},
-    {"encodings.cp1140", _Py_M__encodings_cp1140,
-        (int)sizeof(_Py_M__encodings_cp1140)},
-    {"encodings.cp1250", _Py_M__encodings_cp1250,
-        (int)sizeof(_Py_M__encodings_cp1250)},
-    {"encodings.cp1251", _Py_M__encodings_cp1251,
-        (int)sizeof(_Py_M__encodings_cp1251)},
-    {"encodings.cp1252", _Py_M__encodings_cp1252,
-        (int)sizeof(_Py_M__encodings_cp1252)},
-    {"encodings.cp1253", _Py_M__encodings_cp1253,
-        (int)sizeof(_Py_M__encodings_cp1253)},
-    {"encodings.cp1254", _Py_M__encodings_cp1254,
-        (int)sizeof(_Py_M__encodings_cp1254)},
-    {"encodings.cp1255", _Py_M__encodings_cp1255,
-        (int)sizeof(_Py_M__encodings_cp1255)},
-    {"encodings.cp1256", _Py_M__encodings_cp1256,
-        (int)sizeof(_Py_M__encodings_cp1256)},
-    {"encodings.cp1257", _Py_M__encodings_cp1257,
-        (int)sizeof(_Py_M__encodings_cp1257)},
-    {"encodings.cp1258", _Py_M__encodings_cp1258,
-        (int)sizeof(_Py_M__encodings_cp1258)},
-    {"encodings.cp273", _Py_M__encodings_cp273,
-        (int)sizeof(_Py_M__encodings_cp273)},
-    {"encodings.cp424", _Py_M__encodings_cp424,
-        (int)sizeof(_Py_M__encodings_cp424)},
-    {"encodings.cp437", _Py_M__encodings_cp437,
-        (int)sizeof(_Py_M__encodings_cp437)},
-    {"encodings.cp500", _Py_M__encodings_cp500,
-        (int)sizeof(_Py_M__encodings_cp500)},
-    {"encodings.cp720", _Py_M__encodings_cp720,
-        (int)sizeof(_Py_M__encodings_cp720)},
-    {"encodings.cp737", _Py_M__encodings_cp737,
-        (int)sizeof(_Py_M__encodings_cp737)},
-    {"encodings.cp775", _Py_M__encodings_cp775,
-        (int)sizeof(_Py_M__encodings_cp775)},
-    {"encodings.cp850", _Py_M__encodings_cp850,
-        (int)sizeof(_Py_M__encodings_cp850)},
-    {"encodings.cp852", _Py_M__encodings_cp852,
-        (int)sizeof(_Py_M__encodings_cp852)},
-    {"encodings.cp855", _Py_M__encodings_cp855,
-        (int)sizeof(_Py_M__encodings_cp855)},
-    {"encodings.cp856", _Py_M__encodings_cp856,
-        (int)sizeof(_Py_M__encodings_cp856)},
-    {"encodings.cp857", _Py_M__encodings_cp857,
-        (int)sizeof(_Py_M__encodings_cp857)},
-    {"encodings.cp858", _Py_M__encodings_cp858,
-        (int)sizeof(_Py_M__encodings_cp858)},
-    {"encodings.cp860", _Py_M__encodings_cp860,
-        (int)sizeof(_Py_M__encodings_cp860)},
-    {"encodings.cp861", _Py_M__encodings_cp861,
-        (int)sizeof(_Py_M__encodings_cp861)},
-    {"encodings.cp862", _Py_M__encodings_cp862,
-        (int)sizeof(_Py_M__encodings_cp862)},
-    {"encodings.cp863", _Py_M__encodings_cp863,
-        (int)sizeof(_Py_M__encodings_cp863)},
-    {"encodings.cp864", _Py_M__encodings_cp864,
-        (int)sizeof(_Py_M__encodings_cp864)},
-    {"encodings.cp865", _Py_M__encodings_cp865,
-        (int)sizeof(_Py_M__encodings_cp865)},
-    {"encodings.cp866", _Py_M__encodings_cp866,
-        (int)sizeof(_Py_M__encodings_cp866)},
-    {"encodings.cp869", _Py_M__encodings_cp869,
-        (int)sizeof(_Py_M__encodings_cp869)},
-    {"encodings.cp874", _Py_M__encodings_cp874,
-        (int)sizeof(_Py_M__encodings_cp874)},
-    {"encodings.cp875", _Py_M__encodings_cp875,
-        (int)sizeof(_Py_M__encodings_cp875)},
-    {"encodings.cp932", _Py_M__encodings_cp932,
-        (int)sizeof(_Py_M__encodings_cp932)},
-    {"encodings.cp949", _Py_M__encodings_cp949,
-        (int)sizeof(_Py_M__encodings_cp949)},
-    {"encodings.cp950", _Py_M__encodings_cp950,
-        (int)sizeof(_Py_M__encodings_cp950)},
-    {"encodings.euc_jis_2004", _Py_M__encodings_euc_jis_2004,
-        (int)sizeof(_Py_M__encodings_euc_jis_2004)},
-    {"encodings.euc_jisx0213", _Py_M__encodings_euc_jisx0213,
-        (int)sizeof(_Py_M__encodings_euc_jisx0213)},
-    {"encodings.euc_jp", _Py_M__encodings_euc_jp,
-        (int)sizeof(_Py_M__encodings_euc_jp)},
-    {"encodings.euc_kr", _Py_M__encodings_euc_kr,
-        (int)sizeof(_Py_M__encodings_euc_kr)},
-    {"encodings.gb18030", _Py_M__encodings_gb18030,
-        (int)sizeof(_Py_M__encodings_gb18030)},
-    {"encodings.gb2312", _Py_M__encodings_gb2312,
-        (int)sizeof(_Py_M__encodings_gb2312)},
-    {"encodings.gbk", _Py_M__encodings_gbk, (int)sizeof(_Py_M__encodings_gbk)},
-    {"encodings.hex_codec", _Py_M__encodings_hex_codec,
-        (int)sizeof(_Py_M__encodings_hex_codec)},
-    {"encodings.hp_roman8", _Py_M__encodings_hp_roman8,
-        (int)sizeof(_Py_M__encodings_hp_roman8)},
-    {"encodings.hz", _Py_M__encodings_hz, (int)sizeof(_Py_M__encodings_hz)},
-    {"encodings.idna", _Py_M__encodings_idna, (int)sizeof(_Py_M__encodings_idna)},
-    {"encodings.iso2022_jp", _Py_M__encodings_iso2022_jp,
-        (int)sizeof(_Py_M__encodings_iso2022_jp)},
-    {"encodings.iso2022_jp_1", _Py_M__encodings_iso2022_jp_1,
-        (int)sizeof(_Py_M__encodings_iso2022_jp_1)},
-    {"encodings.iso2022_jp_2", _Py_M__encodings_iso2022_jp_2,
-        (int)sizeof(_Py_M__encodings_iso2022_jp_2)},
-    {"encodings.iso2022_jp_2004", _Py_M__encodings_iso2022_jp_2004,
-        (int)sizeof(_Py_M__encodings_iso2022_jp_2004)},
-    {"encodings.iso2022_jp_3", _Py_M__encodings_iso2022_jp_3,
-        (int)sizeof(_Py_M__encodings_iso2022_jp_3)},
-    {"encodings.iso2022_jp_ext", _Py_M__encodings_iso2022_jp_ext,
-        (int)sizeof(_Py_M__encodings_iso2022_jp_ext)},
-    {"encodings.iso2022_kr", _Py_M__encodings_iso2022_kr,
-        (int)sizeof(_Py_M__encodings_iso2022_kr)},
-    {"encodings.iso8859_1", _Py_M__encodings_iso8859_1,
-        (int)sizeof(_Py_M__encodings_iso8859_1)},
-    {"encodings.iso8859_10", _Py_M__encodings_iso8859_10,
-        (int)sizeof(_Py_M__encodings_iso8859_10)},
-    {"encodings.iso8859_11", _Py_M__encodings_iso8859_11,
-        (int)sizeof(_Py_M__encodings_iso8859_11)},
-    {"encodings.iso8859_13", _Py_M__encodings_iso8859_13,
-        (int)sizeof(_Py_M__encodings_iso8859_13)},
-    {"encodings.iso8859_14", _Py_M__encodings_iso8859_14,
-        (int)sizeof(_Py_M__encodings_iso8859_14)},
-    {"encodings.iso8859_15", _Py_M__encodings_iso8859_15,
-        (int)sizeof(_Py_M__encodings_iso8859_15)},
-    {"encodings.iso8859_16", _Py_M__encodings_iso8859_16,
-        (int)sizeof(_Py_M__encodings_iso8859_16)},
-    {"encodings.iso8859_2", _Py_M__encodings_iso8859_2,
-        (int)sizeof(_Py_M__encodings_iso8859_2)},
-    {"encodings.iso8859_3", _Py_M__encodings_iso8859_3,
-        (int)sizeof(_Py_M__encodings_iso8859_3)},
-    {"encodings.iso8859_4", _Py_M__encodings_iso8859_4,
-        (int)sizeof(_Py_M__encodings_iso8859_4)},
-    {"encodings.iso8859_5", _Py_M__encodings_iso8859_5,
-        (int)sizeof(_Py_M__encodings_iso8859_5)},
-    {"encodings.iso8859_6", _Py_M__encodings_iso8859_6,
-        (int)sizeof(_Py_M__encodings_iso8859_6)},
-    {"encodings.iso8859_7", _Py_M__encodings_iso8859_7,
-        (int)sizeof(_Py_M__encodings_iso8859_7)},
-    {"encodings.iso8859_8", _Py_M__encodings_iso8859_8,
-        (int)sizeof(_Py_M__encodings_iso8859_8)},
-    {"encodings.iso8859_9", _Py_M__encodings_iso8859_9,
-        (int)sizeof(_Py_M__encodings_iso8859_9)},
-    {"encodings.johab", _Py_M__encodings_johab,
-        (int)sizeof(_Py_M__encodings_johab)},
-    {"encodings.koi8_r", _Py_M__encodings_koi8_r,
-        (int)sizeof(_Py_M__encodings_koi8_r)},
-    {"encodings.koi8_t", _Py_M__encodings_koi8_t,
-        (int)sizeof(_Py_M__encodings_koi8_t)},
-    {"encodings.koi8_u", _Py_M__encodings_koi8_u,
-        (int)sizeof(_Py_M__encodings_koi8_u)},
-    {"encodings.kz1048", _Py_M__encodings_kz1048,
-        (int)sizeof(_Py_M__encodings_kz1048)},
-    {"encodings.latin_1", _Py_M__encodings_latin_1,
-        (int)sizeof(_Py_M__encodings_latin_1)},
-    {"encodings.mac_arabic", _Py_M__encodings_mac_arabic,
-        (int)sizeof(_Py_M__encodings_mac_arabic)},
-    {"encodings.mac_croatian", _Py_M__encodings_mac_croatian,
-        (int)sizeof(_Py_M__encodings_mac_croatian)},
-    {"encodings.mac_cyrillic", _Py_M__encodings_mac_cyrillic,
-        (int)sizeof(_Py_M__encodings_mac_cyrillic)},
-    {"encodings.mac_farsi", _Py_M__encodings_mac_farsi,
-        (int)sizeof(_Py_M__encodings_mac_farsi)},
-    {"encodings.mac_greek", _Py_M__encodings_mac_greek,
-        (int)sizeof(_Py_M__encodings_mac_greek)},
-    {"encodings.mac_iceland", _Py_M__encodings_mac_iceland,
-        (int)sizeof(_Py_M__encodings_mac_iceland)},
-    {"encodings.mac_latin2", _Py_M__encodings_mac_latin2,
-        (int)sizeof(_Py_M__encodings_mac_latin2)},
-    {"encodings.mac_roman", _Py_M__encodings_mac_roman,
-        (int)sizeof(_Py_M__encodings_mac_roman)},
-    {"encodings.mac_romanian", _Py_M__encodings_mac_romanian,
-        (int)sizeof(_Py_M__encodings_mac_romanian)},
-    {"encodings.mac_turkish", _Py_M__encodings_mac_turkish,
-        (int)sizeof(_Py_M__encodings_mac_turkish)},
-    {"encodings.mbcs", _Py_M__encodings_mbcs, (int)sizeof(_Py_M__encodings_mbcs)},
-    {"encodings.oem", _Py_M__encodings_oem, (int)sizeof(_Py_M__encodings_oem)},
-    {"encodings.palmos", _Py_M__encodings_palmos,
-        (int)sizeof(_Py_M__encodings_palmos)},
-    {"encodings.ptcp154", _Py_M__encodings_ptcp154,
-        (int)sizeof(_Py_M__encodings_ptcp154)},
-    {"encodings.punycode", _Py_M__encodings_punycode,
-        (int)sizeof(_Py_M__encodings_punycode)},
-    {"encodings.quopri_codec", _Py_M__encodings_quopri_codec,
-        (int)sizeof(_Py_M__encodings_quopri_codec)},
-    {"encodings.raw_unicode_escape", _Py_M__encodings_raw_unicode_escape,
-        (int)sizeof(_Py_M__encodings_raw_unicode_escape)},
-    {"encodings.rot_13", _Py_M__encodings_rot_13,
-        (int)sizeof(_Py_M__encodings_rot_13)},
-    {"encodings.shift_jis", _Py_M__encodings_shift_jis,
-        (int)sizeof(_Py_M__encodings_shift_jis)},
-    {"encodings.shift_jis_2004", _Py_M__encodings_shift_jis_2004,
-        (int)sizeof(_Py_M__encodings_shift_jis_2004)},
-    {"encodings.shift_jisx0213", _Py_M__encodings_shift_jisx0213,
-        (int)sizeof(_Py_M__encodings_shift_jisx0213)},
-    {"encodings.tis_620", _Py_M__encodings_tis_620,
-        (int)sizeof(_Py_M__encodings_tis_620)},
-    {"encodings.undefined", _Py_M__encodings_undefined,
-        (int)sizeof(_Py_M__encodings_undefined)},
-    {"encodings.unicode_escape", _Py_M__encodings_unicode_escape,
-        (int)sizeof(_Py_M__encodings_unicode_escape)},
-    {"encodings.utf_16", _Py_M__encodings_utf_16,
-        (int)sizeof(_Py_M__encodings_utf_16)},
-    {"encodings.utf_16_be", _Py_M__encodings_utf_16_be,
-        (int)sizeof(_Py_M__encodings_utf_16_be)},
-    {"encodings.utf_16_le", _Py_M__encodings_utf_16_le,
-        (int)sizeof(_Py_M__encodings_utf_16_le)},
-    {"encodings.utf_32", _Py_M__encodings_utf_32,
-        (int)sizeof(_Py_M__encodings_utf_32)},
-    {"encodings.utf_32_be", _Py_M__encodings_utf_32_be,
-        (int)sizeof(_Py_M__encodings_utf_32_be)},
-    {"encodings.utf_32_le", _Py_M__encodings_utf_32_le,
-        (int)sizeof(_Py_M__encodings_utf_32_le)},
-    {"encodings.utf_7", _Py_M__encodings_utf_7,
-        (int)sizeof(_Py_M__encodings_utf_7)},
-    {"encodings.utf_8", _Py_M__encodings_utf_8,
-        (int)sizeof(_Py_M__encodings_utf_8)},
-    {"encodings.utf_8_sig", _Py_M__encodings_utf_8_sig,
-        (int)sizeof(_Py_M__encodings_utf_8_sig)},
-    {"encodings.uu_codec", _Py_M__encodings_uu_codec,
-        (int)sizeof(_Py_M__encodings_uu_codec)},
-    {"encodings.zlib_codec", _Py_M__encodings_zlib_codec,
-        (int)sizeof(_Py_M__encodings_zlib_codec)},
-    {"io", _Py_M__io, (int)sizeof(_Py_M__io)},
-    {"_collections_abc", _Py_M___collections_abc,
-        (int)sizeof(_Py_M___collections_abc)},
-    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
-    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath)},
-    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
-    {"os", _Py_M__os, (int)sizeof(_Py_M__os)},
-    {"site", _Py_M__site, (int)sizeof(_Py_M__site)},
-    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
+    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), GET_CODE(abc)},
+    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), GET_CODE(codecs)},
+    {"encodings", _Py_M__encodings, -(int)sizeof(_Py_M__encodings), GET_CODE(encodings)},
+    {"encodings.__init__", _Py_M__encodings___init__, (int)sizeof(_Py_M__encodings___init__), GET_CODE(encodings___init__)},
+    {"encodings.aliases", _Py_M__encodings_aliases, (int)sizeof(_Py_M__encodings_aliases), GET_CODE(encodings_aliases)},
+    {"encodings.ascii", _Py_M__encodings_ascii, (int)sizeof(_Py_M__encodings_ascii), GET_CODE(encodings_ascii)},
+    {"encodings.base64_codec", _Py_M__encodings_base64_codec, (int)sizeof(_Py_M__encodings_base64_codec), GET_CODE(encodings_base64_codec)},
+    {"encodings.big5", _Py_M__encodings_big5, (int)sizeof(_Py_M__encodings_big5), GET_CODE(encodings_big5)},
+    {"encodings.big5hkscs", _Py_M__encodings_big5hkscs, (int)sizeof(_Py_M__encodings_big5hkscs), GET_CODE(encodings_big5hkscs)},
+    {"encodings.bz2_codec", _Py_M__encodings_bz2_codec, (int)sizeof(_Py_M__encodings_bz2_codec), GET_CODE(encodings_bz2_codec)},
+    {"encodings.charmap", _Py_M__encodings_charmap, (int)sizeof(_Py_M__encodings_charmap), GET_CODE(encodings_charmap)},
+    {"encodings.cp037", _Py_M__encodings_cp037, (int)sizeof(_Py_M__encodings_cp037), GET_CODE(encodings_cp037)},
+    {"encodings.cp1006", _Py_M__encodings_cp1006, (int)sizeof(_Py_M__encodings_cp1006), GET_CODE(encodings_cp1006)},
+    {"encodings.cp1026", _Py_M__encodings_cp1026, (int)sizeof(_Py_M__encodings_cp1026), GET_CODE(encodings_cp1026)},
+    {"encodings.cp1125", _Py_M__encodings_cp1125, (int)sizeof(_Py_M__encodings_cp1125), GET_CODE(encodings_cp1125)},
+    {"encodings.cp1140", _Py_M__encodings_cp1140, (int)sizeof(_Py_M__encodings_cp1140), GET_CODE(encodings_cp1140)},
+    {"encodings.cp1250", _Py_M__encodings_cp1250, (int)sizeof(_Py_M__encodings_cp1250), GET_CODE(encodings_cp1250)},
+    {"encodings.cp1251", _Py_M__encodings_cp1251, (int)sizeof(_Py_M__encodings_cp1251), GET_CODE(encodings_cp1251)},
+    {"encodings.cp1252", _Py_M__encodings_cp1252, (int)sizeof(_Py_M__encodings_cp1252), GET_CODE(encodings_cp1252)},
+    {"encodings.cp1253", _Py_M__encodings_cp1253, (int)sizeof(_Py_M__encodings_cp1253), GET_CODE(encodings_cp1253)},
+    {"encodings.cp1254", _Py_M__encodings_cp1254, (int)sizeof(_Py_M__encodings_cp1254), GET_CODE(encodings_cp1254)},
+    {"encodings.cp1255", _Py_M__encodings_cp1255, (int)sizeof(_Py_M__encodings_cp1255), GET_CODE(encodings_cp1255)},
+    {"encodings.cp1256", _Py_M__encodings_cp1256, (int)sizeof(_Py_M__encodings_cp1256), GET_CODE(encodings_cp1256)},
+    {"encodings.cp1257", _Py_M__encodings_cp1257, (int)sizeof(_Py_M__encodings_cp1257), GET_CODE(encodings_cp1257)},
+    {"encodings.cp1258", _Py_M__encodings_cp1258, (int)sizeof(_Py_M__encodings_cp1258), GET_CODE(encodings_cp1258)},
+    {"encodings.cp273", _Py_M__encodings_cp273, (int)sizeof(_Py_M__encodings_cp273), GET_CODE(encodings_cp273)},
+    {"encodings.cp424", _Py_M__encodings_cp424, (int)sizeof(_Py_M__encodings_cp424), GET_CODE(encodings_cp424)},
+    {"encodings.cp437", _Py_M__encodings_cp437, (int)sizeof(_Py_M__encodings_cp437), GET_CODE(encodings_cp437)},
+    {"encodings.cp500", _Py_M__encodings_cp500, (int)sizeof(_Py_M__encodings_cp500), GET_CODE(encodings_cp500)},
+    {"encodings.cp720", _Py_M__encodings_cp720, (int)sizeof(_Py_M__encodings_cp720), GET_CODE(encodings_cp720)},
+    {"encodings.cp737", _Py_M__encodings_cp737, (int)sizeof(_Py_M__encodings_cp737), GET_CODE(encodings_cp737)},
+    {"encodings.cp775", _Py_M__encodings_cp775, (int)sizeof(_Py_M__encodings_cp775), GET_CODE(encodings_cp775)},
+    {"encodings.cp850", _Py_M__encodings_cp850, (int)sizeof(_Py_M__encodings_cp850), GET_CODE(encodings_cp850)},
+    {"encodings.cp852", _Py_M__encodings_cp852, (int)sizeof(_Py_M__encodings_cp852), GET_CODE(encodings_cp852)},
+    {"encodings.cp855", _Py_M__encodings_cp855, (int)sizeof(_Py_M__encodings_cp855), GET_CODE(encodings_cp855)},
+    {"encodings.cp856", _Py_M__encodings_cp856, (int)sizeof(_Py_M__encodings_cp856), GET_CODE(encodings_cp856)},
+    {"encodings.cp857", _Py_M__encodings_cp857, (int)sizeof(_Py_M__encodings_cp857), GET_CODE(encodings_cp857)},
+    {"encodings.cp858", _Py_M__encodings_cp858, (int)sizeof(_Py_M__encodings_cp858), GET_CODE(encodings_cp858)},
+    {"encodings.cp860", _Py_M__encodings_cp860, (int)sizeof(_Py_M__encodings_cp860), GET_CODE(encodings_cp860)},
+    {"encodings.cp861", _Py_M__encodings_cp861, (int)sizeof(_Py_M__encodings_cp861), GET_CODE(encodings_cp861)},
+    {"encodings.cp862", _Py_M__encodings_cp862, (int)sizeof(_Py_M__encodings_cp862), GET_CODE(encodings_cp862)},
+    {"encodings.cp863", _Py_M__encodings_cp863, (int)sizeof(_Py_M__encodings_cp863), GET_CODE(encodings_cp863)},
+    {"encodings.cp864", _Py_M__encodings_cp864, (int)sizeof(_Py_M__encodings_cp864), GET_CODE(encodings_cp864)},
+    {"encodings.cp865", _Py_M__encodings_cp865, (int)sizeof(_Py_M__encodings_cp865), GET_CODE(encodings_cp865)},
+    {"encodings.cp866", _Py_M__encodings_cp866, (int)sizeof(_Py_M__encodings_cp866), GET_CODE(encodings_cp866)},
+    {"encodings.cp869", _Py_M__encodings_cp869, (int)sizeof(_Py_M__encodings_cp869), GET_CODE(encodings_cp869)},
+    {"encodings.cp874", _Py_M__encodings_cp874, (int)sizeof(_Py_M__encodings_cp874), GET_CODE(encodings_cp874)},
+    {"encodings.cp875", _Py_M__encodings_cp875, (int)sizeof(_Py_M__encodings_cp875), GET_CODE(encodings_cp875)},
+    {"encodings.cp932", _Py_M__encodings_cp932, (int)sizeof(_Py_M__encodings_cp932), GET_CODE(encodings_cp932)},
+    {"encodings.cp949", _Py_M__encodings_cp949, (int)sizeof(_Py_M__encodings_cp949), GET_CODE(encodings_cp949)},
+    {"encodings.cp950", _Py_M__encodings_cp950, (int)sizeof(_Py_M__encodings_cp950), GET_CODE(encodings_cp950)},
+    {"encodings.euc_jis_2004", _Py_M__encodings_euc_jis_2004, (int)sizeof(_Py_M__encodings_euc_jis_2004), GET_CODE(encodings_euc_jis_2004)},
+    {"encodings.euc_jisx0213", _Py_M__encodings_euc_jisx0213, (int)sizeof(_Py_M__encodings_euc_jisx0213), GET_CODE(encodings_euc_jisx0213)},
+    {"encodings.euc_jp", _Py_M__encodings_euc_jp, (int)sizeof(_Py_M__encodings_euc_jp), GET_CODE(encodings_euc_jp)},
+    {"encodings.euc_kr", _Py_M__encodings_euc_kr, (int)sizeof(_Py_M__encodings_euc_kr), GET_CODE(encodings_euc_kr)},
+    {"encodings.gb18030", _Py_M__encodings_gb18030, (int)sizeof(_Py_M__encodings_gb18030), GET_CODE(encodings_gb18030)},
+    {"encodings.gb2312", _Py_M__encodings_gb2312, (int)sizeof(_Py_M__encodings_gb2312), GET_CODE(encodings_gb2312)},
+    {"encodings.gbk", _Py_M__encodings_gbk, (int)sizeof(_Py_M__encodings_gbk), GET_CODE(encodings_gbk)},
+    {"encodings.hex_codec", _Py_M__encodings_hex_codec, (int)sizeof(_Py_M__encodings_hex_codec), GET_CODE(encodings_hex_codec)},
+    {"encodings.hp_roman8", _Py_M__encodings_hp_roman8, (int)sizeof(_Py_M__encodings_hp_roman8), GET_CODE(encodings_hp_roman8)},
+    {"encodings.hz", _Py_M__encodings_hz, (int)sizeof(_Py_M__encodings_hz), GET_CODE(encodings_hz)},
+    {"encodings.idna", _Py_M__encodings_idna, (int)sizeof(_Py_M__encodings_idna), GET_CODE(encodings_idna)},
+    {"encodings.iso2022_jp", _Py_M__encodings_iso2022_jp, (int)sizeof(_Py_M__encodings_iso2022_jp), GET_CODE(encodings_iso2022_jp)},
+    {"encodings.iso2022_jp_1", _Py_M__encodings_iso2022_jp_1, (int)sizeof(_Py_M__encodings_iso2022_jp_1), GET_CODE(encodings_iso2022_jp_1)},
+    {"encodings.iso2022_jp_2", _Py_M__encodings_iso2022_jp_2, (int)sizeof(_Py_M__encodings_iso2022_jp_2), GET_CODE(encodings_iso2022_jp_2)},
+    {"encodings.iso2022_jp_2004", _Py_M__encodings_iso2022_jp_2004, (int)sizeof(_Py_M__encodings_iso2022_jp_2004), GET_CODE(encodings_iso2022_jp_2004)},
+    {"encodings.iso2022_jp_3", _Py_M__encodings_iso2022_jp_3, (int)sizeof(_Py_M__encodings_iso2022_jp_3), GET_CODE(encodings_iso2022_jp_3)},
+    {"encodings.iso2022_jp_ext", _Py_M__encodings_iso2022_jp_ext, (int)sizeof(_Py_M__encodings_iso2022_jp_ext), GET_CODE(encodings_iso2022_jp_ext)},
+    {"encodings.iso2022_kr", _Py_M__encodings_iso2022_kr, (int)sizeof(_Py_M__encodings_iso2022_kr), GET_CODE(encodings_iso2022_kr)},
+    {"encodings.iso8859_1", _Py_M__encodings_iso8859_1, (int)sizeof(_Py_M__encodings_iso8859_1), GET_CODE(encodings_iso8859_1)},
+    {"encodings.iso8859_10", _Py_M__encodings_iso8859_10, (int)sizeof(_Py_M__encodings_iso8859_10), GET_CODE(encodings_iso8859_10)},
+    {"encodings.iso8859_11", _Py_M__encodings_iso8859_11, (int)sizeof(_Py_M__encodings_iso8859_11), GET_CODE(encodings_iso8859_11)},
+    {"encodings.iso8859_13", _Py_M__encodings_iso8859_13, (int)sizeof(_Py_M__encodings_iso8859_13), GET_CODE(encodings_iso8859_13)},
+    {"encodings.iso8859_14", _Py_M__encodings_iso8859_14, (int)sizeof(_Py_M__encodings_iso8859_14), GET_CODE(encodings_iso8859_14)},
+    {"encodings.iso8859_15", _Py_M__encodings_iso8859_15, (int)sizeof(_Py_M__encodings_iso8859_15), GET_CODE(encodings_iso8859_15)},
+    {"encodings.iso8859_16", _Py_M__encodings_iso8859_16, (int)sizeof(_Py_M__encodings_iso8859_16), GET_CODE(encodings_iso8859_16)},
+    {"encodings.iso8859_2", _Py_M__encodings_iso8859_2, (int)sizeof(_Py_M__encodings_iso8859_2), GET_CODE(encodings_iso8859_2)},
+    {"encodings.iso8859_3", _Py_M__encodings_iso8859_3, (int)sizeof(_Py_M__encodings_iso8859_3), GET_CODE(encodings_iso8859_3)},
+    {"encodings.iso8859_4", _Py_M__encodings_iso8859_4, (int)sizeof(_Py_M__encodings_iso8859_4), GET_CODE(encodings_iso8859_4)},
+    {"encodings.iso8859_5", _Py_M__encodings_iso8859_5, (int)sizeof(_Py_M__encodings_iso8859_5), GET_CODE(encodings_iso8859_5)},
+    {"encodings.iso8859_6", _Py_M__encodings_iso8859_6, (int)sizeof(_Py_M__encodings_iso8859_6), GET_CODE(encodings_iso8859_6)},
+    {"encodings.iso8859_7", _Py_M__encodings_iso8859_7, (int)sizeof(_Py_M__encodings_iso8859_7), GET_CODE(encodings_iso8859_7)},
+    {"encodings.iso8859_8", _Py_M__encodings_iso8859_8, (int)sizeof(_Py_M__encodings_iso8859_8), GET_CODE(encodings_iso8859_8)},
+    {"encodings.iso8859_9", _Py_M__encodings_iso8859_9, (int)sizeof(_Py_M__encodings_iso8859_9), GET_CODE(encodings_iso8859_9)},
+    {"encodings.johab", _Py_M__encodings_johab, (int)sizeof(_Py_M__encodings_johab), GET_CODE(encodings_johab)},
+    {"encodings.koi8_r", _Py_M__encodings_koi8_r, (int)sizeof(_Py_M__encodings_koi8_r), GET_CODE(encodings_koi8_r)},
+    {"encodings.koi8_t", _Py_M__encodings_koi8_t, (int)sizeof(_Py_M__encodings_koi8_t), GET_CODE(encodings_koi8_t)},
+    {"encodings.koi8_u", _Py_M__encodings_koi8_u, (int)sizeof(_Py_M__encodings_koi8_u), GET_CODE(encodings_koi8_u)},
+    {"encodings.kz1048", _Py_M__encodings_kz1048, (int)sizeof(_Py_M__encodings_kz1048), GET_CODE(encodings_kz1048)},
+    {"encodings.latin_1", _Py_M__encodings_latin_1, (int)sizeof(_Py_M__encodings_latin_1), GET_CODE(encodings_latin_1)},
+    {"encodings.mac_arabic", _Py_M__encodings_mac_arabic, (int)sizeof(_Py_M__encodings_mac_arabic), GET_CODE(encodings_mac_arabic)},
+    {"encodings.mac_croatian", _Py_M__encodings_mac_croatian, (int)sizeof(_Py_M__encodings_mac_croatian), GET_CODE(encodings_mac_croatian)},
+    {"encodings.mac_cyrillic", _Py_M__encodings_mac_cyrillic, (int)sizeof(_Py_M__encodings_mac_cyrillic), GET_CODE(encodings_mac_cyrillic)},
+    {"encodings.mac_farsi", _Py_M__encodings_mac_farsi, (int)sizeof(_Py_M__encodings_mac_farsi), GET_CODE(encodings_mac_farsi)},
+    {"encodings.mac_greek", _Py_M__encodings_mac_greek, (int)sizeof(_Py_M__encodings_mac_greek), GET_CODE(encodings_mac_greek)},
+    {"encodings.mac_iceland", _Py_M__encodings_mac_iceland, (int)sizeof(_Py_M__encodings_mac_iceland), GET_CODE(encodings_mac_iceland)},
+    {"encodings.mac_latin2", _Py_M__encodings_mac_latin2, (int)sizeof(_Py_M__encodings_mac_latin2), GET_CODE(encodings_mac_latin2)},
+    {"encodings.mac_roman", _Py_M__encodings_mac_roman, (int)sizeof(_Py_M__encodings_mac_roman), GET_CODE(encodings_mac_roman)},
+    {"encodings.mac_romanian", _Py_M__encodings_mac_romanian, (int)sizeof(_Py_M__encodings_mac_romanian), GET_CODE(encodings_mac_romanian)},
+    {"encodings.mac_turkish", _Py_M__encodings_mac_turkish, (int)sizeof(_Py_M__encodings_mac_turkish), GET_CODE(encodings_mac_turkish)},
+    {"encodings.mbcs", _Py_M__encodings_mbcs, (int)sizeof(_Py_M__encodings_mbcs), GET_CODE(encodings_mbcs)},
+    {"encodings.oem", _Py_M__encodings_oem, (int)sizeof(_Py_M__encodings_oem), GET_CODE(encodings_oem)},
+    {"encodings.palmos", _Py_M__encodings_palmos, (int)sizeof(_Py_M__encodings_palmos), GET_CODE(encodings_palmos)},
+    {"encodings.ptcp154", _Py_M__encodings_ptcp154, (int)sizeof(_Py_M__encodings_ptcp154), GET_CODE(encodings_ptcp154)},
+    {"encodings.punycode", _Py_M__encodings_punycode, (int)sizeof(_Py_M__encodings_punycode), GET_CODE(encodings_punycode)},
+    {"encodings.quopri_codec", _Py_M__encodings_quopri_codec, (int)sizeof(_Py_M__encodings_quopri_codec), GET_CODE(encodings_quopri_codec)},
+    {"encodings.raw_unicode_escape", _Py_M__encodings_raw_unicode_escape, (int)sizeof(_Py_M__encodings_raw_unicode_escape), GET_CODE(encodings_raw_unicode_escape)},
+    {"encodings.rot_13", _Py_M__encodings_rot_13, (int)sizeof(_Py_M__encodings_rot_13), GET_CODE(encodings_rot_13)},
+    {"encodings.shift_jis", _Py_M__encodings_shift_jis, (int)sizeof(_Py_M__encodings_shift_jis), GET_CODE(encodings_shift_jis)},
+    {"encodings.shift_jis_2004", _Py_M__encodings_shift_jis_2004, (int)sizeof(_Py_M__encodings_shift_jis_2004), GET_CODE(encodings_shift_jis_2004)},
+    {"encodings.shift_jisx0213", _Py_M__encodings_shift_jisx0213, (int)sizeof(_Py_M__encodings_shift_jisx0213), GET_CODE(encodings_shift_jisx0213)},
+    {"encodings.tis_620", _Py_M__encodings_tis_620, (int)sizeof(_Py_M__encodings_tis_620), GET_CODE(encodings_tis_620)},
+    {"encodings.undefined", _Py_M__encodings_undefined, (int)sizeof(_Py_M__encodings_undefined), GET_CODE(encodings_undefined)},
+    {"encodings.unicode_escape", _Py_M__encodings_unicode_escape, (int)sizeof(_Py_M__encodings_unicode_escape), GET_CODE(encodings_unicode_escape)},
+    {"encodings.utf_16", _Py_M__encodings_utf_16, (int)sizeof(_Py_M__encodings_utf_16), GET_CODE(encodings_utf_16)},
+    {"encodings.utf_16_be", _Py_M__encodings_utf_16_be, (int)sizeof(_Py_M__encodings_utf_16_be), GET_CODE(encodings_utf_16_be)},
+    {"encodings.utf_16_le", _Py_M__encodings_utf_16_le, (int)sizeof(_Py_M__encodings_utf_16_le), GET_CODE(encodings_utf_16_le)},
+    {"encodings.utf_32", _Py_M__encodings_utf_32, (int)sizeof(_Py_M__encodings_utf_32), GET_CODE(encodings_utf_32)},
+    {"encodings.utf_32_be", _Py_M__encodings_utf_32_be, (int)sizeof(_Py_M__encodings_utf_32_be), GET_CODE(encodings_utf_32_be)},
+    {"encodings.utf_32_le", _Py_M__encodings_utf_32_le, (int)sizeof(_Py_M__encodings_utf_32_le), GET_CODE(encodings_utf_32_le)},
+    {"encodings.utf_7", _Py_M__encodings_utf_7, (int)sizeof(_Py_M__encodings_utf_7), GET_CODE(encodings_utf_7)},
+    {"encodings.utf_8", _Py_M__encodings_utf_8, (int)sizeof(_Py_M__encodings_utf_8), GET_CODE(encodings_utf_8)},
+    {"encodings.utf_8_sig", _Py_M__encodings_utf_8_sig, (int)sizeof(_Py_M__encodings_utf_8_sig), GET_CODE(encodings_utf_8_sig)},
+    {"encodings.uu_codec", _Py_M__encodings_uu_codec, (int)sizeof(_Py_M__encodings_uu_codec), GET_CODE(encodings_uu_codec)},
+    {"encodings.zlib_codec", _Py_M__encodings_zlib_codec, (int)sizeof(_Py_M__encodings_zlib_codec), GET_CODE(encodings_zlib_codec)},
+    {"io", _Py_M__io, (int)sizeof(_Py_M__io), GET_CODE(io)},
+    {"_collections_abc", _Py_M___collections_abc, (int)sizeof(_Py_M___collections_abc), GET_CODE(_collections_abc)},
+    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), GET_CODE(_sitebuiltins)},
+    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), GET_CODE(genericpath)},
+    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), GET_CODE(posixpath)},
+    {"os", _Py_M__os, (int)sizeof(_Py_M__os), GET_CODE(os)},
+    {"site", _Py_M__site, (int)sizeof(_Py_M__site), GET_CODE(site)},
+    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), GET_CODE(stat)},
 
     /* Test module */
     {"__hello__", _Py_M__hello, (int)sizeof(_Py_M__hello), GET_CODE(hello)},
