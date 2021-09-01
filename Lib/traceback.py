@@ -450,7 +450,7 @@ class StackSummary(list):
                 result.append(FrameSummary(filename, lineno, name, line=line))
         return result
 
-    def format_frame_summary(self, f_summary):
+    def format_frame_summary(self, frame_info):
         """Format the lines for a single FrameSummary.
 
         Returns a string representing one frame involved in the stack. This
@@ -458,26 +458,26 @@ class StackSummary(list):
         """
         row = []
         row.append('  File "{}", line {}, in {}\n'.format(
-            f_summary.filename, f_summary.lineno, f_summary.name))
-        if f_summary.line:
-            row.append('    {}\n'.format(f_summary.line.strip()))
+            frame_info.filename, frame_info.lineno, frame_info.name))
+        if frame_info.line:
+            row.append('    {}\n'.format(frame_info.line.strip()))
 
-            stripped_characters = len(f_summary._original_line) - len(f_summary.line.lstrip())
+            stripped_characters = len(frame_info._original_line) - len(frame_info.line.lstrip())
             if (
-                f_summary.colno is not None
-                and f_summary.end_colno is not None
+                frame_info.colno is not None
+                and frame_info.end_colno is not None
             ):
-                colno = _byte_offset_to_character_offset(f_summary._original_line, f_summary.colno)
-                end_colno = _byte_offset_to_character_offset(f_summary._original_line, f_summary.end_colno)
+                colno = _byte_offset_to_character_offset(frame_info._original_line, frame_info.colno)
+                end_colno = _byte_offset_to_character_offset(frame_info._original_line, frame_info.end_colno)
 
                 anchors = None
-                if f_summary.lineno == f_summary.end_lineno:
+                if frame_info.lineno == frame_info.end_lineno:
                     with suppress(Exception):
                         anchors = _extract_caret_anchors_from_line_segment(
-                            f_summary._original_line[colno - 1:end_colno - 1]
+                            frame_info._original_line[colno - 1:end_colno - 1]
                         )
                 else:
-                    end_colno = stripped_characters + len(f_summary.line.strip())
+                    end_colno = stripped_characters + len(frame_info.line.strip())
 
                 row.append('    ')
                 row.append(' ' * (colno - stripped_characters))
@@ -491,8 +491,8 @@ class StackSummary(list):
 
                 row.append('\n')
 
-        if f_summary.locals:
-            for name, value in sorted(f_summary.locals.items()):
+        if frame_info.locals:
+            for name, value in sorted(frame_info.locals.items()):
                 row.append('    {name} = {value}\n'.format(name=name, value=value))
 
         return ''.join(row)
@@ -514,22 +514,22 @@ class StackSummary(list):
         last_line = None
         last_name = None
         count = 0
-        for f_summary in self:
-            formatted_frame = self.format_frame_summary(f_summary)
+        for frame_info in self:
+            formatted_frame = self.format_frame_summary(frame_info)
             if formatted_frame is None:
                 continue
-            if (last_file is None or last_file != f_summary.filename or
-                last_line is None or last_line != f_summary.lineno or
-                last_name is None or last_name != f_summary.name):
+            if (last_file is None or last_file != frame_info.filename or
+                last_line is None or last_line != frame_info.lineno or
+                last_name is None or last_name != frame_info.name):
                 if count > _RECURSIVE_CUTOFF:
                     count -= _RECURSIVE_CUTOFF
                     result.append(
                         f'  [Previous line repeated {count} more '
                         f'time{"s" if count > 1 else ""}]\n'
                     )
-                last_file = f_summary.filename
-                last_line = f_summary.lineno
-                last_name = f_summary.name
+                last_file = frame_info.filename
+                last_line = frame_info.lineno
+                last_name = frame_info.name
                 count = 0
             count += 1
             if count > _RECURSIVE_CUTOFF:
