@@ -1151,7 +1151,7 @@ calls these functions.
    :attr:`~CalledProcessError.returncode` attribute.
    .. note::
 
-      If .. function:: `check_call` was run unsuccessfully - it can raise only
+      If :func: `check_call` was run unsuccessfully - it can raise only
       :exc:`CalledProcessError`, however there might be other exceptions if the
       command could not run at all.
 
