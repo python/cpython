@@ -409,7 +409,7 @@ A key invariant is that powers on the run stack are strictly decreasing
 Note that even powersort's strategy isn't always truly optimal. It can't be.
 Computing an optimal merge sequence can be done in time quadratic in the
 number of runs, which is very much slower, and also requires finding &
-remembering _all_ the runs lengths (of which there may be billions) in
+remembering _all_ the runs' lengths (of which there may be billions) in
 advance.  It's remarkable, though, how close to optimal this strategy gets.
 
 Curious factoid: of all the alternatives I've seen in the literature,
