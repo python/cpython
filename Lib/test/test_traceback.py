@@ -1502,8 +1502,8 @@ class TestStack(unittest.TestCase):
 
     def test_custom_format_frame(self):
         class CustomStackSummary(traceback.StackSummary):
-            def format_frame(self, frame):
-                return f'{frame.filename}:{frame.lineno}'
+            def format_frame_summary(self, f_summary):
+                return f'{f_summary.filename}:{f_summary.lineno}'
 
         def some_inner():
             return CustomStackSummary.extract(
@@ -1527,10 +1527,10 @@ class TestStack(unittest.TestCase):
          exc_info = g()
 
          class Skip_G(traceback.StackSummary):
-             def format_frame(self, frame):
-                 if frame.name == 'g':
+             def format_frame_summary(self, f_summary):
+                 if f_summary.name == 'g':
                      return None
-                 return super().format_frame(frame)
+                 return super().format_frame_summary(f_summary)
 
          stack = Skip_G.extract(
              traceback.walk_tb(exc_info[2])).format()
