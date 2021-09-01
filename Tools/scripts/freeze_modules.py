@@ -308,6 +308,7 @@ def regen_frozen(specs, dest=MODULES_DIR):
         header = os.path.relpath(frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
+    externlines = []
     deflines = []
     indent = '    '
     lastsection = None
@@ -323,15 +324,14 @@ def regen_frozen(specs, dest=MODULES_DIR):
         name = frozenid.replace('.', '_')
         symbol = '_Py_M__' + name
         pkg = '-' if ispkg else ''
-        line = ('{"%s", %s, %s(int)sizeof(%s)},'
-                % (modname, symbol, pkg, symbol))
-        # TODO: Consider not folding lines
-        if len(line) < 80:
-            deflines.append(line)
-        else:
-            line1, _, line2 = line.rpartition(' ')
-            deflines.append(line1)
-            deflines.append(indent + line2)
+        line = ('{"%s", %s, %s(int)sizeof(%s), GET_CODE(%s)},'
+                % (modname, symbol, pkg, symbol, name))
+        deflines.append(line)
+
+        # Also add a extern declaration for the corresponding
+        # codegen-generated function.
+        externlines.append(
+            "extern PyObject *GET_CODE(%s)(void);" % name)
 
     if not deflines[0]:
         del deflines[0]
@@ -353,6 +353,13 @@ def regen_frozen(specs, dest=MODULES_DIR):
         )
         lines = replace_block(
             lines,
+            "/* Start extern declarations */",
+            "/* End extern declarations */",
+            externlines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
             "static const struct _frozen _PyImport_FrozenModules[] =",
             "/* sentinel */",
             deflines,
@@ -363,7 +370,9 @@ def regen_frozen(specs, dest=MODULES_DIR):
 
 def regen_makefile(frozenids, frozen):
     frozenfiles = []
+    deepfreezefiles = []
     rules = ['']
+    deepfreezerules = ['']
     for frozenid in frozenids:
         pyfile, frozenfile = frozen[frozenid]
         header = os.path.relpath(frozenfile, ROOT_DIR)
@@ -371,16 +380,31 @@ def regen_makefile(frozenids, frozen):
         frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
 
         _pyfile = os.path.relpath(pyfile, ROOT_DIR)
-        tmpfile = f'{header}.new'
-        # Note that we freeze the module to the target .h file
-        # instead of going through an intermediate file like we used to.
+
+        # TODO: This is a bit hackish
+        xfile = relfile.replace("/frozen_modules/", "/deepfreeze/")
+        cfile = xfile.replace(".h", ".c")
+        ofile = xfile.replace(".h", ".o")
+        deepfreezefiles.append(f"\t\t{ofile} \\")
+
+        # Add a rule to generate the frozen header file.
         rules.append(f'{header}: $(srcdir)/Programs/_freeze_module $(srcdir)/{_pyfile}')
         rules.append(f'\t$(srcdir)/Programs/_freeze_module {frozenid} \\')
         rules.append(f'\t\t$(srcdir)/{_pyfile} \\')
         rules.append(f'\t\t$(srcdir)/{header}')
         rules.append('')
 
+        # Also add a deepfreeze rule.
+        deepfreezerules.append(f'{cfile}: {_pyfile} Tools/scripts/deepfreeze.py $(BOOTSTRAP)')
+        deepfreezerules.append(f"\t$(BOOTSTRAP) \\")
+        deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
+        deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} \\")
+        deepfreezerules.append(f"\t\t-m {frozenid} \\")
+        deepfreezerules.append(f"\t\t-o $(srcdir)/{cfile}")
+        deepfreezerules.append('')
+
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
+    deepfreezefiles[-1] = deepfreezefiles[-1].rstrip(" \\")
 
     print(f'# Updating {os.path.relpath(MAKEFILE)}')
     with updating_file_with_tmpfile(MAKEFILE) as (infile, outfile):
@@ -394,9 +418,23 @@ def regen_makefile(frozenids, frozen):
         )
         lines = replace_block(
             lines,
+            "DEEPFREEZE_OBJS =",
+            "# End DEEPFREEZE_OBJS",
+            deepfreezefiles,
+            MAKEFILE,
+        )
+        lines = replace_block(
+            lines,
             "# BEGIN: freezing modules",
             "# END: freezing modules",
             rules,
+            MAKEFILE,
+        )
+        lines = replace_block(
+            lines,
+            "# BEGIN: deepfreeze modules",
+            "# END: deepfreeze modules",
+            deepfreezerules,
             MAKEFILE,
         )
         outfile.writelines(lines)

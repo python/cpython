@@ -44,13 +44,6 @@
 #include "frozen_modules/hello.h"
 /* End includes */
 
-/* Start extern declarations */
-extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
-extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
-extern PyObject *_Py_get_zipimport_toplevel(void);
-extern PyObject *_Py_get_hello_toplevel(void);
-/* End extern declarations */
-
 #ifdef MS_WINDOWS
 /* Deepfreeze isn't supported on Windows yet. */
 #define GET_CODE(name) NULL
@@ -58,26 +51,27 @@ extern PyObject *_Py_get_hello_toplevel(void);
 #define GET_CODE(name) _Py_get_##name##_toplevel
 #endif
 
+/* Start extern declarations */
+extern PyObject *GET_CODE(importlib__bootstrap)(void);
+extern PyObject *GET_CODE(importlib__bootstrap_external)(void);
+extern PyObject *GET_CODE(zipimport)(void);
+extern PyObject *GET_CODE(hello)(void);
+extern PyObject *GET_CODE(hello)(void);
+extern PyObject *GET_CODE(hello)(void);
+/* End extern declarations */
+
 /* Note that a negative size indicates a package. */
 
 static const struct _frozen _PyImport_FrozenModules[] = {
     /* importlib */
-    {"_frozen_importlib", _Py_M__importlib__bootstrap,
-        (int)sizeof(_Py_M__importlib__bootstrap),
-        GET_CODE(importlib__bootstrap)},
-    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
-        (int)sizeof(_Py_M__importlib__bootstrap_external),
-        GET_CODE(importlib__bootstrap_external)},
-    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport),
-        GET_CODE(zipimport)},
+    {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), GET_CODE(importlib__bootstrap)},
+    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), GET_CODE(importlib__bootstrap_external)},
+    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), GET_CODE(zipimport)},
 
     /* Test module */
-    {"__hello__", _Py_M__hello, (int)sizeof(_Py_M__hello),
-        GET_CODE(hello)},
-    {"__phello__", _Py_M__hello, -(int)sizeof(_Py_M__hello),
-        GET_CODE(hello)},
-    {"__phello__.spam", _Py_M__hello, (int)sizeof(_Py_M__hello),
-        GET_CODE(hello)},
+    {"__hello__", _Py_M__hello, (int)sizeof(_Py_M__hello), GET_CODE(hello)},
+    {"__phello__", _Py_M__hello, -(int)sizeof(_Py_M__hello), GET_CODE(hello)},
+    {"__phello__.spam", _Py_M__hello, (int)sizeof(_Py_M__hello), GET_CODE(hello)},
     {0, 0, 0} /* sentinel */
 };
 
