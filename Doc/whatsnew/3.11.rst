@@ -65,7 +65,11 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+Windows improvements:
 
+* A new command line option for the Windows installer ``AppendPath`` has beend added.
+  It behaves similiar to ``PrependPath`` but appends the install and scripts directories
+  instead of prepending it.
 
 New Features
 ============
