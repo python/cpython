@@ -1156,12 +1156,6 @@ are always available.  They are listed here in alphabetical order.
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
 
-   There is an additional mode character permitted, ``'U'``, which no longer
-   has any effect, and is considered deprecated. It previously enabled
-   :term:`universal newlines` in text mode, which became the default behavior
-   in Python 3.0. Refer to the documentation of the
-   :ref:`newline <open-newline-parameter>` parameter for further details.
-
    .. note::
 
       Python doesn't depend on the underlying operating system's notion of text
@@ -1304,8 +1298,7 @@ are always available.  They are listed here in alphabetical order.
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
 
-   .. versionchanged::
-      3.3
+   .. versionchanged:: 3.3
 
          * The *opener* parameter was added.
          * The ``'x'`` mode was added.
@@ -1313,29 +1306,25 @@ are always available.  They are listed here in alphabetical order.
          * :exc:`FileExistsError` is now raised if the file opened in exclusive
            creation mode (``'x'``) already exists.
 
-   .. versionchanged::
-      3.4
+   .. versionchanged:: 3.4
 
          * The file is now non-inheritable.
 
-   .. deprecated-removed:: 3.4 3.10
-
-      The ``'U'`` mode.
-
-   .. versionchanged::
-      3.5
+   .. versionchanged:: 3.5
 
          * If the system call is interrupted and the signal handler does not raise an
            exception, the function now retries the system call instead of raising an
            :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
          * The ``'namereplace'`` error handler was added.
 
-   .. versionchanged::
-      3.6
+   .. versionchanged:: 3.6
 
          * Support added to accept objects implementing :class:`os.PathLike`.
          * On Windows, opening a console buffer may return a subclass of
            :class:`io.RawIOBase` other than :class:`io.FileIO`.
+
+   .. versionchanged:: 3.11
+      The ``'U'`` mode has been removed.
 
 .. function:: ord(c)
 
