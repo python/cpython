@@ -963,7 +963,7 @@ print_exception(PyObject *f, PyObject *value)
     else {
         PyObject* moduleName;
         PyObject* qualName;
-        const char* className = NULL;
+        const char *className = NULL;
 
         _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
