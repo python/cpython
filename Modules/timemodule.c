@@ -2091,11 +2091,19 @@ pysleep(_PyTime_t secs)
         if (err == 0)
             break;
 
+#ifdef HAVE_CLOCK_NANOSLEEP
         if (err != EINTR) {
             errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
+#else
+        if (errno != EINTR) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+#endif
+
 #else
         millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
         if (millisecs > (double)ULONG_MAX) {
