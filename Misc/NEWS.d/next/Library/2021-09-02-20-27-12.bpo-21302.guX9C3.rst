@@ -1,0 +1,1 @@
+In Unix operating systems eg: Linux, macOS, FreeBSD etc. time.sleep() has a resolution of nanoseconds with using clock_nanosleep() or nanosleep() function.
