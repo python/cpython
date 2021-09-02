@@ -357,11 +357,10 @@ static int Tkinter_busywaitinterval = 20;
 static void
 Sleep(int milli)
 {
-    /* XXX Too bad if you don't have select(). */
-    struct timeval t;
+    struct timespec t;
     t.tv_sec = milli/1000;
-    t.tv_usec = (milli%1000) * 1000;
-    select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
+    t.tv_nsec = (milli%1000) * 1000000;
+    nanosleep(&t, NULL);
 }
 #endif /* MS_WINDOWS */
 
