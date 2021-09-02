@@ -1288,7 +1288,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
 
     assert(PyExceptionClass_Check(exc_type));
     PyObject *qualName = PyType_GetQualName((PyTypeObject *)exc_type);
-    if (!qualName) {
+    if (qualName == NULL) {
         return -1;
     }
     const char *className = PyUnicode_AsUTF8(qualName);
