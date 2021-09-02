@@ -717,6 +717,8 @@ The following exceptions are used as warning categories; see the
    (:pep:`565`). Enabling the :ref:`Python Development Mode <devmode>` shows
    this warning.
 
+   The deprecation policy is described in :pep:`387`.
+
 
 .. exception:: PendingDeprecationWarning
 
@@ -730,6 +732,8 @@ The following exceptions are used as warning categories; see the
 
    Ignored by the default warning filters. Enabling the :ref:`Python
    Development Mode <devmode>` shows this warning.
+
+   The deprecation policy is described in :pep:`387`.
 
 
 .. exception:: SyntaxWarning
