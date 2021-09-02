@@ -71,6 +71,7 @@ jobs:
           make regen-stdlib-module-names
       - name: Check for changes
         run: |
+          git add -u
           changes=$(git status --porcelain)
           # Check for changes in regenerated files
           if ! test -z "$changes"
