@@ -2151,6 +2151,8 @@ class TestInit(unittest.TestCase):
         self.assertEqual(C(5).x, 10)
 
     def test_inherit_from_protocol(self):
+        # See bpo-45081.
+
         class P(Protocol):
             a: int
 

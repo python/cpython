@@ -1401,7 +1401,25 @@ def _is_callable_members_only(cls):
 
 
 def _no_init(self, *args, **kwargs):
-    raise TypeError('Protocols cannot be instantiated')
+    cls = type(self)
+
+    if cls._is_protocol:
+        raise TypeError('Protocols cannot be instantiated')
+
+    # set correct __init__ method on a first initialization
+    # so all further initialization will call it directly
+    # see bpo-45081
+    for base in cls.__mro__:
+        init = base.__dict__.get('__init__', _no_init)
+        if init is not _no_init:
+            cls.__init__ = init
+            break
+    else:
+        # should not happen
+        cls.__init__ = object.__init__
+
+    cls.__init__(self, *args, **kwargs)
+
 
 def _caller(depth=1, default='__main__'):
     try:
@@ -1541,15 +1559,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
-            if cls.__init__ == _no_init:
-                for base in cls.__mro__:
-                    init = base.__dict__.get('__init__', _no_init)
-                    if init != _no_init:
-                        cls.__init__ = init
-                        break
-                else:
-                    # should not happen
-                    cls.__init__ = object.__init__
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.

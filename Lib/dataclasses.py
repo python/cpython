@@ -1015,11 +1015,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
-        # typing.Protocol can override __init__ method to object.__init__
-        inherits_from_protocol = any(getattr(c, '_is_protocol', False) for c in cls.__bases__)
-        if inherits_from_protocol and cls.__dict__.get('__init__') is object.__init__:
-            del cls.__init__
-
         _set_new_attribute(cls, '__init__',
                            _init_fn(all_init_fields,
                                     std_init_fields,
