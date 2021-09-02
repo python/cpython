@@ -53,7 +53,6 @@
     <Compile Include="asyncore.py" />
     <Compile Include="base64.py" />
     <Compile Include="bdb.py" />
-    <Compile Include="binhex.py" />
     <Compile Include="bisect.py" />
     <Compile Include="bz2.py" />
     <Compile Include="calendar.py" />
@@ -894,7 +893,6 @@
     <Compile Include="test\test_bigaddrspace.py" />
     <Compile Include="test\test_bigmem.py" />
     <Compile Include="test\test_binascii.py" />
-    <Compile Include="test\test_binhex.py" />
     <Compile Include="test\test_binop.py" />
     <Compile Include="test\test_bisect.py" />
     <Compile Include="test\test_bool.py" />
