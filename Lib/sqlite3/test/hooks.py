@@ -289,6 +289,15 @@ class TraceCallbackTests(unittest.TestCase):
             con2.close()
         self.assertEqual(traced_statements, queries)
 
+    @with_tracebacks(["ZeroDivisionError", "division by zero"])
+    def test_trace_bad_handler(self):
+        cx = sqlite.connect(":memory:")
+        cx.set_trace_callback(lambda stmt: 5/0)
+        self.assertRaisesRegex(
+            sqlite.OperationalError, "trace callback raised an exception",
+            cx.execute, "select 1"
+        )
+
 
 def suite():
     tests = [

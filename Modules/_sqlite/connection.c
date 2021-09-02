@@ -1002,27 +1002,33 @@ static void _trace_callback(void* user_arg, const char* statement_string)
 
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    PyObject *py_statement = NULL;
-    PyObject *ret = NULL;
-    py_statement = PyUnicode_DecodeUTF8(statement_string,
+    PyObject *py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
-    if (py_statement) {
-        ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
-        Py_DECREF(py_statement);
-    }
-
-    if (ret) {
-        Py_DECREF(ret);
-    } else {
+    if (py_statement == NULL) {
         pysqlite_state *state = pysqlite_get_state(NULL);
         if (state->enable_callback_tracebacks) {
             PyErr_Print();
         }
-        else {
-            PyErr_Clear();
-        }
+        PyErr_SetString(state->DataError,
+                        "trace callback unable to fetch statement string");
+        goto exit;
     }
 
+    PyObject *ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
+    Py_DECREF(py_statement);
+    if (ret == NULL) {
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        if (state->enable_callback_tracebacks) {
+            PyErr_Print();
+        }
+        PyErr_SetString(state->OperationalError,
+                        "trace callback raised an exception");
+    }
+    else {
+        Py_DECREF(ret);
+    }
+
+exit:
     PyGILState_Release(gilstate);
 #ifdef HAVE_TRACE_V2
     return 0;
