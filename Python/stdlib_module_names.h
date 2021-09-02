@@ -103,7 +103,6 @@ static const char* _Py_stdlib_module_names[] = {
 "base64",
 "bdb",
 "binascii",
-"binhex",
 "bisect",
 "builtins",
 "bz2",
