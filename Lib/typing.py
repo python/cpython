@@ -1400,8 +1400,29 @@ def _is_callable_members_only(cls):
     return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
 
 
-def _no_init(self, *args, **kwargs):
-    raise TypeError('Protocols cannot be instantiated')
+def _no_init_or_replace_init(self, *args, **kwargs):
+    cls = type(self)
+
+    if cls._is_protocol:
+        raise TypeError('Protocols cannot be instantiated')
+
+    # Initially, `__init__` of a protocol subclass is set to `_no_init_or_replace_init`.
+    # The first instantiation of the subclass will call `_no_init_or_replace_init` which
+    # searches for a proper new `__init__` in the MRO. The new `__init__`
+    # replaces the subclass' old `__init__` (ie `_no_init_or_replace_init`). Subsequent
+    # instantiation of the protocol subclass will thus use the new
+    # `__init__` and no longer call `_no_init_or_replace_init`.
+    for base in cls.__mro__:
+        init = base.__dict__.get('__init__', _no_init_or_replace_init)
+        if init is not _no_init_or_replace_init:
+            cls.__init__ = init
+            break
+    else:
+        # should not happen
+        cls.__init__ = object.__init__
+
+    cls.__init__(self, *args, **kwargs)
+
 
 def _caller(depth=1, default='__main__'):
     try:
@@ -1541,15 +1562,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
-            if cls.__init__ == _no_init:
-                for base in cls.__mro__:
-                    init = base.__dict__.get('__init__', _no_init)
-                    if init != _no_init:
-                        cls.__init__ = init
-                        break
-                else:
-                    # should not happen
-                    cls.__init__ = object.__init__
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.
@@ -1560,7 +1572,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
-        cls.__init__ = _no_init
+        cls.__init__ = _no_init_or_replace_init
 
 
 class _AnnotatedAlias(_GenericAlias, _root=True):
