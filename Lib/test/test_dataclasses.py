@@ -2151,6 +2151,7 @@ class TestInit(unittest.TestCase):
         self.assertEqual(C(5).x, 10)
 
     def test_inherit_from_protocol(self):
+        # Dataclasses inheriting from protocol should preserve their own `__init__`.
         # See bpo-45081.
 
         class P(Protocol):
