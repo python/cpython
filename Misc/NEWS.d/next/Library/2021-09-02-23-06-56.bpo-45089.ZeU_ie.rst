@@ -1,0 +1,2 @@
+The :mod:`sqlite3` trace callback now raise :exc:`~sqlite3.DataError` or
+:exc:`~sqlite3.OperationalError` on error. Patch by Erlend E. Aasland.
