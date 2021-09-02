@@ -1406,12 +1406,12 @@ def _no_init_or_replace_init(self, *args, **kwargs):
     if cls._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
-    # Initially, `__init__` of a protocol subclass is set to `_no_init`.
-    # The first instantiation of the subclass will call `_no_init` which
+    # Initially, `__init__` of a protocol subclass is set to `_no_init_or_replace_init`.
+    # The first instantiation of the subclass will call `_no_init_or_replace_init` which
     # searches for a proper new `__init__` in the MRO. The new `__init__`
-    # replaces the subclass' old `__init__` (ie `_no_init`). Subsequent
+    # replaces the subclass' old `__init__` (ie `_no_init_or_replace_init`). Subsequent
     # instantiation of the protocol subclass will thus use the new
-    # `__init__` and no longer call `_no_init`.
+    # `__init__` and no longer call `_no_init_or_replace_init`.
     for base in cls.__mro__:
         init = base.__dict__.get('__init__', _no_init_or_replace_init)
         if init is not _no_init_or_replace_init:
