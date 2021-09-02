@@ -961,43 +961,37 @@ print_exception(PyObject *f, PyObject *value)
         /* Don't do anything else */
     }
     else {
-        PyObject* moduleName;
-        PyObject* qualName;
-        const char *className = NULL;
+        PyObject* modulename;
 
         _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
 
-        qualName = PyType_GetQualName((PyTypeObject *)type);
-        if (!qualName) {
-            PyErr_Clear();
-        }
-        else {
-            className = PyUnicode_AsUTF8(qualName);
-            if (!className) {
-                PyErr_Clear();
-            }
-        }
-
-        moduleName = _PyObject_GetAttrId(type, &PyId___module__);
-        if (moduleName == NULL || !PyUnicode_Check(moduleName))
+        modulename = _PyObject_GetAttrId(type, &PyId___module__);
+        if (modulename == NULL || !PyUnicode_Check(modulename))
         {
-            Py_XDECREF(moduleName);
+            Py_XDECREF(modulename);
+            PyErr_Clear();
             err = PyFile_WriteString("<unknown>", f);
         }
         else {
-            if (!_PyUnicode_EqualToASCIIId(moduleName, &PyId_builtins))
+            if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins))
             {
-                err = PyFile_WriteObject(moduleName, f, Py_PRINT_RAW);
+                err = PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
                 err += PyFile_WriteString(".", f);
             }
-            Py_DECREF(moduleName);
+            Py_DECREF(modulename);
         }
         if (err == 0) {
-            if (className == NULL)
-                      err = PyFile_WriteString("<unknown>", f);
-            else
-                      err = PyFile_WriteString(className, f);
+            PyObject* qualname = PyType_GetQualName((PyTypeObject *)type);
+            if (qualname == NULL || !PyUnicode_Check(qualname)) {
+                Py_XDECREF(qualname);
+                PyErr_Clear();
+                err = PyFile_WriteString("<unknown>", f);
+            }
+            else {
+                err = PyFile_WriteObject(qualname, f, Py_PRINT_RAW);
+                Py_DECREF(qualname);
+            }
         }
     }
     if (err == 0 && (value != Py_None)) {
