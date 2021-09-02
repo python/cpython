@@ -1,0 +1,3 @@
+The :mod:`lib2to3` package is now deprecated and may not be able to parse
+Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython). Patch
+by Victor Stinner.
