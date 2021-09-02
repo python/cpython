@@ -371,7 +371,6 @@ def regen_makefile(frozenids, frozen):
         frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
 
         _pyfile = os.path.relpath(pyfile, ROOT_DIR)
-        tmpfile = f'{header}.new'
         # Note that we freeze the module to the target .h file
         # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: $(srcdir)/Programs/_freeze_module $(srcdir)/{_pyfile}')
@@ -451,7 +450,7 @@ def regen_pcbuild(frozenids, frozen):
 def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
     """Generate the frozen module .h file for the given module."""
     for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
-        frozenfile = _resolve_frozen(modname, destdir)
+        frozenfile = resolve_frozen_file(modname, destdir)
         _freeze_module(modname, pyfile, frozenfile)
 
 
