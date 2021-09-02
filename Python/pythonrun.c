@@ -971,7 +971,8 @@ print_exception(PyObject *f, PyObject *value)
         qualName = PyType_GetQualName((PyTypeObject *)type);
         if (!qualName) {
             PyErr_Clear();
-        } else {
+        }
+        else {
             className = PyUnicode_AsUTF8(qualName);
             if (!className) {
                 PyErr_Clear();
