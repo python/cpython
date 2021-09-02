@@ -85,74 +85,6 @@ class WStringArrayTestCase(unittest.TestCase):
         w = c_wchar(u)
         self.assertEqual(w.value, u)
 
-class StringTestCase(unittest.TestCase):
-    @unittest.skip('test disabled')
-    def test_basic_strings(self):
-        cs = c_string("abcdef")
-
-        # Cannot call len on a c_string any longer
-        self.assertRaises(TypeError, len, cs)
-        self.assertEqual(sizeof(cs), 7)
-
-        # The value property is the string up to the first terminating NUL.
-        self.assertEqual(cs.value, "abcdef")
-        self.assertEqual(c_string("abc\000def").value, "abc")
-
-        # The raw property is the total buffer contents:
-        self.assertEqual(cs.raw, "abcdef\000")
-        self.assertEqual(c_string("abc\000def").raw, "abc\000def\000")
-
-        # We can change the value:
-        cs.value = "ab"
-        self.assertEqual(cs.value, "ab")
-        self.assertEqual(cs.raw, "ab\000\000\000\000\000")
-
-        cs.raw = "XY"
-        self.assertEqual(cs.value, "XY")
-        self.assertEqual(cs.raw, "XY\000\000\000\000\000")
-
-        self.assertRaises(TypeError, c_string, "123")
-
-    @unittest.skip('test disabled')
-    def test_sized_strings(self):
-
-        # New in releases later than 0.4.0:
-        self.assertRaises(TypeError, c_string, None)
-
-        # New in releases later than 0.4.0:
-        # c_string(number) returns an empty string of size number
-        self.assertEqual(len(c_string(32).raw), 32)
-        self.assertRaises(ValueError, c_string, -1)
-        self.assertRaises(ValueError, c_string, 0)
-
-        # These tests fail, because it is no longer initialized
-##        self.assertEqual(c_string(2).value, "")
-##        self.assertEqual(c_string(2).raw, "\000\000")
-        self.assertEqual(c_string(2).raw[-1], "\000")
-        self.assertEqual(len(c_string(2).raw), 2)
-
-    @unittest.skip('test disabled')
-    def test_initialized_strings(self):
-
-        self.assertEqual(c_string("ab", 4).raw[:2], "ab")
-        self.assertEqual(c_string("ab", 4).raw[:2:], "ab")
-        self.assertEqual(c_string("ab", 4).raw[:2:-1], "ba")
-        self.assertEqual(c_string("ab", 4).raw[:2:2], "a")
-        self.assertEqual(c_string("ab", 4).raw[-1], "\000")
-        self.assertEqual(c_string("ab", 2).raw, "a\000")
-
-    @unittest.skip('test disabled')
-    def test_toolong(self):
-        cs = c_string("abcdef")
-        # Much too long string:
-        self.assertRaises(ValueError, setattr, cs, "value", "123456789012345")
-
-        # One char too long values:
-        self.assertRaises(ValueError, setattr, cs, "value", "1234567")
-
-    @unittest.skip('test disabled')
-    def test_perf(self):
-        check_perf()
 
 @need_symbol('c_wchar')
 class WStringTestCase(unittest.TestCase):
@@ -208,25 +140,6 @@ def run_test(rep, msg, func, arg):
     stop = clock()
     print("%20s: %.2f us" % (msg, ((stop-start)*1e6/5/rep)))
 
-def check_perf():
-    # Construct 5 objects
-
-    REP = 200000
-
-    run_test(REP, "c_string(None)", c_string, None)
-    run_test(REP, "c_string('abc')", c_string, 'abc')
-
-# Python 2.3 -OO, win2k, P4 700 MHz:
-#
-#      c_string(None): 1.75 us
-#     c_string('abc'): 2.74 us
-
-# Python 2.2 -OO, win2k, P4 700 MHz:
-#
-#      c_string(None): 2.95 us
-#     c_string('abc'): 3.67 us
-
 
 if __name__ == '__main__':
-##    check_perf()
     unittest.main()
