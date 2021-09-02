@@ -165,9 +165,13 @@ of available options is shown below.
 | CompileAll                | Compile all ``.py`` files to         | 0                        |
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
-| PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
-|                           | :envvar:`PATHEXT`                    |                          |
+| PrependPath               | Prepend install and Scripts          | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
++---------------------------+--------------------------------------+--------------------------+
+| AppendPath                | Append install and Scripts           | 0                        |
+|                           | directories  to :envvar:`PATH` and   |                          |
+|                           | add ``.PY`` to :envvar:`PATHEXT`     |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
 |                           | documentation and IDLE if installed. |                          |
