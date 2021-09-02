@@ -321,6 +321,14 @@ Changes in the Python API
   Python 3.8.
   (Contributed by Illia Volochii in :issue:`43234`.)
 
+* :func:`open`, :func:`io.open`, :func:`codecs.open` and
+  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
+  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
+  "universal newline" is used by default when a file is open in text mode.  The
+  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
+  how universal newlines works.
+  (Contributed by Victor Stinner in :issue:`37330`.)
+
 
 C API Changes
 =============
