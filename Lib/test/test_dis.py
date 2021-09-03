@@ -1302,6 +1302,11 @@ class BytecodeTests(InstructionTestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
+    @requires_debug_ranges()
+    def test_bytecode_co_positions(self):
+        bytecode = dis.Bytecode("a=1")
+        for instr, positions in zip(bytecode, bytecode.codeobj.co_positions()):
+            assert instr.positions == positions
 
 class TestBytecodeTestCase(BytecodeTestCase):
     def test_assert_not_in_with_op_not_in_bytecode(self):
