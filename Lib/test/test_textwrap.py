@@ -1090,7 +1090,7 @@ class WideCharacterTestCase(BaseTestCase):
 
         text = "123 🔧"
         expected = ["123", "🔧"]
-        self.check_wrap(text, 6, expected, text_len=text_len)
+        self.check_wrap(text, 5, expected, text_len=text_len)
 
 
 if __name__ == '__main__':
