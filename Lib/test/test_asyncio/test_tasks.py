@@ -1026,13 +1026,13 @@ class BaseTaskTests:
         
     def test_wait_for_does_not_suppress_cancellation(self):
         async def inner():
-            return
+            await asyncio.sleep(0)
 
         async def with_for_coro():
             await wait_for(inner(), timeout=1)
             assert False, 'End of with_for_coro. Should not be reached!'
 
-        async def main(self):
+        async def main():
             task = asyncio.create_task(with_for_coro())
             await asyncio.sleep(0)
             self.assertFalse(task.done())
@@ -1040,7 +1040,7 @@ class BaseTaskTests:
             with self.assertRaises(asyncio.CancelledError):
                 await task
                 
-        asyncio.run(main(self))
+        asyncio.run(main())
 
     def test_wait_for_waits_for_task_cancellation(self):
         loop = asyncio.new_event_loop()
