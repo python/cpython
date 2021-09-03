@@ -127,7 +127,7 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 
-static inline Py_ssize_t Py_ALWAYS_INLINE _Py_REFCNT(const PyObject *ob) {
+static inline Py_ALWAYS_INLINE Py_ssize_t _Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
@@ -140,7 +140,7 @@ static inline Py_ssize_t Py_ALWAYS_INLINE _Py_REFCNT(const PyObject *ob) {
 #define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
 
-static inline int Py_ALWAYS_INLINE _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
+static inline Py_ALWAYS_INLINE int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
     // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
     // object.
     return ob->ob_type == type;
@@ -148,19 +148,19 @@ static inline int Py_ALWAYS_INLINE _Py_IS_TYPE(const PyObject *ob, const PyTypeO
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
 
-static inline void Py_ALWAYS_INLINE _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+static inline Py_ALWAYS_INLINE void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
 
 
-static inline void Py_ALWAYS_INLINE _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
+static inline Py_ALWAYS_INLINE void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
     ob->ob_type = type;
 }
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
 
 
-static inline void Py_ALWAYS_INLINE _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+static inline Py_ALWAYS_INLINE void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;
 }
 #define Py_SET_SIZE(ob, size) _Py_SET_SIZE(_PyVarObject_CAST(ob), size)
@@ -462,7 +462,7 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-static inline void Py_ALWAYS_INLINE Py_ALWAYS_INLINE _Py_INCREF(PyObject *op)
+static inline Py_ALWAYS_INLINE void _Py_INCREF(PyObject *op)
 {
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
@@ -478,7 +478,7 @@ static inline void Py_ALWAYS_INLINE Py_ALWAYS_INLINE _Py_INCREF(PyObject *op)
 }
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
-static inline void Py_ALWAYS_INLINE _Py_DECREF(
+static inline Py_ALWAYS_INLINE void _Py_DECREF(
 #if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
     const char *filename, int lineno,
 #endif
@@ -556,7 +556,7 @@ static inline void Py_ALWAYS_INLINE _Py_DECREF(
     } while (0)
 
 /* Function to use in case the object pointer can be NULL: */
-static inline void Py_ALWAYS_INLINE _Py_XINCREF(PyObject *op)
+static inline Py_ALWAYS_INLINE void _Py_XINCREF(PyObject *op)
 {
     if (op != NULL) {
         Py_INCREF(op);
@@ -565,7 +565,7 @@ static inline void Py_ALWAYS_INLINE _Py_XINCREF(PyObject *op)
 
 #define Py_XINCREF(op) _Py_XINCREF(_PyObject_CAST(op))
 
-static inline void Py_ALWAYS_INLINE _Py_XDECREF(PyObject *op)
+static inline Py_ALWAYS_INLINE void _Py_XDECREF(PyObject *op)
 {
     if (op != NULL) {
         Py_DECREF(op);
@@ -581,13 +581,13 @@ PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
 // Similar to Py_NewRef(), but the object can be NULL.
 PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
 
-static inline PyObject* Py_ALWAYS_INLINE _Py_NewRef(PyObject *obj)
+static inline Py_ALWAYS_INLINE PyObject* _Py_NewRef(PyObject *obj)
 {
     Py_INCREF(obj);
     return obj;
 }
 
-static inline PyObject* Py_ALWAYS_INLINE _Py_XNewRef(PyObject *obj)
+static inline Py_ALWAYS_INLINE PyObject* _Py_XNewRef(PyObject *obj)
 {
     Py_XINCREF(obj);
     return obj;

@@ -114,7 +114,7 @@ complete listing.
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler is
-   free is ignored this "hint".
+   free to ignore this "hint".
 
    This attribute can be used to avoid increasing the stack memory usage when
    building Python in debug mode with function inlining disabled. For example,
@@ -125,9 +125,11 @@ complete listing.
    worse performances (due to increased code size for example). The compiler is
    usually smarter than the developer for the cost/benefit analysis.
 
+   It must be specified before the function return type.
+
    Usage::
 
-       static inline int Py_ALWAYS_INLINE random(void) { return 4; }
+       static inline Py_ALWAYS_INLINE int random(void) { return 4; }
 
    .. versionadded:: 3.11
 
