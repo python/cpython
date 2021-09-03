@@ -105,6 +105,71 @@ defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
 
+.. c:macro:: Py_ABS(x)
+
+   Return the absolute value of ``x``.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_CHARMASK(c)
+
+   Argument must be a character or an integer in the range [-128, 127] or [0,
+   255].  This macro returns ``c`` cast to an ``unsigned char``.
+
+.. c:macro:: Py_DEPRECATED(version)
+
+   Use this for deprecated declarations.  The macro must be placed before the
+   symbol name.
+
+   Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+   .. versionchanged:: 3.8
+      MSVC support was added.
+
+.. c:macro:: Py_GETENV(s)
+
+   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
+   command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
+
+.. c:macro:: Py_MAX(x, y)
+
+   Return the maximum value between ``x`` and ``y``.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_MEMBER_SIZE(type, member)
+
+   Return the size of a structure (``type``) ``member`` in bytes.
+
+   .. versionadded:: 3.6
+
+.. c:macro:: Py_MIN(x, y)
+
+   Return the minimum value between ``x`` and ``y``.
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_NO_INLINE
+
+   Disable inlining on a function. For example, it reduces the C stack
+   consumption: useful on LTO+PGO builds which heavily inline code (see
+   :issue:`33720`).
+
+   Usage::
+
+       Py_NO_INLINE static int random(void) { return 4; }
+
+   .. versionadded:: 3.11
+
+.. c:macro:: Py_STRINGIFY(x)
+
+   Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
+   ``"123"``.
+
+   .. versionadded:: 3.4
+
 .. c:macro:: Py_UNREACHABLE()
 
    Use this when you have a code path that cannot be reached by design.
@@ -127,65 +192,12 @@ complete listing.
 
    .. versionadded:: 3.7
 
-.. c:macro:: Py_ABS(x)
-
-   Return the absolute value of ``x``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_MIN(x, y)
-
-   Return the minimum value between ``x`` and ``y``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_MAX(x, y)
-
-   Return the maximum value between ``x`` and ``y``.
-
-   .. versionadded:: 3.3
-
-.. c:macro:: Py_STRINGIFY(x)
-
-   Convert ``x`` to a C string.  E.g. ``Py_STRINGIFY(123)`` returns
-   ``"123"``.
-
-   .. versionadded:: 3.4
-
-.. c:macro:: Py_MEMBER_SIZE(type, member)
-
-   Return the size of a structure (``type``) ``member`` in bytes.
-
-   .. versionadded:: 3.6
-
-.. c:macro:: Py_CHARMASK(c)
-
-   Argument must be a character or an integer in the range [-128, 127] or [0,
-   255].  This macro returns ``c`` cast to an ``unsigned char``.
-
-.. c:macro:: Py_GETENV(s)
-
-   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
-   command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
-
 .. c:macro:: Py_UNUSED(arg)
 
    Use this for unused arguments in a function definition to silence compiler
    warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
-
-.. c:macro:: Py_DEPRECATED(version)
-
-   Use this for deprecated declarations.  The macro must be placed before the
-   symbol name.
-
-   Example::
-
-      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
-
-   .. versionchanged:: 3.8
-      MSVC support was added.
 
 .. c:macro:: PyDoc_STRVAR(name, str)
 
@@ -220,6 +232,7 @@ complete listing.
               PyDoc_STR("Returns the keys of the row.")},
           {NULL, NULL}
       };
+
 
 .. _api-objects:
 
