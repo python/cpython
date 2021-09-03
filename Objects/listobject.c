@@ -1139,7 +1139,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
            if (k)
 
 /* The maximum number of entries in a MergeState's pending-runs stack.
- * For a list with n elements, thia needs at most floor(log2(n)) + 1 entries
+ * For a list with n elements, this needs at most floor(log2(n)) + 1 entries
  * even if we didn't force runs to a minimal length.  So the number of bits
  * in a Py_ssize_t is plenty large enough for all cases.
  */
@@ -1941,6 +1941,11 @@ powerloop(Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2, Py_ssize_t n)
     /* midpoints a and b:
      * a = s1 + n1/2
      * b = s1 + n1 + n2/2 = a + (n1 + n2)/2
+     *
+     * Those may not be integers, though, because of the "/2". So we work with
+     * 2*a and 2*b instead, which are necessarily integers. It makes no
+     * difference to the outcome, since the bits in the expansion of (2*i)/n
+     * are merely shifted one position from those of i/n.
      */
     Py_ssize_t a = 2 * s1 + n1;  /* 2*a */
     Py_ssize_t b = a + n1 + n2;  /* 2*b */
