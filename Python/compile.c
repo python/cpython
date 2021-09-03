@@ -2464,12 +2464,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
     }
-    /*
-    if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
-        compiler_exit_scope(c);
-        return 0;
-    }
-    */
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
