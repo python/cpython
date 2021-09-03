@@ -4689,15 +4689,11 @@ check_eval_breaker:
 
         TARGET(MAKE_FUNCTION): {
             PyObject *codeobj = POP();
-            PyObject *doc;
+            PyObject *doc = NULL;
 
             if (oparg & 0x10) {
                 assert(PyUnicode_Check(TOP()));
                 doc = POP();
-            }
-            else {
-                Py_INCREF(Py_None);
-                doc = Py_None;
             }
             PyFunctionObject *func = (PyFunctionObject *)
                 PyFunction_NewWithDoc(codeobj, GLOBALS(), NULL, doc);
