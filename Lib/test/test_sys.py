@@ -1071,6 +1071,10 @@ class UnraisableHookTest(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     def test_original_unraisablehook_exception_qualname(self):
+        # See bpo-41031, bpo-45083.
+        # Check that the exception is printed with its qualified name
+        # rather than just classname, and the module names appears
+        # unless it is one of the hard-coded exclusions.
         class A:
             class B:
                 class X(Exception):
@@ -1086,11 +1090,11 @@ class UnraisableHookTest(unittest.TestCase):
                              A.B.X(), "msg", "obj");
                 report = stderr.getvalue()
                 testName = 'test_original_unraisablehook_exception_qualname'
-                self.assertIn(f"{testName}.<locals>.A.B.X", report)
+                self.assertIn(A.B.X.__qualname__, report)
                 if moduleName in ['builtins', '__main__']:
-                    self.assertNotIn(moduleName, report)
+                    self.assertNotIn(moduleName + '.', report)
                 else:
-                    self.assertIn(moduleName, report)
+                    self.assertIn(moduleName + '.', report)
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)
