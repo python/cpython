@@ -1089,7 +1089,6 @@ class UnraisableHookTest(unittest.TestCase):
                          expected = self.write_unraisable_exc(
                              A.B.X(), "msg", "obj");
                 report = stderr.getvalue()
-                testName = 'test_original_unraisablehook_exception_qualname'
                 self.assertIn(A.B.X.__qualname__, report)
                 if moduleName in ['builtins', '__main__']:
                     self.assertNotIn(moduleName + '.', report)
