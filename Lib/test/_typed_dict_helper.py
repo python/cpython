@@ -17,7 +17,7 @@ OptionalIntType = Optional[int]
 class Foo(TypedDict):
     a: OptionalIntType
 
-OptionableT = TypeVar("OptionableT")
+T = TypeVar("T")
 
-class FooGeneric(TypedDict, Generic[OptionableT]):
-    a: Optional[OptionableT]
+class FooGeneric(TypedDict, Generic[T]):
+    a: Optional[T]

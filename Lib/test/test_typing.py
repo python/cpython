@@ -2943,20 +2943,18 @@ class XRepr(NamedTuple):
 
 Label = TypedDict('Label', [('label', str)])
 
-TDG = TypeVar("TDG")
-
 class Point2D(TypedDict):
     x: int
     y: int
 
-class Point2DGeneric(Generic[TDG], TypedDict):
-    a: TDG
-    b: TDG
+class Point2DGeneric(Generic[T], TypedDict):
+    a: T
+    b: T
 
 class Bar(_typed_dict_helper.Foo, total=False):
     b: int
 
-class BarGeneric(_typed_dict_helper.FooGeneric[TDG], total=False):
+class BarGeneric(_typed_dict_helper.FooGeneric[T], total=False):
     b: int
 
 class LabelPoint2D(Point2D, Label): ...
@@ -4249,7 +4247,44 @@ class TypedDictTests(BaseTestCase):
         )
 
     def test_get_type_hints_generic(self):
-        assert set(get_type_hints(BarGeneric)) == {'a', 'b'}
+        self.assertEqual(
+            get_type_hints(BarGeneric[int]), 
+            {'a': typing.Optional[T], 'b': int}
+        )
+
+    def test_generic(self):
+        class A(TypedDict, Generic[T]):
+            a: T
+
+        self.assertEqual(A.__parameters__, (T,))
+        self.assertEqual(A[str].__parameters__, ())
+        self.assertEqual(A[str].__args__, (str,))
+
+        class B(A[KT], total=False):
+            b: KT
+
+        self.assertEqual(B.__total__, False)
+        self.assertEqual(B.__parameters__, (KT, ))
+        self.assertEqual(B.__optional_keys__, frozenset(['b']))
+        self.assertEqual(B.__required_keys__, frozenset(['a']))
+
+        self.assertEqual(B[str].__parameters__, ())
+        self.assertEqual(B[str].__args__, (str,))
+        self.assertEqual(B[str].__optional_keys__, frozenset(['b']))
+        self.assertEqual(B[str].__required_keys__, frozenset(['a']))
+
+        class C(B[int]):
+            c: int
+
+        self.assertEqual(C.__total__, True)
+        self.assertEqual(C.__parameters__, ())
+        self.assertEqual(C.__optional_keys__, frozenset(['b']))
+        self.assertEqual(C.__required_keys__, frozenset(['a', 'c']))
+        assert C.__annotations__ == {
+            'a': T,
+            'b': KT,
+            'c': int,
+        }
 
 
 class IOTests(BaseTestCase):
