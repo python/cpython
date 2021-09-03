@@ -281,6 +281,12 @@ hyphenated words; only then will long words be broken if necessary, unless
       .. versionadded:: 3.4
 
 
+   .. attribute:: text_len
+
+      (default: ``len``) Used to determine the length of a string. You can
+      provide a custom function, e.g. to account for wide characters.
+
+
    .. index:: single: ...; placeholder
 
    .. attribute:: placeholder

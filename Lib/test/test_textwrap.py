@@ -9,6 +9,7 @@
 #
 
 import unittest
+import unicodedata
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
 
@@ -1074,6 +1075,25 @@ class ShortenTestCase(BaseTestCase):
 
     def test_first_word_too_long_but_placeholder_fits(self):
         self.check_shorten("Helloo", 5, "[...]")
+
+
+class WideCharacterTestCase(BaseTestCase):
+    def setUp(self):
+        def text_len(text):
+            n = 0
+            for c in text:
+                if unicodedata.east_asian_width(c) in ['F', 'W']:
+                    n += 2
+                else:
+                    n += 1
+            return n
+
+        self.wrapper = TextWrapper(width=5, text_len=text_len)
+
+    def test_wide_character(self):
+        text = "123 🔧"
+        result = self.wrapper.wrap(text, **kwargs)
+        self.check(result, ["123", "🔧"])
 
 
 if __name__ == '__main__':
