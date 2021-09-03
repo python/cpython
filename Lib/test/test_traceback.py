@@ -781,6 +781,19 @@ class BaseExceptionReportingTests:
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
+    def test_format_exception_only_qualname(self):
+        class A:
+            class B:
+                class X(Exception):
+                    def __str__(self):
+                        return "I am X"
+                    pass
+        err = self.get_report(A.B.X())
+        str_value = 'I am X'
+        str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
+        exp = "%s: %s\n" % (str_name, str_value)
+        self.assertEqual(exp, err)
+
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
