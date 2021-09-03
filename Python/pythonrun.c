@@ -13,7 +13,8 @@
 #include "pycore_ast.h"           // PyAST_mod2obj
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
-#include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_object.h"        // _PyDebug_PrintTotalRefs(),
+                                  // _PyType_GetQualName()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
@@ -982,7 +983,7 @@ print_exception(PyObject *f, PyObject *value)
             Py_DECREF(modulename);
         }
         if (err == 0) {
-            PyObject* qualname = PyType_GetQualName((PyTypeObject *)type);
+            PyObject* qualname = _PyType_GetQualName((PyTypeObject *)type);
             if (qualname == NULL || !PyUnicode_Check(qualname)) {
                 Py_XDECREF(qualname);
                 PyErr_Clear();

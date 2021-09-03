@@ -3617,6 +3617,14 @@ PyType_FromSpec(PyType_Spec *spec)
     return PyType_FromSpecWithBases(spec, NULL);
 }
 
+/* private in 3.10 and 3.9.8+; public in 3.11 */
+PyObject *
+_PyType_GetQualName(PyTypeObject *type)
+{
+    return type_qualname(type, NULL);
+}
+
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
