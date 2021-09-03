@@ -50,6 +50,16 @@ There are a few functions specific to Python functions.
    .. versionadded:: 3.3
 
 
+.. c:function:: PyObject* PyFunction_NewWithDoc(PyObject *code, PyObject *globals, PyObject *qualname, PyObject *doc)
+
+   As :c:func:`PyFunction_NewWithQualName`, but also allows setting the function
+   object's ``__doc__`` attribute (e.g. docstring).  *doc* should be a unicode
+   object or ``NULL``; if ``NULL``, the ``__doc__`` attribute is set to ``None``.
+   This API don't use ``code.co_consts[0]`` for the docstring.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: PyObject* PyFunction_GetCode(PyObject *op)
 
    Return the code object associated with the function object *op*.
