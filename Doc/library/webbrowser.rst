@@ -174,7 +174,7 @@ Notes:
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
 
-.. deprecated-removed:: 3.11 3.12
+.. deprecated-removed:: 3.11 3.13
    :class:`MacOSX` is deprecated, use :class:`MacOSXOSAScript` instead.
 
 Here are some simple examples::
