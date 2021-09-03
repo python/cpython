@@ -2057,11 +2057,11 @@ pysleep(_PyTime_t secs)
     int err = 0;
 #else
     _PyTime_t millisecs;
-    unsigned long ul_millis;
+    DWORD ul_millis;
     DWORD rc;
     FILETIME FileTime;
     LARGE_INTEGER dueTimeAbs;
-    HANDLE hTimer = 0;
+    HANDLE hTimer = NULL;
     GetSystemTimeAsFileTime(&FileTime);
 #endif
 
@@ -2075,11 +2075,15 @@ pysleep(_PyTime_t secs)
     }
 #else
     CopyMemory(&dueTimeAbs, &FileTime, sizeof(FILETIME));
-    dueTimeAbs.QuadPart += ((_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 1000) / 100);
+
+    /* convert to 100 nsec unit */
+    dueTimeAbs.QuadPart += (_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 10);
+
     hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
     if (NULL == hTimer) {
         return -1;
     }
+
     if (!SetWaitableTimer(hTimer, &dueTimeAbs, 0, NULL, NULL, FALSE)) {
         return -1;
     }
@@ -2101,8 +2105,9 @@ pysleep(_PyTime_t secs)
 #endif
         Py_END_ALLOW_THREADS
 
-        if (err == 0)
+        if (err == 0) {
             break;
+        }
 
 #ifdef HAVE_CLOCK_NANOSLEEP
         if (err != EINTR) {
@@ -2137,16 +2142,18 @@ pysleep(_PyTime_t secs)
         }
 
         Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hTimer, ul_millis*2, FALSE);
+        rc = WaitForSingleObjectEx(hTimer, ul_millis, FALSE);
         Py_END_ALLOW_THREADS
 
-        if (rc != WAIT_OBJECT_0)
-            break;
+        if ((rc != WAIT_OBJECT_0) && (rc != WAIT_TIMEOUT)) {
+            return -1;
+        }
 #endif
 
         /* sleep was interrupted by SIGINT */
-        if (PyErr_CheckSignals())
+        if (PyErr_CheckSignals()) {
             return -1;
+        }
 
         if (get_monotonic(&monotonic) < 0) {
             return -1;
