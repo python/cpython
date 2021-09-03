@@ -2059,15 +2059,28 @@ pysleep(_PyTime_t secs)
     _PyTime_t millisecs;
     unsigned long ul_millis;
     DWORD rc;
-    HANDLE hInterruptEvent;
+    FILETIME FileTime;
+    LARGE_INTEGER dueTimeAbs;
+    HANDLE hTimer = 0;
+    GetSystemTimeAsFileTime(&FileTime);
 #endif
 
     if (get_monotonic(&monotonic) < 0) {
         return -1;
     }
     deadline = monotonic + secs;
-#ifdef HAVE_CLOCK_NANOSLEEP
+#if defined(HAVE_CLOCK_NANOSLEEP) && !defined(MS_WINDOWS)
     if (_PyTime_AsTimespec(deadline, &timeout) < 0) {
+        return -1;
+    }
+#else
+    CopyMemory(&dueTimeAbs, &FileTime, sizeof(FILETIME));
+    dueTimeAbs.QuadPart += ((_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 1000) / 100);
+    hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
+    if (NULL == hTimer) {
+        return -1;
+    }
+    if (!SetWaitableTimer(hTimer, &dueTimeAbs, 0, NULL, NULL, FALSE)) {
         return -1;
     }
 #endif
@@ -2106,7 +2119,7 @@ pysleep(_PyTime_t secs)
 
 #else
         millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-        if (millisecs > (double)ULONG_MAX) {
+        if (millisecs > LLONG_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "sleep length is too large");
             return -1;
@@ -2123,11 +2136,8 @@ pysleep(_PyTime_t secs)
             break;
         }
 
-        hInterruptEvent = _PyOS_SigintEvent();
-        ResetEvent(hInterruptEvent);
-
         Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
+        rc = WaitForSingleObjectEx(hTimer, ul_millis*2, FALSE);
         Py_END_ALLOW_THREADS
 
         if (rc != WAIT_OBJECT_0)
