@@ -292,6 +292,10 @@ Deprecated
   Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
   (Contributed by Victor Stinner in :issue:`40360`.)
 
+* :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+  It is untested and undocumented and also not used by webbrowser itself.
+  (Contributed by Dong-hee Na in :issue:`42255`.)
+
 
 Removed
 =======
