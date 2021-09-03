@@ -282,7 +282,7 @@ def find_shared(paths, name):
         if path.exists(archive):
             members = get_shared(get_ld_headers(archive))
             member = get_member(re.escape(name), members)
-            if member != None:
+            if member is not None:
                 return (base, member)
             else:
                 return (None, None)
@@ -307,7 +307,7 @@ def find_library(name):
 
     libpaths = get_libpaths()
     (base, member) = find_shared(libpaths, name)
-    if base != None:
+    if base is not None:
         return f"{base}({member})"
 
     # To get here, a member in an archive has not been found

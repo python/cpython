@@ -515,6 +515,9 @@ class StackSummary(list):
         last_name = None
         count = 0
         for frame in self:
+            formatted_frame = self.format_frame(frame)
+            if formatted_frame is None:
+                continue
             if (last_file is None or last_file != frame.filename or
                 last_line is None or last_line != frame.lineno or
                 last_name is None or last_name != frame.name):

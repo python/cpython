@@ -574,8 +574,8 @@ coverage-lcov:
 	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
 	@echo
 
-# Force regeneration of parser and importlib
-coverage-report: regen-token regen-importlib
+# Force regeneration of parser and frozen modules
+coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -734,45 +734,60 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
-# Importlib
+# frozen modules (including importlib)
 
-Programs/_freeze_importlib.o: Programs/_freeze_importlib.c Makefile
+Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
-Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
+Tools/scripts/freeze_modules.py: Programs/_freeze_module
+
+.PHONY: regen-frozen
+regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+	@echo "The Makefile was updated, you may need to re-run make."
+
+# BEGIN: freezing modules
+
+Python/frozen_modules/importlib__bootstrap.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap.py
+	$(srcdir)/Programs/_freeze_module importlib._bootstrap \
+		$(srcdir)/Lib/importlib/_bootstrap.py \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap.h
+
+Python/frozen_modules/importlib__bootstrap_external.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap_external.py
+	$(srcdir)/Programs/_freeze_module importlib._bootstrap_external \
+		$(srcdir)/Lib/importlib/_bootstrap_external.py \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h
+
+Python/frozen_modules/zipimport.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/zipimport.py
+	$(srcdir)/Programs/_freeze_module zipimport \
+		$(srcdir)/Lib/zipimport.py \
+		$(srcdir)/Python/frozen_modules/zipimport.h
+
+Python/frozen_modules/hello.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Tools/freeze/flag.py
+	$(srcdir)/Programs/_freeze_module hello \
+		$(srcdir)/Tools/freeze/flag.py \
+		$(srcdir)/Python/frozen_modules/hello.h
+
+# END: freezing modules
+
+# We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
-regen-importlib: Programs/_freeze_importlib
-	# Regenerate Python/importlib_external.h
-	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap_external \
-	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
-	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap \
-	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
-	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib zipimport \
-	    $(srcdir)/Lib/zipimport.py \
-	    $(srcdir)/Python/importlib_zipimport.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
+regen-importlib: regen-frozen
 
+############################################################################
+# ABI
 
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
-
 
 ############################################################################
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
+	regen-token regen-ast regen-keyword regen-frozen clinic \
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
@@ -884,15 +899,6 @@ regen-opcode:
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
-.PHONY: regen-frozen
-regen-frozen: Programs/_freeze_importlib
-	# Regenerate code for frozen module "__hello__".
-	./Programs/_freeze_importlib hello \
-		$(srcdir)/Tools/freeze/flag.py \
-		$(srcdir)/Python/frozen_hello.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
-		$(srcdir)/Python/frozen_hello.h.new
-
 .PHONY: regen-token
 regen-token:
 	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
@@ -995,8 +1001,15 @@ regen-opcode-targets:
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
 		$(srcdir)/Python/condvar.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
-		$(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/frozen_hello.h
+# FROZEN_FILES is auto-generated by Tools/scripts/freeze_modules.py.
+FROZEN_FILES = \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap.h \
+		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h \
+		$(srcdir)/Python/frozen_modules/zipimport.h \
+		$(srcdir)/Python/frozen_modules/hello.h
+# End FROZEN_FILES
+
+Python/frozen.o: $(FROZEN_FILES)
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -1918,7 +1931,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f Programs/_testembed Programs/_freeze_importlib
+	-rm -f Programs/_testembed Programs/_freeze_module
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp

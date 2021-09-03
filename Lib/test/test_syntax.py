@@ -629,38 +629,6 @@ isn't, there should be a syntax error.
      ...
    SyntaxError: 'break' outside loop
 
-This raises a SyntaxError, it used to raise a SystemError.
-Context for this change can be found on issue #27514
-
-In 2.5 there was a missing exception and an assert was triggered in a debug
-build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
-
-   >>> while 1:
-   ...  while 2:
-   ...   while 3:
-   ...    while 4:
-   ...     while 5:
-   ...      while 6:
-   ...       while 8:
-   ...        while 9:
-   ...         while 10:
-   ...          while 11:
-   ...           while 12:
-   ...            while 13:
-   ...             while 14:
-   ...              while 15:
-   ...               while 16:
-   ...                while 17:
-   ...                 while 18:
-   ...                  while 19:
-   ...                   while 20:
-   ...                    while 21:
-   ...                     while 22:
-   ...                      break
-   Traceback (most recent call last):
-     ...
-   SyntaxError: too many statically nested blocks
-
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
    >>> def f():
@@ -1549,6 +1517,41 @@ case(34)
             "keyword argument repeated",
             lineno=3
         )
+
+    @support.cpython_only
+    def test_syntax_error_on_deeply_nested_blocks(self):
+        # This raises a SyntaxError, it used to raise a SystemError. Context
+        # for this change can be found on issue #27514
+
+        # In 2.5 there was a missing exception and an assert was triggered in a
+        # debug build.  The number of blocks must be greater than CO_MAXBLOCKS.
+        # SF #1565514
+
+        source = """
+while 1:
+ while 2:
+  while 3:
+   while 4:
+    while 5:
+     while 6:
+      while 8:
+       while 9:
+        while 10:
+         while 11:
+          while 12:
+           while 13:
+            while 14:
+             while 15:
+              while 16:
+               while 17:
+                while 18:
+                 while 19:
+                  while 20:
+                   while 21:
+                    while 22:
+                     break
+"""
+        self._check_error(source, "too many statically nested blocks")
 
 
 def test_main():

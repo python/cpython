@@ -1210,6 +1210,9 @@ class UnivariateTypeMixin:
             def __add__(self, other):
                 return type(self)(super().__add__(other))
             __radd__ = __add__
+            def __mul__(self, other):
+                return type(self)(super().__mul__(other))
+            __rmul__ = __mul__
         return (float, Decimal, Fraction, MyFloat)
 
     def test_types_conserved(self):

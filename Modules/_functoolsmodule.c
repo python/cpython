@@ -186,7 +186,7 @@ partial_dealloc(partialobject *pto)
 /* Merging keyword arguments using the vectorcall convention is messy, so
  * if we would need to do that, we stop using vectorcall and fall back
  * to using partial_call() instead. */
-_Py_NO_INLINE static PyObject *
+Py_NO_INLINE static PyObject *
 partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
                             PyObject *const *args, size_t nargsf,
                             PyObject *kwnames)
