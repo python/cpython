@@ -564,7 +564,8 @@ class Bytecode:
                                        co.co_names, co.co_consts,
                                        self._linestarts,
                                        line_offset=self._line_offset,
-                                       exception_entries=self.exception_entries)
+                                       exception_entries=self.exception_entries,
+                                       co_positions=co.co_positions())
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
