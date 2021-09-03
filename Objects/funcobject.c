@@ -31,9 +31,6 @@ PyFunction_NewWithDoc(PyObject *code, PyObject *globals, PyObject *qualname, PyO
     assert(qualname != NULL);
     Py_INCREF(qualname);
 
-    PyObject *consts = code_obj->co_consts;
-    assert(PyTuple_Check(consts));
-
     if (doc == NULL) {
         doc = Py_None;
     }
