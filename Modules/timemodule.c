@@ -2073,7 +2073,7 @@ pysleep(_PyTime_t secs)
     if (_PyTime_AsTimespec(deadline, &timeout) < 0) {
         return -1;
     }
-#else
+#elif defined(MS_WINDOWS)
     CopyMemory(&dueTimeAbs, &FileTime, sizeof(FILETIME));
 
     /* convert to 100 nsec unit */
