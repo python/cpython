@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_object.h"        // _PyType_GetQualName
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"    // _PyThreadState_GET()
 #include "pycore_sysmodule.h"
@@ -1346,7 +1347,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
 
-    PyObject *qualname = PyType_GetQualName((PyTypeObject *)exc_type);
+    PyObject *qualname = _PyType_GetQualName((PyTypeObject *)exc_type);
     if (qualname == NULL || !PyUnicode_Check(qualname)) {
         Py_XDECREF(qualname);
         _PyErr_Clear(tstate);

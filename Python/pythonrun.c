@@ -14,7 +14,8 @@
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 
 #include "pycore_interp.h"        // PyInterpreterState.importlib
-#include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_object.h"        // _PyDebug_PrintTotalRefs(),
+                                  // _PyType_GetQualName()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -913,7 +914,7 @@ print_exception(PyObject *f, PyObject *value)
             Py_DECREF(modulename);
         }
         if (err == 0) {
-            PyObject* qualname = PyType_GetQualName((PyTypeObject *)type);
+            PyObject* qualname = _PyType_GetQualName((PyTypeObject *)type);
             if (qualname == NULL || !PyUnicode_Check(qualname)) {
                 Py_XDECREF(qualname);
                 PyErr_Clear();
