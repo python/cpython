@@ -10,7 +10,7 @@ import inspect
 import builtins
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
@@ -2149,6 +2149,26 @@ class TestInit(unittest.TestCase):
             def __init__(self, x):
                 self.x = 2 * x
         self.assertEqual(C(5).x, 10)
+
+    def test_inherit_from_protocol(self):
+        # Dataclasses inheriting from protocol should preserve their own `__init__`.
+        # See bpo-45081.
+
+        class P(Protocol):
+            a: int
+
+        @dataclass
+        class C(P):
+            a: int
+
+        self.assertEqual(C(5).a, 5)
+
+        @dataclass
+        class D(P):
+            def __init__(self, a):
+                self.a = a * 2
+
+        self.assertEqual(D(5).a, 10)
 
 
 class TestRepr(unittest.TestCase):
