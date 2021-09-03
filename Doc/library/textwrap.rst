@@ -286,6 +286,8 @@ hyphenated words; only then will long words be broken if necessary, unless
       (default: ``len``) Used to determine the length of a string. You can
       provide a custom function, e.g. to account for wide characters.
 
+      .. versionadded:: 3.11
+
 
    .. index:: single: ...; placeholder
 

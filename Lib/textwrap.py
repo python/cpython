@@ -261,8 +261,8 @@ class TextWrapper:
                 indent = self.subsequent_indent
             else:
                 indent = self.initial_indent
-            if self.text_len(indent) +
-                    self.text_len(self.placeholder.lstrip()) > self.width:
+            if (self.text_len(indent) +
+                    self.text_len(self.placeholder.lstrip()) > self.width):
                 raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped

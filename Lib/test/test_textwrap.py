@@ -1078,22 +1078,19 @@ class ShortenTestCase(BaseTestCase):
 
 
 class WideCharacterTestCase(BaseTestCase):
-    def setUp(self):
+    def test_wide_character(self):
         def text_len(text):
             n = 0
             for c in text:
-                if unicodedata.east_asian_width(c) in ['F', 'W']:
+                if unicodedata.east_asian_width(c) in {'F', 'W'}:
                     n += 2
                 else:
                     n += 1
             return n
 
-        self.wrapper = TextWrapper(width=5, text_len=text_len)
-
-    def test_wide_character(self):
         text = "123 🔧"
-        result = self.wrapper.wrap(text, **kwargs)
-        self.check(result, ["123", "🔧"])
+        expected = ["123", "🔧"]
+        self.check_wrap(text, 6, expected, text_len=text_len)
 
 
 if __name__ == '__main__':
