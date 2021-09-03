@@ -1,0 +1,1 @@
+Allow ``TypedDict`` to also inherit from ``Generic``.
