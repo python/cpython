@@ -25,6 +25,8 @@ from . import exceptions
 from . import futures
 from .coroutines import _is_coroutine
 
+_SENTINEL = object()
+
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
 # is not thread safe. See bpo-11866 for a longer explanation.
@@ -432,8 +434,8 @@ async def wait_for(fut, timeout):
         # wait until the future completes or the timeout
         try:
             await waiter
-        except exceptions.CancelledError:
-            if fut.done():
+        except exceptions.CancelledError as e:
+            if fut.done() and _SENTINEL in e.args:
                 return fut.result()
             else:
                 fut.remove_done_callback(cb)
@@ -516,7 +518,7 @@ async def _cancel_and_wait(fut, loop):
     fut.add_done_callback(cb)
 
     try:
-        fut.cancel()
+        fut.cancel(_SENTINEL)
         # We cannot wait on *fut* directly to make
         # sure _cancel_and_wait itself is reliably cancellable.
         await waiter
