@@ -291,7 +291,7 @@ This can be useful when you are transforming exceptions. For example::
     Traceback (most recent call last):
       File "<stdin>", line 2, in <module>
       File "<stdin>", line 2, in func
-    OSError
+    IOError
     <BLANKLINE>
     The above exception was the direct cause of the following exception:
     <BLANKLINE>
