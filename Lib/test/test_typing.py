@@ -4252,7 +4252,7 @@ class TypedDictTests(BaseTestCase):
             {'a': typing.Optional[T], 'b': int}
         )
 
-    def test_generic(self):
+    def test_generic_inheritance(self):
         class A(TypedDict, Generic[T]):
             a: T
 
@@ -4277,7 +4277,6 @@ class TypedDictTests(BaseTestCase):
             c: int
 
         self.assertEqual(C.__total__, True)
-        self.assertEqual(C.__parameters__, ())
         self.assertEqual(C.__optional_keys__, frozenset(['b']))
         self.assertEqual(C.__required_keys__, frozenset(['a', 'c']))
         assert C.__annotations__ == {
@@ -4285,12 +4284,13 @@ class TypedDictTests(BaseTestCase):
             'b': KT,
             'c': int,
         }
+        with self.assertRaises(TypeError):
+            C[str]
 
         class WithImplicitAny(B):
             c: int
 
         self.assertEqual(WithImplicitAny.__total__, True)
-        self.assertEqual(WithImplicitAny.__parameters__, ())
         self.assertEqual(WithImplicitAny.__optional_keys__, frozenset(['b']))
         self.assertEqual(WithImplicitAny.__required_keys__, frozenset(['a', 'c']))
         assert WithImplicitAny.__annotations__ == {
@@ -4298,7 +4298,9 @@ class TypedDictTests(BaseTestCase):
             'b': KT,
             'c': int,
         }
-
+        with self.assertRaises(TypeError):
+            WithImplicitAny[str]
+        
 
 class IOTests(BaseTestCase):
 
