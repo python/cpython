@@ -1,0 +1,30 @@
+.. bpo: 44394
+.. date: 2021-06-29-02-45-53
+.. nonce: A220N1
+.. release date: 2021-09-03
+.. section: Security
+
+Update the vendored copy of libexpat to 2.4.1 (from 2.2.8) to get the fix
+for the CVE-2013-0340 "Billion Laughs" vulnerability. This copy is most used
+on Windows and macOS.
+
+..
+
+.. bpo: 43124
+.. date: 2021-05-08-11-50-46
+.. nonce: 2CTM6M
+.. section: Security
+
+Made the internal ``putcmd`` function in :mod:`smtplib` sanitize input for
+presence of ``\r`` and ``\n`` characters to avoid (unlikely) command
+injection.
+
+..
+
+.. bpo: 45001
+.. date: 2021-08-26-16-25-48
+.. nonce: tn_dKp
+.. section: Library
+
+Made email date parsing more robust against malformed input, namely a
+whitespace-only ``Date:`` header. Patch by Wouter Bolsterlee.
