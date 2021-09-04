@@ -4077,7 +4077,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(jim['id'], 1)
         self.assertEqual(Emp.__name__, 'Emp')
         self.assertEqual(Emp.__module__, __name__)
-        self.assertIn(dict, Emp.__bases__)
+        self.assertEqual(Emp.__bases__, (dict,))
         self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
         self.assertEqual(Emp.__total__, True)
 
@@ -4092,7 +4092,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(jim['id'], 1)
         self.assertEqual(Emp.__name__, 'Emp')
         self.assertEqual(Emp.__module__, __name__)
-        self.assertIn(dict, Emp.__bases__)
+        self.assertEqual(Emp.__bases__, (dict,))
         self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
         self.assertEqual(Emp.__total__, True)
 
@@ -4142,7 +4142,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(LabelPoint2D.__name__, 'LabelPoint2D')
         self.assertEqual(LabelPoint2D.__module__, __name__)
         self.assertEqual(LabelPoint2D.__annotations__, {'x': int, 'y': int, 'label': str})
-        self.assertIn(dict, LabelPoint2D.__bases__)
+        self.assertEqual(LabelPoint2D.__bases__, (dict,))
         self.assertEqual(LabelPoint2D.__total__, True)
         self.assertNotIsSubclass(LabelPoint2D, typing.Sequence)
         not_origin = Point2D(x=0, y=1)
@@ -4256,6 +4256,7 @@ class TypedDictTests(BaseTestCase):
         class A(TypedDict, Generic[T]):
             a: T
 
+        self.assertEqual(A.__bases__, (Generic, dict,))
         self.assertEqual(A.__parameters__, (T,))
         self.assertEqual(A[str].__parameters__, ())
         self.assertEqual(A[str].__args__, (str,))
@@ -4263,6 +4264,7 @@ class TypedDictTests(BaseTestCase):
         class B(A[KT], total=False):
             b: KT
 
+        self.assertEqual(B.__bases__, (Generic, dict,))
         self.assertEqual(B.__total__, False)
         self.assertEqual(B.__parameters__, (KT, ))
         self.assertEqual(B.__optional_keys__, frozenset(['b']))
@@ -4276,6 +4278,7 @@ class TypedDictTests(BaseTestCase):
         class C(B[int]):
             c: int
 
+        self.assertEqual(C.__bases__, (dict,))
         self.assertEqual(C.__total__, True)
         self.assertEqual(C.__optional_keys__, frozenset(['b']))
         self.assertEqual(C.__required_keys__, frozenset(['a', 'c']))
@@ -4290,6 +4293,7 @@ class TypedDictTests(BaseTestCase):
         class WithImplicitAny(B):
             c: int
 
+        self.assertEqual(WithImplicitAny.__bases__, (dict,))
         self.assertEqual(WithImplicitAny.__total__, True)
         self.assertEqual(WithImplicitAny.__optional_keys__, frozenset(['b']))
         self.assertEqual(WithImplicitAny.__required_keys__, frozenset(['a', 'c']))
