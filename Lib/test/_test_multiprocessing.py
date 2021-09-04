@@ -3773,6 +3773,7 @@ class _TestSharedMemory(BaseTestCase):
         local_sms.buf[:len(binary_data)] = binary_data
         local_sms.close()
 
+    @unittest.skipIf(sys.platform == "win32", "test is broken on Windows")
     def test_shared_memory_basics(self):
         sms = shared_memory.SharedMemory('test01_tsmb', create=True, size=512)
         self.addCleanup(sms.unlink)
