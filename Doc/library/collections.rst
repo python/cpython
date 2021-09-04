@@ -1175,39 +1175,63 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
-    class LRU:
+    class MultiHitLRUCache:
+        """ Variant of an LRU cache that defers caching a result until
+            it has been requested multiple times.
 
-        def __init__(self, func, maxsize=128):
+            To avoid flushing LRU caches with one-time requests, we don't
+            cache until a request has been made more than once.
+
+        """
+
+        def __init__(self, func, *, maxsize=128, maxrequests=4096, cache_after=1):
+            self.requests = OrderedDict()   # { uncached_key : request_count }
+            self.cache = OrderedDict()      # { cached_key : function_result }
             self.func = func
-            self.maxsize = maxsize
-            self.cache = OrderedDict()
+            self.maxrequests = maxrequests  # max number of uncached request counts
+            self.maxsize = maxsize          # max number of stored return values
+            self.cache_after = cache_after
 
-        def __call__(self, *args):
-            if args in self.cache:
-                value = self.cache[args]
-                self.cache.move_to_end(args)
-                return value
-            value = self.func(*args)
-            if len(self.cache) >= self.maxsize:
-                self.cache.popitem(False)
-            self.cache[args] = value
-            return value
+        def __call__(self, x):
+            cache = self.cache
+            if x in cache:
+                y = cache[x]
+                cache.move_to_end(x)
+                return y
+            y = self.func(x)
+            requests = self.requests
+            requests[x] = requests.get(x, 0) + 1
+            if requests[x] <= self.cache_after:
+                requests.move_to_end(x)
+                if len(requests) > self.maxrequests:
+                    requests.popitem(0)
+            else:
+                requests.pop(x, None)
+                cache[x] = y
+                if len(cache) > self.maxsize:
+                    cache.popitem(0)
+            return y
 
 .. doctest::
     :hide:
 
-    >>> def square(x):
-    ...     return x ** 2
-    ...
-    >>> s = LRU(square, maxsize=5)
-    >>> actual = [(s(x), s(x)) for x in range(20)]
-    >>> expected = [(x**2, x**2) for x in range(20)]
-    >>> actual == expected
-    True
-    >>> actual = list(s.cache.items())
-    >>> expected = [((x,), x**2) for x in range(15, 20)]
-    >>> actual == expected
-    True
+    >>> f = MultiHitLRUCache(square, maxsize=4, maxrequests=6)
+    >>> list(map(f, range(10)))  # First requests, don't cache
+    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    >>> f(4)  # Cache the second request
+    16
+    >>> f(6)  # Cache the second request
+    36
+    >>> f(2)  # The first request aged out, so don't cache
+    4
+    >>> f(6)  # Cache hit
+    36
+    >>> f(4)  # Cache hit and move to front
+    16
+    >>> f.requests
+    OrderedDict([(5, 1), (7, 1), (8, 1), (9, 1), (2, 1)])
+    >>> f.cache
+    OrderedDict([(6, 36), (4, 16)])
 
 
 :class:`UserDict` objects
