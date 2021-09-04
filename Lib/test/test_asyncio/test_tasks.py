@@ -1010,11 +1010,11 @@ class BaseTaskTests:
 
     def test_wait_for_cancellation_race_condition(self):
         async def inner():
-            await wait_for(asyncio.sleep(1), timeout=2)
+            await asyncio.wait_for(asyncio.sleep(1), timeout=2)
             return 1
 
         async def main():
-            result = await wait_for(inner(), timeout=1)
+            result = await asyncio.wait_for(inner(), timeout=1)
             assert result == 1
 
         asyncio.run(main())
