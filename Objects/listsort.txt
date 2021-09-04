@@ -318,13 +318,13 @@ merging must be done as (A+B)+C or A+(B+C) instead.
 So merging is always done on two consecutive runs at a time, and in-place,
 although this may require some temp memory (more on that later).
 
-When a run is identified, its starting index and length are passed to
-found_new_run() to potentially merge runs on a stack of pending runs.  We
-would like to delay merging as long as possible in order to exploit patterns
-that may come up later, but we like even more to do merging as soon as
-possible to exploit that the run just found is still high in the memory
-hierarchy.  We also can't delay merging "too long" because it consumes memory
-to remember the runs that are still unmerged, and the stack has a fixed size.
+When a run is identified, its length is passed to found_new_run() to
+potentially merge runs on a stack of pending runs.  We would like to delay
+merging as long as possible in order to exploit patterns that may come up
+later, but we like even more to do merging as soon as possible to exploit
+that the run just found is still high in the memory hierarchy.  We also can't
+delay merging "too long" because it consumes memory to remember the runs that
+are still unmerged, and the stack has a fixed size.
 
 The original version of this code used the first thing I made up that didn't
 obviously suck ;-) It was loosely based on invariants involving the Fibonacci
