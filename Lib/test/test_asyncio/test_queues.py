@@ -301,11 +301,12 @@ class QueueGetTests(_QueueTestBase):
         with self.assertWarns(DeprecationWarning):
             q = asyncio.Queue(queue_size, loop=self.loop)
 
-        self.loop.run_until_complete(
-            asyncio.gather(producer(q, producer_num_items),
-                           consumer(q, producer_num_items),
-                           loop=self.loop),
-            )
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.gather(producer(q, producer_num_items),
+                               consumer(q, producer_num_items),
+                               loop=self.loop),
+                )
 
     def test_cancelled_getters_not_being_held_in_self_getters(self):
         def a_generator():
@@ -555,8 +556,9 @@ class QueuePutTests(_QueueTestBase):
         t1 = putter(1)
         t2 = putter(2)
         t3 = putter(3)
-        self.loop.run_until_complete(
-            asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
 
     def test_cancelled_puts_not_being_held_in_self_putters(self):
         def a_generator():

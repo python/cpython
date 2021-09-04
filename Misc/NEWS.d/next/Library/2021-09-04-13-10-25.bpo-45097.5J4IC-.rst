@@ -1,0 +1,2 @@
+Remove deprecation warnings about the loop argument in :mod:`asyncio`
+incorrectly emitted in cases when the user does not pass the loop argument.

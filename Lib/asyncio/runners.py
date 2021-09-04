@@ -61,7 +61,7 @@ def _cancel_all_tasks(loop):
         task.cancel()
 
     loop.run_until_complete(
-        tasks.gather(*to_cancel, loop=loop, return_exceptions=True))
+        tasks._gather(*to_cancel, loop=loop, return_exceptions=True))
 
     for task in to_cancel:
         if task.cancelled():

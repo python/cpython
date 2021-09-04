@@ -193,8 +193,8 @@ class Process:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()
-        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr,
-                                                   loop=self._loop)
+        stdin, stdout, stderr = await tasks._gather(stdin, stdout, stderr,
+                                                    loop=self._loop)
         await self.wait()
         return (stdout, stderr)
 
