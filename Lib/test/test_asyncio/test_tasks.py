@@ -1114,24 +1114,6 @@ class BaseTaskTests:
         with self.assertRaises(FooException):
             loop.run_until_complete(foo())
 
-    def test_wait_for_raises_timeout_error_if_returned_during_cancellation(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
-
-        async def foo():
-            async def inner():
-                try:
-                    await asyncio.sleep(0.2)
-                except asyncio.CancelledError:
-                    return 42
-
-            inner_task = self.new_task(loop, inner())
-
-            await asyncio.wait_for(inner_task, timeout=_EPSILON)
-
-        with self.assertRaises(asyncio.TimeoutError):
-            loop.run_until_complete(foo())
-
     def test_wait_for_self_cancellation(self):
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
