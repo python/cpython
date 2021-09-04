@@ -4286,6 +4286,19 @@ class TypedDictTests(BaseTestCase):
             'c': int,
         }
 
+        class WithImplicitAny(B):
+            c: int
+
+        self.assertEqual(WithImplicitAny.__total__, True)
+        self.assertEqual(WithImplicitAny.__parameters__, ())
+        self.assertEqual(WithImplicitAny.__optional_keys__, frozenset(['b']))
+        self.assertEqual(WithImplicitAny.__required_keys__, frozenset(['a', 'c']))
+        assert WithImplicitAny.__annotations__ == {
+            'a': T,
+            'b': KT,
+            'c': int,
+        }
+
 
 class IOTests(BaseTestCase):
 
