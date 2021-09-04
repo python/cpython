@@ -1638,12 +1638,14 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define ADDOP_O(C, OP, O, TYPE) { \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
         return 0; \
 }
 
 /* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
         Py_DECREF((O)); \
         return 0; \
@@ -1821,7 +1823,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
     ADDOP_I(c, CALL_FUNCTION, 3);
@@ -5226,7 +5228,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     if(!compiler_call_exit_with_nones(c))
         return 0;
     ADDOP(c, GET_AWAITABLE);
-    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
     ADDOP(c, POP_TOP);
@@ -7571,6 +7573,9 @@ normalize_basic_block(basicblock *bb);
 static int
 optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 
+static int
+trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts);
+
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
 duplicate_exits_without_lineno(struct compiler *c);
@@ -7867,6 +7872,9 @@ assemble(struct compiler *c, int addNone)
     }
     if (duplicate_exits_without_lineno(c)) {
         return NULL;
+    }
+    if (trim_unused_consts(c, &a, consts)) {
+        goto error;
     }
     propagate_line_numbers(&a);
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
@@ -8593,6 +8601,33 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     }
     if (maybe_empty_blocks) {
         eliminate_empty_basic_blocks(a->a_entry);
+    }
+    return 0;
+}
+
+// Remove trailing unused constants.
+static int
+trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts)
+{
+    assert(PyList_CheckExact(consts));
+
+    // The first constant may be docstring; keep it always.
+    int max_const_index = 0;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_opcode == LOAD_CONST &&
+                    b->b_instr[i].i_oparg > max_const_index) {
+                max_const_index = b->b_instr[i].i_oparg;
+            }
+        }
+    }
+    if (max_const_index+1 < PyList_GET_SIZE(consts)) {
+        //fprintf(stderr, "removing trailing consts: max=%d, size=%d\n",
+        //        max_const_index, (int)PyList_GET_SIZE(consts));
+        if (PyList_SetSlice(consts, max_const_index+1,
+                            PyList_GET_SIZE(consts), NULL) < 0) {
+            return 1;
+        }
     }
     return 0;
 }

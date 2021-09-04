@@ -557,19 +557,20 @@ extern "C" {
 #define _Py_HOT_FUNCTION
 #endif
 
-/* _Py_NO_INLINE
- * Disable inlining on a function. For example, it helps to reduce the C stack
- * consumption.
- *
- * Usage:
- *    int _Py_NO_INLINE x(void) { return 3; }
- */
-#if defined(_MSC_VER)
-#  define _Py_NO_INLINE __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__ ((noinline))
+// Py_NO_INLINE
+// Disable inlining on a function. For example, it reduces the C stack
+// consumption: useful on LTO+PGO builds which heavily inline code (see
+// bpo-33720).
+//
+// Usage:
+//
+//    Py_NO_INLINE static int random(void) { return 4; }
+#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#  define Py_NO_INLINE __attribute__ ((noinline))
+#elif defined(_MSC_VER)
+#  define Py_NO_INLINE __declspec(noinline)
 #else
-#  define _Py_NO_INLINE
+#  define Py_NO_INLINE
 #endif
 
 /**************************************************************************
