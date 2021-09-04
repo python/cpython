@@ -2051,8 +2051,8 @@ PyInit_time(void)
 static int
 pysleep(_PyTime_t secs)
 {
-    _PyTime_t deadline, monotonic;
 #ifndef MS_WINDOWS
+    _PyTime_t deadline, monotonic;
     struct timespec timeout;
     int err = 0;
 #else
@@ -2060,37 +2060,39 @@ pysleep(_PyTime_t secs)
     DWORD ul_millis;
     DWORD rc;
     FILETIME FileTime;
-    LARGE_INTEGER dueTimeAbs;
+    LARGE_INTEGER deadline;
     HANDLE hTimer = NULL;
-    GetSystemTimeAsFileTime(&FileTime);
 #endif
 
+#ifndef MS_WINDOWS
     if (get_monotonic(&monotonic) < 0) {
         return -1;
     }
     deadline = monotonic + secs;
-#if defined(HAVE_CLOCK_NANOSLEEP) && !defined(MS_WINDOWS)
+#ifdef HAVE_CLOCK_NANOSLEEP
     if (_PyTime_AsTimespec(deadline, &timeout) < 0) {
         return -1;
     }
-#elif defined(MS_WINDOWS)
-    CopyMemory(&dueTimeAbs, &FileTime, sizeof(FILETIME));
+#endif
+#else
+    GetSystemTimePreciseAsFileTime(&FileTime);
+    CopyMemory(&deadline, &FileTime, sizeof(FILETIME));
 
     /* convert to 100 nsec unit */
-    dueTimeAbs.QuadPart += (_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 10);
+    deadline.QuadPart += (_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 10);
 
     hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
     if (NULL == hTimer) {
         return -1;
     }
 
-    if (!SetWaitableTimer(hTimer, &dueTimeAbs, 0, NULL, NULL, FALSE)) {
+    if (!SetWaitableTimer(hTimer, &deadline, 0, NULL, NULL, FALSE)) {
         return -1;
     }
 #endif
 
-    do {
 #ifndef MS_WINDOWS
+    do {
 #ifndef HAVE_CLOCK_NANOSLEEP
         if (_PyTime_AsTimespec(secs, &timeout) < 0) {
             return -1;
@@ -2122,34 +2124,6 @@ pysleep(_PyTime_t secs)
         }
 #endif
 
-#else
-        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-        if (millisecs > LLONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "sleep length is too large");
-            return -1;
-        }
-
-        /* Allow sleep(0) to maintain win32 semantics, and as decreed
-         * by Guido, only the main thread can be interrupted.
-         */
-        ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
-            Py_BEGIN_ALLOW_THREADS
-            Sleep(ul_millis);
-            Py_END_ALLOW_THREADS
-            break;
-        }
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hTimer, ul_millis, FALSE);
-        Py_END_ALLOW_THREADS
-
-        if ((rc != WAIT_OBJECT_0) && (rc != WAIT_TIMEOUT)) {
-            return -1;
-        }
-#endif
-
         /* sleep was interrupted by SIGINT */
         if (PyErr_CheckSignals()) {
             return -1;
@@ -2164,6 +2138,38 @@ pysleep(_PyTime_t secs)
         }
         /* retry with the recomputed delay */
     } while (1);
+#else
+    millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
+    if (millisecs > LLONG_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "sleep length is too large");
+        return -1;
+    }
+    
+    /* Allow sleep(0) to maintain win32 semantics, and as decreed
+     * by Guido, only the main thread can be interrupted.
+     */
+    ul_millis = (unsigned long)millisecs;
+    if (ul_millis == 0 || !_PyOS_IsMainThread()) {
+        Py_BEGIN_ALLOW_THREADS
+        Sleep(ul_millis);
+        Py_END_ALLOW_THREADS
+        return 0;
+    }
+    
+    Py_BEGIN_ALLOW_THREADS
+    rc = WaitForSingleObjectEx(hTimer, ul_millis, FALSE);
+    Py_END_ALLOW_THREADS
+    
+    if ((rc != WAIT_OBJECT_0) && (rc != WAIT_TIMEOUT)) {
+        return -1;
+    }
+
+    /* sleep was interrupted by SIGINT */
+    if (PyErr_CheckSignals()) {
+        return -1;
+    }
+#endif
 
     return 0;
 }
