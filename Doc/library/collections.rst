@@ -1179,8 +1179,8 @@ variants of :func:`functools.lru_cache`:
         """ Variant of an LRU cache that defers caching a result until
             it has been requested multiple times.
 
-            To avoid flushing LRU caches with one-time requests, we don't
-            cache until a request has been made more than once.
+            To avoid flushing the LRU cache with one-time requests,
+            we don't cache until a request has been made more than once.
 
         """
 
@@ -1215,6 +1215,9 @@ variants of :func:`functools.lru_cache`:
 .. doctest::
     :hide:
 
+    >>> def square(x):
+    ...     return x * x
+    ...
     >>> f = MultiHitLRUCache(square, maxsize=4, maxrequests=6)
     >>> list(map(f, range(10)))  # First requests, don't cache
     [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -1232,7 +1235,18 @@ variants of :func:`functools.lru_cache`:
     OrderedDict([(5, 1), (7, 1), (8, 1), (9, 1), (2, 1)])
     >>> f.cache
     OrderedDict([(6, 36), (4, 16)])
-
+    >>> set(f.requests).isdisjoint(f.cache)
+    True
+    >>> list(map(f, [9, 8, 7]))   # Cache these second requests
+    [81, 64, 49]
+    >>> list(map(f, [7, 9]))  # Cache hits
+    [49, 81]
+    >>> f.requests
+    OrderedDict([(5, 1), (2, 1)])
+    >>> f.cache
+    OrderedDict([(4, 16), (8, 64), (7, 49), (9, 81)])
+    >>> set(f.requests).isdisjoint(f.cache)
+    True
 
 :class:`UserDict` objects
 -------------------------
