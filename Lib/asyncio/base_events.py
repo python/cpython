@@ -350,7 +350,7 @@ class Server(events.AbstractServer):
         self._start_serving()
         # Skip one loop iteration so that all 'loop.add_reader'
         # go through.
-        await tasks.sleep(0, loop=self._loop)
+        await tasks.sleep(0)
 
     async def serve_forever(self):
         if self._serving_forever_fut is not None:
@@ -539,7 +539,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         closing_agens = list(self._asyncgens)
         self._asyncgens.clear()
 
-        results = await tasks.gather(
+        results = await tasks._gather(
             *[ag.aclose() for ag in closing_agens],
             return_exceptions=True,
             loop=self)
@@ -1457,7 +1457,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             fs = [self._create_server_getaddrinfo(host, port, family=family,
                                                   flags=flags)
                   for host in hosts]
-            infos = await tasks.gather(*fs, loop=self)
+            infos = await tasks._gather(*fs, loop=self)
             infos = set(itertools.chain.from_iterable(infos))
 
             completed = False
@@ -1515,7 +1515,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
-            await tasks.sleep(0, loop=self)
+            await tasks.sleep(0)
 
         if self._debug:
             logger.info("%r is serving", server)
