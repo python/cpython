@@ -1078,19 +1078,47 @@ class ShortenTestCase(BaseTestCase):
 
 
 class WideCharacterTestCase(BaseTestCase):
-    def test_wide_character(self):
-        def text_len(text):
-            n = 0
-            for c in text:
-                if unicodedata.east_asian_width(c) in {'F', 'W'}:
-                    n += 2
-                else:
-                    n += 1
-            return n
+    def text_len(self, text):
+        n = 0
+        for c in text:
+            if unicodedata.east_asian_width(c) in {'F', 'W'}:
+                n += 2
+            else:
+                n += 1
+        return n
 
+    def check_shorten(self, text, width, expect, **kwargs):
+        result = shorten(text, width, **kwargs)
+        self.check(result, expect)
+
+    def test_wrap(self):
         text = "123 🔧"
-        expected = ["123", "🔧"]
-        self.check_wrap(text, 5, expected, text_len=text_len)
+        self.check_wrap(text, 5, ["123 🔧"])
+        self.check_wrap(text, 5, ["123", "🔧"], text_len=self.text_len)
+
+    def test_wrap_initial_indent(self):
+        text = "12 12"
+        self.check_wrap(text, 6, ["🔧12 12"], initial_indent="🔧")
+        self.check_wrap(text, 6, ["🔧12", "12"], initial_indent="🔧",
+                        text_len=self.text_len)
+
+    def test_wrap_subsequent_indent(self):
+        text = "12 12 12 12"
+        self.check_wrap(text, 6, ["12 12", "🔧12 12"], subsequent_indent="🔧")
+        self.check_wrap(text, 6, ["12 12", "🔧12", "🔧12"],
+                        subsequent_indent="🔧", text_len=self.text_len)
+
+    def test_shorten(self):
+        text = "123 1234🔧"
+        expected = "123 [...]"
+        self.check_shorten(text, 9, "123 1234🔧")
+        self.check_shorten(text, 9, "123 [...]", text_len=self.text_len)
+
+    def test_shorten_placeholder(self):
+        text = "123 1 123"
+        self.check_shorten(text, 7, "123 1 🔧", placeholder=" 🔧")
+        self.check_shorten(text, 7, "123 🔧", placeholder=" 🔧",
+                           text_len=self.text_len)
 
 
 if __name__ == '__main__':
