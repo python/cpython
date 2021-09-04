@@ -2412,14 +2412,14 @@ Samuele
 ...             pending -= 1
 ...             nexts = cycle(islice(nexts, pending))
 
-... def partition(pred, iterable):
+>>> def partition(pred, iterable):
 ...     "Use a predicate to partition entries into false entries and true entries"
 ...     # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
 ...     t1, t2 = tee(iterable)
 ...     return filterfalse(pred, t1), filter(pred, t2)
 
-... def before_and_after(predicate, it):
-...     """ Variant of takewhile() that allows complete
+>>> def before_and_after(predicate, it):
+...     ''' Variant of takewhile() that allows complete
 ...         access to the remainder of the iterator.
 ...
 ...         >>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
@@ -2431,7 +2431,7 @@ Samuele
 ...         Note that the first iterator must be fully
 ...         consumed before the second iterator can
 ...         generate valid results.
-...     """
+...     '''
 ...     it = iter(it)
 ...     transition = []
 ...     def true_iterator():
@@ -2572,6 +2572,9 @@ True
 
 >>> list(roundrobin('abc', 'd', 'ef'))
 ['a', 'd', 'e', 'b', 'f', 'c']
+
+>>> def is_odd(x):
+...     return x % 2 == 1
 
 >>> evens, odds = partition(is_odd, range(10))
 >>> list(evens)
