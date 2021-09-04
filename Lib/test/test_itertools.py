@@ -2400,10 +2400,11 @@ Samuele
 ...     for (a, _), (b, c) in pairwise(pairwise(iterable)):
 ...         yield a, b, c
 
+>>> import collections
 >>> def sliding_window(iterable, n):
 ...     # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
 ...     it = iter(iterable)
-...     window = deque(islice(it, n), maxlen=n)
+...     window = collections.deque(islice(it, n), maxlen=n)
 ...     if len(window) == n:
 ...         yield tuple(window)
 ...     for x in it:
