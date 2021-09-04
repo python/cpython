@@ -1967,39 +1967,35 @@ powerloop(Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2, Py_ssize_t n)
     return result;
 }
 
-/* Examine the stack of runs waiting to be merged, merging adjacent runs
- * according to the "powersort" merge strategy.
+/* The next run has been identified, starting at index s2 and of length n2.
+ * If there's already a run on the stack, apply the "powersort" merge strategy:
+ * compute the topmost run's "power" (depth in a conceptual binary merge tree)
+ * and merge adjacent runs on the stack with greater power. See listsort.txt
+ * for more info.
  *
- * See listsort.txt for more info.
+ * It's the caller's responsibilty to push the new run on the stack when this
+ * returns.
  *
  * Returns 0 on success, -1 on error.
  */
 static int
-merge_collapse(MergeState *ms)
+found_new_run(MergeState *ms, Py_ssize_t s2, Py_ssize_t n2)
 {
     assert(ms);
-    if (ms->n <= 1)
-        return 0;
-    struct s_slice *p = ms->pending;
-    /* The most recent run is never merged here, because we can't know its
-     * power before we see the run that follows it. So pop it off the stack
-     * and restore it later.
-     */
-    --ms->n;
-    struct s_slice ss2 = p[ms->n];
-    Py_ssize_t s1 = p[ms->n - 1].base.keys - ms->basekeys; /* start index */
-    Py_ssize_t n1 = p[ms->n - 1].len;
-    Py_ssize_t n2 = ss2.len;
-    assert(s1 + n1 == ss2.base.keys - ms->basekeys);
-    int power = powerloop(s1, n1, n2, ms->listlen);
-    while (ms->n > 1 && p[ms->n - 2].power > power) {
-        if (merge_at(ms, ms->n - 2) < 0)
-            return -1;
+    if (ms->n) {
+        assert(ms->n > 0);
+        struct s_slice *p = ms->pending;
+        Py_ssize_t s1 = p[ms->n - 1].base.keys - ms->basekeys; /* start index */
+        Py_ssize_t n1 = p[ms->n - 1].len;
+        assert(s1 + n1 == s2);
+        int power = powerloop(s1, n1, n2, ms->listlen);
+        while (ms->n > 1 && p[ms->n - 2].power > power) {
+            if (merge_at(ms, ms->n - 2) < 0)
+                return -1;
+        }
+        assert(ms->n < 2 || p[ms->n - 2].power < power);
+        p[ms->n - 1].power = power;
     }
-    assert(ms->n < 2 || p[ms->n - 2].power < power);
-    p[ms->n - 1].power = power;
-    p[ms->n] = ss2;
-    ++ms->n;
     return 0;
 }
 
@@ -2441,13 +2437,14 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 goto fail;
             n = force;
         }
-        /* Push run onto pending-runs stack, and maybe merge. */
+        /* Maybe merge pending runs. */
+        if (found_new_run(&ms, lo.keys - ms.basekeys, n) < 0)
+            goto fail;
+        /* Push new run on stack. */
         assert(ms.n < MAX_MERGE_PENDING);
         ms.pending[ms.n].base = lo;
         ms.pending[ms.n].len = n;
         ++ms.n;
-        if (merge_collapse(&ms) < 0)
-            goto fail;
         /* Advance to find next run. */
         sortslice_advance(&lo, n);
         nremaining -= n;

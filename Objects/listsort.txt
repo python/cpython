@@ -318,14 +318,13 @@ merging must be done as (A+B)+C or A+(B+C) instead.
 So merging is always done on two consecutive runs at a time, and in-place,
 although this may require some temp memory (more on that later).
 
-When a run is identified, its base address and length are pushed on a stack
-in the MergeState struct.  merge_collapse() is then called to potentially
-merge runs on that stack.  We would like to delay merging as long as possible
-in order to exploit patterns that may come up later, but we like even more to
-do merging as soon as possible to exploit that the run just found is still
-high in the memory hierarchy.  We also can't delay merging "too long" because
-it consumes memory to remember the runs that are still unmerged, and the
-stack has a fixed size.
+When a run is identified, its starting index and length are passed to
+found_new_run() to potentially merge runs on a stack of pending runs.  We
+would like to delay merging as long as possible in order to exploit patterns
+that may come up later, but we like even more to do merging as soon as
+possible to exploit that the run just found is still high in the memory
+hierarchy.  We also can't delay merging "too long" because it consumes memory
+to remember the runs that are still unmerged, and the stack has a fixed size.
 
 The original version of this code used the first thing I made up that didn't
 obviously suck ;-) It was loosely based on invariants involving the Fibonacci
@@ -398,10 +397,11 @@ with 4-byte pointers) smaller than than the largest size_t. So at least the
 leading two bits of the integers we're using are clear.
 
 Since we can't compute a run's power before seeing the run that follows it,
-the most-recently identified run is never merged by `merge_collapse()`.
-Instead that run is only used to compute the 2nd-most-recent run's power.
+the most-recently identified run is never merged by `found_new_run()`.
+Instead a new run is only used to compute the 2nd-most-recent run's power.
 Then adjacent runs are merged so long as their saved power (tree depth) is
-greater than that newly computed power.
+greater than that newly computed power. When found_new_run() returns, only
+then is a new run pushed on to the stack of pending runs.
 
 A key invariant is that powers on the run stack are strictly decreasing
 (starting from the run at the top of the stack).
