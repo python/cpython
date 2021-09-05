@@ -1171,6 +1171,19 @@ class BaseExceptionReportingTests:
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
+    def test_format_exception_only_qualname(self):
+        class A:
+            class B:
+                class X(Exception):
+                    def __str__(self):
+                        return "I am X"
+                    pass
+        err = self.get_report(A.B.X())
+        str_value = 'I am X'
+        str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
+        exp = "%s: %s\n" % (str_name, str_value)
+        self.assertEqual(exp, err)
+
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
@@ -1502,8 +1515,8 @@ class TestStack(unittest.TestCase):
 
     def test_custom_format_frame(self):
         class CustomStackSummary(traceback.StackSummary):
-            def format_frame(self, frame):
-                return f'{frame.filename}:{frame.lineno}'
+            def format_frame_summary(self, frame_summary):
+                return f'{frame_summary.filename}:{frame_summary.lineno}'
 
         def some_inner():
             return CustomStackSummary.extract(
@@ -1513,6 +1526,34 @@ class TestStack(unittest.TestCase):
         self.assertEqual(
             s.format(),
             [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
+
+    def test_dropping_frames(self):
+         def f():
+             1/0
+
+         def g():
+             try:
+                 f()
+             except:
+                 return sys.exc_info()
+
+         exc_info = g()
+
+         class Skip_G(traceback.StackSummary):
+             def format_frame_summary(self, frame_summary):
+                 if frame_summary.name == 'g':
+                     return None
+                 return super().format_frame_summary(frame_summary)
+
+         stack = Skip_G.extract(
+             traceback.walk_tb(exc_info[2])).format()
+
+         self.assertEqual(len(stack), 1)
+         lno = f.__code__.co_firstlineno + 1
+         self.assertEqual(
+             stack[0],
+             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
+         )
 
 
 class TestTracebackException(unittest.TestCase):
