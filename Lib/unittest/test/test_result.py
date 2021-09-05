@@ -441,7 +441,7 @@ class Test_TestResult(unittest.TestCase):
         try:
             try:
                 raiseAnException()
-            except:
+            except ValueError:
                 self.fail('too bad')
         except self.failureException:
             exc_info = sys.exc_info()
