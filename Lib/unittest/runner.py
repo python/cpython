@@ -61,7 +61,7 @@ class TextTestResult(result.TestResult):
         is_subtest = isinstance(test, _SubTest)
         if is_subtest or self._newline:
             if not self._newline:
-                self.stream.writeln("")
+                self.stream.writeln()
             if is_subtest:
                 self.stream.write("  ")
             self.stream.write(self.getDescription(test))
