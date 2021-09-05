@@ -4496,6 +4496,7 @@ check_eval_breaker:
         }
 
         TARGET(LOAD_METHOD_MODULE): {
+            /* LOAD_METHOD, for module methods */
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
