@@ -443,7 +443,7 @@ class Test_TestResult(unittest.TestCase):
                 raiseAnException()
             except:
                 self.fail('too bad')
-        except:
+        except self.failureException:
             exc_info = sys.exc_info()
 
         class ResultWithoutFilter(unittest.TestResult):
