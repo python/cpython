@@ -427,7 +427,7 @@ class Test_TestResult(unittest.TestCase):
     def testRemoveUnittestTbFrames(self):
         try:
             self.fail('too bad')
-        except:
+        except self.failureException:
             exc_info = sys.exc_info()
         tb = exc_info[2]
         self.assertEqual(len(list(traceback.walk_tb(tb))), 2)
