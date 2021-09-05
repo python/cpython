@@ -1181,7 +1181,7 @@ variants of :func:`functools.lru_cache`:
         "LRU Cache that invalidates and refreshes old entries."
 
         def __init__(self, func, maxsize=128, maxage=30):
-            self.cache = OrderedDict()    # { args : (timestamp, result)}
+            self.cache = OrderedDict()      # { args : (timestamp, result)}
             self.func = func
             self.maxsize = maxsize
             self.maxage = maxage
@@ -1219,23 +1219,20 @@ variants of :func:`functools.lru_cache`:
             self.cache_after = cache_after
 
         def __call__(self, *args):
-            cache = self.cache
             if args in self.cache:
-                cache.move_to_end(args)
-                result = cache[args]
-                return result
+                self.cache.move_to_end(args)
+                return self.cache[args]
             result = self.func(*args)
-            requests = self.requests
-            requests[args] = requests.get(args, 0) + 1
-            if requests[args] <= self.cache_after:
-                requests.move_to_end(args)
-                if len(requests) > self.maxrequests:
-                    requests.popitem(0)
+            self.requests[args] = self.requests.get(args, 0) + 1
+            if self.requests[args] <= self.cache_after:
+                self.requests.move_to_end(args)
+                if len(self.requests) > self.maxrequests:
+                    self.requests.popitem(0)
             else:
-                requests.pop(args, None)
-                cache[args] = result
-                if len(cache) > self.maxsize:
-                    cache.popitem(0)
+                self.requests.pop(args, None)
+                self.cache[args] = result
+                if len(self.cache) > self.maxsize:
+                    self.cache.popitem(0)
             return result
 
 .. doctest::
