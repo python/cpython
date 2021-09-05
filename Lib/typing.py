@@ -2296,15 +2296,6 @@ class _TypedDictMeta(type):
 
     __instancecheck__ = __subclasscheck__
 
-    def __getitem__(cls, params):
-        if not isinstance(params, tuple):
-            params = (params,)
-        msg = "Parameters to generic types must be types."
-        params = tuple(_type_check(p, msg) for p in params)
-        nparams = len(cls.__dict__.get("__parameters__", ()))
-        _check_generic(cls, params, nparams)
-        return types.GenericAlias(cls, params)
-
 
 def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
