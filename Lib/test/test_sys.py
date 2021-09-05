@@ -1070,6 +1070,20 @@ class UnraisableHookTest(unittest.TestCase):
                     self.assertIn("del is broken", report)
                 self.assertTrue(report.endswith("\n"))
 
+    def test_original_unraisablehook_exception_qualname(self):
+        class A:
+            class B:
+                class X(Exception):
+                    pass
+
+        with test.support.captured_stderr() as stderr, \
+             test.support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+                 expected = self.write_unraisable_exc(
+                     A.B.X(), "msg", "obj");
+        report = stderr.getvalue()
+        testName = 'test_original_unraisablehook_exception_qualname'
+        self.assertIn(f"{testName}.<locals>.A.B.X", report)
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)

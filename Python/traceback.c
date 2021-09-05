@@ -1071,7 +1071,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
     frame = tstate->frame;
     if (frame == NULL) {
-        PUTS(fd, "<no Python frame>\n");
+        PUTS(fd, "  <no Python frame>\n");
         return;
     }
 

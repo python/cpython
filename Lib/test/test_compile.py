@@ -650,6 +650,17 @@ if 1:
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
         self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
 
+    # Stripping unused constants is not a strict requirement for the
+    # Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_strip_unused_consts(self):
+        # Python 3.10rc1 appended None to co_consts when None is not used
+        # at all. See bpo-45056.
+        def f1():
+            "docstring"
+            return 42
+        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
     # that peephole optimization was actually done though that isn't an

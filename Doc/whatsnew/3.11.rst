@@ -226,11 +226,29 @@ sqlite3
   now raise :exc:`UnicodeEncodeError` instead of :exc:`sqlite3.ProgrammingError`.
   (Contributed by Erlend E. Aasland in :issue:`44688`.)
 
+* :mod:`sqlite3` exceptions now include the SQLite error code as
+  :attr:`~sqlite3.Error.sqlite_errorcode` and the SQLite error name as
+  :attr:`~sqlite3.Error.sqlite_errorname`.
+  (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
+  :issue:`16379`.)
+
 
 Removed
 =======
+
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without
   an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+
+* The ``binhex`` module, deprecated in Python 3.9, is now removed.
+  The following :mod:`binascii` functions, deprecated in Python 3.9, are now
+  also removed:
+
+  * ``a2b_hqx()``, ``b2a_hqx()``;
+  * ``rlecode_hqx()``, ``rledecode_hqx()``.
+
+  The :func:`binascii.crc_hqx` function remains available.
+
+  (Contributed by Victor Stinner in :issue:`45085`.)
 
 
 Optimizations
@@ -270,6 +288,13 @@ Build Changes
 Deprecated
 ==========
 
+* The :mod:`lib2to3` package is now deprecated and may not be able to parse
+  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
+  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+  It is untested and undocumented and also not used by webbrowser itself.
+  (Contributed by Dong-hee Na in :issue:`42255`.)
 
 
 Removed
@@ -299,6 +324,14 @@ Changes in the Python API
   executors to :meth:`loop.set_default_executor` following a deprecation in
   Python 3.8.
   (Contributed by Illia Volochii in :issue:`43234`.)
+
+* :func:`open`, :func:`io.open`, :func:`codecs.open` and
+  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
+  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
+  "universal newline" is used by default when a file is open in text mode.  The
+  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
+  how universal newlines works.
+  (Contributed by Victor Stinner in :issue:`37330`.)
 
 
 C API Changes

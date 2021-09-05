@@ -728,15 +728,19 @@ def _ss(data, c=None):
     lead to garbage results.
     """
     if c is not None:
-        T, total, count = _sum((x-c)**2 for x in data)
+        T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
+    # Compute the mean accurate to within 1/2 ulp
     c = mean(data)
-    T, total, count = _sum((x-c)**2 for x in data)
-    # The following sum should mathematically equal zero, but due to rounding
-    # error may not.
-    U, total2, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
-    total -= total2 ** 2 / len(data)
+    # Initial computation for the sum of square deviations
+    T, total, count = _sum((d := x - c) * d for x in data)
+    # Correct any remaining inaccuracy in the mean c.
+    # The following sum should mathematically equal zero,
+    # but due to the final rounding of the mean, it may not.
+    U, error, count2 = _sum((x - c) for x in data)
+    assert count == count2
+    correction = error * error / len(data)
+    total -= correction
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
@@ -924,8 +928,8 @@ def correlation(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
-    syy = fsum((yi - ybar) ** 2.0 for yi in y)
+    sxx = fsum((d := xi - xbar) * d for xi in x)
+    syy = fsum((d := yi - ybar) * d for yi in y)
     try:
         return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
@@ -968,7 +972,7 @@ def linear_regression(x, y, /):
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((xi - xbar) ** 2.0 for xi in x)
+    sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
@@ -1094,10 +1098,11 @@ class NormalDist:
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
-        variance = self._sigma ** 2.0
+        variance = self._sigma * self._sigma
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
+        diff = x - self._mu
+        return exp(diff * diff / (-2.0 * variance)) / sqrt(tau * variance)
 
     def cdf(self, x):
         "Cumulative distribution function.  P(X <= x)"
@@ -1161,7 +1166,7 @@ class NormalDist:
         if not dv:
             return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
         a = X._mu * Y_var - Y._mu * X_var
-        b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+        b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
@@ -1204,7 +1209,7 @@ class NormalDist:
     @property
     def variance(self):
         "Square of the standard deviation."
-        return self._sigma ** 2.0
+        return self._sigma * self._sigma
 
     def __add__(x1, x2):
         """Add a constant or another NormalDist instance.
