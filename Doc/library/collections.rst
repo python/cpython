@@ -1175,6 +1175,42 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
+    class SimpleLRU:
+
+        def __init__(self, func, maxsize=128):
+            self.func = func
+            self.maxsize = maxsize
+            self.cache = OrderedDict()
+
+        def __call__(self, *args):
+            if args in self.cache:
+                value = self.cache[args]
+                self.cache.move_to_end(args)
+                return value
+            value = self.func(*args)
+            if len(self.cache) >= self.maxsize:
+                self.cache.popitem(False)
+            self.cache[args] = value
+            return value
+
+.. doctest::
+    :hide:
+
+    >>> def square(x):
+    ...     return x ** 2
+    ...
+    >>> s = SimpleLRU(square, maxsize=5)
+    >>> actual = [(s(x), s(x)) for x in range(20)]
+    >>> expected = [(x**2, x**2) for x in range(20)]
+    >>> actual == expected
+    True
+    >>> actual = list(s.cache.items())
+    >>> expected = [((x,), x**2) for x in range(15, 20)]
+    >>> actual == expected
+    True
+
+.. testcode::
+
     class MultiHitLRUCache:
         """ Variant of an LRU cache that defers caching a result until
             it has been requested multiple times.
