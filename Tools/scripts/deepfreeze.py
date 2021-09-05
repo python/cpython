@@ -8,6 +8,8 @@ import time
 import types
 import typing
 
+verbose = False
+
 
 def make_string_literal(b: bytes) -> str:
     res = ['"']
@@ -375,12 +377,14 @@ def generate(source: str, filename: str, modname: str, file: typing.TextIO) -> N
             printer.write(p)
     here = os.path.dirname(__file__)
     printer.write(EPILOGUE.replace("%%NAME%%", modname.replace(".", "_")))
-    print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
+    if verbose:
+        print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--module", help="Defaults to basename(file)")
 parser.add_argument("-o", "--output", help="Defaults to MODULE.c")
+parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
 parser.add_argument("file", help="Input file (required)")
 
 
@@ -391,11 +395,14 @@ def report_time(label: str):
         yield
     finally:
         t1 = time.time()
-    print(f"{label}: {t1-t0:.3f} sec")
+    if verbose:
+        print(f"{label}: {t1-t0:.3f} sec")
 
 
 def main() -> None:
+    global verbose
     args = parser.parse_args()
+    verbose = args.verbose
     with open(args.file) as f:
         source = f.read()
     modname = args.module or os.path.basename(args.file).removesuffix(".py")
@@ -403,7 +410,8 @@ def main() -> None:
     with open(output, "w") as file:
         with report_time("generate"):
             generate(source, args.file, modname, file)
-    print(f"Wrote {os.path.getsize(output)} bytes to {output}")
+    if verbose:
+        print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 
 
 if __name__ == "__main__":

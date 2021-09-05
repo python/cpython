@@ -404,14 +404,16 @@ def regen_makefile(frozenids, frozen):
 
         # Add a rule to generate the frozen header file.
         rules.append(f'{header}: $(srcdir)/Programs/_freeze_module $(srcdir)/{_pyfile}')
-        rules.append(f'\t$(srcdir)/Programs/_freeze_module {frozenid} \\')
+        rules.append(f'\t@echo "Freezing {header} from {_pyfile}"')
+        rules.append(f'\t@$(srcdir)/Programs/_freeze_module {frozenid} \\')
         rules.append(f'\t\t$(srcdir)/{_pyfile} \\')
         rules.append(f'\t\t$(srcdir)/{header}')
         rules.append('')
 
         # Also add a deepfreeze rule.
         deepfreezerules.append(f'{cfile}: {_pyfile} Tools/scripts/deepfreeze.py $(BOOTSTRAP)')
-        deepfreezerules.append(f"\t$(BOOTSTRAP) \\")
+        deepfreezerules.append(f'\t@echo "Deepfreezing {cfile} from {_pyfile}"')
+        deepfreezerules.append(f"\t@$(BOOTSTRAP) \\")
         deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
         deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} \\")
         deepfreezerules.append(f"\t\t-m {frozenid} \\")
