@@ -41,6 +41,7 @@ class TextTestResult(result.TestResult):
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
+        self._newline = True
 
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
