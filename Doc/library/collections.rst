@@ -1180,7 +1180,7 @@ variants of :func:`functools.lru_cache`:
     class TimeBoundedLRU:
         "LRU Cache that invalidates and refreshes old entries."
 
-        def __init__(self, func, *, maxsize=128, maxage=30):
+        def __init__(self, func, maxsize=128, maxage=30):
             self.cache = OrderedDict()    # { args : (timestamp, result)}
             self.func = func
             self.maxsize = maxsize
@@ -1210,7 +1210,7 @@ variants of :func:`functools.lru_cache`:
 
         """
 
-        def __init__(self, func, *, maxsize=128, maxrequests=4096, cache_after=1):
+        def __init__(self, func, maxsize=128, maxrequests=4096, cache_after=1):
             self.requests = OrderedDict()   # { uncached_key : request_count }
             self.cache = OrderedDict()      # { cached_key : function_result }
             self.func = func
