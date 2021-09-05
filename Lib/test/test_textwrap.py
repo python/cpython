@@ -1079,13 +1079,10 @@ class ShortenTestCase(BaseTestCase):
 
 class WideCharacterTestCase(BaseTestCase):
     def text_len(self, text):
-        n = 0
-        for c in text:
-            if unicodedata.east_asian_width(c) in {'F', 'W'}:
-                n += 2
-            else:
-                n += 1
-        return n
+        sum(
+            2 if unicodedata.east_asian_width(c) in {'F', 'W'} else 1
+            for c in text
+        )
 
     def check_shorten(self, text, width, expect, **kwargs):
         result = shorten(text, width, **kwargs)
