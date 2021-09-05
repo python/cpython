@@ -29,12 +29,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-/** the names of the three mandatory methods **/
-
-#define MICROPROTOCOLS_GETQUOTED_NAME "getquoted"
-#define MICROPROTOCOLS_GETSTRING_NAME "getstring"
-#define MICROPROTOCOLS_GETBINARY_NAME "getbinary"
-
 /** exported functions **/
 
 /* used by module.c to init the microprotocols system */
