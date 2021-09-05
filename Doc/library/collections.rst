@@ -1221,8 +1221,8 @@ variants of :func:`functools.lru_cache`:
         def __call__(self, *args):
             cache = self.cache
             if args in self.cache:
-                result = cache[args]
                 cache.move_to_end(args)
+                result = cache[args]
                 return result
             result = self.func(*args)
             requests = self.requests
