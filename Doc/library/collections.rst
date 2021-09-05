@@ -1209,12 +1209,12 @@ variants of :func:`functools.lru_cache`:
     >>> actual == expected
     True
 
-.. testcode:
+.. testcode::
 
     from time import time
 
     class TimeBoundedLRU:
-        'Variant of an LRU Cache that invalidates and refreshes old entries'
+        "Variant of an LRU Cache that invalidates and refreshes old entries."
 
         def __init__(self, func, *, maxsize=128, maxage=30):
             self.func = func
