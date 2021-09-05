@@ -1257,20 +1257,16 @@ variants of :func:`functools.lru_cache`:
     36
     >>> f(4)  # Cache hit and move to front
     16
-    >>> f.requests
-    OrderedDict([(5, 1), (7, 1), (8, 1), (9, 1), (2, 1)])
-    >>> f.cache
-    OrderedDict([(6, 36), (4, 16)])
+    >>> list(f.cache.values())
+    [36, 16]
     >>> set(f.requests).isdisjoint(f.cache)
     True
     >>> list(map(f, [9, 8, 7]))   # Cache these second requests
     [81, 64, 49]
     >>> list(map(f, [7, 9]))  # Cache hits
     [49, 81]
-    >>> f.requests
-    OrderedDict([(5, 1), (2, 1)])
-    >>> f.cache
-    OrderedDict([(4, 16), (8, 64), (7, 49), (9, 81)])
+    >>> list(f.cache.values())
+    [16, 64, 49, 81]
     >>> set(f.requests).isdisjoint(f.cache)
     True
 
