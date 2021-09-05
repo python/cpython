@@ -1178,20 +1178,20 @@ variants of :func:`functools.lru_cache`:
     class SimpleLRU:
 
         def __init__(self, func, maxsize=128):
+            self.cache = OrderedDict()
             self.func = func
             self.maxsize = maxsize
-            self.cache = OrderedDict()
 
         def __call__(self, *args):
             if args in self.cache:
-                value = self.cache[args]
+                result = self.cache[args]
                 self.cache.move_to_end(args)
-                return value
-            value = self.func(*args)
+                return result
+            result = self.func(*args)
             if len(self.cache) >= self.maxsize:
-                self.cache.popitem(False)
-            self.cache[args] = value
-            return value
+                self.cache.popitem(0)
+            self.cache[args] = result
+            return result
 
 .. doctest::
     :hide:
@@ -1217,18 +1217,18 @@ variants of :func:`functools.lru_cache`:
         "Variant of an LRU Cache that invalidates and refreshes old entries."
 
         def __init__(self, func, *, maxsize=128, maxage=30):
+            self.cache = OrderedDict()    # { args : (timestamp, result)}
             self.func = func
             self.maxsize = maxsize
             self.maxage = maxage
-            self.cache = OrderedDict()    # { args : (timestamp, result)}
 
-        def __call__(self, args):
+        def __call__(self, *args):
             if args in self.cache:
                 self.cache.move_to_end(args)
                 timestamp, result = self.cache[args]
                 if time() - timestamp <= self.maxage:
                     return result
-            result = self.func(args)
+            result = self.func(*args)
             self.cache[args] = time(), result
             if len(self.cache) > self.maxsize:
                 self.cache.popitem(0)
@@ -1254,25 +1254,25 @@ variants of :func:`functools.lru_cache`:
             self.maxsize = maxsize          # max number of stored return values
             self.cache_after = cache_after
 
-        def __call__(self, x):
+        def __call__(self, *args):
             cache = self.cache
-            if x in cache:
-                y = cache[x]
-                cache.move_to_end(x)
-                return y
-            y = self.func(x)
+            if args in self.cache:
+                result = cache[args]
+                cache.move_to_end(args)
+                return result
+            result = self.func(*args)
             requests = self.requests
-            requests[x] = requests.get(x, 0) + 1
-            if requests[x] <= self.cache_after:
-                requests.move_to_end(x)
+            requests[args] = requests.get(args, 0) + 1
+            if requests[args] <= self.cache_after:
+                requests.move_to_end(args)
                 if len(requests) > self.maxrequests:
                     requests.popitem(0)
             else:
-                requests.pop(x, None)
-                cache[x] = y
+                requests.pop(args, None)
+                cache[args] = result
                 if len(cache) > self.maxsize:
                     cache.popitem(0)
-            return y
+            return result
 
 .. doctest::
     :hide:
