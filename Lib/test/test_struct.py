@@ -678,6 +678,15 @@ class StructTest(unittest.TestCase):
                                         'embedded null character'):
                 struct.calcsize(s)
 
+    @support.cpython_only
+    def test_issue45034(self):
+        from _testcapi import USHRT_MAX
+        error_msg = f'ushort format requires 0 <= number <= {USHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', -1)  # too small
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

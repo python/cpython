@@ -1,0 +1,2 @@
+Changes how max value is formatted for ``struct.pack`` with ``'H'`` mode and
+too large / small numbers.
