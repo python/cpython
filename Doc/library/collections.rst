@@ -1175,42 +1175,6 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
-    class SimpleLRU:
-
-        def __init__(self, func, maxsize=128):
-            self.cache = OrderedDict()
-            self.func = func
-            self.maxsize = maxsize
-
-        def __call__(self, *args):
-            if args in self.cache:
-                self.cache.move_to_end(args)
-                result = self.cache[args]
-                return result
-            result = self.func(*args)
-            self.cache[args] = result
-            if len(self.cache) > self.maxsize:
-                self.cache.popitem(0)
-            return result
-
-.. doctest::
-    :hide:
-
-    >>> def square(x):
-    ...     return x ** 2
-    ...
-    >>> s = SimpleLRU(square, maxsize=5)
-    >>> actual = [(s(x), s(x)) for x in range(20)]
-    >>> expected = [(x**2, x**2) for x in range(20)]
-    >>> actual == expected
-    True
-    >>> actual = list(s.cache.items())
-    >>> expected = [((x,), x**2) for x in range(15, 20)]
-    >>> actual == expected
-    True
-
-.. testcode::
-
     from time import time
 
     class TimeBoundedLRU:
