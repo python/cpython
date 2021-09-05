@@ -837,6 +837,34 @@ which incur interpreter overhead.
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
 
+   def before_and_after(predicate, it):
+       """ Variant of takewhile() that allows complete
+           access to the remainder of the iterator.
+
+           >>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
+           >>> str.join('', all_upper)
+           'ABC'
+           >>> str.join('', remainder)
+           'dEfGhI'
+
+           Note that the first iterator must be fully
+           consumed before the second iterator can
+           generate valid results.
+       """
+       it = iter(it)
+       transition = []
+       def true_iterator():
+           for elem in it:
+               if predicate(elem):
+                   yield elem
+               else:
+                   transition.append(elem)
+                   return
+       def remainder_iterator():
+           yield from transition
+           yield from it
+       return true_iterator(), remainder_iterator()
+
    def powerset(iterable):
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
        s = list(iterable)
@@ -948,4 +976,3 @@ which incur interpreter overhead.
                c, n = c*(n-r)//n, n-1
            result.append(pool[-1-n])
        return tuple(result)
-
