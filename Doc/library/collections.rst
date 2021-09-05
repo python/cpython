@@ -1184,13 +1184,13 @@ variants of :func:`functools.lru_cache`:
 
         def __call__(self, *args):
             if args in self.cache:
-                result = self.cache[args]
                 self.cache.move_to_end(args)
+                result = self.cache[args]
                 return result
             result = self.func(*args)
-            if len(self.cache) >= self.maxsize:
-                self.cache.popitem(0)
             self.cache[args] = result
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(0)
             return result
 
 .. doctest::
@@ -1214,7 +1214,7 @@ variants of :func:`functools.lru_cache`:
     from time import time
 
     class TimeBoundedLRU:
-        "Variant of an LRU Cache that invalidates and refreshes old entries."
+        "LRU Cache that invalidates and refreshes old entries."
 
         def __init__(self, func, *, maxsize=128, maxage=30):
             self.cache = OrderedDict()    # { args : (timestamp, result)}
@@ -1238,7 +1238,7 @@ variants of :func:`functools.lru_cache`:
 .. testcode::
 
     class MultiHitLRUCache:
-        """ Variant of an LRU cache that defers caching a result until
+        """ LRU cache that defers caching a result until
             it has been requested multiple times.
 
             To avoid flushing the LRU cache with one-time requests,
@@ -1250,7 +1250,7 @@ variants of :func:`functools.lru_cache`:
             self.requests = OrderedDict()   # { uncached_key : request_count }
             self.cache = OrderedDict()      # { cached_key : function_result }
             self.func = func
-            self.maxrequests = maxrequests  # max number of uncached request counts
+            self.maxrequests = maxrequests  # max number of uncached requests
             self.maxsize = maxsize          # max number of stored return values
             self.cache_after = cache_after
 
