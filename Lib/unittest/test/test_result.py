@@ -204,6 +204,32 @@ class Test_TestResult(unittest.TestCase):
         self.assertIs(test_case, test)
         self.assertIsInstance(formatted_exc, str)
 
+    def test_addFailure_filter_traceback_frames(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        test = Foo('test_1')
+        def get_exc_info():
+            try:
+                test.fail("foo")
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        full_exc = traceback.format_exception(*exc_info_tuple)
+
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        dropped = [l for l in full_exc if l not in formatted_exc]
+        self.assertEqual(len(dropped), 1)
+        self.assertIn("raise self.failureException(msg)", dropped[0])
+
     # "addError(test, err)"
     # ...
     # "Called when the test case test raises an unexpected exception err
@@ -423,47 +449,6 @@ class Test_TestResult(unittest.TestCase):
 
         Frame.tb_frame.f_globals['__unittest'] = True
         self.assertTrue(result._is_relevant_tb_level(Frame))
-
-    def testRemoveUnittestTbFrames(self):
-        try:
-            self.fail('too bad')
-        except self.failureException:
-            exc_info = sys.exc_info()
-        tb = exc_info[2]
-        self.assertEqual(len(list(traceback.walk_tb(tb))), 2)
-        result = unittest.TestResult()
-        result._remove_unittest_tb_frames(tb)
-        self.assertEqual(len(list(traceback.walk_tb(tb))), 1)
-
-    def testExcInfoStringChained(self):  # bpo 49563
-        def raiseAnException():
-            raise ValueError(42)
-        try:
-            try:
-                raiseAnException()
-            except ValueError:
-                self.fail('too bad')
-        except self.failureException:
-            exc_info = sys.exc_info()
-
-        class ResultWithoutFilter(unittest.TestResult):
-            def _remove_unittest_tb_frames(self, tb):
-                pass
-
-        result = ResultWithoutFilter()
-        exc_str_no_filter = result._exc_info_to_string(exc_info, self)
-
-        result = unittest.TestResult()
-        exc_str_filtered = result._exc_info_to_string(exc_info, self)
-        for exc_str in [exc_str_no_filter, exc_str_filtered]:
-            self.assertIn('raiseAnException()', exc_str)
-            self.assertIn('raise ValueError(42)', exc_str)
-            self.assertIn("self.fail('too bad')", exc_str)
-            self.assertIn('AssertionError: too bad', exc_str)
-
-        # The unittest call:
-        self.assertNotIn('raise self.failureException(msg)', exc_str_filtered)
-        self.assertIn('raise self.failureException(msg)', exc_str_no_filter)
 
     def testFailFast(self):
         result = unittest.TestResult()
