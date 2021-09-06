@@ -117,7 +117,12 @@ cursor_dealloc(pysqlite_Cursor *self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
     if (self->statement) {
-        pysqlite_statement_reset(self->statement);
+        /* A SELECT query will lock the affected database table(s), so we need
+         * to reset the statement to unlock the database before disappearing */
+        sqlite3_stmt *stmt = self->statement->st;
+        if (sqlite3_stmt_readonly(stmt)) {
+            pysqlite_statement_reset(self->statement);
+        }
     }
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
@@ -525,6 +530,16 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
     self->rowcount = 0L;
+
+    if (self->statement) {
+        /* A SELECT query will lock the affected database table(s), so we need
+         * to reset the statement to unlock the database before switching
+         * statements */
+        sqlite3_stmt *stmt = self->statement->st;
+        if (sqlite3_stmt_readonly(stmt)) {
+            pysqlite_statement_reset(self->statement);
+        }
+    }
 
     PyObject *stmt = get_statement_from_cache(self, operation);
     Py_XSETREF(self->statement, (pysqlite_Statement *)stmt);
