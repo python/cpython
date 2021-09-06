@@ -173,13 +173,7 @@ class TestResult(object):
     def _exc_info_to_string(self, err, test):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
-        # Skip test runner traceback levels
-        while tb and self._is_relevant_tb_level(tb):
-            tb = tb.tb_next
-
-        if exctype is test.failureException:
-            # Skip assert*() traceback levels
-            self._remove_unittest_tb_frames(tb)
+        tb = self._clean_tracebacks(exctype, value, tb, test)
         tb_e = traceback.TracebackException(
             exctype, value, tb,
             capture_locals=self.tb_locals, compact=True)
@@ -198,6 +192,31 @@ class TestResult(object):
                 msgLines.append(STDERR_LINE % error)
         return ''.join(msgLines)
 
+    def _clean_tracebacks(self, exctype, value, tb, test):
+        ret = None
+        first = True
+        excs = [(exctype, value, tb)]
+        while excs:
+            (exctype, value, tb) = excs.pop()
+            # Skip test runner traceback levels
+            while tb and self._is_relevant_tb_level(tb):
+                tb = tb.tb_next
+
+            # Skip assert*() traceback levels
+            if exctype is test.failureException:
+                self._remove_unittest_tb_frames(tb)
+
+            if first:
+                ret = tb
+                first = False
+            else:
+                value.__traceback__ = tb
+
+            if value is not None:
+                for c in (value.__cause__, value.__context__):
+                    if c is not None:
+                        excs.append((type(c), c, c.__traceback__))
+        return ret
 
     def _is_relevant_tb_level(self, tb):
         return '__unittest' in tb.tb_frame.f_globals
