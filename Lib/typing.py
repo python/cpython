@@ -2256,8 +2256,16 @@ class _TypedDictMeta(type):
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
         
-        if '__orig_bases__' in ns and any(issubclass(b, Generic) for b in bases):
-            generic_base = (Generic,)
+        if any(issubclass(b, Generic) for b in bases):
+            if '__orig_bases__' in ns:
+                # Original base is a Generic[X] or A[X]
+                generic_base = (Generic,)
+            else:
+                # Implicit Any case: a generic base with no type args
+                generic_base = ()
+                # Offloading work from Generic.__init_subclass__ 
+                # to keep consistency with normal generic classes
+                ns['__parameters__'] = ()
         else:
             generic_base = ()
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict,), ns)
