@@ -220,6 +220,11 @@ def_op('CALL_METHOD_KW', 166)
 del def_op, name_op, jrel_op, jabs_op
 
 _specialized_instructions = [
+    "BINARY_ADD_ADAPTIVE",
+    "BINARY_ADD_INT",
+    "BINARY_ADD_FLOAT",
+    "BINARY_ADD_UNICODE",
+    "BINARY_ADD_UNICODE_INPLACE_FAST",
     "BINARY_SUBSCR_ADAPTIVE",
     "BINARY_SUBSCR_LIST_INT",
     "BINARY_SUBSCR_TUPLE_INT",

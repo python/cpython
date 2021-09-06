@@ -1,0 +1,7 @@
+``WithProcessesTestSharedMemory.test_shared_memory_basics`` test was
+ignored, because ``self.assertEqual(sms.size, sms2.size)`` line was failing.
+It is now removed and test is unskipped.
+
+The main motivation for this line to be removed from the test is that the
+``size`` of ``SharedMemory`` is not ever guaranteed to be the same. It is
+decided by the platform.

@@ -1,0 +1,8 @@
+Fix bugs in cleaning up classes and modules in :mod:`unittest`:
+
+* Functions registered with :func:`~unittest.addModuleCleanup` were not called unless the user defines ``tearDownModule()`` in their test module.
+* Functions registered with :meth:`~unittest.TestCase.addClassCleanup` were not called if ``tearDownClass`` is set to ``None``.
+* Buffering in :class:`~unittest.TestResult` did not work with functions registered with ``addClassCleanup()`` and ``addModuleCleanup()``.
+* Errors in functions registered with ``addClassCleanup()`` and ``addModuleCleanup()`` were not handled correctly in buffered and debug modes.
+* Errors in ``setUpModule()`` and functions registered with ``addModuleCleanup()`` were reported in wrong order.
+* And several lesser bugs.
