@@ -124,13 +124,14 @@ class RegressionTests(unittest.TestCase):
         """
         SELECT = "select * from foo"
         con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
-        con.execute("create table foo(bar timestamp)")
-        con.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
-        con.execute(SELECT)
-        con.execute("drop table foo")
-        con.execute("create table foo(bar integer)")
-        con.execute("insert into foo(bar) values (5)")
-        con.execute(SELECT)
+        cur = con.cursor()
+        cur.execute("create table foo(bar timestamp)")
+        cur.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
+        cur.execute(SELECT)
+        cur.execute("drop table foo")
+        cur.execute("create table foo(bar integer)")
+        cur.execute("insert into foo(bar) values (5)")
+        cur.execute(SELECT)
 
     def test_bind_mutating_list(self):
         # Issue41662: Crash when mutate a list of parameters during iteration.
