@@ -436,6 +436,26 @@ class RegressionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, b'')
 
+    def test_table_lock_cursor_replace_stmt(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        cur.execute("create table t(t)")
+        cur.executemany("insert into t values(?)", ((v,) for v in range(5)))
+        con.commit()
+        cur.execute("select t from t")
+        cur.execute("drop table t")
+        con.commit()
+
+    def test_table_lock_cursor_dealloc(self):
+        con = sqlite.connect(":memory:")
+        con.execute("create table t(t)")
+        con.executemany("insert into t values(?)", ((v,) for v in range(5)))
+        con.commit()
+        cur = con.execute("select t from t")
+        del cur
+        con.execute("drop table t")
+        con.commit()
+
 
 def suite():
     tests = [
