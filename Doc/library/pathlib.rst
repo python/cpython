@@ -709,7 +709,7 @@ call fails (for example because the path doesn't exist).
       PosixPath('/home/antoine')
 
    Note that unlike :func:`os.path.expanduser`, on Posix systems a
-   :exc:`KeyError` may be raised, and on Windows systems a :exc:`RuntimeError`
+   :exc:`KeyError` will be raised, and on Windows systems a :exc:`RuntimeError`
    will be raised if home directory can't be resolved.
 
    .. versionadded:: 3.5
@@ -769,7 +769,7 @@ call fails (for example because the path doesn't exist).
       PosixPath('/home/eric/films/Monty Python')
 
    Note that unlike :func:`os.path.expanduser`, on Posix systems a
-   :exc:`KeyError` may be raised, and on Windows systems a :exc:`RuntimeError`
+   :exc:`KeyError` will be raised, and on Windows systems a :exc:`RuntimeError`
    will be raised if home directory can't be resolved.
 
    .. versionadded:: 3.5
