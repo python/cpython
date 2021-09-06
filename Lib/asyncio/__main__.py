@@ -52,7 +52,7 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        self.loop.call_soon_threadsafe(callback)
 
         try:
             return future.result()
@@ -77,7 +77,7 @@ class REPLThread(threading.Thread):
                 f'{getattr(sys, "ps1", ">>> ")}import asyncio'
             )
 
-            console.interact(
+            self.console.interact(
                 banner=banner,
                 exitmsg='exiting asyncio REPL...')
         finally:
@@ -86,7 +86,7 @@ class REPLThread(threading.Thread):
                 message=r'^coroutine .* was never awaited$',
                 category=RuntimeWarning)
 
-            loop.call_soon_threadsafe(loop.stop)
+            self.loop.call_soon_threadsafe(self.loop.stop)
 
 
 if __name__ == '__main__':
@@ -111,6 +111,8 @@ if __name__ == '__main__':
 
     repl_thread = REPLThread()
     repl_thread.daemon = True
+    repl_thread.loop = loop
+    repl_thread.console = console
     repl_thread.start()
 
     while True:
