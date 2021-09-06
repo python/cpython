@@ -284,6 +284,11 @@ CPython bytecode changes
 Build Changes
 =============
 
+* On Windows, enable compiler optimizations on the debug build to make tests
+  run faster and to reduce the stack memory usage, especially with static
+  inline functions used in Python public header files.
+  (Contributed by Victor Stinner in :issue:`45115`.)
+
 
 Deprecated
 ==========
