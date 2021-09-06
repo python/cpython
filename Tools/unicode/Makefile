@@ -6,7 +6,7 @@
 #    Licensed to PSF under a Contributor Agreement.
 
 # Python binary to use
-PYTHON = python
+PYTHON = python3
 
 # Remove tool to use
 RM = /bin/rm
@@ -15,7 +15,7 @@ RM = /bin/rm
 
 all:	distclean mappings codecs
 
-codecs:	misc windows iso apple ebcdic custom-mappings cjk
+codecs:	misc windows-bestfit iso apple ebcdic custom-mappings cjk
 
 ### Mappings
 
@@ -42,6 +42,17 @@ windows:	build/
 	$(PYTHON) gencodec.py MAPPINGS/VENDORS/MICSFT/WINDOWS/ build/
 	$(RM) build/cp9*
 	$(RM) -f build/readme.*
+
+windows-bestfit:	build/ 	windows
+	mkdir -p WindowsBestFit
+	cp MAPPINGS/VENDORS/MICSFT/WindowsBestFit/bestfit12* WindowsBestFit/
+	rename -f 's/bestfit/cp/' WindowsBestFit/*
+	sed -si '/^0x..\t/!d' WindowsBestFit/*
+	sed -si 's/;/#/' WindowsBestFit/*
+	sed -si 's/#[a-z]/#\U&/g' WindowsBestFit/*
+	sed -si 's/#.*[a-z]/\U&/g' WindowsBestFit/*
+	$(PYTHON) gencodec.py WindowsBestFit build/
+	rm -rf WindowsBestFit
 
 iso:	build/
 	$(PYTHON) gencodec.py MAPPINGS/ISO8859/ build/ iso
