@@ -4290,6 +4290,29 @@ class TypedDictTests(BaseTestCase):
         with self.assertRaises(TypeError):
            C[str]
 
+        
+        class Point3D(Point2DGeneric[T], Generic[T, KT]):
+            c: KT
+
+        self.assertEqual(Point3D.__bases__, (Generic, dict,))
+        self.assertEqual(Point3D.__parameters__, (T, KT))
+        self.assertEqual(Point3D.__total__, True)
+        self.assertEqual(Point3D.__optional_keys__, frozenset())
+        self.assertEqual(Point3D.__required_keys__, frozenset(['a', 'b', 'c']))
+        assert Point3D.__annotations__ == {
+            'a': T,
+            'b': T,
+            'c': KT,
+        }
+        self.assertEqual(Point3D[int, str].__origin__, Point3D)
+
+        with self.assertRaises(TypeError):
+            Point3D[int]
+
+        with self.assertRaises(TypeError):
+            class Point3D(Point2DGeneric[T], Generic[KT]):
+                c: KT
+
         class WithImplicitAny(B):
             c: int
 
