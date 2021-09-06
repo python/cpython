@@ -4265,8 +4265,8 @@ class TypedDictTests(BaseTestCase):
             b: KT
 
         self.assertEqual(B.__bases__, (Generic, dict,))
-        self.assertEqual(B.__total__, False)
         self.assertEqual(B.__parameters__, (KT, ))
+        self.assertEqual(B.__total__, False)
         self.assertEqual(B.__optional_keys__, frozenset(['b']))
         self.assertEqual(B.__required_keys__, frozenset(['a']))
 
@@ -4277,7 +4277,8 @@ class TypedDictTests(BaseTestCase):
         class C(B[int]):
             c: int
 
-        self.assertEqual(C.__bases__, (dict,))
+        self.assertEqual(C.__bases__, (Generic, dict,))
+        self.assertEqual(C.__parameters__, ())
         self.assertEqual(C.__total__, True)
         self.assertEqual(C.__optional_keys__, frozenset(['b']))
         self.assertEqual(C.__required_keys__, frozenset(['a', 'c']))
@@ -4286,13 +4287,15 @@ class TypedDictTests(BaseTestCase):
             'b': KT,
             'c': int,
         }
-        # with self.assertRaises(TypeError):
-        #    C[str]
+        with self.assertRaises(TypeError):
+           C[str]
 
         class WithImplicitAny(B):
             c: int
 
         self.assertEqual(WithImplicitAny.__bases__, (dict,))
+        # Consistent with GenericTests.test_implicit_any
+        self.assertEqual(WithImplicitAny.__parameters__, ())
         self.assertEqual(WithImplicitAny.__total__, True)
         self.assertEqual(WithImplicitAny.__optional_keys__, frozenset(['b']))
         self.assertEqual(WithImplicitAny.__required_keys__, frozenset(['a', 'c']))
@@ -4301,8 +4304,8 @@ class TypedDictTests(BaseTestCase):
             'b': KT,
             'c': int,
         }
-        # with self.assertRaises(TypeError):
-        #    WithImplicitAny[str]
+        with self.assertRaises(TypeError):
+           WithImplicitAny[str]
         
 
 class IOTests(BaseTestCase):
