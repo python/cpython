@@ -2,14 +2,18 @@ import asyncio
 import unittest
 
 
+class MyException(Exception):
+    pass
+
+
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
 class TestAsyncCase(unittest.TestCase):
-    def test_full_cycle(self):
-        events = []
+    maxDiff = None
 
+    def test_full_cycle(self):
         class Test(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
                 self.assertEqual(events, [])
@@ -46,22 +50,25 @@ class TestAsyncCase(unittest.TestCase):
                                           'tearDown'])
                 events.append('cleanup')
 
+        events = []
         test = Test("test_func")
         test.run()
-        self.assertEqual(events, ['setUp',
-                                  'asyncSetUp',
-                                  'test',
-                                  'asyncTearDown',
-                                  'tearDown',
-                                  'cleanup'])
+        expected = ['setUp', 'asyncSetUp', 'test',
+                    'asyncTearDown', 'tearDown', 'cleanup']
+        self.assertEqual(events, expected)
+
+        events = []
+        test = Test("test_func")
+        test.debug()
+        self.assertEqual(events, expected)
+        test.doCleanups()
+        self.assertEqual(events, expected)
 
     def test_exception_in_setup(self):
-        events = []
-
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
-                raise Exception()
+                raise MyException()
 
             async def test_func(self):
                 events.append('test')
@@ -74,20 +81,29 @@ class TestAsyncCase(unittest.TestCase):
                 events.append('cleanup')
 
 
+        events = []
         test = Test("test_func")
-        test.run()
+        result = test.run()
+        self.assertEqual(events, ['asyncSetUp'])
+        self.assertIs(result.errors[0][0], test)
+        self.assertIn('MyException', result.errors[0][1])
+
+        events = []
+        test = Test("test_func")
+        with self.assertRaises(MyException):
+            test.debug()
+        self.assertEqual(events, ['asyncSetUp'])
+        test.doCleanups()
         self.assertEqual(events, ['asyncSetUp'])
 
     def test_exception_in_test(self):
-        events = []
-
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
 
             async def test_func(self):
                 events.append('test')
-                raise Exception()
+                raise MyException()
                 self.addAsyncCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
@@ -96,13 +112,22 @@ class TestAsyncCase(unittest.TestCase):
             async def on_cleanup(self):
                 events.append('cleanup')
 
+        events = []
         test = Test("test_func")
-        test.run()
+        result = test.run()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown'])
+        self.assertIs(result.errors[0][0], test)
+        self.assertIn('MyException', result.errors[0][1])
+
+        events = []
+        test = Test("test_func")
+        with self.assertRaises(MyException):
+            test.debug()
+        self.assertEqual(events, ['asyncSetUp', 'test'])
+        test.doCleanups()
+        self.assertEqual(events, ['asyncSetUp', 'test'])
 
     def test_exception_in_test_after_adding_cleanup(self):
-        events = []
-
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
@@ -110,7 +135,7 @@ class TestAsyncCase(unittest.TestCase):
             async def test_func(self):
                 events.append('test')
                 self.addAsyncCleanup(self.on_cleanup)
-                raise Exception()
+                raise MyException()
 
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
@@ -118,13 +143,22 @@ class TestAsyncCase(unittest.TestCase):
             async def on_cleanup(self):
                 events.append('cleanup')
 
+        events = []
         test = Test("test_func")
-        test.run()
+        result = test.run()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
+        self.assertIs(result.errors[0][0], test)
+        self.assertIn('MyException', result.errors[0][1])
+
+        events = []
+        test = Test("test_func")
+        with self.assertRaises(MyException):
+            test.debug()
+        self.assertEqual(events, ['asyncSetUp', 'test'])
+        test.doCleanups()
+        self.assertEqual(events, ['asyncSetUp', 'test', 'cleanup'])
 
     def test_exception_in_tear_down(self):
-        events = []
-
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
@@ -135,19 +169,28 @@ class TestAsyncCase(unittest.TestCase):
 
             async def asyncTearDown(self):
                 events.append('asyncTearDown')
-                raise Exception()
+                raise MyException()
 
             async def on_cleanup(self):
                 events.append('cleanup')
 
+        events = []
         test = Test("test_func")
-        test.run()
+        result = test.run()
+        self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
+        self.assertIs(result.errors[0][0], test)
+        self.assertIn('MyException', result.errors[0][1])
+
+        events = []
+        test = Test("test_func")
+        with self.assertRaises(MyException):
+            test.debug()
+        self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown'])
+        test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
 
 
     def test_exception_in_tear_clean_up(self):
-        events = []
-
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
@@ -161,10 +204,21 @@ class TestAsyncCase(unittest.TestCase):
 
             async def on_cleanup(self):
                 events.append('cleanup')
-                raise Exception()
+                raise MyException()
 
+        events = []
         test = Test("test_func")
-        test.run()
+        result = test.run()
+        self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
+        self.assertIs(result.errors[0][0], test)
+        self.assertIn('MyException', result.errors[0][1])
+
+        events = []
+        test = Test("test_func")
+        with self.assertRaises(MyException):
+            test.debug()
+        self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
+        test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
 
     def test_deprecation_of_return_val_from_test(self):
