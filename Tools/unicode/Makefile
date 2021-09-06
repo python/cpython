@@ -6,7 +6,7 @@
 #    Licensed to PSF under a Contributor Agreement.
 
 # Python binary to use
-PYTHON = python3
+PYTHON = python
 
 # Remove tool to use
 RM = /bin/rm
