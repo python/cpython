@@ -2307,6 +2307,13 @@ class _TypedDictMeta(type):
 
     __instancecheck__ = __subclasscheck__
 
+    @_tp_cache
+    def __getitem__(cls, params):
+        if issubclass(cls, Generic):
+            return cls.__class_getitem__(params)
+
+        raise TypeError(f"'{cls!r}' is not subscriptable")
+
 
 def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
