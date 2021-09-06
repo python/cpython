@@ -35,7 +35,7 @@ def _splitparam(param):
     if not sep:
         return a.strip(), None
     return a.strip(), b.strip()
-
+
 def _formatparam(param, value=None, quote=True):
     """Convenience function to format and return a key=value pair.
 
@@ -101,7 +101,7 @@ def _unquotevalue(value):
         return utils.unquote(value)
 
 
-
+
 class Message:
     """Basic message object.
 

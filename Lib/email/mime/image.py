@@ -12,7 +12,7 @@ from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
 
 
-
+
 class MIMEImage(MIMENonMultipart):
     """Class for generating image/* type MIME documents."""
 

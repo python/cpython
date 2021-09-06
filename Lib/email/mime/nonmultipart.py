@@ -10,7 +10,7 @@ from email import errors
 from email.mime.base import MIMEBase
 
 
-
+
 class MIMENonMultipart(MIMEBase):
     """Base class for MIME non-multipart type messages."""
 
