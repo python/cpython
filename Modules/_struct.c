@@ -609,7 +609,7 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (x < 0 || x > USHRT_MAX) {
         PyErr_Format(state->StructError,
                      "ushort format requires 0 <= number <= %u",
-                     USHRT_MAX);
+                     (unsigned int)(USHRT_MAX));
         return -1;
     }
     y = (unsigned short)x;
