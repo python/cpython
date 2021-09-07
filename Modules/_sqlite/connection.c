@@ -998,7 +998,7 @@ progress_callback(void *ctx)
 
     assert(ctx != NULL);
     PyObject *callable = ((callback_context *)ctx)->callable;
-    ret = _PyObject_CallNoArg(ctx->callable);
+    ret = _PyObject_CallNoArg(callable);
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;
@@ -1042,7 +1042,6 @@ trace_callback(void *ctx, const char *statement_string)
     PyObject *ret = NULL;
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
-    callback_context *ctx = (callback_context *)user_arg;
     assert(ctx != NULL);
     if (py_statement) {
         PyObject *callable = ((callback_context *)ctx)->callable;
@@ -1124,12 +1123,13 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
         /* None clears the progress handler previously set */
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
         SET_CALLBACK_CONTEXT(self->progress_ctx, NULL);
-    } else {
+    }
+    else {
         callback_context *ctx = create_callback_context(self->state, callable);
         if (ctx == NULL) {
             return NULL;
         }
-        sqlite3_progress_handler(self->db, n, progress_handler, ctx);
+        sqlite3_progress_handler(self->db, n, progress_callback, ctx);
         SET_CALLBACK_CONTEXT(self->progress_ctx, ctx);
     }
     Py_RETURN_NONE;
@@ -1179,7 +1179,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 #else
         sqlite3_trace(self->db, trace_callback, ctx);
 #endif
-        SET_CALLBACK_CONTEXT(self->trace_ctx, callable);
+        SET_CALLBACK_CONTEXT(self->trace_ctx, ctx);
     }
 
     Py_RETURN_NONE;
