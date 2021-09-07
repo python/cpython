@@ -331,6 +331,21 @@ class ConnectionTests(unittest.TestCase):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
 
+    def test_connection_reinit(self):
+        db = ":memory:"
+        cx = sqlite.connect(db)
+        cx.__init__(db)
+
+    def test_connection_bad_reinit(self):
+        cx = sqlite.connect(":memory:")
+        with temp_dir() as db:
+            try:
+                cx.__init__(db)
+            except sqlite.OperationalError:
+                pass
+            else:
+                self.fail("Unexpected success")
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
