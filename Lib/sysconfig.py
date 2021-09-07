@@ -37,10 +37,10 @@ _INSTALL_SCHEMES = {
         'data': '{base}',
         },
     'posix_home': {
-        'stdlib': '{installed_base}/{platlibdir}/python',
-        'platstdlib': '{base}/{platlibdir}/python',
+        'stdlib': '{installed_base}/lib/python',
+        'platstdlib': '{base}/lib/python',
         'purelib': '{base}/lib/python',
-        'platlib': '{base}/{platlibdir}/python',
+        'platlib': '{base}/lib/python',
         'include': '{installed_base}/include/python',
         'platinclude': '{installed_base}/include/python',
         'scripts': '{base}/bin',
