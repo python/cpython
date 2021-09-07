@@ -318,7 +318,12 @@ connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
         clear_sqlite_callbacks(self);
-        int rc = sqlite3_close_v2(self->db);
+
+        int rc;
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_close_v2(self->db);
+        Py_END_ALLOW_THREADS
+
         assert(rc == SQLITE_OK), (void)rc;
         self->db = NULL;
     }
