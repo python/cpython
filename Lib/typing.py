@@ -1406,9 +1406,8 @@ def _no_init_or_replace_init(self, *args, **kwargs):
     if cls._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
-    # When `_no_init_or_replace_init` called using super() there are no
-    # need to calculate correct `__init__` method to call.
-    # see bpo-45121
+    # Already using a custom `__init__`. No need to calculate correct
+    # `__init__` to call. This can lead to RecursionError. See bpo-45121.
     if cls.__init__ is not _no_init_or_replace_init:
         return
 
