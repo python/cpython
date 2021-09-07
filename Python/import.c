@@ -1913,49 +1913,11 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
     return import_add_module(tstate, name);
 }
 
-static const char *
-get_env_var(const char *name)
-{
-    /* Try os.environ first. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *modules = interp->modules;
-    PyObject *osmod;
-    if (PyDict_CheckExact(modules)) {
-        osmod = PyDict_GetItemString(modules, "os");  /* borrowed */
-        Py_XINCREF(osmod);
-    }
-    else {
-        osmod = PyMapping_GetItemString(modules, "os");
-    }
-    if (osmod != NULL) {
-        PyObject *env = PyObject_GetAttrString(osmod, "environ");
-        Py_DECREF(osmod);
-        if (env != NULL) {
-            const char *value = NULL;
-            PyObject *obj = PyMapping_GetItemString(env, name);
-            Py_DECREF(env);
-            if (obj != NULL) {
-                value = PyUnicode_AsUTF8(obj);
-                Py_DECREF(obj);
-            }
-            PyErr_Clear();
-            return value;
-        }
-    }
-    PyErr_Clear();
-
-    /* Fall back to the process env. */
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    assert(config != NULL);
-    return _Py_GetEnv(config->use_environment, name);
-}
-
 static bool
-get_env_var_flag(const char *name)
+parse_env_var_flag(const char *value)
 {
-    const char *env = get_env_var(name);
     /* It isn't set or it is set to an empty string. */
-    if (env == NULL || strlen(env) == 0) {
+    if (value == NULL || strlen(value) == 0) {
         return false;
     }
     /* For now we treat all non-empty strings as true. */
@@ -1975,7 +1937,8 @@ static PyObject *
 _imp_get_frozen_object_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
 {
-    bool force = get_env_var_flag("_PYTHONTESTFROZENMODULES");
+    /* Note that we don't bother with os.environ. */
+    bool force = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"));
     return get_frozen_object(name, force);
 }
 
@@ -1992,7 +1955,8 @@ static PyObject *
 _imp_is_frozen_package_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=e70cbdb45784a1c9 input=81b6cdecd080fbb8]*/
 {
-    bool force = get_env_var_flag("_PYTHONTESTFROZENMODULES");
+    /* Note that we don't bother with os.environ. */
+    bool force = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"));
     return is_frozen_package(name, force);
 }
 
@@ -2025,7 +1989,8 @@ static PyObject *
 _imp_is_frozen_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
-    bool force = get_env_var_flag("_PYTHONTESTFROZENMODULES");
+    /* Note that we don't bother with os.environ. */
+    bool force = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"));
     const struct _frozen *p;
 
     p = find_frozen(name, force);
