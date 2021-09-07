@@ -307,6 +307,14 @@ clear_sqlite_callbacks(pysqlite_Connection *self)
 }
 
 static void
+free_callback_contexts(pysqlite_Connection *self)
+{
+    set_callback_context(&self->trace_ctx, NULL);
+    set_callback_context(&self->progress_ctx, NULL);
+    set_callback_context(&self->authorizer_ctx, NULL);
+}
+
+static void
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
@@ -315,18 +323,11 @@ connection_close(pysqlite_Connection *self)
         clear_sqlite_callbacks(self);
         rc = sqlite3_close_v2(self->db);
         Py_END_ALLOW_THREADS
+        free_callback_contexts(self);
 
         assert(rc == SQLITE_OK), (void)rc;
         self->db = NULL;
     }
-}
-
-static void
-free_callback_contexts(pysqlite_Connection *self)
-{
-    set_callback_context(&self->trace_ctx, NULL);
-    set_callback_context(&self->progress_ctx, NULL);
-    set_callback_context(&self->authorizer_ctx, NULL);
 }
 
 static void
@@ -338,7 +339,6 @@ connection_dealloc(pysqlite_Connection *self)
 
     /* Clean up if user has not called .close() explicitly. */
     connection_close(self);
-    free_callback_contexts(self);
 
     tp->tp_free(self);
     Py_DECREF(tp);
