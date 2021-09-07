@@ -95,7 +95,7 @@ presence of the required methods:
    >>> isinstance(MySeq(), Iterable)
    True
 
-Complex interfaces do no support this last technique because an
+Complex interfaces do not support this last technique because an
 interface is more than just the presence of method names.  Interfaces
 specify semanatics and relationships between methods that cannot be
 inferred solely from the presence of specific method names.  For
@@ -179,7 +179,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 .. rubric:: Footnotes
 
 .. [1] This ABC overrides :meth:`object.__subclasshook__` to support
-   testing an interface verifying the required methods are present.
+   testing an interface by verifying the required methods are present.
    This only works for simple interfaces.  More complex interfaces
    require registration or direct subclassing.
 
