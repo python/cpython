@@ -129,7 +129,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     isolation_level: object = NULL
     check_same_thread: bool(accept={int}) = True
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
-    cached_statements: int = 128
+    cached_statements as cache_size: int = 128
     uri: bool = False
 [clinic start generated code]*/
 
@@ -138,8 +138,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
                               int detect_types, PyObject *isolation_level,
                               int check_same_thread, PyObject *factory,
-                              int cached_statements, int uri)
-/*[clinic end generated code: output=bc39e55eb0b68783 input=f8d1f7efc0d84104]*/
+                              int cache_size, int uri)
+/*[clinic end generated code: output=ded53c0781f8fb58 input=3588bcf7e2987e6a]*/
 {
     if (PySys_Audit("sqlite3.connect", "s", database) < 0) {
         return -1;
@@ -176,7 +176,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    PyObject *cache = new_statement_cache(self, state, cached_statements);
+    PyObject *cache = new_statement_cache(self, state, cache_size);
     if (cache == NULL) {
         Py_DECREF(cursors);
         return -1;
