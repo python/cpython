@@ -159,7 +159,6 @@
     <Compile Include="distutils\cmd.py" />
     <Compile Include="distutils\command\bdist.py" />
     <Compile Include="distutils\command\bdist_dumb.py" />
-    <Compile Include="distutils\command\bdist_msi.py" />
     <Compile Include="distutils\command\bdist_rpm.py" />
     <Compile Include="distutils\command\build.py" />
     <Compile Include="distutils\command\build_clib.py" />
@@ -200,7 +199,6 @@
     <Compile Include="distutils\tests\test_archive_util.py" />
     <Compile Include="distutils\tests\test_bdist.py" />
     <Compile Include="distutils\tests\test_bdist_dumb.py" />
-    <Compile Include="distutils\tests\test_bdist_msi.py" />
     <Compile Include="distutils\tests\test_bdist_rpm.py" />
     <Compile Include="distutils\tests\test_build.py" />
     <Compile Include="distutils\tests\test_build_clib.py" />
@@ -1181,7 +1179,6 @@
     <Compile Include="test\test_mmap.py" />
     <Compile Include="test\test_module.py" />
     <Compile Include="test\test_modulefinder.py" />
-    <Compile Include="test\test_msilib.py" />
     <Compile Include="test\test_multibytecodec.py" />
     <Compile Include="test\test_multiprocessing_fork.py" />
     <Compile Include="test\test_multiprocessing_forkserver.py" />
