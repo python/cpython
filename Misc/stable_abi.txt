@@ -2122,9 +2122,9 @@ function _Py_IncRef
 function _Py_DecRef
     added 3.10
     abi_only
-function PyAiter_Check
+function PyAIter_Check
     added 3.10
-function PyObject_GetAiter
+function PyObject_GetAIter
     added 3.10
 data PyExc_EncodingWarning
     added 3.10
