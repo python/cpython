@@ -427,7 +427,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': True,
+        'use_frozen_modules': False,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -1028,6 +1028,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'program_name': './init_read_set',
             'executable': 'my_executable',
+            'use_frozen_modules': True,
         }
         def modify_path(path):
             path.insert(1, "test_path_insert1")
@@ -1139,6 +1140,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
+            'use_frozen_modules': True,
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
@@ -1162,6 +1164,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
+            'use_frozen_modules': True,
             # overriden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1252,6 +1255,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
             'stdlib_dir': home,
+            'use_frozen_modules': True,
         }
         self.default_program_name(config)
         env = {'TESTHOME': home,
@@ -1294,6 +1298,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 'stdlib_dir': None,
+                'use_frozen_modules': True,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1346,6 +1351,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 'stdlib_dir': None,
+                'use_frozen_modules': True,
             }
             path_config = {}
             if MS_WINDOWS:
