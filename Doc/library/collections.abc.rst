@@ -14,7 +14,7 @@
 
 .. testsetup:: *
 
-   from collections import *
+   from collections.abc import *
    import itertools
    __name__ = '<doctest>'
 
@@ -43,7 +43,7 @@ desired.  Other methods may be added as needed:
 .. doctest::
 
    >>> Sequence.register(MySeq)
-   <class '__main__.MySeq'>
+   <class '<doctest>.MySeq'>
    >>> issubclass(MySeq, Sequence)
    True
    >>> isinstance(MySeq(), Sequence)
@@ -67,7 +67,7 @@ automatically inferred from the rest of the API:
 .. doctest::
 
    >>> Sequence.register(MySeq)
-   <class '__main__.MySeq'>
+   <class '<doctest>.MySeq'>
    >>> issubclass(MySeq, Sequence)
    True
    >>> isinstance(MySeq(), Sequence)
