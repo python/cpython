@@ -1,4 +1,0 @@
-Rewrote ``Doc/library/__main__.rst``. Broadened scope of the document to
-explicitly discuss and differentiate between ``__main__.py`` in packages
-versus the ``__name__ == '__main__'`` expression (and the idioms that
-surround it).
