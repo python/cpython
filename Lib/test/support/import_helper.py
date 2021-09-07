@@ -6,7 +6,7 @@ import sys
 import unittest
 import warnings
 
-from .os_helper import unlink, EnvironmentVarGuard
+from .os_helper import unlink
 
 
 @contextlib.contextmanager
@@ -111,10 +111,12 @@ def _save_and_block_module(name, orig_modules):
 
 @contextlib.contextmanager
 def frozen_modules(*, disabled=False):
-    with EnvironmentVarGuard() as env:
-        os.environ = env
-        os.environ['_PYTHONTESTFROZENMODULES'] = '' if disabled else '1'
+    # FYI: the env var will never show up in os.environ.
+    os.putenv('_PYTHONTESTFROZENMODULES', '' if disabled else '1')
+    try:
         yield
+    finally:
+        os.unsetenv('_PYTHONTESTFROZENMODULES')
 
 
 def import_fresh_module(name, fresh=(), blocked=(), *,
