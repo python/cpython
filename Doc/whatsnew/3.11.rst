@@ -254,6 +254,12 @@ Removed
   Use ``bdist_wheel`` (wheel packages) instead.
   (Contributed by Hugo van Kemenade in :issue:`45124`.)
 
+* Remove :meth:`__getitem__` methods of
+  :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
+  and :class:`fileinput.FileInput`, deprecated since Python 3.9.
+  (Contributed by Hugo van Kemenade in :issue:`45132`.)
+
+
 Optimizations
 =============
 

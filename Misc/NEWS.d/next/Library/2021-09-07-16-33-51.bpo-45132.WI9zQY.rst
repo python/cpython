@@ -1,0 +1,5 @@
+Remove :meth:`__getitem__` methods of
+:class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
+and :class:`fileinput.FileInput`, deprecated since Python 3.9.
+
+Patch by Hugo van Kemenade.

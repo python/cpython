@@ -147,8 +147,7 @@ available for subclassing as well:
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
    :meth:`isstdin`, :meth:`nextfile` and :meth:`close` correspond to the
    functions of the same name in the module. In addition it has a
-   :meth:`~io.TextIOBase.readline` method which returns the next input line,
-   and a :meth:`__getitem__` method which implements the sequence behavior.
+   :meth:`~io.TextIOBase.readline` method which returns the next input line.
    The sequence must be accessed in strictly sequential order; random access
    and :meth:`~io.TextIOBase.readline` cannot be mixed.
 
@@ -171,8 +170,8 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
-   .. deprecated:: 3.8
-      Support for :meth:`__getitem__` method is deprecated.
+   .. deprecated-removed:: 3.8 3.11
+      Support for :meth:`__getitem__` method has been removed.
 
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
