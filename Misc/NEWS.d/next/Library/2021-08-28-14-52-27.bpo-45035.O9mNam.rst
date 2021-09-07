@@ -1,0 +1,2 @@
+Fix the ``posix_home`` scheme in :mod:`sysconfig` to depend on
+:data:`sys.platlibdir`.
