@@ -101,7 +101,7 @@ if _HAS_USER_BASE:
             'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
             'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
             'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
+            'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
             'include': '{userbase}/include/python{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',

@@ -358,7 +358,7 @@ Object Protocol
    iterated.
 
 
-.. c:function:: PyObject* PyObject_GetAiter(PyObject *o)
+.. c:function:: PyObject* PyObject_GetAIter(PyObject *o)
 
    This is the equivalent to the Python expression ``aiter(o)``. Takes an
    :class:`AsyncIterable` object and returns an :class:`AsyncIterator` for it.
