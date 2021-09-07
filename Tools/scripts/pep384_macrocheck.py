@@ -1,7 +1,7 @@
 """
 pep384_macrocheck.py
 
-This programm tries to locate errors in the relevant Python header
+This program tries to locate errors in the relevant Python header
 files where macros access type fields when they are reachable from
 the limided API.
 
