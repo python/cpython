@@ -60,8 +60,10 @@ for main_key in INSTALL_SCHEMES:
         value = value.replace("$py_version_nodot_plat", "$py_version_nodot")
         if key == "headers":
             value += "/$dist_name"
-        if sys.version_info >= (3, 9) and key == "platlib":
-            # platlibdir is available since 3.9: bpo-1294959
+        if (sys.version_info >= (3, 9) and key == "platlib"
+           and main_key != 'unix_home'):
+            # platlibdir is available since 3.9 (bpo-1294959).
+            # Don't use it for the unix_home scheme (bpo-45035)
             value = value.replace("/lib/", "/$platlibdir/")
         INSTALL_SCHEMES[main_key][key] = value
 

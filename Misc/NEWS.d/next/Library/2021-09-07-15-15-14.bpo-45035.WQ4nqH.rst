@@ -1,0 +1,3 @@
+The :mod:`distutils` install command no longer use :data:`sys.platlibdir` (ex:
+``lib64/`` on Fedora) for the ``unix_home`` scheme, but always use the ``lib/``
+subdirectory.  Patch by Victor Stinner.
