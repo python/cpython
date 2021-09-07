@@ -24,6 +24,85 @@ This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
 example, whether it is hashable or whether it is a mapping.
 
+An :func:`issubclass` or :func:`isinstance` test for an interface works in one
+of three ways.
+
+First, a newly written class can inherit directly from one the abstract
+base classes.  The class must supply the required abstract methods.  The
+remaining mixin methods come from inheritance and can be overridden if
+desired.  Other methods may be added as needed:
+
+.. testcode::
+
+    class MySeq(Sequence):
+        def __init__(self): ...  # Extra method not required by the ABC
+        def __getitem__(self, index):  ...   # Required abstract method
+        def __len__(self):  ...              # Required abstract method
+        def count(self, value): ...          # Optionally override a mixin method
+
+.. doctest::
+
+   >>> Sequence.register(MySeq)
+   <class '__main__.MySeq'>
+   >>> issubclass(MySeq, Sequence)
+   True
+   >>> isinstance(MySeq(), Sequence)
+   True
+
+Second, existing classes and built-in classes can be registered as
+"virtual subclasses" of the ABCs.  So that users can rely on the
+interface being present, the existing class should define all of the
+abstract methods and mixin methods unless those methods are
+automatically inferred from the rest of the API:
+
+.. testcode::
+
+    class MySeq:
+        def __init__(self): ...  # Extra method not required by the ABC
+        def __getitem__(self, index):  ...
+        def __len__(self):  ...
+        def count(self, value): ...
+        def index(self, value): ...
+
+.. doctest::
+
+   >>> Sequence.register(MySeq)
+   <class '__main__.MySeq'>
+   >>> issubclass(MySeq, Sequence)
+   True
+   >>> isinstance(MySeq(), Sequence)
+   True
+
+In this second example, :class:`~MySeq` does not need to define
+``__contains__``, ``__iter__``, and ``__reversed__`` because the
+:ref:`in-operator <comparisons>`, :term:`iteration <iterable>` logic,
+and the :func:`reversed` function automatically fall back to using
+``__getitem__`` and ``__len__``.
+
+Third, some simple interfaces are directly recognizable just by the
+presence of the required methods:
+
+.. testcode::
+
+    class MyIterable:
+        def __iter__(self): ...
+        def __next__(next): ...
+
+.. doctest::
+
+   >>> issubclass(MySeq, Iterable)
+   True
+   >>> isinstance(MySeq(), Iterable)
+   True
+
+Complex interfaces do no support this last technique because an
+interface is more than just the presence of method names.  Interfaces
+specify semanatics and relationships between methods that cannot be
+inferred solely from the presence of specific method names.  For
+example, knowing that a class supplies ``__getitem__``, ``__len__``, and
+``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
+a :class:`Mapping`.
+
 
 .. _collections-abstract-base-classes:
 
