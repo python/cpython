@@ -51,11 +51,11 @@ overridden if desired.  Other methods may be added as needed:
 
 2) Existing classes and built-in classes can be registered as "virtual
 subclasses" of the ABCs.  Those classes should define the full API
-including all of the abstract methods and all of mixin methods.  This
-lets users rely on :func:`issubclass` or :func:`isinstance` tests to
-determine whether the full interface is supported.  The exception to
-this rule is methods that are automatically inferred from the rest of
-the API:
+including all of the abstract methods and all of the mixin methods.
+This lets users rely on :func:`issubclass` or :func:`isinstance` tests
+to determine whether the full interface is supported.  The exception to
+this rule is for methods that are automatically inferred from the rest
+of the API:
 
 .. testcode::
 
@@ -77,9 +77,9 @@ the API:
 
 In this example, :class:`~SecondSeq` does not need to define
 ``__contains__``, ``__iter__``, and ``__reversed__`` because the
-:ref:`in-operator <comparisons>`, :term:`iteration <iterable>` logic,
-and the :func:`reversed` function automatically fall back to using
-``__getitem__`` and ``__len__``.
+:ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
+logic, and the :func:`reversed` function automatically fall back to
+using ``__getitem__`` and ``__len__``.
 
 3) Some simple interfaces are directly recognizable by the presence of
 the required methods (unless those methods have been set to
@@ -100,7 +100,7 @@ the required methods (unless those methods have been set to
 
 Complex interfaces do not support this last technique because an
 interface is more than just the presence of method names.  Interfaces
-specify semanatics and relationships between methods that cannot be
+specify semantics and relationships between methods that cannot be
 inferred solely from the presence of specific method names.  For
 example, knowing that a class supplies ``__getitem__``, ``__len__``, and
 ``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
