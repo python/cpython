@@ -1406,6 +1406,12 @@ def _no_init_or_replace_init(self, *args, **kwargs):
     if cls._is_protocol:
         raise TypeError('Protocols cannot be instantiated')
 
+    # When `_no_init_or_replace_init` called using super() there are no
+    # need to calculate correct `__init__` method to call.
+    # see bpo-45121
+    if cls.__init__ is not _no_init_or_replace_init:
+        return
+
     # Initially, `__init__` of a protocol subclass is set to `_no_init_or_replace_init`.
     # The first instantiation of the subclass will call `_no_init_or_replace_init` which
     # searches for a proper new `__init__` in the MRO. The new `__init__`
