@@ -492,6 +492,8 @@ loops that truncate the stream.
             next(b, None)
             return zip(a, b)
 
+    .. versionadded:: 3.10
+
 
 .. function:: permutations(iterable, r=None)
 
