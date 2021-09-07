@@ -1,2 +1,2 @@
-Fix issue when ``Protocol.__init__`` raise ``RecursionError`` when it called
+Fix issue where ``Protocol.__init__`` raises ``RecursionError`` when called
 using ``super()``. Patch provided by Yurii Karabas.
