@@ -254,6 +254,13 @@ Removed
   Use ``bdist_wheel`` (wheel packages) instead.
   (Contributed by Hugo van Kemenade in :issue:`45124`.)
 
+* Due to significant security concerns, the *reuse_address* parameter of
+  :meth:`asyncio.loop.create_datagram_endpoint`, deprecated in Python 3.9, is
+  now removed. This is because of the behavior of the socket option
+  ``SO_REUSEADDR`` in UDP.
+  (Contributed by Hugo van Kemenade in :issue:`45129`.)
+
+
 Optimizations
 =============
 
