@@ -374,7 +374,7 @@ PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 /* Takes an AsyncIterable object and returns an AsyncIterator for it.
    This is typically a new iterator but if the argument is an AsyncIterator,
    this returns itself. */
-PyAPI_FUNC(PyObject *) PyObject_GetAiter(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_GetAIter(PyObject *);
 
 /* Returns non-zero if the object 'obj' provides iterator protocols, and 0 otherwise.
 
@@ -384,7 +384,7 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
 /* Returns non-zero if the object 'obj' provides AsyncIterator protocols, and 0 otherwise.
 
    This function always succeeds. */
-PyAPI_FUNC(int) PyAiter_Check(PyObject *);
+PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
