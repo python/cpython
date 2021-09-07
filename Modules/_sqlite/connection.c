@@ -146,9 +146,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     if (self->initialized) {
-        connection_close(self);
         PyTypeObject *tp = Py_TYPE(self);
         tp->tp_clear((PyObject *)self);
+        connection_close(self);
         self->initialized = 0;
     }
 
@@ -170,18 +170,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    // Create cursor weak ref list and statement cache
-    PyObject *cursors = PyList_New(0);
-    if (cursors == NULL) {
-        return -1;
-    }
-
-    PyObject *cache = new_statement_cache(self, state, cache_size);
-    if (cache == NULL) {
-        Py_DECREF(cursors);
-        return -1;
-    }
-
     // Init connection state members
     self->db = db;
     self->state = state;
@@ -190,8 +178,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->begin_statement = NULL;
     self->check_same_thread = check_same_thread;
     self->thread_ident = PyThread_get_thread_ident();
-    self->statement_cache = cache;
-    self->cursors = cursors;
+    self->statement_cache = new_statement_cache(self, state, cache_size);;
+    self->cursors = PyList_New(0);
     self->created_cursors = 0;
     self->row_factory = Py_NewRef(Py_None);
     self->text_factory = Py_NewRef(&PyUnicode_Type);
@@ -210,6 +198,10 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->InternalError         = state->InternalError;
     self->ProgrammingError      = state->ProgrammingError;
     self->NotSupportedError     = state->NotSupportedError;
+
+    if (self->cursors == NULL || self->statement_cache == NULL) {
+        return -1;
+    }
 
     // Set isolation level at last, since it may trigger a COMMIT
     if (isolation_level == NULL) {
@@ -318,10 +310,9 @@ static void
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
-        clear_sqlite_callbacks(self);
-
         int rc;
         Py_BEGIN_ALLOW_THREADS
+        clear_sqlite_callbacks(self);
         rc = sqlite3_close_v2(self->db);
         Py_END_ALLOW_THREADS
 
