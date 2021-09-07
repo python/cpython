@@ -350,7 +350,7 @@ class ColNamesTests(unittest.TestCase):
         self.assertEqual(val, "<xxx>")
 
         # Check if the stripping of colnames works. Everything after the first
-        # '[' (and the preceeding space) should be stripped.
+        # '[' (and the preceding space) should be stripped.
         self.assertEqual(self.cur.description[0][0], "x y")
 
     def test_case_in_converter_name(self):
