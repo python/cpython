@@ -46,11 +46,11 @@ clinic_fsconverter(PyObject *pathlike, const char **result)
     else if (PyBytes_AsStringAndSize(bytes, &str, &len) < 0) {
         goto error;
     }
-    else if ((*result = PyMem_Malloc(len))) {
+    else if ((*result = (const char *)PyMem_Malloc(len+1)) == NULL) {
         goto error;
     }
 
-    memcpy((void *)(*result), str, len);
+    memcpy((void *)(*result), str, len+1);
     Py_DECREF(bytes);
     return 1;
 
