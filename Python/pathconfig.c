@@ -37,6 +37,17 @@ copy_wstr(wchar_t **dst, const wchar_t *src)
     return 0;
 }
 
+static size_t
+find_basename(const wchar_t *filename)
+{
+    for (size_t i = wcslen(filename); i > 0; --i) {
+        if (filename[i] == SEP) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
 
 static void
 pathconfig_clear(_PyPathConfig *config)
@@ -665,26 +676,27 @@ get_executable(const PyConfig *fallback)
 }
 
 bool
-_Py_IsInstalled(const PyConfig *fallback)
+_Py_IsDevelopmentEnv(const PyConfig *fallback)
 {
-    /* If the stdlib dir is *not* in the same dir as the executable
-       then we consider it an installed Python. */
-    const wchar_t *stdlib = _Py_GetStdlibDir(fallback);
-    if (stdlib != NULL) {
-        size_t i = wcslen(stdlib);
-        while (i > 0 && stdlib[i] != SEP) {
-            --i;
-        }
-        const wchar_t *executable = get_executable(fallback);
-        if (executable != NULL) {
-            if (wcslen(executable) > i) {
-                /* If they share a parent dir then it is a local (dev)
-                   build and therefore not installed. */
-                return wcsncmp(stdlib, executable, i + 1) != 0;
-            }
-        }
+    const wchar_t *executable = get_executable(fallback);
+    if (executable == NULL) {
+        return false;
     }
-    /* We fall back to assuming this is an installed Python. */
+    size_t len = find_basename(executable);
+    if (wcscmp(executable + len, L"python") != 0) {
+        return false;
+    }
+    /* If dirname() is the same for both then it is a local (dev) build. */
+    const wchar_t *stdlib = _Py_GetStdlibDir(fallback);
+    if (stdlib == NULL) {
+        return false;
+    }
+    if (len != find_basename(stdlib)) {
+        return false;
+    }
+    if (wcsncmp(stdlib, executable, len) != 0) {
+        return false;
+    }
     return true;
 }
 

@@ -2131,7 +2131,7 @@ _PyConfig_InitImportConfig(PyConfig *config)
 #ifdef _Py_OPT  // configure --enable-optimizations
         config->use_frozen_modules = true;
 #else
-        config->use_frozen_modules = _Py_IsInstalled(config);
+        config->use_frozen_modules = !_Py_IsDevelopmentEnv(config);
 #endif
     }
     else if (wcscmp(value, L"on") == 0) {
