@@ -199,6 +199,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->progress_ctx = NULL;
     self->authorizer_ctx = NULL;
 
+    // Borrowed refs
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
     self->InterfaceError        = state->InterfaceError;
