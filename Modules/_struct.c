@@ -591,8 +591,7 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (x < SHRT_MIN || x > SHRT_MAX) {
         PyErr_Format(state->StructError,
                      "short format requires %d <= number <= %d",
-                     SHRT_MIN,
-                     SHRT_MAX);
+                     (int)SHRT_MIN, (int)SHRT_MAX);
         return -1;
     }
     y = (short)x;
