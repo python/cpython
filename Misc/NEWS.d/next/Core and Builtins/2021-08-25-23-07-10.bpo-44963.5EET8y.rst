@@ -1,0 +1,2 @@
+Implement ``send()`` and ``throw()`` methods for ``anext_awaitable``
+objects. Patch by Pablo Galindo.

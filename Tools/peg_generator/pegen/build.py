@@ -1,11 +1,10 @@
+import itertools
 import pathlib
 import shutil
-import tokenize
 import sysconfig
 import tempfile
-import itertools
-
-from typing import Optional, Tuple, List, IO, Set, Dict
+import tokenize
+from typing import IO, Dict, List, Optional, Set, Tuple
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
@@ -45,9 +44,9 @@ def compile_c_extension(
     of distutils (this is useful in case you want to use a temporary directory).
     """
     import distutils.log
-    from distutils.core import Distribution, Extension
-    from distutils.command.clean import clean  # type: ignore
     from distutils.command.build_ext import build_ext  # type: ignore
+    from distutils.command.clean import clean  # type: ignore
+    from distutils.core import Distribution, Extension
     from distutils.tests.support import fixup_build_ext  # type: ignore
 
     if verbose:

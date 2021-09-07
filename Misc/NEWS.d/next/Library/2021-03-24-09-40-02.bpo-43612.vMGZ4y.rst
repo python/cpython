@@ -1,0 +1,5 @@
+:func:`zlib.compress` now accepts a wbits parameter which allows users to
+compress data as a raw deflate block without zlib headers and trailers in
+one go. Previously this required instantiating a ``zlib.compressobj``. It
+also provides a faster alternative to ``gzip.compress`` when wbits=31 is
+used.

@@ -1,0 +1,3 @@
+:class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+It is untested and undocumented and also not used by webbrowser itself.
+Patch by Dong-hee Na.
