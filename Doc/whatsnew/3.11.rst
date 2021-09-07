@@ -250,6 +250,9 @@ Removed
 
   (Contributed by Victor Stinner in :issue:`45085`.)
 
+* The distutils ``bdist_msi`` command, deprecated in Python 3.9, is now removed.
+  Use ``bdist_wheel`` (wheel packages) instead.
+  (Contributed by Hugo van Kemenade in :issue:`45124`.)
 
 Optimizations
 =============
