@@ -27,10 +27,10 @@ example, whether it is hashable or whether it is a mapping.
 An :func:`issubclass` or :func:`isinstance` test for an interface works in one
 of three ways.
 
-First, a newly written class can inherit directly from one the abstract
-base classes.  The class must supply the required abstract methods.  The
-remaining mixin methods come from inheritance and can be overridden if
-desired.  Other methods may be added as needed:
+First, a newly written class can inherit directly from one of the
+abstract base classes.  The class must supply the required abstract
+methods.  The remaining mixin methods come from inheritance and can be
+overridden if desired.  Other methods may be added as needed:
 
 .. testcode::
 
@@ -79,8 +79,9 @@ In this second example, :class:`~MySeq` does not need to define
 and the :func:`reversed` function automatically fall back to using
 ``__getitem__`` and ``__len__``.
 
-Third, some simple interfaces are directly recognizable just by the
-presence of the required methods:
+Third, some simple interfaces are directly recognizable by the presence
+of the required methods (unless those methods have been set to
+:const:`None`.
 
 .. testcode::
 
@@ -118,7 +119,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 ============================== ====================== ======================= ====================================================
 :class:`Container` [1]_                               ``__contains__``
 :class:`Hashable` [1]_                                ``__hash__``
-:class:`Iterable` [1]_                                ``__iter__``
+:class:`Iterable` [1]_ [2]_                           ``__iter__``
 :class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
 :class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``
 :class:`Generator`  [1]_       :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
@@ -179,9 +180,16 @@ ABC                            Inherits from          Abstract Methods        Mi
 .. rubric:: Footnotes
 
 .. [1] This ABC overrides :meth:`object.__subclasshook__` to support
-   testing an interface by verifying the required methods are present.
-   This only works for simple interfaces.  More complex interfaces
-   require registration or direct subclassing.
+   testing an interface by verifying the required methods are present
+   and have not been set to :const:`None`.  This only works for simple
+   interfaces.  More complex interfaces require registration or direct
+   subclassing.
+
+.. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
+   registered as :class:`Iterable` or that have an :meth:`__iter__`
+   method, but it does not detect classes that iterate with the
+   :meth:`__getitem__` method.  The only reliable way to determine
+   whether an object is :term:`iterable` is to call ``iter(obj)``.
 
 
 Collections Abstract Base Classes -- Detailed Descriptions
