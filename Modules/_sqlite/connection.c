@@ -81,7 +81,6 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
-
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
