@@ -595,8 +595,9 @@ Py_GetPath(void)
 const wchar_t *
 _Py_GetStdlibDir(const PyConfig *fallback)
 {
-    if (_Py_path_config.stdlib_dir != NULL) {
-        return _Py_path_config.stdlib_dir;
+    wchar_t *stdlib_dir = _Py_path_config.stdlib_dir;
+    if (stdlib_dir != NULL && stdlib_dir[0] != L'\0') {
+        return stdlib_dir;
     }
     if (fallback == NULL) {
         fallback = _Py_GetMainConfig();
@@ -604,7 +605,11 @@ _Py_GetStdlibDir(const PyConfig *fallback)
             return NULL;
         }
     }
-    return fallback->stdlib_dir;
+    stdlib_dir = fallback->stdlib_dir;
+    if (stdlib_dir != NULL && stdlib_dir[0] != L'\0') {
+        return stdlib_dir;
+    }
+    return NULL;
 }
 
 
