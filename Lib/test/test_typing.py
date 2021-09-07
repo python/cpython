@@ -1618,7 +1618,7 @@ class ProtocolTests(BaseTestCase):
             def __init__(self):
                 super().__init__()
 
-        Foo()
+        Foo()  # Previously triggered RecursionError
 
 
 class GenericTests(BaseTestCase):
