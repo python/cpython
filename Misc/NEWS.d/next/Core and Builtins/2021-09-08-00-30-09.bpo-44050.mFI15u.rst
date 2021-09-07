@@ -1,0 +1,2 @@
+Extensions and def->m_base.m_copy can be updated when the extension module
+doesn't support sub-interpreters.
