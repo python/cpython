@@ -57,7 +57,7 @@ automatically inferred from the rest of the API:
 
 .. testcode::
 
-    class MySeq:
+    class SecondSeq:
         def __init__(self): ...  # Extra method not required by the ABC
         def __getitem__(self, index):  ...
         def __len__(self):  ...
@@ -66,14 +66,14 @@ automatically inferred from the rest of the API:
 
 .. doctest::
 
-   >>> Sequence.register(MySeq)
+   >>> Sequence.register(SecondSeq)
    <class '<doctest>.MySeq'>
-   >>> issubclass(MySeq, Sequence)
+   >>> issubclass(SecondSeq, Sequence)
    True
-   >>> isinstance(MySeq(), Sequence)
+   >>> isinstance(SecondSeq(), Sequence)
    True
 
-In this second example, :class:`~MySeq` does not need to define
+In this example, :class:`~SecondSeq` does not need to define
 ``__contains__``, ``__iter__``, and ``__reversed__`` because the
 :ref:`in-operator <comparisons>`, :term:`iteration <iterable>` logic,
 and the :func:`reversed` function automatically fall back to using
