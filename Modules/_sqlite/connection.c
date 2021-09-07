@@ -82,17 +82,6 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
 }
 
 
-static void
-set_callback_context(callback_context **ctx_pp, callback_context *ctx)
-{
-    assert(ctx_pp != NULL);
-    callback_context *tmp = *ctx_pp;
-    *ctx_pp = ctx;
-    if (tmp != NULL) {
-        free_callback_context(tmp);
-    }
-}
-
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
@@ -844,6 +833,17 @@ free_callback_context(callback_context *ctx)
     assert(ctx != NULL);
     Py_XDECREF(ctx->callable);
     PyMem_Free(ctx);
+}
+
+static void
+set_callback_context(callback_context **ctx_pp, callback_context *ctx)
+{
+    assert(ctx_pp != NULL);
+    callback_context *tmp = *ctx_pp;
+    *ctx_pp = ctx;
+    if (tmp != NULL) {
+        free_callback_context(tmp);
+    }
 }
 
 static void
