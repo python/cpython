@@ -78,6 +78,7 @@ jobs:
           then
             echo "Generated files not up to date. Perhaps you forgot to run make regen-all or build.bat --regen ;)"
             echo "$changes"
+            git diff --cached Python/frozen_modules/MANIFEST
             exit 1
           fi
       - name: Check exported libpython symbols
