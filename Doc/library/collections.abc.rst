@@ -50,15 +50,17 @@ overridden if desired.  Other methods may be added as needed:
    True
 
 2) Existing classes and built-in classes can be registered as "virtual
-subclasses" of the ABCs.  So that users can rely on the interface being
-present, the existing class should define all of the abstract methods
-and mixin methods unless those methods are automatically inferred from
-the rest of the API:
+subclasses" of the ABCs.  Those classes should define the full API
+including all of the abstract methods and all of mixin methods.  This
+lets users rely on :func:`issubclass` or :func:`isinstance` tests to
+determine whether the full interface is supported.  The exception to
+this rule is methods that are automatically inferred from the rest of
+the API:
 
 .. testcode::
 
     class SecondSeq:
-        def __init__(self): ...  # Extra method not required by the ABC
+        def __init__(self): ...              # Extra method not required by the ABC
         def __getitem__(self, index):  ...   # Abstract method
         def __len__(self):  ...              # Abstract method
         def count(self, value): ...          # Mixin method
