@@ -27,7 +27,7 @@ example, whether it is hashable or whether it is a mapping.
 An :func:`issubclass` or :func:`isinstance` test for an interface works in one
 of three ways.
 
-First, a newly written class can inherit directly from one of the
+1) A newly written class can inherit directly from one of the
 abstract base classes.  The class must supply the required abstract
 methods.  The remaining mixin methods come from inheritance and can be
 overridden if desired.  Other methods may be added as needed:
@@ -49,11 +49,11 @@ overridden if desired.  Other methods may be added as needed:
    >>> isinstance(MySeq(), Sequence)
    True
 
-Second, existing classes and built-in classes can be registered as
-"virtual subclasses" of the ABCs.  So that users can rely on the
-interface being present, the existing class should define all of the
-abstract methods and mixin methods unless those methods are
-automatically inferred from the rest of the API:
+2) Existing classes and built-in classes can be registered as "virtual
+subclasses" of the ABCs.  So that users can rely on the interface being
+present, the existing class should define all of the abstract methods
+and mixin methods unless those methods are automatically inferred from
+the rest of the API:
 
 .. testcode::
 
@@ -79,9 +79,9 @@ In this example, :class:`~SecondSeq` does not need to define
 and the :func:`reversed` function automatically fall back to using
 ``__getitem__`` and ``__len__``.
 
-Third, some simple interfaces are directly recognizable by the presence
-of the required methods (unless those methods have been set to
-:const:`None`.
+3) Some simple interfaces are directly recognizable by the presence of
+the required methods (unless those methods have been set to
+:const:`None`):
 
 .. testcode::
 
