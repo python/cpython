@@ -338,13 +338,16 @@ class ConnectionTests(unittest.TestCase):
 
     def test_connection_bad_reinit(self):
         cx = sqlite.connect(":memory:")
+        with cx:
+            cx.execute("create table t(t)")
         with temp_dir() as db:
-            try:
-                cx.__init__(db)
-            except sqlite.OperationalError:
-                pass
-            else:
-                self.fail("Unexpected success")
+            self.assertRaisesRegex(sqlite.OperationalError,
+                                   "unable to open database file",
+                                   cx.__init__, db)
+            self.assertRaisesRegex(sqlite.ProgrammingError,
+                                   "Base Connection.__init__ not called",
+                                   cx.executemany, "insert into t values(?)",
+                                   ((v,) for v in range(3)))
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
