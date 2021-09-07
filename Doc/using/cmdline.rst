@@ -480,8 +480,8 @@ Miscellaneous options
      objects and pyc files are desired as well as supressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
-   * ``-X frozen_modules`` determines whether or not frozen modules are
-     ignored by the import machinery.  A value of "on" means they get
+   * ``-X frozen_modules=[on|off]`` determines whether or not frozen modules
+     are ignored by the import machinery.  A value of "on" means they get
      imported and "off" means they are ignored.  The default is "on"
      if this is an installed Python (the normal case).  If it's under
      development (running from the build dir) then the default is "off".
