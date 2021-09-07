@@ -322,14 +322,14 @@ class CmdLineTest(unittest.TestCase):
                                cwd=script_dir)
 
     def test_module_in_package_in_zipfile(self):
-        with import_helper.frozen_modules(), os_helper.temp_dir() as script_dir:
+        with os_helper.temp_dir() as script_dir:
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script')
             self._check_script(["-m", "test_pkg.script"], run_name, run_name,
                                script_dir, 'test_pkg', zipimport.zipimporter,
                                PYTHONPATH=zip_name, cwd=script_dir)
 
     def test_module_in_subpackage_in_zipfile(self):
-        with import_helper.frozen_modules(), os_helper.temp_dir() as script_dir:
+        with os_helper.temp_dir() as script_dir:
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script', depth=2)
             self._check_script(["-m", "test_pkg.test_pkg.script"], run_name, run_name,
                                script_dir, 'test_pkg.test_pkg',
