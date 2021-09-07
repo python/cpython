@@ -34,11 +34,11 @@ overridden if desired.  Other methods may be added as needed:
 
 .. testcode::
 
-    class MySeq(Sequence):
-        def __init__(self): ...  # Extra method not required by the ABC
-        def __getitem__(self, index):  ...   # Required abstract method
-        def __len__(self):  ...              # Required abstract method
-        def count(self, value): ...          # Optionally override a mixin method
+    class MySeq(Sequence):                  # Direct inheritance
+        def __init__(self): ...             # Extra method not required by the ABC
+        def __getitem__(self, index):  ...  # Required abstract method
+        def __len__(self):  ...             # Required abstract method
+        def count(self, value): ...         # Optionally override a mixin method
 
 .. doctest::
 
@@ -59,14 +59,14 @@ the rest of the API:
 
     class SecondSeq:
         def __init__(self): ...  # Extra method not required by the ABC
-        def __getitem__(self, index):  ...
-        def __len__(self):  ...
-        def count(self, value): ...
-        def index(self, value): ...
+        def __getitem__(self, index):  ...   # Abstract method
+        def __len__(self):  ...              # Abstract method
+        def count(self, value): ...          # Mixin method
+        def index(self, value): ...          # Mixin method
 
 .. doctest::
 
-   >>> Sequence.register(SecondSeq)
+   >>> Sequence.register(SecondSeq)          # Register instead of inherit
    <class '<doctest>.MySeq'>
    >>> issubclass(SecondSeq, Sequence)
    True
