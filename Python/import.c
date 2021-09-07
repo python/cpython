@@ -1060,6 +1060,9 @@ is_essential_frozen_module(PyObject *name)
     if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external")) {
         return true;
     }
+    if (_PyUnicode_EqualToASCIIString(name, "zipimport")) {
+        return true;
+    }
     /* This doesn't otherwise have anywhere to find the module.
        See frozenmain.c. */
     if (_PyUnicode_EqualToASCIIString(name, "__main__")) {
