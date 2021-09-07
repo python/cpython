@@ -1136,6 +1136,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'base_prefix': '',
             'exec_prefix': '',
             'base_exec_prefix': '',
+             # The current getpath.c doesn't determine the stdlib dir
+             # in this case.
+            'stdlib_dir': '',
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
@@ -1156,6 +1159,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'base_prefix': '',
             'exec_prefix': '',
             'base_exec_prefix': '',
+             # The current getpath.c doesn't determine the stdlib dir
+             # in this case.
+            'stdlib_dir': '',
             # overriden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1245,6 +1251,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': exec_prefix,
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
+            'stdlib_dir': home,
         }
         self.default_program_name(config)
         env = {'TESTHOME': home,
@@ -1284,6 +1291,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': module_search_paths,
+                # The current getpath.c doesn't determine the stdlib dir
+                # in this case.
+                'stdlib_dir': None,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1333,6 +1343,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': paths,
+                # The current getpath.c doesn't determine the stdlib dir
+                # in this case.
+                'stdlib_dir': None,
             }
             path_config = {}
             if MS_WINDOWS:

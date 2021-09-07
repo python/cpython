@@ -1542,6 +1542,7 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
     if (pathconfig->stdlib_dir == NULL) {
         if (calculate->prefix_found) {
+            /* This must be done *before* calculate_set_prefix() is called. */
             pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->prefix);
             if (pathconfig->stdlib_dir == NULL) {
                 return _PyStatus_NO_MEMORY();

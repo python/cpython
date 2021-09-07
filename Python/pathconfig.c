@@ -500,7 +500,12 @@ Py_SetPath(const wchar_t *path)
     _Py_path_config.prefix = _PyMem_RawWcsdup(L"");
     _Py_path_config.exec_prefix = _PyMem_RawWcsdup(L"");
     // XXX Copy this from the new module_search_path?
-    _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(L"");
+    if (_Py_path_config.home != NULL) {
+        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(_Py_path_config.home);
+    }
+    else {
+        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(L"");
+    }
     _Py_path_config.module_search_path = _PyMem_RawWcsdup(path);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -527,10 +532,13 @@ Py_SetPythonHome(const wchar_t *home)
 
     PyMem_RawFree(_Py_path_config.home);
     _Py_path_config.home = _PyMem_RawWcsdup(home);
+    if (_Py_path_config.home != NULL) {
+        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(home);
+    }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (_Py_path_config.home == NULL) {
+    if (_Py_path_config.home == NULL || _Py_path_config.stdlib_dir == NULL) {
         path_out_of_memory(__func__);
     }
 }
