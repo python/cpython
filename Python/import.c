@@ -1050,6 +1050,24 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 
 /* Frozen modules */
 
+static bool
+is_essential_frozen_module(PyObject *name)
+{
+    /* These modules are necessary to bootstrap the import system. */
+    if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib")) {
+        return true;
+    }
+    if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external")) {
+        return true;
+    }
+    /* This doesn't otherwise have anywhere to find the module.
+       See frozenmain.c. */
+    if (_PyUnicode_EqualToASCIIString(name, "__main__")) {
+        return true;
+    }
+    return false;
+}
+
 static const struct _frozen *
 find_frozen(PyObject *name, bool force)
 {
@@ -1060,10 +1078,7 @@ find_frozen(PyObject *name, bool force)
 
     const PyConfig *config = _Py_GetConfig();
     if (!config->use_frozen_modules && !force) {
-        /* These modules are necessary to bootstrap the import system. */
-        if (!_PyUnicode_EqualToASCIIString(name, "_frozen_importlib") &&
-            !_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external"))
-        {
+        if (!is_essential_frozen_module(name)) {
             return NULL;
         }
     }
