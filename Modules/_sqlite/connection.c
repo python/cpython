@@ -147,6 +147,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 
     if (self->initialized) {
         connection_close(self);
+        PyTypeObject *tp = Py_TYPE(self);
+        tp->tp_clear((PyObject *)self);
         self->initialized = 0;
     }
 
@@ -184,20 +186,18 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->db = db;
     self->state = state;
     self->detect_types = detect_types;
+    self->isolation_level = NULL;
     self->begin_statement = NULL;
     self->check_same_thread = check_same_thread;
     self->thread_ident = PyThread_get_thread_ident();
+    self->statement_cache = cache;
+    self->cursors = cursors;
     self->created_cursors = 0;
-
-    Py_CLEAR(self->isolation_level);
-    Py_XSETREF(self->statement_cache, cache);
-    Py_XSETREF(self->cursors, cursors);
-    Py_XSETREF(self->row_factory, Py_NewRef(Py_None));
-    Py_XSETREF(self->text_factory, Py_NewRef(&PyUnicode_Type));
-
-    set_callback_context(&self->trace_ctx, NULL);
-    set_callback_context(&self->progress_ctx, NULL);
-    set_callback_context(&self->authorizer_ctx, NULL);
+    self->row_factory = Py_NewRef(Py_None);
+    self->text_factory = Py_NewRef(&PyUnicode_Type);
+    self->trace_ctx = NULL;
+    self->progress_ctx = NULL;
+    self->authorizer_ctx = NULL;
 
     self->Warning               = state->Warning;
     self->Error                 = state->Error;
