@@ -915,22 +915,14 @@ get_len_of_range(long lo, long hi, long step)
    is not representable as a C long, OverflowError is raised. */
 
 static PyObject *
-fast_range_iter(long start, long stop, long step)
+fast_range_iter(long start, long stop, long step, long len)
 {
     rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
-    unsigned long ulen;
     if (it == NULL)
         return NULL;
     it->start = start;
     it->step = step;
-    ulen = get_len_of_range(start, stop, step);
-    if (ulen > (unsigned long)LONG_MAX) {
-        Py_DECREF(it);
-        PyErr_SetString(PyExc_OverflowError,
-                        "range too large to represent as a range_iterator");
-        return NULL;
-    }
-    it->len = (long)ulen;
+    it->len = len;
     it->index = 0;
     return (PyObject *)it;
 }
@@ -1092,7 +1084,7 @@ range_iter(PyObject *seq)
     rangeobject *r = (rangeobject *)seq;
     longrangeiterobject *it;
     long lstart, lstop, lstep;
-    PyObject *int_it;
+    unsigned long ulen;
 
     assert(PyRange_Check(seq));
 
@@ -1113,12 +1105,22 @@ range_iter(PyObject *seq)
         PyErr_Clear();
         goto long_range;
     }
-    int_it = fast_range_iter(lstart, lstop, lstep);
-    if (int_it == NULL && PyErr_ExceptionMatches(PyExc_OverflowError)) {
-        PyErr_Clear();
+    ulen = get_len_of_range(lstart, lstop, lstep);
+    if (ulen > (unsigned long)LONG_MAX) {
         goto long_range;
     }
-    return (PyObject *)int_it;
+    /* check for potential overflow of lstart + ulen * lstep */
+    if (ulen) {
+        if (lstep > 0) {
+            if (lstop > LONG_MAX - (lstep - 1))
+                goto long_range;
+        }
+        else {
+            if (lstop < LONG_MIN + (-1 - lstep))
+                goto long_range;
+        }
+    }
+    return fast_range_iter(lstart, lstop, lstep, (long)ulen);
 
   long_range:
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
@@ -1204,7 +1206,7 @@ range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored))
 
     new_stop = lstart - lstep;
     new_start = (long)(new_stop + ulen * lstep);
-    return fast_range_iter(new_start, new_stop, -lstep);
+    return fast_range_iter(new_start, new_stop, -lstep, (long)ulen);
 
 long_range:
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
