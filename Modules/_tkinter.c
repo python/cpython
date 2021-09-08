@@ -2342,68 +2342,6 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     return v;
 }
 
-/*[clinic input]
-_tkinter.tkapp.split
-
-    arg: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-_tkinter_tkapp_split(TkappObject *self, PyObject *arg)
-/*[clinic end generated code: output=e08ad832363facfd input=a1c78349eacaa140]*/
-{
-    PyObject *v;
-    char *list;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "split() is deprecated; consider using splitlist() instead", 1))
-    {
-        return NULL;
-    }
-
-    if (PyTclObject_Check(arg)) {
-        Tcl_Obj *value = ((PyTclObject*)arg)->value;
-        int objc;
-        Tcl_Obj **objv;
-        int i;
-        if (Tcl_ListObjGetElements(Tkapp_Interp(self), value,
-                                   &objc, &objv) == TCL_ERROR) {
-            return FromObj(self, value);
-        }
-        if (objc == 0)
-            return PyUnicode_FromString("");
-        if (objc == 1)
-            return FromObj(self, objv[0]);
-        if (!(v = PyTuple_New(objc)))
-            return NULL;
-        for (i = 0; i < objc; i++) {
-            PyObject *s = FromObj(self, objv[i]);
-            if (!s) {
-                Py_DECREF(v);
-                return NULL;
-            }
-            PyTuple_SET_ITEM(v, i, s);
-        }
-        return v;
-    }
-    if (PyTuple_Check(arg) || PyList_Check(arg))
-        return SplitObj(arg);
-
-    if (!PyArg_Parse(arg, "et:split", "utf-8", &list))
-        return NULL;
-    if (strlen(list) >= INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "string is too long");
-        PyMem_Free(list);
-        return NULL;
-    }
-    v = Split(list);
-    PyMem_Free(list);
-    return v;
-}
-
-
 
 /** Tcl Command **/
 
@@ -3331,7 +3269,6 @@ static PyMethodDef Tkapp_methods[] =
     _TKINTER_TKAPP_EXPRDOUBLE_METHODDEF
     _TKINTER_TKAPP_EXPRBOOLEAN_METHODDEF
     _TKINTER_TKAPP_SPLITLIST_METHODDEF
-    _TKINTER_TKAPP_SPLIT_METHODDEF
     _TKINTER_TKAPP_CREATECOMMAND_METHODDEF
     _TKINTER_TKAPP_DELETECOMMAND_METHODDEF
     _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
