@@ -79,7 +79,8 @@ class PythonValuesTestCase(unittest.TestCase):
                 else:
                     self.assertIsNone(spec.submodule_search_locations)
 
-        expected = imp._frozen_module_names()
+        with import_helper.frozen_modules():
+            expected = imp._frozen_module_names()
         self.maxDiff = None
         self.assertEqual(modules, expected, "PyImport_FrozenModules example "
             "in Doc/library/ctypes.rst may be out of date")
