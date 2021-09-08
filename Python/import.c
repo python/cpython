@@ -1071,6 +1071,39 @@ is_essential_frozen_module(PyObject *name)
     return false;
 }
 
+static PyObject *
+list_frozen_module_names(bool force)
+{
+    const PyConfig *config = _Py_GetConfig();
+    PyObject *names = PyList_New(0);
+    if (names == NULL) {
+        return NULL;
+    }
+    for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        PyObject *name = PyUnicode_FromString(p->name);
+        if (name == NULL) {
+            Py_DECREF(names);
+            return NULL;
+        }
+        if (!config->use_frozen_modules && !force) {
+            if (!is_essential_frozen_module(name)) {
+                Py_DECREF(name);
+                continue;
+            }
+        }
+        int res = PyList_Append(names, name);
+        Py_DECREF(name);
+        if (res != 0) {
+            Py_DECREF(names);
+            return NULL;
+        }
+    }
+    return names;
+}
+
 static const struct _frozen *
 find_frozen(PyObject *name, bool force)
 {
@@ -2000,6 +2033,19 @@ _imp_is_frozen_impl(PyObject *module, PyObject *name)
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
+/*[clinic input]
+_imp._frozen_module_names
+
+Returns the list of available frozen modules.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module)
+/*[clinic end generated code: output=80609ef6256310a8 input=76237fbfa94460d2]*/
+{
+    return list_frozen_module_names(true);
+}
+
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
@@ -2160,6 +2206,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_INIT_FROZEN_METHODDEF
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
+    _IMP__FROZEN_MODULE_NAMES_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
