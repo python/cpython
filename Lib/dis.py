@@ -561,9 +561,10 @@ def find_store_names(co):
 
     Generate sequence of strings
     """
-    STORE_OPS = (
+    STORE_OPS = {
         opmap['STORE_NAME'],
-        opmap['STORE_GLOBAL'])
+        opmap['STORE_GLOBAL']
+    }
 
     names = co.co_names
     for _, op, arg in _unpack_opargs(co.co_code):
