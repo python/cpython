@@ -708,6 +708,10 @@ call fails (for example because the path doesn't exist).
       >>> Path.home()
       PosixPath('/home/antoine')
 
+   Note that unlike :func:`os.path.expanduser`, on POSIX systems a
+   :exc:`KeyError` or :exc:`RuntimeError` will be raised, and on Windows systems a
+   :exc:`RuntimeError` will be raised if home directory can't be resolved.
+
    .. versionadded:: 3.5
 
 
@@ -763,6 +767,10 @@ call fails (for example because the path doesn't exist).
       >>> p = PosixPath('~/films/Monty Python')
       >>> p.expanduser()
       PosixPath('/home/eric/films/Monty Python')
+
+   Note that unlike :func:`os.path.expanduser`, on POSIX systems a
+   :exc:`KeyError` or :exc:`RuntimeError` will be raised, and on Windows systems a
+   :exc:`RuntimeError` will be raised if home directory can't be resolved.
 
    .. versionadded:: 3.5
 
