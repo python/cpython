@@ -750,687 +750,687 @@ regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
 
 # BEGIN: freezing modules
 
-Python/frozen_modules/importlib__bootstrap.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap.py
+Python/frozen_modules/importlib__bootstrap.h: Programs/_freeze_module Lib/importlib/_bootstrap.py
 	$(srcdir)/Programs/_freeze_module importlib._bootstrap \
 		$(srcdir)/Lib/importlib/_bootstrap.py \
 		$(srcdir)/Python/frozen_modules/importlib__bootstrap.h
 
-Python/frozen_modules/importlib__bootstrap_external.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap_external.py
+Python/frozen_modules/importlib__bootstrap_external.h: Programs/_freeze_module Lib/importlib/_bootstrap_external.py
 	$(srcdir)/Programs/_freeze_module importlib._bootstrap_external \
 		$(srcdir)/Lib/importlib/_bootstrap_external.py \
 		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h
 
-Python/frozen_modules/zipimport.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/zipimport.py
+Python/frozen_modules/zipimport.h: Programs/_freeze_module Lib/zipimport.py
 	$(srcdir)/Programs/_freeze_module zipimport \
 		$(srcdir)/Lib/zipimport.py \
 		$(srcdir)/Python/frozen_modules/zipimport.h
 
-Python/frozen_modules/abc.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/abc.py
+Python/frozen_modules/abc.h: Programs/_freeze_module Lib/abc.py
 	$(srcdir)/Programs/_freeze_module abc \
 		$(srcdir)/Lib/abc.py \
 		$(srcdir)/Python/frozen_modules/abc.h
 
-Python/frozen_modules/codecs.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/codecs.py
+Python/frozen_modules/codecs.h: Programs/_freeze_module Lib/codecs.py
 	$(srcdir)/Programs/_freeze_module codecs \
 		$(srcdir)/Lib/codecs.py \
 		$(srcdir)/Python/frozen_modules/codecs.h
 
-Python/frozen_modules/encodings.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/__init__.py
+Python/frozen_modules/encodings.h: Programs/_freeze_module Lib/encodings/__init__.py
 	$(srcdir)/Programs/_freeze_module encodings \
 		$(srcdir)/Lib/encodings/__init__.py \
 		$(srcdir)/Python/frozen_modules/encodings.h
 
-Python/frozen_modules/encodings___init__.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/__init__.py
+Python/frozen_modules/encodings___init__.h: Programs/_freeze_module Lib/encodings/__init__.py
 	$(srcdir)/Programs/_freeze_module encodings.__init__ \
 		$(srcdir)/Lib/encodings/__init__.py \
 		$(srcdir)/Python/frozen_modules/encodings___init__.h
 
-Python/frozen_modules/encodings_aliases.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/aliases.py
+Python/frozen_modules/encodings_aliases.h: Programs/_freeze_module Lib/encodings/aliases.py
 	$(srcdir)/Programs/_freeze_module encodings.aliases \
 		$(srcdir)/Lib/encodings/aliases.py \
 		$(srcdir)/Python/frozen_modules/encodings_aliases.h
 
-Python/frozen_modules/encodings_ascii.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/ascii.py
+Python/frozen_modules/encodings_ascii.h: Programs/_freeze_module Lib/encodings/ascii.py
 	$(srcdir)/Programs/_freeze_module encodings.ascii \
 		$(srcdir)/Lib/encodings/ascii.py \
 		$(srcdir)/Python/frozen_modules/encodings_ascii.h
 
-Python/frozen_modules/encodings_base64_codec.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/base64_codec.py
+Python/frozen_modules/encodings_base64_codec.h: Programs/_freeze_module Lib/encodings/base64_codec.py
 	$(srcdir)/Programs/_freeze_module encodings.base64_codec \
 		$(srcdir)/Lib/encodings/base64_codec.py \
 		$(srcdir)/Python/frozen_modules/encodings_base64_codec.h
 
-Python/frozen_modules/encodings_big5.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/big5.py
+Python/frozen_modules/encodings_big5.h: Programs/_freeze_module Lib/encodings/big5.py
 	$(srcdir)/Programs/_freeze_module encodings.big5 \
 		$(srcdir)/Lib/encodings/big5.py \
 		$(srcdir)/Python/frozen_modules/encodings_big5.h
 
-Python/frozen_modules/encodings_big5hkscs.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/big5hkscs.py
+Python/frozen_modules/encodings_big5hkscs.h: Programs/_freeze_module Lib/encodings/big5hkscs.py
 	$(srcdir)/Programs/_freeze_module encodings.big5hkscs \
 		$(srcdir)/Lib/encodings/big5hkscs.py \
 		$(srcdir)/Python/frozen_modules/encodings_big5hkscs.h
 
-Python/frozen_modules/encodings_bz2_codec.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/bz2_codec.py
+Python/frozen_modules/encodings_bz2_codec.h: Programs/_freeze_module Lib/encodings/bz2_codec.py
 	$(srcdir)/Programs/_freeze_module encodings.bz2_codec \
 		$(srcdir)/Lib/encodings/bz2_codec.py \
 		$(srcdir)/Python/frozen_modules/encodings_bz2_codec.h
 
-Python/frozen_modules/encodings_charmap.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/charmap.py
+Python/frozen_modules/encodings_charmap.h: Programs/_freeze_module Lib/encodings/charmap.py
 	$(srcdir)/Programs/_freeze_module encodings.charmap \
 		$(srcdir)/Lib/encodings/charmap.py \
 		$(srcdir)/Python/frozen_modules/encodings_charmap.h
 
-Python/frozen_modules/encodings_cp037.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp037.py
+Python/frozen_modules/encodings_cp037.h: Programs/_freeze_module Lib/encodings/cp037.py
 	$(srcdir)/Programs/_freeze_module encodings.cp037 \
 		$(srcdir)/Lib/encodings/cp037.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp037.h
 
-Python/frozen_modules/encodings_cp1006.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1006.py
+Python/frozen_modules/encodings_cp1006.h: Programs/_freeze_module Lib/encodings/cp1006.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1006 \
 		$(srcdir)/Lib/encodings/cp1006.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1006.h
 
-Python/frozen_modules/encodings_cp1026.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1026.py
+Python/frozen_modules/encodings_cp1026.h: Programs/_freeze_module Lib/encodings/cp1026.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1026 \
 		$(srcdir)/Lib/encodings/cp1026.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1026.h
 
-Python/frozen_modules/encodings_cp1125.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1125.py
+Python/frozen_modules/encodings_cp1125.h: Programs/_freeze_module Lib/encodings/cp1125.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1125 \
 		$(srcdir)/Lib/encodings/cp1125.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1125.h
 
-Python/frozen_modules/encodings_cp1140.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1140.py
+Python/frozen_modules/encodings_cp1140.h: Programs/_freeze_module Lib/encodings/cp1140.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1140 \
 		$(srcdir)/Lib/encodings/cp1140.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1140.h
 
-Python/frozen_modules/encodings_cp1250.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1250.py
+Python/frozen_modules/encodings_cp1250.h: Programs/_freeze_module Lib/encodings/cp1250.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1250 \
 		$(srcdir)/Lib/encodings/cp1250.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1250.h
 
-Python/frozen_modules/encodings_cp1251.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1251.py
+Python/frozen_modules/encodings_cp1251.h: Programs/_freeze_module Lib/encodings/cp1251.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1251 \
 		$(srcdir)/Lib/encodings/cp1251.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1251.h
 
-Python/frozen_modules/encodings_cp1252.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1252.py
+Python/frozen_modules/encodings_cp1252.h: Programs/_freeze_module Lib/encodings/cp1252.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1252 \
 		$(srcdir)/Lib/encodings/cp1252.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1252.h
 
-Python/frozen_modules/encodings_cp1253.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1253.py
+Python/frozen_modules/encodings_cp1253.h: Programs/_freeze_module Lib/encodings/cp1253.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1253 \
 		$(srcdir)/Lib/encodings/cp1253.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1253.h
 
-Python/frozen_modules/encodings_cp1254.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1254.py
+Python/frozen_modules/encodings_cp1254.h: Programs/_freeze_module Lib/encodings/cp1254.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1254 \
 		$(srcdir)/Lib/encodings/cp1254.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1254.h
 
-Python/frozen_modules/encodings_cp1255.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1255.py
+Python/frozen_modules/encodings_cp1255.h: Programs/_freeze_module Lib/encodings/cp1255.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1255 \
 		$(srcdir)/Lib/encodings/cp1255.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1255.h
 
-Python/frozen_modules/encodings_cp1256.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1256.py
+Python/frozen_modules/encodings_cp1256.h: Programs/_freeze_module Lib/encodings/cp1256.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1256 \
 		$(srcdir)/Lib/encodings/cp1256.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1256.h
 
-Python/frozen_modules/encodings_cp1257.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1257.py
+Python/frozen_modules/encodings_cp1257.h: Programs/_freeze_module Lib/encodings/cp1257.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1257 \
 		$(srcdir)/Lib/encodings/cp1257.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1257.h
 
-Python/frozen_modules/encodings_cp1258.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp1258.py
+Python/frozen_modules/encodings_cp1258.h: Programs/_freeze_module Lib/encodings/cp1258.py
 	$(srcdir)/Programs/_freeze_module encodings.cp1258 \
 		$(srcdir)/Lib/encodings/cp1258.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp1258.h
 
-Python/frozen_modules/encodings_cp273.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp273.py
+Python/frozen_modules/encodings_cp273.h: Programs/_freeze_module Lib/encodings/cp273.py
 	$(srcdir)/Programs/_freeze_module encodings.cp273 \
 		$(srcdir)/Lib/encodings/cp273.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp273.h
 
-Python/frozen_modules/encodings_cp424.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp424.py
+Python/frozen_modules/encodings_cp424.h: Programs/_freeze_module Lib/encodings/cp424.py
 	$(srcdir)/Programs/_freeze_module encodings.cp424 \
 		$(srcdir)/Lib/encodings/cp424.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp424.h
 
-Python/frozen_modules/encodings_cp437.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp437.py
+Python/frozen_modules/encodings_cp437.h: Programs/_freeze_module Lib/encodings/cp437.py
 	$(srcdir)/Programs/_freeze_module encodings.cp437 \
 		$(srcdir)/Lib/encodings/cp437.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp437.h
 
-Python/frozen_modules/encodings_cp500.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp500.py
+Python/frozen_modules/encodings_cp500.h: Programs/_freeze_module Lib/encodings/cp500.py
 	$(srcdir)/Programs/_freeze_module encodings.cp500 \
 		$(srcdir)/Lib/encodings/cp500.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp500.h
 
-Python/frozen_modules/encodings_cp720.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp720.py
+Python/frozen_modules/encodings_cp720.h: Programs/_freeze_module Lib/encodings/cp720.py
 	$(srcdir)/Programs/_freeze_module encodings.cp720 \
 		$(srcdir)/Lib/encodings/cp720.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp720.h
 
-Python/frozen_modules/encodings_cp737.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp737.py
+Python/frozen_modules/encodings_cp737.h: Programs/_freeze_module Lib/encodings/cp737.py
 	$(srcdir)/Programs/_freeze_module encodings.cp737 \
 		$(srcdir)/Lib/encodings/cp737.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp737.h
 
-Python/frozen_modules/encodings_cp775.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp775.py
+Python/frozen_modules/encodings_cp775.h: Programs/_freeze_module Lib/encodings/cp775.py
 	$(srcdir)/Programs/_freeze_module encodings.cp775 \
 		$(srcdir)/Lib/encodings/cp775.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp775.h
 
-Python/frozen_modules/encodings_cp850.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp850.py
+Python/frozen_modules/encodings_cp850.h: Programs/_freeze_module Lib/encodings/cp850.py
 	$(srcdir)/Programs/_freeze_module encodings.cp850 \
 		$(srcdir)/Lib/encodings/cp850.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp850.h
 
-Python/frozen_modules/encodings_cp852.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp852.py
+Python/frozen_modules/encodings_cp852.h: Programs/_freeze_module Lib/encodings/cp852.py
 	$(srcdir)/Programs/_freeze_module encodings.cp852 \
 		$(srcdir)/Lib/encodings/cp852.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp852.h
 
-Python/frozen_modules/encodings_cp855.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp855.py
+Python/frozen_modules/encodings_cp855.h: Programs/_freeze_module Lib/encodings/cp855.py
 	$(srcdir)/Programs/_freeze_module encodings.cp855 \
 		$(srcdir)/Lib/encodings/cp855.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp855.h
 
-Python/frozen_modules/encodings_cp856.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp856.py
+Python/frozen_modules/encodings_cp856.h: Programs/_freeze_module Lib/encodings/cp856.py
 	$(srcdir)/Programs/_freeze_module encodings.cp856 \
 		$(srcdir)/Lib/encodings/cp856.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp856.h
 
-Python/frozen_modules/encodings_cp857.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp857.py
+Python/frozen_modules/encodings_cp857.h: Programs/_freeze_module Lib/encodings/cp857.py
 	$(srcdir)/Programs/_freeze_module encodings.cp857 \
 		$(srcdir)/Lib/encodings/cp857.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp857.h
 
-Python/frozen_modules/encodings_cp858.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp858.py
+Python/frozen_modules/encodings_cp858.h: Programs/_freeze_module Lib/encodings/cp858.py
 	$(srcdir)/Programs/_freeze_module encodings.cp858 \
 		$(srcdir)/Lib/encodings/cp858.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp858.h
 
-Python/frozen_modules/encodings_cp860.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp860.py
+Python/frozen_modules/encodings_cp860.h: Programs/_freeze_module Lib/encodings/cp860.py
 	$(srcdir)/Programs/_freeze_module encodings.cp860 \
 		$(srcdir)/Lib/encodings/cp860.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp860.h
 
-Python/frozen_modules/encodings_cp861.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp861.py
+Python/frozen_modules/encodings_cp861.h: Programs/_freeze_module Lib/encodings/cp861.py
 	$(srcdir)/Programs/_freeze_module encodings.cp861 \
 		$(srcdir)/Lib/encodings/cp861.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp861.h
 
-Python/frozen_modules/encodings_cp862.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp862.py
+Python/frozen_modules/encodings_cp862.h: Programs/_freeze_module Lib/encodings/cp862.py
 	$(srcdir)/Programs/_freeze_module encodings.cp862 \
 		$(srcdir)/Lib/encodings/cp862.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp862.h
 
-Python/frozen_modules/encodings_cp863.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp863.py
+Python/frozen_modules/encodings_cp863.h: Programs/_freeze_module Lib/encodings/cp863.py
 	$(srcdir)/Programs/_freeze_module encodings.cp863 \
 		$(srcdir)/Lib/encodings/cp863.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp863.h
 
-Python/frozen_modules/encodings_cp864.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp864.py
+Python/frozen_modules/encodings_cp864.h: Programs/_freeze_module Lib/encodings/cp864.py
 	$(srcdir)/Programs/_freeze_module encodings.cp864 \
 		$(srcdir)/Lib/encodings/cp864.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp864.h
 
-Python/frozen_modules/encodings_cp865.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp865.py
+Python/frozen_modules/encodings_cp865.h: Programs/_freeze_module Lib/encodings/cp865.py
 	$(srcdir)/Programs/_freeze_module encodings.cp865 \
 		$(srcdir)/Lib/encodings/cp865.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp865.h
 
-Python/frozen_modules/encodings_cp866.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp866.py
+Python/frozen_modules/encodings_cp866.h: Programs/_freeze_module Lib/encodings/cp866.py
 	$(srcdir)/Programs/_freeze_module encodings.cp866 \
 		$(srcdir)/Lib/encodings/cp866.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp866.h
 
-Python/frozen_modules/encodings_cp869.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp869.py
+Python/frozen_modules/encodings_cp869.h: Programs/_freeze_module Lib/encodings/cp869.py
 	$(srcdir)/Programs/_freeze_module encodings.cp869 \
 		$(srcdir)/Lib/encodings/cp869.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp869.h
 
-Python/frozen_modules/encodings_cp874.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp874.py
+Python/frozen_modules/encodings_cp874.h: Programs/_freeze_module Lib/encodings/cp874.py
 	$(srcdir)/Programs/_freeze_module encodings.cp874 \
 		$(srcdir)/Lib/encodings/cp874.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp874.h
 
-Python/frozen_modules/encodings_cp875.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp875.py
+Python/frozen_modules/encodings_cp875.h: Programs/_freeze_module Lib/encodings/cp875.py
 	$(srcdir)/Programs/_freeze_module encodings.cp875 \
 		$(srcdir)/Lib/encodings/cp875.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp875.h
 
-Python/frozen_modules/encodings_cp932.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp932.py
+Python/frozen_modules/encodings_cp932.h: Programs/_freeze_module Lib/encodings/cp932.py
 	$(srcdir)/Programs/_freeze_module encodings.cp932 \
 		$(srcdir)/Lib/encodings/cp932.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp932.h
 
-Python/frozen_modules/encodings_cp949.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp949.py
+Python/frozen_modules/encodings_cp949.h: Programs/_freeze_module Lib/encodings/cp949.py
 	$(srcdir)/Programs/_freeze_module encodings.cp949 \
 		$(srcdir)/Lib/encodings/cp949.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp949.h
 
-Python/frozen_modules/encodings_cp950.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/cp950.py
+Python/frozen_modules/encodings_cp950.h: Programs/_freeze_module Lib/encodings/cp950.py
 	$(srcdir)/Programs/_freeze_module encodings.cp950 \
 		$(srcdir)/Lib/encodings/cp950.py \
 		$(srcdir)/Python/frozen_modules/encodings_cp950.h
 
-Python/frozen_modules/encodings_euc_jis_2004.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/euc_jis_2004.py
+Python/frozen_modules/encodings_euc_jis_2004.h: Programs/_freeze_module Lib/encodings/euc_jis_2004.py
 	$(srcdir)/Programs/_freeze_module encodings.euc_jis_2004 \
 		$(srcdir)/Lib/encodings/euc_jis_2004.py \
 		$(srcdir)/Python/frozen_modules/encodings_euc_jis_2004.h
 
-Python/frozen_modules/encodings_euc_jisx0213.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/euc_jisx0213.py
+Python/frozen_modules/encodings_euc_jisx0213.h: Programs/_freeze_module Lib/encodings/euc_jisx0213.py
 	$(srcdir)/Programs/_freeze_module encodings.euc_jisx0213 \
 		$(srcdir)/Lib/encodings/euc_jisx0213.py \
 		$(srcdir)/Python/frozen_modules/encodings_euc_jisx0213.h
 
-Python/frozen_modules/encodings_euc_jp.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/euc_jp.py
+Python/frozen_modules/encodings_euc_jp.h: Programs/_freeze_module Lib/encodings/euc_jp.py
 	$(srcdir)/Programs/_freeze_module encodings.euc_jp \
 		$(srcdir)/Lib/encodings/euc_jp.py \
 		$(srcdir)/Python/frozen_modules/encodings_euc_jp.h
 
-Python/frozen_modules/encodings_euc_kr.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/euc_kr.py
+Python/frozen_modules/encodings_euc_kr.h: Programs/_freeze_module Lib/encodings/euc_kr.py
 	$(srcdir)/Programs/_freeze_module encodings.euc_kr \
 		$(srcdir)/Lib/encodings/euc_kr.py \
 		$(srcdir)/Python/frozen_modules/encodings_euc_kr.h
 
-Python/frozen_modules/encodings_gb18030.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/gb18030.py
+Python/frozen_modules/encodings_gb18030.h: Programs/_freeze_module Lib/encodings/gb18030.py
 	$(srcdir)/Programs/_freeze_module encodings.gb18030 \
 		$(srcdir)/Lib/encodings/gb18030.py \
 		$(srcdir)/Python/frozen_modules/encodings_gb18030.h
 
-Python/frozen_modules/encodings_gb2312.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/gb2312.py
+Python/frozen_modules/encodings_gb2312.h: Programs/_freeze_module Lib/encodings/gb2312.py
 	$(srcdir)/Programs/_freeze_module encodings.gb2312 \
 		$(srcdir)/Lib/encodings/gb2312.py \
 		$(srcdir)/Python/frozen_modules/encodings_gb2312.h
 
-Python/frozen_modules/encodings_gbk.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/gbk.py
+Python/frozen_modules/encodings_gbk.h: Programs/_freeze_module Lib/encodings/gbk.py
 	$(srcdir)/Programs/_freeze_module encodings.gbk \
 		$(srcdir)/Lib/encodings/gbk.py \
 		$(srcdir)/Python/frozen_modules/encodings_gbk.h
 
-Python/frozen_modules/encodings_hex_codec.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/hex_codec.py
+Python/frozen_modules/encodings_hex_codec.h: Programs/_freeze_module Lib/encodings/hex_codec.py
 	$(srcdir)/Programs/_freeze_module encodings.hex_codec \
 		$(srcdir)/Lib/encodings/hex_codec.py \
 		$(srcdir)/Python/frozen_modules/encodings_hex_codec.h
 
-Python/frozen_modules/encodings_hp_roman8.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/hp_roman8.py
+Python/frozen_modules/encodings_hp_roman8.h: Programs/_freeze_module Lib/encodings/hp_roman8.py
 	$(srcdir)/Programs/_freeze_module encodings.hp_roman8 \
 		$(srcdir)/Lib/encodings/hp_roman8.py \
 		$(srcdir)/Python/frozen_modules/encodings_hp_roman8.h
 
-Python/frozen_modules/encodings_hz.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/hz.py
+Python/frozen_modules/encodings_hz.h: Programs/_freeze_module Lib/encodings/hz.py
 	$(srcdir)/Programs/_freeze_module encodings.hz \
 		$(srcdir)/Lib/encodings/hz.py \
 		$(srcdir)/Python/frozen_modules/encodings_hz.h
 
-Python/frozen_modules/encodings_idna.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/idna.py
+Python/frozen_modules/encodings_idna.h: Programs/_freeze_module Lib/encodings/idna.py
 	$(srcdir)/Programs/_freeze_module encodings.idna \
 		$(srcdir)/Lib/encodings/idna.py \
 		$(srcdir)/Python/frozen_modules/encodings_idna.h
 
-Python/frozen_modules/encodings_iso2022_jp.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_jp.py
+Python/frozen_modules/encodings_iso2022_jp.h: Programs/_freeze_module Lib/encodings/iso2022_jp.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_jp \
 		$(srcdir)/Lib/encodings/iso2022_jp.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_jp.h
 
-Python/frozen_modules/encodings_iso2022_jp_1.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_jp_1.py
+Python/frozen_modules/encodings_iso2022_jp_1.h: Programs/_freeze_module Lib/encodings/iso2022_jp_1.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_jp_1 \
 		$(srcdir)/Lib/encodings/iso2022_jp_1.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_jp_1.h
 
-Python/frozen_modules/encodings_iso2022_jp_2.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_jp_2.py
+Python/frozen_modules/encodings_iso2022_jp_2.h: Programs/_freeze_module Lib/encodings/iso2022_jp_2.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_jp_2 \
 		$(srcdir)/Lib/encodings/iso2022_jp_2.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_jp_2.h
 
-Python/frozen_modules/encodings_iso2022_jp_2004.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_jp_2004.py
+Python/frozen_modules/encodings_iso2022_jp_2004.h: Programs/_freeze_module Lib/encodings/iso2022_jp_2004.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_jp_2004 \
 		$(srcdir)/Lib/encodings/iso2022_jp_2004.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_jp_2004.h
 
-Python/frozen_modules/encodings_iso2022_jp_3.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_jp_3.py
+Python/frozen_modules/encodings_iso2022_jp_3.h: Programs/_freeze_module Lib/encodings/iso2022_jp_3.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_jp_3 \
 		$(srcdir)/Lib/encodings/iso2022_jp_3.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_jp_3.h
 
-Python/frozen_modules/encodings_iso2022_jp_ext.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_jp_ext.py
+Python/frozen_modules/encodings_iso2022_jp_ext.h: Programs/_freeze_module Lib/encodings/iso2022_jp_ext.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_jp_ext \
 		$(srcdir)/Lib/encodings/iso2022_jp_ext.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_jp_ext.h
 
-Python/frozen_modules/encodings_iso2022_kr.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso2022_kr.py
+Python/frozen_modules/encodings_iso2022_kr.h: Programs/_freeze_module Lib/encodings/iso2022_kr.py
 	$(srcdir)/Programs/_freeze_module encodings.iso2022_kr \
 		$(srcdir)/Lib/encodings/iso2022_kr.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso2022_kr.h
 
-Python/frozen_modules/encodings_iso8859_1.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_1.py
+Python/frozen_modules/encodings_iso8859_1.h: Programs/_freeze_module Lib/encodings/iso8859_1.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_1 \
 		$(srcdir)/Lib/encodings/iso8859_1.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_1.h
 
-Python/frozen_modules/encodings_iso8859_10.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_10.py
+Python/frozen_modules/encodings_iso8859_10.h: Programs/_freeze_module Lib/encodings/iso8859_10.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_10 \
 		$(srcdir)/Lib/encodings/iso8859_10.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_10.h
 
-Python/frozen_modules/encodings_iso8859_11.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_11.py
+Python/frozen_modules/encodings_iso8859_11.h: Programs/_freeze_module Lib/encodings/iso8859_11.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_11 \
 		$(srcdir)/Lib/encodings/iso8859_11.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_11.h
 
-Python/frozen_modules/encodings_iso8859_13.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_13.py
+Python/frozen_modules/encodings_iso8859_13.h: Programs/_freeze_module Lib/encodings/iso8859_13.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_13 \
 		$(srcdir)/Lib/encodings/iso8859_13.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_13.h
 
-Python/frozen_modules/encodings_iso8859_14.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_14.py
+Python/frozen_modules/encodings_iso8859_14.h: Programs/_freeze_module Lib/encodings/iso8859_14.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_14 \
 		$(srcdir)/Lib/encodings/iso8859_14.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_14.h
 
-Python/frozen_modules/encodings_iso8859_15.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_15.py
+Python/frozen_modules/encodings_iso8859_15.h: Programs/_freeze_module Lib/encodings/iso8859_15.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_15 \
 		$(srcdir)/Lib/encodings/iso8859_15.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_15.h
 
-Python/frozen_modules/encodings_iso8859_16.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_16.py
+Python/frozen_modules/encodings_iso8859_16.h: Programs/_freeze_module Lib/encodings/iso8859_16.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_16 \
 		$(srcdir)/Lib/encodings/iso8859_16.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_16.h
 
-Python/frozen_modules/encodings_iso8859_2.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_2.py
+Python/frozen_modules/encodings_iso8859_2.h: Programs/_freeze_module Lib/encodings/iso8859_2.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_2 \
 		$(srcdir)/Lib/encodings/iso8859_2.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_2.h
 
-Python/frozen_modules/encodings_iso8859_3.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_3.py
+Python/frozen_modules/encodings_iso8859_3.h: Programs/_freeze_module Lib/encodings/iso8859_3.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_3 \
 		$(srcdir)/Lib/encodings/iso8859_3.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_3.h
 
-Python/frozen_modules/encodings_iso8859_4.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_4.py
+Python/frozen_modules/encodings_iso8859_4.h: Programs/_freeze_module Lib/encodings/iso8859_4.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_4 \
 		$(srcdir)/Lib/encodings/iso8859_4.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_4.h
 
-Python/frozen_modules/encodings_iso8859_5.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_5.py
+Python/frozen_modules/encodings_iso8859_5.h: Programs/_freeze_module Lib/encodings/iso8859_5.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_5 \
 		$(srcdir)/Lib/encodings/iso8859_5.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_5.h
 
-Python/frozen_modules/encodings_iso8859_6.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_6.py
+Python/frozen_modules/encodings_iso8859_6.h: Programs/_freeze_module Lib/encodings/iso8859_6.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_6 \
 		$(srcdir)/Lib/encodings/iso8859_6.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_6.h
 
-Python/frozen_modules/encodings_iso8859_7.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_7.py
+Python/frozen_modules/encodings_iso8859_7.h: Programs/_freeze_module Lib/encodings/iso8859_7.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_7 \
 		$(srcdir)/Lib/encodings/iso8859_7.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_7.h
 
-Python/frozen_modules/encodings_iso8859_8.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_8.py
+Python/frozen_modules/encodings_iso8859_8.h: Programs/_freeze_module Lib/encodings/iso8859_8.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_8 \
 		$(srcdir)/Lib/encodings/iso8859_8.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_8.h
 
-Python/frozen_modules/encodings_iso8859_9.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/iso8859_9.py
+Python/frozen_modules/encodings_iso8859_9.h: Programs/_freeze_module Lib/encodings/iso8859_9.py
 	$(srcdir)/Programs/_freeze_module encodings.iso8859_9 \
 		$(srcdir)/Lib/encodings/iso8859_9.py \
 		$(srcdir)/Python/frozen_modules/encodings_iso8859_9.h
 
-Python/frozen_modules/encodings_johab.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/johab.py
+Python/frozen_modules/encodings_johab.h: Programs/_freeze_module Lib/encodings/johab.py
 	$(srcdir)/Programs/_freeze_module encodings.johab \
 		$(srcdir)/Lib/encodings/johab.py \
 		$(srcdir)/Python/frozen_modules/encodings_johab.h
 
-Python/frozen_modules/encodings_koi8_r.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/koi8_r.py
+Python/frozen_modules/encodings_koi8_r.h: Programs/_freeze_module Lib/encodings/koi8_r.py
 	$(srcdir)/Programs/_freeze_module encodings.koi8_r \
 		$(srcdir)/Lib/encodings/koi8_r.py \
 		$(srcdir)/Python/frozen_modules/encodings_koi8_r.h
 
-Python/frozen_modules/encodings_koi8_t.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/koi8_t.py
+Python/frozen_modules/encodings_koi8_t.h: Programs/_freeze_module Lib/encodings/koi8_t.py
 	$(srcdir)/Programs/_freeze_module encodings.koi8_t \
 		$(srcdir)/Lib/encodings/koi8_t.py \
 		$(srcdir)/Python/frozen_modules/encodings_koi8_t.h
 
-Python/frozen_modules/encodings_koi8_u.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/koi8_u.py
+Python/frozen_modules/encodings_koi8_u.h: Programs/_freeze_module Lib/encodings/koi8_u.py
 	$(srcdir)/Programs/_freeze_module encodings.koi8_u \
 		$(srcdir)/Lib/encodings/koi8_u.py \
 		$(srcdir)/Python/frozen_modules/encodings_koi8_u.h
 
-Python/frozen_modules/encodings_kz1048.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/kz1048.py
+Python/frozen_modules/encodings_kz1048.h: Programs/_freeze_module Lib/encodings/kz1048.py
 	$(srcdir)/Programs/_freeze_module encodings.kz1048 \
 		$(srcdir)/Lib/encodings/kz1048.py \
 		$(srcdir)/Python/frozen_modules/encodings_kz1048.h
 
-Python/frozen_modules/encodings_latin_1.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/latin_1.py
+Python/frozen_modules/encodings_latin_1.h: Programs/_freeze_module Lib/encodings/latin_1.py
 	$(srcdir)/Programs/_freeze_module encodings.latin_1 \
 		$(srcdir)/Lib/encodings/latin_1.py \
 		$(srcdir)/Python/frozen_modules/encodings_latin_1.h
 
-Python/frozen_modules/encodings_mac_arabic.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_arabic.py
+Python/frozen_modules/encodings_mac_arabic.h: Programs/_freeze_module Lib/encodings/mac_arabic.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_arabic \
 		$(srcdir)/Lib/encodings/mac_arabic.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_arabic.h
 
-Python/frozen_modules/encodings_mac_croatian.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_croatian.py
+Python/frozen_modules/encodings_mac_croatian.h: Programs/_freeze_module Lib/encodings/mac_croatian.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_croatian \
 		$(srcdir)/Lib/encodings/mac_croatian.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_croatian.h
 
-Python/frozen_modules/encodings_mac_cyrillic.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_cyrillic.py
+Python/frozen_modules/encodings_mac_cyrillic.h: Programs/_freeze_module Lib/encodings/mac_cyrillic.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_cyrillic \
 		$(srcdir)/Lib/encodings/mac_cyrillic.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_cyrillic.h
 
-Python/frozen_modules/encodings_mac_farsi.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_farsi.py
+Python/frozen_modules/encodings_mac_farsi.h: Programs/_freeze_module Lib/encodings/mac_farsi.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_farsi \
 		$(srcdir)/Lib/encodings/mac_farsi.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_farsi.h
 
-Python/frozen_modules/encodings_mac_greek.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_greek.py
+Python/frozen_modules/encodings_mac_greek.h: Programs/_freeze_module Lib/encodings/mac_greek.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_greek \
 		$(srcdir)/Lib/encodings/mac_greek.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_greek.h
 
-Python/frozen_modules/encodings_mac_iceland.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_iceland.py
+Python/frozen_modules/encodings_mac_iceland.h: Programs/_freeze_module Lib/encodings/mac_iceland.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_iceland \
 		$(srcdir)/Lib/encodings/mac_iceland.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_iceland.h
 
-Python/frozen_modules/encodings_mac_latin2.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_latin2.py
+Python/frozen_modules/encodings_mac_latin2.h: Programs/_freeze_module Lib/encodings/mac_latin2.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_latin2 \
 		$(srcdir)/Lib/encodings/mac_latin2.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_latin2.h
 
-Python/frozen_modules/encodings_mac_roman.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_roman.py
+Python/frozen_modules/encodings_mac_roman.h: Programs/_freeze_module Lib/encodings/mac_roman.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_roman \
 		$(srcdir)/Lib/encodings/mac_roman.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_roman.h
 
-Python/frozen_modules/encodings_mac_romanian.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_romanian.py
+Python/frozen_modules/encodings_mac_romanian.h: Programs/_freeze_module Lib/encodings/mac_romanian.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_romanian \
 		$(srcdir)/Lib/encodings/mac_romanian.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_romanian.h
 
-Python/frozen_modules/encodings_mac_turkish.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mac_turkish.py
+Python/frozen_modules/encodings_mac_turkish.h: Programs/_freeze_module Lib/encodings/mac_turkish.py
 	$(srcdir)/Programs/_freeze_module encodings.mac_turkish \
 		$(srcdir)/Lib/encodings/mac_turkish.py \
 		$(srcdir)/Python/frozen_modules/encodings_mac_turkish.h
 
-Python/frozen_modules/encodings_mbcs.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/mbcs.py
+Python/frozen_modules/encodings_mbcs.h: Programs/_freeze_module Lib/encodings/mbcs.py
 	$(srcdir)/Programs/_freeze_module encodings.mbcs \
 		$(srcdir)/Lib/encodings/mbcs.py \
 		$(srcdir)/Python/frozen_modules/encodings_mbcs.h
 
-Python/frozen_modules/encodings_oem.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/oem.py
+Python/frozen_modules/encodings_oem.h: Programs/_freeze_module Lib/encodings/oem.py
 	$(srcdir)/Programs/_freeze_module encodings.oem \
 		$(srcdir)/Lib/encodings/oem.py \
 		$(srcdir)/Python/frozen_modules/encodings_oem.h
 
-Python/frozen_modules/encodings_palmos.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/palmos.py
+Python/frozen_modules/encodings_palmos.h: Programs/_freeze_module Lib/encodings/palmos.py
 	$(srcdir)/Programs/_freeze_module encodings.palmos \
 		$(srcdir)/Lib/encodings/palmos.py \
 		$(srcdir)/Python/frozen_modules/encodings_palmos.h
 
-Python/frozen_modules/encodings_ptcp154.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/ptcp154.py
+Python/frozen_modules/encodings_ptcp154.h: Programs/_freeze_module Lib/encodings/ptcp154.py
 	$(srcdir)/Programs/_freeze_module encodings.ptcp154 \
 		$(srcdir)/Lib/encodings/ptcp154.py \
 		$(srcdir)/Python/frozen_modules/encodings_ptcp154.h
 
-Python/frozen_modules/encodings_punycode.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/punycode.py
+Python/frozen_modules/encodings_punycode.h: Programs/_freeze_module Lib/encodings/punycode.py
 	$(srcdir)/Programs/_freeze_module encodings.punycode \
 		$(srcdir)/Lib/encodings/punycode.py \
 		$(srcdir)/Python/frozen_modules/encodings_punycode.h
 
-Python/frozen_modules/encodings_quopri_codec.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/quopri_codec.py
+Python/frozen_modules/encodings_quopri_codec.h: Programs/_freeze_module Lib/encodings/quopri_codec.py
 	$(srcdir)/Programs/_freeze_module encodings.quopri_codec \
 		$(srcdir)/Lib/encodings/quopri_codec.py \
 		$(srcdir)/Python/frozen_modules/encodings_quopri_codec.h
 
-Python/frozen_modules/encodings_raw_unicode_escape.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/raw_unicode_escape.py
+Python/frozen_modules/encodings_raw_unicode_escape.h: Programs/_freeze_module Lib/encodings/raw_unicode_escape.py
 	$(srcdir)/Programs/_freeze_module encodings.raw_unicode_escape \
 		$(srcdir)/Lib/encodings/raw_unicode_escape.py \
 		$(srcdir)/Python/frozen_modules/encodings_raw_unicode_escape.h
 
-Python/frozen_modules/encodings_rot_13.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/rot_13.py
+Python/frozen_modules/encodings_rot_13.h: Programs/_freeze_module Lib/encodings/rot_13.py
 	$(srcdir)/Programs/_freeze_module encodings.rot_13 \
 		$(srcdir)/Lib/encodings/rot_13.py \
 		$(srcdir)/Python/frozen_modules/encodings_rot_13.h
 
-Python/frozen_modules/encodings_shift_jis.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/shift_jis.py
+Python/frozen_modules/encodings_shift_jis.h: Programs/_freeze_module Lib/encodings/shift_jis.py
 	$(srcdir)/Programs/_freeze_module encodings.shift_jis \
 		$(srcdir)/Lib/encodings/shift_jis.py \
 		$(srcdir)/Python/frozen_modules/encodings_shift_jis.h
 
-Python/frozen_modules/encodings_shift_jis_2004.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/shift_jis_2004.py
+Python/frozen_modules/encodings_shift_jis_2004.h: Programs/_freeze_module Lib/encodings/shift_jis_2004.py
 	$(srcdir)/Programs/_freeze_module encodings.shift_jis_2004 \
 		$(srcdir)/Lib/encodings/shift_jis_2004.py \
 		$(srcdir)/Python/frozen_modules/encodings_shift_jis_2004.h
 
-Python/frozen_modules/encodings_shift_jisx0213.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/shift_jisx0213.py
+Python/frozen_modules/encodings_shift_jisx0213.h: Programs/_freeze_module Lib/encodings/shift_jisx0213.py
 	$(srcdir)/Programs/_freeze_module encodings.shift_jisx0213 \
 		$(srcdir)/Lib/encodings/shift_jisx0213.py \
 		$(srcdir)/Python/frozen_modules/encodings_shift_jisx0213.h
 
-Python/frozen_modules/encodings_tis_620.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/tis_620.py
+Python/frozen_modules/encodings_tis_620.h: Programs/_freeze_module Lib/encodings/tis_620.py
 	$(srcdir)/Programs/_freeze_module encodings.tis_620 \
 		$(srcdir)/Lib/encodings/tis_620.py \
 		$(srcdir)/Python/frozen_modules/encodings_tis_620.h
 
-Python/frozen_modules/encodings_undefined.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/undefined.py
+Python/frozen_modules/encodings_undefined.h: Programs/_freeze_module Lib/encodings/undefined.py
 	$(srcdir)/Programs/_freeze_module encodings.undefined \
 		$(srcdir)/Lib/encodings/undefined.py \
 		$(srcdir)/Python/frozen_modules/encodings_undefined.h
 
-Python/frozen_modules/encodings_unicode_escape.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/unicode_escape.py
+Python/frozen_modules/encodings_unicode_escape.h: Programs/_freeze_module Lib/encodings/unicode_escape.py
 	$(srcdir)/Programs/_freeze_module encodings.unicode_escape \
 		$(srcdir)/Lib/encodings/unicode_escape.py \
 		$(srcdir)/Python/frozen_modules/encodings_unicode_escape.h
 
-Python/frozen_modules/encodings_utf_16.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_16.py
+Python/frozen_modules/encodings_utf_16.h: Programs/_freeze_module Lib/encodings/utf_16.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_16 \
 		$(srcdir)/Lib/encodings/utf_16.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_16.h
 
-Python/frozen_modules/encodings_utf_16_be.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_16_be.py
+Python/frozen_modules/encodings_utf_16_be.h: Programs/_freeze_module Lib/encodings/utf_16_be.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_16_be \
 		$(srcdir)/Lib/encodings/utf_16_be.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_16_be.h
 
-Python/frozen_modules/encodings_utf_16_le.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_16_le.py
+Python/frozen_modules/encodings_utf_16_le.h: Programs/_freeze_module Lib/encodings/utf_16_le.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_16_le \
 		$(srcdir)/Lib/encodings/utf_16_le.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_16_le.h
 
-Python/frozen_modules/encodings_utf_32.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_32.py
+Python/frozen_modules/encodings_utf_32.h: Programs/_freeze_module Lib/encodings/utf_32.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_32 \
 		$(srcdir)/Lib/encodings/utf_32.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_32.h
 
-Python/frozen_modules/encodings_utf_32_be.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_32_be.py
+Python/frozen_modules/encodings_utf_32_be.h: Programs/_freeze_module Lib/encodings/utf_32_be.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_32_be \
 		$(srcdir)/Lib/encodings/utf_32_be.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_32_be.h
 
-Python/frozen_modules/encodings_utf_32_le.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_32_le.py
+Python/frozen_modules/encodings_utf_32_le.h: Programs/_freeze_module Lib/encodings/utf_32_le.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_32_le \
 		$(srcdir)/Lib/encodings/utf_32_le.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_32_le.h
 
-Python/frozen_modules/encodings_utf_7.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_7.py
+Python/frozen_modules/encodings_utf_7.h: Programs/_freeze_module Lib/encodings/utf_7.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_7 \
 		$(srcdir)/Lib/encodings/utf_7.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_7.h
 
-Python/frozen_modules/encodings_utf_8.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_8.py
+Python/frozen_modules/encodings_utf_8.h: Programs/_freeze_module Lib/encodings/utf_8.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_8 \
 		$(srcdir)/Lib/encodings/utf_8.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_8.h
 
-Python/frozen_modules/encodings_utf_8_sig.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/utf_8_sig.py
+Python/frozen_modules/encodings_utf_8_sig.h: Programs/_freeze_module Lib/encodings/utf_8_sig.py
 	$(srcdir)/Programs/_freeze_module encodings.utf_8_sig \
 		$(srcdir)/Lib/encodings/utf_8_sig.py \
 		$(srcdir)/Python/frozen_modules/encodings_utf_8_sig.h
 
-Python/frozen_modules/encodings_uu_codec.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/uu_codec.py
+Python/frozen_modules/encodings_uu_codec.h: Programs/_freeze_module Lib/encodings/uu_codec.py
 	$(srcdir)/Programs/_freeze_module encodings.uu_codec \
 		$(srcdir)/Lib/encodings/uu_codec.py \
 		$(srcdir)/Python/frozen_modules/encodings_uu_codec.h
 
-Python/frozen_modules/encodings_zlib_codec.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/encodings/zlib_codec.py
+Python/frozen_modules/encodings_zlib_codec.h: Programs/_freeze_module Lib/encodings/zlib_codec.py
 	$(srcdir)/Programs/_freeze_module encodings.zlib_codec \
 		$(srcdir)/Lib/encodings/zlib_codec.py \
 		$(srcdir)/Python/frozen_modules/encodings_zlib_codec.h
 
-Python/frozen_modules/io.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/io.py
+Python/frozen_modules/io.h: Programs/_freeze_module Lib/io.py
 	$(srcdir)/Programs/_freeze_module io \
 		$(srcdir)/Lib/io.py \
 		$(srcdir)/Python/frozen_modules/io.h
 
-Python/frozen_modules/_collections_abc.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/_collections_abc.py
+Python/frozen_modules/_collections_abc.h: Programs/_freeze_module Lib/_collections_abc.py
 	$(srcdir)/Programs/_freeze_module _collections_abc \
 		$(srcdir)/Lib/_collections_abc.py \
 		$(srcdir)/Python/frozen_modules/_collections_abc.h
 
-Python/frozen_modules/_sitebuiltins.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/_sitebuiltins.py
+Python/frozen_modules/_sitebuiltins.h: Programs/_freeze_module Lib/_sitebuiltins.py
 	$(srcdir)/Programs/_freeze_module _sitebuiltins \
 		$(srcdir)/Lib/_sitebuiltins.py \
 		$(srcdir)/Python/frozen_modules/_sitebuiltins.h
 
-Python/frozen_modules/genericpath.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/genericpath.py
+Python/frozen_modules/genericpath.h: Programs/_freeze_module Lib/genericpath.py
 	$(srcdir)/Programs/_freeze_module genericpath \
 		$(srcdir)/Lib/genericpath.py \
 		$(srcdir)/Python/frozen_modules/genericpath.h
 
-Python/frozen_modules/posixpath.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/posixpath.py
+Python/frozen_modules/posixpath.h: Programs/_freeze_module Lib/posixpath.py
 	$(srcdir)/Programs/_freeze_module posixpath \
 		$(srcdir)/Lib/posixpath.py \
 		$(srcdir)/Python/frozen_modules/posixpath.h
 
-Python/frozen_modules/os.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/os.py
+Python/frozen_modules/os.h: Programs/_freeze_module Lib/os.py
 	$(srcdir)/Programs/_freeze_module os \
 		$(srcdir)/Lib/os.py \
 		$(srcdir)/Python/frozen_modules/os.h
 
-Python/frozen_modules/site.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/site.py
+Python/frozen_modules/site.h: Programs/_freeze_module Lib/site.py
 	$(srcdir)/Programs/_freeze_module site \
 		$(srcdir)/Lib/site.py \
 		$(srcdir)/Python/frozen_modules/site.h
 
-Python/frozen_modules/stat.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/stat.py
+Python/frozen_modules/stat.h: Programs/_freeze_module Lib/stat.py
 	$(srcdir)/Programs/_freeze_module stat \
 		$(srcdir)/Lib/stat.py \
 		$(srcdir)/Python/frozen_modules/stat.h
 
-Python/frozen_modules/hello.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Tools/freeze/flag.py
+Python/frozen_modules/hello.h: Programs/_freeze_module Tools/freeze/flag.py
 	$(srcdir)/Programs/_freeze_module hello \
 		$(srcdir)/Tools/freeze/flag.py \
 		$(srcdir)/Python/frozen_modules/hello.h
