@@ -146,6 +146,13 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     if (self->initialized) {
+        int rc = PyErr_WarnEx(PyExc_DeprecationWarning,
+                              "Connection reinitialization is deprecated and "
+                              "will be removed in Python 3.13",
+                              1);
+        if (rc < 0) {
+            return -1;
+        }
         PyTypeObject *tp = Py_TYPE(self);
         tp->tp_clear((PyObject *)self);
         connection_close(self);

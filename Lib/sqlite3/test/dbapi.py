@@ -346,7 +346,10 @@ class ConnectionTests(unittest.TestCase):
         self.assertTrue(all(isinstance(r, sqlite.Row) for r in rows))
         self.assertEqual([r[0] for r in rows], [b"0", b"1"])
 
-        cx.__init__(db)
+        with self.assertWarns(DeprecationWarning) as cm:
+            cx.__init__(db)
+        self.assertIn("dbapi.py", cm.filename)
+
         cx.execute("create table foo (bar)")
         cx.executemany("insert into foo (bar) values (?)",
                        ((v,) for v in ("a", "b", "c", "d")))
@@ -361,9 +364,11 @@ class ConnectionTests(unittest.TestCase):
         with cx:
             cx.execute("create table t(t)")
         with temp_dir() as db:
-            self.assertRaisesRegex(sqlite.OperationalError,
-                                   "unable to open database file",
-                                   cx.__init__, db)
+            with self.assertWarns(DeprecationWarning) as cm:
+                msg = "unable to open database file"
+                with self.assertRaisesRegex(sqlite.OperationalError, msg):
+                    cx.__init__(db)
+            self.assertIn("dbapi.py", cm.filename)
             self.assertRaisesRegex(sqlite.ProgrammingError,
                                    "Base Connection.__init__ not called",
                                    cx.executemany, "insert into t values(?)",
