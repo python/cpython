@@ -739,16 +739,16 @@ def _ss(data, c=None):
     for n, d in map(_exact_ratio, data):
         dev_numerator = n * cd - cn * d
         dev_denominator = d * cd
-        dev_numerator *=  dev_numerator
+        dev_numerator *= dev_numerator
         dev_denominator *= dev_denominator
-        partials[d] = partials_get(dev_denominator, 0) + dev_numerator
+        partials[dev_denominator] = partials_get(dev_denominator, 0) + dev_numerator
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         total = partials[None]
         assert not _isfinite(total)
     else:
-        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total)
 
 
