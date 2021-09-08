@@ -985,14 +985,13 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
 static void
 inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
-    PyObject *method = NULL;
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context,
-                                                            sizeof(PyObject *));
+    int size = sizeof(PyObject *);
+    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context, size);
     assert(cls != NULL);
     assert(*cls != NULL);
-    method = PyObject_GetAttrString(*cls, "inverse");
+    PyObject *method = PyObject_GetAttrString(*cls, "inverse");
     if (method == NULL) {
         set_sqlite_error(context,
                          "user-defined aggregate's 'inverse' method "
@@ -1032,14 +1031,14 @@ exit:
 static void
 value_callback(sqlite3_context *context)
 {
-    _Py_IDENTIFIER(value);
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    PyObject **cls = NULL;  // Aggregate class instance.
-    cls = (PyObject **)sqlite3_aggregate_context(context, sizeof(PyObject *));
+    int size = sizeof(PyObject *);
+    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context, size);
     assert(cls != NULL);
     assert(*cls != NULL);
 
+    _Py_IDENTIFIER(value);
     PyObject *res = _PyObject_CallMethodIdNoArgs(*cls, &PyId_value);
     if (res == NULL) {
         set_sqlite_error(context,
@@ -1127,11 +1126,11 @@ pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
         }
         rc = sqlite3_create_window_function(self->db, name, num_params, flags,
                                             ctx,
-                                            &_pysqlite_step_callback,
-                                            &_pysqlite_final_callback,
+                                            &step_callback,
+                                            &final_callback,
                                             &value_callback,
                                             &inverse_callback,
-                                            &_destructor);
+                                            &destructor_callback);
     }
 
     if (rc != SQLITE_OK) {
