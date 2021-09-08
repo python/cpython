@@ -302,18 +302,6 @@ connection_clear(pysqlite_Connection *self)
 }
 
 static void
-clear_sqlite_callbacks(pysqlite_Connection *self)
-{
-    (void)sqlite3_set_authorizer(self->db, NULL, NULL);
-    sqlite3_progress_handler(self->db, 0, NULL, NULL);
-#ifdef HAVE_TRACE_V2
-    sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, NULL, NULL);
-#else
-    sqlite3_trace(self->db, NULL, NULL);
-#endif
-}
-
-static void
 free_callback_contexts(pysqlite_Connection *self)
 {
     set_callback_context(&self->trace_ctx, NULL);
@@ -327,7 +315,6 @@ connection_close(pysqlite_Connection *self)
     if (self->db) {
         int rc;
         Py_BEGIN_ALLOW_THREADS
-        clear_sqlite_callbacks(self);
         rc = sqlite3_close_v2(self->db);
         Py_END_ALLOW_THREADS
         free_callback_contexts(self);
