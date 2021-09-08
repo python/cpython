@@ -147,21 +147,17 @@ class StatisticsError(ValueError):
 
 # === Private utilities ===
 
-def _sum(data, start=0):
-    """_sum(data [, start]) -> (type, sum, count)
+def _sum(data):
+    """_sum(data) -> (type, sum, count)
 
     Return a high-precision sum of the given numeric data as a fraction,
     together with the type to be converted to and the count of items.
 
-    If optional argument ``start`` is given, it is added to the total.
-    If ``data`` is empty, ``start`` (defaulting to 0) is returned.
-
-
     Examples
     --------
 
-    >>> _sum([3, 2.25, 4.5, -0.5, 1.0], 0.75)
-    (<class 'float'>, Fraction(11, 1), 5)
+    >>> _sum([3, 2.25, 4.5, -0.5, 0.25])
+    (<class 'float'>, Fraction(19, 2), 5)
 
     Some sources of round-off error will be avoided:
 
@@ -184,10 +180,9 @@ def _sum(data, start=0):
     allowed.
     """
     count = 0
-    n, d = _exact_ratio(start)
-    partials = {d: n}
+    partials = {}
     partials_get = partials.get
-    T = _coerce(int, type(start))
+    T = int
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
