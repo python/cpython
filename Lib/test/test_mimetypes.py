@@ -150,6 +150,7 @@ class MimeTypesTestCase(unittest.TestCase):
         # Poison should be gone.
         self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
 
+    @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
     def test_guess_known_extensions(self):
         # Issue 37529
         from mimetypes import types_map
