@@ -110,9 +110,11 @@ def _save_and_block_module(name, orig_modules):
 
 
 @contextlib.contextmanager
-def frozen_modules(*, disabled=False):
+def frozen_modules(enabled=True):
+    # No other code should be setting this env var.
+    assert os.getenv('_PYTHONTESTFROZENMODULES') is None
     # FYI: the env var will never show up in os.environ.
-    os.putenv('_PYTHONTESTFROZENMODULES', '' if disabled else '1')
+    os.putenv('_PYTHONTESTFROZENMODULES', '1' if enabled else '')
     try:
         yield
     finally:
@@ -161,7 +163,7 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
             for blocked_name in blocked:
                 if not _save_and_block_module(blocked_name, orig_modules):
                     names_to_remove.append(blocked_name)
-            with frozen_modules(disabled=not usefrozen):
+            with frozen_modules(usefrozen):
                 fresh_module = importlib.import_module(name)
         except ImportError:
             fresh_module = None
