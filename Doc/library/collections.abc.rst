@@ -34,7 +34,7 @@ overridden if desired.  Other methods may be added as needed:
 
 .. testcode::
 
-    class MySeq(Sequence):                  # Direct inheritance
+    class C(Sequence):                      # Direct inheritance
         def __init__(self): ...             # Extra method not required by the ABC
         def __getitem__(self, index):  ...  # Required abstract method
         def __len__(self):  ...             # Required abstract method
@@ -42,11 +42,9 @@ overridden if desired.  Other methods may be added as needed:
 
 .. doctest::
 
-   >>> Sequence.register(MySeq)
-   <class '<doctest>.MySeq'>
-   >>> issubclass(MySeq, Sequence)
+   >>> issubclass(C, Sequence)
    True
-   >>> isinstance(MySeq(), Sequence)
+   >>> isinstance(C(), Sequence)
    True
 
 2) Existing classes and built-in classes can be registered as "virtual
@@ -59,27 +57,27 @@ of the API:
 
 .. testcode::
 
-    class SecondSeq:
+    class D:                                 # No inheritance
         def __init__(self): ...              # Extra method not required by the ABC
         def __getitem__(self, index):  ...   # Abstract method
         def __len__(self):  ...              # Abstract method
         def count(self, value): ...          # Mixin method
         def index(self, value): ...          # Mixin method
 
+    Sequence.register(D)                     # Register instead of inherit
+
 .. doctest::
 
-   >>> Sequence.register(SecondSeq)          # Register instead of inherit
-   <class '<doctest>.SecondSeq'>
-   >>> issubclass(SecondSeq, Sequence)
+   >>> issubclass(D, Sequence)
    True
-   >>> isinstance(SecondSeq(), Sequence)
+   >>> isinstance(D(), Sequence)
    True
 
-In this example, :class:`~SecondSeq` does not need to define
-``__contains__``, ``__iter__``, and ``__reversed__`` because the
-:ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
-logic, and the :func:`reversed` function automatically fall back to
-using ``__getitem__`` and ``__len__``.
+In this example, :class:`D` does not need to define ``__contains__``,
+``__iter__``, and ``__reversed__`` because the :ref:`in-operator
+<comparisons>`, the :term:`iteration <iterable>` logic, and the
+:func:`reversed` function automatically fall back to using
+``__getitem__`` and ``__len__``.
 
 3) Some simple interfaces are directly recognizable by the presence of
 the required methods (unless those methods have been set to
@@ -87,15 +85,15 @@ the required methods (unless those methods have been set to
 
 .. testcode::
 
-    class MyIterable:
+    class E:
         def __iter__(self): ...
         def __next__(next): ...
 
 .. doctest::
 
-   >>> issubclass(MyIterable, Iterable)
+   >>> issubclass(E, Iterable)
    True
-   >>> isinstance(MyIterable(), Iterable)
+   >>> isinstance(E(), Iterable)
    True
 
 Complex interfaces do not support this last technique because an
