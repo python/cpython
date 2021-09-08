@@ -1144,6 +1144,10 @@ find_frozen(PyObject *modname)
         return NULL;
     }
     const char *name = PyUnicode_AsUTF8(modname);
+    if (name == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
     if (!use_frozen(name)) {
         return NULL;
     }
