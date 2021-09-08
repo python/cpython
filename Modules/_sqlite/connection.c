@@ -1026,7 +1026,7 @@ progress_callback(void *ctx)
  * to ensure future compatibility.
  */
 static int
-trace_callback(unsigned int type, void *ctx, void *stmt, void *Py_UNUSED(sql))
+trace_callback(unsigned int type, void *ctx, void *stmt, void *sql)
 #else
 static void
 trace_callback(void *ctx, const char *sql)
@@ -1054,9 +1054,14 @@ trace_callback(void *ctx, const char *sql)
         else {
             pysqlite_state *state = ((callback_context *)ctx)->state;
             assert(state != NULL);
-            PyErr_SetString(state->DataError,
-                            "Expanded SQL string exceeds the maximum string "
-                            "length");
+            if (state->enable_callback_tracebacks) {
+                PyErr_SetString(state->DataError,
+                                "Expanded SQL string exceeds the maximum "
+                                "string length");
+                PyErr_Print();
+            }
+            // Fall back to unexpanded sql
+            py_statement = PyUnicode_FromString((const char *)sql);
         }
     }
     else {
