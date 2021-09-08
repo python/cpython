@@ -170,7 +170,7 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
-   .. deprecated-removed:: 3.8 3.11
+   .. versionchanged:: 3.11
       Support for :meth:`__getitem__` method has been removed.
 
    .. versionchanged:: 3.8

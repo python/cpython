@@ -114,8 +114,8 @@ DOMEventStream Objects
 
 .. class:: DOMEventStream(stream, parser, bufsize)
 
-   .. deprecated-removed:: 3.8 3.11
-      Support for sequence protocol :meth:`__getitem__` has been removed.
+   .. versionchanged:: 3.11
+      Support for :meth:`__getitem__` method has been removed.
 
    .. method:: getEvent()
 
