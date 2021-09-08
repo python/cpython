@@ -313,6 +313,9 @@ Removed
   generator-based coroutine objects in the debug mode.
   (Contributed by Illia Volochii in :issue:`43216`.)
 
+* Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+  (Contributed by Erlend E. Aasland in :issue:`38371`.)
+
 Porting to Python 3.11
 ======================
 
