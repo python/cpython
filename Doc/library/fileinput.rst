@@ -146,10 +146,10 @@ available for subclassing as well:
    Class :class:`FileInput` is the implementation; its methods :meth:`filename`,
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
    :meth:`isstdin`, :meth:`nextfile` and :meth:`close` correspond to the
-   functions of the same name in the module. In addition it has a
-   :meth:`~io.TextIOBase.readline` method which returns the next input line.
-   The sequence must be accessed in strictly sequential order; random access
-   and :meth:`~io.TextIOBase.readline` cannot be mixed.
+   functions of the same name in the module. In addition it is :term:`iterable`
+   and has a :meth:`~io.TextIOBase.readline` method which returns the next
+   input line. The sequence must be accessed in strictly sequential order;
+   random access and :meth:`~io.TextIOBase.readline` cannot be mixed.
 
    With *mode* you can specify which file mode will be passed to :func:`open`. It
    must be one of ``'r'`` and ``'rb'``.
@@ -170,8 +170,8 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
-   .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+   .. deprecated:: 3.8
+      Support for :meth:`__getitem__` method is deprecated.
 
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
@@ -181,6 +181,9 @@ available for subclassing as well:
 
    .. versionchanged:: 3.11
       The ``'rU'`` and ``'U'`` modes have been removed.
+
+   .. versionchanged:: 3.11
+      Support for :meth:`__getitem__` method has been removed.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is

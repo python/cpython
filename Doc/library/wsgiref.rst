@@ -172,6 +172,9 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
+   .. deprecated:: 3.8
+      Support for :meth:`__getitem__` method is deprecated.
+
    .. versionchanged:: 3.11
       Support for :meth:`__getitem__` method has been removed.
 
