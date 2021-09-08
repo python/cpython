@@ -185,7 +185,7 @@ class CleanImport(object):
             importlib.import_module("foo") # new reference
     """
 
-    def __init__(self, *module_names):
+    def __init__(self, *module_names, usefrozen=False):
         self.original_modules = sys.modules.copy()
         for module_name in module_names:
             if module_name in sys.modules:
@@ -197,12 +197,15 @@ class CleanImport(object):
                 if module.__name__ != module_name:
                     del sys.modules[module.__name__]
                 del sys.modules[module_name]
+        self._frozen_modules = frozen_modules(usefrozen)
 
     def __enter__(self):
+        self._frozen_modules.__enter__()
         return self
 
     def __exit__(self, *ignore_exc):
         sys.modules.update(self.original_modules)
+        self._frozen_modules.__exit__(*ignore_exc)
 
 
 class DirsOnSysPath(object):
