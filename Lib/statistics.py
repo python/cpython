@@ -734,7 +734,7 @@ def _ss(data, c=None):
     mean_n, mean_d = (total / count).as_integer_ratio()
     partials = Counter()
     for n, d in map(_exact_ratio, data):
-        diff_n = n * mean_d - mean_n * d
+        diff_n = n * mean_d - d * mean_n
         diff_d = d * mean_d
         partials[diff_d * diff_d] += diff_n * diff_n
     if None in partials:
