@@ -833,6 +833,9 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
+    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
+    # remain because there are two rounding steps.  The first occurs in
+    # the _convert() step for variance(), the second occurs in math.sqrt().
     var = variance(data, xbar)
     try:
         return var.sqrt()
@@ -849,6 +852,9 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
+    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
+    # remain because there are two rounding steps.  The first occurs in
+    # the _convert() step for pvariance(), the second occurs in math.sqrt().
     var = pvariance(data, mu)
     try:
         return var.sqrt()
