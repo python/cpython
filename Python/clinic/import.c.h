@@ -297,6 +297,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__frozen_module_names__doc__,
+"_frozen_module_names($module, /)\n"
+"--\n"
+"\n"
+"Returns the list of available frozen modules.");
+
+#define _IMP__FROZEN_MODULE_NAMES_METHODDEF    \
+    {"_frozen_module_names", (PyCFunction)_imp__frozen_module_names, METH_NOARGS, _imp__frozen_module_names__doc__},
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module);
+
+static PyObject *
+_imp__frozen_module_names(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _imp__frozen_module_names_impl(module);
+}
+
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
@@ -449,4 +467,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=7c31c433af88af6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ab3fa7c5808bba4 input=a9049054013a1b77]*/
