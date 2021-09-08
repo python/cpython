@@ -321,7 +321,7 @@ PyDoc_STRVAR(pysqlite_connection_set_authorizer__doc__,
 
 static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
-                                        PyObject *authorizer_cb);
+                                        PyObject *callable);
 
 static PyObject *
 pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -330,14 +330,14 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyObject *const *a
     static const char * const _keywords[] = {"authorizer_callback", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "set_authorizer", 0};
     PyObject *argsbuf[1];
-    PyObject *authorizer_cb;
+    PyObject *callable;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    authorizer_cb = args[0];
-    return_value = pysqlite_connection_set_authorizer_impl(self, authorizer_cb);
+    callable = args[0];
+    return_value = pysqlite_connection_set_authorizer_impl(self, callable);
 
 exit:
     return return_value;
@@ -354,8 +354,7 @@ PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
-                                              PyObject *progress_handler,
-                                              int n);
+                                              PyObject *callable, int n);
 
 static PyObject *
 pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -364,19 +363,19 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyObject *co
     static const char * const _keywords[] = {"progress_handler", "n", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "set_progress_handler", 0};
     PyObject *argsbuf[2];
-    PyObject *progress_handler;
+    PyObject *callable;
     int n;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    progress_handler = args[0];
+    callable = args[0];
     n = _PyLong_AsInt(args[1]);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = pysqlite_connection_set_progress_handler_impl(self, progress_handler, n);
+    return_value = pysqlite_connection_set_progress_handler_impl(self, callable, n);
 
 exit:
     return return_value;
@@ -395,7 +394,7 @@ PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
 
 static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
-                                            PyObject *trace_callback);
+                                            PyObject *callable);
 
 static PyObject *
 pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -404,14 +403,14 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyObject *cons
     static const char * const _keywords[] = {"trace_callback", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "set_trace_callback", 0};
     PyObject *argsbuf[1];
-    PyObject *trace_callback;
+    PyObject *callable;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    trace_callback = args[0];
-    return_value = pysqlite_connection_set_trace_callback_impl(self, trace_callback);
+    callable = args[0];
+    return_value = pysqlite_connection_set_trace_callback_impl(self, callable);
 
 exit:
     return return_value;
@@ -817,4 +816,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=a7a899c4e41381ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c0dfc6c1ebf9039 input=a9049054013a1b77]*/

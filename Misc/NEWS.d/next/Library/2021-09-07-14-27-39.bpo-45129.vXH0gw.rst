@@ -1,0 +1,6 @@
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint`, disabled in Python 3.9, is
+now entirely removed. This is because of the behavior of the socket option
+``SO_REUSEADDR`` in UDP.
+
+Patch by Hugo van Kemenade.

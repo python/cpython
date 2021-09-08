@@ -983,8 +983,67 @@ they are provided by the underlying curses library.
 dataclasses
 -----------
 
-Add ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+__slots__
+~~~~~~~~~
+
+Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
+
+Keyword-only fields
+~~~~~~~~~~~~~~~~~~~
+
+dataclassses now supports fields that are keyword-only in the
+generated __init__ method.  There are a number of ways of specifying
+keyword-only fields.
+
+You can say that every field is keyword-only:
+
+.. code-block:: python
+
+    from dataclasses import dataclass
+
+    @dataclass(kw_only=True)
+    class Birthday:
+        name: str
+        birthday: datetime.date
+
+Both ``name`` and ``birthday`` are keyword-only parameters to the
+generated __init__ method.
+
+You can specify keyword-only on a per-field basis:
+
+.. code-block:: python
+
+    from dataclasses import dataclass
+
+    @dataclass
+    class Birthday:
+        name: str
+        birthday: datetime.date = field(kw_only=True)
+
+Here only ``birthday`` is keyword-only.  If you set ``kw_only`` on
+individual fields, be aware that there are rules about re-ordering
+fields due to keyword-only fields needing to follow non-keyword-only
+fields.  See the full dataclasses documentation for details.
+
+You can also specify that all fields following a KW_ONLY marker are
+keyword-only.  This will probably be the most common usage:
+
+.. code-block:: python
+
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+        _: KW_ONLY
+        z: float = 0.0
+        t: float = 0.0
+
+Here, ``z`` and ``t`` are keyword-only parameters, while ``x`` and
+``y`` are not.
+(Contributed by Eric V. Smith in :issue:`43532`)
 
 .. _distutils-deprecated:
 
@@ -1888,6 +1947,12 @@ Changes in the C API
        result = PyObject_CallMethod(fileobject, "close", "");
        source_buf = PyBytes_AsString(source_bytes_object);
        code = Py_CompileString(source_buf, filename, Py_file_input);
+
+  * For ``FrameObject`` objects, the ``f_lasti`` member now represents a wordcode
+    offset instead of a simple offset into the bytecode string. This means that this
+    number needs to be multiplied by 2 to be used with APIs that expect a byte offset
+    instead (like :c:func:`PyCode_Addr2Line` for example). Notice as well that the
+    ``f_lasti`` member of ``FrameObject`` objects is not considered stable.
 
 CPython bytecode changes
 ========================

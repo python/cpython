@@ -1610,7 +1610,7 @@ static PyObject *
 builtin_aiter(PyObject *module, PyObject *async_iterable)
 /*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
 {
-    return PyObject_GetAiter(async_iterable);
+    return PyObject_GetAIter(async_iterable);
 }
 
 PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
