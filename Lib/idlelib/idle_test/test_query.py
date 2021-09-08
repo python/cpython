@@ -11,7 +11,7 @@ HelpSource htests.  These are run by running query.py.
 """
 from idlelib import query
 import unittest
-from test.support import requires
+from test.support import requires, import_helper
 from tkinter import Tk, END
 
 import sys
@@ -136,9 +136,12 @@ class ModuleNameTest(unittest.TestCase):
         dialog = self.Dummy_ModuleName('idlelib')
         self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
         self.assertEqual(dialog.entry_error['text'], '')
-        dialog = self.Dummy_ModuleName('types')
-        self.assertTrue(dialog.entry_ok().endswith('types.py'))
+        dialog = self.Dummy_ModuleName('os.path')
+        with import_helper.CleanImport('os', 'os.path'):
+            import os.path
+            filename = dialog.entry_ok()
         self.assertEqual(dialog.entry_error['text'], '')
+        self.assertTrue(filename.endswith('path.py'))
 
 
 class GotoTest(unittest.TestCase):
