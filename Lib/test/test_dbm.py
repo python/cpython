@@ -4,7 +4,6 @@ import unittest
 import glob
 from test.support import import_helper
 from test.support import os_helper
-from pathlib import Path
 
 # Skip tests if dbm module doesn't exist.
 dbm = import_helper.import_module('dbm')
@@ -131,7 +130,7 @@ class AnyDBMTestCase:
         f.close()
 
     def test_open_with_pathlib_path(self):
-        dbm.open(Path(_fname), "c").close()
+        dbm.open(os_helper.FakePath(_fname), "c").close()
 
     def read_helper(self, f):
         keys = self.keys_helper(f)
@@ -148,7 +147,7 @@ class AnyDBMTestCase:
 
 class WhichDBTestCase(unittest.TestCase):
     def test_whichdb(self):
-        for path in [_fname, Path(_fname)]:
+        for path in [_fname, os_helper.FakePath(_fname)]:
             for module in dbm_iterator():
                 # Check whether whichdb correctly guesses module name
                 # for databases opened with "module" module.
@@ -177,10 +176,10 @@ class WhichDBTestCase(unittest.TestCase):
         with open(db_file, 'w'):
             self.addCleanup(os_helper.unlink, db_file)
         self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
-        path = Path(db_file)
+        path = os_helper.FakePath(db_file)
         with open(path, 'w'):
             self.addCleanup(os_helper.unlink, path)
-        self.assertIsNone(self.dbm.whichdb(path.stem))
+        self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
 
     def tearDown(self):
         delete_files()

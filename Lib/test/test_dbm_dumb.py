@@ -295,8 +295,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(db[b'key'], b'value')
 
     def test_open_with_pathlib_path(self):
-        from pathlib import Path
-        dumbdbm.open(Path(_fname), "c").close()
+        dumbdbm.open(os_helper.FakePath(_fname), "c").close()
 
     def tearDown(self):
         _delete_files()

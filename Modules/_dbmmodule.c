@@ -479,20 +479,9 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
 
-    PyObject *filenamecharsorbytes = PyOS_FSPath(filename);
-    if (filenamecharsorbytes == NULL) {
-        return NULL;
-    }
-
     PyObject *filenamebytes;
-    if (PyUnicode_Check(filenamecharsorbytes)) {
-        filenamebytes = PyUnicode_EncodeFSDefault(filenamecharsorbytes);
-        Py_DECREF(filenamecharsorbytes);
-        if (filenamebytes == NULL) {
-            return NULL;
-        }
-    } else {
-        filenamebytes = filenamecharsorbytes;
+    if (!PyUnicode_FSConverter(filename, &filenamebytes)) {
+        return NULL;
     }
 
     const char *name = PyBytes_AS_STRING(filenamebytes);

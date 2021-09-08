@@ -125,8 +125,7 @@ class DbmTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.filename, nonexisting_file)
 
     def test_open_with_pathlib_path(self):
-        from pathlib import Path
-        dbm.ndbm.open(Path(self.filename), "c").close()
+        dbm.ndbm.open(os_helper.FakePath(self.filename), "c").close()
 
 
 if __name__ == '__main__':

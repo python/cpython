@@ -66,12 +66,8 @@ class TestCase(unittest.TestCase):
             self.fail('Closed shelf should not find a key')
 
     def test_open_template(self, filename=None, protocol=None):
-        kwargs = {
-            "filename": filename or self.fn,
-        }
-        if protocol:
-            kwargs["protocol"] = protocol
-        s = shelve.open(**kwargs)
+        s = shelve.open(filename=filename if filename is not None else self.fn,
+                        protocol=protocol)
         try:
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
@@ -88,9 +84,7 @@ class TestCase(unittest.TestCase):
         self.test_open_template(protocol=2)
 
     def test_pathlib_path_file_shelf(self):
-        from pathlib import Path
-        self.test_open_template(filename=Path(self.fn))
-
+        self.test_open_template(filename=os_helper.FakePath(self.fn))
 
     def test_in_memory_shelf(self):
         d1 = byteskeydict()

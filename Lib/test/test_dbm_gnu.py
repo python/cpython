@@ -3,7 +3,7 @@ from test.support import import_helper, cpython_only
 gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink
+from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink, FakePath
 
 
 filename = TESTFN
@@ -170,8 +170,7 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(cm.exception.filename, nonexisting_file)
 
     def test_open_with_pathlib_path(self):
-        from pathlib import Path
-        gdbm.open(Path(filename), "c").close()
+        gdbm.open(FakePath(filename), "c").close()
 
 
 if __name__ == '__main__':

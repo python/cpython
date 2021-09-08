@@ -75,7 +75,7 @@ def open(file, flag='r', mode=0o666):
             raise ImportError("no dbm clone found; tried %s" % _names)
 
     # guess the type of an existing database, if not creating a new one
-    file = os.fspath(file)
+    file = os.fsencode(file)
     result = whichdb(file) if 'n' not in flag else None
     if result is None:
         # db doesn't exist or 'n' flag was specified to create a new db
@@ -110,18 +110,18 @@ def whichdb(filename):
     """
 
     # Check for ndbm first -- this has a .pag and a .dir file
-    filename = os.fspath(filename)
+    filename = os.fsencode(filename)
     try:
-        f = io.open(filename + ".pag", "rb")
+        f = io.open(filename + b".pag", "rb")
         f.close()
-        f = io.open(filename + ".dir", "rb")
+        f = io.open(filename + b".dir", "rb")
         f.close()
         return "dbm.ndbm"
     except OSError:
         # some dbm emulations based on Berkeley DB generate a .db file
         # some do not, but they should be caught by the bsd checks
         try:
-            f = io.open(filename + ".db", "rb")
+            f = io.open(filename + b".db", "rb")
             f.close()
             # guarantee we can actually open the file using dbm
             # kind of overkill, but since we are dealing with emulations
@@ -136,12 +136,12 @@ def whichdb(filename):
     # Check for dumbdbm next -- this has a .dir and a .dat file
     try:
         # First check for presence of files
-        os.stat(filename + ".dat")
-        size = os.stat(filename + ".dir").st_size
+        os.stat(filename + b".dat")
+        size = os.stat(filename + b".dir").st_size
         # dumbdbm files with no keys are empty
         if size == 0:
             return "dbm.dumb"
-        f = io.open(filename + ".dir", "rb")
+        f = io.open(filename + b".dir", "rb")
         try:
             if f.read(1) in (b"'", b'"'):
                 return "dbm.dumb"
