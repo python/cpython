@@ -206,7 +206,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1l, 3.0.0-beta1]
+        openssl_ver: [1.1.1l, 3.0.0]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
