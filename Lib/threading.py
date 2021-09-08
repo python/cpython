@@ -745,6 +745,18 @@ _dangling = WeakSet()
 _shutdown_locks_lock = _allocate_lock()
 _shutdown_locks = set()
 
+
+def _maintain_shutdown_locks():
+    """
+    Drop any shutdown locks that don't correspond to running threads anymore.
+    Calling this from time to time avoids an ever-growing _shutdown_locks
+    set when Thread objects are not joined explicitly. See bpo-37788.
+    This must be called with _shutdown_locks_lock acquired.
+    """
+    # If a lock was released, the corresponding thread has exited
+    to_remove = [lock for lock in _shutdown_locks if not lock.locked()]
+    _shutdown_locks.difference_update(to_remove)
+
 # Main class for threads
 
 class Thread:
@@ -910,6 +922,7 @@ class Thread:
 
         if not self.daemon:
             with _shutdown_locks_lock:
+                _maintain_shutdown_locks()
                 _shutdown_locks.add(self._tstate_lock)
 
     def _bootstrap_inner(self):
@@ -965,7 +978,8 @@ class Thread:
         self._tstate_lock = None
         if not self.daemon:
             with _shutdown_locks_lock:
-                _shutdown_locks.discard(lock)
+                # Remove our lock and other released locks from _shutdown_locks
+                _maintain_shutdown_locks()
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
