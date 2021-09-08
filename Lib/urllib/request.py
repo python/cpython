@@ -2692,8 +2692,8 @@ elif os.name == 'nt':
                 if proxies.get('socks'):
                     # The default SOCKS proxy type of Windows is SOCKS4
                     address = re.sub(r'^socks://', 'socks4://', proxies['socks'])
-                    proxies['http'] = proxies['http'] or address
-                    proxies['https'] = proxies['https'] or address
+                    proxies['http'] = proxies.get('http') or address
+                    proxies['https'] = proxies.get('https') or address
             internetSettings.Close()
         except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an
