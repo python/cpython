@@ -2148,6 +2148,13 @@ class TestVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
         self.assertEqual(self.func(data), 0.5)
         self.assertEqual(self.func(data, xbar=2.0), 1.0)
 
+    def test_accuracy_bug_20499(self):
+        data = [0, 0, 2]
+        exact = 4 / 3
+        result = self.func(data)
+        self.assertEqual(result, exact)
+        self.assertIsInstance(result, float)
+
 class TestPStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for population standard deviation.
     def setUp(self):
