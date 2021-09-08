@@ -1069,8 +1069,9 @@ Internal types
       :attr:`f_code` is the code object being executed in this frame; :attr:`f_locals`
       is the dictionary used to look up local variables; :attr:`f_globals` is used for
       global variables; :attr:`f_builtins` is used for built-in (intrinsic) names;
-      :attr:`f_lasti` gives the precise instruction (this is an index into the
-      bytecode string of the code object).
+      :attr:`f_lasti` gives the precise instruction (it represents a wordcode index, which
+      means that to get an index into the bytecode string of the code object it needs to be
+      multiplied by 2).
 
       Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
       ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
@@ -1271,7 +1272,7 @@ Basic customization
    as necessary before returning it.
 
    If :meth:`__new__` is invoked during object construction and it returns an
-   instance or subclass of *cls*, then the new instance’s :meth:`__init__` method
+   instance of *cls*, then the new instance’s :meth:`__init__` method
    will be invoked like ``__init__(self[, ...])``, where *self* is the new instance
    and the remaining arguments are the same as were passed to the object constructor.
 

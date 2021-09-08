@@ -702,10 +702,7 @@ class DisWithFileTests(DisTests):
 if sys.flags.optimize:
     code_info_consts = "0: None"
 else:
-    code_info_consts = (
-    """0: 'Formatted details of methods, functions, or code.'
-   1: None"""
-)
+    code_info_consts = "0: 'Formatted details of methods, functions, or code.'"
 
 code_info_code_info = f"""\
 Name:              code_info
@@ -828,7 +825,6 @@ Flags:             0x0
 Constants:
    0: 0
    1: 1
-   2: None
 Names:
    0: x"""
 
@@ -1306,6 +1302,11 @@ class BytecodeTests(InstructionTestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
+    @requires_debug_ranges()
+    def test_bytecode_co_positions(self):
+        bytecode = dis.Bytecode("a=1")
+        for instr, positions in zip(bytecode, bytecode.codeobj.co_positions()):
+            assert instr.positions == positions
 
 class TestBytecodeTestCase(BytecodeTestCase):
     def test_assert_not_in_with_op_not_in_bytecode(self):

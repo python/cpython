@@ -1149,6 +1149,8 @@ calls these functions.
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised.
 
    Code needing to capture stdout or stderr should use :func:`run` instead::
 
