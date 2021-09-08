@@ -188,7 +188,7 @@ def _sum(data, start=0):
     partials = {d: n}
     partials_get = partials.get
     T = _coerce(int, type(start))
-    for typ, values in groupby(data, type):        # XXX Are these sorted
+    for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
             count += 1
