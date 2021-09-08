@@ -1459,13 +1459,6 @@ class ProtocolTests(BaseTestCase):
         class CustomContextManager(typing.ContextManager, Protocol):
             pass
 
-    def test_non_runtime_protocol_isinstance_check(self):
-        class P(Protocol):
-            x: int
-
-        with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
-            isinstance(1, P)
-
     def test_super_call_init(self):
         class P(Protocol):
             x: int
