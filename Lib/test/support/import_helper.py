@@ -111,10 +111,8 @@ def _save_and_block_module(name, orig_modules):
 
 @contextlib.contextmanager
 def frozen_modules(enabled=True):
-    # No other code should be setting this env var.
-    assert os.getenv('_PYTHONTESTFROZENMODULES') is None
     # FYI: the env var will never show up in os.environ.
-    os.putenv('_PYTHONTESTFROZENMODULES', '1' if enabled else '')
+    os.putenv('_PYTHONTESTFROZENMODULES', '1' if enabled else '0')
     try:
         yield
     finally:

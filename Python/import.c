@@ -886,7 +886,7 @@ _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
 
 
 /* Forward */
-static const struct _frozen * find_frozen(PyObject *, bool);
+static const struct _frozen * find_frozen(PyObject *);
 
 
 /* Helper to test for built-in module */
@@ -1051,48 +1051,81 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 /* Frozen modules */
 
 static bool
-is_essential_frozen_module(PyObject *name)
+parse_env_var_flag(const char *rawvalue, bool *isset)
+{
+    /* It isn't set or it is set to an empty string. */
+    if (rawvalue == NULL || strlen(rawvalue) == 0) {
+        if (isset != NULL) {
+            *isset = false;
+        }
+        return false;
+    }
+    if (isset != NULL) {
+        *isset = true;
+    }
+    if (strcmp(rawvalue, "0") == 0) {
+        return false;
+    }
+    /* For now we treat all other non-empty strings as true. */
+    return true;
+}
+
+static bool
+is_essential_frozen_module(const char *name)
 {
     /* These modules are necessary to bootstrap the import system. */
-    if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib")) {
+    if (strcmp(name, "_frozen_importlib") == 0) {
         return true;
     }
-    if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external")) {
+    if (strcmp(name, "_frozen_importlib_external") == 0) {
         return true;
     }
-    if (_PyUnicode_EqualToASCIIString(name, "zipimport")) {
+    if (strcmp(name, "zipimport") == 0) {
         return true;
     }
     /* This doesn't otherwise have anywhere to find the module.
        See frozenmain.c. */
-    if (_PyUnicode_EqualToASCIIString(name, "__main__")) {
+    if (strcmp(name, "__main__") == 0) {
         return true;
     }
     return false;
 }
 
-static PyObject *
-list_frozen_module_names(bool force)
+static bool
+use_frozen(const char *modname)
 {
-    const PyConfig *config = _Py_GetConfig();
+    bool isset;
+    /* Note that we don't bother with os.environ. */
+    bool use = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"), &isset);
+    if (!isset) {
+        const PyConfig *config = _Py_GetConfig();
+        use = config->use_frozen_modules;
+    }
+    if (!use && modname != NULL) {
+        use = is_essential_frozen_module(modname);
+    }
+    return use;
+}
+
+static PyObject *
+list_frozen_module_names()
+{
     PyObject *names = PyList_New(0);
     if (names == NULL) {
         return NULL;
     }
+    bool enabled = use_frozen(NULL);
     for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
             break;
+        }
+        if (!enabled && !is_essential_frozen_module(p->name)) {
+            continue;
         }
         PyObject *name = PyUnicode_FromString(p->name);
         if (name == NULL) {
             Py_DECREF(names);
             return NULL;
-        }
-        if (!config->use_frozen_modules && !force) {
-            if (!is_essential_frozen_module(name)) {
-                Py_DECREF(name);
-                continue;
-            }
         }
         int res = PyList_Append(names, name);
         Py_DECREF(name);
@@ -1105,33 +1138,31 @@ list_frozen_module_names(bool force)
 }
 
 static const struct _frozen *
-find_frozen(PyObject *name, bool force)
+find_frozen(PyObject *modname)
 {
-    const struct _frozen *p;
-
-    if (name == NULL)
+    if (modname == NULL) {
         return NULL;
-
-    const PyConfig *config = _Py_GetConfig();
-    if (!config->use_frozen_modules && !force) {
-        if (!is_essential_frozen_module(name)) {
+    }
+    const char *name = PyUnicode_AsUTF8(modname);
+    if (!use_frozen(name)) {
+        return NULL;
+    }
+    const struct _frozen *p;
+    for (p = PyImport_FrozenModules; ; p++) {
+        if (p->name == NULL) {
             return NULL;
         }
-    }
-
-    for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL)
-            return NULL;
-        if (_PyUnicode_EqualToASCIIString(name, p->name))
+        if (strcmp(name, p->name) == 0) {
             break;
+        }
     }
     return p;
 }
 
 static PyObject *
-get_frozen_object(PyObject *name, bool force)
+get_frozen_object(PyObject *name)
 {
-    const struct _frozen *p = find_frozen(name, force);
+    const struct _frozen *p = find_frozen(name);
     int size;
 
     if (p == NULL) {
@@ -1153,9 +1184,9 @@ get_frozen_object(PyObject *name, bool force)
 }
 
 static PyObject *
-is_frozen_package(PyObject *name, bool force)
+is_frozen_package(PyObject *name)
 {
-    const struct _frozen *p = find_frozen(name, force);
+    const struct _frozen *p = find_frozen(name);
     int size;
 
     if (p == NULL) {
@@ -1188,7 +1219,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     int ispackage;
     int size;
 
-    p = find_frozen(name, false);
+    p = find_frozen(name);
 
     if (p == NULL)
         return 0;
@@ -1949,17 +1980,6 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
     return import_add_module(tstate, name);
 }
 
-static bool
-parse_env_var_flag(const char *value)
-{
-    /* It isn't set or it is set to an empty string. */
-    if (value == NULL || strlen(value) == 0) {
-        return false;
-    }
-    /* For now we treat all non-empty strings as true. */
-    return true;
-}
-
 /*[clinic input]
 _imp.get_frozen_object
 
@@ -1973,9 +1993,7 @@ static PyObject *
 _imp_get_frozen_object_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
 {
-    /* Note that we don't bother with os.environ. */
-    bool force = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"));
-    return get_frozen_object(name, force);
+    return get_frozen_object(name);
 }
 
 /*[clinic input]
@@ -1991,9 +2009,7 @@ static PyObject *
 _imp_is_frozen_package_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=e70cbdb45784a1c9 input=81b6cdecd080fbb8]*/
 {
-    /* Note that we don't bother with os.environ. */
-    bool force = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"));
-    return is_frozen_package(name, force);
+    return is_frozen_package(name);
 }
 
 /*[clinic input]
@@ -2025,11 +2041,9 @@ static PyObject *
 _imp_is_frozen_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
-    /* Note that we don't bother with os.environ. */
-    bool force = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"));
     const struct _frozen *p;
 
-    p = find_frozen(name, force);
+    p = find_frozen(name);
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
@@ -2043,7 +2057,7 @@ static PyObject *
 _imp__frozen_module_names_impl(PyObject *module)
 /*[clinic end generated code: output=80609ef6256310a8 input=76237fbfa94460d2]*/
 {
-    return list_frozen_module_names(true);
+    return list_frozen_module_names();
 }
 
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
