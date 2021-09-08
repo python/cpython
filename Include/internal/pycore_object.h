@@ -29,6 +29,8 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+/* Only private in Python 3.10 and 3.9.8+; public in 3.11 */
+extern PyObject *_PyType_GetQualName(PyTypeObject *type);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
