@@ -195,8 +195,7 @@ def _sum(data):
         assert not _isfinite(total)
     else:
         # Sum all the partial sums using builtin sum.
-        # FIXME is this faster if we sum them in order of the denominator?
-        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total, count)
 
 
