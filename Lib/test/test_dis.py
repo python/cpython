@@ -1332,8 +1332,10 @@ class TestFinderMethods(unittest.TestCase):
             ("import a.b.c", ('a.b.c', 0, None)),
             ("from a.b import c", ('a.b', 0, ('c',))),
             ("from a.b import c as d", ('a.b', 0, ('c',))),
+            ("from a.b import *", ('a.b', 0, ('*',))),
             ("from ...a.b import c as d", ('a.b', 3, ('c',))),
-            ("from ..a.b import c as d, e as f", ('a.b', 2, ('c', 'e')))
+            ("from ..a.b import c as d, e as f", ('a.b', 2, ('c', 'e'))),
+            ("from ..a.b import *", ('a.b', 2, ('*',))),
         ]
         for src, expected in cases:
             with self.subTest(src=src):
