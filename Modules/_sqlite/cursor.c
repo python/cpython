@@ -52,7 +52,7 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 {
     if (self->initialized) {
         const char *msg = "Cursor reinitialization is depreacted and will be "
-                          "removed in Python 3.13";
+                          "disallowed in Python 3.13";
         const int stacklevel = 1;
         if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, stacklevel) < 0) {
             return -1;

@@ -233,7 +233,7 @@ sqlite3
   :issue:`16379`.)
 
 * :class:`sqlite3.Connection` and :class:`sqlite3.Cursor` reinitialization is
-  now deprecated, scheduled for removal in Python 3.13.
+  now deprecated. Reinitialization will be disallowed in Python 3.13.
   (Contributed by Erlend E. Aasland in :issue:`45126`.)
 
 
