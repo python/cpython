@@ -1604,6 +1604,16 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
 
+    def test_super_call_init(self):
+        class P(Protocol):
+            x: int
+
+        class Foo(P):
+            def __init__(self):
+                super().__init__()
+
+        Foo()  # Previously triggered RecursionError
+
 
 class GenericTests(BaseTestCase):
 
