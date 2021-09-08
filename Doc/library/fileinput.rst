@@ -170,9 +170,6 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
-   .. deprecated:: 3.8
-      Support for :meth:`__getitem__` method is deprecated.
-
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
 
@@ -180,10 +177,8 @@ available for subclassing as well:
       The keyword-only parameter *encoding* and *errors* are added.
 
    .. versionchanged:: 3.11
-      The ``'rU'`` and ``'U'`` modes have been removed.
-
-   .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+      The ``'rU'`` and ``'U'`` modes and the :meth:`__getitem__` method have
+      been removed.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
