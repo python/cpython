@@ -731,20 +731,19 @@ def _ss(data, c=None):
         T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
     T, total, count = _sum(data)
-    c = total / count                # Exact fraction
-    cn, cd = c.as_integer_ratio()
+    mean_n, mean_d = (total / count).as_integer_ratio()
     partials = Counter()
     for n, d in map(_exact_ratio, data):
-        dev_numerator = n * cd - cn * d
-        dev_denominator = d * cd     # Defer squaring until summation
-        partials[dev_denominator] += dev_numerator * dev_numerator
+        diff_n = n * mean_d - mean_n * d
+        diff_d = d * mean_d
+        partials[diff_d * diff_d] += diff_n * diff_n
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         total = partials[None]
         assert not _isfinite(total)
     else:
-        total = sum(Fraction(n, d*d) for d, n in partials.items())
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total)
 
 
