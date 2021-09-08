@@ -69,7 +69,7 @@ of the API:
 .. doctest::
 
    >>> Sequence.register(SecondSeq)          # Register instead of inherit
-   <class '<doctest>.MySeq'>
+   <class '<doctest>.SecondSeq'>
    >>> issubclass(SecondSeq, Sequence)
    True
    >>> isinstance(SecondSeq(), Sequence)
@@ -93,9 +93,9 @@ the required methods (unless those methods have been set to
 
 .. doctest::
 
-   >>> issubclass(MySeq, Iterable)
+   >>> issubclass(MyIterable, Iterable)
    True
-   >>> isinstance(MySeq(), Iterable)
+   >>> isinstance(MyIterable(), Iterable)
    True
 
 Complex interfaces do not support this last technique because an
