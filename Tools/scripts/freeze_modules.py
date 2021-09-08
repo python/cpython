@@ -65,7 +65,6 @@ def parse_frozen_specs(sectionalspecs=FROZEN, destdir=None):
                 source = FrozenSource.from_id(frozenid, pyfile, destdir)
                 seen[frozenid] = source
             else:
-#                assert not pyfile or pyfile == source.pyfile
                 assert not pyfile
             yield FrozenModule(modname, ispkg, section, source)
 
@@ -165,30 +164,6 @@ def _parse_spec(spec, knownids=None, section=None):
 class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile')):
 
     @classmethod
-    def from_raw(cls, raw, destdir=MODULES_DIR):
-        section = None
-        if isinstance(raw, cls):
-            return raw.resolve_frozen(destdir), section
-        elif isinstance(raw, FrozenSource):
-            raise NotImplementedError(raw)
-
-        # Try FrozenModule.
-        try:
-            source = raw.source
-            section = raw.section
-        except AttributeError:
-            pass
-        else:
-            if not isinstance(source, FrozenSource):
-                raise ValueError(f'bad raw value {raw!r}')
-            return cls.from_raw(source), section
-
-        # It must be a raw spec.
-        frozenid, pyfile, *_, section = mod
-        source = cls.from_id(frozenid, pyfile, destdir)
-        return source, section
-
-    @classmethod
     def from_id(cls, frozenid, pyfile=None, destdir=MODULES_DIR):
         if not pyfile:
             pyfile = os.path.join(STDLIB_DIR, *frozenid.split('.')) + '.py'
@@ -212,20 +187,6 @@ class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile')):
         name = self.frozenid.replace('.', '_')
         return '_Py_M__' + name
 
-    def resolve_frozen(self, destdir=MODULES_DIR):
-        if not destdir:
-            return self
-        if self.frozenfile != os.path.basename(self.frozenfile):
-            return self
-        return self._replace(
-            frozenfile=resolve_frozenfile(self.id, destdir),
-        )
-
-    def get_array_size(self):
-        with open(self.frozenfile) as frozenfile:
-            text = frozenfile.read()
-        return text.count(',')
-
 
 def resolve_frozen_file(frozenid, destdir=MODULES_DIR):
     """Return the filename corresponding to the given frozen ID.
@@ -243,24 +204,6 @@ def resolve_frozen_file(frozenid, destdir=MODULES_DIR):
     if not destdir:
         return frozenfile
     return os.path.join(destdir, frozenfile)
-
-
-def resolve_frozen_files(modules, destdir=MODULES_DIR):
-    frozen = {}
-    frozenids = []
-    lastsection = None
-    for mod in modules:
-        src, section = FrozenSource.from_raw(mod, destdir)
-        if src.frozenid in frozen:
-            if section is None:
-                lastsection = None
-            else:
-                assert section == lastsection
-            continue
-        lastsection = section
-        frozen[frozenid] = src
-        frozenids.append(frozenid)
-    return frozen, frozenids
 
 
 #######################################
@@ -290,7 +233,7 @@ class FrozenModule(namedtuple('FrozenModule', 'name ispkg section source')):
         }
 
 
-def _iter_sources(modules, destdir=MODULES_DIR):
+def _iter_sources(modules):
     seen = set()
     for mod in modules:
         if mod.source not in seen:
