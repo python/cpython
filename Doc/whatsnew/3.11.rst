@@ -287,7 +287,7 @@ CPython bytecode changes
 Build Changes
 =============
 
-* CPython is now able to build with the ThinLTO option via `--with-lto=thin`.
+* CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
 
