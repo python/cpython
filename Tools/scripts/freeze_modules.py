@@ -483,7 +483,7 @@ def regen_manifest(modules):
         modlines.append(' '.join(row).rstrip())
 
     print(f'# Updating {os.path.relpath(MANIFEST)}')
-    with updating_file_with_tmpfile(MANIFEST) as (_, outfile):
+    with open(MANIFEST, 'w') as outfile:
         lines = (l + '\n' for l in modlines)
         outfile.writelines(lines)
 
