@@ -1081,14 +1081,7 @@ trace_callback(void *ctx, const char *sql)
         Py_DECREF(ret);
     }
     else {
-        pysqlite_state *state = ((callback_context *)ctx)->state;
-        assert(state != NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_Print();
-        }
-        else {
-            PyErr_Clear();
-        }
+        print_or_clear_traceback((callback_context *)ctx);
     }
 
 exit:
