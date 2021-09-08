@@ -6986,6 +6986,9 @@ normalize_basic_block(basicblock *bb);
 static int
 optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 
+static int
+trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts);
+
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
 duplicate_exits_without_lineno(struct compiler *c);
@@ -7126,6 +7129,9 @@ assemble(struct compiler *c, int addNone)
     }
     if (duplicate_exits_without_lineno(c)) {
         return NULL;
+    }
+    if (trim_unused_consts(c, &a, consts)) {
+        goto error;
     }
     propagate_line_numbers(&a);
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
@@ -7805,6 +7811,33 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
     }
     if (maybe_empty_blocks) {
         eliminate_empty_basic_blocks(a->a_entry);
+    }
+    return 0;
+}
+
+// Remove trailing unused constants.
+static int
+trim_unused_consts(struct compiler *c, struct assembler *a, PyObject *consts)
+{
+    assert(PyList_CheckExact(consts));
+
+    // The first constant may be docstring; keep it always.
+    int max_const_index = 0;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_opcode == LOAD_CONST &&
+                    b->b_instr[i].i_oparg > max_const_index) {
+                max_const_index = b->b_instr[i].i_oparg;
+            }
+        }
+    }
+    if (max_const_index+1 < PyList_GET_SIZE(consts)) {
+        //fprintf(stderr, "removing trailing consts: max=%d, size=%d\n",
+        //        max_const_index, (int)PyList_GET_SIZE(consts));
+        if (PyList_SetSlice(consts, max_const_index+1,
+                            PyList_GET_SIZE(consts), NULL) < 0) {
+            return 1;
+        }
     }
     return 0;
 }
