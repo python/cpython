@@ -296,7 +296,11 @@ class TestSysConfig(unittest.TestCase):
                 base = base.replace(sys.base_prefix, sys.prefix)
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
-                self.assertEqual(user_path, global_path.replace(base, user, 1))
+                expected = global_path.replace(base, user, 1)
+                # bpo-44860: platlib of posix_user doesn't use sys.platlibdir
+                if name == 'platlib' and sys.platlibdir != 'lib':
+                    expected = expected.replace(f'/{sys.platlibdir}/', '/lib/')
+                self.assertEqual(user_path, expected)
 
     def test_main(self):
         # just making sure _main() runs and returns things in the stdout
