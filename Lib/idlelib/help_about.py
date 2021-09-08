@@ -89,8 +89,8 @@ class AboutDialog(Toplevel):
                       justify=LEFT, fg=self.fg, bg=self.bg)
         email.grid(row=6, column=0, columnspan=2, sticky=W, padx=10, pady=0)
         docs = Label(frame_background, text='https://docs.python.org/' +
-                     python_version()[:3] + '/library/idle.html',
-                     justify=LEFT, fg=self.fg, bg=self.bg)
+                     str(sys.version_info[0]) + '.' + str(sys.version_info[1]) +
+                     '/library/idle.html', justify=LEFT, fg=self.fg, bg=self.bg)
         docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
