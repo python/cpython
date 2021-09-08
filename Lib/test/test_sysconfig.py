@@ -297,9 +297,15 @@ class TestSysConfig(unittest.TestCase):
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
                 expected = global_path.replace(base, user, 1)
-                # bpo-44860: platlib of posix_user doesn't use sys.platlibdir
-                if name == 'platlib' and sys.platlibdir != 'lib':
-                    expected = expected.replace(f'/{sys.platlibdir}/', '/lib/')
+                # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
+                # whereas posix_prefix does.
+                if name == 'platlib':
+                    # Replace "/lib64/python3.11/site-packages" suffix
+                    # with "/lib/python3.11/site-packages".
+                    py_version_short = sysconfig.get_python_version()
+                    suffix = f'python{py_version_short}/site-packages'
+                    expected = expected.replace(f'/{sys.platlibdir}/{suffix}',
+                                                f'/lib/{suffix}')
                 self.assertEqual(user_path, expected)
 
     def test_main(self):
