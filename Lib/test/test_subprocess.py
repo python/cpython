@@ -3022,6 +3022,7 @@ class POSIXProcessTestCase(BaseTestCase):
         pid = p.pid
         with warnings_helper.check_warnings(('', ResourceWarning)):
             p = None
+            support.gc_collect()  # For PyPy or other GCs.
 
         os.kill(pid, signal.SIGKILL)
         if mswindows:

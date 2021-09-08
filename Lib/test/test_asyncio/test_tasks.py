@@ -2690,6 +2690,7 @@ class BaseTaskTests:
                 self.new_task(self.loop, gen)
             finally:
                 gen.close()
+        gc.collect()  # For PyPy or other GCs.
 
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]

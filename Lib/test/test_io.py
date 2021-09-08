@@ -4372,6 +4372,31 @@ class SignalsTest(unittest.TestCase):
         """Check that a partial write, when it gets interrupted, properly
         invokes the signal handler, and bubbles up the exception raised
         in the latter."""
+
+        # XXX This test has three flaws that appear when objects are
+        # XXX not reference counted.
+
+        # - if wio.write() happens to trigger a garbage collection,
+        #   the signal exception may be raised when some __del__
+        #   method is running; it will not reach the assertRaises()
+        #   call.
+
+        # - more subtle, if the wio object is not destroyed at once
+        #   and survives this function, the next opened file is likely
+        #   to have the same fileno (since the file descriptor was
+        #   actively closed).  When wio.__del__ is finally called, it
+        #   will close the other's test file...  To trigger this with
+        #   CPython, try adding "global wio" in this function.
+
+        # - This happens only for streams created by the _pyio module,
+        #   because a wio.close() that fails still consider that the
+        #   file needs to be closed again.  You can try adding an
+        #   "assert wio.closed" at the end of the function.
+
+        # Fortunately, a little gc.collect() seems to be enough to
+        # work around all these issues.
+        support.gc_collect()  # For PyPy or other GCs.
+
         read_results = []
         def _read():
             s = os.read(r, 1)

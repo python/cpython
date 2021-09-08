@@ -9,7 +9,7 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import (run_unittest, cpython_only, swap_attr)
+from test.support import run_unittest, cpython_only, swap_attr, gc_collect
 from test.support.os_helper import (TESTFN, TESTFN_UNICODE, make_bad_fd)
 from test.support.warnings_helper import check_warnings
 from collections import UserList
@@ -36,6 +36,7 @@ class AutoFileTests:
         self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'tell')
 
     def testSeekTell(self):

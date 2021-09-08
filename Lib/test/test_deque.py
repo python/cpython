@@ -869,6 +869,7 @@ class TestSubclass(unittest.TestCase):
         p = weakref.proxy(d)
         self.assertEqual(str(p), str(d))
         d = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, str, p)
 
     def test_strange_subclass(self):

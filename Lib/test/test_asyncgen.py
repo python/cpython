@@ -1044,6 +1044,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             await g.__anext__()
             await g.__anext__()
             del g
+            gc_collect()  # For PyPy or other GCs.
 
             await asyncio.sleep(0.1)
 
