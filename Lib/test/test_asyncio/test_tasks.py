@@ -155,7 +155,7 @@ class BaseTaskTests:
         self.loop.run_until_complete(
             asyncio.gather(*[
                 self.new_task(self.loop, run()) for _ in range(100)
-            ], loop=self.loop))
+            ]))
 
     def test_other_loop_future(self):
         other_loop = asyncio.new_event_loop()
@@ -2519,7 +2519,8 @@ class BaseTaskTests:
         # gathering task is done at the same time as the child future
         def child_coro():
             return (yield from fut)
-        gather_future = asyncio.gather(child_coro(), loop=loop)
+        with self.assertWarns(DeprecationWarning):
+            gather_future = asyncio.gather(child_coro(), loop=loop)
         gather_task = asyncio.ensure_future(gather_future, loop=loop)
 
         cancel_result = None
@@ -2555,7 +2556,8 @@ class BaseTaskTests:
                     time = 0
                     while True:
                         time += 0.05
-                        await asyncio.gather(asyncio.sleep(0.05),
+                        with self.assertWarns(DeprecationWarning):
+                            await asyncio.gather(asyncio.sleep(0.05),
                                              return_exceptions=True,
                                              loop=loop)
                         if time > 1:
@@ -2773,7 +2775,7 @@ class BaseTaskTests:
                 task = loop.create_task(sub(random.randint(0, 10)))
                 tasks.append(task)
 
-            await asyncio.gather(*tasks, loop=loop)
+            await asyncio.gather(*tasks)
 
         loop = asyncio.new_event_loop()
         try:
