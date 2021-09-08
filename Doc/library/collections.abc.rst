@@ -343,8 +343,10 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.6
 
+Examples and Recipes
+--------------------
 
-These ABCs allow us to ask classes or instances if they provide
+ABCs allow us to ask classes or instances if they provide
 particular functionality, for example::
 
     size = None
