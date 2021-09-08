@@ -188,7 +188,7 @@ def _sum(data, start=0):
     partials = {d: n}
     partials_get = partials.get
     T = _coerce(int, type(start))
-    for typ, values in groupby(data, type):
+    for typ, values in groupby(data, type):        # XXX Are these sorted
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
             count += 1
@@ -730,18 +730,25 @@ def _ss(data, c=None):
     if c is not None:
         T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
-    # Compute the mean accurate to within 1/2 ulp
-    c = mean(data)
-    # Initial computation for the sum of square deviations
-    T, total, count = _sum((d := x - c) * d for x in data)
-    # Correct any remaining inaccuracy in the mean c.
-    # The following sum should mathematically equal zero,
-    # but due to the final rounding of the mean, it may not.
-    U, error, count2 = _sum((x - c) for x in data)
-    assert count == count2
-    correction = error * error / len(data)
-    total -= correction
-    assert not total < 0, 'negative sum of square deviations: %f' % total
+    T, total, count = _sum(data)
+    c = total / count                # Exact fraction
+    cn = c.numerator
+    cd = c.denominator
+    partials = {}
+    partials_get = partials.get
+    for n, d in map(_exact_ratio, data):
+        dev_numerator = n * cd - cn * d
+        dev_denominator = d * cd
+        dev_numerator *=  dev_numerator
+        dev_denominator *= dev_denominator
+        partials[d] = partials_get(dev_denominator, 0) + dev_numerator
+    if None in partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = partials[None]
+        assert not _isfinite(total)
+    else:
+        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
     return (T, total)
 
 
