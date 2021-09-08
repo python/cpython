@@ -50,6 +50,15 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
                           pysqlite_Connection *connection)
 /*[clinic end generated code: output=ac59dce49a809ca8 input=23d4265b534989fb]*/
 {
+    if (self->initialized) {
+        const char *msg = "Cursor reinitialization is depreacted and will be "
+                          "removed in Python 3.13";
+        const int stacklevel = 1;
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, msg, stacklevel) < 0) {
+            return -1;
+        }
+    }
+
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);

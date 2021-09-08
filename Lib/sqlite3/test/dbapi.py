@@ -331,6 +331,13 @@ class ConnectionTests(unittest.TestCase):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
 
+    def test_connection_reinit(self):
+        db = ":memory:"
+        cx = sqlite.connect(db)
+        with self.assertWarns(DeprecationWarning) as cm:
+            cx.__init__(db)
+        self.assertIn("dbapi.py", cm.filename)
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
@@ -727,6 +734,13 @@ class CursorTests(unittest.TestCase):
         cursors = [self.cx.execute("select 1") for _ in range(3)]
         for cu in cursors:
             self.assertEqual(cu.fetchall(), [(1,)])
+
+    def test_cursor_reinit(self):
+        db = ":memory:"
+        cu = self.cx.cursor()
+        with self.assertWarns(DeprecationWarning) as cm:
+            cu.__init__(self.cx)
+        self.assertIn("dbapi.py", cm.filename)
 
 
 class ThreadTests(unittest.TestCase):
