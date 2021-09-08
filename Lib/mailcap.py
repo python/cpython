@@ -16,7 +16,7 @@ def lineno_sort_key(entry):
 
 # Part 1: top-level interface.
 
-def getcaps():
+def getcaps(files=None):
     """Return a dictionary containing the mailcap database.
 
     The dictionary maps a MIME type (in all lowercase, e.g. 'text/plain')
@@ -28,7 +28,8 @@ def getcaps():
     """
     caps = {}
     lineno = 0
-    for mailcap in listmailcapfiles():
+    mailcaps = listmailcapfiles() if files is None else files
+    for mailcap in mailcaps:
         try:
             fp = open(mailcap, 'r')
         except OSError:

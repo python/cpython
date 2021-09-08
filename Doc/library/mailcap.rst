@@ -55,17 +55,22 @@ standard.  However, mailcap files are supported on most Unix systems.
    will automatically check such conditions and skip the entry if the check fails.
 
 
-.. function:: getcaps()
+.. function:: getcaps(files=None)
 
    Returns a dictionary mapping MIME types to a list of mailcap file entries. This
    dictionary must be passed to the :func:`findmatch` function.  An entry is stored
    as a list of dictionaries, but it shouldn't be necessary to know the details of
    this representation.
 
-   The information is derived from all of the mailcap files found on the system.
-   Settings in the user's mailcap file :file:`$HOME/.mailcap` will override
-   settings in the system mailcap files :file:`/etc/mailcap`,
-   :file:`/usr/etc/mailcap`, and :file:`/usr/local/etc/mailcap`.
+   *files* can be a list of paths to mailcap files from which the mapping is to
+   be read, in decreasing order of preference (i.e. the settings contained in
+   the files appearing first will override the ones in subsequent files).
+   If this parameter is set to ``None`` (the default), the information is
+   instead derived from all the mailcap files listed in the ``$MAILCAPS``
+   environment variable if it is set, or otherwise from mailcap files found on
+   well-known paths on the system (the user's mailcap file
+   file:`$HOME/.mailcap`, the system mailcap files :file:`/etc/mailcap`,
+   :file:`/usr/etc/mailcap`, and finally :file:`/usr/local/etc/mailcap`).
 
 An example usage::
 

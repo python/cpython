@@ -1,0 +1,1 @@
+:func:`mailcap.getcaps` now accepts a list of file paths as parameter
