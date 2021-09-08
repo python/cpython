@@ -150,6 +150,12 @@ class MimeTypesTestCase(unittest.TestCase):
         # Poison should be gone.
         self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
 
+    def test_guess_known_extensions(self):
+        # Issue 37529
+        from mimetypes import types_map
+        for v in types_map.values():
+            self.assertIsNotNone(mimetypes.guess_extension(v))
+
     def test_preferred_extension(self):
         def check_extensions():
             self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
