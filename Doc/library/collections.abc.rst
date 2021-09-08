@@ -73,11 +73,11 @@ of the API:
    >>> isinstance(D(), Sequence)
    True
 
-In this example, :class:`D` does not need to define ``__contains__``,
-``__iter__``, and ``__reversed__`` because the :ref:`in-operator
-<comparisons>`, the :term:`iteration <iterable>` logic, and the
-:func:`reversed` function automatically fall back to using
-``__getitem__`` and ``__len__``.
+In this example, class :class:`D` does not need to define
+``__contains__``, ``__iter__``, and ``__reversed__`` because the
+:ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
+logic, and the :func:`reversed` function automatically fall back to
+using ``__getitem__`` and ``__len__``.
 
 3) Some simple interfaces are directly recognizable by the presence of
 the required methods (unless those methods have been set to
@@ -179,7 +179,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 
 .. rubric:: Footnotes
 
-.. [1] This ABC overrides :meth:`object.__subclasshook__` to support
+.. [1] These ABCs override :meth:`object.__subclasshook__` to support
    testing an interface by verifying the required methods are present
    and have not been set to :const:`None`.  This only works for simple
    interfaces.  More complex interfaces require registration or direct
