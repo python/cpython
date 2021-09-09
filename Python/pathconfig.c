@@ -684,7 +684,9 @@ _Py_IsDevelopmentEnv(const PyConfig *fallback)
     }
     size_t len = find_basename(executable);
     if (wcscmp(executable + len, L"python") != 0) {
-        return false;
+        if (wcscmp(executable + len, L"python.exe") != 0) {
+            return false;
+        }
     }
     /* If dirname() is the same for both then it is a local (dev) build. */
     const wchar_t *stdlib = _Py_GetStdlibDir(fallback);
