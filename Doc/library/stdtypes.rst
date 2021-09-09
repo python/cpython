@@ -521,8 +521,7 @@ class`. In addition, it provides a few more methods:
     integer, and defaults to :data:`sys.byteorder`.  If *byteorder* is
     ``"big"``, the most significant byte is at the beginning of the byte
     array.  If *byteorder* is ``"little"``, the most significant byte is at
-    the end of the byte array.  To request the native byte order of the host
-    system, use :data:`sys.byteorder` as the byte order value.
+    the end of the byte array.
 
     The *signed* argument determines whether two's complement is used to
     represent the integer.  If *signed* is ``False`` and a negative integer is
