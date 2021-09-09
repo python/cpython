@@ -226,7 +226,8 @@ int_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(int_to_bytes__doc__,
-"to_bytes($self, /, length, byteorder, *, signed=False)\n"
+"to_bytes($self, /, length=1, byteorder=<unrepresentable>, *,\n"
+"         signed=False)\n"
 "--\n"
 "\n"
 "Return an array of bytes representing an integer.\n"
@@ -259,35 +260,49 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static const char * const _keywords[] = {"length", "byteorder", "signed", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "to_bytes", 0};
     PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
-    Py_ssize_t length;
-    PyObject *byteorder;
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    Py_ssize_t length = 1;
+    PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        {
+            Py_ssize_t ival = -1;
+            PyObject *iobj = _PyNumber_Index(args[0]);
+            if (iobj != NULL) {
+                ival = PyLong_AsSsize_t(iobj);
+                Py_DECREF(iobj);
+            }
+            if (ival == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
+            length = ival;
         }
-        if (ival == -1 && PyErr_Occurred()) {
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        length = ival;
+        if (PyUnicode_READY(args[1]) == -1) {
+            goto exit;
+        }
+        byteorder = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-    if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
-    byteorder = args[1];
+skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -367,4 +382,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ea18e51af5b53591 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc853442451f79a6 input=a9049054013a1b77]*/

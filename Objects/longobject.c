@@ -5521,10 +5521,10 @@ int_as_integer_ratio_impl(PyObject *self)
 /*[clinic input]
 int.to_bytes
 
-    length: Py_ssize_t
+    length: Py_ssize_t = 1
         Length of bytes object to use.  An OverflowError is raised if the
         integer is not representable with the given number of bytes.
-    byteorder: unicode
+    byteorder: unicode = NULL
         The byte order used to represent the integer.  If byteorder is 'big',
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
@@ -5542,10 +5542,13 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=ddac63f4c7bf414c]*/
+/*[clinic end generated code: output=89c801df114050a3 input=d6b9571b1ee1fd05]*/
 {
     int little_endian;
     PyObject *bytes;
+
+    if (byteorder == NULL)
+        byteorder = PySys_GetObject("byteorder");
 
     if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;

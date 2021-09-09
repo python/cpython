@@ -1,0 +1,2 @@
+int.to_bytes() now takes default arguments for ``length`` and ``byteorder``,
+defaulting to ``1`` and ``sys.byteorder`` respectively.
