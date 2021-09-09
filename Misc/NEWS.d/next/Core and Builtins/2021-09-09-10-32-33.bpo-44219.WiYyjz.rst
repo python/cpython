@@ -1,4 +1,5 @@
 Release the GIL while performing ``isatty`` system calls on arbitrary file
 descriptors. In particular, this affects :func:`os.isatty`,
 :func:`os.device_encoding` and :class:`io.TextIOWrapper`. By extension,
-:func:`io.open` in text mode is also affected.
+:func:`io.open` in text mode is also affected. This change solves
+a deadlock in :func:`os.isatty`. Patch by Vincent Michel in :issue:`44219`.
