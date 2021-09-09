@@ -2053,7 +2053,11 @@ pysleep(_PyTime_t secs)
 {
     _PyTime_t deadline, monotonic;
 #ifndef MS_WINDOWS
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec timeout;
+#else
     struct timeval timeout;
+#endif
     int err = 0;
 #else
     _PyTime_t millisecs;
@@ -2066,23 +2070,44 @@ pysleep(_PyTime_t secs)
         return -1;
     }
     deadline = monotonic + secs;
+#if defined(HAVE_CLOCK_NANOSLEEP) && !defined(MS_WINDOWS)
+    if (_PyTime_AsTimespec(deadline, &timeout) < 0) {
+        return -1;
+    }
+#endif
 
     do {
 #ifndef MS_WINDOWS
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0)
+#ifndef HAVE_CLOCK_NANOSLEEP
+        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0) {
             return -1;
+        }
+#endif
 
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_CLOCK_NANOSLEEP
+        err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout, NULL);
+#else
         err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+#endif
         Py_END_ALLOW_THREADS
 
-        if (err == 0)
+        if (err == 0) {
             break;
+        }
 
+#ifdef HAVE_CLOCK_NANOSLEEP
+        if (err != EINTR) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+#else
         if (errno != EINTR) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
+#endif
 #else
         millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
         if (millisecs > (double)ULONG_MAX) {
@@ -2114,8 +2139,9 @@ pysleep(_PyTime_t secs)
 #endif
 
         /* sleep was interrupted by SIGINT */
-        if (PyErr_CheckSignals())
+        if (PyErr_CheckSignals()) {
             return -1;
+        }
 
         if (get_monotonic(&monotonic) < 0) {
             return -1;
