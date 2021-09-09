@@ -164,12 +164,6 @@ Here is the :class:`Header` class description:
       This method allows you to compare two :class:`Header` instances for
       equality.
 
-
-   .. method:: __ne__(other)
-
-      This method allows you to compare two :class:`Header` instances for
-      inequality.
-
 The :mod:`email.header` module also provides the following convenient functions.
 
 

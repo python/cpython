@@ -61,7 +61,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`ByteString`        :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
                                                   ``__len__``
 
-:class:`Set`               :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
+:class:`Set`               :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``,
                                                   ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
                                                   ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
 
@@ -72,7 +72,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
                                                   ``discard``
 
 :class:`Mapping`           :class:`Collection`    ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
-                                                  ``__iter__``,           ``get``, ``__eq__``, and ``__ne__``
+                                                  ``__iter__``,           ``get``, and ``__eq__``
                                                   ``__len__``
 
 :class:`MutableMapping`    :class:`Mapping`       ``__getitem__``,        Inherited :class:`Mapping` methods and

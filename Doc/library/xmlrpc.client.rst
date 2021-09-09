@@ -333,7 +333,7 @@ Binary Objects
       XML-RPC spec was written.
 
    It also supports certain of Python's built-in operators through :meth:`__eq__`
-   and :meth:`__ne__` methods.
+   method.
 
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::
