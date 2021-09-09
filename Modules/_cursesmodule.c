@@ -135,7 +135,8 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-#if NCURSES_EXT_COLORS+0 && NCURSES_EXT_FUNCS+0
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20170401) && \
+    (defined(NCURSES_EXT_COLORS) && NCURSES_EXT_COLORS >= 20170401)
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
