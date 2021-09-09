@@ -5589,7 +5589,7 @@ int.from_bytes
         support the buffer protocol or be an iterable object producing bytes.
         Bytes and bytearray are examples of built-in objects that support the
         buffer protocol.
-    byteorder: unicode
+    byteorder: unicode = NULL
         The byte order used to represent the integer.  If byteorder is 'big',
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
@@ -5605,10 +5605,13 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=cdf98332b6a821b0]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=2562febe16a92f7a]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;
+
+    if (byteorder == NULL)
+        byteorder = PySys_GetObject("byteorder");
 
     if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;

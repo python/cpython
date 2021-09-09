@@ -1251,8 +1251,19 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1!r} and signed={2}"
+                        "failed to convert {} with byteorder={!r} and signed={}"
                         .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if byteorder == sys.byteorder and not signed:
+                    try:
+                        self.assertEqual(
+                            int.from_bytes(test),
+                            expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arugments"
+                            .format(test)) from err
 
                 try:
                     self.assertEqual(

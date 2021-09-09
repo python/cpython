@@ -552,7 +552,7 @@ class`. In addition, it provides a few more methods:
     .. versionchanged:: 3.11
        Added default argument values for ``length`` and ``byteorder``.
 
-.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder=sys.byteorder, *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -571,18 +571,18 @@ class`. In addition, it provides a few more methods:
     iterable producing bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
-    beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    integer, and defaults to :data:`sys.byteorder`.  If *byteorder* is
+    ``"big"``, the most significant byte is at the beginning of the byte
+    array.  If *byteorder* is ``"little"``, the most significant byte is at
+    the end of the byte array.  To request the native byte order of the host
+    system, use :data:`sys.byteorder` as the byte order value.
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.
 
     Equivalent to::
 
-        def from_bytes(bytes, byteorder, signed=False):
+        def from_bytes(bytes, byteorder=sys.byteorder, signed=False):
             if byteorder == 'little':
                 little_ordered = list(bytes)
             elif byteorder == 'big':
@@ -597,6 +597,8 @@ class`. In addition, it provides a few more methods:
             return n
 
     .. versionadded:: 3.2
+    .. versionchanged:: 3.11
+       Added default argument value for ``byteorder``.
 
 .. method:: int.as_integer_ratio()
 

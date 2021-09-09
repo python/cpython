@@ -318,7 +318,8 @@ exit:
 }
 
 PyDoc_STRVAR(int_from_bytes__doc__,
-"from_bytes($type, /, bytes, byteorder, *, signed=False)\n"
+"from_bytes($type, /, bytes, byteorder=<unrepresentable>, *,\n"
+"           signed=False)\n"
 "--\n"
 "\n"
 "Return the integer represented by the given array of bytes.\n"
@@ -351,24 +352,33 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     static const char * const _keywords[] = {"bytes", "byteorder", "signed", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "from_bytes", 0};
     PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *bytes_obj;
-    PyObject *byteorder;
+    PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     bytes_obj = args[0];
-    if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
-        goto exit;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
+            goto exit;
+        }
+        if (PyUnicode_READY(args[1]) == -1) {
+            goto exit;
+        }
+        byteorder = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-    byteorder = args[1];
+skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -382,4 +392,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bc853442451f79a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=078e5ad8fa273312 input=a9049054013a1b77]*/
