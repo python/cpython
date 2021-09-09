@@ -147,21 +147,17 @@ class StatisticsError(ValueError):
 
 # === Private utilities ===
 
-def _sum(data, start=0):
-    """_sum(data [, start]) -> (type, sum, count)
+def _sum(data):
+    """_sum(data) -> (type, sum, count)
 
     Return a high-precision sum of the given numeric data as a fraction,
     together with the type to be converted to and the count of items.
 
-    If optional argument ``start`` is given, it is added to the total.
-    If ``data`` is empty, ``start`` (defaulting to 0) is returned.
-
-
     Examples
     --------
 
-    >>> _sum([3, 2.25, 4.5, -0.5, 1.0], 0.75)
-    (<class 'float'>, Fraction(11, 1), 5)
+    >>> _sum([3, 2.25, 4.5, -0.5, 0.25])
+    (<class 'float'>, Fraction(19, 2), 5)
 
     Some sources of round-off error will be avoided:
 
@@ -184,10 +180,9 @@ def _sum(data, start=0):
     allowed.
     """
     count = 0
-    n, d = _exact_ratio(start)
-    partials = {d: n}
+    partials = {}
     partials_get = partials.get
-    T = _coerce(int, type(start))
+    T = int
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
@@ -200,8 +195,7 @@ def _sum(data, start=0):
         assert not _isfinite(total)
     else:
         # Sum all the partial sums using builtin sum.
-        # FIXME is this faster if we sum them in order of the denominator?
-        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total, count)
 
 
@@ -252,27 +246,19 @@ def _exact_ratio(x):
     x is expected to be an int, Fraction, Decimal or float.
     """
     try:
-        # Optimise the common case of floats. We expect that the most often
-        # used numeric type will be builtin floats, so try to make this as
-        # fast as possible.
-        if type(x) is float or type(x) is Decimal:
-            return x.as_integer_ratio()
-        try:
-            # x may be an int, Fraction, or Integral ABC.
-            return (x.numerator, x.denominator)
-        except AttributeError:
-            try:
-                # x may be a float or Decimal subclass.
-                return x.as_integer_ratio()
-            except AttributeError:
-                # Just give up?
-                pass
+        return x.as_integer_ratio()
+    except AttributeError:
+        pass
     except (OverflowError, ValueError):
         # float NAN or INF.
         assert not _isfinite(x)
         return (x, None)
-    msg = "can't convert type '{}' to numerator/denominator"
-    raise TypeError(msg.format(type(x).__name__))
+    try:
+        # x may be an Integral ABC.
+        return (x.numerator, x.denominator)
+    except AttributeError:
+        msg = f"can't convert type '{type(x).__name__}' to numerator/denominator"
+        raise TypeError(msg)
 
 
 def _convert(value, T):
@@ -719,14 +705,20 @@ def _ss(data, c=None):
     if c is not None:
         T, total, count = _sum((x-c)**2 for x in data)
         return (T, total)
-    c = mean(data)
-    T, total, count = _sum((x-c)**2 for x in data)
-    # The following sum should mathematically equal zero, but due to rounding
-    # error may not.
-    U, total2, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
-    total -= total2 ** 2 / len(data)
-    assert not total < 0, 'negative sum of square deviations: %f' % total
+    T, total, count = _sum(data)
+    mean_n, mean_d = (total / count).as_integer_ratio()
+    partials = Counter()
+    for n, d in map(_exact_ratio, data):
+        diff_n = n * mean_d - d * mean_n
+        diff_d = d * mean_d
+        partials[diff_d * diff_d] += diff_n * diff_n
+    if None in partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = partials[None]
+        assert not _isfinite(total)
+    else:
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total)
 
 
@@ -830,6 +822,9 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
+    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
+    # remain because there are two rounding steps.  The first occurs in
+    # the _convert() step for variance(), the second occurs in math.sqrt().
     var = variance(data, xbar)
     try:
         return var.sqrt()
@@ -846,6 +841,9 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
+    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
+    # remain because there are two rounding steps.  The first occurs in
+    # the _convert() step for pvariance(), the second occurs in math.sqrt().
     var = pvariance(data, mu)
     try:
         return var.sqrt()

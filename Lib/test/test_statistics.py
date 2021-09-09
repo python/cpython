@@ -1247,20 +1247,14 @@ class TestSum(NumericTestCase):
         # Override test for empty data.
         for data in ([], (), iter([])):
             self.assertEqual(self.func(data), (int, Fraction(0), 0))
-            self.assertEqual(self.func(data, 23), (int, Fraction(23), 0))
-            self.assertEqual(self.func(data, 2.3), (float, Fraction(2.3), 0))
 
     def test_ints(self):
         self.assertEqual(self.func([1, 5, 3, -4, -8, 20, 42, 1]),
                          (int, Fraction(60), 8))
-        self.assertEqual(self.func([4, 2, 3, -8, 7], 1000),
-                         (int, Fraction(1008), 5))
 
     def test_floats(self):
         self.assertEqual(self.func([0.25]*20),
                          (float, Fraction(5.0), 20))
-        self.assertEqual(self.func([0.125, 0.25, 0.5, 0.75], 1.5),
-                         (float, Fraction(3.125), 4))
 
     def test_fractions(self):
         self.assertEqual(self.func([Fraction(1, 1000)]*500),
@@ -1280,14 +1274,6 @@ class TestSum(NumericTestCase):
         # we differ by a very slight amount :-(
         data = [random.uniform(-100, 1000) for _ in range(1000)]
         self.assertApproxEqual(float(self.func(data)[1]), math.fsum(data), rel=2e-16)
-
-    def test_start_argument(self):
-        # Test that the optional start argument works correctly.
-        data = [random.uniform(1, 1000) for _ in range(100)]
-        t = self.func(data)[1]
-        self.assertEqual(t+42, self.func(data, 42)[1])
-        self.assertEqual(t-23, self.func(data, -23)[1])
-        self.assertEqual(t+Fraction(1e20), self.func(data, 1e20)[1])
 
     def test_strings_fail(self):
         # Sum of strings should fail.
@@ -2077,6 +2063,13 @@ class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
         self.assertEqual(result, exact)
         self.assertIsInstance(result, Decimal)
 
+    def test_accuracy_bug_20499(self):
+        data = [0, 0, 1]
+        exact = 2 / 9
+        result = self.func(data)
+        self.assertEqual(result, exact)
+        self.assertIsInstance(result, float)
+
 
 class TestVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for sample variance.
@@ -2116,6 +2109,13 @@ class TestVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
         data = (1.0, 2.0)
         self.assertEqual(self.func(data), 0.5)
         self.assertEqual(self.func(data, xbar=2.0), 1.0)
+
+    def test_accuracy_bug_20499(self):
+        data = [0, 0, 2]
+        exact = 4 / 3
+        result = self.func(data)
+        self.assertEqual(result, exact)
+        self.assertIsInstance(result, float)
 
 class TestPStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for population standard deviation.
