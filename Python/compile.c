@@ -1638,14 +1638,14 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define ADDOP_O(C, OP, O, TYPE) { \
-    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST */ \
+    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
         return 0; \
 }
 
 /* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
-    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST_NEW */ \
+    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
         Py_DECREF((O)); \
         return 0; \
@@ -7951,6 +7951,24 @@ assemble(struct compiler *c, int addNone)
     return co;
 }
 
+static PyObject*
+get_const_value(int opcode, int oparg, PyObject *co_consts)
+{
+    PyObject *constant = NULL;
+    assert(HAS_CONST(opcode));
+    if (opcode == LOAD_CONST) {
+        constant = PyList_GET_ITEM(co_consts, oparg);
+    }
+
+    if (constant == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Internal error: failed to get value of a constant");
+        return NULL;
+    }
+    Py_INCREF(constant);
+    return constant;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -7968,7 +7986,7 @@ fold_tuple_on_constants(struct compiler *c,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (inst[i].i_opcode != LOAD_CONST) {
+        if (!HAS_CONST(inst[i].i_opcode)) {
             return 0;
         }
     }
@@ -7979,9 +7997,12 @@ fold_tuple_on_constants(struct compiler *c,
         return -1;
     }
     for (int i = 0; i < n; i++) {
+        int op = inst[i].i_opcode;
         int arg = inst[i].i_oparg;
-        PyObject *constant = PyList_GET_ITEM(consts, arg);
-        Py_INCREF(constant);
+        PyObject *constant = get_const_value(op, arg, consts);
+        if (constant == NULL) {
+            return -1;
+        }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
     if (merge_const_one(c, &newconst) == 0) {
@@ -8097,52 +8118,57 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
         else {
             target = &nop;
         }
-        switch (inst->i_opcode) {
+        if (HAS_CONST(inst->i_opcode)) {
             /* Remove LOAD_CONST const; conditional jump */
-            case LOAD_CONST:
-            {
-                PyObject* cnt;
-                int is_true;
-                int jump_if_true;
-                switch(nextop) {
-                    case POP_JUMP_IF_FALSE:
-                    case POP_JUMP_IF_TRUE:
-                        cnt = PyList_GET_ITEM(consts, oparg);
-                        is_true = PyObject_IsTrue(cnt);
-                        if (is_true == -1) {
-                            goto error;
-                        }
+            PyObject* cnt;
+            int is_true;
+            int jump_if_true;
+            switch(nextop) {
+                case POP_JUMP_IF_FALSE:
+                case POP_JUMP_IF_TRUE:
+                    cnt = get_const_value(inst->i_opcode, oparg, consts);
+                    if (cnt == NULL) {
+                        goto error;
+                    }
+                    is_true = PyObject_IsTrue(cnt);
+                    if (is_true == -1) {
+                        goto error;
+                    }
+                    inst->i_opcode = NOP;
+                    jump_if_true = nextop == POP_JUMP_IF_TRUE;
+                    if (is_true == jump_if_true) {
+                        bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                        bb->b_nofallthrough = 1;
+                    }
+                    else {
+                        bb->b_instr[i+1].i_opcode = NOP;
+                    }
+                    break;
+                case JUMP_IF_FALSE_OR_POP:
+                case JUMP_IF_TRUE_OR_POP:
+                    cnt = get_const_value(inst->i_opcode, oparg, consts);
+                    if (cnt == NULL) {
+                        goto error;
+                    }
+                    is_true = PyObject_IsTrue(cnt);
+                    if (is_true == -1) {
+                        goto error;
+                    }
+                    jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
+                    if (is_true == jump_if_true) {
+                        bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                        bb->b_nofallthrough = 1;
+                    }
+                    else {
                         inst->i_opcode = NOP;
-                        jump_if_true = nextop == POP_JUMP_IF_TRUE;
-                        if (is_true == jump_if_true) {
-                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
-                            bb->b_nofallthrough = 1;
-                        }
-                        else {
-                            bb->b_instr[i+1].i_opcode = NOP;
-                        }
-                        break;
-                    case JUMP_IF_FALSE_OR_POP:
-                    case JUMP_IF_TRUE_OR_POP:
-                        cnt = PyList_GET_ITEM(consts, oparg);
-                        is_true = PyObject_IsTrue(cnt);
-                        if (is_true == -1) {
-                            goto error;
-                        }
-                        jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
-                        if (is_true == jump_if_true) {
-                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
-                            bb->b_nofallthrough = 1;
-                        }
-                        else {
-                            inst->i_opcode = NOP;
-                            bb->b_instr[i+1].i_opcode = NOP;
-                        }
-                        break;
-                }
-                break;
+                        bb->b_instr[i+1].i_opcode = NOP;
+                    }
+                    break;
             }
+            continue;
+        }
 
+        switch (inst->i_opcode) {
                 /* Try to fold tuples of constants.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
