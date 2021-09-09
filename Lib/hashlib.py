@@ -65,7 +65,8 @@ algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
 __all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'pbkdf2_hmac')
+                                'algorithms_available', 'pbkdf2_hmac',
+                                'file_digest')
 
 
 __builtin_constructor_cache = {}
@@ -254,6 +255,22 @@ except ImportError:
     pass
 
 
+def file_digest(filepath, digest=None, chunk_size=4096, hex=True):
+    """Returns a digest of a file.
+    """
+    if digest is None:
+        from _sha256 import sha256
+        digest = sha256
+
+    hash = digest()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(chunk_size), b""):
+            hash.update(chunk)
+    if hex:
+        return hash.hexdigest()
+    return hash.digest()
+
+
 for __func_name in __always_supported:
     # try them all, some may not work due to the OpenSSL
     # version not supporting that algorithm.
@@ -263,6 +280,10 @@ for __func_name in __always_supported:
         import logging
         logging.exception('code for hash %s was not found.', __func_name)
 
+if __name__ == '__main__':
+    import sys
+
+    print(file_digest(sys.argv[1]))
 
 # Cleanup locals()
 del __always_supported, __func_name, __get_hash
