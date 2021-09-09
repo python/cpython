@@ -51,7 +51,7 @@ You can control how files are opened by providing an opening hook via the
 hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. If *encoding* and/or *errors*
 are specified, they will be passed to the hook as aditional keyword arguments.
-This module provides a :func:`hook_encoded` to support compressed files.
+This module provides a :func:`hook_compressed` to support compressed files.
 
 The following function is the primary interface of this module:
 
