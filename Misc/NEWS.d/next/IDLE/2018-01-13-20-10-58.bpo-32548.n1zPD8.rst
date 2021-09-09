@@ -1,0 +1,1 @@
+Change labels to hyperlinks in help_about.

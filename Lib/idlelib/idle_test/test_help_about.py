@@ -4,9 +4,10 @@ help_about.build_bits branches on sys.platform='darwin'.
 """
 
 from idlelib import help_about
-import unittest
 from test.support import requires, findfile
-from tkinter import Tk, TclError
+import unittest
+from unittest import mock
+from tkinter import Tk, TclError, font
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib import textview
@@ -38,6 +39,33 @@ class LiveDialogTest(unittest.TestCase):
     def test_build_bits(self):
         self.assertIn(help_about.build_bits(), ('32', '64'))
 
+    def test_display_browser_link(self):
+        """Test display browser link."""
+        dialog = self.dialog
+        ha = help_about
+        orig_webbrowser = ha.webbrowser.open
+        orig_showerror = ha.showerror
+        web = ha.webbrowser.open = mock.Mock()
+        error = ha.showerror = Mbox_func()
+
+        # No link.
+        dialog.display_browser_link()
+        web.assert_not_called()
+
+        # Valid link.
+        link = 'https://www.python.org'
+        ha.webbrowser.open.return_value(True)
+        dialog.display_browser_link(link=link)
+        web.assert_called_with(link)
+
+        # False returned from webbrowser.open.
+        ha.webbrowser.open.return_value = False
+        dialog.display_browser_link(link=link)
+        self.assertEqual(error.title, 'Page Load Error')
+
+        ha.webbrowser.open = orig_webbrowser
+        ha.showerror = orig_showerror
+
     def test_dialog_title(self):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(), 'About IDLE')
@@ -47,6 +75,18 @@ class LiveDialogTest(unittest.TestCase):
         path, file = os.path.split(self.dialog.icon_image['file'])
         fn, ext = os.path.splitext(file)
         self.assertEqual(fn, 'idle_48')
+
+    def test_create_link(self):
+        """Test appearance of label acting as links."""
+        dialog = self.dialog
+        link_widgets = (dialog.email, )
+        for widget in link_widgets:
+            widget_font = font.Font(widget, font=widget['font'])
+            self.assertTrue(widget_font.actual()['underline'])
+            self.assertEqual(widget_font.actual()['size'], 10)
+            self.assertEqual(widget['foreground'], 'blue')
+            self.assertEqual(widget['cursor'], 'hand2')
+            self.assertIn('<Button-1>', widget.bind())
 
     def test_printer_buttons(self):
         """Test buttons whose commands use printer function."""
