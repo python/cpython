@@ -139,7 +139,7 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
-#endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
+#endif
 
 #if _NCURSES_EXTENDED_COLOR_FUNCS
 #define _CURSES_COLOR_VAL_TYPE          int
