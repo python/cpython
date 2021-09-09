@@ -1843,7 +1843,7 @@ Changes in the Python syntax
 
 * Deprecation warning is now emitted when compiling previously valid syntax
   if the numeric literal is immediately followed by a keyword (like in ``0in x``).
-  If future releases it will be changed to syntax warning, and finally to a
+  In future releases it will be changed to syntax warning, and finally to a
   syntax error.  To get rid of the warning and make the code compatible with
   future releases just add a space between the numeric literal and the
   following keyword.
