@@ -1327,7 +1327,7 @@ class TestBytecodeTestCase(BytecodeTestCase):
             self.assertNotInBytecode(code, "LOAD_CONST", 1)
 
 class TestFinderMethods(unittest.TestCase):
-    def test_find_imports(self):
+    def test__find_imports(self):
         cases = [
             ("import a.b.c", ('a.b.c', 0, None)),
             ("from a.b import c", ('a.b', 0, ('c',))),
@@ -1340,11 +1340,11 @@ class TestFinderMethods(unittest.TestCase):
         for src, expected in cases:
             with self.subTest(src=src):
                 code = compile(src, "<string>", "exec")
-                res = tuple(dis.find_imports(code))
+                res = tuple(dis._find_imports(code))
                 self.assertEqual(len(res), 1)
                 self.assertEqual(res[0], expected)
 
-    def test_find_store_names(self):
+    def test__find_store_names(self):
         cases = [
             ("x+y", ()),
             ("x=y=1", ('x', 'y')),
@@ -1355,7 +1355,7 @@ class TestFinderMethods(unittest.TestCase):
         for src, expected in cases:
             with self.subTest(src=src):
                 code = compile(src, "<string>", "exec")
-                res = tuple(dis.find_store_names(code))
+                res = tuple(dis._find_store_names(code))
                 self.assertEqual(res, expected)
 
 

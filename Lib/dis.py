@@ -535,7 +535,7 @@ def findlinestarts(code):
             yield start, line
     return
 
-def find_imports(co):
+def _find_imports(co):
     """Find import statements in the code
 
     Generate triplets (name, level, fromlist) where
@@ -556,7 +556,7 @@ def find_imports(co):
             fromlist = consts[opargs[i-1][1]]
             yield (names[oparg], level, fromlist)
 
-def find_store_names(co):
+def _find_store_names(co):
     """Find names of variables which are written in the code
 
     Generate sequence of strings

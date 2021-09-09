@@ -1,3 +1,0 @@
-Add two functions to the :mod:`dis` module. :func:`find_imports` generates information about import statements in a code object and :func:`find_store_name` generates a sequence of names that the code object writes.
-
-Refactored :mod:`modulefinder` to use these functions instead of scanning opcodes itself.

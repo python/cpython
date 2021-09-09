@@ -248,24 +248,6 @@ operation is being performed, so the intermediate analysis object isn't useful:
    return a list of these offsets.
 
 
-.. function:: find_imports(code)
-
-   Find import statements in *code*
-
-   Generate triplets (`name`, `level`, `fromlist`) where
-   `name` is the imported module and `level`, `fromlist` are
-   the corresponding args to `__import__`.
-
-   .. versionadded:: 3.11
-
-
-.. function:: find_store_names(code)
-
-   Generate a sequence of names of variables which are written in *code*.
-
-   .. versionadded:: 3.11
-
-
 .. function:: stack_effect(opcode, oparg=None, *, jump=None)
 
    Compute the stack effect of *opcode* with argument *oparg*.

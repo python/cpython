@@ -386,9 +386,9 @@ class ModuleFinder:
 
     def scan_opcodes(self, co):
         # Scan the code, and yield 'interesting' opcode combinations
-        for name in dis.find_store_names(co):
+        for name in dis._find_store_names(co):
             yield "store", (name,)
-        for name, level, fromlist in dis.find_imports(co):
+        for name, level, fromlist in dis._find_imports(co):
             if level == 0:  # absolute import
                 yield "absolute_import", (fromlist, name)
             else:  # relative import
