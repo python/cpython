@@ -75,7 +75,6 @@ def open(file, flag='r', mode=0o666):
             raise ImportError("no dbm clone found; tried %s" % _names)
 
     # guess the type of an existing database, if not creating a new one
-    file = os.fsencode(file)
     result = whichdb(file) if 'n' not in flag else None
     if result is None:
         # db doesn't exist or 'n' flag was specified to create a new db

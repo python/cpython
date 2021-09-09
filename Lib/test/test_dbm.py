@@ -2,6 +2,7 @@
 
 import unittest
 import glob
+import os
 from test.support import import_helper
 from test.support import os_helper
 
@@ -129,8 +130,14 @@ class AnyDBMTestCase:
         assert(f[key] == b"Python:")
         f.close()
 
+    def test_open_with_bytes(self):
+        dbm.open(os.fsencode(_fname), "c").close()
+
     def test_open_with_pathlib_path(self):
         dbm.open(os_helper.FakePath(_fname), "c").close()
+
+    def test_open_with_pathlib_path_bytes(self):
+        dbm.open(os_helper.FakePath(os.fsencode(_fname)), "c").close()
 
     def read_helper(self, f):
         keys = self.keys_helper(f)
@@ -147,7 +154,9 @@ class AnyDBMTestCase:
 
 class WhichDBTestCase(unittest.TestCase):
     def test_whichdb(self):
-        for path in [_fname, os_helper.FakePath(_fname)]:
+        _bytes_fname = os.fsencode(_fname)
+        for path in [_fname, os_helper.FakePath(_fname),
+                     _bytes_fname, os_helper.FakePath(_bytes_fname)]:
             for module in dbm_iterator():
                 # Check whether whichdb correctly guesses module name
                 # for databases opened with "module" module.
@@ -175,11 +184,11 @@ class WhichDBTestCase(unittest.TestCase):
         db_file = '{}_ndbm.db'.format(_fname)
         with open(db_file, 'w'):
             self.addCleanup(os_helper.unlink, db_file)
+        db_file_bytes = os.fsencode(db_file)
         self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
-        path = os_helper.FakePath(db_file)
-        with open(path, 'w'):
-            self.addCleanup(os_helper.unlink, path)
-        self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
+        self.assertIsNone(self.dbm.whichdb(os_helper.FakePath(db_file[:-3])))
+        self.assertIsNone(self.dbm.whichdb(db_file_bytes[:-3]))
+        self.assertIsNone(self.dbm.whichdb(os_helper.FakePath(db_file_bytes[:-3])))
 
     def tearDown(self):
         delete_files()
