@@ -182,11 +182,10 @@ blob_read_impl(pysqlite_Blob *self, int length)
     }
 
     PyObject *buffer = inner_read(self, length, self->offset);
-    if (buffer != NULL) {
-        /* update offset on sucess. */
-        self->offset += length;
+    if (buffer == NULL) {
+        return NULL;
     }
-
+    self->offset += length;
     return buffer;
 };
 
@@ -210,40 +209,36 @@ write_inner(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
 /*[clinic input]
 _sqlite3.Blob.write as blob_write
 
-    data_buffer: Py_buffer
+    data: Py_buffer
     /
 
 Write data to blob.
 [clinic start generated code]*/
 
 static PyObject *
-blob_write_impl(pysqlite_Blob *self, Py_buffer *data_buffer)
-/*[clinic end generated code: output=dc8da6900b969799 input=8597402caf368add]*/
+blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
+/*[clinic end generated code: output=b34cf22601b570b2 input=0dcf4018286f55d2]*/
 {
-    int rc;
-
-    if (data_buffer->len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "data longer than INT_MAX bytes");
-        return NULL;
-    }
-
-    if (data_buffer->len > self->length - self->offset) {
-        PyErr_SetString(PyExc_ValueError, "data longer than blob length");
-        return NULL;
-    }
-
     if (!check_blob(self)) {
         return NULL;
     }
 
-    rc = write_inner(self, data_buffer->buf, data_buffer->len, self->offset);
-
-    if (rc == 0) {
-        self->offset += (int)data_buffer->len;
-        Py_RETURN_NONE;
-    } else {
+    if (data->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "data longer than INT_MAX bytes");
         return NULL;
     }
+
+    if (data->len > self->length - self->offset) {
+        PyErr_SetString(PyExc_ValueError, "data longer than blob length");
+        return NULL;
+    }
+
+    int rc = write_inner(self, data->buf, data->len, self->offset);
+    if (rc < 0) {
+        return NULL;
+    }
+    self->offset += (int)data->len;
+    Py_RETURN_NONE;
 }
 
 

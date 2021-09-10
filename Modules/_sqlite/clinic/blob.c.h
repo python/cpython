@@ -56,7 +56,7 @@ exit:
 }
 
 PyDoc_STRVAR(blob_write__doc__,
-"write($self, data_buffer, /)\n"
+"write($self, data, /)\n"
 "--\n"
 "\n"
 "Write data to blob.");
@@ -65,27 +65,27 @@ PyDoc_STRVAR(blob_write__doc__,
     {"write", (PyCFunction)blob_write, METH_O, blob_write__doc__},
 
 static PyObject *
-blob_write_impl(pysqlite_Blob *self, Py_buffer *data_buffer);
+blob_write_impl(pysqlite_Blob *self, Py_buffer *data);
 
 static PyObject *
 blob_write(pysqlite_Blob *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_buffer data_buffer = {NULL, NULL};
+    Py_buffer data = {NULL, NULL};
 
-    if (PyObject_GetBuffer(arg, &data_buffer, PyBUF_SIMPLE) != 0) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data_buffer, 'C')) {
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
         _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
         goto exit;
     }
-    return_value = blob_write_impl(self, &data_buffer);
+    return_value = blob_write_impl(self, &data);
 
 exit:
-    /* Cleanup for data_buffer */
-    if (data_buffer.obj) {
-       PyBuffer_Release(&data_buffer);
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
     }
 
     return return_value;
@@ -199,4 +199,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=755e33bbf7642839 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=235d02d1bfa39b2a input=a9049054013a1b77]*/
