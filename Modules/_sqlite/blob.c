@@ -346,17 +346,10 @@ blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
                PyObject *tb)
 /*[clinic end generated code: output=fc86ceeb2b68c7b2 input=575d9ecea205f35f]*/
 {
-    PyObject *res;
     if (!check_blob(self)) {
         return NULL;
     }
-
-    res = blob_close_impl(self);
-    if (!res) {
-        return NULL;
-    }
-    Py_XDECREF(res);
-
+    close_blob(self);
     Py_RETURN_FALSE;
 }
 
