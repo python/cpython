@@ -933,12 +933,6 @@ class ClosedBlobTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             self.blob.tell()
 
-    def test_closed_blob_close(self):
-        self.blob = self.cx.open_blob("test", "blob_col", 1)
-        self.blob.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            self.blob.close()
-
     def test_closed_blob_read(self):
         con = sqlite.connect(":memory:")
         con.execute("create table test(id integer primary key, blob_col blob)")
@@ -963,12 +957,6 @@ class BlobContextManagerTests(unittest.TestCase):
         with self.cx.open_blob("test", "blob_col", 1) as blob:
             blob.write(data)
         self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], data)
-
-    def test_blob_ctx_mgr_close(self):
-        with self.cx.open_blob("test", "blob_col", 1) as blob:
-            blob.seek(10)
-        with self.assertRaises(sqlite.ProgrammingError):
-            blob.close()
 
 
 class ThreadTests(unittest.TestCase):

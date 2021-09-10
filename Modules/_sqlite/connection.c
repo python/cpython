@@ -413,7 +413,7 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    pysqlite_Blob *obj = PyObject_New(pysqlite_Blob, &pysqlite_BlobType);
+    pysqlite_Blob *obj = PyObject_GC_New(pysqlite_Blob, self->state->BlobType);
     if (obj == NULL) {
         goto error;
     }

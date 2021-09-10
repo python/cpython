@@ -53,6 +53,7 @@ typedef struct {
     int BaseTypeAdapted;
     int enable_callback_tracebacks;
 
+    PyTypeObject *BlobType;
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
     PyTypeObject *PrepareProtocolType;

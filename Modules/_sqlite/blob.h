@@ -14,11 +14,9 @@ typedef struct {
     PyObject *in_weakreflist;
 } pysqlite_Blob;
 
-extern PyTypeObject pysqlite_BlobType;
-
 PyObject *pysqlite_blob_close(pysqlite_Blob *self);
 
-int pysqlite_blob_setup_types(void);
+int pysqlite_blob_setup_types(PyObject *module);
 void pysqlite_close_all_blobs(pysqlite_Connection *self);
 
 #endif

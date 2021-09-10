@@ -448,7 +448,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_connection_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
         (pysqlite_prepare_protocol_setup_types(module) < 0) ||
-        (pysqlite_blob_setup_types() < 0)
+        (pysqlite_blob_setup_types(module) < 0)
        ) {
         goto error;
     }

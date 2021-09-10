@@ -13,21 +13,6 @@ class _sqlite3.Blob "pysqlite_Blob *" "clinic_state()->BlobType"
 
 
 static void
-remove_blob_from_connection(pysqlite_Blob *self)
-{
-    Py_ssize_t size = PyList_GET_SIZE(self->connection->blobs);
-    for (Py_ssize_t i = 0; i < size; i++) {
-        PyObject *item = PyList_GET_ITEM(self->connection->blobs, i);
-        if (PyWeakref_GetObject(item) == (PyObject *)self) {
-            Py_ssize_t low = i;
-            Py_ssize_t high = low + 1;
-            PyList_SetSlice(self->connection->blobs, low, high, NULL);
-            break;
-        }
-    }
-}
-
-static void
 close_blob(pysqlite_Blob *self)
 {
     if (self->blob) {
@@ -36,19 +21,37 @@ close_blob(pysqlite_Blob *self)
         Py_END_ALLOW_THREADS
         self->blob = NULL;
     }
+}
 
-    remove_blob_from_connection(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)self);
-    }   
+static int
+blob_traverse(pysqlite_Blob *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->connection);
+    return 0;
+}
+
+static int
+blob_clear(pysqlite_Blob *self)
+{
+    Py_CLEAR(self->connection);
+    return 0;
 }
 
 static void
 blob_dealloc(pysqlite_Blob *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+
     close_blob(self);
-    Py_XDECREF(self->connection);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject*)self);
+    }
+    tp->tp_clear((PyObject *)self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 
@@ -58,16 +61,16 @@ blob_dealloc(pysqlite_Blob *self)
  * 0 => error; 1 => ok
  */
 static int
-check_blob(pysqlite_Blob *blob)
+check_blob(pysqlite_Blob *self)
 {
-    if (blob->blob == NULL) {
+    if (!pysqlite_check_connection(self->connection) ||
+        !pysqlite_check_thread(self->connection)) {
+        return 0;
+    }
+    if (self->blob == NULL) {
         pysqlite_state *state = pysqlite_get_state(NULL);
         PyErr_SetString(state->ProgrammingError,
                         "Cannot operate on a closed blob.");
-        return 0;
-    }
-    else if (!pysqlite_check_connection(blob->connection) ||
-             !pysqlite_check_thread(blob->connection)) {
         return 0;
     }
     return 1;
@@ -84,7 +87,9 @@ static PyObject *
 blob_close_impl(pysqlite_Blob *self)
 /*[clinic end generated code: output=848accc20a138d1b input=56c86df5cab22490]*/
 {
-    if (!check_blob(self)) {
+    if (!pysqlite_check_connection(self->connection) ||
+        !pysqlite_check_thread(self->connection))
+    {
         return NULL;
     }
     close_blob(self);
@@ -650,36 +655,48 @@ static PyMethodDef blob_methods[] = {
     {NULL, NULL}
 };
 
-static PySequenceMethods blob_sequence_methods = {
-    .sq_length = (lenfunc)blob_length,
-    .sq_concat = (binaryfunc)blob_concat,
-    .sq_repeat = (ssizeargfunc)blob_repeat,
-    .sq_item = (ssizeargfunc)blob_item,
-    .sq_ass_item = (ssizeobjargproc)blob_ass_item,
-    .sq_contains = (objobjproc)blob_contains,
+static struct PyMemberDef blob_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Blob, in_weakreflist), READONLY},
 };
 
-static PyMappingMethods blob_mapping_methods = {
-    (lenfunc)blob_length,
-    (binaryfunc)blob_subscript,
-    (objobjargproc)blob_ass_subscript,
+static PyType_Slot blob_slots[] = {
+    {Py_tp_dealloc, blob_dealloc},
+    {Py_tp_traverse, blob_traverse},
+    {Py_tp_clear, blob_clear},
+    {Py_tp_methods, blob_methods},
+    {Py_tp_members, blob_members},
+
+    // Sequence protocol
+    {Py_sq_length, blob_length},
+    {Py_sq_concat, blob_concat},
+    {Py_sq_repeat, blob_repeat},
+    {Py_sq_item, blob_item},
+    {Py_sq_ass_item, blob_ass_item},
+    {Py_sq_contains, blob_contains},
+
+    // Mapping protocol
+    {Py_mp_length, blob_length},
+    {Py_mp_subscript, blob_subscript},
+    {Py_mp_ass_subscript, blob_ass_subscript},
+    {0, NULL},
 };
 
-PyTypeObject pysqlite_BlobType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    MODULE_NAME ".Blob",
-    .tp_basicsize = sizeof(pysqlite_Blob),
-    .tp_dealloc = (destructor)blob_dealloc,
-    .tp_as_sequence = &blob_sequence_methods,
-    .tp_as_mapping = &blob_mapping_methods,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_weaklistoffset = offsetof(pysqlite_Blob, in_weakreflist),
-    .tp_methods = blob_methods,
+static PyType_Spec blob_spec = {
+    .name = MODULE_NAME ".Blob",
+    .basicsize = sizeof(pysqlite_Blob),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = blob_slots,
 };
 
-extern int
-pysqlite_blob_setup_types(void)
+int
+pysqlite_blob_setup_types(PyObject *module)
 {
-    pysqlite_BlobType.tp_new = PyType_GenericNew;
-    return PyType_Ready(&pysqlite_BlobType);
+    PyObject *type = PyType_FromModuleAndSpec(module, &blob_spec, NULL);
+    if (type == NULL) {
+        return -1;
+    }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->BlobType = (PyTypeObject *)type;
+    return 0;
 }
