@@ -763,13 +763,10 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(-10, 2)
         self.assertEqual(self.blob.tell(), 90)
 
-    def test_blob_seek_over_size(self):
-        with self.assertRaises(ValueError):
-            self.blob.seek(1000)
-
-    def test_blob_seek_under_size(self):
-        with self.assertRaises(ValueError):
-            self.blob.seek(-10)
+    def test_blob_seek_error(self):
+        for pos in 1000, -10:
+            with self.subTest(pos=pos):
+                self.assertRaises(ValueError, self.blob.seek, pos)
 
     def test_blob_read(self):
         self.assertEqual(self.blob.read(), self.blob_data)
@@ -899,39 +896,29 @@ class BlobTests(unittest.TestCase):
         with self.assertRaises(SystemError):
             b"aaaaa" in self.blob
 
+    def test_blob_context_manager(self):
+        data = b"a" * 100
+        with self.cx.open_blob("test", "blob_col", 1) as blob:
+            blob.write(data)
+        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], data)
 
-class ClosedBlobTests(unittest.TestCase):
-    def setUp(self):
-        self.cx = sqlite.connect(":memory:")
-        self.cx.execute("create table test(id integer primary key, blob_col blob)")
-        self.cx.execute("insert into test(blob_col) values (zeroblob(100))")
-
-    def tearDown(self):
-        self.cx.close()
-
-    def test_closed_blob_read(self):
-        self.blob = self.cx.open_blob("test", "blob_col", 1)
-        self.blob.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            self.blob.read()
-
-    def test_closed_blob_write(self):
-        self.blob = self.cx.open_blob("test", "blob_col", 1)
-        self.blob.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            self.blob.write(b"aaaaaaaaa")
-
-    def test_closed_blob_seek(self):
-        self.blob = self.cx.open_blob("test", "blob_col", 1)
-        self.blob.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            self.blob.seek(10)
-
-    def test_closed_blob_tell(self):
-        self.blob = self.cx.open_blob("test", "blob_col", 1)
-        self.blob.close()
-        with self.assertRaises(sqlite.ProgrammingError):
-            self.blob.tell()
+    def test_blob_closed(self):
+        cx = sqlite.connect(":memory:")
+        cx.execute("create table test(b blob)")
+        cx.execute("insert into test values (zeroblob(100))")
+        blob = cx.open_blob("test", "b", 1)
+        blob.close()
+        ops = [
+            lambda: blob.read(),
+            lambda: blob.write(b""),
+            lambda: blob.seek(0),
+            lambda: blob.tell(),
+        ]
+        msg = "Cannot operate on a closed blob"
+        for op in ops:
+            with self.subTest(op=op):
+                with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+                    op()
 
     def test_closed_blob_read(self):
         con = sqlite.connect(":memory:")
@@ -941,22 +928,6 @@ class ClosedBlobTests(unittest.TestCase):
         con.close()
         with self.assertRaises(sqlite.ProgrammingError):
             blob.read()
-
-
-class BlobContextManagerTests(unittest.TestCase):
-    def setUp(self):
-        self.cx = sqlite.connect(":memory:")
-        self.cx.execute("create table test(id integer primary key, blob_col blob)")
-        self.cx.execute("insert into test(blob_col) values (zeroblob(100))")
-
-    def tearDown(self):
-        self.cx.close()
-
-    def test_blob_ctx_mgr_execute(self):
-        data = b"a" * 100
-        with self.cx.open_blob("test", "blob_col", 1) as blob:
-            blob.write(data)
-        self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], data)
 
 
 class ThreadTests(unittest.TestCase):
@@ -1388,9 +1359,7 @@ class MultiprocessTests(unittest.TestCase):
 
 def suite():
     tests = [
-        BlobContextManagerTests,
         BlobTests,
-        ClosedBlobTests,
         ClosedConTests,
         ClosedCurTests,
         ConnectionTests,
