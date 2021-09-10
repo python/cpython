@@ -123,8 +123,6 @@ PyAPI_FUNC(PyStatus) _Py_PreInitializeFromConfig(
     const PyConfig *config,
     const struct _PyArgv *args);
 
-PyAPI_FUNC(const wchar_t *) _Py_GetStdlibDir(const PyConfig *);
-
 PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
 
 PyAPI_FUNC(PyObject*) _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
