@@ -62,7 +62,7 @@ blob_seterror(pysqlite_Blob *self, int rc)
     // SQLite pre 3.8.8 does not set errors on the connection
     if (rc == SQLITE_ABORT) {
         PyErr_SetString(self->connection->OperationalError,
-                        "Cannot operate on modified blob");
+                        "Cannot operate on an expired blob handle");
         return;
     }
 #endif
