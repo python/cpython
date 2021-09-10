@@ -912,7 +912,7 @@ but may also be used *inside* a :keyword:`!with` statement that is already
 using the same context manager.
 
 :class:`threading.RLock` is an example of a reentrant context manager, as are
-:func:`suppress`, :func:`redirect_stdout` and :func:`chdir`. Here's a very
+:func:`suppress`, :func:`redirect_stdout`, and :func:`chdir`. Here's a very
 simple example of reentrant use::
 
     >>> from contextlib import redirect_stdout
