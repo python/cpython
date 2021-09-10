@@ -1,2 +1,0 @@
-Add keywords to module name completion list.  Rewrite Completions
-section of IDLE doc.

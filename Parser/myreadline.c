@@ -249,10 +249,8 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     if (!Py_LegacyWindowsStdioFlag && sys_stdin == stdin) {
         HANDLE hStdIn, hStdErr;
 
-        _Py_BEGIN_SUPPRESS_IPH
-        hStdIn = (HANDLE)_get_osfhandle(fileno(sys_stdin));
-        hStdErr = (HANDLE)_get_osfhandle(fileno(stderr));
-        _Py_END_SUPPRESS_IPH
+        hStdIn = _Py_get_osfhandle_noraise(fileno(sys_stdin));
+        hStdErr = _Py_get_osfhandle_noraise(fileno(stderr));
 
         if (_get_console_type(hStdIn) == 'r') {
             fflush(sys_stdout);
@@ -317,7 +315,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             return NULL;
         }
         p = pr;
-        int err = my_fgets(tstate, p + n, incr, sys_stdin);
+        int err = my_fgets(tstate, p + n, (int)incr, sys_stdin);
         if (err == 1) {
             // Interrupt
             PyMem_RawFree(p);

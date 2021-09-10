@@ -109,6 +109,11 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.4.3
       *context* was added.
 
+   .. versionchanged:: 3.10
+      HTTPS connection now send an ALPN extension with protocol indicator
+      ``http/1.1`` when no *context* is given. Custom *context* should set
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+
    .. deprecated:: 3.6
 
        *cafile*, *capath* and *cadefault* are deprecated in favor of *context*.
@@ -946,7 +951,7 @@ tracking URIs for which authentication credentials should always be sent.
    If *is_authenticated* is specified as ``True``, *realm* is ignored.
 
 
-.. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
+.. method:: HTTPPasswordMgrWithPriorAuth.find_user_password(realm, authuri)
 
    Same as for :class:`HTTPPasswordMgrWithDefaultRealm` objects
 
@@ -1538,7 +1543,7 @@ some point in the future.
 
 * The :func:`urlopen` and :func:`urlretrieve` functions can cause arbitrarily
   long delays while waiting for a network connection to be set up.  This means
-  that it is difficult to build an interactive Web client using these functions
+  that it is difficult to build an interactive web client using these functions
   without using threads.
 
   .. index::

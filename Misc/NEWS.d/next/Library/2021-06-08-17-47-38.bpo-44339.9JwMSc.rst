@@ -1,0 +1,3 @@
+Change ``math.pow(±0.0, -math.inf)`` to return ``inf`` instead of raising
+``ValueError``. This brings the special-case handling of ``math.pow`` into
+compliance with the IEEE 754 standard.

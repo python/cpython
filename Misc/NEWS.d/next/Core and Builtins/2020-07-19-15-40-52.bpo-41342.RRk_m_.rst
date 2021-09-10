@@ -1,1 +1,0 @@
-:func:`round` with integer argument is now faster (9--60%).

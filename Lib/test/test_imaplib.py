@@ -96,7 +96,7 @@ if ssl:
 
         def get_request(self):
             newsocket, fromaddr = self.socket.accept()
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             connstream = context.wrap_socket(newsocket, server_side=True)
             return connstream, fromaddr
@@ -476,7 +476,7 @@ class NewIMAPTestsMixin():
 
         _, server = self._setup(TimeoutHandler)
         addr = server.server_address[1]
-        with self.assertRaises(socket.timeout):
+        with self.assertRaises(TimeoutError):
             client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):

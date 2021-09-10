@@ -55,6 +55,30 @@ bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return PyBool_FromLong(ok);
 }
 
+static PyObject *
+bool_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    long ok = 0;
+    if (!_PyArg_NoKwnames("bool", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("bool", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    assert(PyType_Check(type));
+    if (nargs) {
+        ok = PyObject_IsTrue(args[0]);
+        if (ok < 0) {
+            return NULL;
+        }
+    }
+    return PyBool_FromLong(ok);
+}
+
 /* Arithmetic operations redefined to return bool if both args are bool. */
 
 static PyObject *
@@ -129,6 +153,13 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
+static void _Py_NO_RETURN
+bool_dealloc(PyObject* Py_UNUSED(ignore))
+{
+    Py_FatalError("deallocating True or False likely caused by "
+                  "a refcount bug in a C extension");
+}
+
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
@@ -136,7 +167,7 @@ PyTypeObject PyBool_Type = {
     "bool",
     sizeof(struct _longobject),
     0,
-    0,                                          /* tp_dealloc */
+    bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -170,6 +201,7 @@ PyTypeObject PyBool_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     bool_new,                                   /* tp_new */
+    .tp_vectorcall = bool_vectorcall,
 };
 
 /* The objects representing bool values False and True */

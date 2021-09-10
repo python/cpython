@@ -1,3 +1,0 @@
-Added a `defaults` parameter to :class:`logging.Formatter`, to allow
-specifying default values for custom fields. Patch by Asaf Alon and Bar
-Harel.

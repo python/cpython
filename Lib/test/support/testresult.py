@@ -9,24 +9,21 @@ import time
 import traceback
 import unittest
 
-import xml.etree.ElementTree as ET
-
-from datetime import datetime
-
 class RegressionTestResult(unittest.TextTestResult):
-    separator1 = '=' * 70 + '\n'
-    separator2 = '-' * 70 + '\n'
+    USE_XML = False
 
     def __init__(self, stream, descriptions, verbosity):
-        super().__init__(stream=stream, descriptions=descriptions, verbosity=0)
+        super().__init__(stream=stream, descriptions=descriptions,
+                         verbosity=2 if verbosity else 0)
         self.buffer = True
-        self.__suite = ET.Element('testsuite')
-        self.__suite.set('start', datetime.utcnow().isoformat(' '))
-
-        self.__e = None
+        if self.USE_XML:
+            from xml.etree import ElementTree as ET
+            from datetime import datetime
+            self.__ET = ET
+            self.__suite = ET.Element('testsuite')
+            self.__suite.set('start', datetime.utcnow().isoformat(' '))
+            self.__e = None
         self.__start_time = None
-        self.__results = []
-        self.__verbose = bool(verbosity)
 
     @classmethod
     def __getId(cls, test):
@@ -42,17 +39,19 @@ class RegressionTestResult(unittest.TextTestResult):
 
     def startTest(self, test):
         super().startTest(test)
-        self.__e = e = ET.SubElement(self.__suite, 'testcase')
+        if self.USE_XML:
+            self.__e = e = self.__ET.SubElement(self.__suite, 'testcase')
         self.__start_time = time.perf_counter()
-        if self.__verbose:
-            self.stream.write(f'{self.getDescription(test)} ... ')
-            self.stream.flush()
 
     def _add_result(self, test, capture=False, **args):
+        if not self.USE_XML:
+            return
         e = self.__e
         self.__e = None
         if e is None:
             return
+        ET = self.__ET
+
         e.set('name', args.pop('name', self.__getId(test)))
         e.set('status', args.pop('status', 'run'))
         e.set('result', args.pop('result', 'completed'))
@@ -80,10 +79,6 @@ class RegressionTestResult(unittest.TextTestResult):
             else:
                 e2.text = str(v)
 
-    def __write(self, c, word):
-        if self.__verbose:
-            self.stream.write(f'{word}\n')
-
     @classmethod
     def __makeErrorDict(cls, err_type, err_value, err_tb):
         if isinstance(err_type, type):
@@ -106,47 +101,30 @@ class RegressionTestResult(unittest.TextTestResult):
     def addError(self, test, err):
         self._add_result(test, True, error=self.__makeErrorDict(*err))
         super().addError(test, err)
-        self.__write('E', 'ERROR')
 
     def addExpectedFailure(self, test, err):
         self._add_result(test, True, output=self.__makeErrorDict(*err))
         super().addExpectedFailure(test, err)
-        self.__write('x', 'expected failure')
 
     def addFailure(self, test, err):
         self._add_result(test, True, failure=self.__makeErrorDict(*err))
         super().addFailure(test, err)
-        self.__write('F', 'FAIL')
 
     def addSkip(self, test, reason):
         self._add_result(test, skipped=reason)
         super().addSkip(test, reason)
-        self.__write('S', f'skipped {reason!r}')
 
     def addSuccess(self, test):
         self._add_result(test)
         super().addSuccess(test)
-        self.__write('.', 'ok')
 
     def addUnexpectedSuccess(self, test):
         self._add_result(test, outcome='UNEXPECTED_SUCCESS')
         super().addUnexpectedSuccess(test)
-        self.__write('u', 'unexpected success')
-
-    def printErrors(self):
-        if self.__verbose:
-            self.stream.write('\n')
-        self.printErrorList('ERROR', self.errors)
-        self.printErrorList('FAIL', self.failures)
-
-    def printErrorList(self, flavor, errors):
-        for test, err in errors:
-            self.stream.write(self.separator1)
-            self.stream.write(f'{flavor}: {self.getDescription(test)}\n')
-            self.stream.write(self.separator2)
-            self.stream.write('%s\n' % err)
 
     def get_xml_element(self):
+        if not self.USE_XML:
+            raise ValueError("USE_XML is false")
         e = self.__suite
         e.set('tests', str(self.testsRun))
         e.set('errors', str(len(self.errors)))
@@ -174,6 +152,9 @@ def get_test_runner(stream, verbosity, capture_output=False):
     return get_test_runner_class(verbosity, capture_output)(stream)
 
 if __name__ == '__main__':
+    import xml.etree.ElementTree as ET
+    RegressionTestResult.USE_XML = True
+
     class TestTests(unittest.TestCase):
         def test_pass(self):
             pass

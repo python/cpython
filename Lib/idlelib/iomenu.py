@@ -5,8 +5,8 @@ import sys
 import tempfile
 import tokenize
 
-import tkinter.filedialog as tkFileDialog
-import tkinter.messagebox as tkMessageBox
+from tkinter import filedialog
+from tkinter import messagebox
 from tkinter.simpledialog import askstring
 
 import idlelib
@@ -147,10 +147,10 @@ class IOBinding:
                     eol_convention = f.newlines
                     converted = True
         except OSError as err:
-            tkMessageBox.showerror("I/O Error", str(err), parent=self.text)
+            messagebox.showerror("I/O Error", str(err), parent=self.text)
             return False
         except UnicodeDecodeError:
-            tkMessageBox.showerror("Decoding Error",
+            messagebox.showerror("Decoding Error",
                                    "File %s\nFailed to Decode" % filename,
                                    parent=self.text)
             return False
@@ -159,7 +159,7 @@ class IOBinding:
             # If the file does not contain line separators, it is None.
             # If the file contains mixed line separators, it is a tuple.
             if eol_convention is not None:
-                tkMessageBox.showwarning("Mixed Newlines",
+                messagebox.showwarning("Mixed Newlines",
                                          "Mixed newlines detected.\n"
                                          "The file will be changed on save.",
                                          parent=self.text)
@@ -187,10 +187,10 @@ class IOBinding:
             return "yes"
         message = "Do you want to save %s before closing?" % (
             self.filename or "this untitled document")
-        confirm = tkMessageBox.askyesnocancel(
+        confirm = messagebox.askyesnocancel(
                   title="Save On Close",
                   message=message,
-                  default=tkMessageBox.YES,
+                  default=messagebox.YES,
                   parent=self.text)
         if confirm:
             reply = "yes"
@@ -249,7 +249,7 @@ class IOBinding:
                 os.fsync(f.fileno())
             return True
         except OSError as msg:
-            tkMessageBox.showerror("I/O Error", str(msg),
+            messagebox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
 
@@ -286,7 +286,7 @@ class IOBinding:
             failed = str(err)
         except UnicodeEncodeError:
             failed = "Invalid encoding '%s'" % enc
-        tkMessageBox.showerror(
+        messagebox.showerror(
             "I/O Error",
             "%s.\nSaving as UTF-8" % failed,
             parent=self.text)
@@ -295,10 +295,10 @@ class IOBinding:
         return chars.encode('utf-8-sig')
 
     def print_window(self, event):
-        confirm = tkMessageBox.askokcancel(
+        confirm = messagebox.askokcancel(
                   title="Print",
                   message="Print to Default Printer",
-                  default=tkMessageBox.OK,
+                  default=messagebox.OK,
                   parent=self.text)
         if not confirm:
             self.text.focus_set()
@@ -336,10 +336,10 @@ class IOBinding:
                          status + output
             if output:
                 output = "Printing command: %s\n" % repr(command) + output
-                tkMessageBox.showerror("Print status", output, parent=self.text)
+                messagebox.showerror("Print status", output, parent=self.text)
         else:  #no printing for this platform
             message = "Printing is not enabled for this platform: %s" % platform
-            tkMessageBox.showinfo("Print status", message, parent=self.text)
+            messagebox.showinfo("Print status", message, parent=self.text)
         if tempfilename:
             os.unlink(tempfilename)
         return "break"
@@ -358,7 +358,7 @@ class IOBinding:
     def askopenfile(self):
         dir, base = self.defaultfilename("open")
         if not self.opendialog:
-            self.opendialog = tkFileDialog.Open(parent=self.text,
+            self.opendialog = filedialog.Open(parent=self.text,
                                                 filetypes=self.filetypes)
         filename = self.opendialog.show(initialdir=dir, initialfile=base)
         return filename
@@ -378,7 +378,7 @@ class IOBinding:
     def asksavefile(self):
         dir, base = self.defaultfilename("save")
         if not self.savedialog:
-            self.savedialog = tkFileDialog.SaveAs(
+            self.savedialog = filedialog.SaveAs(
                     parent=self.text,
                     filetypes=self.filetypes,
                     defaultextension=self.defaultextension)

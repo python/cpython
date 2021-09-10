@@ -31,10 +31,11 @@ TRIGGERS = f".{SEPS}"
 
 class AutoComplete:
 
-    def __init__(self, editwin=None):
+    def __init__(self, editwin=None, tags=None):
         self.editwin = editwin
         if editwin is not None:   # not in subprocess or no-gui test
             self.text = editwin.text
+        self.tags = tags
         self.autocompletewindow = None
         # id of delayed call, and the index of the text insert when
         # the delayed call was issued. If _delayed_completion_id is
@@ -48,7 +49,7 @@ class AutoComplete:
             "extensions", "AutoComplete", "popupwait", type="int", default=0)
 
     def _make_autocomplete_window(self):  # Makes mocking easier.
-        return autocomplete_w.AutoCompleteWindow(self.text)
+        return autocomplete_w.AutoCompleteWindow(self.text, tags=self.tags)
 
     def _remove_autocomplete_window(self, event=None):
         if self.autocompletewindow:

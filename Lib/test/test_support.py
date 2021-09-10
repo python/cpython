@@ -11,6 +11,8 @@ import tempfile
 import textwrap
 import time
 import unittest
+import warnings
+
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -22,6 +24,33 @@ TESTFN = os_helper.TESTFN
 
 
 class TestSupport(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        orig_filter_len = len(warnings.filters)
+        cls._warnings_helper_token = support.ignore_deprecations_from(
+            "test.support.warnings_helper", like=".*used in test_support.*"
+        )
+        cls._test_support_token = support.ignore_deprecations_from(
+            "test.test_support", like=".*You should NOT be seeing this.*"
+        )
+        assert len(warnings.filters) == orig_filter_len + 2
+
+    @classmethod
+    def tearDownClass(cls):
+        orig_filter_len = len(warnings.filters)
+        support.clear_ignored_deprecations(
+            cls._warnings_helper_token,
+            cls._test_support_token,
+        )
+        assert len(warnings.filters) == orig_filter_len - 2
+
+    def test_ignored_deprecations_are_silent(self):
+        """Test support.ignore_deprecations_from() silences warnings"""
+        with warnings.catch_warnings(record=True) as warning_objs:
+            warnings_helper._warn_about_deprecation()
+            warnings.warn("You should NOT be seeing this.", DeprecationWarning)
+            messages = [str(w.message) for w in warning_objs]
+        self.assertEqual(len(messages), 0, messages)
 
     def test_import_module(self):
         import_helper.import_module("ftplib")
@@ -47,7 +76,7 @@ class TestSupport(unittest.TestCase):
         self.assertNotIn("sched", sys.modules)
 
     def test_unlink(self):
-        with open(TESTFN, "w") as f:
+        with open(TESTFN, "w", encoding="utf-8") as f:
             pass
         os_helper.unlink(TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
@@ -79,7 +108,7 @@ class TestSupport(unittest.TestCase):
 
     def test_forget(self):
         mod_filename = TESTFN + '.py'
-        with open(mod_filename, 'w') as f:
+        with open(mod_filename, 'w', encoding="utf-8") as f:
             print('foo = 1', file=f)
         sys.path.insert(0, os.curdir)
         importlib.invalidate_caches()
@@ -292,8 +321,8 @@ class TestSupport(unittest.TestCase):
 
     def test_CleanImport(self):
         import importlib
-        with import_helper.CleanImport("asyncore"):
-            importlib.import_module("asyncore")
+        with import_helper.CleanImport("pprint"):
+            importlib.import_module("pprint")
 
     def test_DirsOnSysPath(self):
         with import_helper.DirsOnSysPath('foo', 'bar'):
@@ -391,14 +420,14 @@ class TestSupport(unittest.TestCase):
 
     def test_check__all__(self):
         extra = {'tempdir'}
-        blacklist = {'template'}
+        not_exported = {'template'}
         support.check__all__(self,
                              tempfile,
                              extra=extra,
-                             blacklist=blacklist)
+                             not_exported=not_exported)
 
         extra = {'TextTestResult', 'installHandler'}
-        blacklist = {'load_tests', "TestProgram", "BaseTestSuite"}
+        not_exported = {'load_tests', "TestProgram", "BaseTestSuite"}
 
         support.check__all__(self,
                              unittest,
@@ -407,7 +436,7 @@ class TestSupport(unittest.TestCase):
                               "unittest.main", "unittest.runner",
                               "unittest.signals", "unittest.async_case"),
                              extra=extra,
-                             blacklist=blacklist)
+                             not_exported=not_exported)
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 

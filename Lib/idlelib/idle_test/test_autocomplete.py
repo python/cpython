@@ -195,7 +195,7 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertFalse(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
-    class dummy_acw():
+    class dummy_acw:
         __init__ = Func()
         show_window = Func(result=False)
         hide_window = Func()

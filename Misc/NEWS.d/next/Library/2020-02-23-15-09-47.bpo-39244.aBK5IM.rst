@@ -1,2 +1,0 @@
-Fixed :class:`multiprocessing.context.get_all_start_methods`
-to properly return the default method first on macOS.

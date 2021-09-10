@@ -1,2 +1,0 @@
-Guard against a NULL pointer dereference within bytearrayobject triggered by
-the ``bytearray() + bytearray()`` operation.

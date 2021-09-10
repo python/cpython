@@ -1,0 +1,3 @@
+The list in :ref:`stable-abi-list` now shows the public name
+:c:struct:`PyFrameObject` rather than ``_frame``. The non-existing
+entry ``_node`` no longer appears in the list.

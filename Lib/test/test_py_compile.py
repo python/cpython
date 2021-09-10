@@ -228,7 +228,7 @@ class PyCompileCLITestCase(unittest.TestCase):
             file.write('x = 123\n')
 
     def tearDown(self):
-        support.rmtree(self.directory)
+        os_helper.rmtree(self.directory)
 
     def pycompilecmd(self, *args, **kwargs):
         # assert_python_* helpers don't return proc object. We'll just use
@@ -276,7 +276,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         rc, stdout, stderr = self.pycompilecmd_failure(self.source_path, should_not_exists)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
-        self.assertIn(b'No such file or directory', stderr)
+        self.assertIn(b'no such file or directory', stderr.lower())
 
     def test_file_not_exists_with_quiet(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')

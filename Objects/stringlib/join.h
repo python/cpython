@@ -155,7 +155,7 @@ done:
     for (i = 0; i < nbufs; i++)
         PyBuffer_Release(&buffers[i]);
     if (buffers != static_buffers)
-        PyMem_FREE(buffers);
+        PyMem_Free(buffers);
     return res;
 }
 

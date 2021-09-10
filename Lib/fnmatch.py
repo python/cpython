@@ -41,7 +41,7 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
-@functools.lru_cache(maxsize=256, typed=True)
+@functools.lru_cache(maxsize=32768, typed=True)
 def _compile_pattern(pat):
     if isinstance(pat, bytes):
         pat_str = str(pat, 'ISO-8859-1')
@@ -52,7 +52,7 @@ def _compile_pattern(pat):
     return re.compile(res).match
 
 def filter(names, pat):
-    """Return the subset of the list NAMES that match PAT."""
+    """Construct a list from those elements of the iterable NAMES that match PAT."""
     result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)

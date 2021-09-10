@@ -1,0 +1,3 @@
+When :class:`http.server.SimpleHTTPRequestHandler` sends a
+``301 (Moved Permanently)`` for a directory path not ending with `/`, add a
+``Content-Length: 0`` header. This improves the behavior for certain clients.

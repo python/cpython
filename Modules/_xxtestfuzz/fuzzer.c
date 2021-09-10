@@ -83,7 +83,7 @@ static int fuzz_builtin_unicode(const char* data, size_t size) {
 PyObject* struct_unpack_method = NULL;
 PyObject* struct_error = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_struct_unpack() {
+static int init_struct_unpack(void) {
     /* Import struct.unpack */
     PyObject* struct_module = PyImport_ImportModule("struct");
     if (struct_module == NULL) {
@@ -146,7 +146,7 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
 
 PyObject* json_loads_method = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_json_loads() {
+static int init_json_loads(void) {
     /* Import json.loads */
     PyObject* json_module = PyImport_ImportModule("json");
     if (json_module == NULL) {
@@ -192,7 +192,7 @@ PyObject* sre_compile_method = NULL;
 PyObject* sre_error_exception = NULL;
 int SRE_FLAG_DEBUG = 0;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_sre_compile() {
+static int init_sre_compile(void) {
     /* Import sre_compile.compile and sre.error */
     PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
     if (sre_compile_module == NULL) {
@@ -284,7 +284,7 @@ static const char* regex_patterns[] = {
 const size_t NUM_PATTERNS = sizeof(regex_patterns) / sizeof(regex_patterns[0]);
 PyObject** compiled_patterns = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_sre_match() {
+static int init_sre_match(void) {
     PyObject* re_module = PyImport_ImportModule("re");
     if (re_module == NULL) {
         return 0;
@@ -339,7 +339,7 @@ static int fuzz_sre_match(const char* data, size_t size) {
 PyObject* csv_module = NULL;
 PyObject* csv_error = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
-static int init_csv_reader() {
+static int init_csv_reader(void) {
     /* Import csv and csv.Error */
     csv_module = PyImport_ImportModule("csv");
     if (csv_module == NULL) {
@@ -354,7 +354,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
         return 0;
     }
     /* Ignore non null-terminated strings since _csv can't handle
-       embeded nulls */
+       embedded nulls */
     if (memchr(data, '\0', size) == NULL) {
         return 0;
     }
@@ -383,7 +383,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     }
 
     /* Ignore csv.Error because we're probably going to generate
-       some bad files (embeded new-lines, unterminated quotes etc) */
+       some bad files (embedded new-lines, unterminated quotes etc) */
     if (PyErr_ExceptionMatches(csv_error)) {
         PyErr_Clear();
     }
@@ -411,9 +411,26 @@ int __lsan_is_turned_off(void) { return 1; }
 
 
 int LLVMFuzzerInitialize(int *argc, char ***argv) {
-    wchar_t* wide_program_name = Py_DecodeLocale(*argv[0], NULL);
-    Py_SetProgramName(wide_program_name);
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    config.install_signal_handlers = 0;
+    PyStatus status;
+    status = PyConfig_SetBytesString(&config, &config.program_name, *argv[0]);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+    PyConfig_Clear(&config);
+
     return 0;
+
+fail:
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
 }
 
 /* Fuzz test interface.
@@ -424,12 +441,7 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
    (And we bitwise or when running multiple tests to verify that normally we
    only return 0.) */
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (!Py_IsInitialized()) {
-        /* LLVMFuzzerTestOneInput is called repeatedly from the same process,
-           with no separate initialization phase, sadly, so we need to
-           initialize CPython ourselves on the first run. */
-        Py_InitializeEx(0);
-    }
+    assert(Py_IsInitialized());
 
     int rv = 0;
 

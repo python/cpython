@@ -5,8 +5,12 @@ from test.support import socket_helper
 from test.support import warnings_helper
 import socket
 import io
-import smtpd
-import asyncore
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import smtpd
+    import asyncore
 
 
 class DummyServer(smtpd.SMTPServer):
@@ -1003,12 +1007,11 @@ class SMTPDChannelTestWithEnableSMTPUTF8True(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {
+        not_exported = {
             "program", "Devnull", "DEBUGSTREAM", "NEWLINE", "COMMASPACE",
             "DATA_SIZE_DEFAULT", "usage", "Options", "parseargs",
-
         }
-        support.check__all__(self, smtpd, blacklist=blacklist)
+        support.check__all__(self, smtpd, not_exported=not_exported)
 
 
 if __name__ == "__main__":

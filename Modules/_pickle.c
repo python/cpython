@@ -9,6 +9,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(pickle_module_doc,
@@ -182,7 +183,7 @@ static struct PyModuleDef _picklemodule;
 static PickleState *
 _Pickle_GetState(PyObject *module)
 {
-    return (PickleState *)PyModule_GetState(module);
+    return (PickleState *)_PyModule_GetState(module);
 }
 
 /* Find the module instance imported in the currently running sub-interpreter
@@ -442,8 +443,8 @@ Pdata_dealloc(Pdata *self)
     while (--i >= 0) {
         Py_DECREF(self->data[i]);
     }
-    PyMem_FREE(self->data);
-    PyObject_Del(self);
+    PyMem_Free(self->data);
+    PyObject_Free(self);
 }
 
 static PyTypeObject Pdata_Type = {
@@ -465,7 +466,7 @@ Pdata_New(void)
     self->mark_set = 0;
     self->fence = 0;
     self->allocated = 8;
-    self->data = PyMem_MALLOC(self->allocated * sizeof(PyObject *));
+    self->data = PyMem_Malloc(self->allocated * sizeof(PyObject *));
     if (self->data)
         return (PyObject *)self;
     Py_DECREF(self);
@@ -726,7 +727,7 @@ static PyTypeObject Unpickler_Type;
 static PyMemoTable *
 PyMemoTable_New(void)
 {
-    PyMemoTable *memo = PyMem_MALLOC(sizeof(PyMemoTable));
+    PyMemoTable *memo = PyMem_Malloc(sizeof(PyMemoTable));
     if (memo == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -735,9 +736,9 @@ PyMemoTable_New(void)
     memo->mt_used = 0;
     memo->mt_allocated = MT_MINSIZE;
     memo->mt_mask = MT_MINSIZE - 1;
-    memo->mt_table = PyMem_MALLOC(MT_MINSIZE * sizeof(PyMemoEntry));
+    memo->mt_table = PyMem_Malloc(MT_MINSIZE * sizeof(PyMemoEntry));
     if (memo->mt_table == NULL) {
-        PyMem_FREE(memo);
+        PyMem_Free(memo);
         PyErr_NoMemory();
         return NULL;
     }
@@ -758,10 +759,10 @@ PyMemoTable_Copy(PyMemoTable *self)
     new->mt_mask = self->mt_mask;
     /* The table we get from _New() is probably smaller than we wanted.
        Free it and allocate one that's the right size. */
-    PyMem_FREE(new->mt_table);
+    PyMem_Free(new->mt_table);
     new->mt_table = PyMem_NEW(PyMemoEntry, self->mt_allocated);
     if (new->mt_table == NULL) {
-        PyMem_FREE(new);
+        PyMem_Free(new);
         PyErr_NoMemory();
         return NULL;
     }
@@ -800,8 +801,8 @@ PyMemoTable_Del(PyMemoTable *self)
         return;
     PyMemoTable_Clear(self);
 
-    PyMem_FREE(self->mt_table);
-    PyMem_FREE(self);
+    PyMem_Free(self->mt_table);
+    PyMem_Free(self);
 }
 
 /* Since entries cannot be deleted from this hashtable, _PyMemoTable_Lookup()
@@ -880,7 +881,7 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, size_t min_size)
     }
 
     /* Deallocate the old table. */
-    PyMem_FREE(oldtable);
+    PyMem_Free(oldtable);
     return 0;
 }
 
@@ -1582,7 +1583,7 @@ _Unpickler_MemoCleanup(UnpicklerObject *self)
     while (--i >= 0) {
         Py_XDECREF(memo[i]);
     }
-    PyMem_FREE(memo);
+    PyMem_Free(memo);
 }
 
 static UnpicklerObject *
@@ -2004,26 +2005,21 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             self->fast_nesting = -1;
             return 0;
         }
-        if (PyDict_GetItemWithError(self->fast_memo, key)) {
-            Py_DECREF(key);
+        int r = PyDict_Contains(self->fast_memo, key);
+        if (r > 0) {
             PyErr_Format(PyExc_ValueError,
                          "fast mode: can't pickle cyclic objects "
                          "including object type %.200s at %p",
                          Py_TYPE(obj)->tp_name, obj);
-            self->fast_nesting = -1;
-            return 0;
         }
-        if (PyErr_Occurred()) {
-            Py_DECREF(key);
-            self->fast_nesting = -1;
-            return 0;
-        }
-        if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
-            Py_DECREF(key);
-            self->fast_nesting = -1;
-            return 0;
+        else if (r == 0) {
+            r = PyDict_SetItem(self->fast_memo, key, Py_None);
         }
         Py_DECREF(key);
+        if (r != 0) {
+            self->fast_nesting = -1;
+            return 0;
+        }
     }
     return 1;
 }
@@ -2574,7 +2570,7 @@ save_picklebuffer(PicklerObject *self, PyObject *obj)
     return 0;
 }
 
-/* A copy of PyUnicode_EncodeRawUnicodeEscape() that also translates
+/* A copy of PyUnicode_AsRawUnicodeEscapeString() that also translates
    backslash and newline characters to \uXXXX escapes. */
 static PyObject *
 raw_unicode_escape(PyObject *obj)
@@ -7549,7 +7545,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
         for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
             Py_XDECREF(new_memo[i]);
         }
-        PyMem_FREE(new_memo);
+        PyMem_Free(new_memo);
     }
     return -1;
 }

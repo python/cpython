@@ -69,6 +69,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(complex___complex____doc__,
+"__complex__($self, /)\n"
+"--\n"
+"\n"
+"Convert this value to exact type complex.");
+
+#define COMPLEX___COMPLEX___METHODDEF    \
+    {"__complex__", (PyCFunction)complex___complex__, METH_NOARGS, complex___complex____doc__},
+
+static PyObject *
+complex___complex___impl(PyComplexObject *self);
+
+static PyObject *
+complex___complex__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return complex___complex___impl(self);
+}
+
 PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
@@ -90,7 +108,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *r = _PyLong_Zero;
+    PyObject *r = NULL;
     PyObject *i = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
@@ -113,4 +131,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=193a37aebaaa5f89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d85094ace15677e input=a9049054013a1b77]*/

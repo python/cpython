@@ -72,7 +72,8 @@ int pysqlite_check_blob(pysqlite_Blob *blob)
 {
 
     if (!blob->blob) {
-        PyErr_SetString(pysqlite_ProgrammingError,
+        pysqlite_state *state = pysqlite_get_state(NULL);
+        PyErr_SetString(state->ProgrammingError,
                         "Cannot operate on a closed blob.");
         return 0;
     } else if (!pysqlite_check_connection(blob->connection) ||
@@ -126,10 +127,10 @@ static PyObject* inner_read(pysqlite_Blob *self, int read_length, int offset)
         /* For some reason after modifying blob the
            error is not set on the connection db. */
         if (rc == SQLITE_ABORT) {
-            PyErr_SetString(pysqlite_OperationalError,
+            PyErr_SetString(self->connection->OperationalError,
                             "Cannot operate on modified blob");
         } else {
-            _pysqlite_seterror(self->connection->db, NULL);
+            _pysqlite_seterror(self->connection->state, self->connection->db);
         }
         return NULL;
     }
@@ -181,10 +182,10 @@ static int write_inner(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int
         /* For some reason after modifying blob the
         error is not set on the connection db. */
         if (rc == SQLITE_ABORT) {
-            PyErr_SetString(pysqlite_OperationalError,
+            PyErr_SetString(self->connection->OperationalError,
                             "Cannot operate on modified blob");
         } else {
-            _pysqlite_seterror(self->connection->db, NULL);
+            _pysqlite_seterror(self->connection->state, self->connection->db);
         }
         return -1;
     }
@@ -443,10 +444,10 @@ static PyObject * pysqlite_blob_subscript(pysqlite_Blob *self, PyObject *item)
                 /* For some reason after modifying blob the
                    error is not set on the connection db. */
                 if (rc == SQLITE_ABORT) {
-                    PyErr_SetString(pysqlite_OperationalError,
+                    PyErr_SetString(self->connection->OperationalError,
                                     "Cannot operate on modified blob");
                 } else {
-                    _pysqlite_seterror(self->connection->db, NULL);
+                    _pysqlite_seterror(self->connection->state, self->connection->db);
                 }
                 PyMem_Free(result_buf);
                 PyMem_Free(data_buff);
@@ -554,10 +555,10 @@ static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyOb
                 /* For some reason after modifying blob the
                    error is not set on the connection db. */
                 if (rc == SQLITE_ABORT) {
-                    PyErr_SetString(pysqlite_OperationalError,
+                    PyErr_SetString(self->connection->OperationalError,
                                     "Cannot operate on modified blob");
                 } else {
-                    _pysqlite_seterror(self->connection->db, NULL);
+                    _pysqlite_seterror(self->connection->state, self->connection->db);
                 }
                 PyMem_Free(data_buff);
                 rc = -1;
@@ -578,10 +579,10 @@ static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyOb
                 /* For some reason after modifying blob the
                    error is not set on the connection db. */
                 if (rc == SQLITE_ABORT) {
-                    PyErr_SetString(pysqlite_OperationalError,
+                    PyErr_SetString(self->connection->OperationalError,
                                     "Cannot operate on modified blob");
                 } else {
-                    _pysqlite_seterror(self->connection->db, NULL);
+                    _pysqlite_seterror(self->connection->state, self->connection->db);
                 }
                 PyMem_Free(data_buff);
                 rc = -1;

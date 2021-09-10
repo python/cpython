@@ -1,2 +1,0 @@
-Fix test_binhex when run twice: it now uses import_fresh_module() to ensure
-that it raises DeprecationWarning each time.

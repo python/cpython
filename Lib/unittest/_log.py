@@ -47,6 +47,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
             logger = self.logger = logging.getLogger(self.logger_name)
         formatter = logging.Formatter(self.LOGGING_FORMAT)
         handler = _CapturingHandler()
+        handler.setLevel(self.level)
         handler.setFormatter(formatter)
         self.watcher = handler.watcher
         self.old_handlers = logger.handlers[:]

@@ -710,6 +710,33 @@ exit:
 
 #endif /* defined(Py_REF_DEBUG) */
 
+PyDoc_STRVAR(sys__getquickenedcount__doc__,
+"_getquickenedcount($module, /)\n"
+"--\n"
+"\n");
+
+#define SYS__GETQUICKENEDCOUNT_METHODDEF    \
+    {"_getquickenedcount", (PyCFunction)sys__getquickenedcount, METH_NOARGS, sys__getquickenedcount__doc__},
+
+static Py_ssize_t
+sys__getquickenedcount_impl(PyObject *module);
+
+static PyObject *
+sys__getquickenedcount(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys__getquickenedcount_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
 "--\n"
@@ -799,6 +826,26 @@ static PyObject *
 sys__current_frames(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys__current_frames_impl(module);
+}
+
+PyDoc_STRVAR(sys__current_exceptions__doc__,
+"_current_exceptions($module, /)\n"
+"--\n"
+"\n"
+"Return a dict mapping each thread\'s identifier to its current raised exception.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__CURRENT_EXCEPTIONS_METHODDEF    \
+    {"_current_exceptions", (PyCFunction)sys__current_exceptions, METH_NOARGS, sys__current_exceptions__doc__},
+
+static PyObject *
+sys__current_exceptions_impl(PyObject *module);
+
+static PyObject *
+sys__current_exceptions(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__current_exceptions_impl(module);
 }
 
 PyDoc_STRVAR(sys_call_tracing__doc__,
@@ -945,4 +992,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=87baa3357293ea65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=855fc93b2347710b input=a9049054013a1b77]*/

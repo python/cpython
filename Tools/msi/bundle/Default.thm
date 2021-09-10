@@ -116,9 +116,9 @@
         <Text X="185" Y="11" Width="-11" Height="36" FontId="1" DisablePrefix="yes">#(loc.SuccessHeader)</Text>
         <Image X="0" Y="0" Width="178" Height="382" ImageFile="SideBar.png"/>
 
-        <Hypertext Name="SuccessText" X="205" Y="71" Width="-71" Height="180" FontId="3" DisablePrefix="yes"></Hypertext>
+        <Hypertext Name="SuccessText" X="205" Y="71" Width="-71" Height="160" FontId="3" DisablePrefix="yes"></Hypertext>
 
-        <Button Name="SuccessMaxPathButton" X="185" Y="-70" Width="-11" Height="81" TabStop="yes" FontId="3" HexStyle="0xE" HideWhenDisabled="yes">#(loc.SuccessMaxPathButton)</Button>
+        <Button Name="SuccessMaxPathButton" X="185" Y="-80" Width="-11" Height="81" TabStop="yes" FontId="3" HexStyle="0xE" HideWhenDisabled="yes">#(loc.SuccessMaxPathButton)</Button>
 
         <Text Name="SuccessRestartText" X="205" Y="-40" Width="-11" Height="34" FontId="3" HideWhenDisabled="yes" DisablePrefix="yes">#(loc.SuccessRestartText)</Text>
         <Button Name="SuccessRestartButton" X="-101" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0" HideWhenDisabled="yes">#(loc.SuccessRestartButton)</Button>

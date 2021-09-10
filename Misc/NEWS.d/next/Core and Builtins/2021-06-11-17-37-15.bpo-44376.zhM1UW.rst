@@ -1,0 +1,1 @@
+Exact integer exponentiation (like ``i**2`` or ``pow(i, 2)``) with a small exponent is much faster, due to reducing overhead in such cases.

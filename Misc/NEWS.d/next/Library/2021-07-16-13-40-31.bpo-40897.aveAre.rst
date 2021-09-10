@@ -1,0 +1,2 @@
+Give priority to using the current class constructor in
+:func:`inspect.signature`. Patch by Weipeng Hong.
