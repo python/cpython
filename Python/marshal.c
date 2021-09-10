@@ -1739,6 +1739,25 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     return w_finish_string(&wf);
 }
 
+PyObject *
+_PyMarshal_WriteForFreezing(PyObject *co, PyObject *nonref)
+{
+    WFILE wf;
+    if (w_init(&wf, NULL, NULL, Py_MARSHAL_VERSION) != 0) {
+        return NULL;
+    }
+    if (w_init_refs(&wf, nonref) != 0) {
+        w_clear(&wf);
+        return NULL;
+    }
+    w_object(co, &wf);
+    if (w_handle_err(&wf)) {
+        w_clear(&wf);
+        return NULL;
+    }
+    return w_finish_string(&wf);
+}
+
 /* And an interface for Python programs... */
 /*[clinic input]
 marshal.dump

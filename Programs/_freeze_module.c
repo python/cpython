@@ -9,6 +9,8 @@
 
 #include <Python.h>
 #include <marshal.h>
+#include <pycore_pystate.h>       // _PyInterpreterState_GET()
+#include "pycore_interp.h"        // PyInterpreterState
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -100,18 +102,109 @@ read_text(const char *inpath)
 }
 
 static PyObject *
+get_ref_counts(void)
+{
+    // The only objects where this currently matters are interned strings.
+    // (See https://github.com/python/cpython/pull/28107#issuecomment-915627148.)
+    // So for now we only get ref counts for those.
+    PyObject *counts = PyDict_New();
+    if (counts == NULL) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->unicode.interned == NULL) {
+        return counts;
+    }
+    // Remember the refcounts.
+    PyObject *obj, *_value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(interp->unicode.interned, &pos, &obj, &_value)) {
+        PyObject *count = PyLong_FromLongLong(obj->ob_refcnt);
+        if (count == NULL) {
+            Py_DECREF(counts);
+            return NULL;
+        }
+        int res = PyDict_SetItem(counts, obj, count);
+        Py_DECREF(count);
+        if (res != 0) {
+            Py_DECREF(counts);
+            return NULL;
+        }
+    }
+    return counts;
+}
+
+static PyObject *
+get_nonref_objects(PyObject *before)
+{
+    PyObject *nonref = PySet_New(NULL);
+    if (nonref == NULL) {
+        return NULL;
+    }
+    PyObject *obj, *count;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(before, &pos, &obj, &count)) {
+        Py_ssize_t old = PyLong_AsLongLong(count);
+        if (old == -1 && PyErr_Occurred()) {
+            Py_DECREF(nonref);
+            return NULL;
+        }
+        // We take into account the reference "before" holds.
+        if (obj->ob_refcnt == old + 2) {
+            if (PySet_Add(nonref, obj) != 0) {
+                Py_DECREF(nonref);
+                return NULL;
+            }
+        }
+    }
+    return nonref;
+}
+
+extern PyObject* _PyMarshal_WriteForFreezing(PyObject *code, PyObject *nonref);
+
+static PyObject *
 compile_and_marshal(const char *name, const char *text)
 {
+    // To avoid unnecessary duplication during marshaling, all "complex"
+    // objects get stored in a lookup table that allows them to be
+    // referenced by later entries using an integer ID.  However, this
+    // optimization is not applied if the refcount is exactly 1.
+    //
+    // The problem is that any objects cached during runtime
+    // initialization will get re-used in the code object during
+    // compilation.  This means some objects will have a refcount > 1,
+    // even though there is only one instance within the code object.
+    // This is problematic it this happens inconsistently, such as only
+    // in non-debug builds (e.g. init_filters() in Python/_warnings.c);
+    // the generated marshal data we are freezing will be different even
+    // though the Python code hasn't changed.
+    //
+    // We address this by giving marshal the set of objects with
+    // refcount > 1 that actually only get used once in the code object.
+    // This mostly consists of interned strings and small integers.
+    PyObject *refs_before = get_ref_counts();
+    if (refs_before == NULL) {
+        return NULL;
+    }
+
     char *filename = (char *) malloc(strlen(name) + 10);
     sprintf(filename, "<frozen %s>", name);
     PyObject *code = Py_CompileStringExFlags(text, filename,
                                              Py_file_input, NULL, 0);
     free(filename);
     if (code == NULL) {
+        Py_DECREF(refs_before);
         return NULL;
     }
 
-    PyObject *marshalled = PyMarshal_WriteObjectToString(code, Py_MARSHAL_VERSION);
+    PyObject *nonref = get_nonref_objects(refs_before);
+    Py_DECREF(refs_before);
+    if (nonref == NULL) {
+        return NULL;
+    }
+
+    PyObject *marshalled = _PyMarshal_WriteForFreezing(code, nonref);
+    Py_DECREF(nonref);
     Py_CLEAR(code);
     if (marshalled == NULL) {
         return NULL;
