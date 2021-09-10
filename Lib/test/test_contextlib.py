@@ -1117,8 +1117,9 @@ class TestChdir(unittest.TestCase):
         try:
             with chdir(target):
                 assert os.getcwd() == target
-                raise RuntimeError()
-        except RuntimeError:
+                raise RuntimeError("boom")
+        except RuntimeError as re:
+            assert str(re) == "boom"
             pass
         assert os.getcwd() == old_cwd
 
