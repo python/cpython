@@ -117,7 +117,7 @@ pysqlite_close_all_blobs(pysqlite_Connection *self)
         PyObject *weakref = PyList_GET_ITEM(self->blobs, i);
         PyObject *blob = PyWeakref_GetObject(weakref);
         if (!Py_IsNone(blob)) {
-            blob_close_impl((pysqlite_Blob *)blob);
+            close_blob((pysqlite_Blob *)blob);
         }
     }
 }
