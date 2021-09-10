@@ -93,30 +93,8 @@ class TestLoader(object):
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
-    # XXX After Python 3.5, remove backward compatibility hacks for
-    # use_load_tests deprecation via *args and **kws.  See issue 16662.
-    def loadTestsFromModule(self, module, *args, pattern=None, **kws):
+    def loadTestsFromModule(self, module, *, pattern=None):
         """Return a suite of all test cases contained in the given module"""
-        # This method used to take an undocumented and unofficial
-        # use_load_tests argument.  For backward compatibility, we still
-        # accept the argument (which can also be the first position) but we
-        # ignore it and issue a deprecation warning if it's present.
-        if len(args) > 0 or 'use_load_tests' in kws:
-            warnings.warn('use_load_tests is deprecated and ignored',
-                          DeprecationWarning)
-            kws.pop('use_load_tests', None)
-        if len(args) > 1:
-            # Complain about the number of arguments, but don't forget the
-            # required `module` argument.
-            complaint = len(args) + 1
-            raise TypeError('loadTestsFromModule() takes 1 positional argument but {} were given'.format(complaint))
-        if len(kws) != 0:
-            # Since the keyword arguments are unsorted (see PEP 468), just
-            # pick the alphabetically sorted first argument to complain about,
-            # if multiple were given.  At least the error message will be
-            # predictable.
-            complaint = sorted(kws)[0]
-            raise TypeError("loadTestsFromModule() got an unexpected keyword argument '{}'".format(complaint))
         tests = []
         for name in dir(module):
             obj = getattr(module, name)

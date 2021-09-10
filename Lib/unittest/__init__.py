@@ -67,9 +67,6 @@ from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
 
-# deprecated
-_TextTestResult = TextTestResult
-
 # There are no tests here, so don't try to run anything discovered from
 # introspecting the symbols (e.g. FunctionTestCase). Instead, all our
 # tests come from within unittest.test.
