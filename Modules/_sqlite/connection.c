@@ -441,21 +441,6 @@ error:
     return NULL;
 }
 
-static void pysqlite_close_all_blobs(pysqlite_Connection *self)
-{
-    int i;
-    PyObject *weakref;
-    PyObject *blob;
-
-    for (i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
-        weakref = PyList_GET_ITEM(self->blobs, i);
-        blob = PyWeakref_GetObject(weakref);
-        if (blob != Py_None) {
-            pysqlite_blob_close((pysqlite_Blob*)blob);
-        }
-    }
-}
-
 /*[clinic input]
 _sqlite3.Connection.close as pysqlite_connection_close
 

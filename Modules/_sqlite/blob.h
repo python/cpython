@@ -22,5 +22,6 @@ int pysqlite_blob_init(pysqlite_Blob* self, pysqlite_Connection* connection,
 PyObject* pysqlite_blob_close(pysqlite_Blob *self);
 
 int pysqlite_blob_setup_types(void);
+void pysqlite_close_all_blobs(pysqlite_Connection *self);
 
 #endif

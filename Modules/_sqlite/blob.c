@@ -1,6 +1,15 @@
 #include "blob.h"
 #include "util.h"
 
+#define clinic_state() (pysqlite_get_state(NULL))
+#include "clinic/blob.c.h"
+#undef clinic_state
+
+/*[clinic input]
+module _sqlite3
+class _sqlite3.Blob "pysqlite_Blob *" "clinic_state()->BlobType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=908d3e16a45f8da7]*/
 
 int pysqlite_blob_init(pysqlite_Blob *self, pysqlite_Connection* connection,
                        sqlite3_blob *blob)
@@ -85,7 +94,15 @@ int pysqlite_check_blob(pysqlite_Blob *blob)
 }
 
 
-PyObject* pysqlite_blob_close(pysqlite_Blob *self)
+/*[clinic input]
+_sqlite3.Blob.close as blob_close
+
+Close blob.
+[clinic start generated code]*/
+
+static PyObject *
+blob_close_impl(pysqlite_Blob *self)
+/*[clinic end generated code: output=848accc20a138d1b input=56c86df5cab22490]*/
 {
 
     if (!pysqlite_check_blob(self)) {
@@ -96,6 +113,21 @@ PyObject* pysqlite_blob_close(pysqlite_Blob *self)
     Py_RETURN_NONE;
 };
 
+void
+pysqlite_close_all_blobs(pysqlite_Connection *self)
+{
+    int i;
+    PyObject *weakref;
+    PyObject *blob;
+
+    for (i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
+        weakref = PyList_GET_ITEM(self->blobs, i);
+        blob = PyWeakref_GetObject(weakref);
+        if (blob != Py_None) {
+            blob_close_impl((pysqlite_Blob*)blob);
+        }
+    }
+}
 
 static Py_ssize_t pysqlite_blob_length(pysqlite_Blob *self)
 {
@@ -138,14 +170,20 @@ static PyObject* inner_read(pysqlite_Blob *self, int read_length, int offset)
 }
 
 
-PyObject* pysqlite_blob_read(pysqlite_Blob *self, PyObject *args)
-{
-    int read_length = -1;
-    PyObject *buffer;
+/*[clinic input]
+_sqlite3.Blob.read as blob_read
 
-    if (!PyArg_ParseTuple(args, "|i", &read_length)) {
-        return NULL;
-    }
+    read_length: int = -1
+    /
+
+Read data from blob.
+[clinic start generated code]*/
+
+static PyObject *
+blob_read_impl(pysqlite_Blob *self, int read_length)
+/*[clinic end generated code: output=9c4881a77860b216 input=753a766082129348]*/
+{
+    PyObject *buffer;
 
     if (!pysqlite_check_blob(self)) {
         return NULL;
@@ -193,56 +231,62 @@ static int write_inner(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int
 }
 
 
-PyObject* pysqlite_blob_write(pysqlite_Blob *self, PyObject *data)
+/*[clinic input]
+_sqlite3.Blob.write as blob_write
+
+    data_buffer: Py_buffer
+    /
+
+Write data to blob.
+[clinic start generated code]*/
+
+static PyObject *
+blob_write_impl(pysqlite_Blob *self, Py_buffer *data_buffer)
+/*[clinic end generated code: output=dc8da6900b969799 input=8597402caf368add]*/
 {
-    Py_buffer data_buffer;
     int rc;
 
-    if (PyObject_GetBuffer(data, &data_buffer, PyBUF_SIMPLE) < 0) {
-        return NULL;
-    }
-
-    if (data_buffer.len > INT_MAX) {
+    if (data_buffer->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "data longer than INT_MAX bytes");
-        PyBuffer_Release(&data_buffer);
         return NULL;
     }
 
-    if (data_buffer.len > self->length - self->offset) {
+    if (data_buffer->len > self->length - self->offset) {
         PyErr_SetString(PyExc_ValueError,
                         "data longer than blob length");
-        PyBuffer_Release(&data_buffer);
         return NULL;
     }
 
     if (!pysqlite_check_blob(self)) {
-        PyBuffer_Release(&data_buffer);
         return NULL;
     }
 
-    rc = write_inner(self, data_buffer.buf, data_buffer.len, self->offset);
+    rc = write_inner(self, data_buffer->buf, data_buffer->len, self->offset);
 
     if (rc == 0) {
-        self->offset += (int)data_buffer.len;
-        PyBuffer_Release(&data_buffer);
+        self->offset += (int)data_buffer->len;
         Py_RETURN_NONE;
     } else {
-        PyBuffer_Release(&data_buffer);
         return NULL;
     }
 }
 
 
-PyObject* pysqlite_blob_seek(pysqlite_Blob *self, PyObject *args)
+/*[clinic input]
+_sqlite3.Blob.seek as blob_seek
+
+    offset: int
+    from_what: int = 0
+    /
+
+Change the access position for a blob.
+[clinic start generated code]*/
+
+static PyObject *
+blob_seek_impl(pysqlite_Blob *self, int offset, int from_what)
+/*[clinic end generated code: output=c7f07cd9e1d90bf7 input=f8dae77055129be3]*/
 {
-    int offset, from_what = 0;
-
-    if (!PyArg_ParseTuple(args, "i|i", &offset, &from_what)) {
-        return NULL;
-    }
-
-
     if (!pysqlite_check_blob(self)) {
         return NULL;
     }
@@ -282,7 +326,15 @@ overflow:
 }
 
 
-PyObject* pysqlite_blob_tell(pysqlite_Blob *self)
+/*[clinic input]
+_sqlite3.Blob.tell as blob_tell
+
+Return current access position for a blob.
+[clinic start generated code]*/
+
+static PyObject *
+blob_tell_impl(pysqlite_Blob *self)
+/*[clinic end generated code: output=3d3ba484a90b3a99 input=aa1660f9aee18be4]*/
 {
     if (!pysqlite_check_blob(self)) {
         return NULL;
@@ -292,7 +344,15 @@ PyObject* pysqlite_blob_tell(pysqlite_Blob *self)
 }
 
 
-PyObject* pysqlite_blob_enter(pysqlite_Blob *self)
+/*[clinic input]
+_sqlite3.Blob.__enter__ as blob_enter
+
+Blob context manager enter.
+[clinic start generated code]*/
+
+static PyObject *
+blob_enter_impl(pysqlite_Blob *self)
+/*[clinic end generated code: output=4fd32484b071a6cd input=fe4842c3c582d5a7]*/
 {
     if (!pysqlite_check_blob(self)) {
         return NULL;
@@ -303,14 +363,28 @@ PyObject* pysqlite_blob_enter(pysqlite_Blob *self)
 }
 
 
-PyObject* pysqlite_blob_exit(pysqlite_Blob *self, PyObject *args)
+/*[clinic input]
+_sqlite3.Blob.__exit__ as blob_exit
+
+    type: object
+    val: object
+    tb: object
+    /
+
+Blob context manager exit.
+[clinic start generated code]*/
+
+static PyObject *
+blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
+               PyObject *tb)
+/*[clinic end generated code: output=fc86ceeb2b68c7b2 input=575d9ecea205f35f]*/
 {
     PyObject *res;
     if (!pysqlite_check_blob(self)) {
         return NULL;
     }
 
-    res = pysqlite_blob_close(self);
+    res = blob_close_impl(self);
     if (!res) {
         return NULL;
     }
@@ -602,20 +676,13 @@ static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyOb
 
 
 static PyMethodDef blob_methods[] = {
-    {"read", (PyCFunction)pysqlite_blob_read, METH_VARARGS,
-        PyDoc_STR("read data from blob")},
-    {"write", (PyCFunction)pysqlite_blob_write, METH_O,
-        PyDoc_STR("write data to blob")},
-    {"close", (PyCFunction)pysqlite_blob_close, METH_NOARGS,
-        PyDoc_STR("close blob")},
-    {"seek", (PyCFunction)pysqlite_blob_seek, METH_VARARGS,
-        PyDoc_STR("change blob current offset")},
-    {"tell", (PyCFunction)pysqlite_blob_tell, METH_NOARGS,
-        PyDoc_STR("return blob current offset")},
-    {"__enter__", (PyCFunction)pysqlite_blob_enter, METH_NOARGS,
-        PyDoc_STR("blob context manager enter")},
-    {"__exit__", (PyCFunction)pysqlite_blob_exit, METH_VARARGS,
-        PyDoc_STR("blob context manager exit")},
+    BLOB_CLOSE_METHODDEF
+    BLOB_ENTER_METHODDEF
+    BLOB_EXIT_METHODDEF
+    BLOB_READ_METHODDEF
+    BLOB_SEEK_METHODDEF
+    BLOB_TELL_METHODDEF
+    BLOB_WRITE_METHODDEF
     {NULL, NULL}
 };
 
