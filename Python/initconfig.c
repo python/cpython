@@ -2123,9 +2123,15 @@ _PyConfig_InitImportConfig(PyConfig *config)
     /* -X frozen_modules=[on|off] */
     const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
     if (value == NULL) {
-        // Use a meaningful default.
-        // XXX Add the logic.
+        // Use a meaningful default:
+        // * "off" for core development (running in a local repo)
+        // * "on" otherwise (e.g. for release builds)
+#ifdef Py_DEBUG
+        // For now, Py_DEBUG is an adequate approximation of core development.
         config->use_frozen_modules = false;
+#else
+        config->use_frozen_modules = true;
+#endif
     }
     else if (wcscmp(value, L"on") == 0) {
         config->use_frozen_modules = true;
