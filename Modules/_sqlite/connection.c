@@ -374,25 +374,29 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
     return cursor;
 }
 
-PyObject* pysqlite_connection_blob(pysqlite_Connection *self, PyObject *args,
-                                   PyObject *kwargs)
+/*[clinic input]
+_sqlite3.Connection.open_blob as pysqlite_connection_open_blob
+
+    table: str
+    column: str
+    row: int
+    *
+    readonly: bool(accept={int}) = False
+    dbname: str = "main"
+
+Return a blob object. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
+                                   const char *table, const char *column,
+                                   int row, int readonly, const char *dbname)
+/*[clinic end generated code: output=54dfadc6f1283245 input=38c93f0f7d73a1ef]*/
 {
-    static char *kwlist[] = {"table", "column", "row", "readonly",
-                             "dbname", NULL};
     int rc;
-    const char *dbname = "main", *table, *column;
-    long long row;
-    int readonly = 0;
     sqlite3_blob *blob;
     pysqlite_Blob *pyblob = NULL;
     PyObject *weakref;
-
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ssL|$ps", kwlist,
-                                     &table, &column, &row, &readonly,
-                                     &dbname)) {
-        return NULL;
-    }
 
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_open(self->db, dbname, table, column, row,
@@ -1957,8 +1961,6 @@ static PyGetSetDef connection_getset[] = {
 };
 
 static PyMethodDef connection_methods[] = {
-    {"open_blob", (PyCFunction)pysqlite_connection_blob, METH_VARARGS|METH_KEYWORDS,
-        PyDoc_STR("return a blob object")},
     PYSQLITE_CONNECTION_BACKUP_METHODDEF
     PYSQLITE_CONNECTION_CLOSE_METHODDEF
     PYSQLITE_CONNECTION_COMMIT_METHODDEF
@@ -1975,6 +1977,7 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_INTERRUPT_METHODDEF
     PYSQLITE_CONNECTION_ITERDUMP_METHODDEF
     PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
+    PYSQLITE_CONNECTION_OPEN_BLOB_METHODDEF
     PYSQLITE_CONNECTION_ROLLBACK_METHODDEF
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
