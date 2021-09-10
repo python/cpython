@@ -378,27 +378,34 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 _sqlite3.Connection.open_blob as pysqlite_connection_open_blob
 
     table: str
-    column: str
+    column as col: str
     row: int
+    /
     *
     readonly: bool(accept={int}) = False
-    dbname: str = "main"
+    name: str = "main"
 
 Return a blob object. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
-                                   const char *table, const char *column,
-                                   int row, int readonly, const char *dbname)
-/*[clinic end generated code: output=54dfadc6f1283245 input=38c93f0f7d73a1ef]*/
+                                   const char *table, const char *col,
+                                   int row, int readonly, const char *name)
+/*[clinic end generated code: output=5c11d18e7eb629ef input=9192dd28146d4e14]*/
 {
-    int rc;
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    int rc, len;
     sqlite3_blob *blob;
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_open(self->db, dbname, table, column, row, !readonly,
-                           &blob);
+    rc = sqlite3_blob_open(self->db, name, table, col, row, !readonly, &blob);
+    if (rc == SQLITE_OK) {
+        len = sqlite3_blob_bytes(blob);
+    }
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -406,18 +413,19 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    pysqlite_Blob *pyblob = PyObject_New(pysqlite_Blob, &pysqlite_BlobType);
-    if (pyblob == NULL) {
+    pysqlite_Blob *obj = PyObject_New(pysqlite_Blob, &pysqlite_BlobType);
+    if (obj == NULL) {
         goto error;
     }
 
-    rc = pysqlite_blob_init(pyblob, self, blob);
-    if (rc < 0) {
-        goto error;
-    }
+    obj->connection = (pysqlite_Connection *)Py_NewRef(self);
+    obj->blob = blob;
+    obj->offset = 0;
+    obj->length = len;
+    obj->in_weakreflist = NULL;
 
     // Add our blob to connection blobs list
-    PyObject *weakref = PyWeakref_NewRef((PyObject *)pyblob, NULL);
+    PyObject *weakref = PyWeakref_NewRef((PyObject *)obj, NULL);
     if (weakref == NULL) {
         goto error;
     }
@@ -427,10 +435,11 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
         goto error;
     }
 
-    return (PyObject *)pyblob;
+    return (PyObject *)obj;
 
 error:
-    Py_XDECREF(pyblob);
+    Py_XDECREF(obj);
+
     Py_BEGIN_ALLOW_THREADS
     sqlite3_blob_close(blob);
     Py_END_ALLOW_THREADS

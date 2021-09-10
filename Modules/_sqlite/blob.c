@@ -11,24 +11,6 @@ class _sqlite3.Blob "pysqlite_Blob *" "clinic_state()->BlobType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=908d3e16a45f8da7]*/
 
-int
-pysqlite_blob_init(pysqlite_Blob *self, pysqlite_Connection *connection,
-                   sqlite3_blob *blob)
-{
-    self->connection = (pysqlite_Connection *)Py_NewRef(connection);
-    self->offset = 0;
-    self->blob = blob;
-    self->in_weakreflist = NULL;
-
-    Py_BEGIN_ALLOW_THREADS
-    self->length = sqlite3_blob_bytes(self->blob);
-    Py_END_ALLOW_THREADS
-
-    if (!pysqlite_check_thread(self->connection)) {
-        return -1;
-    }
-    return 0;
-}
 
 static void
 remove_blob_from_connection(pysqlite_Blob *self)

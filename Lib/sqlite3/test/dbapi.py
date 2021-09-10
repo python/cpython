@@ -824,7 +824,7 @@ class BlobTests(unittest.TestCase):
 
     def test_blob_open_with_bad_db(self):
         with self.assertRaises(sqlite.OperationalError):
-            self.cx.open_blob("test", "blob_col", 1, dbname="notexisintg")
+            self.cx.open_blob("test", "blob_col", 1, name="notexisintg")
 
     def test_blob_open_with_bad_table(self):
         with self.assertRaises(sqlite.OperationalError):

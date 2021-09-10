@@ -141,8 +141,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_connection_open_blob__doc__,
-"open_blob($self, /, table, column, row, *, readonly=False,\n"
-"          dbname=\'main\')\n"
+"open_blob($self, table, column, row, /, *, readonly=False, name=\'main\')\n"
 "--\n"
 "\n"
 "Return a blob object. Non-standard.");
@@ -152,29 +151,29 @@ PyDoc_STRVAR(pysqlite_connection_open_blob__doc__,
 
 static PyObject *
 pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
-                                   const char *table, const char *column,
-                                   int row, int readonly, const char *dbname);
+                                   const char *table, const char *col,
+                                   int row, int readonly, const char *name);
 
 static PyObject *
 pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"table", "column", "row", "readonly", "dbname", NULL};
+    static const char * const _keywords[] = {"", "", "", "readonly", "name", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "open_blob", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
-    const char *column;
+    const char *col;
     int row;
     int readonly = 0;
-    const char *dbname = "main";
+    const char *name = "main";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open_blob", "argument 'table'", "str", args[0]);
+        _PyArg_BadArgument("open_blob", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t table_length;
@@ -187,15 +186,15 @@ pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, 
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("open_blob", "argument 'column'", "str", args[1]);
+        _PyArg_BadArgument("open_blob", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t column_length;
-    column = PyUnicode_AsUTF8AndSize(args[1], &column_length);
-    if (column == NULL) {
+    Py_ssize_t col_length;
+    col = PyUnicode_AsUTF8AndSize(args[1], &col_length);
+    if (col == NULL) {
         goto exit;
     }
-    if (strlen(column) != (size_t)column_length) {
+    if (strlen(col) != (size_t)col_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
@@ -216,20 +215,20 @@ pysqlite_connection_open_blob(pysqlite_Connection *self, PyObject *const *args, 
         }
     }
     if (!PyUnicode_Check(args[4])) {
-        _PyArg_BadArgument("open_blob", "argument 'dbname'", "str", args[4]);
+        _PyArg_BadArgument("open_blob", "argument 'name'", "str", args[4]);
         goto exit;
     }
-    Py_ssize_t dbname_length;
-    dbname = PyUnicode_AsUTF8AndSize(args[4], &dbname_length);
-    if (dbname == NULL) {
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[4], &name_length);
+    if (name == NULL) {
         goto exit;
     }
-    if (strlen(dbname) != (size_t)dbname_length) {
+    if (strlen(name) != (size_t)name_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = pysqlite_connection_open_blob_impl(self, table, column, row, readonly, dbname);
+    return_value = pysqlite_connection_open_blob_impl(self, table, col, row, readonly, name);
 
 exit:
     return return_value;
@@ -911,4 +910,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=2c37726d47594c3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a392a91a234a8fc8 input=a9049054013a1b77]*/
