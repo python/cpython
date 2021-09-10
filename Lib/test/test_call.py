@@ -39,7 +39,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
     def test_varargs3(self):
-        msg = r"^from_bytes\(\) takes exactly 2 positional arguments \(3 given\)"
+        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
