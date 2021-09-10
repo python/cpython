@@ -4,6 +4,10 @@
 #include "sqlite3.h"
 #include "connection.h"
 
+#define BLOB_SEEK_START 0
+#define BLOB_SEEK_CUR   1
+#define BLOB_SEEK_END   2
+
 typedef struct {
     PyObject_HEAD
     pysqlite_Connection *connection;

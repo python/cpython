@@ -393,6 +393,9 @@ static int add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3008003
     ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
 #endif
+    ret += PyModule_AddIntMacro(module, BLOB_SEEK_START);
+    ret += PyModule_AddIntMacro(module, BLOB_SEEK_CUR);
+    ret += PyModule_AddIntMacro(module, BLOB_SEEK_END);
     return ret;
 }
 

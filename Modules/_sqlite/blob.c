@@ -266,22 +266,24 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
     }
 
     switch (origin) {
-        case 0:  // relative to blob begin
+        case BLOB_SEEK_START:
             break;
-        case 1:  // relative to current position
+        case BLOB_SEEK_CUR:
             if (offset > INT_MAX - self->offset) {
                 goto overflow;
             }
             offset = self->offset + offset;
             break;
-        case 2:  // relative to blob end
+        case BLOB_SEEK_END:
             if (offset > INT_MAX - self->length) {
                 goto overflow;
             }
             offset = self->length + offset;
             break;
         default:
-            PyErr_SetString(PyExc_ValueError, "'origin' should be 0, 1 or 2");
+            PyErr_SetString(PyExc_ValueError,
+                            "'origin' should be 'BLOB_SEEK_START', "
+                            "'BLOB_SEEK_CUR', or 'BLOB_SEEK_END'");
             return NULL;
     }
 
