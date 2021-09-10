@@ -3100,7 +3100,7 @@ AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
 # Haiku system library
-AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [] $LIBS)
+AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
