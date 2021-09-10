@@ -563,7 +563,7 @@ def _freeze_module(frozenid, pyfile, frozenfile):
     tmpfile = frozenfile + '.new'
 
     argv = [TOOL, frozenid, pyfile, tmpfile]
-    print('#', '  '.join(os.path.relpath(a) for a in argv))
+    print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)
     try:
         subprocess.run(argv, check=True)
     except subprocess.CalledProcessError:
