@@ -2054,7 +2054,7 @@ pysleep(_PyTime_t secs)
     _PyTime_t deadline, monotonic;
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
-    struct timespec timeout;
+    struct timespec timeout_abs;
 #else
     struct timeval timeout;
 #endif
@@ -2071,7 +2071,7 @@ pysleep(_PyTime_t secs)
     }
     deadline = monotonic + secs;
 #if defined(HAVE_CLOCK_NANOSLEEP) && !defined(MS_WINDOWS)
-    if (_PyTime_AsTimespec(deadline, &timeout) < 0) {
+    if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
         return -1;
     }
 #endif
@@ -2086,7 +2086,7 @@ pysleep(_PyTime_t secs)
 
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
-        err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout, NULL);
+        err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
 #else
         err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
 #endif
