@@ -1034,9 +1034,8 @@ Internal types
       :attr:`f_code` is the code object being executed in this frame; :attr:`f_locals`
       is the dictionary used to look up local variables; :attr:`f_globals` is used for
       global variables; :attr:`f_builtins` is used for built-in (intrinsic) names;
-      :attr:`f_lasti` gives the precise instruction (it represents a wordcode index, which
-      means that to get an index into the bytecode string of the code object it needs to be
-      multiplied by 2).
+      :attr:`f_lasti` gives the precise instruction (this is an index into the
+      bytecode string of the code object).
 
       Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
       ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
