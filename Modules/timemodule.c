@@ -2080,7 +2080,7 @@ pysleep(_PyTime_t secs)
     err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
     Py_END_ALLOW_THREADS
 
-    if (err != EINTR) {
+    if ((err != EINTR) && (err != 0)) {
         errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
