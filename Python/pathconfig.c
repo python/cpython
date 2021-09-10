@@ -8,7 +8,6 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _Py_GetMainConfig()
 #include <wchar.h>
-#include <stdbool.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #endif
@@ -33,17 +32,6 @@ copy_wstr(wchar_t **dst, const wchar_t *src)
     }
     else {
         *dst = NULL;
-    }
-    return 0;
-}
-
-static size_t
-find_basename(const wchar_t *filename)
-{
-    for (size_t i = wcslen(filename); i > 0; --i) {
-        if (filename[i] == SEP) {
-            return i + 1;
-        }
     }
     return 0;
 }
@@ -656,50 +644,6 @@ wchar_t *
 Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;
-}
-
-
-static const wchar_t *
-get_executable(const PyConfig *fallback)
-{
-    const wchar_t *executable = Py_GetProgramFullPath();
-    if (executable != NULL) {
-        return executable;
-    }
-    if (fallback == NULL) {
-        fallback = _Py_GetMainConfig();
-        if (fallback == NULL) {
-            return NULL;
-        }
-    }
-    return fallback->executable;
-}
-
-bool
-_Py_IsDevelopmentEnv(const PyConfig *fallback)
-{
-    const wchar_t *executable = get_executable(fallback);
-    if (executable == NULL) {
-        return false;
-    }
-    size_t len = find_basename(executable);
-    if (wcscmp(executable + len, L"python") != 0) {
-        if (wcscmp(executable + len, L"python.exe") != 0) {
-            return false;
-        }
-    }
-    /* If dirname() is the same for both then it is a local (dev) build. */
-    const wchar_t *stdlib = _Py_GetStdlibDir(fallback);
-    if (stdlib == NULL) {
-        return false;
-    }
-    if (len != find_basename(stdlib)) {
-        return false;
-    }
-    if (wcsncmp(stdlib, executable, len) != 0) {
-        return false;
-    }
-    return true;
 }
 
 
