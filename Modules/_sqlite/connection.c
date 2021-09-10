@@ -395,12 +395,10 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
 {
     int rc;
     sqlite3_blob *blob;
-    pysqlite_Blob *pyblob = NULL;
-    PyObject *weakref;
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_open(self->db, dbname, table, column, row,
-                           !readonly, &blob);
+    rc = sqlite3_blob_open(self->db, dbname, table, column, row, !readonly,
+                           &blob);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -408,24 +406,24 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    pyblob = PyObject_New(pysqlite_Blob, &pysqlite_BlobType);
-    if (!pyblob) {
+    pysqlite_Blob *pyblob = PyObject_New(pysqlite_Blob, &pysqlite_BlobType);
+    if (pyblob == NULL) {
         goto error;
     }
 
     rc = pysqlite_blob_init(pyblob, self, blob);
-    if (rc) {
+    if (rc < 0) {
         Py_CLEAR(pyblob);
         goto error;
     }
 
     // Add our blob to connection blobs list
-    weakref = PyWeakref_NewRef((PyObject*)pyblob, NULL);
-    if (!weakref) {
+    PyObject *weakref = PyWeakref_NewRef((PyObject*)pyblob, NULL);
+    if (weakref == NULL) {
         Py_CLEAR(pyblob);
         goto error;
     }
-    if (PyList_Append(self->blobs, weakref) != 0) {
+    if (PyList_Append(self->blobs, weakref) < 0) {
         Py_CLEAR(weakref);
         Py_CLEAR(pyblob);
         goto error;
