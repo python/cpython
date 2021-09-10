@@ -14,7 +14,7 @@
 
 .. testsetup:: *
 
-   from collections import *
+   from collections.abc import *
    import itertools
    __name__ = '<doctest>'
 
@@ -23,6 +23,86 @@
 This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
 example, whether it is hashable or whether it is a mapping.
+
+An :func:`issubclass` or :func:`isinstance` test for an interface works in one
+of three ways.
+
+1) A newly written class can inherit directly from one of the
+abstract base classes.  The class must supply the required abstract
+methods.  The remaining mixin methods come from inheritance and can be
+overridden if desired.  Other methods may be added as needed:
+
+.. testcode::
+
+    class C(Sequence):                      # Direct inheritance
+        def __init__(self): ...             # Extra method not required by the ABC
+        def __getitem__(self, index):  ...  # Required abstract method
+        def __len__(self):  ...             # Required abstract method
+        def count(self, value): ...         # Optionally override a mixin method
+
+.. doctest::
+
+   >>> issubclass(C, Sequence)
+   True
+   >>> isinstance(C(), Sequence)
+   True
+
+2) Existing classes and built-in classes can be registered as "virtual
+subclasses" of the ABCs.  Those classes should define the full API
+including all of the abstract methods and all of the mixin methods.
+This lets users rely on :func:`issubclass` or :func:`isinstance` tests
+to determine whether the full interface is supported.  The exception to
+this rule is for methods that are automatically inferred from the rest
+of the API:
+
+.. testcode::
+
+    class D:                                 # No inheritance
+        def __init__(self): ...              # Extra method not required by the ABC
+        def __getitem__(self, index):  ...   # Abstract method
+        def __len__(self):  ...              # Abstract method
+        def count(self, value): ...          # Mixin method
+        def index(self, value): ...          # Mixin method
+
+    Sequence.register(D)                     # Register instead of inherit
+
+.. doctest::
+
+   >>> issubclass(D, Sequence)
+   True
+   >>> isinstance(D(), Sequence)
+   True
+
+In this example, class :class:`D` does not need to define
+``__contains__``, ``__iter__``, and ``__reversed__`` because the
+:ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
+logic, and the :func:`reversed` function automatically fall back to
+using ``__getitem__`` and ``__len__``.
+
+3) Some simple interfaces are directly recognizable by the presence of
+the required methods (unless those methods have been set to
+:const:`None`):
+
+.. testcode::
+
+    class E:
+        def __iter__(self): ...
+        def __next__(next): ...
+
+.. doctest::
+
+   >>> issubclass(E, Iterable)
+   True
+   >>> isinstance(E(), Iterable)
+   True
+
+Complex interfaces do not support this last technique because an
+interface is more than just the presence of method names.  Interfaces
+specify semantics and relationships between methods that cannot be
+inferred solely from the presence of specific method names.  For
+example, knowing that a class supplies ``__getitem__``, ``__len__``, and
+``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
+a :class:`Mapping`.
 
 
 .. _collections-abstract-base-classes:
@@ -34,67 +114,86 @@ The collections module offers the following :term:`ABCs <abstract base class>`:
 
 .. tabularcolumns:: |l|L|L|L|
 
-========================== ====================== ======================= ====================================================
-ABC                        Inherits from          Abstract Methods        Mixin Methods
-========================== ====================== ======================= ====================================================
-:class:`Container`                                ``__contains__``
-:class:`Hashable`                                 ``__hash__``
-:class:`Iterable`                                 ``__iter__``
-:class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
-:class:`Reversible`        :class:`Iterable`      ``__reversed__``
-:class:`Generator`         :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
-:class:`Sized`                                    ``__len__``
-:class:`Callable`                                 ``__call__``
-:class:`Collection`        :class:`Sized`,        ``__contains__``,
-                           :class:`Iterable`,     ``__iter__``,
-                           :class:`Container`     ``__len__``
+============================== ====================== ======================= ====================================================
+ABC                            Inherits from          Abstract Methods        Mixin Methods
+============================== ====================== ======================= ====================================================
+:class:`Container` [1]_                               ``__contains__``
+:class:`Hashable` [1]_                                ``__hash__``
+:class:`Iterable` [1]_ [2]_                           ``__iter__``
+:class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
+:class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``
+:class:`Generator`  [1]_       :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
+:class:`Sized`  [1]_                                  ``__len__``
+:class:`Callable`  [1]_                               ``__call__``
+:class:`Collection`  [1]_      :class:`Sized`,        ``__contains__``,
+                               :class:`Iterable`,     ``__iter__``,
+                               :class:`Container`     ``__len__``
 
-:class:`Sequence`          :class:`Reversible`,   ``__getitem__``,        ``__contains__``, ``__iter__``, ``__reversed__``,
-                           :class:`Collection`    ``__len__``             ``index``, and ``count``
+:class:`Sequence`              :class:`Reversible`,   ``__getitem__``,        ``__contains__``, ``__iter__``, ``__reversed__``,
+                               :class:`Collection`    ``__len__``             ``index``, and ``count``
 
-:class:`MutableSequence`   :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods and
-                                                  ``__setitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
-                                                  ``__delitem__``,        ``remove``, and ``__iadd__``
-                                                  ``__len__``,
-                                                  ``insert``
+:class:`MutableSequence`       :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods and
+                                                      ``__setitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
+                                                      ``__delitem__``,        ``remove``, and ``__iadd__``
+                                                      ``__len__``,
+                                                      ``insert``
 
-:class:`ByteString`        :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
-                                                  ``__len__``
+:class:`ByteString`            :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
+                                                      ``__len__``
 
-:class:`Set`               :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
-                                                  ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
-                                                  ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
+:class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
+                                                      ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
+                                                      ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
 
-:class:`MutableSet`        :class:`Set`           ``__contains__``,       Inherited :class:`Set` methods and
-                                                  ``__iter__``,           ``clear``, ``pop``, ``remove``, ``__ior__``,
-                                                  ``__len__``,            ``__iand__``, ``__ixor__``, and ``__isub__``
-                                                  ``add``,
-                                                  ``discard``
+:class:`MutableSet`            :class:`Set`           ``__contains__``,       Inherited :class:`Set` methods and
+                                                      ``__iter__``,           ``clear``, ``pop``, ``remove``, ``__ior__``,
+                                                      ``__len__``,            ``__iand__``, ``__ixor__``, and ``__isub__``
+                                                      ``add``,
+                                                      ``discard``
 
-:class:`Mapping`           :class:`Collection`    ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
-                                                  ``__iter__``,           ``get``, ``__eq__``, and ``__ne__``
-                                                  ``__len__``
+:class:`Mapping`               :class:`Collection`    ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
+                                                      ``__iter__``,           ``get``, ``__eq__``, and ``__ne__``
+                                                      ``__len__``
 
-:class:`MutableMapping`    :class:`Mapping`       ``__getitem__``,        Inherited :class:`Mapping` methods and
-                                                  ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
-                                                  ``__delitem__``,        and ``setdefault``
-                                                  ``__iter__``,
-                                                  ``__len__``
+:class:`MutableMapping`        :class:`Mapping`       ``__getitem__``,        Inherited :class:`Mapping` methods and
+                                                      ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
+                                                      ``__delitem__``,        and ``setdefault``
+                                                      ``__iter__``,
+                                                      ``__len__``
 
 
-:class:`MappingView`       :class:`Sized`                                 ``__len__``
-:class:`ItemsView`         :class:`MappingView`,                          ``__contains__``,
-                           :class:`Set`                                   ``__iter__``
-:class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
-                           :class:`Set`                                   ``__iter__``
-:class:`ValuesView`        :class:`MappingView`,                          ``__contains__``, ``__iter__``
-                           :class:`Collection`
-:class:`Awaitable`                                ``__await__``
-:class:`Coroutine`         :class:`Awaitable`     ``send``, ``throw``     ``close``
-:class:`AsyncIterable`                            ``__aiter__``
-:class:`AsyncIterator`     :class:`AsyncIterable` ``__anext__``           ``__aiter__``
-:class:`AsyncGenerator`    :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
-========================== ====================== ======================= ====================================================
+:class:`MappingView`           :class:`Sized`                                 ``__len__``
+:class:`ItemsView`             :class:`MappingView`,                          ``__contains__``,
+                               :class:`Set`                                   ``__iter__``
+:class:`KeysView`              :class:`MappingView`,                          ``__contains__``,
+                               :class:`Set`                                   ``__iter__``
+:class:`ValuesView`            :class:`MappingView`,                          ``__contains__``, ``__iter__``
+                               :class:`Collection`
+:class:`Awaitable` [1]_                               ``__await__``
+:class:`Coroutine` [1]_        :class:`Awaitable`     ``send``, ``throw``     ``close``
+:class:`AsyncIterable` [1]_                           ``__aiter__``
+:class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
+:class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
+============================== ====================== ======================= ====================================================
+
+
+.. rubric:: Footnotes
+
+.. [1] These ABCs override :meth:`object.__subclasshook__` to support
+   testing an interface by verifying the required methods are present
+   and have not been set to :const:`None`.  This only works for simple
+   interfaces.  More complex interfaces require registration or direct
+   subclassing.
+
+.. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
+   registered as :class:`Iterable` or that have an :meth:`__iter__`
+   method, but it does not detect classes that iterate with the
+   :meth:`__getitem__` method.  The only reliable way to determine
+   whether an object is :term:`iterable` is to call ``iter(obj)``.
+
+
+Collections Abstract Base Classes -- Detailed Descriptions
+----------------------------------------------------------
 
 
 .. class:: Container
@@ -244,8 +343,10 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    .. versionadded:: 3.6
 
+Examples and Recipes
+--------------------
 
-These ABCs allow us to ask classes or instances if they provide
+ABCs allow us to ask classes or instances if they provide
 particular functionality, for example::
 
     size = None
