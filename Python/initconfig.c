@@ -2127,12 +2127,7 @@ _PyConfig_InitImportConfig(PyConfig *config)
     /* -X frozen_modules=[on|off] */
     const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
     if (value == NULL) {
-        /* PGO builds always default to using frozen modules. */
-#ifdef _Py_OPT  // configure --enable-optimizations
-        config->use_frozen_modules = true;
-#else
         config->use_frozen_modules = !_Py_IsDevelopmentEnv(config);
-#endif
     }
     else if (wcscmp(value, L"on") == 0) {
         config->use_frozen_modules = true;
