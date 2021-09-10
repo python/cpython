@@ -519,7 +519,7 @@ blob_subscript(pysqlite_Blob *self, PyObject *item)
 static int
 blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
 {
-    int rc;
+    int rc = -1;
 
     if (!check_blob(self)) {
         return -1;
@@ -574,7 +574,7 @@ blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
             return -1;
         }
 
-        if (slicelen == 0) {  // FIXME
+        if (slicelen == 0) { // FIXME
         }
         else if (step == 1) {
             rc = write_inner(self, vbuf.buf, slicelen, start);
