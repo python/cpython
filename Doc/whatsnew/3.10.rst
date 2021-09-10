@@ -1948,7 +1948,8 @@ Changes in the C API
     offset instead of a simple offset into the bytecode string. This means that this
     number needs to be multiplied by 2 to be used with APIs that expect a byte offset
     instead (like :c:func:`PyCode_Addr2Line` for example). Notice as well that the
-    ``f_lasti`` member of ``FrameObject`` objects is not considered stable.
+    ``f_lasti`` member of ``FrameObject`` objects is not considered stable: please
+    use :c:func:`PyFrame_GetLineNumber` instead.
 
 CPython bytecode changes
 ========================
