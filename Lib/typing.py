@@ -171,7 +171,7 @@ def _type_check(arg, msg, is_argument=True, module=None):
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if arg in (Any, NoReturn):
+    if arg in (Any, NoReturn, Final):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
@@ -1831,7 +1831,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         if value is None:
             value = type(None)
         if isinstance(value, str):
-            value = ForwardRef(value)
+            value = ForwardRef(
+                value, is_argument=not isinstance(obj, types.ModuleType))
         value = _eval_type(value, globalns, localns)
         if name in defaults and defaults[name] is None:
             value = Optional[value]

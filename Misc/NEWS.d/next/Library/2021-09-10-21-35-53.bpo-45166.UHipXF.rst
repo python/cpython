@@ -1,0 +1,2 @@
+Fixes that ``Final`` wrapped in ``ForwardRef`` was failing during
+``get_type_hints``.
