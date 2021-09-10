@@ -86,14 +86,105 @@ typedef struct {
     char *ptr;
     const char *end;
     char *buf;
-    _Py_hashtable_t *hashtable;
+    struct {
+        _Py_hashtable_t *hashtable;
+    } refs;
     int version;
 } WFILE;
 
-#define w_byte(c, p) do {                               \
-        if ((p)->ptr != (p)->end || w_reserve((p), 1))  \
-            *(p)->ptr++ = (c);                          \
-    } while(0)
+static void
+w_decref_entry(void *key)
+{
+    PyObject *entry_key = (PyObject *)key;
+    Py_XDECREF(entry_key);
+}
+
+static int
+w_init_refs(WFILE *wf)
+{
+    if (wf->version >= 3) {
+        wf->refs.hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                                    _Py_hashtable_compare_direct,
+                                                    w_decref_entry, NULL, NULL);
+        if (wf->refs.hashtable == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static void
+w_clear_refs(WFILE *wf)
+{
+    if (wf->refs.hashtable != NULL) {
+        _Py_hashtable_destroy(wf->refs.hashtable);
+    }
+}
+
+static int
+w_init(WFILE *wf, FILE *fp, char *buf, int version)
+{
+    memset(wf, 0, sizeof(*wf));
+    wf->fp = fp;
+    if (fp == NULL) {
+        assert(buf == NULL);
+        wf->str = PyBytes_FromStringAndSize((char *)NULL, 50);
+        if (wf->str == NULL) {
+            return -1;
+        }
+        wf->ptr = wf->buf = PyBytes_AS_STRING(wf->str);
+        wf->end = wf->ptr + PyBytes_GET_SIZE(wf->str);
+    }
+    else {
+        assert(buf != NULL);
+        wf->ptr = wf->buf = buf;
+        wf->end = wf->ptr + sizeof(buf);
+    }
+    wf->error = WFERR_OK;
+    wf->version = version;
+    return 0;
+}
+
+static void
+w_clear(WFILE *wf)
+{
+    Py_XDECREF(wf->str);
+    w_clear_refs(wf);
+}
+
+static int
+w_handle_err(WFILE *wf)
+{
+    if (wf->error == WFERR_OK) {
+        return 0;
+    }
+    if (wf->error == WFERR_NOMEMORY) {
+        PyErr_NoMemory();
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+          (wf->error == WFERR_UNMARSHALLABLE) ? "unmarshallable object"
+           : "object too deeply nested to marshal");
+    }
+    return 1;
+}
+
+static PyObject *
+w_finish_string(WFILE *wf)
+{
+    if (wf->str == NULL) {
+        Py_RETURN_NONE;
+    }
+    const char *base = PyBytes_AS_STRING(wf->str);
+    if (_PyBytes_Resize(&wf->str, (Py_ssize_t)(wf->ptr - base)) < 0) {
+        return NULL;
+    }
+    PyObject *finished = wf->str;
+    wf->str = NULL;
+    w_clear(wf);
+    return finished;
+}
 
 static void
 w_flush(WFILE *p)
@@ -137,6 +228,11 @@ w_reserve(WFILE *p, Py_ssize_t needed)
         return 1;
     }
 }
+
+#define w_byte(c, p) do {                               \
+        if ((p)->ptr != (p)->end || w_reserve((p), 1))  \
+            *(p)->ptr++ = (c);                          \
+    } while(0)
 
 static void
 w_string(const void *s, Py_ssize_t n, WFILE *p)
@@ -296,14 +392,14 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     _Py_hashtable_entry_t *entry;
     int w;
 
-    if (p->version < 3 || p->hashtable == NULL)
+    if (p->version < 3 || p->refs.hashtable == NULL)
         return 0; /* not writing object references */
 
     /* if it has only one reference, it definitely isn't shared */
     if (Py_REFCNT(v) == 1)
         return 0;
 
-    entry = _Py_hashtable_get_entry(p->hashtable, v);
+    entry = _Py_hashtable_get_entry(p->refs.hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
         w = (int)(uintptr_t)entry->value;
@@ -313,7 +409,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         w_long(w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->nentries;
+        size_t s = p->refs.hashtable->nentries;
         /* we don't support long indices */
         if (s >= 0x7fffffff) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
@@ -321,7 +417,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         }
         w = (int)s;
         Py_INCREF(v);
-        if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
+        if (_Py_hashtable_set(p->refs.hashtable, v, (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
             goto err;
         }
@@ -583,72 +679,35 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
 }
 
-static void
-w_decref_entry(void *key)
-{
-    PyObject *entry_key = (PyObject *)key;
-    Py_XDECREF(entry_key);
-}
-
-static int
-w_init_refs(WFILE *wf, int version)
-{
-    if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
-                                               _Py_hashtable_compare_direct,
-                                               w_decref_entry, NULL, NULL);
-        if (wf->hashtable == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-    }
-    return 0;
-}
-
-static void
-w_clear_refs(WFILE *wf)
-{
-    if (wf->hashtable != NULL) {
-        _Py_hashtable_destroy(wf->hashtable);
-    }
-}
-
 /* version currently has no effect for writing ints. */
 void
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {
     char buf[4];
     WFILE wf;
-    memset(&wf, 0, sizeof(wf));
-    wf.fp = fp;
-    wf.ptr = wf.buf = buf;
-    wf.end = wf.ptr + sizeof(buf);
-    wf.error = WFERR_OK;
-    wf.version = version;
+    (void)w_init(&wf, fp, buf, version);
     w_long(x, &wf);
     w_flush(&wf);
+    w_clear(&wf);
 }
 
 void
 PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
-    char buf[BUFSIZ];
-    WFILE wf;
     if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
         return; /* caller must check PyErr_Occurred() */
     }
-    memset(&wf, 0, sizeof(wf));
-    wf.fp = fp;
-    wf.ptr = wf.buf = buf;
-    wf.end = wf.ptr + sizeof(buf);
-    wf.error = WFERR_OK;
-    wf.version = version;
-    if (w_init_refs(&wf, version)) {
+
+    char buf[BUFSIZ];
+    WFILE wf;
+    (void)w_init(&wf, fp, buf, version);
+    if (w_init_refs(&wf) != 0) {
+        w_clear(&wf);
         return; /* caller must check PyErr_Occurred() */
     }
     w_object(x, &wf);
-    w_clear_refs(&wf);
     w_flush(&wf);
+    w_clear(&wf);
 }
 
 typedef struct {
@@ -1648,41 +1707,24 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
 PyObject *
 PyMarshal_WriteObjectToString(PyObject *x, int version)
 {
-    WFILE wf;
-
     if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
         return NULL;
     }
-    memset(&wf, 0, sizeof(wf));
-    wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
-    if (wf.str == NULL)
+
+    WFILE wf;
+    if (w_init(&wf, NULL, NULL, version) != 0) {
         return NULL;
-    wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
-    wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
-    wf.error = WFERR_OK;
-    wf.version = version;
-    if (w_init_refs(&wf, version)) {
-        Py_DECREF(wf.str);
+    }
+    if (w_init_refs(&wf) != 0) {
+        w_clear(&wf);
         return NULL;
     }
     w_object(x, &wf);
-    w_clear_refs(&wf);
-    if (wf.str != NULL) {
-        const char *base = PyBytes_AS_STRING(wf.str);
-        if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
-            return NULL;
-    }
-    if (wf.error != WFERR_OK) {
-        Py_XDECREF(wf.str);
-        if (wf.error == WFERR_NOMEMORY)
-            PyErr_NoMemory();
-        else
-            PyErr_SetString(PyExc_ValueError,
-              (wf.error==WFERR_UNMARSHALLABLE)?"unmarshallable object"
-               :"object too deeply nested to marshal");
+    if (w_handle_err(&wf)) {
+        w_clear(&wf);
         return NULL;
     }
-    return wf.str;
+    return w_finish_string(&wf);
 }
 
 /* And an interface for Python programs... */
