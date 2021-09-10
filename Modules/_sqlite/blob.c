@@ -448,11 +448,10 @@ blob_subscript(pysqlite_Blob *self, PyObject *item)
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
-
-        if (PySlice_GetIndicesEx(item, self->length, &start, &stop, &step,
-                                 &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->length, &start, &stop, step);
 
         if (slicelen <= 0) {
             return PyBytes_FromStringAndSize("", 0);
@@ -537,10 +536,10 @@ blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen;
-        if (PySlice_GetIndicesEx(item, self->length, &start, &stop, &step,
-                                 &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->length, &start, &stop, step);
         if (value == NULL) {
             PyErr_SetString(PyExc_TypeError,
                             "Blob object doesn't support slice deletion");
