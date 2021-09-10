@@ -990,13 +990,11 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
     if (cmp > 0) {
         state = length;
     }
-    else {
-        Py_INCREF(state);
-        Py_DECREF(length);
-    }
     PyObject *product = PyNumber_Multiply(state, r->step);
-    if (product == NULL)
+    Py_DECREF(length);
+    if (product == NULL) {
         return NULL;
+    }
     PyObject *new_start = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (new_start == NULL)
