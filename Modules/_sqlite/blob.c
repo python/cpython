@@ -248,21 +248,21 @@ blob_write_impl(pysqlite_Blob *self, Py_buffer *data_buffer)
 _sqlite3.Blob.seek as blob_seek
 
     offset: int
-    from_what: int = 0
+    origin: int = 0
     /
 
 Change the access position for a blob.
 [clinic start generated code]*/
 
 static PyObject *
-blob_seek_impl(pysqlite_Blob *self, int offset, int from_what)
-/*[clinic end generated code: output=c7f07cd9e1d90bf7 input=f8dae77055129be3]*/
+blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
+/*[clinic end generated code: output=854c5a0e208547a5 input=cc33da6f28af0561]*/
 {
     if (!check_blob(self)) {
         return NULL;
     }
 
-    switch (from_what) {
+    switch (origin) {
         case 0:  // relative to blob begin
             break;
         case 1:  // relative to current position
@@ -278,7 +278,7 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int from_what)
             offset = self->length + offset;
             break;
         default:
-            PyErr_SetString(PyExc_ValueError, "from_what should be 0, 1 or 2");
+            PyErr_SetString(PyExc_ValueError, "'origin' should be 0, 1 or 2");
             return NULL;
     }
 

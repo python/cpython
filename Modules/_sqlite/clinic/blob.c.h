@@ -92,7 +92,7 @@ exit:
 }
 
 PyDoc_STRVAR(blob_seek__doc__,
-"seek($self, offset, from_what=0, /)\n"
+"seek($self, offset, origin=0, /)\n"
 "--\n"
 "\n"
 "Change the access position for a blob.");
@@ -101,14 +101,14 @@ PyDoc_STRVAR(blob_seek__doc__,
     {"seek", (PyCFunction)(void(*)(void))blob_seek, METH_FASTCALL, blob_seek__doc__},
 
 static PyObject *
-blob_seek_impl(pysqlite_Blob *self, int offset, int from_what);
+blob_seek_impl(pysqlite_Blob *self, int offset, int origin);
 
 static PyObject *
 blob_seek(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int offset;
-    int from_what = 0;
+    int origin = 0;
 
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
@@ -120,12 +120,12 @@ blob_seek(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    from_what = _PyLong_AsInt(args[1]);
-    if (from_what == -1 && PyErr_Occurred()) {
+    origin = _PyLong_AsInt(args[1]);
+    if (origin == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional:
-    return_value = blob_seek_impl(self, offset, from_what);
+    return_value = blob_seek_impl(self, offset, origin);
 
 exit:
     return return_value;
@@ -199,4 +199,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d378130443aa9ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=76c066429020440e input=a9049054013a1b77]*/
