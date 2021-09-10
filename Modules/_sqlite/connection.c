@@ -413,26 +413,24 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
 
     rc = pysqlite_blob_init(pyblob, self, blob);
     if (rc < 0) {
-        Py_CLEAR(pyblob);
         goto error;
     }
 
     // Add our blob to connection blobs list
-    PyObject *weakref = PyWeakref_NewRef((PyObject*)pyblob, NULL);
+    PyObject *weakref = PyWeakref_NewRef((PyObject *)pyblob, NULL);
     if (weakref == NULL) {
-        Py_CLEAR(pyblob);
         goto error;
     }
-    if (PyList_Append(self->blobs, weakref) < 0) {
-        Py_CLEAR(weakref);
-        Py_CLEAR(pyblob);
-        goto error;
-    }
+    rc = PyList_Append(self->blobs, weakref);
     Py_DECREF(weakref);
+    if (rc < 0) {
+        goto error;
+    }
 
-    return (PyObject*)pyblob;
+    return (PyObject *)pyblob;
 
 error:
+    Py_XDECREF(pyblob);
     Py_BEGIN_ALLOW_THREADS
     sqlite3_blob_close(blob);
     Py_END_ALLOW_THREADS
