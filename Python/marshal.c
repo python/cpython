@@ -88,6 +88,7 @@ typedef struct {
     char *buf;
     struct {
         _Py_hashtable_t *hashtable;
+        PyObject *nonref;
     } refs;
     int version;
 } WFILE;
@@ -100,7 +101,7 @@ w_decref_entry(void *key)
 }
 
 static int
-w_init_refs(WFILE *wf)
+w_init_refs(WFILE *wf, PyObject *nonref)
 {
     if (wf->version >= 3) {
         wf->refs.hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
@@ -111,6 +112,8 @@ w_init_refs(WFILE *wf)
             return -1;
         }
     }
+    Py_XINCREF(nonref);
+    wf->refs.nonref = nonref;
     return 0;
 }
 
@@ -120,6 +123,7 @@ w_clear_refs(WFILE *wf)
     if (wf->refs.hashtable != NULL) {
         _Py_hashtable_destroy(wf->refs.hashtable);
     }
+    Py_XDECREF(wf->refs.nonref);
 }
 
 static int
@@ -392,12 +396,20 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     _Py_hashtable_entry_t *entry;
     int w;
 
-    if (p->version < 3 || p->refs.hashtable == NULL)
+    if (p->version < 3 || p->refs.hashtable == NULL) {
         return 0; /* not writing object references */
+    }
 
     /* if it has only one reference, it definitely isn't shared */
-    if (Py_REFCNT(v) == 1)
+    if (Py_REFCNT(v) == 1) {
         return 0;
+    }
+    else if (p->refs.nonref != NULL) {
+        if (PySet_Contains(p->refs.nonref, v) == 1) {
+            return 0;
+        }
+        PyErr_Clear();
+    }
 
     entry = _Py_hashtable_get_entry(p->refs.hashtable, v);
     if (entry != NULL) {
@@ -701,7 +713,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     char buf[BUFSIZ];
     WFILE wf;
     (void)w_init(&wf, fp, buf, version);
-    if (w_init_refs(&wf) != 0) {
+    if (w_init_refs(&wf, NULL) != 0) {
         w_clear(&wf);
         return; /* caller must check PyErr_Occurred() */
     }
@@ -1715,7 +1727,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     if (w_init(&wf, NULL, NULL, version) != 0) {
         return NULL;
     }
-    if (w_init_refs(&wf) != 0) {
+    if (w_init_refs(&wf, NULL) != 0) {
         w_clear(&wf);
         return NULL;
     }
