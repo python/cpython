@@ -2143,6 +2143,7 @@ pysleep(_PyTime_t secs)
             return -1;
         }
 
+#ifndef HAVE_CLOCK_NANOSLEEP
         if (get_monotonic(&monotonic) < 0) {
             return -1;
         }
@@ -2151,6 +2152,7 @@ pysleep(_PyTime_t secs)
             break;
         }
         /* retry with the recomputed delay */
+#endif
     } while (1);
 
     return 0;
