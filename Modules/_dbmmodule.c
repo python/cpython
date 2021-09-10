@@ -433,7 +433,7 @@ static PyType_Spec dbmtype_spec = {
 
 _dbm.open as dbmopen
 
-    filename: unicode
+    filename: object
         The filename to open.
 
     flags: str="r"
@@ -452,7 +452,7 @@ Return a database object.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=376a9d903a50df59]*/
+/*[clinic end generated code: output=9527750f5df90764 input=d8cf50a9f81218c8]*/
 {
     int iflags;
     _dbm_state *state =  get_dbm_state(module);
@@ -479,10 +479,11 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
 
-    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
-    if (filenamebytes == NULL) {
+    PyObject *filenamebytes;
+    if (!PyUnicode_FSConverter(filename, &filenamebytes)) {
         return NULL;
     }
+
     const char *name = PyBytes_AS_STRING(filenamebytes);
     if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
         Py_DECREF(filenamebytes);
