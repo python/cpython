@@ -15,8 +15,7 @@ int
 pysqlite_blob_init(pysqlite_Blob *self, pysqlite_Connection *connection,
                    sqlite3_blob *blob)
 {
-    Py_INCREF(connection);
-    self->connection = connection;
+    self->connection = (pysqlite_Connection *)Py_NewRef(connection);
     self->offset = 0;
     self->blob = blob;
     self->in_weakreflist = NULL;
@@ -116,7 +115,7 @@ pysqlite_close_all_blobs(pysqlite_Connection *self)
     for (int i = 0; i < PyList_GET_SIZE(self->blobs); i++) {
         PyObject *weakref = PyList_GET_ITEM(self->blobs, i);
         PyObject *blob = PyWeakref_GetObject(weakref);
-        if (blob != Py_None) {
+        if (!Py_IsNone(blob)) {
             blob_close_impl((pysqlite_Blob *)blob);
         }
     }
@@ -345,9 +344,7 @@ blob_enter_impl(pysqlite_Blob *self)
     if (!check_blob(self)) {
         return NULL;
     }
-
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 
