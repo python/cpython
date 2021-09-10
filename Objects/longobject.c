@@ -5613,9 +5613,11 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     PyObject *long_obj, *bytes;
 
     if (byteorder == NULL)
-        byteorder = PySys_GetObject("byteorder");
-
-    if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
+        // PY_LITTLE_ENDIAN is 1 on little-endian systems, and 0 on big-endian
+        // systems. In the default case, using it is significantly faster than
+        // looking up sys.byteorder and performing the string comparisons below:
+        little_endian = PY_LITTLE_ENDIAN;
+    else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;
     else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
         little_endian = 0;
