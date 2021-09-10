@@ -7,6 +7,7 @@ import sys
 import unittest
 import warnings
 from ntpath import ALLOW_MISSING
+from test import support
 from test.support import TestFailed, cpython_only, os_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
@@ -75,27 +76,6 @@ def tester(fn, wantResult):
     if _norm(wantResult) != _norm(gotResult):
         raise TestFailed("%s should return: %s but returned: %s" \
               %(str(fn), str(wantResult), repr(gotResult)))
-
-
-def _parameterize(*parameters):
-    """Simplistic decorator to parametrize a test
-
-    Runs the decorated test multiple times in subTest, with a value from
-    'parameters' passed as an extra positional argument.
-    Calls doCleanups() after each run.
-
-    Not for general use. Intended to avoid indenting for easier backports.
-
-    See https://discuss.python.org/t/91827 for discussing generalizations.
-    """
-    def _parametrize_decorator(func):
-        def _parameterized(self, *args, **kwargs):
-            for parameter in parameters:
-                with self.subTest(parameter):
-                    func(self, *args, parameter, **kwargs)
-                self.doCleanups()
-        return _parameterized
-    return _parametrize_decorator
 
 
 class NtpathTestCase(unittest.TestCase):
@@ -556,7 +536,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
+    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}), _do_cleanups=True)
     def test_realpath_basic(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -635,7 +615,7 @@ class TestNtpath(NtpathTestCase):
         self.assertEqual(realpath(path, strict=ALLOW_MISSING), ABSTFNb + b'\\nonexistent')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
+    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}))
     def test_realpath_invalid_unicode_paths(self, kwargs):
         realpath = ntpath.realpath
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
@@ -655,7 +635,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
+    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}), _do_cleanups=True)
     def test_realpath_relative(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         open(ABSTFN, "wb").close()
@@ -869,7 +849,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': True}, {'strict': ALLOW_MISSING})
+    @support.subTests('kwargs', ({}, {'strict': True}, {'strict': ALLOW_MISSING}), _do_cleanups=True)
     def test_realpath_symlink_prefix(self, kwargs):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "3")
