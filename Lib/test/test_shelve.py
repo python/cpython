@@ -2,6 +2,7 @@ import unittest
 import shelve
 import glob
 import pickle
+import os
 
 from test import support
 from test.support import os_helper
@@ -85,6 +86,12 @@ class TestCase(unittest.TestCase):
 
     def test_pathlib_path_file_shelf(self):
         self.test_open_template(filename=os_helper.FakePath(self.fn))
+
+    def test_bytes_path_file_shelf(self):
+        self.test_open_template(filename=os.fsencode(self.fn))
+
+    def test_pathlib_bytes_path_file_shelf(self):
+        self.test_open_template(filename=os_helper.FakePath(os.fsencode(self.fn)))
 
     def test_in_memory_shelf(self):
         d1 = byteskeydict()

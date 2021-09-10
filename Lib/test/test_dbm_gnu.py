@@ -172,6 +172,12 @@ class TestGdbm(unittest.TestCase):
     def test_open_with_pathlib_path(self):
         gdbm.open(FakePath(filename), "c").close()
 
+    def test_open_with_bytes_path(self):
+        gdbm.open(os.fsencode(filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        gdbm.open(FakePath(os.fsencode(filename)), "c").close()
+
 
 if __name__ == '__main__':
     unittest.main()

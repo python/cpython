@@ -297,6 +297,12 @@ class DumbDBMTestCase(unittest.TestCase):
     def test_open_with_pathlib_path(self):
         dumbdbm.open(os_helper.FakePath(_fname), "c").close()
 
+    def test_open_with_bytes_path(self):
+        dumbdbm.open(os.fsencode(_fname), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        dumbdbm.open(os_helper.FakePath(os.fsencode(_fname)), "c").close()
+
     def tearDown(self):
         _delete_files()
 

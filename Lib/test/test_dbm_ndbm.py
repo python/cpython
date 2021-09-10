@@ -127,6 +127,12 @@ class DbmTestCase(unittest.TestCase):
     def test_open_with_pathlib_path(self):
         dbm.ndbm.open(os_helper.FakePath(self.filename), "c").close()
 
+    def test_open_with_bytes_path(self):
+        dbm.ndbm.open(os.fsencode(self.filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        dbm.ndbm.open(os_helper.FakePath(os.fsencode(self.filename)), "c").close()
+
 
 if __name__ == '__main__':
     unittest.main()
