@@ -1108,6 +1108,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_GLOBAL:
             return 0;
         case LOAD_CONST:
+        case LOAD_NONE:
             return 1;
         case LOAD_NAME:
             return 1;
@@ -1473,6 +1474,9 @@ compiler_add_const(struct compiler *c, PyObject *o)
 static int
 compiler_addop_load_const(struct compiler *c, PyObject *o)
 {
+    if (o == Py_None) {
+        return compiler_addop(c, LOAD_NONE);
+    }
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
@@ -7956,8 +7960,13 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
     PyObject *constant = NULL;
     assert(HAS_CONST(opcode));
-    if (opcode == LOAD_CONST) {
-        constant = PyList_GET_ITEM(co_consts, oparg);
+    switch(opcode) {
+        case LOAD_CONST:
+            constant = PyList_GET_ITEM(co_consts, oparg);
+            break;
+        case LOAD_NONE:
+            constant = Py_None;
+            break;
     }
 
     if (constant == NULL) {
@@ -8121,6 +8130,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
         switch (inst->i_opcode) {
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
+            case LOAD_NONE:
             {
                 PyObject* cnt;
                 int is_true;

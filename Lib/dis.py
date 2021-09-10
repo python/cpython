@@ -27,6 +27,7 @@ MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
 LOAD_CONST = opmap['LOAD_CONST']
+LOAD_NONE = opmap['LOAD_NONE']
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -331,6 +332,8 @@ def _get_const_value(op, arg, co_consts):
     if op == LOAD_CONST:
         if co_consts is not None:
             argval = co_consts[arg]
+    elif op == LOAD_NONE:
+        argval = None
     return argval
 
 def _get_const_info(op, arg, co_consts):
@@ -574,7 +577,7 @@ def _find_imports(co):
         if op == IMPORT_NAME and i >= 2:
             from_op = opargs[i-1]
             level_op = opargs[i-2]
-            if (from_op[0] in hasconst and level_op[0] in hasconst):
+            if from_op[0] in hasconst and level_op[0] in hasconst:
                 level = _get_const_value(level_op[0], level_op[1], consts)
                 fromlist = _get_const_value(from_op[0], from_op[1], consts)
                 yield (names[oparg], level, fromlist)

@@ -122,6 +122,8 @@ def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
+def_op('LOAD_NONE', 80)
+hasconst.append(80)
 
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)

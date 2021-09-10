@@ -93,7 +93,10 @@ class TestTranforms(BytecodeTestCase):
         for func, elem in ((f, None), (g, True), (h, False)):
             with self.subTest(func=func):
                 self.assertNotInBytecode(func, 'LOAD_GLOBAL')
-                self.assertInBytecode(func, 'LOAD_CONST', elem)
+                if elem is None:
+                    self.assertInBytecode(func, 'LOAD_NONE')
+                else:
+                    self.assertInBytecode(func, 'LOAD_CONST', elem)
                 self.check_lnotab(func)
 
         def f():
@@ -101,7 +104,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'LOAD_CONST', None)
+        self.assertInBytecode(f, 'LOAD_NONE')
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -118,7 +121,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'LOAD_CONST',),
+            ('a, = a,', 'LOAD_NONE',),
             ('a, b = a, b', 'ROT_TWO',),
             ('a, b, c = a, b, c', 'ROT_THREE',),
             ):
@@ -146,10 +149,15 @@ class TestTranforms(BytecodeTestCase):
         # Long tuples should be folded too.
         code = compile(repr(tuple(range(10000))),'','single')
         self.assertNotInBytecode(code, 'BUILD_TUPLE')
-        # One LOAD_CONST for the tuple, one for the None return value
+        # One LOAD_CONST for the tuple
         load_consts = [instr for instr in dis.get_instructions(code)
                               if instr.opname == 'LOAD_CONST']
-        self.assertEqual(len(load_consts), 2)
+        self.assertEqual(len(load_consts), 1)
+        # one LOAD_NONE for the return value
+        load_nones = [instr for instr in dis.get_instructions(code)
+                              if instr.opname == 'LOAD_NONE']
+        self.assertEqual(len(load_nones), 1)
+
         self.check_lnotab(code)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:

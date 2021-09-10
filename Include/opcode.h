@@ -67,6 +67,7 @@ extern "C" {
 #define INPLACE_AND              77
 #define INPLACE_XOR              78
 #define INPLACE_OR               79
+#define LOAD_NONE                80
 #define LIST_TO_TUPLE            82
 #define RETURN_VALUE             83
 #define IMPORT_STAR              84
@@ -155,18 +156,18 @@ extern "C" {
 #define LOAD_GLOBAL_MODULE       47
 #define LOAD_GLOBAL_BUILTIN      48
 #define LOAD_METHOD_ADAPTIVE     58
-#define LOAD_METHOD_CACHED       80
-#define LOAD_METHOD_CLASS        81
-#define LOAD_METHOD_MODULE       87
-#define STORE_ATTR_ADAPTIVE      88
-#define STORE_ATTR_SPLIT_KEYS   120
-#define STORE_ATTR_SLOT         122
-#define STORE_ATTR_WITH_HINT    123
-#define LOAD_FAST__LOAD_FAST    127
-#define STORE_FAST__LOAD_FAST   128
-#define LOAD_FAST__LOAD_CONST   134
-#define LOAD_CONST__LOAD_FAST   140
-#define STORE_FAST__STORE_FAST  143
+#define LOAD_METHOD_CACHED       81
+#define LOAD_METHOD_CLASS        87
+#define LOAD_METHOD_MODULE       88
+#define STORE_ATTR_ADAPTIVE     120
+#define STORE_ATTR_SPLIT_KEYS   122
+#define STORE_ATTR_SLOT         123
+#define STORE_ATTR_WITH_HINT    127
+#define LOAD_FAST__LOAD_FAST    128
+#define STORE_FAST__LOAD_FAST   134
+#define LOAD_FAST__LOAD_CONST   140
+#define LOAD_CONST__LOAD_FAST   143
+#define STORE_FAST__STORE_FAST  149
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
@@ -190,7 +191,8 @@ static uint32_t _PyOpcode_Jump[8] = {
 };
 #endif /* OPCODE_TABLES */
 
-#define HAS_CONST(op) (false\
+#define HAS_CONST(op) (0\
+    || ((op) == 80) \
     || ((op) == 100) \
     )
 

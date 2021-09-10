@@ -1715,20 +1715,19 @@ class ConstantTests(unittest.TestCase):
         tree = ast.parse("'docstring'\nx = 1")
         self.assertEqual(ast.get_docstring(tree), 'docstring')
 
-    def get_load_const(self, tree):
-        # Compile to bytecode, disassemble and get parameter of LOAD_CONST
+    def get_values_for_opname(self, tree, opname):
+        # Compile to bytecode, disassemble and get parameter of opname
         # instructions
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST':
+            if instr.opname == opname:
                 consts.append(instr.argval)
         return consts
 
     @support.cpython_only
     def test_load_const(self):
-        consts = [None,
-                  True, False,
+        consts = [True, False,
                   124,
                   2.0,
                   3j,
@@ -1738,11 +1737,15 @@ class ConstantTests(unittest.TestCase):
 
         code = '\n'.join(['x={!r}'.format(const) for const in consts])
         code += '\nx = ...'
-        consts.extend((Ellipsis, None))
+        consts.append(Ellipsis)
+
+        code += '\nx = None'  # LOAD_NONE, so not added to consts
 
         tree = ast.parse(code)
-        self.assertEqual(self.get_load_const(tree),
+        self.assertEqual(self.get_values_for_opname(tree, 'LOAD_CONST'),
                          consts)
+        self.assertEqual(self.get_values_for_opname(tree, 'LOAD_NONE'),
+                         [None, None])  # One None from return at the end
 
         # Replace expression nodes with constants
         for assign, const in zip(tree.body, consts):
@@ -1751,8 +1754,11 @@ class ConstantTests(unittest.TestCase):
             ast.copy_location(new_node, assign.value)
             assign.value = new_node
 
-        self.assertEqual(self.get_load_const(tree),
+        self.assertEqual(self.get_values_for_opname(tree, 'LOAD_CONST'),
                          consts)
+        self.assertEqual(self.get_values_for_opname(tree, 'LOAD_NONE'),
+                         [None, None])  # One None from return at the end
+
 
     def test_literal_eval(self):
         tree = ast.parse("1 + 2")

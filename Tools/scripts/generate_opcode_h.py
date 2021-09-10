@@ -79,7 +79,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("#endif /* OPCODE_TABLES */\n")
 
         fobj.write("\n")
-        fobj.write("#define HAS_CONST(op) (false\\")
+        fobj.write("#define HAS_CONST(op) (0\\")
         for op in hasconst:
             fobj.write(f"\n    || ((op) == {op}) \\")
         fobj.write("\n    )\n")
