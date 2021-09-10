@@ -424,6 +424,8 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
     obj->length = len;
     obj->in_weakreflist = NULL;
 
+    PyObject_GC_Track(obj);
+
     // Add our blob to connection blobs list
     PyObject *weakref = PyWeakref_NewRef((PyObject *)obj, NULL);
     if (weakref == NULL) {
@@ -439,10 +441,6 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
 
 error:
     Py_XDECREF(obj);
-
-    Py_BEGIN_ALLOW_THREADS
-    sqlite3_blob_close(blob);
-    Py_END_ALLOW_THREADS
     return NULL;
 }
 
