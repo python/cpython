@@ -611,7 +611,11 @@ static PyObject *
 signal_strsignal_impl(PyObject *module, int signalnum)
 /*[clinic end generated code: output=44e12e1e3b666261 input=b77914b03f856c74]*/
 {
+#ifdef __HAIKU__
+    const char * res;
+#else
     char *res;
+#endif
 
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,
@@ -663,7 +667,7 @@ signal_strsignal_impl(PyObject *module, int signalnum)
     }
 #else
     errno = 0;
-    res = strsignal(signalnum);
+    res = (const char *)strsignal(signalnum);
 
     if (errno || res == NULL || strstr(res, "Unknown signal") != NULL)
         Py_RETURN_NONE;
