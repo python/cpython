@@ -579,7 +579,7 @@ this::
        .
        .
        .
-       <statement-N>
+       <statement-n>
 
 The name :class:`BaseClassName` must be defined in a scope containing the
 derived class definition.  In place of a base class name, other arbitrary
