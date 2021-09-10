@@ -54,6 +54,20 @@ blob_dealloc(pysqlite_Blob *self)
     Py_DECREF(tp);
 }
 
+static void
+blob_seterror(pysqlite_Blob *self, int rc)
+{
+    assert(self->connection != NULL);
+#if SQLITE_VERSION_NUMBER < 3008008
+    // SQLite pre 3.8.8 does not set errors on the connection
+    if (rc == SQLITE_ABORT) {
+        PyErr_SetString(self->connection->OperationalError,
+                        "Cannot operate on modified blob");
+        return;
+    }
+#endif
+    _pysqlite_seterror(self->connection->state, self->connection->db);
+}
 
 /*
  * Checks if a blob object is usable (i. e. not closed).
@@ -133,15 +147,7 @@ inner_read(pysqlite_Blob *self, int length, int offset)
 
     if (rc != SQLITE_OK) {
         Py_DECREF(buffer);
-        /* For some reason after modifying blob the
-           error is not set on the connection db. */
-        if (rc == SQLITE_ABORT) {
-            PyErr_SetString(self->connection->OperationalError,
-                            "Cannot operate on modified blob");
-        }
-        else {
-            _pysqlite_seterror(self->connection->state, self->connection->db);
-        }
+        blob_seterror(self, rc);
         return NULL;
     }
     return buffer;
@@ -194,15 +200,7 @@ write_inner(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        /* For some reason after modifying blob the
-        error is not set on the connection db. */
-        if (rc == SQLITE_ABORT) {
-            PyErr_SetString(self->connection->OperationalError,
-                            "Cannot operate on modified blob");
-        }
-        else {
-            _pysqlite_seterror(self->connection->state, self->connection->db);
-        }
+        blob_seterror(self, rc);
         return -1;
     }
     return 0;
@@ -490,16 +488,7 @@ blob_subscript(pysqlite_Blob *self, PyObject *item)
             Py_END_ALLOW_THREADS
 
             if (rc != SQLITE_OK) {
-                /* For some reason after modifying blob the
-                   error is not set on the connection db. */
-                if (rc == SQLITE_ABORT) {
-                    PyErr_SetString(self->connection->OperationalError,
-                                    "Cannot operate on modified blob");
-                }
-                else {
-                    _pysqlite_seterror(self->connection->state,
-                                       self->connection->db);
-                }
+                blob_seterror(self, rc);
                 PyMem_Free(result_buf);
                 PyMem_Free(data_buff);
                 return NULL;
@@ -596,15 +585,7 @@ blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
             Py_END_ALLOW_THREADS
 
             if (rc != SQLITE_OK){
-                /* For some reason after modifying blob the
-                   error is not set on the connection db. */
-                if (rc == SQLITE_ABORT) {
-                    PyErr_SetString(self->connection->OperationalError,
-                                    "Cannot operate on modified blob");
-                }
-                else {
-                    _pysqlite_seterror(self->connection->state, self->connection->db);
-                }
+                blob_seterror(self, rc);
                 PyMem_Free(data_buff);
                 rc = -1;
             }
@@ -618,15 +599,7 @@ blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
             Py_END_ALLOW_THREADS
 
             if (rc != SQLITE_OK){
-                /* For some reason after modifying blob the
-                   error is not set on the connection db. */
-                if (rc == SQLITE_ABORT) {
-                    PyErr_SetString(self->connection->OperationalError,
-                                    "Cannot operate on modified blob");
-                }
-                else {
-                    _pysqlite_seterror(self->connection->state, self->connection->db);
-                }
+                blob_seterror(self, rc);
                 PyMem_Free(data_buff);
                 rc = -1;
             }
