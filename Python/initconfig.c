@@ -2127,7 +2127,9 @@ _PyConfig_InitImportConfig(PyConfig *config)
     /* -X frozen_modules=[on|off] */
     const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
     if (value == NULL) {
-        config->use_frozen_modules = !_Py_IsDevelopmentEnv(config);
+        // Use a meaningful default.
+        // XXX Add the logic.
+        config->use_frozen_modules = false;
     }
     else if (wcscmp(value, L"on") == 0) {
         config->use_frozen_modules = true;
