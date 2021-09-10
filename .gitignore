@@ -126,7 +126,6 @@ Tools/ssl/win32
 # At that point we will rely the frozen manifest file to identify
 # changed generated files.  We'll drop the entry for it then.
 # See: Tools/scripts/freeze_modules.py.
-Python/frozen_modules/MANIFEST
 #Python/frozen_modules/*.h
 
 # Two-trick pony for OSX and other case insensitive file systems:
