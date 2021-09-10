@@ -1,0 +1,2 @@
+Added :func:`~contextlib.chdir` context manager to change the current working
+directory and then restore it on exit. Simple wrapper around :func:`~os.chdir`.
