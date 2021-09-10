@@ -118,9 +118,9 @@ blob_length(pysqlite_Blob *self)
 };
 
 static PyObject *
-inner_read(pysqlite_Blob *self, int read_length, int offset)
+inner_read(pysqlite_Blob *self, int length, int offset)
 {
-    PyObject *buffer = PyBytes_FromStringAndSize(NULL, read_length);
+    PyObject *buffer = PyBytes_FromStringAndSize(NULL, length);
     if (buffer == NULL) {
         return NULL;
     }
@@ -128,7 +128,7 @@ inner_read(pysqlite_Blob *self, int read_length, int offset)
 
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_read(self->blob, raw_buffer, read_length, self->offset);
+    rc = sqlite3_blob_read(self->blob, raw_buffer, length, self->offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -151,34 +151,34 @@ inner_read(pysqlite_Blob *self, int read_length, int offset)
 /*[clinic input]
 _sqlite3.Blob.read as blob_read
 
-    read_length: int = -1
+    length: int = -1
     /
 
 Read data from blob.
 [clinic start generated code]*/
 
 static PyObject *
-blob_read_impl(pysqlite_Blob *self, int read_length)
-/*[clinic end generated code: output=9c4881a77860b216 input=753a766082129348]*/
+blob_read_impl(pysqlite_Blob *self, int length)
+/*[clinic end generated code: output=1fc99b2541360dde input=b4b443e99af5548f]*/
 {
     if (!check_blob(self)) {
         return NULL;
     }
 
-    if (read_length < 0) {
+    if (length < 0) {
         /* same as file read. */
-        read_length = self->length;
+        length = self->length;
     }
 
     /* making sure we don't read more then blob size */
-    if (read_length > self->length - self->offset) {
-        read_length = self->length - self->offset;
+    if (length > self->length - self->offset) {
+        length = self->length - self->offset;
     }
 
-    PyObject *buffer = inner_read(self, read_length, self->offset);
+    PyObject *buffer = inner_read(self, length, self->offset);
     if (buffer != NULL) {
         /* update offset on sucess. */
-        self->offset += read_length;
+        self->offset += length;
     }
 
     return buffer;

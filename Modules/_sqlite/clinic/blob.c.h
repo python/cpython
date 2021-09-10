@@ -21,7 +21,7 @@ blob_close(pysqlite_Blob *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(blob_read__doc__,
-"read($self, read_length=-1, /)\n"
+"read($self, length=-1, /)\n"
 "--\n"
 "\n"
 "Read data from blob.");
@@ -30,13 +30,13 @@ PyDoc_STRVAR(blob_read__doc__,
     {"read", (PyCFunction)(void(*)(void))blob_read, METH_FASTCALL, blob_read__doc__},
 
 static PyObject *
-blob_read_impl(pysqlite_Blob *self, int read_length);
+blob_read_impl(pysqlite_Blob *self, int length);
 
 static PyObject *
 blob_read(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int read_length = -1;
+    int length = -1;
 
     if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
@@ -44,12 +44,12 @@ blob_read(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    read_length = _PyLong_AsInt(args[0]);
-    if (read_length == -1 && PyErr_Occurred()) {
+    length = _PyLong_AsInt(args[0]);
+    if (length == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional:
-    return_value = blob_read_impl(self, read_length);
+    return_value = blob_read_impl(self, length);
 
 exit:
     return return_value;
@@ -199,4 +199,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=76c066429020440e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=755e33bbf7642839 input=a9049054013a1b77]*/
