@@ -1175,40 +1175,97 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
-    class LRU:
+    from time import time
 
-        def __init__(self, func, maxsize=128):
+    class TimeBoundedLRU:
+        "LRU Cache that invalidates and refreshes old entries."
+
+        def __init__(self, func, maxsize=128, maxage=30):
+            self.cache = OrderedDict()      # { args : (timestamp, result)}
             self.func = func
             self.maxsize = maxsize
-            self.cache = OrderedDict()
+            self.maxage = maxage
 
         def __call__(self, *args):
             if args in self.cache:
-                value = self.cache[args]
                 self.cache.move_to_end(args)
-                return value
-            value = self.func(*args)
-            if len(self.cache) >= self.maxsize:
-                self.cache.popitem(False)
-            self.cache[args] = value
-            return value
+                timestamp, result = self.cache[args]
+                if time() - timestamp <= self.maxage:
+                    return result
+            result = self.func(*args)
+            self.cache[args] = time(), result
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(0)
+            return result
+
+
+.. testcode::
+
+    class MultiHitLRUCache:
+        """ LRU cache that defers caching a result until
+            it has been requested multiple times.
+
+            To avoid flushing the LRU cache with one-time requests,
+            we don't cache until a request has been made more than once.
+
+        """
+
+        def __init__(self, func, maxsize=128, maxrequests=4096, cache_after=1):
+            self.requests = OrderedDict()   # { uncached_key : request_count }
+            self.cache = OrderedDict()      # { cached_key : function_result }
+            self.func = func
+            self.maxrequests = maxrequests  # max number of uncached requests
+            self.maxsize = maxsize          # max number of stored return values
+            self.cache_after = cache_after
+
+        def __call__(self, *args):
+            if args in self.cache:
+                self.cache.move_to_end(args)
+                return self.cache[args]
+            result = self.func(*args)
+            self.requests[args] = self.requests.get(args, 0) + 1
+            if self.requests[args] <= self.cache_after:
+                self.requests.move_to_end(args)
+                if len(self.requests) > self.maxrequests:
+                    self.requests.popitem(0)
+            else:
+                self.requests.pop(args, None)
+                self.cache[args] = result
+                if len(self.cache) > self.maxsize:
+                    self.cache.popitem(0)
+            return result
 
 .. doctest::
     :hide:
 
     >>> def square(x):
-    ...     return x ** 2
+    ...     return x * x
     ...
-    >>> s = LRU(square, maxsize=5)
-    >>> actual = [(s(x), s(x)) for x in range(20)]
-    >>> expected = [(x**2, x**2) for x in range(20)]
-    >>> actual == expected
+    >>> f = MultiHitLRUCache(square, maxsize=4, maxrequests=6)
+    >>> list(map(f, range(10)))  # First requests, don't cache
+    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    >>> f(4)  # Cache the second request
+    16
+    >>> f(6)  # Cache the second request
+    36
+    >>> f(2)  # The first request aged out, so don't cache
+    4
+    >>> f(6)  # Cache hit
+    36
+    >>> f(4)  # Cache hit and move to front
+    16
+    >>> list(f.cache.values())
+    [36, 16]
+    >>> set(f.requests).isdisjoint(f.cache)
     True
-    >>> actual = list(s.cache.items())
-    >>> expected = [((x,), x**2) for x in range(15, 20)]
-    >>> actual == expected
+    >>> list(map(f, [9, 8, 7]))   # Cache these second requests
+    [81, 64, 49]
+    >>> list(map(f, [7, 9]))  # Cache hits
+    [49, 81]
+    >>> list(f.cache.values())
+    [16, 64, 49, 81]
+    >>> set(f.requests).isdisjoint(f.cache)
     True
-
 
 :class:`UserDict` objects
 -------------------------

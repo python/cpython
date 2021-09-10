@@ -48,7 +48,7 @@ OPENSSL_OLD_VERSIONS = [
 
 OPENSSL_RECENT_VERSIONS = [
     "1.1.1l",
-    "3.0.0-beta1"
+    "3.0.0"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -412,6 +412,10 @@ class BuildOpenSSL(AbstractBuilder):
             ["make", "-j1", "install_ssldirs", "install_fips"],
             cwd=self.build_dir
         )
+        if not os.path.isdir(self.lib_dir):
+            # 3.0.0-beta2 uses lib64 on 64 bit platforms
+            lib64 = self.lib_dir + "64"
+            os.symlink(lib64, self.lib_dir)
 
     @property
     def short_version(self):

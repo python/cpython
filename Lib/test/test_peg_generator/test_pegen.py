@@ -15,6 +15,7 @@ with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar import GrammarVisitor, GrammarError, Grammar
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
+    from pegen.parser_generator import compute_nullables, compute_left_recursives
     from pegen.python_generator import PythonParserGenerator
 
 
@@ -502,11 +503,10 @@ class TestPegen(unittest.TestCase):
         sign: ['-' | '+']
         """
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
-        out = io.StringIO()
-        genr = PythonParserGenerator(grammar, out)
         rules = grammar.rules
-        self.assertFalse(rules["start"].nullable)  # Not None!
-        self.assertTrue(rules["sign"].nullable)
+        nullables = compute_nullables(rules)
+        self.assertNotIn(rules["start"], nullables)  # Not None!
+        self.assertIn(rules["sign"], nullables)
 
     def test_advanced_left_recursive(self) -> None:
         grammar_source = """
@@ -514,11 +514,11 @@ class TestPegen(unittest.TestCase):
         sign: ['-']
         """
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
-        out = io.StringIO()
-        genr = PythonParserGenerator(grammar, out)
         rules = grammar.rules
-        self.assertFalse(rules["start"].nullable)  # Not None!
-        self.assertTrue(rules["sign"].nullable)
+        nullables = compute_nullables(rules)
+        compute_left_recursives(rules)
+        self.assertNotIn(rules["start"], nullables)  # Not None!
+        self.assertIn(rules["sign"], nullables)
         self.assertTrue(rules["start"].left_recursive)
         self.assertFalse(rules["sign"].left_recursive)
 

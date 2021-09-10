@@ -35,6 +35,7 @@
 #endif
 
 
+_Py_IDENTIFIER(__main__);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(excepthook);
 _Py_IDENTIFIER(flush);
@@ -974,7 +975,8 @@ print_exception(PyObject *f, PyObject *value)
             err = PyFile_WriteString("<unknown>", f);
         }
         else {
-            if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins))
+            if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
+                !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__))
             {
                 err = PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
                 err += PyFile_WriteString(".", f);
