@@ -737,9 +737,9 @@ class CursorTests(unittest.TestCase):
 class BlobTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
-        self.cx.execute("create table test(id integer primary key, blob_col blob)")
+        self.cx.execute("create table test(blob_col blob)")
         self.blob_data = b"a" * 100
-        self.cx.execute("insert into test(blob_col) values (?)", (self.blob_data, ))
+        self.cx.execute("insert into test(blob_col) values (?)", (self.blob_data,))
         self.blob = self.cx.open_blob("test", "blob_col", 1)
         self.second_data = b"b" * 100
 
@@ -803,12 +803,12 @@ class BlobTests(unittest.TestCase):
             self.blob.write(b"a" * 1000)
 
     def test_blob_read_after_row_change(self):
-        self.cx.execute("UPDATE test SET blob_col='aaaa' where id=1")
+        self.cx.execute("UPDATE test SET blob_col='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob.read()
 
     def test_blob_write_after_row_change(self):
-        self.cx.execute("UPDATE test SET blob_col='aaaa' where id=1")
+        self.cx.execute("UPDATE test SET blob_col='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob.write(b"aaa")
 
@@ -920,7 +920,7 @@ class BlobTests(unittest.TestCase):
 
     def test_closed_blob_read(self):
         con = sqlite.connect(":memory:")
-        con.execute("create table test(id integer primary key, blob_col blob)")
+        con.execute("create table test(blob_col blob)")
         con.execute("insert into test(blob_col) values (zeroblob(100))")
         blob = con.open_blob("test", "blob_col", 1)
         con.close()
