@@ -190,7 +190,7 @@ blob_read_impl(pysqlite_Blob *self, int length)
 };
 
 static int
-write_inner(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
+inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len, int offset)
 {
     int rc;
 
@@ -233,7 +233,7 @@ blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
         return NULL;
     }
 
-    int rc = write_inner(self, data->buf, data->len, self->offset);
+    int rc = inner_write(self, data->buf, data->len, self->offset);
     if (rc < 0) {
         return NULL;
     }
@@ -452,7 +452,7 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
     }
 
     const char *buf = PyBytes_AS_STRING(value);
-    return write_inner(self, buf, 1, i);
+    return inner_write(self, buf, 1, i);
 }
 
 static int
@@ -486,7 +486,7 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         rc = 0;
     }
     else if (step == 1) {
-        rc = write_inner(self, vbuf.buf, slicelen, start);
+        rc = inner_write(self, vbuf.buf, slicelen, start);
     }
     else {
         PyObject *read_blob = inner_read(self, stop - start, start);
@@ -498,7 +498,7 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
             for (Py_ssize_t i = 0, j = 0; i < slicelen; i++, j += step) {
                 blob_buf[j] = ((char *)vbuf.buf)[i];
             }
-            rc = write_inner(self, blob_buf, stop - start, start);
+            rc = inner_write(self, blob_buf, stop - start, start);
             Py_DECREF(read_blob);
         }
     }
