@@ -138,8 +138,8 @@ inner_read(pysqlite_Blob *self, int length, int offset)
     if (buffer == NULL) {
         return NULL;
     }
-    char *raw_buffer = PyBytes_AS_STRING(buffer);
 
+    char *raw_buffer = PyBytes_AS_STRING(buffer);
     int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_read(self->blob, raw_buffer, length, self->offset);
@@ -456,38 +456,26 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
     else if (step == 1) {
         return inner_read(self, slicelen, start);
     }
-    else {
-        char *result_buf = (char *)PyMem_Malloc(slicelen);
-        if (result_buf == NULL) {
-            return PyErr_NoMemory();
-        }
 
-        char *data_buff = (char *)PyMem_Malloc(stop - start);
-        if (data_buff == NULL) {
-            PyMem_Free(result_buf);
-            return PyErr_NoMemory();
-        }
-
-        int rc;
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_blob_read(self->blob, data_buff, stop - start, start);
-        Py_END_ALLOW_THREADS
-
-        if (rc != SQLITE_OK) {
-            blob_seterror(self, rc);
-            PyMem_Free(result_buf);
-            PyMem_Free(data_buff);
-            return NULL;
-        }
-
-        for (Py_ssize_t cur = 0, i = 0; i < slicelen; cur += step, i++) {
-            result_buf[i] = data_buff[cur];
-        }
-        PyObject *result = PyBytes_FromStringAndSize(result_buf, slicelen);
-        PyMem_Free(result_buf);
-        PyMem_Free(data_buff);
-        return result;
+    PyObject *blob = inner_read(self, stop - start, start);
+    if (blob == NULL) {
+        return NULL;
     }
+
+    PyObject *result = PyBytes_FromStringAndSize(NULL, slicelen);
+    if (result == NULL) {
+        goto exit;
+    }
+
+    char *blob_buf = PyBytes_AS_STRING(blob);
+    char *res_buf = PyBytes_AS_STRING(result);
+    for (Py_ssize_t i = 0, j = 0; i < slicelen; i++, j += step) {
+        res_buf[i] = blob_buf[j];
+    }
+
+exit:
+    Py_DECREF(blob);
+    return result;
 }
 
 static PyObject *
