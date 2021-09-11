@@ -528,18 +528,17 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
 static int
 ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
 {
-    int rc = -1;
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Blob object doesn't support slice deletion");
+        return -1;
+    }
 
     Py_ssize_t start, stop, step, slicelen;
     if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
         return -1;
     }
     slicelen = PySlice_AdjustIndices(self->length, &start, &stop, step);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Blob object doesn't support slice deletion");
-        return -1;
-    }
 
     Py_buffer vbuf;
     if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
@@ -552,43 +551,26 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return -1;
     }
 
-    if (slicelen == 0) { // FIXME
+    int rc;
+    if (slicelen == 0) {
+        rc = 0;
     }
     else if (step == 1) {
         rc = write_inner(self, vbuf.buf, slicelen, start);
     }
     else {
-        char *data_buff = (char *)PyMem_Malloc(stop - start);
-        if (data_buff == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_blob_read(self->blob, data_buff, stop - start, start);
-        Py_END_ALLOW_THREADS
-
-        if (rc != SQLITE_OK){
-            blob_seterror(self, rc);
-            PyMem_Free(data_buff);
+        PyObject *read_blob = inner_read(self, stop - start, start);
+        if (read_blob == NULL) {
             rc = -1;
         }
-
-        for (Py_ssize_t cur = 0, i = 0; i < slicelen; cur += step, i++) {
-            data_buff[cur] = ((char *)vbuf.buf)[i];
+        else {
+            char *blob_buf = PyBytes_AS_STRING(read_blob);
+            for (Py_ssize_t i = 0, j = 0; i < slicelen; i++, j += step) {
+                blob_buf[j] = ((char *)vbuf.buf)[i];
+            }
+            rc = write_inner(self, blob_buf, stop - start, start);
+            Py_DECREF(read_blob);
         }
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_blob_write(self->blob, data_buff, stop - start, start);
-        Py_END_ALLOW_THREADS
-
-        if (rc != SQLITE_OK){
-            blob_seterror(self, rc);
-            PyMem_Free(data_buff);
-            rc = -1;
-        }
-        rc = 0;
-
     }
     PyBuffer_Release(&vbuf);
     return rc;
