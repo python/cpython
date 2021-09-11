@@ -3276,6 +3276,31 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
 
 }
 
+/*[clinic input]
+_ssl._SSLContext.set_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_sigalgs_impl(PySSLContext *self,
+                                  const char *sigalgslist)
+/*[clinic end generated code: output=e2fedc85569fbee5 input=55d55d1ad9de10cc]*/
+{
+    int ret = SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist);
+    if (ret == 0) {
+        /* Clearing the error queue is necessary on some OpenSSL versions,
+           otherwise the error will be reported again when another SSL call
+           is done. */
+        ERR_clear_error();
+        PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
+                        "No Signature algorithms can be selected.");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 
 static int
 do_protocol_selection(int alpn, unsigned char **out, unsigned char *outlen,
@@ -4637,6 +4662,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT__WRAP_SOCKET_METHODDEF
     _SSL__SSLCONTEXT__WRAP_BIO_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_SIGALGS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF
