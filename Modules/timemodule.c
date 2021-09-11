@@ -2085,7 +2085,6 @@ pysleep(_PyTime_t secs)
         }
 #endif
 
-        
 #ifdef HAVE_CLOCK_NANOSLEEP
         Py_BEGIN_ALLOW_THREADS
         ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
@@ -2097,7 +2096,6 @@ pysleep(_PyTime_t secs)
         Py_END_ALLOW_THREADS
         err = errno;
 #endif
-        
 
         if (ret == 0) {
             break;
