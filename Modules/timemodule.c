@@ -2087,6 +2087,7 @@ pysleep(_PyTime_t secs)
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
         err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
+        errno = err;
 #else
         err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
 #endif
@@ -2096,18 +2097,10 @@ pysleep(_PyTime_t secs)
             break;
         }
 
-#ifdef HAVE_CLOCK_NANOSLEEP
-        if (err != EINTR) {
-            errno = err;
-            PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
-        }
-#else
         if (errno != EINTR) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
-#endif
 #else
         millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
         if (millisecs > (double)ULONG_MAX) {
