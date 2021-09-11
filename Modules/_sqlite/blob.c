@@ -67,7 +67,7 @@ check_blob(pysqlite_Blob *self)
         return 0;
     }
     if (self->blob == NULL) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
+        pysqlite_state *state = self->connection->state;
         PyErr_SetString(state->ProgrammingError,
                         "Cannot operate on a closed blob.");
         return 0;
