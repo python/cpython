@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 
@@ -432,6 +433,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
         })
+    else:
+        config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+        if '--with-address-sanitizer' in config_args:
+            CONFIG_COMPAT['use_frozen_modules'] = True
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
