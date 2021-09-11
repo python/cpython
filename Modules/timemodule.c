@@ -2059,6 +2059,7 @@ pysleep(_PyTime_t secs)
     struct timeval timeout;
 #endif
     int err = 0;
+    int ret = 0;
 #else
     _PyTime_t millisecs;
     unsigned long ul_millis;
@@ -2086,18 +2087,20 @@ pysleep(_PyTime_t secs)
 
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
-        err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
-        errno = err;
+        ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
+        err = ret;
 #else
-        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+        err = errno;
 #endif
         Py_END_ALLOW_THREADS
 
-        if (err == 0) {
+        if (ret == 0) {
             break;
         }
 
-        if (errno != EINTR) {
+        if (err != EINTR) {
+            errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
