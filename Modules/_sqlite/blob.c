@@ -434,8 +434,8 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
         return -1;
     }
     if (!PyBytes_Check(value) || PyBytes_Size(value) != 1) {
-        PyErr_SetString(PyExc_IndexError,
-                        "Blob assignment must be length-1 bytes()");
+        PyErr_SetString(PyExc_ValueError,
+                        "Blob assignment must be a single byte");
         return -1;
     }
 

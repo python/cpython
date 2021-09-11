@@ -883,6 +883,8 @@ class BlobTests(unittest.TestCase):
     def test_blob_set_item_error(self):
         with self.assertRaises(TypeError):
             self.blob["a"] = b"b"
+        with self.assertRaises(ValueError):
+            self.blob[0] = b"abc"
         with self.assertRaises(TypeError):
             del self.blob[0]
         with self.assertRaises(IndexError):
