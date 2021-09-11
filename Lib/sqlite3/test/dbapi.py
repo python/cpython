@@ -172,11 +172,6 @@ class ModuleTests(unittest.TestCase):
         if sqlite.version_info >= (3, 8, 3):
             consts.append("SQLITE_RECURSIVE")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
-        consts += [
-            "BLOB_SEEK_START",
-            "BLOB_SEEK_CUR",
-            "BLOB_SEEK_END",
-        ]
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
@@ -754,13 +749,14 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(10)
         self.assertEqual(self.blob.tell(), 10)
 
-        self.blob.seek(10, sqlite.BLOB_SEEK_START)
+        import os
+        self.blob.seek(10, os.SEEK_SET)
         self.assertEqual(self.blob.tell(), 10)
 
-        self.blob.seek(10, sqlite.BLOB_SEEK_CUR)
+        self.blob.seek(10, os.SEEK_CUR)
         self.assertEqual(self.blob.tell(), 20)
 
-        self.blob.seek(-10, sqlite.BLOB_SEEK_END)
+        self.blob.seek(-10, os.SEEK_END)
         self.assertEqual(self.blob.tell(), 90)
 
     def test_blob_seek_error(self):
