@@ -398,9 +398,20 @@ blob_item(pysqlite_Blob *self, Py_ssize_t i)
 }
 
 static int
-blob_ass_item(pysqlite_Blob *self, Py_ssize_t i, PyObject *v)
+blob_ass_item(pysqlite_Blob *self, Py_ssize_t i, PyObject *value)
 {
     if (!check_blob(self)) {
+        return -1;
+    }
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Blob object doesn't support item deletion");
+        return -1;
+    }
+    if (!PyBytes_Check(value) || PyBytes_Size(value) != 1) {
+        PyErr_SetString(PyExc_IndexError,
+                        "Blob assignment must be length-1 bytes()");
         return -1;
     }
 
@@ -408,18 +419,8 @@ blob_ass_item(pysqlite_Blob *self, Py_ssize_t i, PyObject *v)
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return -1;
     }
-    if (v == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Blob object doesn't support item deletion");
-        return -1;
-    }
-    if (! (PyBytes_Check(v) && PyBytes_Size(v)==1) ) {
-        PyErr_SetString(PyExc_IndexError,
-                        "Blob assignment must be length-1 bytes()");
-        return -1;
-    }
 
-    const char *buf = PyBytes_AsString(v);
+    const char *buf = PyBytes_AS_STRING(value);
     return write_inner(self, buf, 1, i);
 }
 
@@ -499,6 +500,17 @@ blob_subscript(pysqlite_Blob *self, PyObject *item)
 static int
 ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
 {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Blob doesn't support item deletion");
+        return -1;
+    }
+    if (!PyBytes_Check(value) || PyBytes_Size(value) != 1) {
+        PyErr_SetString(PyExc_IndexError,
+                        "Blob assignment must be length-1 bytes()");
+        return -1;
+    }
+
     Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred()) {
         return -1;
@@ -510,18 +522,8 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return -1;
     }
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Blob doesn't support item deletion");
-        return -1;
-    }
-    if (! (PyBytes_Check(value) && PyBytes_Size(value)==1) ) {
-        PyErr_SetString(PyExc_IndexError,
-                        "Blob assignment must be length-1 bytes()");
-        return -1;
-    }
 
-    const char *buf = PyBytes_AsString(value);
+    const char *buf = PyBytes_AS_STRING(value);
     return write_inner(self, buf, 1, i);
 }
 
