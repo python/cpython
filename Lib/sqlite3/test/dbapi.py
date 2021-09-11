@@ -764,15 +764,24 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 90)
 
     def test_blob_seek_error(self):
-        for pos in 1000, -10:
-            with self.subTest(pos=pos):
-                self.assertRaises(ValueError, self.blob.seek, pos)
+        ops = (
+            lambda: self.blob.seek(1000),
+            lambda: self.blob.seek(-10),
+            lambda: self.blob.seek(10, -1),
+        )
+        for op in ops:
+            with self.subTest(op=op):
+                self.assertRaises(ValueError, op)
 
     def test_blob_read(self):
-        self.assertEqual(self.blob.read(), self.blob_data)
+        buf = self.blob.read()
+        self.assertEqual(buf, self.blob_data)
+        self.assertEqual(len(buf), len(self.blob_data))
 
-    def test_blob_read_size(self):
-        self.assertEqual(len(self.blob.read(10)), 10)
+    def test_blob_read_too_much(self):
+        buf = self.blob.read(len(self.blob_data) * 2)
+        self.assertEqual(buf, self.blob_data)
+        self.assertEqual(len(buf), len(self.blob_data))
 
     def test_blob_read_advance_offset(self):
         self.blob.read(10)
@@ -867,9 +876,24 @@ class BlobTests(unittest.TestCase):
         self.blob[0] = b"b"
         self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], b"b" + self.blob_data[1:])
 
+    def test_blob_set_item(self):
+        self.blob[-1] = b"z"
+        self.assertEqual(self.blob[-1], b"z")
+
+    def test_blob_set_item_error(self):
+        with self.assertRaises(TypeError):
+            self.blob["a"] = b"b"
+        with self.assertRaises(TypeError):
+            del self.blob[0]
+        with self.assertRaises(IndexError):
+            self.blob[1000] = b"a"
+
     def test_blob_set_slice(self):
         self.blob[0:5] = b"bbbbb"
         self.assertEqual(self.cx.execute("select blob_col from test").fetchone()[0], b"bbbbb" + self.blob_data[5:])
+
+    def test_blob_set_empty_slice(self):
+        self.blob[0:0] = b""
 
     def test_blob_set_slice_with_skip(self):
         self.blob[0:10:2] = b"bbbbb"
@@ -878,9 +902,13 @@ class BlobTests(unittest.TestCase):
     def test_blob_get_empty_slice(self):
         self.assertEqual(self.blob[5:5], b"")
 
-    def test_blob_set_slice_wrong_length(self):
+    def test_blob_set_slice_error(self):
         with self.assertRaises(IndexError):
             self.blob[5:10] = b"a"
+        with self.assertRaises(IndexError):
+            self.blob[5:10] = b"a" * 1000
+        with self.assertRaises(TypeError):
+            del self.blob[5:10]
 
     def test_blob_concat_not_supported(self):
         with self.assertRaises(SystemError):
@@ -906,11 +934,19 @@ class BlobTests(unittest.TestCase):
         cx.execute("insert into test values (zeroblob(100))")
         blob = cx.open_blob("test", "b", 1)
         blob.close()
+
+        def assign(): blob[0] = b""
         ops = [
             lambda: blob.read(),
             lambda: blob.write(b""),
             lambda: blob.seek(0),
             lambda: blob.tell(),
+            lambda: blob.__enter__(),
+            lambda: blob.__exit__(None, None, None),
+            lambda: len(blob),
+            lambda: blob[0],
+            lambda: blob[0:1],
+            assign,
         ]
         msg = "Cannot operate on a closed blob"
         for op in ops:
