@@ -750,21 +750,16 @@ class BlobTests(unittest.TestCase):
     def test_blob_length(self):
         self.assertEqual(len(self.blob), 100)
 
-    def test_blob_tell(self):
-        self.assertEqual(self.blob.tell(), 0)
-
-    def test_blob_seek_from_start(self):
+    def test_blob_seek_and_tell(self):
         self.blob.seek(10)
         self.assertEqual(self.blob.tell(), 10)
+
         self.blob.seek(10, sqlite.BLOB_SEEK_START)
         self.assertEqual(self.blob.tell(), 10)
 
-    def test_blob_seek_from_current_pos(self):
-        self.blob.seek(10, sqlite.BLOB_SEEK_CUR)
         self.blob.seek(10, sqlite.BLOB_SEEK_CUR)
         self.assertEqual(self.blob.tell(), 20)
 
-    def test_blob_seek_from_end(self):
         self.blob.seek(-10, sqlite.BLOB_SEEK_END)
         self.assertEqual(self.blob.tell(), 90)
 
@@ -824,37 +819,35 @@ class BlobTests(unittest.TestCase):
             read_only_blob.write(b"aaa")
         read_only_blob.close()
 
-    def test_blob_open_with_bad_db(self):
-        with self.assertRaises(sqlite.OperationalError):
-            self.cx.open_blob("test", "blob_col", 1, name="notexisintg")
-
-    def test_blob_open_with_bad_table(self):
-        with self.assertRaises(sqlite.OperationalError):
-            self.cx.open_blob("notexisintg", "blob_col", 1)
-
-    def test_blob_open_with_bad_column(self):
-        with self.assertRaises(sqlite.OperationalError):
-            self.cx.open_blob("test", "notexisting", 1)
-
-    def test_blob_open_with_bad_row(self):
-        with self.assertRaises(sqlite.OperationalError):
-            self.cx.open_blob("test", "blob_col", 2)
+    def test_blob_open_error(self):
+        dataset = (
+            (("test", "blob_col", 1), {"name": "notexisting"}),
+            (("notexisting", "blob_col", 1), {}),
+            (("test", "notexisting", 1), {}),
+            (("test", "blob_col", 2), {}),
+        )
+        for args, kwds in dataset:
+            with self.subTest(args=args, kwds=kwds):
+                with self.assertRaises(sqlite.OperationalError):
+                    self.cx.open_blob(*args, **kwds)
 
     def test_blob_get_item(self):
         self.assertEqual(self.blob[5], b"a")
 
-    def test_blob_get_item_index_out_of_range(self):
-        with self.assertRaises(IndexError):
-            self.blob[105]
-        with self.assertRaises(IndexError):
-            self.blob[-105]
-
     def test_blob_get_item_negative_index(self):
         self.assertEqual(self.blob[-5], b"a")
 
-    def test_blob_get_item_invalid_index(self):
-        with self.assertRaises(TypeError):
-            self.blob[b"a"]
+    def test_blob_get_item_error(self):
+        dataset = (
+            (b"", TypeError),
+            (105, IndexError),
+            (-105, IndexError),
+            (len(self.blob), IndexError),
+        )
+        for idx, exc in dataset:
+            with self.subTest(idx=idx, exc=exc):
+                with self.assertRaises(exc):
+                    self.blob[idx]
 
     def test_blob_get_slice(self):
         self.assertEqual(self.blob[5:10], b"aaaaa")
