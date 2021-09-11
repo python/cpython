@@ -142,7 +142,7 @@ inner_read(pysqlite_Blob *self, int length, int offset)
     char *raw_buffer = PyBytes_AS_STRING(buffer);
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_read(self->blob, raw_buffer, length, self->offset);
+    rc = sqlite3_blob_read(self->blob, raw_buffer, length, offset);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
