@@ -54,21 +54,6 @@ blob_dealloc(pysqlite_Blob *self)
     Py_DECREF(tp);
 }
 
-static void
-blob_seterror(pysqlite_Blob *self, int rc)
-{
-    assert(self->connection != NULL);
-#if SQLITE_VERSION_NUMBER < 3008008
-    // SQLite pre 3.8.8 does not set this blob error on the connection
-    if (rc == SQLITE_ABORT) {
-        PyErr_SetString(self->connection->OperationalError,
-                        "Cannot operate on an expired blob handle");
-        return;
-    }
-#endif
-    _pysqlite_seterror(self->connection->state, self->connection->db);
-}
-
 /*
  * Checks if a blob object is usable (i. e. not closed).
  *
@@ -130,6 +115,21 @@ blob_length(pysqlite_Blob *self)
     }
     return self->length;
 };
+
+static void
+blob_seterror(pysqlite_Blob *self, int rc)
+{
+    assert(self->connection != NULL);
+#if SQLITE_VERSION_NUMBER < 3008008
+    // SQLite pre 3.8.8 does not set this blob error on the connection
+    if (rc == SQLITE_ABORT) {
+        PyErr_SetString(self->connection->OperationalError,
+                        "Cannot operate on an expired blob handle");
+        return;
+    }
+#endif
+    _pysqlite_seterror(self->connection->state, self->connection->db);
+}
 
 static PyObject *
 inner_read(pysqlite_Blob *self, int length, int offset)
