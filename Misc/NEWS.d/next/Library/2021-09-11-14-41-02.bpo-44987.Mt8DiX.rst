@@ -1,3 +1,2 @@
-If the given string is pure ASCII string, :func:`unicode.normalize` now
-handles this as an already normalized to process it in constant time.
+Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
 Patch by Dong-hee Na.
