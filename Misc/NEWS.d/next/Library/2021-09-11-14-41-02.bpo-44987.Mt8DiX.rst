@@ -1,0 +1,2 @@
+If the given string is already ASCII strings, :func:`unicode.normalize` now
+handle this as an already normalized string. Patch by Dong-hee Na.
