@@ -910,17 +910,15 @@ class BlobTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             del self.blob[5:10]
 
-    def test_blob_concat_not_supported(self):
-        with self.assertRaises(SystemError):
-            self.blob + self.blob
-
-    def test_blob_repeat_not_supported(self):
-        with self.assertRaises(SystemError):
-            self.blob * 5
-
-    def test_blob_contains_not_supported(self):
-        with self.assertRaises(SystemError):
-            b"aaaaa" in self.blob
+    def test_blob_sequence_not_supported(self):
+        ops = (
+            lambda: self.blob + self.blob,
+            lambda: self.blob * 5,
+            lambda: b"a" in self.blob,
+        )
+        for op in ops:
+            with self.subTest(op=op):
+                self.assertRaises(TypeError, op)
 
     def test_blob_context_manager(self):
         data = b"a" * 100

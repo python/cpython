@@ -354,77 +354,6 @@ blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
 }
 
 static PyObject *
-blob_concat(pysqlite_Blob *self, PyObject *args)
-{
-    if (check_blob(self)) {
-        PyErr_SetString(PyExc_SystemError, "Blob don't support concatenation");
-    }
-    return NULL;
-}
-
-static PyObject *
-blob_repeat(pysqlite_Blob *self, PyObject *args)
-{
-    if (check_blob(self)) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Blob don't support repeat operation");
-    }
-    return NULL;
-}
-
-static int
-blob_contains(pysqlite_Blob *self, PyObject *args)
-{
-    if (check_blob(self)) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Blob don't support contains operation");
-    }
-    return -1;
-}
-
-static PyObject *
-blob_item(pysqlite_Blob *self, Py_ssize_t i)
-{
-    if (!check_blob(self)) {
-        return NULL;
-    }
-
-    if (i < 0 || i >= self->length) {
-        PyErr_SetString(PyExc_IndexError, "Blob index out of range");
-        return NULL;
-    }
-
-    return inner_read(self, 1, i);
-}
-
-static int
-blob_ass_item(pysqlite_Blob *self, Py_ssize_t i, PyObject *value)
-{
-    if (!check_blob(self)) {
-        return -1;
-    }
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Blob object doesn't support item deletion");
-        return -1;
-    }
-    if (!PyBytes_Check(value) || PyBytes_Size(value) != 1) {
-        PyErr_SetString(PyExc_IndexError,
-                        "Blob assignment must be length-1 bytes()");
-        return -1;
-    }
-
-    if (i < 0 || i >= self->length) {
-        PyErr_SetString(PyExc_IndexError, "Blob index out of range");
-        return -1;
-    }
-
-    const char *buf = PyBytes_AS_STRING(value);
-    return write_inner(self, buf, 1, i);
-}
-
-static PyObject *
 subscript_index(pysqlite_Blob *self, PyObject *item)
 {
     Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -438,7 +367,6 @@ subscript_index(pysqlite_Blob *self, PyObject *item)
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return NULL;
     }
-    // TODO: I am not sure...
     return inner_read(self, 1, i);
 }
 
@@ -618,14 +546,6 @@ static PyType_Slot blob_slots[] = {
     {Py_tp_clear, blob_clear},
     {Py_tp_methods, blob_methods},
     {Py_tp_members, blob_members},
-
-    // Sequence protocol
-    {Py_sq_length, blob_length},
-    {Py_sq_concat, blob_concat},
-    {Py_sq_repeat, blob_repeat},
-    {Py_sq_item, blob_item},
-    {Py_sq_ass_item, blob_ass_item},
-    {Py_sq_contains, blob_contains},
 
     // Mapping protocol
     {Py_mp_length, blob_length},
