@@ -1,0 +1,1 @@
+Adds CAN protocol constants for NetBSD to :mod:`socket`.

@@ -7761,6 +7761,9 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
     PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
+#if defined(CAN_RAW_ERR_FILTER)
+    PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
+#endif
 #ifdef HAVE_LINUX_CAN_RAW_FD_FRAMES
     PyModule_AddIntMacro(m, CAN_RAW_FD_FRAMES);
 #endif
