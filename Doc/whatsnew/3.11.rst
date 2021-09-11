@@ -265,6 +265,13 @@ Removed
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
 
+* Remove from the :mod:`configparser` module:
+  the :class:`SafeConfigParser` class,
+  the :attr:`filename` property of the :class:`ParsingError` class,
+  the :meth:`readfp` method of the :class:`ConfigParser` class,
+  deprecated since Python 3.2.
+  (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
 
 Optimizations
 =============
