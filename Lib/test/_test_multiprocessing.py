@@ -3927,26 +3927,31 @@ class _TestSharedMemory(BaseTestCase):
             sms_invalid = shared_memory.SharedMemory(create=True)
 
     def test_shared_memory_pickle_unpickle(self):
-        sms = shared_memory.SharedMemory(create=True, size=512)
-        self.addCleanup(sms.unlink)
-        sms.buf[0:6] = b'pickle'
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                sms = shared_memory.SharedMemory(create=True, size=512)
+                self.addCleanup(sms.unlink)
+                sms.buf[0:6] = b'pickle'
 
-        # Test pickling
-        pickled_sms = pickle.dumps(sms)
-        self.assertNotIn(b'pickle', pickled_sms)
+                # Test pickling
+                pickled_sms = pickle.dumps(sms, protocol=proto)
+                self.assertNotIn(b'pickle', pickled_sms)
 
-        # Test unpickling
-        sms2 = pickle.loads(pickled_sms)
-        self.assertIsInstance(sms2, sms.__class__)
-        self.assertEqual(sms.name, sms2.name)
-        self.assertEqual(bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'pickle')
+                # Test unpickling
+                sms2 = pickle.loads(pickled_sms)
+                self.assertIsInstance(sms2, sms.__class__)
+                self.assertEqual(sms.name, sms2.name)
+                self.assertEqual(
+                    bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'pickle')
 
-        # Test that unpickled version is still the same SharedMemory
-        sms.buf[0:6] = b'newval'
-        self.assertEqual(bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'newval')
+                # Test that unpickled version is still the same SharedMemory
+                sms.buf[0:6] = b'newval'
+                self.assertEqual(
+                    bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'newval')
 
-        sms2.buf[0:6] = b'oldval'
-        self.assertEqual(bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'oldval')
+                sms2.buf[0:6] = b'oldval'
+                self.assertEqual(
+                    bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'oldval')
 
     def test_shared_memory_pickle_unpickle_dead_object(self):
         sms = shared_memory.SharedMemory(create=True, size=512)
@@ -4178,27 +4183,30 @@ class _TestSharedMemory(BaseTestCase):
             empty_sl.shm.unlink()
 
     def test_shared_memory_ShareableList_pickling(self):
-        sl = shared_memory.ShareableList(range(10))
-        self.addCleanup(sl.shm.unlink)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                sl = shared_memory.ShareableList(range(10))
+                self.addCleanup(sl.shm.unlink)
 
-        serialized_sl = pickle.dumps(sl)
-        deserialized_sl = pickle.loads(serialized_sl)
-        self.assertIsInstance(deserialized_sl, shared_memory.ShareableList)
-        self.assertEqual(deserialized_sl[-1], 9)
-        self.assertIsNot(sl, deserialized_sl)
-        deserialized_sl[4] = "changed"
-        self.assertEqual(sl[4], "changed")
+                serialized_sl = pickle.dumps(sl, protocol=proto)
+                deserialized_sl = pickle.loads(serialized_sl)
+                self.assertIsInstance(
+                    deserialized_sl, shared_memory.ShareableList)
+                self.assertEqual(deserialized_sl[-1], 9)
+                self.assertIsNot(sl, deserialized_sl)
+                deserialized_sl[4] = "changed"
+                self.assertEqual(sl[4], "changed")
 
-        # Verify data is not being put into the pickled representation.
-        name = 'a' * len(sl.shm.name)
-        larger_sl = shared_memory.ShareableList(range(400))
-        self.addCleanup(larger_sl.shm.unlink)
-        serialized_larger_sl = pickle.dumps(larger_sl)
-        self.assertEqual(len(serialized_sl), len(serialized_larger_sl))
-        larger_sl.shm.close()
+                # Verify data is not being put into the pickled representation.
+                name = 'a' * len(sl.shm.name)
+                larger_sl = shared_memory.ShareableList(range(400))
+                self.addCleanup(larger_sl.shm.unlink)
+                serialized_larger_sl = pickle.dumps(larger_sl, protocol=proto)
+                self.assertEqual(len(serialized_sl), len(serialized_larger_sl))
+                larger_sl.shm.close()
 
-        deserialized_sl.shm.close()
-        sl.shm.close()
+                deserialized_sl.shm.close()
+                sl.shm.close()
 
     def test_shared_memory_ShareableList_pickling_dead_object(self):
         sl = shared_memory.ShareableList(range(10))
