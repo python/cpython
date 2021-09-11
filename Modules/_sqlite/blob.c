@@ -460,7 +460,7 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
 {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "Blob object doesn't support slice deletion");
+                        "Blob doesn't support slice deletion");
         return -1;
     }
 
