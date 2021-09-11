@@ -288,7 +288,7 @@ Optimizations
 * :file:`.pdbrc` is now read with ``'utf-8'`` encoding.
 
 * Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
-  (Contributed by Dong-hee Na in :issue:`bpo-44987`.)
+  (Contributed by Dong-hee Na in :issue:`44987`.)
 
 
 CPython bytecode changes
