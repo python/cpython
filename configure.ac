@@ -2568,6 +2568,13 @@ AC_CHECK_HEADERS(linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h n
 #endif
 ])
 
+# CAN protocol constants on NetBSD are defined in this header
+AC_CHECK_HEADERS(netcan/can.h,,,[
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
 # checks for typedefs
 AC_CACHE_CHECK([for clock_t in time.h], [ac_cv_clock_t_time_h], [
   AC_EGREP_HEADER([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])

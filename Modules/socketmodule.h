@@ -148,6 +148,10 @@ typedef int socklen_t;
 #include <linux/can/j1939.h>
 #endif
 
+#ifdef HAVE_NETCAN_CAN_H
+#include <netcan/can.h>
+#endif
+
 #ifdef HAVE_SYS_SYS_DOMAIN_H
 #include <sys/sys_domain.h>
 #endif
