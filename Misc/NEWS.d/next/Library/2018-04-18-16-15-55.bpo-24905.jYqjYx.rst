@@ -1,4 +1,3 @@
-The :class:`sqlite3.Connection` now has the
-:meth:`sqlite3.Connection.open_blob` method. The :class:`sqlite3.Blob`
-allows incremental I/O operations to blobs. (Patch by Aviv Palivoda in
-:issue:`24905`)
+Add :meth:`~sqlite3.Connection.open_blob` to :class:`sqlite3.Connection`.
+:class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+Patch by Aviv Palivoda and Erlend E. Aasland.

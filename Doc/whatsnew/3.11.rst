@@ -232,6 +232,10 @@ sqlite3
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379`.)
 
+* Add :meth:`~sqlite3.Connection.open_blob` to :class:`sqlite3.Connection`.
+  :class:`sqlite3.Blob` allows incremental I/O operations on blobs.
+  (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`)
+
 
 Removed
 =======
