@@ -1,0 +1,3 @@
+Calling :func:`mimetypes.guess_all_extensions` with ``strict=False`` no
+longer affects the result of the following call with ``strict=True``.
+Also, mutating the returned list no longer affects the global state.
