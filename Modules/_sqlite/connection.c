@@ -431,14 +431,11 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    int rc, len;
+    int rc;
     sqlite3_blob *blob;
 
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_blob_open(self->db, name, table, col, row, !readonly, &blob);
-    if (rc == SQLITE_OK) {
-        len = sqlite3_blob_bytes(blob);
-    }
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
@@ -454,7 +451,6 @@ pysqlite_connection_open_blob_impl(pysqlite_Connection *self,
     obj->connection = (pysqlite_Connection *)Py_NewRef(self);
     obj->blob = blob;
     obj->offset = 0;
-    obj->length = len;
     obj->in_weakreflist = NULL;
 
     PyObject_GC_Track(obj);
