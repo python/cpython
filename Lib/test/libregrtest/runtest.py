@@ -252,7 +252,7 @@ def runtest(ns: Namespace, test_name: str) -> TestResult:
 
 
 def _test_module(the_module):
-    loader = unittest.TestLoader()
+    loader = unittest.defaultTestLoader
     tests = loader.loadTestsFromModule(the_module)
     for error in loader.errors:
         print(error, file=sys.stderr)

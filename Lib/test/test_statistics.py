@@ -233,7 +233,7 @@ class NumericTestCase(unittest.TestCase):
         ...
         >>> import unittest
         >>> from io import StringIO  # Suppress test runner output.
-        >>> suite = unittest.TestLoader().loadTestsFromTestCase(MyTest)
+        >>> suite = unittest.defaultTestLoader.loadTestsFromTestCase(MyTest)
         >>> unittest.TextTestRunner(stream=StringIO()).run(suite)
         <unittest.runner.TextTestResult run=2 errors=0 failures=0>
 

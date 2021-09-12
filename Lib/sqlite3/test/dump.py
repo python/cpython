@@ -75,7 +75,7 @@ def suite():
         DumpTests,
     ]
     return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
+        [unittest.defaultTestLoader.loadTestsFromTestCase(t) for t in tests]
     )
 
 def test():
