@@ -2394,6 +2394,23 @@ Samuele
 ...     else:
 ...         return starmap(func, repeat(args, times))
 
+>>> def triplewise(iterable):
+...     "Return overlapping triplets from an iterable"
+...     # pairwise('ABCDEFG') -> ABC BCD CDE DEF EFG
+...     for (a, _), (b, c) in pairwise(pairwise(iterable)):
+...         yield a, b, c
+
+>>> import collections
+>>> def sliding_window(iterable, n):
+...     # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+...     it = iter(iterable)
+...     window = collections.deque(islice(it, n), maxlen=n)
+...     if len(window) == n:
+...         yield tuple(window)
+...     for x in it:
+...         window.append(x)
+...         yield tuple(window)
+
 >>> def grouper(n, iterable, fillvalue=None):
 ...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
 ...     args = [iter(iterable)] * n
@@ -2569,6 +2586,12 @@ True
 
 >>> list(grouper(3, 'abcdefg', 'x'))
 [('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
+
+>>> list(triplewise('ABCDEFG'))
+[('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
+
+>>> list(sliding_window('ABCDEFG', 4))
+[('A', 'B', 'C', 'D'), ('B', 'C', 'D', 'E'), ('C', 'D', 'E', 'F'), ('D', 'E', 'F', 'G')]
 
 >>> list(roundrobin('abc', 'd', 'ef'))
 ['a', 'd', 'e', 'b', 'f', 'c']

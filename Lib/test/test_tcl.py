@@ -617,59 +617,6 @@ class TclTest(unittest.TestCase):
                              'arg=%a, %s' % (arg, dbg_info))
         self.assertRaises(TclError, splitlist, '{')
 
-    def test_split(self):
-        split = self.interp.tk.split
-        call = self.interp.tk.call
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'\bsplit\b.*\bsplitlist\b',
-                                    DeprecationWarning)
-            self.assertRaises(TypeError, split)
-            self.assertRaises(TypeError, split, 'a', 'b')
-            self.assertRaises(TypeError, split, 2)
-        testcases = [
-            ('2', '2'),
-            ('', ''),
-            ('{}', ''),
-            ('""', ''),
-            ('{', '{'),
-            ('a\n b\t\r c\n ', ('a', 'b', 'c')),
-            (b'a\n b\t\r c\n ', ('a', 'b', 'c')),
-            ('a \u20ac', ('a', '\u20ac')),
-            (b'a \xe2\x82\xac', ('a', '\u20ac')),
-            (b'a\xc0\x80b', 'a\x00b'),
-            (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
-            (b'{a\xc0\x80b c\xc0\x80d', '{a\x00b c\x00d'),
-            ('a {b c}', ('a', ('b', 'c'))),
-            (r'a b\ c', ('a', ('b', 'c'))),
-            (('a', b'b c'), ('a', ('b', 'c'))),
-            (('a', 'b c'), ('a', ('b', 'c'))),
-            ('a 2', ('a', '2')),
-            (('a', 2), ('a', 2)),
-            ('a 3.4', ('a', '3.4')),
-            (('a', 3.4), ('a', 3.4)),
-            (('a', (2, 3.4)), ('a', (2, 3.4))),
-            ((), ()),
-            ([], ()),
-            (['a', 'b c'], ('a', ('b', 'c'))),
-            (['a', ['b', 'c']], ('a', ('b', 'c'))),
-            (call('list', 1, '2', (3.4,)),
-                (1, '2', (3.4,)) if self.wantobjects else
-                ('1', '2', '3.4')),
-        ]
-        if tcl_version >= (8, 5):
-            if not self.wantobjects or get_tk_patchlevel() < (8, 5, 5):
-                # Before 8.5.5 dicts were converted to lists through string
-                expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
-            else:
-                expected = (12, '\u20ac', b'\xe2\x82\xac', (3.4,))
-            testcases += [
-                (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                    expected),
-            ]
-        for arg, res in testcases:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(split(arg), res, msg=arg)
-
     def test_splitdict(self):
         splitdict = tkinter._splitdict
         tcl = self.interp.tk

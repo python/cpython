@@ -250,6 +250,21 @@ Removed
 
   (Contributed by Victor Stinner in :issue:`45085`.)
 
+* The distutils ``bdist_msi`` command, deprecated in Python 3.9, is now removed.
+  Use ``bdist_wheel`` (wheel packages) instead.
+  (Contributed by Hugo van Kemenade in :issue:`45124`.)
+
+* Due to significant security concerns, the *reuse_address* parameter of
+  :meth:`asyncio.loop.create_datagram_endpoint`, disabled in Python 3.9, is
+  now entirely removed. This is because of the behavior of the socket option
+  ``SO_REUSEADDR`` in UDP.
+  (Contributed by Hugo van Kemenade in :issue:`45129`.)
+
+* Remove :meth:`__getitem__` methods of
+  :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
+  and :class:`fileinput.FileInput`, deprecated since Python 3.9.
+  (Contributed by Hugo van Kemenade in :issue:`45132`.)
+
 
 Optimizations
 =============
@@ -272,6 +287,9 @@ Optimizations
 
 * :file:`.pdbrc` is now read with ``'utf-8'`` encoding.
 
+* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
+  (Contributed by Dong-hee Na in :issue:`44987`.)
+
 
 CPython bytecode changes
 ========================
@@ -283,6 +301,9 @@ CPython bytecode changes
 
 Build Changes
 =============
+
+* CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
+  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
 
 Deprecated
@@ -309,6 +330,9 @@ Removed
 * :class:`asyncio.coroutines.CoroWrapper` used for wrapping legacy
   generator-based coroutine objects in the debug mode.
   (Contributed by Illia Volochii in :issue:`43216`.)
+
+* Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+  (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
 Porting to Python 3.11
 ======================
@@ -398,6 +422,34 @@ Porting to Python 3.11
   the :pep:`590` vectorcall protocol.  Previously, this was only possible for
   :ref:`static types <static-types>`.
   (Contributed by Erlend E. Aasland in :issue:`43908`)
+
+* Since :c:func:`Py_TYPE()` is changed to a inline static function,
+  ``Py_TYPE(obj) = new_type`` must be replaced with
+  ``Py_SET_TYPE(obj, new_type)``: see the :c:func:`Py_SET_TYPE()` function
+  (available since Python 3.9). For backward compatibility, this macro can be
+  used::
+
+      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
+      static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+      { ob->ob_type = type; }
+      #define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject*)(ob), type)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Since :c:func:`Py_SIZE()` is changed to a inline static function,
+  ``Py_SIZE(obj) = new_size`` must be replaced with
+  ``Py_SET_SIZE(obj, new_size)``: see the :c:func:`Py_SET_SIZE()` function
+  (available since Python 3.9). For backward compatibility, this macro can be
+  used::
+
+      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE)
+      static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+      { ob->ob_size = size; }
+      #define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
 
 Deprecated
 ----------
