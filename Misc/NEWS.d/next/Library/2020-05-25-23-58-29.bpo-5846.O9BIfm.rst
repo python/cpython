@@ -5,4 +5,10 @@ Python 3.13:
 * :meth:`~unittest.makeSuite`
 * :meth:`~unittest.getTestCaseNames`
 
+Use :class:`~unittest.TestLoader` methods instead:
+
+* :meth:`unittest.TestLoader.loadTestsFromModule`
+* :meth:`unittest.TestLoader.loadTestsFromTestCase`
+* :meth:`unittest.TestLoader.getTestCaseNames`
+
 Patch by Erlend E. Aasland.
