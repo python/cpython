@@ -1,0 +1,2 @@
+Update ``test_sysconfig.test_user_similar()`` for the posix_user scheme:
+``platlib`` doesn't use :data:`sys.platlibdir`. Patch by Victor Stinner.

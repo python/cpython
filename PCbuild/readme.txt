@@ -115,9 +115,10 @@ _testembed
 
 These are miscellaneous sub-projects that don't really fit the other
 categories:
-_freeze_importlib
-    _freeze_importlib.exe, used to regenerate Python\importlib.h after
-    changes have been made to Lib\importlib\_bootstrap.py
+_freeze_module
+    _freeze_module.exe, used to regenerate frozen modules in Python
+    after changes have been made to the corresponding source files
+    (e.g. Lib\importlib\_bootstrap.py).
 pyshellext
     pyshellext.dll, the shell extension deployed with the launcher
 python3dll

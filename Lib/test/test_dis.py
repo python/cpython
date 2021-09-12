@@ -702,10 +702,7 @@ class DisWithFileTests(DisTests):
 if sys.flags.optimize:
     code_info_consts = "0: None"
 else:
-    code_info_consts = (
-    """0: 'Formatted details of methods, functions, or code.'
-   1: None"""
-)
+    code_info_consts = "0: 'Formatted details of methods, functions, or code.'"
 
 code_info_code_info = f"""\
 Name:              code_info
@@ -828,7 +825,6 @@ Flags:             0x0
 Constants:
    0: 0
    1: 1
-   2: None
 Names:
    0: x"""
 
@@ -1306,6 +1302,11 @@ class BytecodeTests(InstructionTestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
+    @requires_debug_ranges()
+    def test_bytecode_co_positions(self):
+        bytecode = dis.Bytecode("a=1")
+        for instr, positions in zip(bytecode, bytecode.codeobj.co_positions()):
+            assert instr.positions == positions
 
 class TestBytecodeTestCase(BytecodeTestCase):
     def test_assert_not_in_with_op_not_in_bytecode(self):
@@ -1324,6 +1325,39 @@ class TestBytecodeTestCase(BytecodeTestCase):
         code = compile("a = 1", "<string>", "exec")
         with self.assertRaises(AssertionError):
             self.assertNotInBytecode(code, "LOAD_CONST", 1)
+
+class TestFinderMethods(unittest.TestCase):
+    def test__find_imports(self):
+        cases = [
+            ("import a.b.c", ('a.b.c', 0, None)),
+            ("from a.b import c", ('a.b', 0, ('c',))),
+            ("from a.b import c as d", ('a.b', 0, ('c',))),
+            ("from a.b import *", ('a.b', 0, ('*',))),
+            ("from ...a.b import c as d", ('a.b', 3, ('c',))),
+            ("from ..a.b import c as d, e as f", ('a.b', 2, ('c', 'e'))),
+            ("from ..a.b import *", ('a.b', 2, ('*',))),
+        ]
+        for src, expected in cases:
+            with self.subTest(src=src):
+                code = compile(src, "<string>", "exec")
+                res = tuple(dis._find_imports(code))
+                self.assertEqual(len(res), 1)
+                self.assertEqual(res[0], expected)
+
+    def test__find_store_names(self):
+        cases = [
+            ("x+y", ()),
+            ("x=y=1", ('x', 'y')),
+            ("x+=y", ('x',)),
+            ("global x\nx=y=1", ('x', 'y')),
+            ("global x\nz=x", ('z',)),
+        ]
+        for src, expected in cases:
+            with self.subTest(src=src):
+                code = compile(src, "<string>", "exec")
+                res = tuple(dis._find_store_names(code))
+                self.assertEqual(res, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

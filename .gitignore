@@ -68,7 +68,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
-Programs/_freeze_importlib
+Programs/_freeze_module
 Programs/_testembed
 PC/python_nt*.h
 PC/pythonnt_rc*.h
