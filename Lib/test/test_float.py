@@ -245,6 +245,33 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
 
+    def test_keywords_in_subclass(self):
+        class subclass(float):
+            pass
+        u = subclass(2.5)
+        self.assertIs(type(u), subclass)
+        self.assertEqual(float(u), 2.5)
+        with self.assertRaises(TypeError):
+            subclass(x=0)
+
+        class subclass_with_init(float):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(float):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
         self.assertTrue((1.).is_integer())
