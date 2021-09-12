@@ -171,6 +171,69 @@ class TestSealable(unittest.TestCase):
             m.test1().test2.test3().test4()
         self.assertIn("mock.test1().test2.test3().test4", str(cm.exception))
 
+    def test_seal_with_attr_autospec(self):
+        # https://bugs.python.org/issue45156
+        class Foo:
+            foo = 0
+
+        for spec_set in (True, False):
+            with self.subTest(spec_set=spec_set):
+                foo = mock.create_autospec(Foo, spec_set=spec_set)
+                mock.seal(foo)
+
+                self.assertIsInstance(foo.foo, mock.NonCallableMagicMock)
+                with self.assertRaises(TypeError):
+                    foo.foo()
+                with self.assertRaises(AttributeError):
+                    foo.bar = 1
+                with self.assertRaises(AttributeError):
+                    foo.missing_attr
+                with self.assertRaises(AttributeError):
+                    foo.missing_method()
+
+    def test_seal_with_method_autospec(self):
+        # https://bugs.python.org/issue45156
+        class Foo:
+            def foo(self):
+                return 1
+
+        for spec_set in (True, False):
+            with self.subTest(spec_set=spec_set):
+                foo = mock.create_autospec(Foo, spec_set=spec_set)
+                foo.foo.return_value = 0
+                mock.seal(foo)
+
+                self.assertIsInstance(foo.foo, mock.MagicMock)
+                self.assertEqual(foo.foo(), 0)
+                with self.assertRaises(AttributeError):
+                    foo.bar = 1
+                with self.assertRaises(AttributeError):
+                    foo.missing_attr
+                with self.assertRaises(AttributeError):
+                    foo.missing_method()
+
+    def test_seal_with_nested_class_autospec(self):
+        # https://bugs.python.org/issue45156
+        class Foo:
+            class Baz:
+                def baz(self):
+                    return 1
+
+        for spec_set in (True, False):
+            with self.subTest(spec_set=spec_set):
+                foo = mock.create_autospec(Foo, spec_set=spec_set)
+                foo.Baz.baz.return_value = 0
+                mock.seal(foo)
+
+                self.assertIsInstance(foo.Baz.baz, mock.MagicMock)
+                self.assertEqual(foo.Baz.baz(), 0)
+                with self.assertRaises(AttributeError):
+                    foo.bar = 1
+                with self.assertRaises(AttributeError):
+                    foo.Baz.bar = 1
+                with self.assertRaises(AttributeError):
+                    foo.Baz.missing_method()
+
 
 if __name__ == "__main__":
     unittest.main()

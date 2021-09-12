@@ -1,0 +1,2 @@
+Fixes infinite loop on ``unittest.seal()`` of mocks created by
+``mock.create_autospec()``.
