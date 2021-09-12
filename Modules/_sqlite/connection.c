@@ -43,10 +43,10 @@ clinic_fsconverter(PyObject *pathlike, const char **result)
     if (!PyUnicode_FSConverter(pathlike, &bytes)) {
         goto error;
     }
-    else if (PyBytes_AsStringAndSize(bytes, &str, &len) < 0) {
+    if (PyBytes_AsStringAndSize(bytes, &str, &len) < 0) {
         goto error;
     }
-    else if ((*result = (const char *)PyMem_Malloc(len+1)) == NULL) {
+    if ((*result = (const char *)PyMem_Malloc(len+1)) == NULL) {
         goto error;
     }
 

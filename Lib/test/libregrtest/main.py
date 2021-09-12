@@ -66,6 +66,7 @@ class Regrtest:
         self.resource_denieds = []
         self.environment_changed = []
         self.run_no_tests = []
+        self.need_rerun = []
         self.rerun = []
         self.first_result = None
         self.interrupted = False
@@ -116,7 +117,7 @@ class Regrtest:
         elif isinstance(result, Failed):
             if not rerun:
                 self.bad.append(test_name)
-                self.rerun.append(result)
+                self.need_rerun.append(result)
         elif isinstance(result, DidNotRun):
             self.run_no_tests.append(test_name)
         elif isinstance(result, Interrupted):
@@ -312,10 +313,12 @@ class Regrtest:
 
         self.log()
         self.log("Re-running failed tests in verbose mode")
-        rerun_list = self.rerun[:]
-        self.rerun = []
+        rerun_list = list(self.need_rerun)
+        self.need_rerun.clear()
         for result in rerun_list:
             test_name = result.name
+            self.rerun.append(test_name)
+
             errors = result.errors or []
             failures = result.failures or []
             error_names = [test_full_name.split(" ")[0] for (test_full_name, *_) in errors]
@@ -397,7 +400,7 @@ class Regrtest:
         if self.rerun:
             print()
             print("%s:" % count(len(self.rerun), "re-run test"))
-            printlist(r.name for r in self.rerun)
+            printlist(self.rerun)
 
         if self.run_no_tests:
             print()
