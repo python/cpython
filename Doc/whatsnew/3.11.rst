@@ -287,6 +287,9 @@ Optimizations
 
 * :file:`.pdbrc` is now read with ``'utf-8'`` encoding.
 
+* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
+  (Contributed by Dong-hee Na in :issue:`44987`.)
+
 
 CPython bytecode changes
 ========================
@@ -327,6 +330,9 @@ Removed
 * :class:`asyncio.coroutines.CoroWrapper` used for wrapping legacy
   generator-based coroutine objects in the debug mode.
   (Contributed by Illia Volochii in :issue:`43216`.)
+
+* Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+  (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
 Porting to Python 3.11
 ======================
