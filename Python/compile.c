@@ -8131,6 +8131,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         goto error;
                     }
                     is_true = PyObject_IsTrue(cnt);
+                    Py_DECREF(cnt);
                     if (is_true == -1) {
                         goto error;
                     }
@@ -8151,6 +8152,7 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         goto error;
                     }
                     is_true = PyObject_IsTrue(cnt);
+                    Py_DECREF(cnt);
                     if (is_true == -1) {
                         goto error;
                     }
