@@ -1833,7 +1833,7 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         return NULL;
     }
 
-    pysqlite_do_all_statements(self, ACTION_RESET, 1);
+    pysqlite_do_all_statements(self);
 
     /* Transfer ownership of the buffer to SQLite:
      * - Move buffer from Py to SQLite
