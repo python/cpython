@@ -1,4 +1,4 @@
-Deprecated the following :mod:`unittest` methods, scheduled for removal in
+Deprecated the following :mod:`unittest` functions, scheduled for removal in
 Python 3.13:
 
 * :meth:`~unittest.findTestCases`
