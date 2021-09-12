@@ -4,7 +4,7 @@ preserve
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
-                              PyObject *database_obj, double timeout,
+                              const char *database, double timeout,
                               int detect_types, PyObject *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri);
@@ -19,7 +19,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    PyObject *database_obj;
+    const char *database = NULL;
     double timeout = 5.0;
     int detect_types = 0;
     PyObject *isolation_level = NULL;
@@ -32,7 +32,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (!PyUnicode_FSConverter(fastargs[0], &database_obj)) {
+    if (!clinic_fsconverter(fastargs[0], &database)) {
         goto exit;
     }
     if (!noptargs) {
@@ -97,9 +97,12 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database_obj, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
 
 exit:
+    /* Cleanup for database */
+    PyMem_Free((void *)database);
+
     return return_value;
 }
 
@@ -816,4 +819,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=9c0dfc6c1ebf9039 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b7268875f33c016 input=a9049054013a1b77]*/
