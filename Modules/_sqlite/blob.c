@@ -113,7 +113,7 @@ blob_length(pysqlite_Blob *self)
     if (!check_blob(self)) {
         return -1;
     }
-    return self->length;
+    return sqlite3_blob_bytes(self->blob);
 };
 
 static void
@@ -171,14 +171,12 @@ blob_read_impl(pysqlite_Blob *self, int length)
         return NULL;
     }
 
-    if (length < 0) {
-        /* same as file read. */
-        length = self->length;
-    }
-
-    /* making sure we don't read more then blob size */
-    if (length > self->length - self->offset) {
-        length = self->length - self->offset;
+    /* Make sure we never read past "EOB". Also read the rest of the blob if a
+     * negative length is specified. */
+    int blob_len = sqlite3_blob_bytes(self->blob);
+    int max_read_len = blob_len - self->offset;
+    if (length < 0 || length > max_read_len) {
+        length = max_read_len;
     }
 
     PyObject *buffer = inner_read(self, length, self->offset);
@@ -228,7 +226,8 @@ blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
         return NULL;
     }
 
-    if (data->len > self->length - self->offset) {
+    int remaining_len = sqlite3_blob_bytes(self->blob) - self->offset;
+    if (data->len > remaining_len) {
         PyErr_SetString(PyExc_ValueError, "data longer than blob length");
         return NULL;
     }
@@ -260,6 +259,7 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
         return NULL;
     }
 
+    int blob_len = sqlite3_blob_bytes(self->blob);
     switch (origin) {
         case 0:
             break;
@@ -267,13 +267,13 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
             if (offset > INT_MAX - self->offset) {
                 goto overflow;
             }
-            offset = self->offset + offset;
+            offset += self->offset;
             break;
         case 2:
-            if (offset > INT_MAX - self->length) {
+            if (offset > INT_MAX - blob_len) {
                 goto overflow;
             }
-            offset = self->length + offset;
+            offset += blob_len;
             break;
         default:
             PyErr_SetString(PyExc_ValueError,
@@ -281,7 +281,7 @@ blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
             return NULL;
     }
 
-    if (offset < 0 || offset > self->length) {
+    if (offset < 0 || offset > blob_len) {
         PyErr_SetString(PyExc_ValueError, "offset out of blob range");
         return NULL;
     }
@@ -359,10 +359,11 @@ subscript_index(pysqlite_Blob *self, PyObject *item)
     if (i == -1 && PyErr_Occurred()) {
         return NULL;
     }
+    int blob_len = sqlite3_blob_bytes(self->blob);
     if (i < 0) {
-        i += self->length;
+        i += blob_len;
     }
-    if (i < 0 || i >= self->length) {
+    if (i < 0 || i >= blob_len) {
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return NULL;
     }
@@ -376,7 +377,8 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
     if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
         return NULL;
     }
-    slicelen = PySlice_AdjustIndices(self->length, &start, &stop, step);
+    int blob_len = sqlite3_blob_bytes(self->blob);
+    slicelen = PySlice_AdjustIndices(blob_len, &start, &stop, step);
 
     if (slicelen <= 0) {
         return PyBytes_FromStringAndSize("", 0);
@@ -442,10 +444,11 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
     if (i == -1 && PyErr_Occurred()) {
         return -1;
     }
+    int blob_len = sqlite3_blob_bytes(self->blob);
     if (i < 0) {
-        i += self->length;
+        i += blob_len;
     }
-    if (i < 0 || i >= self->length) {
+    if (i < 0 || i >= blob_len) {
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return -1;
     }
@@ -467,7 +470,8 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
     if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
         return -1;
     }
-    slicelen = PySlice_AdjustIndices(self->length, &start, &stop, step);
+    int blob_len = sqlite3_blob_bytes(self->blob);
+    slicelen = PySlice_AdjustIndices(blob_len, &start, &stop, step);
 
     Py_buffer vbuf;
     if (PyObject_GetBuffer(value, &vbuf, PyBUF_SIMPLE) < 0) {
