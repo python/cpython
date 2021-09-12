@@ -765,7 +765,7 @@ final_callback(sqlite3_context *context)
         goto error;
     }
 
-    /* Keep the exception (if any) of the last call to step() */
+    // Keep the exception (if any) of the last call to step, value, or inverse
     PyErr_Fetch(&exception, &value, &tb);
 
     function_result = _PyObject_CallMethodIdNoArgs(*aggregate_instance, &PyId_finalize);
@@ -778,13 +778,17 @@ final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        set_sqlite_error(context,
-                "user-defined aggregate's 'finalize' method raised error");
+        const char *attr_msg = "user-defined aggregate's 'finalize' method "
+                               "not defined";
+        const char *err_msg  = "user-defined aggregate's 'finalize' method "
+                               "raised error";
+        int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
+        _PyErr_ChainExceptions(exception, value, tb);
+        set_sqlite_error(context, attr_err ? attr_msg : err_msg);
     }
-
-    /* Restore the exception (if any) of the last call to step(),
-       but clear also the current exception if finalize() failed */
-    PyErr_Restore(exception, value, tb);
+    else {
+        PyErr_Restore(exception, value, tb);
+    }
 
 error:
     PyGILState_Release(threadstate);
@@ -1041,9 +1045,12 @@ value_callback(sqlite3_context *context)
     _Py_IDENTIFIER(value);
     PyObject *res = _PyObject_CallMethodIdNoArgs(*cls, &PyId_value);
     if (res == NULL) {
-        set_sqlite_error(context,
-                         "user-defined aggregate's 'value' method "
-                         "raised error");
+        const char *attr_msg = "user-defined aggregate's 'value' method "
+                               "not defined";
+        const char *err_msg  = "user-defined aggregate's 'value' method "
+                               "raised error";
+        int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
+        set_sqlite_error(context, attr_err ? attr_msg : err_msg);
         goto exit;
     }
 

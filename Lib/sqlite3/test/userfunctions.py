@@ -529,36 +529,38 @@ class WindowFunctionTests(unittest.TestCase):
 
     def test_win_missing_method(self):
         class MissingValue:
-            def __init__(self): pass
             def step(self, x): pass
             def inverse(self, x): pass
+            def finalize(self): return 42
+
         class MissingInverse:
-            def __init__(self): pass
             def step(self, x): pass
             def value(self): return 42
+            def finalize(self): return 42
+
         class MissingStep:
-            def __init__(self): pass
             def value(self): return 42
             def inverse(self, x): pass
+            def finalize(self): return 42
+
         class MissingFinalize:
-            def __init__(self): pass
             def step(self, x): pass
             def value(self): return 42
             def inverse(self, x): pass
 
         # Fixme: finalize does not raise correct exception
         dataset = (
-            ("step", MissingStep, "not defined"),
-            ("value", MissingValue, "raised error"),
-            ("inverse", MissingInverse, "not defined"),
+            ("step", MissingStep),
+            ("value", MissingValue),
+            ("inverse", MissingInverse),
             #("finalize", MissingFinalize),
         )
-        for meth, cls, err in dataset:
-            with self.subTest(meth=meth, cls=cls, err=err):
+        for meth, cls in dataset:
+            with self.subTest(meth=meth, cls=cls):
                 self.con.create_window_function(meth, 1, cls)
                 self.addCleanup(self.con.create_window_function, meth, 1, None)
                 with self.assertRaisesRegex(sqlite.OperationalError,
-                                            f"'{meth}' method {err}"):
+                                            f"'{meth}' method not defined"):
                     self.cur.execute(self.query % meth)
                     self.cur.fetchall()
 
@@ -627,10 +629,10 @@ class AggregateTests(unittest.TestCase):
 
     def test_aggr_no_finalize(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "user-defined aggregate's 'finalize' method not defined"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select nofinalize(t) from test")
             val = cur.fetchone()[0]
-        self.assertEqual(str(cm.exception), "user-defined aggregate's 'finalize' method raised error")
 
     @with_tracebacks(['__init__', '5/0', 'ZeroDivisionError'])
     def test_aggr_exception_in_init(self):
