@@ -21,6 +21,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import contextlib
+import os
 import sqlite3 as sqlite
 import subprocess
 import sys
@@ -749,7 +750,6 @@ class BlobTests(unittest.TestCase):
         self.blob.seek(10)
         self.assertEqual(self.blob.tell(), 10)
 
-        import os
         self.blob.seek(10, os.SEEK_SET)
         self.assertEqual(self.blob.tell(), 10)
 
@@ -760,14 +760,16 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 90)
 
     def test_blob_seek_error(self):
-        ops = (
-            lambda: self.blob.seek(1000),
-            lambda: self.blob.seek(-10),
-            lambda: self.blob.seek(10, -1),
+        dataset = (
+            (ValueError, lambda: self.blob.seek(1000)),
+            (ValueError, lambda: self.blob.seek(-10)),
+            (ValueError, lambda: self.blob.seek(10, -1)),
+            (OverflowError, lambda: self.blob.seek(2**65, os.SEEK_CUR)),
+            (OverflowError, lambda: self.blob.seek(2**65, os.SEEK_END)),
         )
-        for op in ops:
-            with self.subTest(op=op):
-                self.assertRaises(ValueError, op)
+        for exc, fn in dataset:
+            with self.subTest(exc=exc, fn=fn):
+                self.assertRaises(exc, fn)
 
     def test_blob_read(self):
         buf = self.blob.read()
@@ -907,6 +909,10 @@ class BlobTests(unittest.TestCase):
             self.blob[5:10] = b"a" * 1000
         with self.assertRaises(TypeError):
             del self.blob[5:10]
+        with self.assertRaises(BufferError):
+            self.blob[5:10] = memoryview(b"abcde")[::2]
+        with self.assertRaises(ValueError):
+            self.blob[5:10:0] = b"12345"
 
     def test_blob_sequence_not_supported(self):
         ops = (
@@ -950,6 +956,16 @@ class BlobTests(unittest.TestCase):
                 with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
                     op()
 
+    def test_blob_close_bad_connection(self):
+        cx = sqlite.connect(":memory:")
+        cx.execute("create table test(b blob)")
+        cx.execute("insert into test values(zeroblob(1))")
+        blob = cx.open_blob("test", "b", 1)
+        cx.close()
+        self.assertRaisesRegex(sqlite.ProgrammingError,
+                               "Cannot operate on a closed database",
+                               blob.close)
+
     def test_closed_blob_read(self):
         con = sqlite.connect(":memory:")
         con.execute("create table test(blob_col blob)")
@@ -964,7 +980,8 @@ class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
         self.cur = self.con.cursor()
-        self.cur.execute("create table test(name text)")
+        self.cur.execute("create table test(name text, b blob)")
+        self.cur.execute("insert into test values('blob', zeroblob(1))")
 
     def tearDown(self):
         self.cur.close()
@@ -997,6 +1014,7 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.set_trace_callback(None),
             lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
+            lambda: self.con.open_blob("test", "b", 1)
         ]
         for fn in fns:
             with self.subTest(fn=fn):
