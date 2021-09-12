@@ -900,6 +900,10 @@ interchangeably.
    :meth:`~Logger.setLevel` and :meth:`~Logger.hasHandlers` methods were added
    to :class:`LoggerAdapter`.  These methods delegate to the underlying logger.
 
+.. versionchanged:: 3.6
+   Attribute :attr:`manager` and method :meth:`_log` were added, which
+   delegate to the underlying logger and allow adapters to be nested.
+
 
 Thread Safety
 -------------
@@ -1110,6 +1114,14 @@ functions.
 
    .. note:: If you are thinking of defining your own levels, please see the
       section on :ref:`custom-levels`.
+
+.. function:: getLevelNamesMapping()
+
+   Returns a mapping from level names to their corresponding logging levels. For example, the
+   string "CRITICAL" maps to :const:`CRITICAL`. The returned mapping is copied from an internal
+   mapping on each call to this function.
+
+   .. versionadded:: 3.11
 
 .. function:: getLevelName(level)
 

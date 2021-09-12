@@ -128,21 +128,21 @@ VERSION=PYTHON_VERSION
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-# The later defininition of _XOPEN_SOURCE disables certain features
+# The later definition of _XOPEN_SOURCE disables certain features
 # on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
 AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
 # them.
 AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
@@ -1360,16 +1360,34 @@ fi
 
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [enable Link-Time-Optimization in any build (default is no)]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto=@<:@full|thin|no|yes@:>@], [enable Link-Time-Optimization in any build (default is no)]),
 [
-if test "$withval" != no
-then
-  Py_LTO='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_LTO='false'
-  AC_MSG_RESULT(no);
-fi],
+case "$withval" in
+    full)
+        Py_LTO='true'
+        Py_LTO_POLICY='full'
+        AC_MSG_RESULT(yes)
+        ;;
+    thin)
+        Py_LTO='true'
+        Py_LTO_POLICY='thin'
+        AC_MSG_RESULT(yes)
+        ;;
+    yes)
+        Py_LTO='true'
+        Py_LTO_POLICY='default'
+        AC_MSG_RESULT(yes)
+        ;;
+    no)
+        Py_LTO='false'
+        AC_MSG_RESULT(no)
+        ;;
+    *)
+        Py_LTO='false'
+        AC_MSG_ERROR([unknown lto option: '$withval'])
+        ;;
+esac
+],
 [AC_MSG_RESULT(no)])
 if test "$Py_LTO" = 'true' ; then
   case $CC in
@@ -1405,15 +1423,30 @@ if test "$Py_LTO" = 'true' ; then
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          LTOCFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto -Wl,-export_dynamic"
+            LTOCFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic"
+            LTOCFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
         *)
-          LTOFLAGS="-flto"
+          if test $Py_LTO_POLICY = default
+          then
+            LTOFLAGS="-flto"
+          else
+            LTOFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
           ;;
       esac
       ;;
     *gcc*)
+      if test $Py_LTO_POLICY = thin
+      then
+        AC_MSG_ERROR([thin lto is not supported under gcc compiler.])
+      fi
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
@@ -2562,6 +2595,47 @@ case $ac_sys_system/$ac_sys_release in
 	;;
 esac
 
+AC_MSG_CHECKING(for --with-address-sanitizer)
+AC_ARG_WITH(address_sanitizer,
+            AS_HELP_STRING([--with-address-sanitizer],
+                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-memory-sanitizer)
+AC_ARG_WITH(memory_sanitizer,
+            AS_HELP_STRING([--with-memory-sanitizer],
+                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
+AC_ARG_WITH(undefined_behavior_sanitizer,
+            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
+                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_ubsan="yes"
+],
+[
+AC_MSG_RESULT(no)
+with_ubsan="no"
+])
+
 # Set info about shared libraries.
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(LDSHARED)
@@ -2662,7 +2736,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*|VxWorks*)
+	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -2731,6 +2805,7 @@ then
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
+	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -2765,9 +2840,18 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-		# Note: This matches the value of THREAD_STACK_SIZE in
-		# thread_pthread.h
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
+    stack_size="1000000"  # 16 MB
+    if test "$with_ubsan" == "yes"
+    then
+        # Undefined behavior sanitizer requires an even deeper stack
+        stack_size="4000000"  # 64 MB
+    fi
+
+    LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+    AC_DEFINE_UNQUOTED(THREAD_STACK_SIZE,
+        0x$stack_size,
+        [Custom thread stack size depending on chosen sanitizer runtimes.])
 
 		if test "$enable_framework"
 		then
@@ -3011,46 +3095,12 @@ esac
  AC_MSG_RESULT("$TZPATH")])
 AC_SUBST(TZPATH)
 
-AC_MSG_CHECKING(for --with-address-sanitizer)
-AC_ARG_WITH(address_sanitizer,
-            AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-],
-[AC_MSG_RESULT(no)])
-
-AC_MSG_CHECKING(for --with-memory-sanitizer)
-AC_ARG_WITH(memory_sanitizer,
-            AS_HELP_STRING([--with-memory-sanitizer],
-                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-],
-[AC_MSG_RESULT(no)])
-
-AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
-AC_ARG_WITH(undefined_behavior_sanitizer,
-            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
-                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
-],
-[AC_MSG_RESULT(no)])
-
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
+
+# Haiku system library
+AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,

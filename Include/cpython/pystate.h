@@ -29,6 +29,11 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 
+typedef struct {
+    PyCodeObject *code; // The code object for the bounds. May be NULL.
+    PyCodeAddressRange bounds; // Only valid if code != NULL.
+} PyTraceInfo;
+
 typedef struct _cframe {
     /* This struct will be threaded through the C stack
      * allowing fast access to per-thread state that needs
@@ -73,7 +78,7 @@ struct _ts {
     PyInterpreterState *interp;
 
     /* Borrowed reference to the current frame (it can be NULL) */
-    PyFrameObject *frame;
+    struct _interpreter_frame *frame;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
     int stackcheck_counter;
@@ -160,6 +165,7 @@ struct _ts {
     uint64_t id;
 
     CFrame root_cframe;
+    PyTraceInfo trace_info;
 
     _PyStackChunk *datastack_chunk;
     PyObject **datastack_top;
@@ -217,7 +223,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _interpreter_frame *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);

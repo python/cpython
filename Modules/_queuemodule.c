@@ -380,7 +380,8 @@ static PyType_Slot simplequeue_slots[] = {
 static PyType_Spec simplequeue_spec = {
     .name = "_queue.SimpleQueue",
     .basicsize = sizeof(simplequeueobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = simplequeue_slots,
 };
 

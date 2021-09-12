@@ -45,6 +45,9 @@ lots of shared  sub-objects.  The keys are ordinary strings.
       :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
+   .. versionchanged:: 3.11
+      Accepts :term:`path-like object` for filename.
+
    .. note::
 
       Do not rely on the shelf being closed automatically; always call
@@ -54,13 +57,16 @@ lots of shared  sub-objects.  The keys are ordinary strings.
           with shelve.open('spam') as db:
               db['eggs'] = 'eggs'
 
+.. _shelve-security:
+
 .. warning::
 
    Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
-Shelf objects support all methods supported by dictionaries.  This eases the
+Shelf objects support most of methods and operations supported by dictionaries
+(except copying, constructors and operators ``|`` and ``|=``).  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
 Two additional methods are supported:

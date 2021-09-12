@@ -660,8 +660,9 @@ def _use_posix_spawn():
         # os.posix_spawn() is not available
         return False
 
-    if sys.platform == 'darwin':
-        # posix_spawn() is a syscall on macOS and properly reports errors
+    if sys.platform in ('darwin', 'sunos5'):
+        # posix_spawn() is a syscall on both macOS and Solaris,
+        # and properly reports errors
         return True
 
     # Check libc name and runtime libc version
@@ -2086,7 +2087,7 @@ class Popen:
             try:
                 os.kill(self.pid, sig)
             except ProcessLookupError:
-                # Supress the race condition error; bpo-40550.
+                # Suppress the race condition error; bpo-40550.
                 pass
 
         def terminate(self):

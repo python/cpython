@@ -1,0 +1,2 @@
+Changes how error is formatted for ``struct.pack`` with ``'H'`` and ``'h'`` modes and
+too large / small numbers. Now it shows the actual numeric limits, while previously it was showing arithmetic expressions.

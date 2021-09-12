@@ -113,10 +113,11 @@ extern "C" {
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132
 #define BUILD_SLICE             133
-#define LOAD_CLOSURE            135
-#define LOAD_DEREF              136
-#define STORE_DEREF             137
-#define DELETE_DEREF            138
+#define MAKE_CELL               135
+#define LOAD_CLOSURE            136
+#define LOAD_DEREF              137
+#define STORE_DEREF             138
+#define DELETE_DEREF            139
 #define CALL_FUNCTION_KW        141
 #define CALL_FUNCTION_EX        142
 #define EXTENDED_ARG            144
@@ -135,6 +136,37 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
+#define BINARY_ADD_ADAPTIVE       7
+#define BINARY_ADD_INT            8
+#define BINARY_ADD_FLOAT         13
+#define BINARY_ADD_UNICODE       14
+#define BINARY_ADD_UNICODE_INPLACE_FAST  18
+#define BINARY_SUBSCR_ADAPTIVE   21
+#define BINARY_SUBSCR_LIST_INT   36
+#define BINARY_SUBSCR_TUPLE_INT  38
+#define BINARY_SUBSCR_DICT       39
+#define JUMP_ABSOLUTE_QUICK      40
+#define LOAD_ATTR_ADAPTIVE       41
+#define LOAD_ATTR_SPLIT_KEYS     42
+#define LOAD_ATTR_WITH_HINT      43
+#define LOAD_ATTR_SLOT           44
+#define LOAD_ATTR_MODULE         45
+#define LOAD_GLOBAL_ADAPTIVE     46
+#define LOAD_GLOBAL_MODULE       47
+#define LOAD_GLOBAL_BUILTIN      48
+#define LOAD_METHOD_ADAPTIVE     58
+#define LOAD_METHOD_CACHED       80
+#define LOAD_METHOD_CLASS        81
+#define LOAD_METHOD_MODULE       87
+#define STORE_ATTR_ADAPTIVE      88
+#define STORE_ATTR_SPLIT_KEYS   120
+#define STORE_ATTR_SLOT         122
+#define STORE_ATTR_WITH_HINT    123
+#define LOAD_FAST__LOAD_FAST    127
+#define STORE_FAST__LOAD_FAST   128
+#define LOAD_FAST__LOAD_CONST   134
+#define LOAD_CONST__LOAD_FAST   140
+#define STORE_FAST__STORE_FAST  143
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

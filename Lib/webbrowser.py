@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Interfaces for launching and remotely controlling Web browsers."""
+"""Interfaces for launching and remotely controlling web browsers."""
 # Maintained by Georg Brandl.
 
 import os
@@ -8,6 +8,7 @@ import shutil
 import sys
 import subprocess
 import threading
+import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -629,6 +630,8 @@ if sys.platform == 'darwin':
         Internet System Preferences panel, will be used.
         """
         def __init__(self, name):
+            warnings.warn(f'{self.__class__.__name__} is deprecated in 3.11'
+                          ' use MacOSXOSAScript instead.', DeprecationWarning, stacklevel=2)
             self.name = name
 
         def open(self, url, new=0, autoraise=True):

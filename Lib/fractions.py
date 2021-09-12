@@ -21,17 +21,17 @@ _PyHASH_MODULUS = sys.hash_info.modulus
 _PyHASH_INF = sys.hash_info.inf
 
 _RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                      # optional whitespace at the start, then
-    (?P<sign>[-+]?)            # an optional sign, then
-    (?=\d|\.\d)                # lookahead for digit or .digit
-    (?P<num>\d*)               # numerator (possibly empty)
-    (?:                        # followed by
-       (?:/(?P<denom>\d+))?    # an optional denominator
-    |                          # or
-       (?:\.(?P<decimal>\d*))? # an optional fractional part
-       (?:E(?P<exp>[-+]?\d+))? # and optional exponent
+    \A\s*                                 # optional whitespace at the start,
+    (?P<sign>[-+]?)                       # an optional sign, then
+    (?=\d|\.\d)                           # lookahead for digit or .digit
+    (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
+    (?:                                   # followed by
+       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
+    |                                     # or
+       (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
+       (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
     )
-    \s*\Z                      # and optional whitespace to finish
+    \s*\Z                                 # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -122,6 +122,7 @@ class Fraction(numbers.Rational):
                     denominator = 1
                     decimal = m.group('decimal')
                     if decimal:
+                        decimal = decimal.replace('_', '')
                         scale = 10**len(decimal)
                         numerator = numerator * scale + int(decimal)
                         denominator *= scale

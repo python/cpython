@@ -94,7 +94,7 @@ import sys
 import os
 from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
-from enum import _simple_enum, _test_simple_enum
+from enum import _simple_enum
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -368,7 +368,7 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     (section 1.7.2 - "Out of Scope").
     """
     # OpenSSL may add a trailing newline to a subjectAltName's IP address,
-    # commonly woth IPv6 addresses. Strip off trailing \n.
+    # commonly with IPv6 addresses. Strip off trailing \n.
     ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
 
@@ -387,7 +387,7 @@ def match_hostname(cert, hostname):
     returns nothing.
     """
     warnings.warn(
-        "ssl module: match_hostname() is deprecated",
+        "ssl.match_hostname() is deprecated",
         category=DeprecationWarning,
         stacklevel=2
     )
@@ -492,8 +492,7 @@ class SSLContext(_SSLContext):
     def __new__(cls, protocol=None, *args, **kwargs):
         if protocol is None:
             warnings.warn(
-                "ssl module: "
-                "SSLContext() without protocol argument is deprecated.",
+                "ssl.SSLContext() without protocol argument is deprecated.",
                 category=DeprecationWarning,
                 stacklevel=2
             )
@@ -536,7 +535,11 @@ class SSLContext(_SSLContext):
         )
 
     def set_npn_protocols(self, npn_protocols):
-        warnings.warn("NPN is deprecated, use ALPN instead", stacklevel=2)
+        warnings.warn(
+            "ssl NPN is deprecated, use ALPN instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
         protos = bytearray()
         for protocol in npn_protocols:
             b = bytes(protocol, 'ascii')
@@ -940,7 +943,9 @@ class SSLObject:
         if a next protocol was not negotiated or if NPN is not supported by one
         of the peers."""
         warnings.warn(
-            "ssl module: NPN is deprecated, use ALPN instead", stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead",
+            DeprecationWarning,
+            stacklevel=2
         )
 
     def selected_alpn_protocol(self):
@@ -1157,7 +1162,9 @@ class SSLSocket(socket):
     def selected_npn_protocol(self):
         self._checkClosed()
         warnings.warn(
-            "ssl module: NPN is deprecated, use ALPN instead", stacklevel=2
+            "ssl NPN is deprecated, use ALPN instead",
+            DeprecationWarning,
+            stacklevel=2
         )
         return None
 
@@ -1419,7 +1426,7 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 suppress_ragged_eofs=True,
                 ciphers=None):
     warnings.warn(
-        "ssl module: wrap_socket is deprecated, use SSLContext.wrap_socket()",
+        "ssl.wrap_socket() is deprecated, use SSLContext.wrap_socket()",
         category=DeprecationWarning,
         stacklevel=2
     )

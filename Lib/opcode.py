@@ -181,14 +181,16 @@ def_op('CALL_FUNCTION', 131)    # #args
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
-def_op('LOAD_CLOSURE', 135)
+def_op('MAKE_CELL', 135)
 hasfree.append(135)
-def_op('LOAD_DEREF', 136)
+def_op('LOAD_CLOSURE', 136)
 hasfree.append(136)
-def_op('STORE_DEREF', 137)
+def_op('LOAD_DEREF', 137)
 hasfree.append(137)
-def_op('DELETE_DEREF', 138)
+def_op('STORE_DEREF', 138)
 hasfree.append(138)
+def_op('DELETE_DEREF', 139)
+hasfree.append(139)
 
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
@@ -216,3 +218,47 @@ def_op('DICT_UPDATE', 165)
 def_op('CALL_METHOD_KW', 166)
 
 del def_op, name_op, jrel_op, jabs_op
+
+_specialized_instructions = [
+    "BINARY_ADD_ADAPTIVE",
+    "BINARY_ADD_INT",
+    "BINARY_ADD_FLOAT",
+    "BINARY_ADD_UNICODE",
+    "BINARY_ADD_UNICODE_INPLACE_FAST",
+    "BINARY_SUBSCR_ADAPTIVE",
+    "BINARY_SUBSCR_LIST_INT",
+    "BINARY_SUBSCR_TUPLE_INT",
+    "BINARY_SUBSCR_DICT",
+    "JUMP_ABSOLUTE_QUICK",
+    "LOAD_ATTR_ADAPTIVE",
+    "LOAD_ATTR_SPLIT_KEYS",
+    "LOAD_ATTR_WITH_HINT",
+    "LOAD_ATTR_SLOT",
+    "LOAD_ATTR_MODULE",
+    "LOAD_GLOBAL_ADAPTIVE",
+    "LOAD_GLOBAL_MODULE",
+    "LOAD_GLOBAL_BUILTIN",
+    "LOAD_METHOD_ADAPTIVE",
+    "LOAD_METHOD_CACHED",
+    "LOAD_METHOD_CLASS",
+    "LOAD_METHOD_MODULE",
+    "STORE_ATTR_ADAPTIVE",
+    "STORE_ATTR_SPLIT_KEYS",
+    "STORE_ATTR_SLOT",
+    "STORE_ATTR_WITH_HINT",
+    # Super instructions
+    "LOAD_FAST__LOAD_FAST",
+    "STORE_FAST__LOAD_FAST",
+    "LOAD_FAST__LOAD_CONST",
+    "LOAD_CONST__LOAD_FAST",
+    "STORE_FAST__STORE_FAST",
+]
+_specialization_stats = [
+    "specialization_success",
+    "specialization_failure",
+    "hit",
+    "deferred",
+    "miss",
+    "deopt",
+    "unquickened",
+]

@@ -130,6 +130,7 @@ int _PyPegen_lookahead_with_string(int , expr_ty (func)(Parser *, const char*), 
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 
 Token *_PyPegen_expect_token(Parser *p, int type);
+void* _PyPegen_expect_forced_result(Parser *p, void* result, const char* expected);
 Token *_PyPegen_expect_forced_token(Parser *p, int type, const char* expected);
 expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
 expr_ty _PyPegen_soft_keyword_token(Parser *p);
@@ -139,6 +140,7 @@ expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
 const char *_PyPegen_get_expr_name(expr_ty);
+Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -148,6 +150,9 @@ void *_PyPegen_dummy_name(Parser *p, ...);
 
 void * _PyPegen_seq_last_item(asdl_seq *seq);
 #define PyPegen_last_item(seq, type) ((type)_PyPegen_seq_last_item((asdl_seq*)seq))
+
+void * _PyPegen_seq_first_item(asdl_seq *seq);
+#define PyPegen_first_item(seq, type) ((type)_PyPegen_seq_first_item((asdl_seq*)seq))
 
 #define CURRENT_POS (-5)
 
@@ -202,7 +207,7 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define CHECK(type, result) ((type) CHECK_CALL(p, result))
 #define CHECK_NULL_ALLOWED(type, result) ((type) CHECK_CALL_NULL_ALLOWED(p, result))
 
-PyObject *_PyPegen_new_type_comment(Parser *, char *);
+PyObject *_PyPegen_new_type_comment(Parser *, const char *);
 
 Py_LOCAL_INLINE(PyObject *)
 NEW_TYPE_COMMENT(Parser *p, Token *tc)
@@ -210,7 +215,7 @@ NEW_TYPE_COMMENT(Parser *p, Token *tc)
     if (tc == NULL) {
         return NULL;
     }
-    char *bytes = PyBytes_AsString(tc->bytes);
+    const char *bytes = PyBytes_AsString(tc->bytes);
     if (bytes == NULL) {
         goto error;
     }
@@ -242,7 +247,7 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
 #define CHECK_VERSION(type, version, msg, node) ((type) INVALID_VERSION_CHECK(p, version, msg, node))
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
-PyObject *_PyPegen_new_identifier(Parser *, char *);
+PyObject *_PyPegen_new_identifier(Parser *, const char *);
 Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
@@ -288,6 +293,7 @@ expr_ty _PyPegen_ensure_imaginary(Parser *p, expr_ty);
 expr_ty _PyPegen_ensure_real(Parser *p, expr_ty);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *, Token *);
+int _PyPegen_check_legacy_stmt(Parser *p, expr_ty t);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 
 // Error reporting helpers
