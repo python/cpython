@@ -23,7 +23,7 @@
                 <File Name="libssl$(var.ssltag).dll" KeyPath="yes" />
             </Component>
             <Component Id="libffi.dll" Directory="DLLs" Guid="*">
-                <File Name="libffi-7.dll" KeyPath="yes" />
+                <File Name="libffi-8.dll" KeyPath="yes" />
             </Component>
             <Component Id="venvlauncher.exe" Directory="Lib_venv_scripts_nt" Guid="*">
                 <File Name="python.exe" Source="venvlauncher.exe" KeyPath="yes" />

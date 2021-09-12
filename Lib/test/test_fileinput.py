@@ -29,7 +29,6 @@ from test.support import verbose
 from test.support.os_helper import TESTFN
 from test.support.os_helper import unlink as safe_unlink
 from test.support import os_helper
-from test.support import warnings_helper
 from test import support
 from unittest import mock
 
@@ -356,44 +355,6 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_empty_files_list_specified_to_constructor(self):
         with FileInput(files=[], encoding="utf-8") as fi:
             self.assertEqual(fi._files, ('-',))
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test__getitem__(self):
-        """Tests invoking FileInput.__getitem__() with the current
-           line number"""
-        t = self.writeTmp("line1\nline2\n")
-        with FileInput(files=[t], encoding="utf-8") as fi:
-            retval1 = fi[0]
-            self.assertEqual(retval1, "line1\n")
-            retval2 = fi[1]
-            self.assertEqual(retval2, "line2\n")
-
-    def test__getitem___deprecation(self):
-        t = self.writeTmp("line1\nline2\n")
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r'Use iterator protocol instead'):
-            with FileInput(files=[t]) as fi:
-                self.assertEqual(fi[0], "line1\n")
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test__getitem__invalid_key(self):
-        """Tests invoking FileInput.__getitem__() with an index unequal to
-           the line number"""
-        t = self.writeTmp("line1\nline2\n")
-        with FileInput(files=[t], encoding="utf-8") as fi:
-            with self.assertRaises(RuntimeError) as cm:
-                fi[1]
-        self.assertEqual(cm.exception.args, ("accessing lines out of order",))
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test__getitem__eof(self):
-        """Tests invoking FileInput.__getitem__() with the line number but at
-           end-of-input"""
-        t = self.writeTmp('')
-        with FileInput(files=[t], encoding="utf-8") as fi:
-            with self.assertRaises(IndexError) as cm:
-                fi[0]
-        self.assertEqual(cm.exception.args, ("end of input reached",))
 
     def test_nextfile_oserror_deleting_backup(self):
         """Tests invoking FileInput.nextfile() when the attempt to delete
