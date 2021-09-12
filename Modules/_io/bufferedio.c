@@ -346,6 +346,14 @@ _enter_buffered_busy(buffered *self)
         return NULL; \
     }
 
+#define CHECK_CLOSED_PEEK(self, error_msg) \
+    Py_ssize_t have; \
+    have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t); \
+    if (IS_CLOSED(self) & (have == 0)) { \
+        PyErr_SetString(PyExc_ValueError, error_msg); \
+        return NULL; \
+    }
+
 
 #define VALID_READ_BUFFER(self) \
     (self->readable && self->read_end != -1)
@@ -842,7 +850,7 @@ _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
-    CHECK_CLOSED(self, "peek of closed file")
+    CHECK_CLOSED_PEEK(self, "peek of closed file")
 
     if (!ENTER_BUFFERED(self))
         return NULL;
