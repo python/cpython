@@ -87,6 +87,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     }
 
     if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+        Py_DECREF(database_obj);
         return -1;
     }
 
