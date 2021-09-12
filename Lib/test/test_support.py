@@ -429,6 +429,7 @@ class TestSupport(unittest.TestCase):
         extra = {'TextTestResult', 'installHandler'}
         not_exported = {'load_tests', "TestProgram", "BaseTestSuite"}
 
+        extra = {'makeSuite', 'findTestCases', 'getTestCaseNames'}
         support.check__all__(self,
                              unittest,
                              ("unittest.result", "unittest.case",
