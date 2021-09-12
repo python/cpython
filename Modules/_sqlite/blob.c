@@ -352,12 +352,12 @@ blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
     Py_RETURN_FALSE;
 }
 
-static PyObject *
-subscript_index(pysqlite_Blob *self, PyObject *item)
+static int
+get_subscript_index(pysqlite_Blob *self, PyObject *item)
 {
     Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred()) {
-        return NULL;
+        return -1;
     }
     int blob_len = sqlite3_blob_bytes(self->blob);
     if (i < 0) {
@@ -365,6 +365,16 @@ subscript_index(pysqlite_Blob *self, PyObject *item)
     }
     if (i < 0 || i >= blob_len) {
         PyErr_SetString(PyExc_IndexError, "Blob index out of range");
+        return -1;
+    }
+    return i;
+}
+
+static PyObject *
+subscript_index(pysqlite_Blob *self, PyObject *item)
+{
+    int i = get_subscript_index(self, item);
+    if (i < 0) {
         return NULL;
     }
     return inner_read(self, 1, i);
@@ -439,20 +449,10 @@ ass_subscript_index(pysqlite_Blob *self, PyObject *item, PyObject *value)
                         "Blob assignment must be a single byte");
         return -1;
     }
-
-    Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-    int blob_len = sqlite3_blob_bytes(self->blob);
+    int i = get_subscript_index(self, item);
     if (i < 0) {
-        i += blob_len;
-    }
-    if (i < 0 || i >= blob_len) {
-        PyErr_SetString(PyExc_IndexError, "Blob index out of range");
         return -1;
     }
-
     const char *buf = PyBytes_AS_STRING(value);
     return inner_write(self, buf, 1, i);
 }
