@@ -66,7 +66,6 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 
-
 New Features
 ============
 
@@ -209,8 +208,8 @@ math
 os
 --
 
-* On Windows, :func:`os.urandom` uses ``BCryptGenRandom()`` instead of ``CryptGenRandom()``
-  which is deprecated.
+* On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
+  instead of ``CryptGenRandom()`` which is deprecated.
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
@@ -231,6 +230,14 @@ sqlite3
   :attr:`~sqlite3.Error.sqlite_errorname`.
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379`.)
+
+time
+----
+
+* In Unix operating systems, :func:`time.sleep` now uses the
+  ``clock_nanosleep()`` function, if available, which allows to sleep for an
+  interval specified with nanosecond precision.
+  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
 
 
 Removed
@@ -264,6 +271,18 @@ Removed
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
+
+* The following deprecated functions and methods are removed in the :mod:`gettext`
+  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
+  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
+
+  Function :func:`~gettext.bind_textdomain_codeset`, methods
+  :meth:`~gettext.NullTranslations.output_charset` and
+  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
+  parameter of functions :func:`~gettext.translation` and
+  :func:`~gettext.install` are also removed, since they are only used for
+  the ``l*gettext()`` functions.
+  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
 
 
 Optimizations
@@ -317,6 +336,10 @@ Deprecated
   It is untested and undocumented and also not used by webbrowser itself.
   (Contributed by Dong-hee Na in :issue:`42255`.)
 
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
+  default ``None`` value), is now deprecated.
+
 
 Removed
 =======
@@ -333,6 +356,7 @@ Removed
 
 * Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
+
 
 Porting to Python 3.11
 ======================
@@ -476,19 +500,3 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
-
-* The following deprecated functions and methods are removed in the :mod:`gettext`
-  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
-
-  Function :func:`~gettext.bind_textdomain_codeset`, methods
-  :meth:`~gettext.NullTranslations.output_charset` and
-  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
-  parameter of functions :func:`~gettext.translation` and
-  :func:`~gettext.install` are also removed, since they are only used for
-  the ``l*gettext()`` functions.
-  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
-
-* The behavior of returning a value from a :class:`~unittest.TestCase` and
-  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the default ``None``
-  value), is now deprecated.
