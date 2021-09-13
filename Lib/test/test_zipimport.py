@@ -155,7 +155,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # zlib.decompress function object, after which the problem being
         # tested here wouldn't be a problem anymore...
         # (Hence the 'A' in the test method name: to make it the first
-        # item in a list sorted by name, like unittest.makeSuite() does.)
+        # item in a list sorted by name, like
+        # unittest.TestLoader.getTestCaseNames() does.)
         #
         # This test fails on platforms on which the zlib module is
         # statically linked, but the problem it tests for can't

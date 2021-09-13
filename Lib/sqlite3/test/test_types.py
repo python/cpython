@@ -530,23 +530,6 @@ class DateTimeTests(unittest.TestCase):
         ts2 = self.cur.fetchone()[0]
         self.assertEqual(ts, ts2)
 
-def suite():
-    tests = [
-        BinaryConverterTests,
-        ColNamesTests,
-        CommonTableExpressionTests,
-        DateTimeTests,
-        DeclTypesTests,
-        ObjectAdaptationTests,
-        SqliteTypeTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
 
 if __name__ == "__main__":
-    test()
+    unittest.main()

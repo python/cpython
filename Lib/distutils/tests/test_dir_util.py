@@ -133,7 +133,7 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
 
 def test_suite():
-    return unittest.makeSuite(DirUtilTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(DirUtilTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())
