@@ -238,6 +238,10 @@ def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
 d[types.MethodType] = _deepcopy_method
 
+def _deepcopy_genericalias(x, memo):
+    return type(x)(deepcopy(x.__origin__, memo), deepcopy(x.__args__, memo))
+d[types.GenericAlias] = _deepcopy_genericalias
+
 del d
 
 def _keep_alive(x, memo):

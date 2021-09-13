@@ -874,6 +874,12 @@ class TestCopy(unittest.TestCase):
         self.assertIs(g.b.__self__, g)
         g.b()
 
+    def test_deepcopy_generic_alias(self):
+        x = list[int]
+        g = copy.deepcopy(x)
+
+        self.assertEqual(x, g)
+
 
 def global_foo(x, y): return x+y
 
