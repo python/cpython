@@ -162,7 +162,8 @@ DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
   if failure, sets the exception
 */
 static int
-parse_internal_render_format_spec(PyObject *format_spec,
+parse_internal_render_format_spec(PyObject *obj,
+                                  PyObject *format_spec,
                                   Py_ssize_t start, Py_ssize_t end,
                                   InternalFormatSpec *format,
                                   char default_type,
@@ -280,7 +281,10 @@ parse_internal_render_format_spec(PyObject *format_spec,
 
     if (end-pos > 1) {
         /* More than one char remain, invalid format specifier. */
-        PyErr_Format(PyExc_ValueError, "Invalid format specifier");
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid format specifier: '%s' for object of type '%s'",
+                     PyUnicode_AsUTF8AndSize(format_spec, NULL),
+                     Py_TYPE(obj)->tp_name);
         return 0;
     }
 
@@ -1444,7 +1448,7 @@ _PyUnicode_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 's', '<'))
         return -1;
 
@@ -1480,7 +1484,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 'd', '>'))
         goto done;
 
@@ -1536,7 +1540,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 
@@ -1575,7 +1579,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 

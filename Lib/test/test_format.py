@@ -519,5 +519,27 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
 
+    @support.cpython_only
+    def test_better_error_message(self):
+        with self.assertRaises(ValueError) as e:
+            "{l:%M}".format(l=complex(12))
+        self.assertEqual(str(e.exception),
+            "Invalid format specifier: '{l:%M}' for object of type 'complex'")
+
+        with self.assertRaises(ValueError) as e:
+            "{length:%M:%S}".format(length=12)
+        self.assertEqual(str(e.exception),
+            "Invalid format specifier: '{length:%M:%S}' for object of type 'int'")
+
+        with self.assertRaises(ValueError) as e:
+            "{0:%S}".format(12.5)
+        self.assertEqual(str(e.exception),
+            "Invalid format specifier: '{0:%S}' for object of type 'float'")
+
+        with self.assertRaises(ValueError) as e:
+            "{a:%k}".format(a='a')
+        self.assertEqual(str(e.exception),
+            "Invalid format specifier: '{a:%k}' for object of type 'str'")
+
 if __name__ == "__main__":
     unittest.main()
