@@ -1,0 +1,1 @@
+Change :func:`dis.dis` output to show '-' indead of the index for values that cannot be calculated because the co_consts, co_names etc are not provided.
