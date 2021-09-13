@@ -440,7 +440,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         result = unittest.TestResult()
         result.failfast = True
-        suite = unittest.makeSuite(Foo)
+        suite = unittest.TestLoader().loadTestsFromTestCase(Foo)
         suite.run(result)
 
         expected = ['a1', 'a2', 'b1']
