@@ -293,17 +293,14 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: argval
 
-      resolved arg value (if known), otherwise ``dis.UNKNOWN``
+      resolved arg value (if any), otherwise ``None``
 
-      .. versionchanged:: 3.11
-         Unknown values are now set to an appropriate sentinel.
 
    .. data:: argrepr
 
-      human readable description of operation argument (if known).
+      human readable description of operation argument (if any),
+      otherwise an empty string.
 
-      .. versionchanged:: 3.11
-         Undefined if argval is ``dis.UNKNOWN``.
 
    .. data:: offset
 
