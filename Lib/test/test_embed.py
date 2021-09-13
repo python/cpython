@@ -433,6 +433,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
         })
+        # On Windows we run tests with a non-debug build.
+        CONFIG_COMPAT['use_frozen_modules'] = True
     else:
         config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
         if '--with-address-sanitizer' in config_args:
