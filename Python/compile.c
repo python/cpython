@@ -8118,59 +8118,60 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
         else {
             target = &nop;
         }
-        if (HAS_CONST(inst->i_opcode)) {
-            /* Remove LOAD_CONST const; conditional jump */
-            PyObject* cnt;
-            int is_true;
-            int jump_if_true;
-            switch(nextop) {
-                case POP_JUMP_IF_FALSE:
-                case POP_JUMP_IF_TRUE:
-                    cnt = get_const_value(inst->i_opcode, oparg, consts);
-                    if (cnt == NULL) {
-                        goto error;
-                    }
-                    is_true = PyObject_IsTrue(cnt);
-                    Py_DECREF(cnt);
-                    if (is_true == -1) {
-                        goto error;
-                    }
-                    inst->i_opcode = NOP;
-                    jump_if_true = nextop == POP_JUMP_IF_TRUE;
-                    if (is_true == jump_if_true) {
-                        bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
-                        bb->b_nofallthrough = 1;
-                    }
-                    else {
-                        bb->b_instr[i+1].i_opcode = NOP;
-                    }
-                    break;
-                case JUMP_IF_FALSE_OR_POP:
-                case JUMP_IF_TRUE_OR_POP:
-                    cnt = get_const_value(inst->i_opcode, oparg, consts);
-                    if (cnt == NULL) {
-                        goto error;
-                    }
-                    is_true = PyObject_IsTrue(cnt);
-                    Py_DECREF(cnt);
-                    if (is_true == -1) {
-                        goto error;
-                    }
-                    jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
-                    if (is_true == jump_if_true) {
-                        bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
-                        bb->b_nofallthrough = 1;
-                    }
-                    else {
-                        inst->i_opcode = NOP;
-                        bb->b_instr[i+1].i_opcode = NOP;
-                    }
-                    break;
-            }
-            continue;
-        }
-
         switch (inst->i_opcode) {
+            /* Remove LOAD_CONST const; conditional jump */
+            case LOAD_CONST:
+            {
+                PyObject* cnt;
+                int is_true;
+                int jump_if_true;
+                switch(nextop) {
+                    case POP_JUMP_IF_FALSE:
+                    case POP_JUMP_IF_TRUE:
+                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
+                        is_true = PyObject_IsTrue(cnt);
+                        Py_DECREF(cnt);
+                        if (is_true == -1) {
+                            goto error;
+                        }
+                        inst->i_opcode = NOP;
+                        jump_if_true = nextop == POP_JUMP_IF_TRUE;
+                        if (is_true == jump_if_true) {
+                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            bb->b_nofallthrough = 1;
+                        }
+                        else {
+                            bb->b_instr[i+1].i_opcode = NOP;
+                        }
+                        break;
+                    case JUMP_IF_FALSE_OR_POP:
+                    case JUMP_IF_TRUE_OR_POP:
+                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
+                        is_true = PyObject_IsTrue(cnt);
+                        Py_DECREF(cnt);
+                        if (is_true == -1) {
+                            goto error;
+                        }
+                        jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
+                        if (is_true == jump_if_true) {
+                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            bb->b_nofallthrough = 1;
+                        }
+                        else {
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                        }
+                        break;
+                }
+                break;
+            }
+
                 /* Try to fold tuples of constants.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
@@ -8338,6 +8339,9 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     fold_rotations(inst - oparg + 1, oparg);
                 }
                 break;
+            default:
+                /* All HAS_CONST opcodes should be handled with LOAD_CONST */
+                assert (!HAS_CONST(inst->i_opcode));
         }
     }
     return 0;
