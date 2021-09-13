@@ -320,9 +320,9 @@ Deprecated
 * Deprecated the following :mod:`unittest` functions, scheduled for removal in
   Python 3.13:
 
-  * :meth:`unittest.findTestCases`
-  * :meth:`unittest.makeSuite`
-  * :meth:`unittest.getTestCaseNames`
+  * :func:`unittest.findTestCases`
+  * :func:`unittest.makeSuite`
+  * :func:`unittest.getTestCaseNames`
 
   Use :class:`~unittest.TestLoader` method instead:
 
