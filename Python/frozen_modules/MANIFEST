@@ -12,6 +12,7 @@ io                           no  <io>                            io.h           
 _collections_abc             no  <_collections_abc>              _collections_abc.h              1d68efc06884
 _sitebuiltins                no  <_sitebuiltins>                 _sitebuiltins.h                 b0e7250b851e
 genericpath                  no  <genericpath>                   genericpath.h                   c9d0ff38948c
+ntpath                       no  <ntpath>                        ntpath.h                        15b9b80fa9c2
 posixpath                    no  <posixpath>                     posixpath.h                     3fc077252afd
 stat                         no  <stat>                          stat.h                          27c32a0815c2
 __hello__                    no  Tools/freeze/flag.py            hello.h                         af6fb665713f

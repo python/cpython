@@ -790,6 +790,11 @@ Python/frozen_modules/genericpath.h: Programs/_freeze_module Lib/genericpath.py
 		$(srcdir)/Lib/genericpath.py \
 		$(srcdir)/Python/frozen_modules/genericpath.h
 
+Python/frozen_modules/ntpath.h: Programs/_freeze_module Lib/ntpath.py
+	$(srcdir)/Programs/_freeze_module ntpath \
+		$(srcdir)/Lib/ntpath.py \
+		$(srcdir)/Python/frozen_modules/ntpath.h
+
 Python/frozen_modules/posixpath.h: Programs/_freeze_module Lib/posixpath.py
 	$(srcdir)/Programs/_freeze_module posixpath \
 		$(srcdir)/Lib/posixpath.py \
@@ -1046,6 +1051,7 @@ FROZEN_FILES = \
 		$(srcdir)/Python/frozen_modules/_collections_abc.h \
 		$(srcdir)/Python/frozen_modules/_sitebuiltins.h \
 		$(srcdir)/Python/frozen_modules/genericpath.h \
+		$(srcdir)/Python/frozen_modules/ntpath.h \
 		$(srcdir)/Python/frozen_modules/posixpath.h \
 		$(srcdir)/Python/frozen_modules/stat.h \
 		$(srcdir)/Python/frozen_modules/hello.h
