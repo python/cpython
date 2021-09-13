@@ -568,19 +568,6 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         # shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
-    def test_hang_issue45021(self):
-        """https://bugs.python.org/issue45021"""
-        def submit(pool):
-            pool.submit(submit, pool)
-
-        if hasattr(os, 'register_at_fork'):
-            with futures.ThreadPoolExecutor(1) as pool:
-                pool.submit(submit, pool)
-
-                for _ in range(50):
-                    with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
-                        workers.submit(tuple)
-
 
 create_executor_tests(ProcessPoolShutdownTest,
                       executor_mixins=(ProcessPoolForkMixin,
@@ -917,6 +904,20 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         executor.submit(mul, 3, 14).result()
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
+
+    @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
+    def test_hang_global_shutdown_lock(self):
+        # bpo-45021: _global_shutdown_lock should be reinitialized in the child
+        # process, otherwise it will never exit
+        def submit(pool):
+            pool.submit(submit, pool)
+
+        with futures.ThreadPoolExecutor(1) as pool:
+            pool.submit(submit, pool)
+
+            for _ in range(50):
+                with futures.ProcessPoolExecutor(1, mp_context=get_context('fork')) as workers:
+                    workers.submit(tuple)
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
