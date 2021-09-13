@@ -770,11 +770,6 @@ Python/frozen_modules/abc.h: Programs/_freeze_module Lib/abc.py
 		$(srcdir)/Lib/abc.py \
 		$(srcdir)/Python/frozen_modules/abc.h
 
-Python/frozen_modules/codecs.h: Programs/_freeze_module Lib/codecs.py
-	$(srcdir)/Programs/_freeze_module codecs \
-		$(srcdir)/Lib/codecs.py \
-		$(srcdir)/Python/frozen_modules/codecs.h
-
 Python/frozen_modules/io.h: Programs/_freeze_module Lib/io.py
 	$(srcdir)/Programs/_freeze_module io \
 		$(srcdir)/Lib/io.py \
@@ -799,16 +794,6 @@ Python/frozen_modules/posixpath.h: Programs/_freeze_module Lib/posixpath.py
 	$(srcdir)/Programs/_freeze_module posixpath \
 		$(srcdir)/Lib/posixpath.py \
 		$(srcdir)/Python/frozen_modules/posixpath.h
-
-Python/frozen_modules/os.h: Programs/_freeze_module Lib/os.py
-	$(srcdir)/Programs/_freeze_module os \
-		$(srcdir)/Lib/os.py \
-		$(srcdir)/Python/frozen_modules/os.h
-
-Python/frozen_modules/site.h: Programs/_freeze_module Lib/site.py
-	$(srcdir)/Programs/_freeze_module site \
-		$(srcdir)/Lib/site.py \
-		$(srcdir)/Python/frozen_modules/site.h
 
 Python/frozen_modules/stat.h: Programs/_freeze_module Lib/stat.py
 	$(srcdir)/Programs/_freeze_module stat \
@@ -1057,14 +1042,11 @@ FROZEN_FILES = \
 		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h \
 		$(srcdir)/Python/frozen_modules/zipimport.h \
 		$(srcdir)/Python/frozen_modules/abc.h \
-		$(srcdir)/Python/frozen_modules/codecs.h \
 		$(srcdir)/Python/frozen_modules/io.h \
 		$(srcdir)/Python/frozen_modules/_collections_abc.h \
 		$(srcdir)/Python/frozen_modules/_sitebuiltins.h \
 		$(srcdir)/Python/frozen_modules/genericpath.h \
 		$(srcdir)/Python/frozen_modules/posixpath.h \
-		$(srcdir)/Python/frozen_modules/os.h \
-		$(srcdir)/Python/frozen_modules/site.h \
 		$(srcdir)/Python/frozen_modules/stat.h \
 		$(srcdir)/Python/frozen_modules/hello.h
 # End FROZEN_FILES
