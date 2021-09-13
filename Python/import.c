@@ -1050,6 +1050,19 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 
 /* Frozen modules */
 
+static bool
+is_essential_frozen_module(PyObject *name)
+{
+    /* These modules are necessary to bootstrap the import system. */
+    if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib")) {
+        return true;
+    }
+    if (_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external")) {
+        return true;
+    }
+    return false;
+}
+
 static PyObject *
 list_frozen_module_names(bool force)
 {
@@ -1062,18 +1075,16 @@ list_frozen_module_names(bool force)
         if (p->name == NULL) {
             break;
         }
-        if (!config->use_frozen_modules) {
-            /* These modules are necessary to bootstrap the import system. */
-            if (!strcmp(p->name, "_frozen_importlib") &&
-                !strcmp(p->name, "_frozen_importlib_external"))
-            {
-                continue;
-            }
-        }
         PyObject *name = PyUnicode_FromString(p->name);
         if (name == NULL) {
             Py_DECREF(names);
             return NULL;
+        }
+        if (!config->use_frozen_modules && !force) {
+            if (!is_essential_frozen_module(name)) {
+                Py_DECREF(name);
+                continue;
+            }
         }
         int res = PyList_Append(names, name);
         Py_DECREF(name);
@@ -1095,10 +1106,7 @@ find_frozen(PyObject *name, bool force)
 
     const PyConfig *config = _Py_GetConfig();
     if (!config->use_frozen_modules && !force) {
-        /* These modules are necessary to bootstrap the import system. */
-        if (!_PyUnicode_EqualToASCIIString(name, "_frozen_importlib") &&
-            !_PyUnicode_EqualToASCIIString(name, "_frozen_importlib_external"))
-        {
+        if (!is_essential_frozen_module(name)) {
             return NULL;
         }
     }
