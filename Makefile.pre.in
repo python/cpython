@@ -750,22 +750,22 @@ regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
 
 # BEGIN: freezing modules
 
-Python/frozen_modules/importlib__bootstrap.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap.py
+Python/frozen_modules/importlib__bootstrap.h: Programs/_freeze_module Lib/importlib/_bootstrap.py
 	$(srcdir)/Programs/_freeze_module importlib._bootstrap \
 		$(srcdir)/Lib/importlib/_bootstrap.py \
 		$(srcdir)/Python/frozen_modules/importlib__bootstrap.h
 
-Python/frozen_modules/importlib__bootstrap_external.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/importlib/_bootstrap_external.py
+Python/frozen_modules/importlib__bootstrap_external.h: Programs/_freeze_module Lib/importlib/_bootstrap_external.py
 	$(srcdir)/Programs/_freeze_module importlib._bootstrap_external \
 		$(srcdir)/Lib/importlib/_bootstrap_external.py \
 		$(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h
 
-Python/frozen_modules/zipimport.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Lib/zipimport.py
+Python/frozen_modules/zipimport.h: Programs/_freeze_module Lib/zipimport.py
 	$(srcdir)/Programs/_freeze_module zipimport \
 		$(srcdir)/Lib/zipimport.py \
 		$(srcdir)/Python/frozen_modules/zipimport.h
 
-Python/frozen_modules/hello.h: $(srcdir)/Programs/_freeze_module $(srcdir)/Tools/freeze/flag.py
+Python/frozen_modules/hello.h: Programs/_freeze_module Tools/freeze/flag.py
 	$(srcdir)/Programs/_freeze_module hello \
 		$(srcdir)/Tools/freeze/flag.py \
 		$(srcdir)/Python/frozen_modules/hello.h
