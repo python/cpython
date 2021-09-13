@@ -1108,6 +1108,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_GLOBAL:
             return 0;
         case LOAD_CONST:
+        case LOAD_CONST_COMMON:
             return 1;
         case LOAD_NAME:
             return 1;
@@ -1823,7 +1824,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 
 static int
 compiler_call_exit_with_nones(struct compiler *c) {
-    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_I(c, LOAD_CONST_COMMON, 0);
     ADDOP(c, DUP_TOP);
     ADDOP(c, DUP_TOP);
     ADDOP_I(c, CALL_FUNCTION, 3);
@@ -1902,7 +1903,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             }
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP(c, GET_AWAITABLE);
-                ADDOP_LOAD_CONST(c, Py_None);
+                ADDOP_I(c, LOAD_CONST_COMMON, 0);
                 ADDOP(c, YIELD_FROM);
             }
             ADDOP(c, POP_TOP);
@@ -1922,7 +1923,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
             if (info->fb_datum) {
-                ADDOP_LOAD_CONST(c, Py_None);
+                ADDOP_I(c, LOAD_CONST_COMMON, 0);
                 compiler_nameop(c, info->fb_datum, Store);
                 compiler_nameop(c, info->fb_datum, Del);
             }
@@ -2594,7 +2595,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         else {
             /* No methods referenced __class__, so just return None */
             assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
-            ADDOP_LOAD_CONST(c, Py_None);
+            ADDOP_I(c, LOAD_CONST_COMMON, 0);
         }
         ADDOP_IN_SCOPE(c, RETURN_VALUE);
         /* create the code object */

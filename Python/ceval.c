@@ -1740,6 +1740,15 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(LOAD_CONST_COMMON): {
+            assert (oparg < 2);
+            static PyObject* values[2] = { Py_None, Py_Ellipsis };
+            PyObject *value = values[oparg];
+            Py_INCREF(value);
+            PUSH(value);
+            DISPATCH();
+        }
+
         TARGET(STORE_FAST): {
             PREDICTED(STORE_FAST);
             PyObject *value = POP();
