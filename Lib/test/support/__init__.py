@@ -1112,15 +1112,14 @@ def run_unittest(*classes):
     for cls in classes:
         if isinstance(cls, str):
             if cls in sys.modules:
-                loader = unittest.defaultTestLoader
+                loader = unittest.TestLoader()
                 suite.addTest(loader.loadTestsFromModule(sys.modules[cls]))
             else:
                 raise ValueError("str arguments must be keys in sys.modules")
         elif isinstance(cls, valid_types):
             suite.addTest(cls)
         else:
-            loader = unittest.defaultTestLoader
-            suite.addTest(loader.loadTestsFromTestCase(cls))
+            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
     _run_suite(suite)
 
