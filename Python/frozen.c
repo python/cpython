@@ -47,7 +47,7 @@
 /* Note that a negative size indicates a package. */
 
 static const struct _frozen _PyImport_FrozenModules[] = {
-    /* importlib */
+    /* import system */
     {"_frozen_importlib", _Py_M__importlib__bootstrap,
         (int)sizeof(_Py_M__importlib__bootstrap)},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
