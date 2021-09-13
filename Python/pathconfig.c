@@ -6,7 +6,6 @@
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_pystate.h"       // _Py_GetMainConfig()
 #include <wchar.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
@@ -606,7 +605,6 @@ Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;
 }
-
 
 /* Compute module search path from argv[0] or the current working
    directory ("-m module" case) which will be prepended to sys.argv:
