@@ -49,6 +49,11 @@ FROZEN = [
         'hello : __phello__.spam',
         ]),
 ]
+ESSENTIAL = {
+    'importlib._bootstrap',
+    'importlib._bootstrap_external',
+    'zipimport',
+}
 
 
 #######################################
@@ -512,6 +517,10 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     for src in _iter_sources(modules):
+        # For now we only require the essential frozen modules on Windows.
+        # See bpo-45186 and bpo-45188.
+        if src.id not in ESSENTIAL and src.id != 'hello':
+            continue
         pyfile = os.path.relpath(src.pyfile, ROOT_DIR).replace('/', '\\')
         header = os.path.relpath(src.frozenfile, ROOT_DIR).replace('/', '\\')
         intfile = header.split('\\')[-1].strip('.h') + '.g.h'
