@@ -542,5 +542,11 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, str_err):
             "{a:%k}".format(a='a')
 
+    def test_unicode_in_error_message(self):
+        str_err = re.escape(
+            "Invalid format specifier '{a:%ЫйЯЧ}' for object of type 'str'")
+        with self.assertRaisesRegex(ValueError, str_err):
+            "{a:%ЫйЯЧ}".format(a='a')
+
 if __name__ == "__main__":
     unittest.main()
