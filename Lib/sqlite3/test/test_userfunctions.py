@@ -661,22 +661,5 @@ class AuthorizerLargeIntegerTests(AuthorizerTests):
         return sqlite.SQLITE_OK
 
 
-def suite():
-    tests = [
-        AggregateTests,
-        AuthorizerIllegalTypeTests,
-        AuthorizerLargeIntegerTests,
-        AuthorizerRaiseExceptionTests,
-        AuthorizerTests,
-        FunctionTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
 if __name__ == "__main__":
-    test()
+    unittest.main()
