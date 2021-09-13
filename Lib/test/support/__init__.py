@@ -1108,18 +1108,18 @@ def _compile_match_function(patterns):
 def run_unittest(*classes):
     """Run tests from unittest.TestCase-derived classes."""
     valid_types = (unittest.TestSuite, unittest.TestCase)
+    loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for cls in classes:
         if isinstance(cls, str):
             if cls in sys.modules:
-                loader = unittest.TestLoader()
                 suite.addTest(loader.loadTestsFromModule(sys.modules[cls]))
             else:
                 raise ValueError("str arguments must be keys in sys.modules")
         elif isinstance(cls, valid_types):
             suite.addTest(cls)
         else:
-            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(cls))
+            suite.addTest(loader.loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
     _run_suite(suite)
 

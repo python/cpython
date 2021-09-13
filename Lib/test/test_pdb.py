@@ -1975,14 +1975,10 @@ class ChecklineTests(unittest.TestCase):
             self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
 
 
-def load_tests(*args):
+def load_tests(loader, tests, pattern):
     from test import test_pdb
-    suites = [
-        unittest.makeSuite(PdbTestCase),
-        unittest.makeSuite(ChecklineTests),
-        doctest.DocTestSuite(test_pdb)
-    ]
-    return unittest.TestSuite(suites)
+    tests.addTest(doctest.DocTestSuite(test_pdb))
+    return tests
 
 
 if __name__ == '__main__':
