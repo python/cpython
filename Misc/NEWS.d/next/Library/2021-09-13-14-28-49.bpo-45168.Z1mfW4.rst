@@ -1,1 +1,1 @@
-Change :func:`dis.dis` output to show '-' indead of the index for values that cannot be calculated because the co_consts, co_names etc are not provided.
+Change :func:`dis.dis` output to omit op arg values that cannot be resolved due to ``co_consts``, ``co_names`` etc not being provided. Previously the oparg itself was repeated in the value field, which is not useful and can be confusing.

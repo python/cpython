@@ -125,6 +125,13 @@ def pretty_flags(flags):
         names.append(hex(flags))
     return ", ".join(names)
 
+class _Unknown:
+    def __repr__(self):
+        return "<unknown>"
+
+# Sentinel to represent values that cannot be calculated
+UNKNOWN = _Unknown()
+
 def _get_code_object(x):
     """Helper to handle methods, compiled or raw code objects, and strings."""
     # Extract functions from methods.
@@ -283,7 +290,7 @@ class Instruction(_Instruction):
         if self.arg is not None:
             fields.append(repr(self.arg).rjust(_OPARG_WIDTH))
             # Column: Opcode argument details
-            if self.argrepr:
+            if self.argrepr and self.argval is not UNKNOWN:
                 fields.append('(' + self.argrepr + ')')
         return ' '.join(fields).rstrip()
 
@@ -315,26 +322,26 @@ def _get_const_info(const_index, const_list):
 
        Returns the dereferenced constant and its repr if the constant
        list is defined.
-       Otherwise returns the index for the value and '-' for its repr.
+       Otherwise returns the sentinel value dis.UNKNOWN for the value.
     """
     if const_list is not None:
         argval = const_list[const_index]
         return argval, repr(argval)
     else:
-        return const_index, '-'
+        return UNKNOWN, repr(UNKNOWN)
 
 def _get_name_info(name_index, get_name, **extrainfo):
     """Helper to get optional details about named references
 
        Returns the dereferenced name as both value and repr if the name
        list is defined.
-       Otherwise returns the index for the value and '-' for its repr.
+       Otherwise returns the sentinel value dis.UNKNOWN for the value.
     """
     if get_name is not None:
         argval = get_name(name_index, **extrainfo)
         return argval, argval
     else:
-        return name_index, '-'
+        return UNKNOWN, repr(UNKNOWN)
 
 def parse_varint(iterator):
     b = next(iterator)
