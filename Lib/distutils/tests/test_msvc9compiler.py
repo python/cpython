@@ -178,7 +178,7 @@ class msvc9compilerTestCase(support.TempdirManager,
 
 
 def test_suite():
-    return unittest.makeSuite(msvc9compilerTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(msvc9compilerTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())
