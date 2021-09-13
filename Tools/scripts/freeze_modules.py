@@ -50,7 +50,8 @@ FROZEN = [
         # without site (python -S)
         'abc',
         'codecs',
-        '<encodings.*>',
+        # For the moment we skip the encodings module, due to noise in diffs.
+        # '<encodings.*>',
         'io',
         # with site
         '_collections_abc',
