@@ -1006,7 +1006,7 @@ class NonCallableMock(Base):
             return AsyncMock(**kw)
 
         if self._mock_sealed:
-            attribute = "." + kw["name"] if "name" in kw else "()"
+            attribute = f".{kw['name']} if "name" in kw else "()"
             mock_name = self._extract_mock_name() + attribute
             raise AttributeError(mock_name)
 
