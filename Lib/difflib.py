@@ -118,7 +118,7 @@ class SequenceMatcher:
 
     Methods:
 
-    __init__(isjunk=None, a='', b='')
+    __init__(isjunk=None, a='', b='', autojunk=True)
         Construct a SequenceMatcher.
 
     set_seqs(a, b)
