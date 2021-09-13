@@ -282,8 +282,8 @@ parse_internal_render_format_spec(PyObject *obj,
     if (end-pos > 1) {
         /* More than one char remain, invalid format specifier. */
         PyErr_Format(PyExc_ValueError,
-                     "Invalid format specifier: '%s' for object of type '%s'",
-                     PyUnicode_AsUTF8AndSize(format_spec, NULL),
+                     "Invalid format specifier '%s' for object of type '%.200s'",
+                     PyUnicode_AsUTF8(format_spec),
                      Py_TYPE(obj)->tp_name);
         return 0;
     }
