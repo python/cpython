@@ -34,13 +34,11 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
             continue;
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
             if (ff->ff_features & 0x2000000) {
-                printf("Barry has returned as BDFL.\n");
                 ff->ff_features ^= 0x2000000;
             }
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
         } else if (strcmp(feature, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL) == 0) {
             if (ff->ff_features & 0x400000) {
-                printf("Barry has been overthrown from benevolent dictatorship!\n");
                 ff->ff_features ^= 0x400000;
             }
             ff->ff_features |= CO_FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL;
