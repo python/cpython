@@ -7,9 +7,6 @@
 #	valgrind --tool=memcheck --suppressions=Misc/valgrind-python.supp \
 #		./python -E ./Lib/test/regrtest.py -u gui,network
 #
-# You must edit Objects/obmalloc.c to use the preferred
-# suppressions with address_in_range.
-#
 # If you do not want to recompile Python, you can uncomment
 # suppressions for _PyObject_Free and _PyObject_Realloc.
 #
