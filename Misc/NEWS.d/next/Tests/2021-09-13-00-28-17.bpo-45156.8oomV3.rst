@@ -1,0 +1,2 @@
+Fixes infinite loop on :func:`unittest.mock.seal` of mocks created by
+:func:`~unittest.create_autospec`.
