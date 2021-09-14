@@ -239,6 +239,11 @@ time
   interval specified with nanosecond precision.
   (Contributed by Livius and Victor Stinner in :issue:`21302`.)
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+
 
 Removed
 =======
