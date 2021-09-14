@@ -433,8 +433,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
         })
-        # On Windows we run tests with a non-debug build.
-        CONFIG_COMPAT['use_frozen_modules'] = True
+        if not sys.executable.endswith('_d.exe'):
+            # It's not a debug build.
+            CONFIG_COMPAT['use_frozen_modules'] = True
     else:
         config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
         if '--with-pydebug' not in config_args:
