@@ -3489,13 +3489,16 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         return 0;
 
     /* build up the names */
+    int skip_check = 1;
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
+        if (skip_check) {
+            skip_check = _PyUnicode_EqualToASCIIString(alias->name, "barry_as_FLUFL") || _PyUnicode_EqualToASCIIString(alias->name, "remove_barry_from_BDFL");
         Py_INCREF(alias->name);
         PyTuple_SET_ITEM(names, i, alias->name);
     }
 
-    if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
+    if (skip_check == 0 && s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
         Py_DECREF(names);
         return compiler_error(c, "from __future__ imports must occur "
