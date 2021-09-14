@@ -97,8 +97,8 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
             identifier modname = s->v.ImportFrom.module;
             asdl_alias_seq *importname = s->v.ImportFrom.names;
             for (Py_ssize_t iter_i = 0; iter_i < asdl_seq_LEN(importname); ++iter_i) {
-                if (_PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i), "barry_as_BDFL") ||
-                    _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i), "remove_barry_from_BDFL")) {
+                if (_PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, "barry_as_BDFL") ||
+                    _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, "remove_barry_from_BDFL")) {
                         barry_related = 1;
                         break;
                 }
