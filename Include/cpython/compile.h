@@ -44,7 +44,7 @@ typedef struct {
 #define FUTURE_PRINT_FUNCTION "print_function"
 #define FUTURE_UNICODE_LITERALS "unicode_literals"
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
-#define FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL "remove_barry_as_BDFL"
+#define FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL "remove_barry_from_BDFL"
 #define FUTURE_GENERATOR_STOP "generator_stop"
 #define FUTURE_ANNOTATIONS "annotations"
 
