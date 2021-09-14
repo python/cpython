@@ -24,6 +24,8 @@ LISTUPDATE_SEQUENCE = "<B1-ButtonRelease>"
 WINCONFIG_SEQUENCE = "<Configure>"
 DOUBLECLICK_SEQUENCE = "<B1-Double-ButtonRelease>"
 
+_TK_FULL_VERSION = None
+
 class AutoCompleteWindow:
 
     def __init__(self, widget, tags):
@@ -60,6 +62,14 @@ class AutoCompleteWindow:
         self.lastkey_was_tab = False
         # Flag set to avoid recursive <Configure> callback invocations.
         self.is_configuring = False
+
+    @property
+    def _tk_full_version(self):
+        global _TK_FULL_VERSION
+        if _TK_FULL_VERSION is None:
+            version_str = self.widget.tk.call("info", "patchlevel")
+            _TK_FULL_VERSION = tuple(map(int, version_str.split(".")))
+        return _TK_FULL_VERSION
 
     def _change_start(self, newstart):
         min_len = min(len(self.start), len(newstart))
@@ -206,7 +216,11 @@ class AutoCompleteWindow:
         scrollbar.config(command=listbox.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         listbox.pack(side=LEFT, fill=BOTH, expand=True)
-        acw.update_idletasks() # Need for tk8.6.8 on macOS: #40128.
+        if (
+            platform.system() == "Darwin" and
+            (8, 6, 8) <= self._tk_full_version < (8, 6, 10)
+        ):
+            acw.update_idletasks()  # Need for tk8.6.8 on macOS: #40128.
         acw.lift()  # work around bug in Tk 8.5.18+ (issue #24570)
 
         # Initialize the listbox selection
