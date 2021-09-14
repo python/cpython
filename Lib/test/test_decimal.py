@@ -40,6 +40,17 @@ from test.support import (import_fresh_module, TestFailed,
 import random
 import inspect
 import threading
+import sysconfig
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+MEMORY_SANITIZER = (
+    '-fsanitize=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
+
+ADDRESS_SANITIZER = (
+    '-fsanitize=address' in _cflags
+)
 
 
 if sys.platform == 'darwin':
@@ -5486,6 +5497,8 @@ class CWhitebox(unittest.TestCase):
     # Issue 41540:
     @unittest.skipIf(sys.platform.startswith("aix"),
                      "AIX: default ulimit: test is flaky because of extreme over-allocation")
+    @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due
