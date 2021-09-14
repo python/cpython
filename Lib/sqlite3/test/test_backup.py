@@ -160,8 +160,5 @@ class BackupTests(unittest.TestCase):
             self.verify_backup(bck)
 
 
-def suite():
-    return unittest.TestLoader().loadTestsFromTestCase(BackupTests)
-
 if __name__ == "__main__":
     unittest.main()
