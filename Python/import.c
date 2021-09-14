@@ -1072,26 +1072,19 @@ is_essential_frozen_module(const char *name)
 }
 
 static bool
-use_frozen(const char *modname)
+use_frozen(void)
 {
-    bool use;
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int override = interp->override_frozen_modules;
     if (override > 0) {
-        use = true;
+        return true;
     }
     else if (override < 0) {
-        use = false;
+        return false;
     }
     else {
-        use = interp->config.use_frozen_modules;
+        return interp->config.use_frozen_modules;
     }
-
-    if (!use && modname != NULL) {
-        use = is_essential_frozen_module(modname);
-    }
-    return use;
 }
 
 static PyObject *
@@ -1101,7 +1094,7 @@ list_frozen_module_names()
     if (names == NULL) {
         return NULL;
     }
-    bool enabled = use_frozen(NULL);
+    bool enabled = use_frozen();
     for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
             break;
@@ -1135,8 +1128,10 @@ find_frozen(PyObject *modname)
         PyErr_Clear();
         return NULL;
     }
-    if (!use_frozen(name)) {
-        return NULL;
+    if (!use_frozen()) {
+        if (!is_essential_frozen_module(name)) {
+            return NULL;
+        }
     }
     const struct _frozen *p;
     for (p = PyImport_FrozenModules; ; p++) {
