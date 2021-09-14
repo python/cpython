@@ -1581,20 +1581,11 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
 
-@threading_helper.reap_threads
-def test_main():
-    try:
-        test.support.run_unittest(PydocDocTest,
-                                  PydocImportTest,
-                                  TestDescriptions,
-                                  PydocServerTest,
-                                  PydocUrlHandlerTest,
-                                  TestHelper,
-                                  PydocWithMetaClasses,
-                                  TestInternalUtilities,
-                                  )
-    finally:
-        reap_children()
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
+    unittest.addModuleCleanup(reap_children)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
