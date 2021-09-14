@@ -898,6 +898,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(no_debug_ranges);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
+    COPY_ATTR(dump_refs_file);
     COPY_ATTR(malloc_stats);
 
     COPY_WSTR_ATTR(pycache_prefix);
@@ -1699,6 +1700,14 @@ config_read_env_vars(PyConfig *config)
     }
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+
+    if (config->dump_refs_file == NULL) {
+        status = CONFIG_GET_ENV_DUP(config, &config->dump_refs_file,
+                                    L"PYTHONDUMPREFSFILE", "PYTHONDUMPREFSFILE");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     if (config->pythonpath_env == NULL) {

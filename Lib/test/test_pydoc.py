@@ -24,7 +24,7 @@ import textwrap
 from io import StringIO
 from collections import namedtuple
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, requires_docstrings)
@@ -345,6 +345,14 @@ def run_pydoc(module_name, *args, **env):
     rc, out, err = assert_python_ok('-B', pydoc.__file__, *args, **env)
     return out.strip()
 
+def run_pydoc_fail(module_name, *args, **env):
+    """
+    Runs pydoc on the specified module expecting a failure.
+    """
+    args = args + (module_name,)
+    rc, out, err = assert_python_failure('-B', pydoc.__file__, *args, **env)
+    return out.strip()
+
 def get_pydoc_html(module):
     "Returns pydoc generated output as html"
     doc = pydoc.HTMLDoc()
@@ -487,7 +495,7 @@ class PydocDocTest(unittest.TestCase):
 
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
-        result = str(run_pydoc(missing_module), 'ascii')
+        result = str(run_pydoc_fail(missing_module), 'ascii')
         expected = missing_pattern % missing_module
         self.assertEqual(expected, result,
             "documentation for missing module found")
@@ -501,7 +509,7 @@ class PydocDocTest(unittest.TestCase):
 
     def test_input_strip(self):
         missing_module = " test.i_am_not_here "
-        result = str(run_pydoc(missing_module), 'ascii')
+        result = str(run_pydoc_fail(missing_module), 'ascii')
         expected = missing_pattern % missing_module.strip()
         self.assertEqual(expected, result)
 
@@ -902,7 +910,7 @@ class PydocImportTest(PydocBaseTest):
         for importstring, expectedinmsg in testpairs:
             with open(sourcefn, 'w') as f:
                 f.write("import {}\n".format(importstring))
-            result = run_pydoc(modname, PYTHONPATH=TESTFN).decode("ascii")
+            result = run_pydoc_fail(modname, PYTHONPATH=TESTFN).decode("ascii")
             expected = badimport_pattern % (modname, expectedinmsg)
             self.assertEqual(expected, result)
 

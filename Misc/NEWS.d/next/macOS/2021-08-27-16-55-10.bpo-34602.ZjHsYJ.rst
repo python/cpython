@@ -1,0 +1,3 @@
+When building CPython on macOS with ``./configure
+--with-undefined-behavior-sanitizer --with-pydebug``, the stack size is now
+quadrupled to allow for the entire test suite to pass.

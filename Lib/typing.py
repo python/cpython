@@ -461,7 +461,7 @@ def ClassVar(self, parameters):
     be used with isinstance() or issubclass().
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,), name="ClassVar")
+    return _GenericAlias(self, (item,))
 
 @_SpecialForm
 def Final(self, parameters):
@@ -482,7 +482,7 @@ def Final(self, parameters):
     There is no runtime checking of these properties.
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,), name="Final")
+    return _GenericAlias(self, (item,))
 
 @_SpecialForm
 def Union(self, parameters):
@@ -520,12 +520,9 @@ def Union(self, parameters):
     parameters = _remove_dups_flatten(parameters)
     if len(parameters) == 1:
         return parameters[0]
-
     if len(parameters) == 2 and type(None) in parameters:
-        name = "Optional"
-    else:
-        name = "Union"
-    return _UnionGenericAlias(self, parameters, name=name)
+        return _UnionGenericAlias(self, parameters, name="Optional")
+    return _UnionGenericAlias(self, parameters)
 
 @_SpecialForm
 def Optional(self, parameters):
@@ -570,7 +567,7 @@ def Literal(self, parameters):
     except TypeError:  # unhashable parameters
         pass
 
-    return _LiteralGenericAlias(self, parameters, name="Literal")
+    return _LiteralGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -609,7 +606,7 @@ def Concatenate(self, parameters):
                         "ParamSpec variable.")
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = tuple(_type_check(p, msg) for p in parameters)
-    return _ConcatenateGenericAlias(self, parameters, name="Concatenate")
+    return _ConcatenateGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -657,7 +654,7 @@ def TypeGuard(self, parameters):
     PEP 647 (User-Defined Type Guards).
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
-    return _GenericAlias(self, (item,), name="TypeGuard")
+    return _GenericAlias(self, (item,))
 
 
 class ForwardRef(_Final, _root=True):
@@ -962,7 +959,7 @@ class _BaseGenericAlias(_Final, _root=True):
 
     def __getattr__(self, attr):
         if attr in {'__name__', '__qualname__'}:
-            return self._name
+            return self._name or self.__origin__.__name__
 
         # We are careful for copy and pickle.
         # Also for simplicity we just don't relay all dunder names
@@ -1086,6 +1083,9 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return operator.getitem, (origin, args)
 
     def __mro_entries__(self, bases):
+        if isinstance(self.__origin__, _SpecialForm):
+            raise TypeError(f"Cannot subclass {self!r}")
+
         if self._name:  # generic version of an ABC or built-in class
             return super().__mro_entries__(bases)
         if self.__origin__ is Generic:
@@ -1400,8 +1400,34 @@ def _is_callable_members_only(cls):
     return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
 
 
-def _no_init(self, *args, **kwargs):
-    raise TypeError('Protocols cannot be instantiated')
+def _no_init_or_replace_init(self, *args, **kwargs):
+    cls = type(self)
+
+    if cls._is_protocol:
+        raise TypeError('Protocols cannot be instantiated')
+
+    # Already using a custom `__init__`. No need to calculate correct
+    # `__init__` to call. This can lead to RecursionError. See bpo-45121.
+    if cls.__init__ is not _no_init_or_replace_init:
+        return
+
+    # Initially, `__init__` of a protocol subclass is set to `_no_init_or_replace_init`.
+    # The first instantiation of the subclass will call `_no_init_or_replace_init` which
+    # searches for a proper new `__init__` in the MRO. The new `__init__`
+    # replaces the subclass' old `__init__` (ie `_no_init_or_replace_init`). Subsequent
+    # instantiation of the protocol subclass will thus use the new
+    # `__init__` and no longer call `_no_init_or_replace_init`.
+    for base in cls.__mro__:
+        init = base.__dict__.get('__init__', _no_init_or_replace_init)
+        if init is not _no_init_or_replace_init:
+            cls.__init__ = init
+            break
+    else:
+        # should not happen
+        cls.__init__ = object.__init__
+
+    cls.__init__(self, *args, **kwargs)
+
 
 def _caller(depth=1, default='__main__'):
     try:
@@ -1541,15 +1567,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
         # We have nothing more to do for non-protocols...
         if not cls._is_protocol:
-            if cls.__init__ == _no_init:
-                for base in cls.__mro__:
-                    init = base.__dict__.get('__init__', _no_init)
-                    if init != _no_init:
-                        cls.__init__ = init
-                        break
-                else:
-                    # should not happen
-                    cls.__init__ = object.__init__
             return
 
         # ... otherwise check consistency of bases, and prohibit instantiation.
@@ -1560,7 +1577,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
-        cls.__init__ = _no_init
+        cls.__init__ = _no_init_or_replace_init
 
 
 class _AnnotatedAlias(_GenericAlias, _root=True):
@@ -1575,7 +1592,7 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
             origin = origin.__origin__
-        super().__init__(origin, origin, name="Annotated")
+        super().__init__(origin, origin)
         self.__metadata__ = metadata
 
     def copy_with(self, params):
@@ -1602,6 +1619,11 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
 
     def __hash__(self):
         return hash((self.__origin__, self.__metadata__))
+
+    def __getattr__(self, attr):
+        if attr in {'__name__', '__qualname__'}:
+            return 'Annotated'
+        return super().__getattr__(attr)
 
 
 class Annotated:

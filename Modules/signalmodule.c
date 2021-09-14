@@ -611,7 +611,7 @@ static PyObject *
 signal_strsignal_impl(PyObject *module, int signalnum)
 /*[clinic end generated code: output=44e12e1e3b666261 input=b77914b03f856c74]*/
 {
-    char *res;
+    const char *res;
 
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,

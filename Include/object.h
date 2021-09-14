@@ -134,10 +134,16 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
+static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
+    return ob->ob_type;
+}
+#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
+static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
+    return ob->ob_size;
+}
+#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
@@ -241,6 +247,7 @@ PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 #endif
 
 /* Generic type check */

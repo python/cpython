@@ -1,0 +1,2 @@
+:mod:`subprocess` on Solaris now also uses :func:`os.posix_spawn()` for
+better performance.

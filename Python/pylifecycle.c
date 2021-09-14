@@ -1737,6 +1737,7 @@ Py_FinalizeEx(void)
 #endif
 #ifdef Py_TRACE_REFS
     int dump_refs = tstate->interp->config.dump_refs;
+    wchar_t *dump_refs_file = tstate->interp->config.dump_refs_file;
 #endif
 #ifdef WITH_PYMALLOC
     int malloc_stats = tstate->interp->config.malloc_stats;
@@ -1835,8 +1836,21 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
+
+    FILE *dump_refs_fp = NULL;
+    if (dump_refs_file != NULL) {
+        dump_refs_fp = _Py_wfopen(dump_refs_file, L"w");
+        if (dump_refs_fp == NULL) {
+            fprintf(stderr, "PYTHONDUMPREFSFILE: cannot create file: %ls\n", dump_refs_file);
+        }
+    }
+
     if (dump_refs) {
         _Py_PrintReferences(stderr);
+    }
+
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferences(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1848,8 +1862,14 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
+
     if (dump_refs) {
         _Py_PrintReferenceAddresses(stderr);
+    }
+
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferenceAddresses(dump_refs_fp);
+        fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC

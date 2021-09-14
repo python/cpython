@@ -23,12 +23,17 @@ typedef struct {
 typedef struct {
     uint32_t tp_version;
     uint32_t dk_version_or_hint;
-} _PyLoadAttrCache;
+} _PyAttrCache;
 
 typedef struct {
     uint32_t module_keys_version;
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
+
+typedef struct {
+    /* Borrowed ref in LOAD_METHOD */
+    PyObject *obj;
+} _PyObjectCache;
 
 /* Add specialized versions of entries to this union.
  *
@@ -43,8 +48,9 @@ typedef struct {
 typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
-    _PyLoadAttrCache load_attr;
+    _PyAttrCache attr;
     _PyLoadGlobalCache load_global;
+    _PyObjectCache obj;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -297,14 +303,27 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
-#define SPECIALIZATION_STATS_TO_FILE 0
+#define PRINT_SPECIALIZATION_STATS 0
+#define PRINT_SPECIALIZATION_STATS_DETAILED 0
+#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
 
-#if SPECIALIZATION_STATS
+#ifdef Py_DEBUG
+#define COLLECT_SPECIALIZATION_STATS 1
+#define COLLECT_SPECIALIZATION_STATS_DETAILED 1
+#else
+#define COLLECT_SPECIALIZATION_STATS PRINT_SPECIALIZATION_STATS
+#define COLLECT_SPECIALIZATION_STATS_DETAILED PRINT_SPECIALIZATION_STATS_DETAILED
+#endif
+
+#define SPECIALIZATION_FAILURE_KINDS 20
+
+#if COLLECT_SPECIALIZATION_STATS
 
 typedef struct _stats {
     uint64_t specialization_success;
@@ -314,8 +333,8 @@ typedef struct _stats {
     uint64_t miss;
     uint64_t deopt;
     uint64_t unquickened;
-#if SPECIALIZATION_STATS_DETAILED
-    PyObject *miss_types;
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+    uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 #endif
 } SpecializationStats;
 

@@ -451,7 +451,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * If vfork-unsafe functionality is desired after vfork(), consider using
  * syscall() to obtain it.
  */
-_Py_NO_INLINE static void
+Py_NO_INLINE static void
 child_exec(char *const exec_array[],
            char *const argv[],
            char *const envp[],
@@ -650,7 +650,7 @@ error:
  * child_exec() should not be inlined to avoid spurious -Wclobber warnings from
  * GCC (see bpo-35823).
  */
-_Py_NO_INLINE static pid_t
+Py_NO_INLINE static pid_t
 do_fork_exec(char *const exec_array[],
              char *const argv[],
              char *const envp[],

@@ -234,9 +234,7 @@ static PyObject* dict_iter(PyDictObject *dict);
 /*Global counter used to set ma_version_tag field of dictionary.
  * It is incremented each time that a dictionary is created and each
  * time that a dictionary is modified. */
-static uint64_t pydict_global_version = 0;
-
-#define DICT_NEXT_VERSION() (++pydict_global_version)
+uint64_t _pydict_global_version = 0;
 
 #include "clinic/dictobject.c.h"
 

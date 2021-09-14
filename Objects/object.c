@@ -1560,14 +1560,11 @@ none_repr(PyObject *op)
     return PyUnicode_FromString("None");
 }
 
-/* ARGUSED */
 static void _Py_NO_RETURN
-none_dealloc(PyObject* ignore)
+none_dealloc(PyObject* Py_UNUSED(ignore))
 {
-    /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref None out of existence.
-     */
-    Py_FatalError("deallocating None");
+    Py_FatalError("deallocating None likely caused by a refcount bug "
+                  "in a C extension");
 }
 
 static PyObject *
