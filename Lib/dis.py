@@ -125,6 +125,13 @@ def pretty_flags(flags):
         names.append(hex(flags))
     return ", ".join(names)
 
+class _Unknown:
+    def __repr__(self):
+        return "<unknown>"
+
+# Sentinel to represent values that cannot be calculated
+UNKNOWN = _Unknown()
+
 def _get_code_object(x):
     """Helper to handle methods, compiled or raw code objects, and strings."""
     # Extract functions from methods.
@@ -315,28 +322,28 @@ def _get_const_info(const_index, const_list):
 
        Returns the dereferenced constant and its repr if the constant
        list is defined.
-       Otherwise returns the constant index and its repr().
+       Otherwise returns the sentinel value dis.UNKNOWN for the value
+       and an empty string for its repr.
     """
-    argval = const_index
     if const_list is not None:
         argval = const_list[const_index]
-    return argval, repr(argval)
+        return argval, repr(argval)
+    else:
+        return UNKNOWN, ''
 
 def _get_name_info(name_index, get_name, **extrainfo):
     """Helper to get optional details about named references
 
        Returns the dereferenced name as both value and repr if the name
        list is defined.
-       Otherwise returns the name index and its repr().
+       Otherwise returns the sentinel value dis.UNKNOWN for the value
+       and an empty string for its repr.
     """
-    argval = name_index
     if get_name is not None:
         argval = get_name(name_index, **extrainfo)
-        argrepr = argval
+        return argval, argval
     else:
-        argrepr = repr(argval)
-    return argval, argrepr
-
+        return UNKNOWN, ''
 
 def parse_varint(iterator):
     b = next(iterator)
