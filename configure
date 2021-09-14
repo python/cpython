@@ -827,11 +827,11 @@ with_trace_refs
 with_assertions
 enable_optimizations
 with_lto
-with_hash_algorithm
-with_tzpath
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
+with_hash_algorithm
+with_tzpath
 with_libs
 with_system_expat
 with_system_ffi
@@ -1548,12 +1548,6 @@ Optional Packages:
   --with-lto=[full|thin|no|yes]
                           enable Link-Time-Optimization in any build (default
                           is no)
-  --with-hash-algorithm=[fnv|siphash24]
-                          select hash algorithm for use in Python/pyhash.c
-                          (default is SipHash24)
-  --with-tzpath=<list of absolute paths separated by pathsep>
-                           Select the default time zone search path for zoneinfo.TZPATH
-
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
@@ -1562,6 +1556,12 @@ Optional Packages:
   --with-undefined-behavior-sanitizer
                           enable UndefinedBehaviorSanitizer undefined
                           behaviour detector, 'ubsan' (default is no)
+  --with-hash-algorithm=[fnv|siphash24]
+                          select hash algorithm for use in Python/pyhash.c
+                          (default is SipHash24)
+  --with-tzpath=<list of absolute paths separated by pathsep>
+                           Select the default time zone search path for zoneinfo.TZPATH
+
   --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
                           library, see Doc/library/pyexpat.rst (default is no)
@@ -9602,6 +9602,65 @@ $as_echo "no" >&6; }
 	;;
 esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5
+$as_echo_n "checking for --with-address-sanitizer... " >&6; }
+
+# Check whether --with-address_sanitizer was given.
+if test "${with_address_sanitizer+set}" = set; then :
+  withval=$with_address_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
+$as_echo_n "checking for --with-memory-sanitizer... " >&6; }
+
+# Check whether --with-memory_sanitizer was given.
+if test "${with_memory_sanitizer+set}" = set; then :
+  withval=$with_memory_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-undefined-behavior-sanitizer" >&5
+$as_echo_n "checking for --with-undefined-behavior-sanitizer... " >&6; }
+
+# Check whether --with-undefined_behavior_sanitizer was given.
+if test "${with_undefined_behavior_sanitizer+set}" = set; then :
+  withval=$with_undefined_behavior_sanitizer;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_ubsan="yes"
+
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+with_ubsan="no"
+
+fi
+
+
 # Set info about shared libraries.
 
 
@@ -9812,9 +9871,20 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-		# Note: This matches the value of THREAD_STACK_SIZE in
-		# thread_pthread.h
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
+    stack_size="1000000"  # 16 MB
+    if test "$with_ubsan" == "yes"
+    then
+        # Undefined behavior sanitizer requires an even deeper stack
+        stack_size="4000000"  # 64 MB
+    fi
+
+    LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+
+cat >>confdefs.h <<_ACEOF
+#define THREAD_STACK_SIZE 0x$stack_size
+_ACEOF
+
 
 		if test "$enable_framework"
 		then
@@ -10408,61 +10478,6 @@ else
 $as_echo "\"$TZPATH\"" >&6; }
 fi
 
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5
-$as_echo_n "checking for --with-address-sanitizer... " >&6; }
-
-# Check whether --with-address_sanitizer was given.
-if test "${with_address_sanitizer+set}" = set; then :
-  withval=$with_address_sanitizer;
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-$as_echo "$withval" >&6; }
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
-$as_echo_n "checking for --with-memory-sanitizer... " >&6; }
-
-# Check whether --with-memory_sanitizer was given.
-if test "${with_memory_sanitizer+set}" = set; then :
-  withval=$with_memory_sanitizer;
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-$as_echo "$withval" >&6; }
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-undefined-behavior-sanitizer" >&5
-$as_echo_n "checking for --with-undefined-behavior-sanitizer... " >&6; }
-
-# Check whether --with-undefined_behavior_sanitizer was given.
-if test "${with_undefined_behavior_sanitizer+set}" = set; then :
-  withval=$with_undefined_behavior_sanitizer;
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-$as_echo "$withval" >&6; }
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
 
 
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
