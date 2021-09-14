@@ -1051,26 +1051,6 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 /* Frozen modules */
 
 static bool
-parse_env_var_flag(const char *rawvalue, bool *isset)
-{
-    /* It isn't set or it is set to an empty string. */
-    if (rawvalue == NULL || strlen(rawvalue) == 0) {
-        if (isset != NULL) {
-            *isset = false;
-        }
-        return false;
-    }
-    if (isset != NULL) {
-        *isset = true;
-    }
-    if (strcmp(rawvalue, "0") == 0) {
-        return false;
-    }
-    /* For now we treat all other non-empty strings as true. */
-    return true;
-}
-
-static bool
 is_essential_frozen_module(const char *name)
 {
     /* These modules are necessary to bootstrap the import system. */
@@ -1094,13 +1074,23 @@ is_essential_frozen_module(const char *name)
 static bool
 use_frozen(const char *modname)
 {
-    bool isset;
-    /* Note that we don't bother with os.environ. */
-    bool use = parse_env_var_flag(getenv("_PYTHONTESTFROZENMODULES"), &isset);
-    if (!isset) {
+    bool use;
+
+    /* Note that we don't bother with os.environ nor do we use Py_GETENV(). */
+    const char *env = getenv("_PYTHONTESTFROZENMODULES");
+    /* We would use "bool _Py_ParseEnvVarFlag(const char *)" if it existed. */
+    if (env == NULL || strlen(env) == 0) {
         const PyConfig *config = _Py_GetConfig();
         use = config->use_frozen_modules;
     }
+    else {
+        use = true;
+        if (strcmp(env, "0") == 0) {
+            use = false;
+        }
+        /* For now we treat all other non-empty strings as true. */
+    }
+
     if (!use && modname != NULL) {
         use = is_essential_frozen_module(modname);
     }
