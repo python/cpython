@@ -1081,7 +1081,7 @@ use_frozen(const char *modname)
     if (override > 0) {
         use = true;
     }
-    else if (override > 0) {
+    else if (override < 0) {
         use = false;
     }
     else {
