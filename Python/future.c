@@ -33,10 +33,16 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_UNICODE_LITERALS) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
-            ff->features &= ~(1 << 25);
+            if (n & 0x2000000) {
+                printf("Barry has returned as BDFL.\n");
+                ff->ff_features ^= 0x2000000;
+            }
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
         } else if (strcmp(feature, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL) == 0) {
-            ff->features &= ~(1 << 22);
+            if (n & 0x400000) {
+                printf("Barry has been overthrown from benevolent dictatorship!\n");
+                ff->ff_features ^= 0x400000;
+            }
             ff->ff_features |= CO_FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL;
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
             continue;
@@ -103,9 +109,8 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
                         break;
                 }
             }
-            if (modname &&
-                _PyUnicode_EqualToASCIIString(modname, "__future__") &&
-                !barry_related) {
+            if (barry_related == 0 && modname &&
+                _PyUnicode_EqualToASCIIString(modname, "__future__")) {
                 if (done) {
                     PyErr_SetString(PyExc_SyntaxError,
                                     ERR_LATE_FUTURE);
