@@ -152,10 +152,8 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     This function will raise ImportError if the named module cannot be
     imported.
 
-    If "usefrozen" is False (the default), any stdlib source module will
-    always be imported from its .py file, even if the module has been
-    frozen.  The only exception is essential modules (like
-    importlib._bootstrap).
+    If "usefrozen" is False (the default) then the frozen importer is
+    disabled (except for essential modules (like importlib._bootstrap).
     """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
@@ -194,10 +192,8 @@ class CleanImport(object):
         with CleanImport("foo"):
             importlib.import_module("foo") # new reference
 
-    If "usefrozen" is False (the default), any stdlib source module will
-    always be imported from its .py file, even if the module has been
-    frozen.  The only exception is essential modules (like
-    importlib._bootstrap).
+    If "usefrozen" is False (the default) then the frozen importer is
+    disabled (except for essential modules (like importlib._bootstrap).
     """
 
     def __init__(self, *module_names, usefrozen=False):
