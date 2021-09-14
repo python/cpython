@@ -1,0 +1,1 @@
+Fix deepcopying of :class:`types.GenericAlias` objects.
