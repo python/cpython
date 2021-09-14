@@ -427,19 +427,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
+        # Currently we default to using source modules instead of frozen.
         'use_frozen_modules': False,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
         })
-        if not sys.executable.endswith('_d.exe'):
-            # It's not a debug build.
-            CONFIG_COMPAT['use_frozen_modules'] = True
-    else:
-        config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-        if '--with-pydebug' not in config_args:
-            CONFIG_COMPAT['use_frozen_modules'] = True
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
