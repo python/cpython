@@ -72,14 +72,16 @@ class PythonValuesTestCase(unittest.TestCase):
                 self.assertGreater(abs(entry.size), 10)
                 self.assertTrue([entry.code[i] for i in range(abs(entry.size))])
                 # Check the module's package-ness.
-                spec = importlib.util.find_spec(modname)
+                with import_helper.frozen_modules():
+                    spec = importlib.util.find_spec(modname)
                 if entry.size < 0:
                     # It's a package.
                     self.assertIsNotNone(spec.submodule_search_locations)
                 else:
                     self.assertIsNone(spec.submodule_search_locations)
 
-        expected = imp._frozen_module_names()
+        with import_helper.frozen_modules():
+            expected = imp._frozen_module_names()
         self.maxDiff = None
         self.assertEqual(modules, expected, "PyImport_FrozenModules example "
             "in Doc/library/ctypes.rst may be out of date")
