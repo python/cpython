@@ -153,7 +153,7 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     imported.
 
     If "usefrozen" is False (the default) then the frozen importer is
-    disabled (except for essential modules (like importlib._bootstrap).
+    disabled (except for essential modules like importlib._bootstrap).
     """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
@@ -193,7 +193,7 @@ class CleanImport(object):
             importlib.import_module("foo") # new reference
 
     If "usefrozen" is False (the default) then the frozen importer is
-    disabled (except for essential modules (like importlib._bootstrap).
+    disabled (except for essential modules like importlib._bootstrap).
     """
 
     def __init__(self, *module_names, usefrozen=False):
