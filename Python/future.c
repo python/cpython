@@ -33,14 +33,8 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_UNICODE_LITERALS) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
-            if (ff->ff_features & 0x2000000) {
-                ff->ff_features ^= 0x2000000;
-            }
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
         } else if (strcmp(feature, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL) == 0) {
-            if (ff->ff_features & 0x400000) {
-                ff->ff_features ^= 0x400000;
-            }
             ff->ff_features |= CO_FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL;
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
             continue;
