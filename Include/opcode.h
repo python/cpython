@@ -190,6 +190,10 @@ static uint32_t _PyOpcode_Jump[8] = {
 };
 #endif /* OPCODE_TABLES */
 
+#define HAS_CONST(op) (false\
+    || ((op) == 100) \
+    )
+
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
 /* Reserve some bytecodes for internal use in the compiler.
