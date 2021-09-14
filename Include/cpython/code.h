@@ -136,6 +136,7 @@ struct PyCodeObject {
 #define CO_FUTURE_BARRY_AS_BDFL  0x400000
 #define CO_FUTURE_GENERATOR_STOP  0x800000
 #define CO_FUTURE_ANNOTATIONS    0x1000000
+#define CO_FUTURE_REVOLT_AND_REMOVE_BARRY_AS_BDFL 0x2000000
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
