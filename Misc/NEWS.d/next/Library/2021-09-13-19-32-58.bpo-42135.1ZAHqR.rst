@@ -1,0 +1,3 @@
+Fix typo: ``importlib.find_loader`` is really slated for removal in Python 3.12 not 3.10, like the others in GH-25169.
+
+Patch by Hugo van Kemenade.

@@ -151,7 +151,7 @@ also provides these miscellaneous utilities:
 .. class:: FileWrapper(filelike, blksize=8192)
 
    A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
-   are :term`iterable`\ s. As the object is iterated over, the
+   are :term:`iterable`\ s. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
    object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
    returns an empty bytestring, iteration is ended and is not resumable.
