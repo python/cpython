@@ -4115,6 +4115,12 @@ AC_CHECK_FUNCS(clock_settime, [], [
     ])
 ])
 
+AC_CHECK_FUNCS(clock_nanosleep, [], [
+    AC_CHECK_LIB(rt, clock_nanosleep, [
+        AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1)
+    ])
+])
+
 AC_MSG_CHECKING(for major, minor, and makedev)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
