@@ -255,7 +255,9 @@ print("history", ascii(readline.get_history_item(1)))
             self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
         expected = br"'[\xefnserted]|t\xebxt[after]'"
         self.assertIn(b"result " + expected + b"\r\n", output)
-        self.assertIn(b"history " + expected + b"\r\n", output)
+        # bpo-45195: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"history " + expected, output)
 
     # We have 2 reasons to skip this test:
     # - readline: history size was added in 6.0
