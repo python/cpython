@@ -1076,19 +1076,16 @@ use_frozen(const char *modname)
 {
     bool use;
 
-    /* Note that we don't bother with os.environ nor do we use Py_GETENV(). */
-    const char *env = getenv("_PYTHONTESTFROZENMODULES");
-    /* We would use "bool _Py_ParseEnvVarFlag(const char *)" if it existed. */
-    if (env == NULL || strlen(env) == 0) {
-        const PyConfig *config = _Py_GetConfig();
-        use = config->use_frozen_modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int override = interp->override_frozen_modules;
+    if (override > 0) {
+        use = true;
+    }
+    else if (override > 0) {
+        use = false;
     }
     else {
-        use = true;
-        if (strcmp(env, "0") == 0) {
-            use = false;
-        }
-        /* For now we treat all other non-empty strings as true. */
+        use = interp->config.use_frozen_modules;
     }
 
     if (!use && modname != NULL) {
@@ -2054,6 +2051,27 @@ _imp__frozen_module_names_impl(PyObject *module)
     return list_frozen_module_names();
 }
 
+/*[clinic input]
+_imp._override_frozen_modules_for_tests
+
+    override: int
+    /
+
+(internal-only) Override PyConfig.use_frozen_modules.
+
+(-1: "off", 1: "on", 0: no override)
+See frozen_modules() in Lib/test/support/import_helper.py.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
+/*[clinic end generated code: output=36d5cb1594160811 input=8f1f95a3ef21aec3]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->override_frozen_modules = override;
+    Py_RETURN_NONE;
+}
+
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
@@ -2215,6 +2233,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
     _IMP__FROZEN_MODULE_NAMES_METHODDEF
+    _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
