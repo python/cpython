@@ -233,6 +233,8 @@ struct compiler_unit {
     int u_col_offset;      /* the offset of the current stmt */
     int u_end_lineno;      /* the end line of the current stmt */
     int u_end_col_offset;  /* the end offset of the current stmt */
+    int u_lineno_set;  /* boolean to indicate whether instr
+                          has been generated with current lineno */
 };
 
 /* This struct captures the global state of a compilation.
@@ -693,6 +695,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_col_offset = 0;
     u->u_end_lineno = 0;
     u->u_end_col_offset = 0;
+    u->u_lineno_set = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -961,11 +964,12 @@ compiler_next_instr(basicblock *b)
    - before the "except" and "finally" clauses
 */
 
-#define SET_LOC(c, x)                           \
-    (c)->u->u_lineno = (x)->lineno;             \
-    (c)->u->u_col_offset = (x)->col_offset;     \
-    (c)->u->u_end_lineno = (x)->end_lineno;     \
-    (c)->u->u_end_col_offset = (x)->end_col_offset;
+#define SET_LOC(c, x)                                    \
+    (c)->u->u_lineno = (x)->lineno;                      \
+    (c)->u->u_col_offset = (x)->col_offset;              \
+    (c)->u->u_end_lineno = (x)->end_lineno;              \
+    (c)->u->u_end_col_offset = (x)->end_col_offset;      \
+    (c)->u>u_lineno_set = 0;
 
 // Artificial instructions
 #define UNSET_LOC(c)                            \
