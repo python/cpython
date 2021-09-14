@@ -33,13 +33,13 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_UNICODE_LITERALS) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
-            if (n & 0x2000000) {
+            if (ff->ff_features & 0x2000000) {
                 printf("Barry has returned as BDFL.\n");
                 ff->ff_features ^= 0x2000000;
             }
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
         } else if (strcmp(feature, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL) == 0) {
-            if (n & 0x400000) {
+            if (ff->ff_features & 0x400000) {
                 printf("Barry has been overthrown from benevolent dictatorship!\n");
                 ff->ff_features ^= 0x400000;
             }
@@ -66,7 +66,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 static int
 future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 {
-    int i, done = 0, prev_line = 0, barry_related = 0;
+    int i, done = 0, prev_line = 0;
 
     if (!(mod->kind == Module_kind || mod->kind == Interactive_kind))
         return 1;
@@ -102,14 +102,15 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
         if (s->kind == ImportFrom_kind) {
             identifier modname = s->v.ImportFrom.module;
             asdl_alias_seq *importname = s->v.ImportFrom.names;
+            int skip_check = 1;
             for (Py_ssize_t iter_i = 0; iter_i < asdl_seq_LEN(importname); ++iter_i) {
-                if (_PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, "barry_as_BDFL") ||
-                    _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, "remove_barry_from_BDFL")) {
-                        barry_related = 1;
-                        break;
-                }
+                printf("%s\n", PyUnicode_AsUTF8(asdl_seq_GET(importname, iter_i)->name));
+                skip_check = _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, FUTURE_BARRY_AS_BDFL) ||
+                             _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL);
+                if (skip_check == 0)
+                    break;
             }
-            if (barry_related == 0 && modname &&
+            if (skip_check == 0 && modname &&
                 _PyUnicode_EqualToASCIIString(modname, "__future__")) {
                 if (done) {
                     PyErr_SetString(PyExc_SyntaxError,
