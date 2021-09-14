@@ -1139,12 +1139,11 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
            if (k)
 
 /* The maximum number of entries in a MergeState's pending-runs stack.
- * This is enough to sort arrays of size up to about
- *     32 * phi ** MAX_MERGE_PENDING
- * where phi ~= 1.618.  85 is ridiculouslylarge enough, good for an array
- * with 2**64 elements.
+ * For a list with n elements, this needs at most floor(log2(n)) + 1 entries
+ * even if we didn't force runs to a minimal length.  So the number of bits
+ * in a Py_ssize_t is plenty large enough for all cases.
  */
-#define MAX_MERGE_PENDING 85
+#define MAX_MERGE_PENDING (SIZEOF_SIZE_T * 8)
 
 /* When we get into galloping mode, we stay there until both runs win less
  * often than MIN_GALLOP consecutive times.  See listsort.txt for more info.
@@ -1159,7 +1158,8 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
  */
 struct s_slice {
     sortslice base;
-    Py_ssize_t len;
+    Py_ssize_t len;   /* length of run */
+    int power; /* node "level" for powersort merge strategy */
 };
 
 typedef struct s_MergeState MergeState;
@@ -1169,6 +1169,9 @@ struct s_MergeState {
      * random data, and lower for highly structured data.
      */
     Py_ssize_t min_gallop;
+
+    Py_ssize_t listlen;     /* len(input_list) - read only */
+    PyObject **basekeys;    /* base address of keys array - read only */
 
     /* 'a' is temp storage to help with merges.  It contains room for
      * alloced entries.
@@ -1513,7 +1516,8 @@ fail:
 
 /* Conceptually a MergeState's constructor. */
 static void
-merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc)
+merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
+           sortslice *lo)
 {
     assert(ms != NULL);
     if (has_keyfunc) {
@@ -1538,6 +1542,8 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc)
     ms->a.keys = ms->temparray;
     ms->n = 0;
     ms->min_gallop = MIN_GALLOP;
+    ms->listlen = list_size;
+    ms->basekeys = lo->keys;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -1920,37 +1926,74 @@ merge_at(MergeState *ms, Py_ssize_t i)
         return merge_hi(ms, ssa, na, ssb, nb);
 }
 
-/* Examine the stack of runs waiting to be merged, merging adjacent runs
- * until the stack invariants are re-established:
+/* Two adjacent runs begin at index s1. The first run has length n1, and
+ * the second run (starting at index s1+n1) has length n2. The list has total
+ * length n.
+ * Compute the "power" of the first run. See listsort.txt for details.
+ */
+static int
+powerloop(Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2, Py_ssize_t n)
+{
+    int result = 0;
+    assert(s1 >= 0);
+    assert(n1 > 0 && n2 > 0);
+    assert(s1 + n1 + n2 <= n);
+    /* midpoints a and b:
+     * a = s1 + n1/2
+     * b = s1 + n1 + n2/2 = a + (n1 + n2)/2
+     *
+     * Those may not be integers, though, because of the "/2". So we work with
+     * 2*a and 2*b instead, which are necessarily integers. It makes no
+     * difference to the outcome, since the bits in the expansion of (2*i)/n
+     * are merely shifted one position from those of i/n.
+     */
+    Py_ssize_t a = 2 * s1 + n1;  /* 2*a */
+    Py_ssize_t b = a + n1 + n2;  /* 2*b */
+    /* Emulate a/n and b/n one bit a time, until bits differ. */
+    for (;;) {
+        ++result;
+        if (a >= n) {  /* both quotient bits are 1 */
+            assert(b >= a);
+            a -= n;
+            b -= n;
+        }
+        else if (b >= n) {  /* a/n bit is 0, b/n bit is 1 */
+            break;
+        } /* else both quotient bits are 0 */
+        assert(a < b && b < n);
+        a <<= 1;
+        b <<= 1;
+    }
+    return result;
+}
+
+/* The next run has been identified, of length n2.
+ * If there's already a run on the stack, apply the "powersort" merge strategy:
+ * compute the topmost run's "power" (depth in a conceptual binary merge tree)
+ * and merge adjacent runs on the stack with greater power. See listsort.txt
+ * for more info.
  *
- * 1. len[-3] > len[-2] + len[-1]
- * 2. len[-2] > len[-1]
- *
- * See listsort.txt for more info.
+ * It's the caller's responsibilty to push the new run on the stack when this
+ * returns.
  *
  * Returns 0 on success, -1 on error.
  */
 static int
-merge_collapse(MergeState *ms)
+found_new_run(MergeState *ms, Py_ssize_t n2)
 {
-    struct s_slice *p = ms->pending;
-
     assert(ms);
-    while (ms->n > 1) {
-        Py_ssize_t n = ms->n - 2;
-        if ((n > 0 && p[n-1].len <= p[n].len + p[n+1].len) ||
-            (n > 1 && p[n-2].len <= p[n-1].len + p[n].len)) {
-            if (p[n-1].len < p[n+1].len)
-                --n;
-            if (merge_at(ms, n) < 0)
+    if (ms->n) {
+        assert(ms->n > 0);
+        struct s_slice *p = ms->pending;
+        Py_ssize_t s1 = p[ms->n - 1].base.keys - ms->basekeys; /* start index */
+        Py_ssize_t n1 = p[ms->n - 1].len;
+        int power = powerloop(s1, n1, n2, ms->listlen);
+        while (ms->n > 1 && p[ms->n - 2].power > power) {
+            if (merge_at(ms, ms->n - 2) < 0)
                 return -1;
         }
-        else if (p[n].len <= p[n+1].len) {
-            if (merge_at(ms, n) < 0)
-                return -1;
-        }
-        else
-            break;
+        assert(ms->n < 2 || p[ms->n - 2].power < power);
+        p[ms->n - 1].power = power;
     }
     return 0;
 }
@@ -2357,7 +2400,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     }
     /* End of pre-sort check: ms is now set properly! */
 
-    merge_init(&ms, saved_ob_size, keys != NULL);
+    merge_init(&ms, saved_ob_size, keys != NULL, &lo);
 
     nremaining = saved_ob_size;
     if (nremaining < 2)
@@ -2393,13 +2436,16 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 goto fail;
             n = force;
         }
-        /* Push run onto pending-runs stack, and maybe merge. */
+        /* Maybe merge pending runs. */
+        assert(ms.n == 0 || ms.pending[ms.n -1].base.keys +
+                            ms.pending[ms.n-1].len == lo.keys);
+        if (found_new_run(&ms, n) < 0)
+            goto fail;
+        /* Push new run on stack. */
         assert(ms.n < MAX_MERGE_PENDING);
         ms.pending[ms.n].base = lo;
         ms.pending[ms.n].len = n;
         ++ms.n;
-        if (merge_collapse(&ms) < 0)
-            goto fail;
         /* Advance to find next run. */
         sortslice_advance(&lo, n);
         nremaining -= n;

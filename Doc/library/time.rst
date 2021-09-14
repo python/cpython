@@ -362,6 +362,11 @@ Functions
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.11
+      In Unix operating systems, the ``clock_nanosleep()`` function is now
+      used, if available: it allows to sleep for an interval specified with
+      nanosecond precision.
+
 
 .. index::
    single: % (percent); datetime format
