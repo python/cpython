@@ -456,9 +456,12 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         flags = &local_flags;
     }
     merged = c.c_future->ff_features | flags->cf_flags;
-    if (c.c_future->ff_features & 0x2000000 && merged & 0x400000) {
-        merged ^= 0x400000;
-        printf("Barry has been overthrown from benevolent dictatorship!\n");
+    if (c.c_future->ff_features & 0x2000000) {
+        if (merged & 0x400000) {
+            merged ^= 0x400000;
+            printf("Barry has been overthrown from benevolent dictatorship!\n");
+        } else
+            merged ^= 0x2000000;
     }
     else if (c.c_future->ff_features & 0x400000 && merged & 0x2000000) {
         merged ^= 0x2000000;
@@ -1646,14 +1649,14 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define ADDOP_O(C, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST */ \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
         return 0; \
 }
 
 /* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
+    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
         Py_DECREF((O)); \
         return 0; \
@@ -7962,24 +7965,6 @@ assemble(struct compiler *c, int addNone)
     return co;
 }
 
-static PyObject*
-get_const_value(int opcode, int oparg, PyObject *co_consts)
-{
-    PyObject *constant = NULL;
-    assert(HAS_CONST(opcode));
-    if (opcode == LOAD_CONST) {
-        constant = PyList_GET_ITEM(co_consts, oparg);
-    }
-
-    if (constant == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Internal error: failed to get value of a constant");
-        return NULL;
-    }
-    Py_INCREF(constant);
-    return constant;
-}
-
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -7997,7 +7982,7 @@ fold_tuple_on_constants(struct compiler *c,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (!HAS_CONST(inst[i].i_opcode)) {
+        if (inst[i].i_opcode != LOAD_CONST) {
             return 0;
         }
     }
@@ -8008,12 +7993,9 @@ fold_tuple_on_constants(struct compiler *c,
         return -1;
     }
     for (int i = 0; i < n; i++) {
-        int op = inst[i].i_opcode;
         int arg = inst[i].i_oparg;
-        PyObject *constant = get_const_value(op, arg, consts);
-        if (constant == NULL) {
-            return -1;
-        }
+        PyObject *constant = PyList_GET_ITEM(consts, arg);
+        Py_INCREF(constant);
         PyTuple_SET_ITEM(newconst, i, constant);
     }
     if (merge_const_one(c, &newconst) == 0) {
@@ -8139,12 +8121,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
-                        if (cnt == NULL) {
-                            goto error;
-                        }
+                        cnt = PyList_GET_ITEM(consts, oparg);
                         is_true = PyObject_IsTrue(cnt);
-                        Py_DECREF(cnt);
                         if (is_true == -1) {
                             goto error;
                         }
@@ -8160,12 +8138,8 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                     case JUMP_IF_FALSE_OR_POP:
                     case JUMP_IF_TRUE_OR_POP:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
-                        if (cnt == NULL) {
-                            goto error;
-                        }
+                        cnt = PyList_GET_ITEM(consts, oparg);
                         is_true = PyObject_IsTrue(cnt);
-                        Py_DECREF(cnt);
                         if (is_true == -1) {
                             goto error;
                         }
@@ -8350,9 +8324,6 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     fold_rotations(inst - oparg + 1, oparg);
                 }
                 break;
-            default:
-                /* All HAS_CONST opcodes should be handled with LOAD_CONST */
-                assert (!HAS_CONST(inst->i_opcode));
         }
     }
     return 0;
