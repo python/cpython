@@ -24,7 +24,7 @@ import sqlite3 as sqlite
 import unittest
 
 from test.support.os_helper import TESTFN, unlink
-from .userfunctions import with_tracebacks
+from .test_userfunctions import with_tracebacks
 
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):
@@ -315,19 +315,5 @@ class TraceCallbackTests(unittest.TestCase):
         cx.execute("select 1")
 
 
-def suite():
-    tests = [
-        CollationTests,
-        ProgressTests,
-        TraceCallbackTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
 if __name__ == "__main__":
-    test()
+    unittest.main()
