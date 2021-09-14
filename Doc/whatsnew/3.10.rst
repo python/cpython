@@ -932,6 +932,12 @@ bdb
 Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
 (Contributed by Irit Katriel in :issue:`24160`.)
 
+bisect
+------
+
+Added the possibility of providing a *key* function to the APIs in the :mod:`bisect`
+module. (Contributed by Raymond Hettinger in :issue:`4356`.)
+
 codecs
 ------
 
