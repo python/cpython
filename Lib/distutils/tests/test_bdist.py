@@ -45,7 +45,7 @@ class BuildTestCase(support.TempdirManager,
 
 
 def test_suite():
-    return unittest.makeSuite(BuildTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(BuildTestCase)
 
 
 if __name__ == '__main__':

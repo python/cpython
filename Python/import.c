@@ -16,6 +16,7 @@
 #include "code.h"
 #include "importdl.h"
 #include "pydtrace.h"
+#include <stdbool.h>
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -1049,6 +1050,32 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 
 /* Frozen modules */
 
+static PyObject *
+list_frozen_module_names(bool force)
+{
+    PyObject *names = PyList_New(0);
+    if (names == NULL) {
+        return NULL;
+    }
+    for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        PyObject *name = PyUnicode_FromString(p->name);
+        if (name == NULL) {
+            Py_DECREF(names);
+            return NULL;
+        }
+        int res = PyList_Append(names, name);
+        Py_DECREF(name);
+        if (res != 0) {
+            Py_DECREF(names);
+            return NULL;
+        }
+    }
+    return names;
+}
+
 static const struct _frozen *
 find_frozen(PyObject *name)
 {
@@ -1954,6 +1981,19 @@ _imp_is_frozen_impl(PyObject *module, PyObject *name)
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
+/*[clinic input]
+_imp._frozen_module_names
+
+Returns the list of available frozen modules.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module)
+/*[clinic end generated code: output=80609ef6256310a8 input=76237fbfa94460d2]*/
+{
+    return list_frozen_module_names(true);
+}
+
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
@@ -2114,6 +2154,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_INIT_FROZEN_METHODDEF
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
+    _IMP__FROZEN_MODULE_NAMES_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF

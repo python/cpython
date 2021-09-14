@@ -1217,29 +1217,5 @@ class MultiprocessTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0)
 
 
-def suite():
-    tests = [
-        ClosedConTests,
-        ClosedCurTests,
-        ConnectionTests,
-        ConstructorTests,
-        CursorTests,
-        ExtensionTests,
-        ModuleTests,
-        MultiprocessTests,
-        OpenTests,
-        SerializeTests,
-        SqliteOnConflictTests,
-        ThreadTests,
-        UninitialisedConnectionTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
 if __name__ == "__main__":
-    test()
+    unittest.main()
