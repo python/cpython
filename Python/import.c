@@ -1128,10 +1128,8 @@ find_frozen(PyObject *modname)
         PyErr_Clear();
         return NULL;
     }
-    if (!use_frozen()) {
-        if (!is_essential_frozen_module(name)) {
-            return NULL;
-        }
+    if (!use_frozen() && !is_essential_frozen_module(name)) {
+        return NULL;
     }
     const struct _frozen *p;
     for (p = PyImport_FrozenModules; ; p++) {
