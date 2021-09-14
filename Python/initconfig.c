@@ -985,10 +985,6 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
 #define SET_ITEM_UINT(ATTR) \
     SET_ITEM(#ATTR, PyLong_FromUnsignedLong(config->ATTR))
-#define SET_ITEM_BOOL(ATTR) \
-    SET_ITEM(#ATTR, ( \
-               Py_INCREF(config->ATTR ? Py_True : Py_False), \
-               (config->ATTR ? Py_True : Py_False)))
 #define FROM_WSTRING(STR) \
     ((STR != NULL) ? \
         PyUnicode_FromWideChar(STR, -1) \
@@ -1059,7 +1055,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
-    SET_ITEM_BOOL(use_frozen_modules);
+    SET_ITEM_INT(use_frozen_modules);
 
     return dict;
 
@@ -1071,7 +1067,6 @@ fail:
 #undef SET_ITEM
 #undef SET_ITEM_INT
 #undef SET_ITEM_UINT
-#undef SET_ITEM_BOOL
 #undef SET_ITEM_WSTR
 #undef SET_ITEM_WSTRLIST
 }
@@ -1143,23 +1138,6 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
         return -1;
     }
     *result = value;
-    return 0;
-}
-
-
-static int
-config_dict_get_bool(PyObject *dict, const char *name, bool *result)
-{
-    PyObject *item = config_dict_get(dict, name);
-    if (item == NULL) {
-        return -1;
-    }
-    int value = PyObject_IsTrue(item);
-    if (value < 0) {
-        config_dict_invalid_value(name);
-        return -1;
-    }
-    *result = value == 0 ? false : true;
     return 0;
 }
 
@@ -1267,12 +1245,6 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         } \
         CHECK_VALUE(#KEY, config->KEY >= 0); \
     } while (0)
-#define GET_BOOL(KEY) \
-    do { \
-        if (config_dict_get_bool(dict, #KEY, &config->KEY) < 0) { \
-            return -1; \
-        } \
-    } while (0)
 #define GET_WSTR(KEY) \
     do { \
         if (config_dict_get_wstr(dict, #KEY, config, &config->KEY) < 0) { \
@@ -1366,11 +1338,10 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
-    GET_BOOL(use_frozen_modules);
+    GET_UINT(use_frozen_modules);
 
 #undef CHECK_VALUE
 #undef GET_UINT
-#undef GET_BOOL
 #undef GET_WSTR
 #undef GET_WSTR_OPT
     return 0;
@@ -2125,17 +2096,17 @@ _PyConfig_InitImportConfig(PyConfig *config)
     if (value == NULL) {
         // For now we always default to "off".
         // In the near future we will be factoring in PGO and in-development.
-        config->use_frozen_modules = false;
+        config->use_frozen_modules = 0;
     }
     else if (wcscmp(value, L"on") == 0) {
-        config->use_frozen_modules = true;
+        config->use_frozen_modules = 1;
     }
     else if (wcscmp(value, L"off") == 0) {
-        config->use_frozen_modules = false;
+        config->use_frozen_modules = 0;
     }
     else if (wcslen(value) == 0) {
         // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
-        config->use_frozen_modules = true;
+        config->use_frozen_modules = 1;
     }
     else {
         return PyStatus_Error("bad value for option -X frozen_modules "

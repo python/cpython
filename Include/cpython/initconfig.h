@@ -2,8 +2,6 @@
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
 
-#include <stdbool.h>
-
 /* --- PyStatus ----------------------------------------------- */
 
 typedef struct {
@@ -174,7 +172,7 @@ typedef struct PyConfig {
     int legacy_windows_stdio;
 #endif
     wchar_t *check_hash_pycs_mode;
-    bool use_frozen_modules;
+    int use_frozen_modules;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
