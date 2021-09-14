@@ -427,7 +427,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        # Currently we default to using source modules instead of frozen.
         'use_frozen_modules': False,
     }
     if MS_WINDOWS:
