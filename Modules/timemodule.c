@@ -2051,6 +2051,7 @@ PyInit_time(void)
 static int
 pysleep(_PyTime_t secs)
 {
+    int ret = -1;
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
     struct timespec timeout_abs;
@@ -2059,7 +2060,6 @@ pysleep(_PyTime_t secs)
 #endif
     _PyTime_t deadline, monotonic;
     int err = 0;
-    int ret = 0;
 
     if (get_monotonic(&monotonic) < 0) {
         return -1;
@@ -2070,31 +2070,7 @@ pysleep(_PyTime_t secs)
         return -1;
     }
 #endif
-#else
-    _PyTime_t millisecs;
-    DWORD ul_millis;
-    DWORD rc;
-    FILETIME FileTime;
-    LARGE_INTEGER deadline;
-    HANDLE hTimer = NULL;
 
-    GetSystemTimePreciseAsFileTime(&FileTime);
-    CopyMemory(&deadline, &FileTime, sizeof(FILETIME));
-
-    /* convert to 100 nsec unit */
-    deadline.QuadPart += (_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 10);
-
-    hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
-    if (NULL == hTimer) {
-        return -1;
-    }
-
-    if (!SetWaitableTimer(hTimer, &deadline, 0, NULL, NULL, FALSE)) {
-        return -1;
-    }
-#endif
-
-#ifndef MS_WINDOWS
     do {
 #ifndef HAVE_CLOCK_NANOSLEEP
         if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0) {
@@ -2141,11 +2117,33 @@ pysleep(_PyTime_t secs)
 #endif
     } while (1);
 #else
+    _PyTime_t millisecs;
+    DWORD ul_millis;
+    DWORD rc;
+    FILETIME FileTime;
+    LARGE_INTEGER deadline;
+    HANDLE hTimer = NULL;
+
+    GetSystemTimePreciseAsFileTime(&FileTime);
+    CopyMemory(&deadline, &FileTime, sizeof(FILETIME));
+
+    /* convert to 100 nsec unit and add */
+    deadline.QuadPart += (_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 10);
+
+    hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
+    if (NULL == hTimer) {
+        return -1;
+    }
+
+    if (!SetWaitableTimer(hTimer, &deadline, 0, NULL, NULL, FALSE)) {
+        goto out;
+    }
+
     millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
     if (millisecs > LLONG_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "sleep length is too large");
-        return -1;
+        goto out;
     }
     
     /* Allow sleep(0) to maintain win32 semantics, and as decreed
@@ -2156,7 +2154,8 @@ pysleep(_PyTime_t secs)
         Py_BEGIN_ALLOW_THREADS
         Sleep(ul_millis);
         Py_END_ALLOW_THREADS
-        return 0;
+        ret = 0;
+        goto out;
     }
     
     Py_BEGIN_ALLOW_THREADS
@@ -2164,14 +2163,18 @@ pysleep(_PyTime_t secs)
     Py_END_ALLOW_THREADS
     
     if ((rc != WAIT_OBJECT_0) && (rc != WAIT_TIMEOUT)) {
-        return -1;
+        goto out;
     }
 
     /* sleep was interrupted by SIGINT */
     if (PyErr_CheckSignals()) {
-        return -1;
+        goto out;
     }
+
+    ret = 0;
+out:
+    CloseHandle(hTimer);
 #endif
 
-    return 0;
+    return ret;
 }
