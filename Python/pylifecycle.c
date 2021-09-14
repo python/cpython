@@ -1078,7 +1078,7 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    // Compute the path configuration
+    // Initialize the import-related configuration.
     status = _PyConfig_InitImportConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

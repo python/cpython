@@ -2081,12 +2081,12 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 }
 
 
-PyStatus
-_PyConfig_InitImportConfig(PyConfig *config)
+static PyStatus
+config_init_import(PyConfig *config, int compute_path_config)
 {
     PyStatus status;
 
-    status = _PyConfig_InitPathConfig(config, 1);
+    status = _PyConfig_InitPathConfig(config, compute_path_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -2114,6 +2114,12 @@ _PyConfig_InitImportConfig(PyConfig *config)
     }
 
     return _PyStatus_OK();
+}
+
+PyStatus
+_PyConfig_InitImportConfig(PyConfig *config)
+{
+    return config_init_import(config, 1);
 }
 
 
@@ -2163,12 +2169,7 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     if (config->_install_importlib) {
-        if (compute_path_config) {
-            status = _PyConfig_InitImportConfig(config);
-        }
-        else {
-            status = _PyConfig_InitPathConfig(config, 0);
-        }
+        status = config_init_import(config, compute_path_config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
