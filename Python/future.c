@@ -104,7 +104,6 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
             asdl_alias_seq *importname = s->v.ImportFrom.names;
             int skip_check = 1;
             for (Py_ssize_t iter_i = 0; iter_i < asdl_seq_LEN(importname); ++iter_i) {
-                printf("%s\n", PyUnicode_AsUTF8(asdl_seq_GET(importname, iter_i)->name));
                 skip_check = _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, FUTURE_BARRY_AS_BDFL) ||
                              _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i)->name, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL);
                 if (skip_check == 0)
