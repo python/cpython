@@ -458,11 +458,11 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     merged = c.c_future->ff_features | flags->cf_flags;
     if (c.c_future->ff_features & 0x2000000 && merged & 0x400000) {
         merged ^= 0x400000;
-        printf("Barry has returned as BDFL.\n");
+        printf("Barry has been overthrown from benevolent dictatorship!\n");
     }
     else if (c.c_future->ff_features & 0x400000 && merged & 0x2000000) {
         merged ^= 0x2000000;
-        printf("Barry has been overthrown from benevolent dictatorship!\n");
+        printf("Barry has returned as BDFL.\n");
     }
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
