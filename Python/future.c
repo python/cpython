@@ -33,7 +33,11 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_UNICODE_LITERALS) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
+            ff->features &= ~(1 << 25);
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
+        } else if (strcmp(feature, FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL) == 0) {
+            ff->features &= ~(1 << 22);
+            ff->ff_features |= CO_FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL;
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
             continue;
         } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
@@ -56,7 +60,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 static int
 future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 {
-    int i, done = 0, prev_line = 0;
+    int i, done = 0, prev_line = 0, barry_related = 0;
 
     if (!(mod->kind == Module_kind || mod->kind == Interactive_kind))
         return 1;
@@ -91,8 +95,17 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 
         if (s->kind == ImportFrom_kind) {
             identifier modname = s->v.ImportFrom.module;
+            asdl_alias_seq *importname = s->v.ImportFrom.names;
+            for (Py_ssize_t iter_i = 0; iter_i < asdl_seq_LEN(importname); ++iter_i) {
+                if (_PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i), "barry_as_BDFL") ||
+                    _PyUnicode_EqualToASCIIString(asdl_seq_GET(importname, iter_i), "remove_barry_from_BDFL")) {
+                        barry_related = 1;
+                        break;
+                }
+            }
             if (modname &&
-                _PyUnicode_EqualToASCIIString(modname, "__future__")) {
+                _PyUnicode_EqualToASCIIString(modname, "__future__") &&
+                !barry_related) {
                 if (done) {
                     PyErr_SetString(PyExc_SyntaxError,
                                     ERR_LATE_FUTURE);
