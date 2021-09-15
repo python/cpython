@@ -7,7 +7,7 @@ import importlib.util
 import unittest
 import sys
 from ctypes import *
-from test.support import import_helper, captured_stdout
+from test.support import import_helper
 
 import _ctypes_test
 
@@ -74,8 +74,7 @@ class PythonValuesTestCase(unittest.TestCase):
                 # Check the module's package-ness.
                 with import_helper.frozen_modules():
                     # Hide the message written by the __hello__ module.
-                    with captured_stdout():
-                        spec = importlib.util.find_spec(modname)
+                    spec = importlib.util.find_spec(modname)
                 if entry.size < 0:
                     # It's a package.
                     self.assertIsNotNone(spec.submodule_search_locations)
