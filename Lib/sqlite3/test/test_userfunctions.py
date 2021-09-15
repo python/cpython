@@ -335,7 +335,12 @@ class FunctionTests(unittest.TestCase):
                                ("\ud803\ude6d",))
 
     def test_func_params(self):
-        dataset = (
+        results = []
+        def append_result(arg):
+            results.append((arg, type(arg)))
+        self.con.create_function("test_params", 1, append_result)
+
+        dataset = [
             (42, int),
             (-1, int),
             (1234567890123456789, int),
@@ -349,13 +354,11 @@ class FunctionTests(unittest.TestCase):
             (bytearray(range(2)), bytes),
             (memoryview(b"blob"), bytes),
             (None, type(None)),
-        )
-        for val, tp in dataset:
-            with self.subTest(val=val, tp=tp):
-                cur = self.con.execute("select boomerang(?)", (val,))
-                retval = cur.fetchone()[0]
-                self.assertEqual(type(retval), tp)
-                self.assertEqual(retval, val)
+        ]
+        for val, _ in dataset:
+            cur = self.con.execute("select test_params(?)", (val,))
+            cur.fetchone()
+        self.assertEqual(dataset, results)
 
     # Regarding deterministic functions:
     #
