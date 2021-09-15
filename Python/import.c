@@ -1050,16 +1050,57 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 
 /* Frozen modules */
 
+static bool
+is_essential_frozen_module(const char *name)
+{
+    /* These modules are necessary to bootstrap the import system. */
+    if (strcmp(name, "_frozen_importlib") == 0) {
+        return true;
+    }
+    if (strcmp(name, "_frozen_importlib_external") == 0) {
+        return true;
+    }
+    if (strcmp(name, "zipimport") == 0) {
+        return true;
+    }
+    /* This doesn't otherwise have anywhere to find the module.
+       See frozenmain.c. */
+    if (strcmp(name, "__main__") == 0) {
+        return true;
+    }
+    return false;
+}
+
+static bool
+use_frozen(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int override = interp->override_frozen_modules;
+    if (override > 0) {
+        return true;
+    }
+    else if (override < 0) {
+        return false;
+    }
+    else {
+        return interp->config.use_frozen_modules;
+    }
+}
+
 static PyObject *
-list_frozen_module_names(bool force)
+list_frozen_module_names()
 {
     PyObject *names = PyList_New(0);
     if (names == NULL) {
         return NULL;
     }
+    bool enabled = use_frozen();
     for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
             break;
+        }
+        if (!enabled && !is_essential_frozen_module(p->name)) {
+            continue;
         }
         PyObject *name = PyUnicode_FromString(p->name);
         if (name == NULL) {
@@ -1077,18 +1118,27 @@ list_frozen_module_names(bool force)
 }
 
 static const struct _frozen *
-find_frozen(PyObject *name)
+find_frozen(PyObject *modname)
 {
-    const struct _frozen *p;
-
-    if (name == NULL)
+    if (modname == NULL) {
         return NULL;
-
+    }
+    const char *name = PyUnicode_AsUTF8(modname);
+    if (name == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+    if (!use_frozen() && !is_essential_frozen_module(name)) {
+        return NULL;
+    }
+    const struct _frozen *p;
     for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL)
+        if (p->name == NULL) {
             return NULL;
-        if (_PyUnicode_EqualToASCIIString(name, p->name))
+        }
+        if (strcmp(name, p->name) == 0) {
             break;
+        }
     }
     return p;
 }
@@ -1991,7 +2041,28 @@ static PyObject *
 _imp__frozen_module_names_impl(PyObject *module)
 /*[clinic end generated code: output=80609ef6256310a8 input=76237fbfa94460d2]*/
 {
-    return list_frozen_module_names(true);
+    return list_frozen_module_names();
+}
+
+/*[clinic input]
+_imp._override_frozen_modules_for_tests
+
+    override: int
+    /
+
+(internal-only) Override PyConfig.use_frozen_modules.
+
+(-1: "off", 1: "on", 0: no override)
+See frozen_modules() in Lib/test/support/import_helper.py.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
+/*[clinic end generated code: output=36d5cb1594160811 input=8f1f95a3ef21aec3]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->override_frozen_modules = override;
+    Py_RETURN_NONE;
 }
 
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
@@ -2155,6 +2226,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
     _IMP__FROZEN_MODULE_NAMES_METHODDEF
+    _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF

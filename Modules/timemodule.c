@@ -128,12 +128,11 @@ static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
     static int initialized = 0;
-    clock_t ticks;
 
     if (!initialized) {
         initialized = 1;
 
-        /* must sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
+        /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
            above cannot overflow */
         if ((_PyTime_t)CLOCKS_PER_SEC > _PyTime_MAX / SEC_TO_NS) {
             PyErr_SetString(PyExc_OverflowError,
@@ -149,14 +148,15 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
     }
 
-    ticks = clock();
+    clock_t ticks = clock();
     if (ticks == (clock_t)-1) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the processor time used is not available "
                         "or its value cannot be represented");
         return -1;
     }
-    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    *tp = _PyTime_FromNanoseconds(ns);
     return 0;
 }
 #endif /* HAVE_CLOCK */
@@ -1325,10 +1325,10 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
                 info->resolution = 1.0 / (double)ticks_per_second;
             }
 
-            _PyTime_t total;
-            total = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
-            total += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
-            *tp = total;
+            _PyTime_t ns;
+            ns = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
+            ns += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
+            *tp = _PyTime_FromNanoseconds(ns);
             return 0;
         }
     }

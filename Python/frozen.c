@@ -41,7 +41,15 @@
 #include "frozen_modules/importlib__bootstrap.h"
 #include "frozen_modules/importlib__bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
-#include "frozen_modules/hello.h"
+#include "frozen_modules/abc.h"
+#include "frozen_modules/io.h"
+#include "frozen_modules/_collections_abc.h"
+#include "frozen_modules/_sitebuiltins.h"
+#include "frozen_modules/genericpath.h"
+#include "frozen_modules/ntpath.h"
+#include "frozen_modules/posixpath.h"
+#include "frozen_modules/stat.h"
+#include "frozen_modules/__hello__.h"
 /* End includes */
 
 /* Note that a negative size indicates a package. */
@@ -54,10 +62,21 @@ static const struct _frozen _PyImport_FrozenModules[] = {
         (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
 
+    /* stdlib */
+    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
+    {"io", _Py_M__io, (int)sizeof(_Py_M__io)},
+    {"_collections_abc", _Py_M___collections_abc,
+        (int)sizeof(_Py_M___collections_abc)},
+    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
+    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath)},
+    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath)},
+    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
+    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
+
     /* Test module */
-    {"__hello__", _Py_M__hello, (int)sizeof(_Py_M__hello)},
-    {"__phello__", _Py_M__hello, -(int)sizeof(_Py_M__hello)},
-    {"__phello__.spam", _Py_M__hello, (int)sizeof(_Py_M__hello)},
+    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__phello__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
+    {"__phello__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
     {0, 0, 0} /* sentinel */
 };
 
