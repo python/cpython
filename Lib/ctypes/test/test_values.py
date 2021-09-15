@@ -7,7 +7,7 @@ import importlib.util
 import unittest
 import sys
 from ctypes import *
-from test.support import import_helper, captured_stdout
+from test.support import import_helper
 
 import _ctypes_test
 
