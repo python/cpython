@@ -570,7 +570,7 @@ class`. In addition, it provides a few more methods:
     iterable producing bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer, and defaults to :data:`sys.byteorder`.  If *byteorder* is
+    integer, and defaults to ``"big"``.  If *byteorder* is
     ``"big"``, the most significant byte is at the beginning of the byte
     array.  If *byteorder* is ``"little"``, the most significant byte is at
     the end of the byte array.  To request the native byte order of the host
