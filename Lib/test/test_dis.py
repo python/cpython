@@ -1326,5 +1326,38 @@ class TestBytecodeTestCase(BytecodeTestCase):
         with self.assertRaises(AssertionError):
             self.assertNotInBytecode(code, "LOAD_CONST", 1)
 
+class TestFinderMethods(unittest.TestCase):
+    def test__find_imports(self):
+        cases = [
+            ("import a.b.c", ('a.b.c', 0, None)),
+            ("from a.b import c", ('a.b', 0, ('c',))),
+            ("from a.b import c as d", ('a.b', 0, ('c',))),
+            ("from a.b import *", ('a.b', 0, ('*',))),
+            ("from ...a.b import c as d", ('a.b', 3, ('c',))),
+            ("from ..a.b import c as d, e as f", ('a.b', 2, ('c', 'e'))),
+            ("from ..a.b import *", ('a.b', 2, ('*',))),
+        ]
+        for src, expected in cases:
+            with self.subTest(src=src):
+                code = compile(src, "<string>", "exec")
+                res = tuple(dis._find_imports(code))
+                self.assertEqual(len(res), 1)
+                self.assertEqual(res[0], expected)
+
+    def test__find_store_names(self):
+        cases = [
+            ("x+y", ()),
+            ("x=y=1", ('x', 'y')),
+            ("x+=y", ('x',)),
+            ("global x\nx=y=1", ('x', 'y')),
+            ("global x\nz=x", ('z',)),
+        ]
+        for src, expected in cases:
+            with self.subTest(src=src):
+                code = compile(src, "<string>", "exec")
+                res = tuple(dis._find_store_names(code))
+                self.assertEqual(res, expected)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -807,6 +807,10 @@ is_normalized_quickcheck(PyObject *self, PyObject *input, bool nfc, bool k,
         return NO;
     }
 
+    if (PyUnicode_IS_ASCII(input)) {
+        return YES;
+    }
+
     Py_ssize_t i, len;
     int kind;
     const void *data;

@@ -492,6 +492,8 @@ loops that truncate the stream.
             next(b, None)
             return zip(a, b)
 
+   .. versionadded:: 3.10
+
 
 .. function:: permutations(iterable, r=None)
 
@@ -812,10 +814,26 @@ which incur interpreter overhead.
        return starmap(func, repeat(args, times))
 
    def grouper(iterable, n, fillvalue=None):
-       "Collect data into fixed-length chunks or blocks"
-       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+       "Collect data into non-overlapping fixed-length chunks or blocks"
+       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
        args = [iter(iterable)] * n
        return zip_longest(*args, fillvalue=fillvalue)
+
+   def triplewise(iterable):
+       "Return overlapping triplets from an iterable"
+       # pairwise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       for (a, _), (b, c) in pairwise(pairwise(iterable)):
+           yield a, b, c
+
+   def sliding_window(iterable, n):
+       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       it = iter(iterable)
+       window = deque(islice(it, n), maxlen=n)
+       if len(window) == n:
+           yield tuple(window)
+       for x in it:
+           window.append(x)
+           yield tuple(window)
 
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"

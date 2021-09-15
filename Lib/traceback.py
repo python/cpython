@@ -169,7 +169,7 @@ def _some_str(value):
     try:
         return str(value)
     except:
-        return '<unprintable %s object>' % type(value).__name__
+        return '<exception str() failed>'
 
 # --
 

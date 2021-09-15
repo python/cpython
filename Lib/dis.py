@@ -535,6 +535,42 @@ def findlinestarts(code):
             yield start, line
     return
 
+def _find_imports(co):
+    """Find import statements in the code
+
+    Generate triplets (name, level, fromlist) where
+    name is the imported module and level, fromlist are
+    the corresponding args to __import__.
+    """
+    IMPORT_NAME = opmap['IMPORT_NAME']
+    LOAD_CONST = opmap['LOAD_CONST']
+
+    consts = co.co_consts
+    names = co.co_names
+    opargs = [(op, arg) for _, op, arg in _unpack_opargs(co.co_code)
+                  if op != EXTENDED_ARG]
+    for i, (op, oparg) in enumerate(opargs):
+        if (op == IMPORT_NAME and i >= 2
+                and opargs[i-1][0] == opargs[i-2][0] == LOAD_CONST):
+            level = consts[opargs[i-2][1]]
+            fromlist = consts[opargs[i-1][1]]
+            yield (names[oparg], level, fromlist)
+
+def _find_store_names(co):
+    """Find names of variables which are written in the code
+
+    Generate sequence of strings
+    """
+    STORE_OPS = {
+        opmap['STORE_NAME'],
+        opmap['STORE_GLOBAL']
+    }
+
+    names = co.co_names
+    for _, op, arg in _unpack_opargs(co.co_code):
+        if op in STORE_OPS:
+            yield names[arg]
+
 
 class Bytecode:
     """The bytecode operations of a piece of code
