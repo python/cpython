@@ -2128,7 +2128,7 @@ pysleep(_PyTime_t secs)
     CopyMemory(&deadline, &FileTime, sizeof(FILETIME));
 
     /* convert to 100 nsec unit and add */
-    deadline.QuadPart += (_PyTime_AsMicroseconds(secs, _PyTime_ROUND_CEILING) * 10);
+    deadline.QuadPart += _PyTime_As100Nanoseconds(secs, _PyTime_ROUND_CEILING);
 
     hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
     if (NULL == hTimer) {
