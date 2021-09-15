@@ -52,6 +52,7 @@ __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'addModuleCleanup']
 
 # Expose obsolete functions for backwards compatibility
+# bpo-5846: Deprecated in Python 3.11, scheduled for removal in Python 3.13.
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 
 __unittest = True
@@ -60,8 +61,7 @@ from .result import TestResult
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
                    skipIf, skipUnless, expectedFailure)
 from .suite import BaseTestSuite, TestSuite
-from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
-                     findTestCases)
+from .loader import TestLoader, defaultTestLoader
 from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
@@ -69,6 +69,37 @@ from .signals import installHandler, registerResult, removeResult, removeHandler
 
 # deprecated
 _TextTestResult = TextTestResult
+
+from .loader import (
+    makeSuite as _makeSuite,
+    findTestCases as _findTestCases,
+    getTestCaseNames as _getTestCaseNames,
+)
+
+import warnings
+def makeSuite(*args, **kwargs):
+    warnings.warn(
+        "unittest.makeSuite() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.loadTestsFromTestCase() instead.",
+        DeprecationWarning, stacklevel=2
+    )
+    return _makeSuite(*args, **kwargs)
+
+def getTestCaseNames(*args, **kwargs):
+    warnings.warn(
+        "unittest.getTestCaseNames() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.getTestCaseNames() instead.",
+        DeprecationWarning, stacklevel=2
+    )
+    return _getTestCaseNames(*args, **kwargs)
+
+def findTestCases(*args, **kwargs):
+    warnings.warn(
+        "unittest.findTestCases() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.loadTestsFromModule() instead.",
+        DeprecationWarning, stacklevel=2
+    )
+    return _findTestCases(*args, **kwargs)
 
 # There are no tests here, so don't try to run anything discovered from
 # introspecting the symbols (e.g. FunctionTestCase). Instead, all our
