@@ -783,8 +783,8 @@ Python/frozen_modules/posixpath.h: Programs/_freeze_module Lib/posixpath.py
 Python/frozen_modules/stat.h: Programs/_freeze_module Lib/stat.py
 	$(srcdir)/Programs/_freeze_module stat $(srcdir)/Lib/stat.py $(srcdir)/Python/frozen_modules/stat.h
 
-Python/frozen_modules/hello.h: Programs/_freeze_module Tools/freeze/flag.py
-	$(srcdir)/Programs/_freeze_module hello $(srcdir)/Tools/freeze/flag.py $(srcdir)/Python/frozen_modules/hello.h
+Python/frozen_modules/__hello__.h: Programs/_freeze_module Lib/__hello__.py
+	$(srcdir)/Programs/_freeze_module __hello__ $(srcdir)/Lib/__hello__.py $(srcdir)/Python/frozen_modules/__hello__.h
 
 # END: freezing modules
 
@@ -1030,7 +1030,7 @@ FROZEN_FILES = \
 		$(srcdir)/Python/frozen_modules/ntpath.h \
 		$(srcdir)/Python/frozen_modules/posixpath.h \
 		$(srcdir)/Python/frozen_modules/stat.h \
-		$(srcdir)/Python/frozen_modules/hello.h
+		$(srcdir)/Python/frozen_modules/__hello__.h
 # End FROZEN_FILES
 
 Python/frozen.o: $(FROZEN_FILES)
