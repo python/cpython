@@ -73,7 +73,9 @@ class PythonValuesTestCase(unittest.TestCase):
                 self.assertTrue([entry.code[i] for i in range(abs(entry.size))])
                 # Check the module's package-ness.
                 with import_helper.frozen_modules():
-                    spec = importlib.util.find_spec(modname)
+                    # Hide the message written by the __hello__ module.
+                    with captured_stdout():
+                        spec = importlib.util.find_spec(modname)
                 if entry.size < 0:
                     # It's a package.
                     self.assertIsNotNone(spec.submodule_search_locations)
