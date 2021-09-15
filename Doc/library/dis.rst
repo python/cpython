@@ -859,6 +859,11 @@ All of the following opcodes use their arguments.
 
    Pushes ``co_consts[consti]`` onto the stack.
 
+.. opcode:: LOAD_NONE
+
+   Pushes ``None`` onto the stack.
+
+   .. versionadded:: 3.11
 
 .. opcode:: LOAD_NAME (namei)
 

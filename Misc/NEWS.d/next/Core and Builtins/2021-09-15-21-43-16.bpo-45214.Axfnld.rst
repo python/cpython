@@ -1,0 +1,2 @@
+Add the ``LOAD_NONE`` opcode as a faster specialized replacement to
+``LOAD_CONST`` for ``None`` values.
