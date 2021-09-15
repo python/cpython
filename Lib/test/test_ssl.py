@@ -4969,16 +4969,17 @@ class TestEnumerations(unittest.TestCase):
                 lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
                 source=ssl._ssl,
                 )
+        # This member is assigned dynamically in `ssl.py`:
+        Checked_SSLMethod.PROTOCOL_SSLv23 = Checked_SSLMethod.PROTOCOL_TLS
         enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
 
     def test_options(self):
         CheckedOptions = enum._old_convert_(
-                enum.FlagEnum, 'Options', 'ssl',
+                enum.IntFlag, 'Options', 'ssl',
                 lambda name: name.startswith('OP_'),
                 source=ssl._ssl,
                 )
         enum._test_simple_enum(CheckedOptions, ssl.Options)
-
 
     def test_alertdescription(self):
         CheckedAlertDescription = enum._old_convert_(
@@ -4989,16 +4990,16 @@ class TestEnumerations(unittest.TestCase):
         enum._test_simple_enum(CheckedAlertDescription, ssl.AlertDescription)
 
     def test_sslerrornumber(self):
-        Checked_SSLMethod = enum._old_convert_(
-                enum.IntEnum, '_SSLMethod', 'ssl',
-                lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+        Checked_SSLErrorNumber = enum._old_convert_(
+                enum.IntEnum, 'SSLErrorNumber', 'ssl',
+                lambda name: name.startswith('SSL_ERROR_'),
                 source=ssl._ssl,
                 )
-        enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
+        enum._test_simple_enum(Checked_SSLErrorNumber, ssl.SSLErrorNumber)
 
     def test_verifyflags(self):
         CheckedVerifyFlags = enum._old_convert_(
-                enum.FlagEnum, 'VerifyFlags', 'ssl',
+                enum.IntFlag, 'VerifyFlags', 'ssl',
                 lambda name: name.startswith('VERIFY_'),
                 source=ssl._ssl,
                 )
@@ -5011,6 +5012,7 @@ class TestEnumerations(unittest.TestCase):
                 source=ssl._ssl,
                 )
         enum._test_simple_enum(CheckedVerifyMode, ssl.VerifyMode)
+
 
 def test_main(verbose=False):
     if support.verbose:
@@ -5046,7 +5048,7 @@ def test_main(verbose=False):
     tests = [
         ContextTests, BasicSocketTests, SSLErrorTests, MemoryBIOTests,
         SSLObjectTests, SimpleBackgroundTests, ThreadedTests,
-        TestPostHandshakeAuth, TestSSLDebug
+        TestPostHandshakeAuth, TestSSLDebug, TestEnumerations,
     ]
 
     if support.is_resource_enabled('network'):
