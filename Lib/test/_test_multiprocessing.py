@@ -4177,14 +4177,14 @@ class _TestSharedMemory(BaseTestCase):
                 raise AssertionError("A SharedMemory segment was leaked after"
                                      " a process was abruptly terminated.")
 
-            # Without this line it was raising warnings like:
-            #   UserWarning: resource_tracker:
-            #   There appear to be 1 leaked shared_memory
-            #   objects to clean up at shutdown
-            # See: https://bugs.python.org/issue45209
-            resource_tracker.unregister(f"/{name}", "shared_memory")
-
             if os.name == 'posix':
+                # Without this line it was raising warnings like:
+                #   UserWarning: resource_tracker:
+                #   There appear to be 1 leaked shared_memory
+                #   objects to clean up at shutdown
+                # See: https://bugs.python.org/issue45209
+                resource_tracker.unregister(f"/{name}", "shared_memory")
+
                 # A warning was emitted by the subprocess' own
                 # resource_tracker (on Windows, shared memory segments
                 # are released automatically by the OS).
