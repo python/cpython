@@ -32,7 +32,7 @@ PyAPI_FUNC(int) PyErr_WarnExplicitObject(
     PyObject *message,
     PyObject *filename,
     int lineno,
-    PyObject *module,
+    PyObject *pyModule,
     PyObject *registry);
 #endif
 PyAPI_FUNC(int) PyErr_WarnExplicit(
@@ -40,14 +40,14 @@ PyAPI_FUNC(int) PyErr_WarnExplicit(
     const char *message,        /* UTF-8 encoded string */
     const char *filename,       /* decoded from the filesystem encoding */
     int lineno,
-    const char *module,         /* UTF-8 encoded string */
+    const char *pyModule,         /* UTF-8 encoded string */
     PyObject *registry);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int)
 PyErr_WarnExplicitFormat(PyObject *category,
                          const char *filename, int lineno,
-                         const char *module, PyObject *registry,
+                         const char *pyModule, PyObject *registry,
                          const char *format, ...);
 #endif
 
