@@ -30,6 +30,9 @@ PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
 TEST_CTYPES = os.path.join(STDLIB_DIR, 'ctypes', 'test', 'test_values.py')
 
+
+OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
+
 # These are modules that get frozen.
 FROZEN = [
     # See parse_frozen_spec() for the format.
@@ -42,6 +45,28 @@ FROZEN = [
         # This module is important because some Python builds rely
         # on a builtin zip file instead of a filesystem.
         'zipimport',
+        ]),
+    ('stdlib', [
+        # For the moment we skip codecs, encodings.*, os, and site.
+        # These modules have different generated files depending on
+        # if a debug or non-debug build.  (See bpo-45186 and bpo-45188.)
+        # without site (python -S)
+        'abc',
+        #'codecs',
+        # '<encodings.*>',
+        'io',
+        # with site
+        '_collections_abc',
+        '_sitebuiltins',
+        'genericpath',
+        'ntpath',
+        'posixpath',
+        # We must explicitly mark os.path as a frozen module
+        # even though it will never be imported.
+        #f'{OS_PATH} : os.path',
+        #'os',
+        #'site',
+        'stat',
         ]),
     ('Test module', [
         'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
@@ -486,9 +511,9 @@ def regen_makefile(modules):
         # Note that we freeze the module to the target .h file
         # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: Programs/_freeze_module {pyfile}')
-        rules.append(f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} \\')
-        rules.append(f'\t\t$(srcdir)/{pyfile} \\')
-        rules.append(f'\t\t$(srcdir)/{header}')
+        rules.append(
+            (f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} '
+             f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
         rules.append('')
 
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
