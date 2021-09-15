@@ -2,7 +2,7 @@
 A testcase which accesses *values* in a dll.
 """
 
-import imp
+import _imp
 import importlib.util
 import unittest
 import sys
@@ -81,7 +81,7 @@ class PythonValuesTestCase(unittest.TestCase):
                     self.assertIsNone(spec.submodule_search_locations)
 
         with import_helper.frozen_modules():
-            expected = imp._frozen_module_names()
+            expected = _imp._frozen_module_names()
         self.maxDiff = None
         self.assertEqual(modules, expected, "PyImport_FrozenModules example "
             "in Doc/library/ctypes.rst may be out of date")
