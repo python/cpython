@@ -125,12 +125,12 @@ PyDoc_STRVAR(_io_open__doc__,
     {"open", (PyCFunction)(void(*)(void))_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
-_io_open_impl(PyObject *module, PyObject *file, const char *mode,
+_io_open_impl(PyObject *pyModule, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener);
 
 static PyObject *
-_io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_open(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
@@ -261,7 +261,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     }
     opener = args[7];
 skip_optional_pos:
-    return_value = _io_open_impl(module, file, mode, buffering, encoding, errors, newline, closefd, opener);
+    return_value = _io_open_impl(pyModule, file, mode, buffering, encoding, errors, newline, closefd, opener);
 
 exit:
     return return_value;
@@ -286,10 +286,10 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
     {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
 
 static PyObject *
-_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
+_io_text_encoding_impl(PyObject *pyModule, PyObject *encoding, int stacklevel);
 
 static PyObject *
-_io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_io_text_encoding(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *encoding;
@@ -307,7 +307,7 @@ _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = _io_text_encoding_impl(module, encoding, stacklevel);
+    return_value = _io_text_encoding_impl(pyModule, encoding, stacklevel);
 
 exit:
     return return_value;
@@ -326,10 +326,10 @@ PyDoc_STRVAR(_io_open_code__doc__,
     {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
 
 static PyObject *
-_io_open_code_impl(PyObject *module, PyObject *path);
+_io_open_code_impl(PyObject *pyModule, PyObject *path);
 
 static PyObject *
-_io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_open_code(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -349,7 +349,7 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
     path = args[0];
-    return_value = _io_open_code_impl(module, path);
+    return_value = _io_open_code_impl(pyModule, path);
 
 exit:
     return return_value;

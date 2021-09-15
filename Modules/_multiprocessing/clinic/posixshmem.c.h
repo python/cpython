@@ -14,11 +14,11 @@ PyDoc_STRVAR(_posixshmem_shm_open__doc__,
     {"shm_open", (PyCFunction)(void(*)(void))_posixshmem_shm_open, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_open__doc__},
 
 static int
-_posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
+_posixshmem_shm_open_impl(PyObject *pyModule, PyObject *path, int flags,
                           int mode);
 
 static PyObject *
-_posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_posixshmem_shm_open(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", "flags", "mode", NULL};
@@ -54,7 +54,7 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
 skip_optional_pos:
-    _return_value = _posixshmem_shm_open_impl(module, path, flags, mode);
+    _return_value = _posixshmem_shm_open_impl(pyModule, path, flags, mode);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -82,10 +82,10 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
     {"shm_unlink", (PyCFunction)(void(*)(void))_posixshmem_shm_unlink, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_unlink__doc__},
 
 static PyObject *
-_posixshmem_shm_unlink_impl(PyObject *module, PyObject *path);
+_posixshmem_shm_unlink_impl(PyObject *pyModule, PyObject *path);
 
 static PyObject *
-_posixshmem_shm_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_posixshmem_shm_unlink(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"path", NULL};
@@ -105,7 +105,7 @@ _posixshmem_shm_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     path = args[0];
-    return_value = _posixshmem_shm_unlink_impl(module, path);
+    return_value = _posixshmem_shm_unlink_impl(pyModule, path);
 
 exit:
     return return_value;

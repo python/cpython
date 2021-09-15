@@ -104,6 +104,6 @@ int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObjec
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 
-int pysqlite_connection_setup_types(PyObject *module);
+int pysqlite_connection_setup_types(PyObject *pyModule);
 
 #endif

@@ -17,13 +17,13 @@ PyDoc_STRVAR(pysqlite_connect__doc__,
     {"connect", (PyCFunction)(void(*)(void))pysqlite_connect, METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
 
 static PyObject *
-pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
+pysqlite_connect_impl(PyObject *pyModule, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri);
 
 static PyObject *
-pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_connect(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
@@ -108,7 +108,7 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connect_impl(module, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+    return_value = pysqlite_connect_impl(pyModule, database, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
 
 exit:
     return return_value;
@@ -124,10 +124,10 @@ PyDoc_STRVAR(pysqlite_complete_statement__doc__,
     {"complete_statement", (PyCFunction)(void(*)(void))pysqlite_complete_statement, METH_FASTCALL|METH_KEYWORDS, pysqlite_complete_statement__doc__},
 
 static PyObject *
-pysqlite_complete_statement_impl(PyObject *module, const char *statement);
+pysqlite_complete_statement_impl(PyObject *pyModule, const char *statement);
 
 static PyObject *
-pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_complete_statement(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"statement", NULL};
@@ -152,7 +152,7 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = pysqlite_complete_statement_impl(module, statement);
+    return_value = pysqlite_complete_statement_impl(pyModule, statement);
 
 exit:
     return return_value;
@@ -170,10 +170,10 @@ PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
     {"enable_shared_cache", (PyCFunction)(void(*)(void))pysqlite_enable_shared_cache, METH_FASTCALL|METH_KEYWORDS, pysqlite_enable_shared_cache__doc__},
 
 static PyObject *
-pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable);
+pysqlite_enable_shared_cache_impl(PyObject *pyModule, int do_enable);
 
 static PyObject *
-pysqlite_enable_shared_cache(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_enable_shared_cache(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"do_enable", NULL};
@@ -189,7 +189,7 @@ pysqlite_enable_shared_cache(PyObject *module, PyObject *const *args, Py_ssize_t
     if (do_enable == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = pysqlite_enable_shared_cache_impl(module, do_enable);
+    return_value = pysqlite_enable_shared_cache_impl(pyModule, do_enable);
 
 exit:
     return return_value;
@@ -205,11 +205,11 @@ PyDoc_STRVAR(pysqlite_register_adapter__doc__,
     {"register_adapter", (PyCFunction)(void(*)(void))pysqlite_register_adapter, METH_FASTCALL, pysqlite_register_adapter__doc__},
 
 static PyObject *
-pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
+pysqlite_register_adapter_impl(PyObject *pyModule, PyTypeObject *type,
                                PyObject *caster);
 
 static PyObject *
-pysqlite_register_adapter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+pysqlite_register_adapter(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyTypeObject *type;
@@ -220,7 +220,7 @@ pysqlite_register_adapter(PyObject *module, PyObject *const *args, Py_ssize_t na
     }
     type = (PyTypeObject *)args[0];
     caster = args[1];
-    return_value = pysqlite_register_adapter_impl(module, type, caster);
+    return_value = pysqlite_register_adapter_impl(pyModule, type, caster);
 
 exit:
     return return_value;
@@ -236,11 +236,11 @@ PyDoc_STRVAR(pysqlite_register_converter__doc__,
     {"register_converter", (PyCFunction)(void(*)(void))pysqlite_register_converter, METH_FASTCALL, pysqlite_register_converter__doc__},
 
 static PyObject *
-pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
+pysqlite_register_converter_impl(PyObject *pyModule, PyObject *orig_name,
                                  PyObject *callable);
 
 static PyObject *
-pysqlite_register_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+pysqlite_register_converter(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *orig_name;
@@ -258,7 +258,7 @@ pysqlite_register_converter(PyObject *module, PyObject *const *args, Py_ssize_t 
     }
     orig_name = args[0];
     callable = args[1];
-    return_value = pysqlite_register_converter_impl(module, orig_name, callable);
+    return_value = pysqlite_register_converter_impl(pyModule, orig_name, callable);
 
 exit:
     return return_value;
@@ -274,10 +274,10 @@ PyDoc_STRVAR(pysqlite_enable_callback_trace__doc__,
     {"enable_callback_tracebacks", (PyCFunction)pysqlite_enable_callback_trace, METH_O, pysqlite_enable_callback_trace__doc__},
 
 static PyObject *
-pysqlite_enable_callback_trace_impl(PyObject *module, int enable);
+pysqlite_enable_callback_trace_impl(PyObject *pyModule, int enable);
 
 static PyObject *
-pysqlite_enable_callback_trace(PyObject *module, PyObject *arg)
+pysqlite_enable_callback_trace(PyObject *pyModule, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int enable;
@@ -286,7 +286,7 @@ pysqlite_enable_callback_trace(PyObject *module, PyObject *arg)
     if (enable == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = pysqlite_enable_callback_trace_impl(module, enable);
+    return_value = pysqlite_enable_callback_trace_impl(pyModule, enable);
 
 exit:
     return return_value;
@@ -302,11 +302,11 @@ PyDoc_STRVAR(pysqlite_adapt__doc__,
     {"adapt", (PyCFunction)(void(*)(void))pysqlite_adapt, METH_FASTCALL, pysqlite_adapt__doc__},
 
 static PyObject *
-pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
+pysqlite_adapt_impl(PyObject *pyModule, PyObject *obj, PyObject *proto,
                     PyObject *alt);
 
 static PyObject *
-pysqlite_adapt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+pysqlite_adapt(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
@@ -326,7 +326,7 @@ pysqlite_adapt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     alt = args[2];
 skip_optional:
-    return_value = pysqlite_adapt_impl(module, obj, proto, alt);
+    return_value = pysqlite_adapt_impl(pyModule, obj, proto, alt);
 
 exit:
     return return_value;

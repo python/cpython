@@ -13,10 +13,10 @@ PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
     {"closesocket", (PyCFunction)_multiprocessing_closesocket, METH_O, _multiprocessing_closesocket__doc__},
 
 static PyObject *
-_multiprocessing_closesocket_impl(PyObject *module, HANDLE handle);
+_multiprocessing_closesocket_impl(PyObject *pyModule, HANDLE handle);
 
 static PyObject *
-_multiprocessing_closesocket(PyObject *module, PyObject *arg)
+_multiprocessing_closesocket(PyObject *pyModule, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -24,7 +24,7 @@ _multiprocessing_closesocket(PyObject *module, PyObject *arg)
     if (!PyArg_Parse(arg, ""F_HANDLE":closesocket", &handle)) {
         goto exit;
     }
-    return_value = _multiprocessing_closesocket_impl(module, handle);
+    return_value = _multiprocessing_closesocket_impl(pyModule, handle);
 
 exit:
     return return_value;
@@ -43,10 +43,10 @@ PyDoc_STRVAR(_multiprocessing_recv__doc__,
     {"recv", (PyCFunction)(void(*)(void))_multiprocessing_recv, METH_FASTCALL, _multiprocessing_recv__doc__},
 
 static PyObject *
-_multiprocessing_recv_impl(PyObject *module, HANDLE handle, int size);
+_multiprocessing_recv_impl(PyObject *pyModule, HANDLE handle, int size);
 
 static PyObject *
-_multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_multiprocessing_recv(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -56,7 +56,7 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         &handle, &size)) {
         goto exit;
     }
-    return_value = _multiprocessing_recv_impl(module, handle, size);
+    return_value = _multiprocessing_recv_impl(pyModule, handle, size);
 
 exit:
     return return_value;
@@ -75,10 +75,10 @@ PyDoc_STRVAR(_multiprocessing_send__doc__,
     {"send", (PyCFunction)(void(*)(void))_multiprocessing_send, METH_FASTCALL, _multiprocessing_send__doc__},
 
 static PyObject *
-_multiprocessing_send_impl(PyObject *module, HANDLE handle, Py_buffer *buf);
+_multiprocessing_send_impl(PyObject *pyModule, HANDLE handle, Py_buffer *buf);
 
 static PyObject *
-_multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_multiprocessing_send(PyObject *pyModule, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -88,7 +88,7 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         &handle, &buf)) {
         goto exit;
     }
-    return_value = _multiprocessing_send_impl(module, handle, &buf);
+    return_value = _multiprocessing_send_impl(pyModule, handle, &buf);
 
 exit:
     /* Cleanup for buf */
@@ -110,10 +110,10 @@ PyDoc_STRVAR(_multiprocessing_sem_unlink__doc__,
     {"sem_unlink", (PyCFunction)_multiprocessing_sem_unlink, METH_O, _multiprocessing_sem_unlink__doc__},
 
 static PyObject *
-_multiprocessing_sem_unlink_impl(PyObject *module, const char *name);
+_multiprocessing_sem_unlink_impl(PyObject *pyModule, const char *name);
 
 static PyObject *
-_multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
+_multiprocessing_sem_unlink(PyObject *pyModule, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *name;
@@ -131,7 +131,7 @@ _multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = _multiprocessing_sem_unlink_impl(module, name);
+    return_value = _multiprocessing_sem_unlink_impl(pyModule, name);
 
 exit:
     return return_value;
