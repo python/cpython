@@ -511,9 +511,9 @@ def regen_makefile(modules):
         # Note that we freeze the module to the target .h file
         # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: Programs/_freeze_module {pyfile}')
-        rules.append(f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} \\')
-        rules.append(f'\t\t$(srcdir)/{pyfile} \\')
-        rules.append(f'\t\t$(srcdir)/{header}')
+        rules.append(
+            (f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} '
+             f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
         rules.append('')
 
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
