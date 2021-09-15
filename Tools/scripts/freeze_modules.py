@@ -21,7 +21,7 @@ ROOT_DIR = os.path.dirname(TOOLS_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # If MODULES_DIR is changed then the .gitattributes and .gitignore files
-# needs to be updated.
+# need to be updated.
 MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 
 if sys.platform != "win32":
