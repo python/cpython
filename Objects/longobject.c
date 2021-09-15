@@ -5543,7 +5543,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=5af4e767317e06a4]*/
+/*[clinic end generated code: output=89c801df114050a3 input=d42ecfb545039d71]*/
 {
     int little_endian;
     PyObject *bytes;
@@ -5605,7 +5605,7 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=495a43f81a11a00f]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=33326dccdd655553]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;

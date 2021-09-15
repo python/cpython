@@ -226,8 +226,7 @@ int_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(int_to_bytes__doc__,
-"to_bytes($self, /, length=1, byteorder=<unrepresentable>, *,\n"
-"         signed=False)\n"
+"to_bytes($self, /, length=1, byteorder=\'big\', *, signed=False)\n"
 "--\n"
 "\n"
 "Return an array of bytes representing an integer.\n"
@@ -319,8 +318,7 @@ exit:
 }
 
 PyDoc_STRVAR(int_from_bytes__doc__,
-"from_bytes($type, /, bytes, byteorder=<unrepresentable>, *,\n"
-"           signed=False)\n"
+"from_bytes($type, /, bytes, byteorder=\'big\', *, signed=False)\n"
 "--\n"
 "\n"
 "Return the integer represented by the given array of bytes.\n"
@@ -393,4 +391,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6760da18d2cc99fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16a375d93769b227 input=a9049054013a1b77]*/
