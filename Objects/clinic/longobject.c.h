@@ -234,13 +234,14 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "\n"
 "  length\n"
 "    Length of bytes object to use.  An OverflowError is raised if the\n"
-"    integer is not representable with the given number of bytes.\n"
+"    integer is not representable with the given number of bytes.  Default\n"
+"    is length 1.\n"
 "  byteorder\n"
 "    The byte order used to represent the integer.  If byteorder is \'big\',\n"
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.\n"
+"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -334,7 +335,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.\n"
+"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
@@ -392,4 +393,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=078e5ad8fa273312 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6760da18d2cc99fe input=a9049054013a1b77]*/

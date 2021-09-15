@@ -1121,9 +1121,7 @@ class LongTest(unittest.TestCase):
                         .format(test, byteorder, signed)) from err
 
                 # Test for all default arguments.
-                if (len(expected) == 1
-                        and byteorder == sys.byteorder
-                        and not signed):
+                if len(expected) == 1 and byteorder == 'big' and not signed:
                     try:
                         self.assertEqual(test.to_bytes(), expected)
                     except Exception as err:
@@ -1255,7 +1253,7 @@ class LongTest(unittest.TestCase):
                         .format(test, byteorder, signed)) from err
 
                 # Test for all default arguments.
-                if byteorder == sys.byteorder and not signed:
+                if byteorder == 'big' and not signed:
                     try:
                         self.assertEqual(
                             int.from_bytes(test),

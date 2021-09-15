@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length=1, byteorder=sys.byteorder, *, signed=False)
+.. method:: int.to_bytes(length=1, byteorder='big', *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -551,7 +551,7 @@ class`. In addition, it provides a few more methods:
     .. versionchanged:: 3.11
        Added default argument values for ``length`` and ``byteorder``.
 
-.. classmethod:: int.from_bytes(bytes, byteorder=sys.byteorder, *, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder='big', *, signed=False)
 
     Return the integer represented by the given array of bytes.
 

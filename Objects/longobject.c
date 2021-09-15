@@ -5523,13 +5523,14 @@ int.to_bytes
 
     length: Py_ssize_t = 1
         Length of bytes object to use.  An OverflowError is raised if the
-        integer is not representable with the given number of bytes.
+        integer is not representable with the given number of bytes.  Default
+        is length 1.
     byteorder: unicode = NULL
         The byte order used to represent the integer.  If byteorder is 'big',
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.
+        `sys.byteorder' as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Determines whether two's complement is used to represent the integer.
@@ -5542,16 +5543,13 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=d6b9571b1ee1fd05]*/
+/*[clinic end generated code: output=89c801df114050a3 input=5af4e767317e06a4]*/
 {
     int little_endian;
     PyObject *bytes;
 
     if (byteorder == NULL)
-        // PY_LITTLE_ENDIAN is 1 on little-endian systems, and 0 on big-endian
-        // systems. In the default case, it's significantly faster than looking
-        // up sys.byteorder and performing the string comparisons below:
-        little_endian = PY_LITTLE_ENDIAN;
+        little_endian = 0;
     else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;
     else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
@@ -5596,7 +5594,7 @@ int.from_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.
+        `sys.byteorder' as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Indicates whether two's complement is used to represent the integer.
@@ -5607,16 +5605,13 @@ Return the integer represented by the given array of bytes.
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed)
-/*[clinic end generated code: output=efc5d68e31f9314f input=2562febe16a92f7a]*/
+/*[clinic end generated code: output=efc5d68e31f9314f input=495a43f81a11a00f]*/
 {
     int little_endian;
     PyObject *long_obj, *bytes;
 
     if (byteorder == NULL)
-        // PY_LITTLE_ENDIAN is 1 on little-endian systems, and 0 on big-endian
-        // systems. In the default case, using it is significantly faster than
-        // looking up sys.byteorder and performing the string comparisons below:
-        little_endian = PY_LITTLE_ENDIAN;
+        little_endian = 0;
     else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_little))
         little_endian = 1;
     else if (_PyUnicode_EqualToASCIIId(byteorder, &PyId_big))
