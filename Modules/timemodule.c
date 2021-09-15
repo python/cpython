@@ -2111,6 +2111,7 @@ pysleep(_PyTime_t secs)
         }
         secs = deadline - monotonic;
         if (secs < 0) {
+            ret = 0;
             break;
         }
         /* retry with the recomputed delay */
