@@ -195,7 +195,6 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("isblob", 1, lambda x: isinstance(x, bytes))
         self.con.create_function("isnone", 1, lambda x: x is None)
         self.con.create_function("spam", -1, lambda *x: len(x))
-        self.con.create_function("boomerang", 1, lambda x: x)
         self.con.execute("create table test(t text)")
 
     def tearDown(self):
@@ -326,7 +325,7 @@ class FunctionTests(unittest.TestCase):
 
     def test_non_contiguous_blob(self):
         self.assertRaisesRegex(ValueError, "could not convert BLOB to buffer",
-                               self.con.execute, "select boomerang(?)",
+                               self.con.execute, "select spam(?)",
                                (memoryview(b"blob")[::2],))
 
     def test_param_surrogates(self):
