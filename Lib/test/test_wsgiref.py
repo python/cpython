@@ -1,7 +1,6 @@
 from unittest import mock
 from test import support
 from test.support import socket_helper
-from test.support import warnings_helper
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -81,41 +80,26 @@ def run_amock(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
 
     return out.getvalue(), err.getvalue()
 
-def compare_generic_iter(make_it,match):
-    """Utility to compare a generic 2.1/2.2+ iterator with an iterable
 
-    If running under Python 2.2+, this tests the iterator using iter()/next(),
-    as well as __getitem__.  'make_it' must be a function returning a fresh
+def compare_generic_iter(make_it, match):
+    """Utility to compare a generic iterator with an iterable
+
+    This tests the iterator using iter()/next().
+    'make_it' must be a function returning a fresh
     iterator to be tested (since this may test the iterator twice)."""
 
     it = make_it()
-    n = 0
+    if not iter(it) is it:
+        raise AssertionError
     for item in match:
-        if not it[n]==item: raise AssertionError
-        n+=1
+        if not next(it) == item:
+            raise AssertionError
     try:
-        it[n]
-    except IndexError:
+        next(it)
+    except StopIteration:
         pass
     else:
-        raise AssertionError("Too many items from __getitem__",it)
-
-    try:
-        iter, StopIteration
-    except NameError:
-        pass
-    else:
-        # Only test iter mode under 2.2+
-        it = make_it()
-        if not iter(it) is it: raise AssertionError
-        for item in match:
-            if not next(it) == item: raise AssertionError
-        try:
-            next(it)
-        except StopIteration:
-            pass
-        else:
-            raise AssertionError("Too many items from .__next__()", it)
+        raise AssertionError("Too many items from .__next__()", it)
 
 
 class IntegrationTests(TestCase):
@@ -340,7 +324,6 @@ class UtilityTests(TestCase):
         util.setup_testing_defaults(kw)
         self.assertEqual(util.request_uri(kw,query),uri)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def checkFW(self,text,size,match):
 
         def make_it(text=text,size=size):
@@ -358,13 +341,6 @@ class UtilityTests(TestCase):
 
         it.close()
         self.assertTrue(it.filelike.closed)
-
-    def test_filewrapper_getitem_deprecation(self):
-        wrapper = util.FileWrapper(StringIO('foobar'), 3)
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r'Use iterator protocol instead'):
-            # This should have returned 'bar'.
-            self.assertEqual(wrapper[1], 'foo')
 
     def testSimpleShifts(self):
         self.checkShift('','/', '', '/', '')

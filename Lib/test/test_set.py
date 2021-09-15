@@ -644,15 +644,34 @@ class TestSetSubclass(TestSet):
     thetype = SetSubclass
     basetype = set
 
-class SetSubclassWithKeywordArgs(set):
-    def __init__(self, iterable=[], newarg=None):
-        set.__init__(self, iterable)
-
-class TestSetSubclassWithKeywordArgs(TestSet):
-
     def test_keywords_in_subclass(self):
-        'SF bug #1486663 -- this used to erroneously raise a TypeError'
-        SetSubclassWithKeywordArgs(newarg=1)
+        class subclass(set):
+            pass
+        u = subclass([1, 2])
+        self.assertIs(type(u), subclass)
+        self.assertEqual(set(u), {1, 2})
+        with self.assertRaises(TypeError):
+            subclass(sequence=())
+
+        class subclass_with_init(set):
+            def __init__(self, arg, newarg=None):
+                super().__init__(arg)
+                self.newarg = newarg
+        u = subclass_with_init([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(set(u), {1, 2})
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(set):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(set(u), {1, 2})
+        self.assertEqual(u.newarg, 3)
+
 
 class TestFrozenSet(TestJointOps, unittest.TestCase):
     thetype = frozenset
@@ -733,6 +752,33 @@ class FrozenSetSubclass(frozenset):
 class TestFrozenSetSubclass(TestFrozenSet):
     thetype = FrozenSetSubclass
     basetype = frozenset
+
+    def test_keywords_in_subclass(self):
+        class subclass(frozenset):
+            pass
+        u = subclass([1, 2])
+        self.assertIs(type(u), subclass)
+        self.assertEqual(set(u), {1, 2})
+        with self.assertRaises(TypeError):
+            subclass(sequence=())
+
+        class subclass_with_init(frozenset):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(set(u), {1, 2})
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(frozenset):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(set(u), {1, 2})
+        self.assertEqual(u.newarg, 3)
 
     def test_constructor_identity(self):
         s = self.thetype(range(3))

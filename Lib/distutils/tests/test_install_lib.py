@@ -109,7 +109,7 @@ class InstallLibTestCase(support.TempdirManager,
 
 
 def test_suite():
-    return unittest.makeSuite(InstallLibTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(InstallLibTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())
