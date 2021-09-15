@@ -5589,7 +5589,7 @@ int.from_bytes
         support the buffer protocol or be an iterable object producing bytes.
         Bytes and bytearray are examples of built-in objects that support the
         buffer protocol.
-    byteorder: unicode = NULL
+    byteorder: unicode(c_default="NULL") = "big"
         The byte order used to represent the integer.  If byteorder is 'big',
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
