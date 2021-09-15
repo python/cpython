@@ -247,7 +247,7 @@
     </None>
     <None Include="..\Tools\freeze\flag.py">
       <ModName>hello</ModName>
-      <IntFile>$(IntDir)ello.g.h</IntFile>
+      <IntFile>$(IntDir)hello.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\hello.h</OutFile>
     </None>
     <!-- END frozen modules -->
@@ -255,9 +255,9 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="_RebuildFrozen" AfterTargets="AfterBuild">
+  <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
-    
+
     <Copy SourceFiles="%(None.IntFile)"
           DestinationFiles="%(None.OutFile)"
           Condition="!Exists(%(None.OutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
@@ -267,7 +267,7 @@
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
   </Target>
-  <Target Name="_CleanFrozen" BeforeTargets="CoreClean">
+  <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
     </ItemGroup>

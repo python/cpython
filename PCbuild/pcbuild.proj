@@ -20,7 +20,6 @@
       <Platform Condition="$(Platform) == 'ARM64'">x64</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
-      <Configuration Condition="$(Configuration) == 'PGUpdate'">Release</Configuration>
       <Properties></Properties>
       <BuildTarget>Build</BuildTarget>
       <CleanTarget>Clean</CleanTarget>
