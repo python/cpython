@@ -77,6 +77,18 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     return 0;
 }
 
+int
+_PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
+    assert(name->kind == Name_kind);
+    const char* candidates[2] = {"print", "exec"};
+    for (int i=0; i<2; i++) {
+        if (PyUnicode_CompareWithASCIIString(name->v.Name.id, candidates[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 PyObject *
 _PyPegen_new_identifier(Parser *p, const char *n)
 {
@@ -883,6 +895,19 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     p->mark += 1;
     return t;
+}
+
+void*
+_PyPegen_expect_forced_result(Parser *p, void* result, const char* expected) {
+
+    if (p->error_indicator == 1) {
+        return NULL;
+    }
+    if (result == NULL) {
+        RAISE_SYNTAX_ERROR("expected (%s)", expected);
+        return NULL;
+    }
+    return result;
 }
 
 Token *

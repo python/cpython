@@ -293,6 +293,85 @@ PyObject_CheckBuffer(PyObject *obj)
 }
 
 
+/* We release the buffer right after use of this function which could
+   cause issues later on.  Don't use these functions in new code.
+ */
+int
+PyObject_CheckReadBuffer(PyObject *obj)
+{
+    PyBufferProcs *pb = Py_TYPE(obj)->tp_as_buffer;
+    Py_buffer view;
+
+    if (pb == NULL ||
+        pb->bf_getbuffer == NULL)
+        return 0;
+    if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE) == -1) {
+        PyErr_Clear();
+        return 0;
+    }
+    PyBuffer_Release(&view);
+    return 1;
+}
+
+static int
+as_read_buffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
+{
+    Py_buffer view;
+
+    if (obj == NULL || buffer == NULL || buffer_len == NULL) {
+        null_error();
+        return -1;
+    }
+    if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
+        return -1;
+
+    *buffer = view.buf;
+    *buffer_len = view.len;
+    PyBuffer_Release(&view);
+    return 0;
+}
+
+int
+PyObject_AsCharBuffer(PyObject *obj,
+                      const char **buffer,
+                      Py_ssize_t *buffer_len)
+{
+    return as_read_buffer(obj, (const void **)buffer, buffer_len);
+}
+
+int PyObject_AsReadBuffer(PyObject *obj,
+                          const void **buffer,
+                          Py_ssize_t *buffer_len)
+{
+    return as_read_buffer(obj, buffer, buffer_len);
+}
+
+int PyObject_AsWriteBuffer(PyObject *obj,
+                           void **buffer,
+                           Py_ssize_t *buffer_len)
+{
+    PyBufferProcs *pb;
+    Py_buffer view;
+
+    if (obj == NULL || buffer == NULL || buffer_len == NULL) {
+        null_error();
+        return -1;
+    }
+    pb = Py_TYPE(obj)->tp_as_buffer;
+    if (pb == NULL ||
+        pb->bf_getbuffer == NULL ||
+        ((*pb->bf_getbuffer)(obj, &view, PyBUF_WRITABLE) != 0)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected a writable bytes-like object");
+        return -1;
+    }
+
+    *buffer = view.buf;
+    *buffer_len = view.len;
+    PyBuffer_Release(&view);
+    return 0;
+}
+
 /* Buffer C-API for Python 3.0 */
 
 int
@@ -2737,18 +2816,18 @@ PyObject_GetIter(PyObject *o)
 }
 
 PyObject *
-PyObject_GetAiter(PyObject *o) {
+PyObject_GetAIter(PyObject *o) {
     PyTypeObject *t = Py_TYPE(o);
     unaryfunc f;
 
     if (t->tp_as_async == NULL || t->tp_as_async->am_aiter == NULL) {
-        return type_error("'%.200s' object is not an AsyncIterable", o);
+        return type_error("'%.200s' object is not an async iterable", o);
     }
     f = t->tp_as_async->am_aiter;
     PyObject *it = (*f)(o);
-    if (it != NULL && !PyAiter_Check(it)) {
+    if (it != NULL && !PyAIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-                     "aiter() returned non-AsyncIterator of type '%.100s'",
+                     "aiter() returned not an async iterator of type '%.100s'",
                      Py_TYPE(it)->tp_name);
         Py_DECREF(it);
         it = NULL;
@@ -2765,12 +2844,10 @@ PyIter_Check(PyObject *obj)
 }
 
 int
-PyAiter_Check(PyObject *obj)
+PyAIter_Check(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     return (tp->tp_as_async != NULL &&
-            tp->tp_as_async->am_aiter != NULL &&
-            tp->tp_as_async->am_aiter != &_PyObject_NextNotImplemented &&
             tp->tp_as_async->am_anext != NULL &&
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }

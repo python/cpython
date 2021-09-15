@@ -3022,7 +3022,9 @@ lead to a number of problems in practice:
 * An attempt to delete a file (e.g. during file rotation) silently fails,
   because there is another reference pointing to it. This can lead to confusion
   and wasted debugging time - log entries end up in unexpected places, or are
-  lost altogether.
+  lost altogether. Or a file that was supposed to be moved remains in place,
+  and grows in size unexpectedly despite size-based rotation being supposedly
+  in place.
 
 Use the techniques outlined in :ref:`multiple-processes` to circumvent such
 issues.

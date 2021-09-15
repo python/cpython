@@ -19,7 +19,7 @@ from unittest.test.support import (
     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
     ResultWithNoStartTestRunStopTestRun
 )
-from test.support import captured_stderr
+from test.support import captured_stderr, gc_collect
 
 
 log_foo = logging.getLogger('foo')
@@ -306,6 +306,26 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         Foo('test').run()
 
+    def test_deprecation_of_return_val_from_test(self):
+        # Issue 41322 - deprecate return of value!=None from a test
+        class Foo(unittest.TestCase):
+            def test1(self):
+                return 1
+            def test2(self):
+                yield 1
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Foo('test1').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
+        self.assertIn('test1', str(w.warnings[0].message))
+        self.assertEqual(w.warnings[0].filename, __file__)
+
+        with self.assertWarns(DeprecationWarning) as w:
+            Foo('test2').run()
+        self.assertIn('It is deprecated to return a value!=None', str(w.warnings[0].message))
+        self.assertIn('test2', str(w.warnings[0].message))
+        self.assertEqual(w.warnings[0].filename, __file__)
+
     def _check_call_order__subtests(self, result, events, expected_events):
         class Foo(Test.LoggingTestCase):
             def test(self):
@@ -420,7 +440,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         result = unittest.TestResult()
         result.failfast = True
-        suite = unittest.makeSuite(Foo)
+        suite = unittest.TestLoader().loadTestsFromTestCase(Foo)
         suite.run(result)
 
         expected = ['a1', 'a2', 'b1']
@@ -1947,6 +1967,7 @@ test case
         for method_name in ('test1', 'test2'):
             testcase = TestCase(method_name)
             testcase.run()
+            gc_collect()  # For PyPy or other GCs.
             self.assertEqual(MyException.ninstance, 0)
 
 

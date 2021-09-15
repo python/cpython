@@ -85,13 +85,15 @@ def dash_R(ns, test_name, test_func):
               flush=True)
 
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
+    support.gc_collect()
 
     for i in rep_range:
         test_func()
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
 
-        # dash_R_cleanup() ends with collecting cyclic trash:
-        # read memory statistics immediately after.
+        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        support.gc_collect()
+
+        # Read memory statistics immediately after the garbage collection
         alloc_after = getallocatedblocks() - _getquickenedcount()
         rc_after = gettotalrefcount()
         fd_after = fd_count()
@@ -166,9 +168,6 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.clear()
         zipimport._zip_directory_cache.update(zdc)
 
-    # clear type cache
-    sys._clear_type_cache()
-
     # Clear ABC registries, restoring previously saved ABC registries.
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
@@ -179,7 +178,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
                     obj.register(ref())
             obj._abc_caches_clear()
 
+    # Clear caches
     clear_caches()
+
+    # Clear type cache at the end: previous function calls can modify types
+    sys._clear_type_cache()
 
 
 def warm_caches():

@@ -589,9 +589,9 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (get_long(state, v, &x) < 0)
         return -1;
     if (x < SHRT_MIN || x > SHRT_MAX) {
-        PyErr_SetString(state->StructError,
-                        "short format requires " Py_STRINGIFY(SHRT_MIN)
-                        " <= number <= " Py_STRINGIFY(SHRT_MAX));
+        PyErr_Format(state->StructError,
+                     "short format requires %d <= number <= %d",
+                     (int)SHRT_MIN, (int)SHRT_MAX);
         return -1;
     }
     y = (short)x;
@@ -607,9 +607,9 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     if (get_long(state, v, &x) < 0)
         return -1;
     if (x < 0 || x > USHRT_MAX) {
-        PyErr_SetString(state->StructError,
-                        "ushort format requires 0 <= number <= "
-                        Py_STRINGIFY(USHRT_MAX));
+        PyErr_Format(state->StructError,
+                     "ushort format requires 0 <= number <= %u",
+                     (unsigned int)USHRT_MAX);
         return -1;
     }
     y = (unsigned short)x;

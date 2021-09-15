@@ -1047,8 +1047,37 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
 
 /* pop() */
 
-/* forward */
-static PyObject * _odict_popkey(PyObject *, PyObject *, PyObject *);
+static PyObject *
+_odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
+                   Py_hash_t hash)
+{
+    PyObject *value = NULL;
+
+    _ODictNode *node = _odict_find_node_hash((PyODictObject *)od, key, hash);
+    if (node != NULL) {
+        /* Pop the node first to avoid a possible dict resize (due to
+           eval loop reentrancy) and complications due to hash collision
+           resolution. */
+        int res = _odict_clear_node((PyODictObject *)od, node, key, hash);
+        if (res < 0) {
+            return NULL;
+        }
+        /* Now delete the value from the dict. */
+        value = _PyDict_Pop_KnownHash(od, key, hash, failobj);
+    }
+    else if (value == NULL && !PyErr_Occurred()) {
+        /* Apply the fallback value, if necessary. */
+        if (failobj) {
+            value = failobj;
+            Py_INCREF(failobj);
+        }
+        else {
+            PyErr_SetObject(PyExc_KeyError, key);
+        }
+    }
+
+    return value;
+}
 
 /* Skips __missing__() calls. */
 /*[clinic input]
@@ -1068,80 +1097,10 @@ OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value)
 /*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
 {
-    return _odict_popkey((PyObject *)self, key, default_value);
-}
-
-static PyObject *
-_odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
-                   Py_hash_t hash)
-{
-    _ODictNode *node;
-    PyObject *value = NULL;
-
-    /* Pop the node first to avoid a possible dict resize (due to
-       eval loop reentrancy) and complications due to hash collision
-       resolution. */
-    node = _odict_find_node_hash((PyODictObject *)od, key, hash);
-    if (node == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-    }
-    else {
-        int res = _odict_clear_node((PyODictObject *)od, node, key, hash);
-        if (res < 0) {
-            return NULL;
-        }
-    }
-
-    /* Now delete the value from the dict. */
-    if (PyODict_CheckExact(od)) {
-        if (node != NULL) {
-            value = _PyDict_GetItem_KnownHash(od, key, hash);  /* borrowed */
-            if (value != NULL) {
-                Py_INCREF(value);
-                if (_PyDict_DelItem_KnownHash(od, key, hash) < 0) {
-                    Py_DECREF(value);
-                    return NULL;
-                }
-            }
-        }
-    }
-    else {
-        int exists = PySequence_Contains(od, key);
-        if (exists < 0)
-            return NULL;
-        if (exists) {
-            value = PyObject_GetItem(od, key);
-            if (value != NULL) {
-                if (PyObject_DelItem(od, key) == -1) {
-                    Py_CLEAR(value);
-                }
-            }
-        }
-    }
-
-    /* Apply the fallback value, if necessary. */
-    if (value == NULL && !PyErr_Occurred()) {
-        if (failobj) {
-            value = failobj;
-            Py_INCREF(failobj);
-        }
-        else {
-            PyErr_SetObject(PyExc_KeyError, key);
-        }
-    }
-
-    return value;
-}
-
-static PyObject *
-_odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
-{
     Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1)
         return NULL;
-
-    return _odict_popkey_hash(od, key, failobj, hash);
+    return _odict_popkey_hash((PyObject *)self, key, default_value, hash);
 }
 
 

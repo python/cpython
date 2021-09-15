@@ -1,0 +1,2 @@
+Add ability to wholesale silence DeprecationWarnings while running the
+regression test suite.

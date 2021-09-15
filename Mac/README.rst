@@ -226,7 +226,7 @@ distribution, this is installed by default on macOS 10.4 or later.  Be
 aware, though, that the Cocoa-based AquaTk's supplied starting with macOS
 10.6 have proven to be unstable.  If possible, you should consider
 installing a newer version before building on macOS 10.6 or later, such as
-the ActiveTcl 8.6.  See http://www.python.org/download/mac/tcltk/.  If you
+the ActiveTcl 8.6.  See https://www.python.org/download/mac/tcltk/.  If you
 are building with an SDK, ensure that the newer Tcl and Tk frameworks are
 seen in the SDK's ``Library/Frameworks`` directory; you may need to
 manually create symlinks to their installed location, ``/Library/Frameworks``.
@@ -293,7 +293,7 @@ GUI programs.  As of 3.4.0, the ``pythonwx.x`` aliases are no longer installed.
 How do I create a binary distribution?
 ======================================
 
-Download and unpack the source release from http://www.python.org/download/.
+Download and unpack the source release from https://www.python.org/download/.
 Go to the directory ``Mac/BuildScript``. There you will find a script
 ``build-installer.py`` that does all the work. This will download and build
 a number of 3rd-party libaries, configures and builds a framework Python,
@@ -334,9 +334,9 @@ The configure script sometimes emits warnings like the one below::
    configure: WARNING: libintl.h:     section "Present But Cannot Be Compiled"
    configure: WARNING: libintl.h: proceeding with the preprocessor's result
    configure: WARNING: libintl.h: in the future, the compiler will take precedence
-   configure: WARNING:     ## -------------------------------------- ##
-   configure: WARNING:     ## Report this to http://bugs.python.org/ ##
-   configure: WARNING:     ## -------------------------------------- ##
+   configure: WARNING:     ## --------------------------------------- ##
+   configure: WARNING:     ## Report this to https://bugs.python.org/ ##
+   configure: WARNING:     ## --------------------------------------- ##
 
 This almost always means you are trying to build a universal binary for
 Python and have libraries in ``/usr/local`` that don't contain the required
@@ -399,8 +399,8 @@ The basic implementation pattern is:
 Resources
 =========
 
-  *  http://www.python.org/download/mac/
+  *  https://www.python.org/downloads/macos/
 
-  *  http://www.python.org/community/sigs/current/pythonmac-sig/
+  *  https://www.python.org/community/sigs/current/pythonmac-sig/
 
   *  https://devguide.python.org/
