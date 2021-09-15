@@ -1509,6 +1509,9 @@
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
 
+/* Custom thread stack size depending on chosen sanitizer runtimes. */
+#undef THREAD_STACK_SIZE
+
 /* Library needed by timemodule.c: librt may be needed for clock_gettime() */
 #undef TIMEMODULE_LIB
 
