@@ -245,10 +245,10 @@
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
-    <None Include="..\Tools\freeze\flag.py">
-      <ModName>hello</ModName>
-      <IntFile>$(IntDir)hello.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\hello.h</OutFile>
+    <None Include="..\Lib\__hello__.py">
+      <ModName>__hello__</ModName>
+      <IntFile>$(IntDir)__hello__.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\__hello__.h</OutFile>
     </None>
     <!-- END frozen modules -->
   </ItemGroup>
