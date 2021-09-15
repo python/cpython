@@ -141,7 +141,7 @@ extern void _PySignal_AfterFork(void);
 
 PyAPI_FUNC(int) _PyState_AddModule(
     PyThreadState *tstate,
-    PyObject* module,
+    PyObject *pyModule,
     struct PyModuleDef* def);
 
 
