@@ -221,9 +221,8 @@ def load_tests(loader, tests, pattern):
         classes.append(type("TestCase-" + mod.__name__,
                             (AnyDBMTestCase, unittest.TestCase),
                             {'module': mod}))
-    suites = [unittest.makeSuite(c) for c in classes]
-
-    tests.addTests(suites)
+    for c in classes:
+        tests.addTest(loader.loadTestsFromTestCase(c))
     return tests
 
 if __name__ == "__main__":
