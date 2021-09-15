@@ -453,6 +453,15 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
+/* CALL_FUNCTION */
+
+#define SPEC_FAIL_PYCFUNCTION 10
+#define SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS 13
+#define SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS 14
+#define SPEC_FAIL_PYCFUNCTION_NOARGS 15
+#define SPEC_FAIL_BAD_CALL_FLAGS 16
+#define SPEC_FAIL_PYTHON_FUNCTION 17
+#define SPEC_FAIL_IMMUTABLE_CLASS 18
 
 static int
 specialize_module_load_attr(
@@ -1230,56 +1239,55 @@ _Py_Specialize_CallFunction(
                     _Py_OPARG(*instr));
                 goto success;
             case METH_VARARGS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION");
+                SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYCFUNCTION);
                 goto fail;
             case METH_VARARGS | METH_KEYWORDS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "PYCFUNCTION_WITH_KEYWORDS");
+                SPECIALIZATION_FAIL(CALL_FUNCTION,
+                    SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS);
                 goto fail;
             case METH_FASTCALL | METH_KEYWORDS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "_PYCFUNCTION_FAST_WITH_KEYWORDS");
+                SPECIALIZATION_FAIL(CALL_FUNCTION,
+                    SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS);
                 goto fail;
             case METH_NOARGS:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-                    "PYCFUNCTION_NOARGS");
+                SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYCFUNCTION_NOARGS);
                 goto fail;
             /* This case should never happen with PyCFunctionObject -- only
                PyMethodObject. See zlib.compressobj()'s methods for an example.
             */
             case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
             default:
-                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
+                SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_BAD_CALL_FLAGS);
                 goto fail;
         }
     }
     /* These might be implemented in the future. Collecting stats for now. */
 #if SPECIALIZATION_STATS
     if (PyFunction_Check(callable)) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python function");
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYTHON_FUNCTION);
         goto fail;
     }
+    // new-style bound methods
     if (PyInstanceMethod_Check(callable)) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
-            "new style bound method");
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_METHOD);
         goto fail;
     }
     if (PyMethod_Check(callable)) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bound method");
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_METHOD);
         goto fail;
     }
+    // builtin method
     if (PyCMethod_Check(callable)) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "builtin method");
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_METHOD);
         goto fail;
     }
     if (PyType_Check(callable)) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
             PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE) ?
-            "immutable class" : "mutable class");
+            SPEC_FAIL_IMMUTABLE_CLASS : SPEC_FAIL_MUTABLE_CLASS);
         goto fail;
     }
-    /* So far this catches things like weakref.weakref */
-    SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "???");
+    /* So far this misses things like weakref.weakref */
 #endif
 fail:
     STAT_INC(CALL_FUNCTION, specialization_failure);

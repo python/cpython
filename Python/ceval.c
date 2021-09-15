@@ -4621,7 +4621,7 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        case TARGET(CALL_FUNCTION_ADAPTIVE): {
+        TARGET(CALL_FUNCTION_ADAPTIVE): {
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 next_instr--;
@@ -4640,7 +4640,7 @@ check_eval_breaker:
             }
         }
 
-        case TARGET(CALL_FUNCTION_BUILTIN_O): {
+        TARGET(CALL_FUNCTION_BUILTIN_O): {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             SpecializedCacheEntry *caches = GET_CACHE();
@@ -4668,7 +4668,7 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        case TARGET(CALL_FUNCTION_BUILTIN_FAST): {
+        TARGET(CALL_FUNCTION_BUILTIN_FAST): {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
