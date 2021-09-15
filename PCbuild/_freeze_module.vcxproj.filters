@@ -25,7 +25,7 @@
     <None Include="..\Lib\zipimport.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Tools\freeze\flag.py">
+    <None Include="..\Lib\__hello__.py">
       <Filter>Python Files</Filter>
     </None>
     <!-- END frozen modules -->

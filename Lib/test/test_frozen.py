@@ -21,8 +21,9 @@ class TestFrozen(unittest.TestCase):
         if name in sys.modules:
             del sys.modules[name]
         with import_helper.frozen_modules():
-            with captured_stdout() as out:
-                import __hello__
+            import __hello__
+        with captured_stdout() as out:
+            __hello__.main()
         self.assertEqual(out.getvalue(), 'Hello world!\n')
 
 
