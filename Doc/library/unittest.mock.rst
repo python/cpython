@@ -225,7 +225,8 @@ a :class:`MagicMock` for you. You can specify an alternative class of :class:`Mo
 the *new_callable* argument to :func:`patch`.
 
 
-.. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
+.. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None,
+   name=None, spec_set=None, unsafe=False, parent=None, **kwargs)
 
     Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
@@ -281,7 +282,10 @@ the *new_callable* argument to :func:`patch`.
 
     * *name*: If the mock has a name then it will be used in the repr of the
       mock. This can be useful for debugging. The name is propagated to child
-      mocks.
+      mocks. This argument should be a string.
+
+    * *parent*: Make current mock a child of *parent*, which should be a
+      :class:`Mock` or :class:`MagicMock` instance.
 
     Mocks can also be called with arbitrary keyword arguments. These will be
     used to set attributes on the mock after it is created. See the

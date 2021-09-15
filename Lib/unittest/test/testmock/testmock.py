@@ -83,6 +83,17 @@ class MockTest(unittest.TestCase):
         self.assertEqual(mock._mock_children, {},
                          "children not initialised incorrectly")
 
+        msg = 'should be a string'
+        with self.assertWarnsRegex(DeprecationWarning, msg) as w:
+            Mock(name=1)
+        with self.assertWarnsRegex(DeprecationWarning, msg) as w:
+            MagicMock(name=1)
+        msg = 'should be a Mock instance'
+        with self.assertWarnsRegex(DeprecationWarning, msg) as w:
+            Mock(parent='foo')
+        with self.assertWarnsRegex(DeprecationWarning, msg) as w:
+            MagicMock(parent='foo')
+
 
     def test_return_value_in_constructor(self):
         mock = Mock(return_value=None)

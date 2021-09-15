@@ -423,6 +423,24 @@ class NonCallableMock(Base):
             parent=None, _spec_state=None, _new_name='', _new_parent=None,
             _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
         ):
+        if parent is not None and not isinstance(parent, NonCallableMock):
+            import warnings
+            if isinstance(self, MagicMock):
+                stacklevel = 4
+            else:
+                stacklevel = 3
+            warnings.warn('parents argument should be a Mock instance',
+                          DeprecationWarning, stacklevel=stacklevel)
+
+        if name is not None and not isinstance(name, str):
+            import warnings
+            if isinstance(self, MagicMock):
+                stacklevel = 4
+            else:
+                stacklevel = 3
+            warnings.warn('name argument should be a string',
+                          DeprecationWarning, stacklevel=stacklevel)
+
         if _new_parent is None:
             _new_parent = parent
 
