@@ -523,7 +523,7 @@ def regen_pcbuild(modules):
             continue
         pyfile = os.path.relpath(src.pyfile, ROOT_DIR).replace('/', '\\')
         header = os.path.relpath(src.frozenfile, ROOT_DIR).replace('/', '\\')
-        intfile = header.split('\\')[-1].strip('.h') + '.g.h'
+        intfile = os.path.splitext(os.path.basename(header))[0] + '.g.h'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
