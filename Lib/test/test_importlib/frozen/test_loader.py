@@ -21,11 +21,12 @@ def deprecated():
 def fresh(name, *, oldapi=False):
     with util.uncache(name):
         with import_helper.frozen_modules():
-            if oldapi:
-                with deprecated():
-                    yield
-            else:
-                yield
+            with captured_stdout() as stdout:
+                if oldapi:
+                    with deprecated():
+                        yield stdout
+                else:
+                    yield stdout
 
 
 class ExecModuleTests(abc.LoaderTests):
@@ -43,10 +44,8 @@ class ExecModuleTests(abc.LoaderTests):
         module.__spec__ = spec
         assert not hasattr(module, 'initialized')
 
-        with fresh(name):
+        with fresh(name) as stdout:
             self.machinery.FrozenImporter.exec_module(module)
-        with captured_stdout() as stdout:
-            module.main()
 
         self.assertTrue(module.initialized)
         self.assertTrue(hasattr(module, '__spec__'))
@@ -120,10 +119,8 @@ class ExecModuleTests(abc.LoaderTests):
 class LoaderTests(abc.LoaderTests):
 
     def load_module(self, name):
-        with fresh(name, oldapi=True):
+        with fresh(name, oldapi=True) as stdout:
             module = self.machinery.FrozenImporter.load_module(name)
-        with captured_stdout() as stdout:
-            module.main()
         return module, stdout
 
     def test_module(self):
@@ -168,18 +165,15 @@ class LoaderTests(abc.LoaderTests):
         self.assertFalse(hasattr(module, '__file__'))
 
     def test_module_reuse(self):
-        with fresh('__hello__', oldapi=True):
+        with fresh('__hello__', oldapi=True) as stdout:
             module1 = self.machinery.FrozenImporter.load_module('__hello__')
             module2 = self.machinery.FrozenImporter.load_module('__hello__')
-        with captured_stdout() as stdout:
-            module1.main()
-            module2.main()
         self.assertIs(module1, module2)
         self.assertEqual(stdout.getvalue(),
                          'Hello world!\nHello world!\n')
 
     def test_module_repr(self):
-        with fresh('__hello__', oldapi=True):
+        with fresh('__hello__', oldapi=True) as stdout:
             module = self.machinery.FrozenImporter.load_module('__hello__')
             repr_str = self.machinery.FrozenImporter.module_repr(module)
         self.assertEqual(repr_str,
@@ -209,12 +203,11 @@ class InspectLoaderTests:
     def test_get_code(self):
         # Make sure that the code object is good.
         name = '__hello__'
-        with import_helper.frozen_modules():
-            code = self.machinery.FrozenImporter.get_code(name)
-            mod = types.ModuleType(name)
-            exec(code, mod.__dict__)
         with captured_stdout() as stdout:
-            mod.main()
+            with import_helper.frozen_modules():
+                code = self.machinery.FrozenImporter.get_code(name)
+                mod = types.ModuleType(name)
+                exec(code, mod.__dict__)
         self.assertTrue(hasattr(mod, 'initialized'))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
 
