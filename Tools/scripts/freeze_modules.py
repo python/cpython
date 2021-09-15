@@ -82,9 +82,9 @@ FROZEN = [
         'stat',
         ]),
     ('Test module', [
-        'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
-        'hello : <__phello__>',
-        'hello : __phello__.spam',
+        '__hello__',
+        '__hello__ : <__phello__>',
+        '__hello__ : __phello__.spam',
         ]),
 ]
 ESSENTIAL = {
@@ -578,7 +578,7 @@ def regen_pcbuild(modules):
     for src in _iter_sources(modules):
         # For now we only require the essential frozen modules on Windows.
         # See bpo-45186 and bpo-45188.
-        if src.id not in ESSENTIAL and src.id != 'hello':
+        if src.id not in ESSENTIAL and src.id != '__hello__':
             continue
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)

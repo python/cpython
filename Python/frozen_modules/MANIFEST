@@ -15,6 +15,6 @@ genericpath                  no  <genericpath>                   genericpath.h  
 ntpath                       no  <ntpath>                        ntpath.h                        15b9b80fa9c2
 posixpath                    no  <posixpath>                     posixpath.h                     3fc077252afd
 stat                         no  <stat>                          stat.h                          27c32a0815c2
-__hello__                    no  Tools/freeze/flag.py            hello.h                         af6fb665713f
-__phello__                  YES  Tools/freeze/flag.py            hello.h                         af6fb665713f
-__phello__.spam              no  Tools/freeze/flag.py            hello.h                         af6fb665713f
+__hello__                    no  <__hello__>                     __hello__.h                     81ba13956479
+__phello__                  YES  <__hello__>                     __hello__.h                     81ba13956479
+__phello__.spam              no  <__hello__>                     __hello__.h                     81ba13956479

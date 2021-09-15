@@ -49,7 +49,7 @@
 #include "frozen_modules/ntpath.h"
 #include "frozen_modules/posixpath.h"
 #include "frozen_modules/stat.h"
-#include "frozen_modules/hello.h"
+#include "frozen_modules/__hello__.h"
 /* End includes */
 
 /* Note that a negative size indicates a package. */
@@ -74,9 +74,9 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
 
     /* Test module */
-    {"__hello__", _Py_M__hello, (int)sizeof(_Py_M__hello)},
-    {"__phello__", _Py_M__hello, -(int)sizeof(_Py_M__hello)},
-    {"__phello__.spam", _Py_M__hello, (int)sizeof(_Py_M__hello)},
+    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__phello__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
+    {"__phello__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
     {0, 0, 0} /* sentinel */
 };
 
