@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 
@@ -426,6 +427,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
+        'use_frozen_modules': False,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({

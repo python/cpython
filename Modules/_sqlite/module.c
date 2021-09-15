@@ -282,12 +282,79 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
+/* SQLite API error codes */
+static const struct {
+    const char *name;
+    long value;
+} error_codes[] = {
+#define DECLARE_ERROR_CODE(code) {#code, code}
+    // Primary result code list
+    DECLARE_ERROR_CODE(SQLITE_ABORT),
+    DECLARE_ERROR_CODE(SQLITE_AUTH),
+    DECLARE_ERROR_CODE(SQLITE_BUSY),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT),
+    DECLARE_ERROR_CODE(SQLITE_DONE),
+    DECLARE_ERROR_CODE(SQLITE_EMPTY),
+    DECLARE_ERROR_CODE(SQLITE_ERROR),
+    DECLARE_ERROR_CODE(SQLITE_FORMAT),
+    DECLARE_ERROR_CODE(SQLITE_FULL),
+    DECLARE_ERROR_CODE(SQLITE_INTERNAL),
+    DECLARE_ERROR_CODE(SQLITE_INTERRUPT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED),
+    DECLARE_ERROR_CODE(SQLITE_MISMATCH),
+    DECLARE_ERROR_CODE(SQLITE_MISUSE),
+    DECLARE_ERROR_CODE(SQLITE_NOLFS),
+    DECLARE_ERROR_CODE(SQLITE_NOMEM),
+    DECLARE_ERROR_CODE(SQLITE_NOTADB),
+    DECLARE_ERROR_CODE(SQLITE_NOTFOUND),
+    DECLARE_ERROR_CODE(SQLITE_OK),
+    DECLARE_ERROR_CODE(SQLITE_PERM),
+    DECLARE_ERROR_CODE(SQLITE_PROTOCOL),
+    DECLARE_ERROR_CODE(SQLITE_READONLY),
+    DECLARE_ERROR_CODE(SQLITE_ROW),
+    DECLARE_ERROR_CODE(SQLITE_SCHEMA),
+    DECLARE_ERROR_CODE(SQLITE_TOOBIG),
+#if SQLITE_VERSION_NUMBER >= 3007017
+    DECLARE_ERROR_CODE(SQLITE_NOTICE),
+    DECLARE_ERROR_CODE(SQLITE_WARNING),
+#endif
+#undef DECLARE_ERROR_CODE
+    {NULL, 0},
+};
+
+static int
+add_error_constants(PyObject *module)
+{
+    for (int i = 0; error_codes[i].name != NULL; i++) {
+        const char *name = error_codes[i].name;
+        const long value = error_codes[i].value;
+        if (PyModule_AddIntConstant(module, name, value) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+const char *
+pysqlite_error_name(int rc)
+{
+    for (int i = 0; error_codes[i].name != NULL; i++) {
+        if (error_codes[i].value == rc) {
+            return error_codes[i].name;
+        }
+    }
+    // No error code matched.
+    return NULL;
+}
+
 static int add_integer_constants(PyObject *module) {
     int ret = 0;
 
     ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
     ret += PyModule_AddIntMacro(module, PARSE_COLNAMES);
-    ret += PyModule_AddIntMacro(module, SQLITE_OK);
     ret += PyModule_AddIntMacro(module, SQLITE_DENY);
     ret += PyModule_AddIntMacro(module, SQLITE_IGNORE);
     ret += PyModule_AddIntMacro(module, SQLITE_CREATE_INDEX);
@@ -325,7 +392,6 @@ static int add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3008003
     ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
 #endif
-    ret += PyModule_AddIntMacro(module, SQLITE_DONE);
     return ret;
 }
 
@@ -405,6 +471,11 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, state, IntegrityError, state->DatabaseError);
     ADD_EXCEPTION(module, state, DataError, state->DatabaseError);
     ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
+
+    /* Set error constants */
+    if (add_error_constants(module) < 0) {
+        goto error;
+    }
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {
