@@ -14,6 +14,18 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
+    <FreezeProjects>
+      <Platform>$(Platform)</Platform>
+      <Platform Condition="$(Platform) == 'ARM'">Win32</Platform>
+      <Platform Condition="$(Platform) == 'ARM64'">x64</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>false</BuildInParallel>
+    </FreezeProjects>
     <Projects>
       <Platform>$(Platform)</Platform>
       <Configuration>$(Configuration)</Configuration>
@@ -73,7 +85,7 @@
     </Projects>
 
     <!-- _freeze_module -->
-    <Projects2 Condition="$(Platform) != 'ARM' and $(Platform) != 'ARM64'" Include="_freeze_module.vcxproj" />
+    <FreezeProjects Include="_freeze_module.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
     <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
@@ -82,6 +94,11 @@
   </ItemGroup>
 
   <Target Name="Build">
+    <MSBuild Projects="@(FreezeProjects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
     <MSBuild Projects="@(Projects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
