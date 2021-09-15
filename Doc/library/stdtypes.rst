@@ -581,7 +581,7 @@ class`. In addition, it provides a few more methods:
 
     Equivalent to::
 
-        def from_bytes(bytes, byteorder=sys.byteorder, signed=False):
+        def from_bytes(bytes, byteorder='big', signed=False):
             if byteorder == 'little':
                 little_ordered = list(bytes)
             elif byteorder == 'big':
