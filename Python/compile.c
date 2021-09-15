@@ -969,7 +969,7 @@ compiler_next_instr(basicblock *b)
     (c)->u->u_col_offset = (x)->col_offset;              \
     (c)->u->u_end_lineno = (x)->end_lineno;              \
     (c)->u->u_end_col_offset = (x)->end_col_offset;      \
-    (c)->u>u_lineno_set = 0;
+    (c)->u->u_lineno_set = 0;
 
 // Artificial instructions
 #define UNSET_LOC(c)                            \
@@ -1537,6 +1537,9 @@ compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg,
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    if (c->u->u_lineno_set)
+        return 1;
+    c->u->u_lineno_set = 1;
     i->i_lineno = lineno;
     i->i_end_lineno = end_lineno;
     i->i_col_offset = col_offset;
