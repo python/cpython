@@ -1086,41 +1086,41 @@ class TestChdir(unittest.TestCase):
     def test_simple(self):
         old_cwd = os.getcwd()
         target = os.path.join(os.path.dirname(__file__), 'data')
-        assert old_cwd != target
+        self.assertNotEqual(old_cwd, target)
 
         with chdir(target):
-            assert os.getcwd() == target
-        assert os.getcwd() == old_cwd
+            self.assertEqual(os.getcwd(), target)
+        self.assertEqual(os.getcwd(), old_cwd)
 
     def test_reentrant(self):
         old_cwd = os.getcwd()
         target1 = os.path.join(os.path.dirname(__file__), 'data')
         target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
-        assert old_cwd not in (target1, target2)
+        self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 
         with chdir1:
-            assert os.getcwd() == target1
+            self.assertEqual(os.getcwd(), target1)
             with chdir2:
-                assert os.getcwd() == target2
+                self.assertEqual(os.getcwd(), target2)
                 with chdir1:
-                    assert os.getcwd() == target1
-                assert os.getcwd() == target2
-            assert os.getcwd() == target1
-        assert os.getcwd() == old_cwd
+                    self.assertEqual(os.getcwd(), target1)
+                self.assertEqual(os.getcwd(), target2)
+            self.assertEqual(os.getcwd(), target1)
+        self.assertEqual(os.getcwd(), old_cwd)
 
     def test_exception(self):
         old_cwd = os.getcwd()
         target = os.path.join(os.path.dirname(__file__), 'data')
-        assert old_cwd != target
+        self.assertNotEqual(old_cwd, target)
 
         try:
             with chdir(target):
-                assert os.getcwd() == target
+                self.assertEqual(os.getcwd(), target)
                 raise RuntimeError("boom")
         except RuntimeError as re:
-            assert str(re) == "boom"
-        assert os.getcwd() == old_cwd
+            self.assertEqual(str(re), "boom")
+        self.assertEqual(os.getcwd(), old_cwd)
 
 
 if __name__ == "__main__":
