@@ -460,13 +460,21 @@ Connection Objects
       Registers *trace_callback* to be called for each SQL statement that is
       actually executed by the SQLite backend.
 
-      The only argument passed to the callback is the statement (as string) that
-      is being executed. The return value of the callback is ignored. Note that
-      the backend does not only run statements passed to the :meth:`Cursor.execute`
-      methods.  Other sources include the transaction management of the Python
-      module and the execution of triggers defined in the current database.
+      The only argument passed to the callback is the statement (as
+      :class:`str`) that is being executed. The return value of the callback is
+      ignored. Note that the backend does not only run statements passed to the
+      :meth:`Cursor.execute` methods.  Other sources include the
+      :ref:`transaction management <sqlite3-controlling-transactions>` of the
+      sqlite3 module and the execution of triggers defined in the current
+      database.
 
       Passing :const:`None` as *trace_callback* will disable the trace callback.
+
+      .. note::
+         Exceptions raised in the trace callback are not propagated. As a
+         development and debugging aid, use
+         :meth:`~sqlite3.enable_callback_tracebacks` to enable printing
+         tracebacks from exceptions raised in the trace callback.
 
       .. versionadded:: 3.3
 
