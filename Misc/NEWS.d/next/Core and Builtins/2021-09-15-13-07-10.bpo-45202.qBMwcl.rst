@@ -1,0 +1,3 @@
+Updated `compile.h` to include checking for new flag 'CO_FUTURE_REVOLT_AND_REMOVE_BARRY_FROM_BDFL' mapped to `0x2000000`.
+Updated `future.h` to include new future "remove_barry_from_BDFL"
+Updated `future.h` to allow barry-related future imports at a place other than the beginning of a file.
