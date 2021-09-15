@@ -537,7 +537,7 @@ class`. In addition, it provides a few more methods:
 
     Equivalent to::
 
-        def to_bytes(n, length=1, byteorder=sys.byteorder, signed=False):
+        def to_bytes(n, length=1, byteorder='big', signed=False):
             if byteorder == 'little':
                 order = range(length)
             elif byteorder == 'big':
