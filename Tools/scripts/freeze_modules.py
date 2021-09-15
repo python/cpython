@@ -576,10 +576,6 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     for src in _iter_sources(modules):
-        # For now we only require the essential frozen modules on Windows.
-        # See bpo-45186 and bpo-45188.
-        if src.id not in ESSENTIAL and src.id != '__hello__':
-            continue
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
