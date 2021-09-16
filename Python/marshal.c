@@ -1678,8 +1678,8 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     return result;
 }
 
-PyObject *
-PyMarshal_WriteObjectToString(PyObject *x, int version)
+static PyObject *
+write_object_to_string(PyObject *x, int version, bool stable)
 {
     WFILE wf;
 
@@ -1698,13 +1698,15 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
         Py_DECREF(wf.str);
         return NULL;
     }
-    /* Make a first pass tracking which objects have multiple refs. */
-    wf.refs_numobjects = -1;
-    w_object(x, &wf);
-    /* Make a second pass de-duplicating the multiple refs. */
-    wf.refs_numobjects = 0;
-    wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
-    wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
+    if (stable) {
+        /* Make a first pass tracking which objects have multiple refs. */
+        wf.refs_numobjects = -1;
+        w_object(x, &wf);
+        /* Make a second pass de-duplicating the multiple refs. */
+        wf.refs_numobjects = 0;
+        wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
+        wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
+    }
     w_object(x, &wf);
 
     w_clear_refs(&wf);
@@ -1724,6 +1726,12 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
         return NULL;
     }
     return wf.str;
+}
+
+PyObject *
+PyMarshal_WriteObjectToString(PyObject *x, int version)
+{
+    return write_object_to_string(x, version, 0);
 }
 
 /* And an interface for Python programs... */
@@ -1830,6 +1838,8 @@ marshal.dumps
     version: int(c_default="Py_MARSHAL_VERSION") = version
         Indicates the data format that dumps should use.
     /
+    *
+    stable: bool = True
 
 Return the bytes object that would be written to a file by dump(value, file).
 
@@ -1838,10 +1848,11 @@ unsupported type.
 [clinic start generated code]*/
 
 static PyObject *
-marshal_dumps_impl(PyObject *module, PyObject *value, int version)
-/*[clinic end generated code: output=9c200f98d7256cad input=a2139ea8608e9b27]*/
+marshal_dumps_impl(PyObject *module, PyObject *value, int version,
+                   int stable)
+/*[clinic end generated code: output=87276039e6c75faf input=b460e8ba0aa325ac]*/
 {
-    return PyMarshal_WriteObjectToString(value, version);
+    return write_object_to_string(value, version, stable);
 }
 
 /*[clinic input]

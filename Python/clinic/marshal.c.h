@@ -73,7 +73,7 @@ PyDoc_STRVAR(marshal_load__doc__,
     {"load", (PyCFunction)marshal_load, METH_O, marshal_load__doc__},
 
 PyDoc_STRVAR(marshal_dumps__doc__,
-"dumps($module, value, version=version, /)\n"
+"dumps($module, value, version=version, /, *, stable=True)\n"
 "--\n"
 "\n"
 "Return the bytes object that would be written to a file by dump(value, file).\n"
@@ -87,31 +87,47 @@ PyDoc_STRVAR(marshal_dumps__doc__,
 "unsupported type.");
 
 #define MARSHAL_DUMPS_METHODDEF    \
-    {"dumps", (PyCFunction)(void(*)(void))marshal_dumps, METH_FASTCALL, marshal_dumps__doc__},
+    {"dumps", (PyCFunction)(void(*)(void))marshal_dumps, METH_FASTCALL|METH_KEYWORDS, marshal_dumps__doc__},
 
 static PyObject *
-marshal_dumps_impl(PyObject *module, PyObject *value, int version);
+marshal_dumps_impl(PyObject *module, PyObject *value, int version,
+                   int stable);
 
 static PyObject *
-marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "stable", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "dumps", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *value;
     int version = Py_MARSHAL_VERSION;
+    int stable = 1;
 
-    if (!_PyArg_CheckPositional("dumps", nargs, 1, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     value = args[0];
     if (nargs < 2) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     version = _PyLong_AsInt(args[1]);
     if (version == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional:
-    return_value = marshal_dumps_impl(module, value, version);
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    stable = PyObject_IsTrue(args[2]);
+    if (stable < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = marshal_dumps_impl(module, value, version, stable);
 
 exit:
     return return_value;
@@ -155,4 +171,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=68b78f38bfe0c06d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e77fd1eb7a09094 input=a9049054013a1b77]*/
