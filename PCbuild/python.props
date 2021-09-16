@@ -107,6 +107,9 @@
     <!-- Sometimes the version in the registry has to .0 suffix, and sometimes it doesn't. Check and add it -->
     <_RegistryVersion Condition="$(_RegistryVersion) != '' and !$(_RegistryVersion.EndsWith('.0'))">$(_RegistryVersion).0</_RegistryVersion>
 
+    <!-- Avoid upgrading to Windows 11 SDK for now, but assume the latest Win10 SDK is installed -->
+    <_RegistryVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) >= $([System.Version]::Parse(`10.0.22000.0`))">10.0.19041.0</_RegistryVersion>
+
     <!-- The minimum allowed SDK version to use for building -->
     <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
     <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) != '' and $([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
