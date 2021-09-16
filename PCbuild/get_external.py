@@ -58,7 +58,6 @@ def main():
     extracted = extract_zip(args.externals_dir, zip_path)
     for retries in range(5, 0, -1):
         try:
-            raise PermissionError("TEST")
             extracted.replace(final_name)
             break
         except PermissionError as ex:
