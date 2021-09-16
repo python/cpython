@@ -51,6 +51,8 @@ def _convert_select_pattern(pattern):
         pattern = '*%s*' % pattern
     return pattern
 
+_options = ('verbosity', 'tb_locals', 'failfast', 'catchbreak', 'buffer', 'tests',
+            'testNamePatterns', 'tests', 'start', 'pattern', 'top', 'exit')
 
 class TestProgram(object):
     """A command-line program that runs a set of tests; this is primarily
@@ -100,6 +102,37 @@ class TestProgram(object):
         self.parseArgs(argv)
         self.runTests()
 
+    def __setattr__(self, name, value):
+        if name in _options:
+            setattr(self.command_line_arguments, name, value)
+        else:
+            super().__setattr__(name, value)
+
+    def __getattribute__(self, name):
+        if name in _options:
+            try:
+                return getattr(self.command_line_arguments, name)
+            except AttributeError:
+                pass
+
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            if name == 'command_line_arguments':
+                namespace = argparse.Namespace()
+                # preload command_line_arguments with class arguments
+                # this is useful for subclasses of TestProgram that override __init__
+                for name in _options:
+                    try:
+                        value = super().__getattribute__(name)
+                        setattr(namespace, name, value)
+                    except AttributeError:
+                        pass
+                self.command_line_arguments = namespace
+                return namespace
+            else:
+                raise
+
     def usageExit(self, msg=None):
         if msg:
             print(msg)
@@ -123,14 +156,14 @@ class TestProgram(object):
             if len(argv) > 1 and argv[1].lower() == 'discover':
                 self._do_discovery(argv[2:])
                 return
-            self._main_parser.parse_args(argv[1:], self)
+            self._main_parser.parse_args(argv[1:], self.command_line_arguments)
             if not self.tests:
                 # this allows "python -m unittest -v" to still work for
                 # test discovery.
                 self._do_discovery([])
                 return
         else:
-            self._main_parser.parse_args(argv[1:], self)
+            self._main_parser.parse_args(argv[1:], self.command_line_arguments)
 
         if self.tests:
             self.testNames = _convert_names(self.tests)
@@ -151,7 +184,12 @@ class TestProgram(object):
             self.testLoader.testNamePatterns = self.testNamePatterns
         if from_discovery:
             loader = self.testLoader if Loader is None else Loader()
-            self.test = loader.discover(self.start, self.pattern, self.top)
+            self.test = loader.discover(
+                self.start,
+                self.pattern,
+                self.top,
+                self.command_line_arguments
+            )
         elif self.testNames is None:
             self.test = self.testLoader.loadTestsFromModule(self.module)
         else:
@@ -196,7 +234,12 @@ class TestProgram(object):
                                 help='Only run tests which match the given substring')
             self.testNamePatterns = []
 
+        self.addCustomArguments(parser)
+
         return parser
+
+    def addCustomArguments(self, parser):
+        pass
 
     def _getMainArgParser(self, parent):
         parser = argparse.ArgumentParser(parents=[parent])
