@@ -1,2 +1,2 @@
-Fixes ``UserWarning: resource_tracker`` warning in
+Fix ``UserWarning: resource_tracker`` warning in
 ``test_shared_memory_cleaned_after_process_termination``
