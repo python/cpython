@@ -489,7 +489,7 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
-    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
     if (keys_version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
@@ -617,7 +617,7 @@ specialize_dict_access(
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
                 return 0;
             }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
             if (keys_version == 0) {
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_VERSIONS);
                 return 0;
@@ -965,7 +965,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
                 goto fail;
             }
         }
-        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
+        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict->ma_keys);
         if (keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
@@ -1030,7 +1030,7 @@ _Py_Specialize_LoadGlobal(
         if (index != (uint16_t)index) {
             goto fail;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)globals)->ma_keys);
         if (keys_version == 0) {
             goto fail;
         }
@@ -1050,11 +1050,11 @@ _Py_Specialize_LoadGlobal(
     if (index != (uint16_t)index) {
         goto fail;
     }
-    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)globals)->ma_keys);
     if (globals_version == 0) {
         goto fail;
     }
-    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)builtins)->ma_keys);
     if (builtins_version == 0) {
         goto fail;
     }
