@@ -14,6 +14,7 @@
 #include "marshal.h"
 #include "pycore_hashtable.h"
 #include "pycore_code.h"        // _PyCode_New()
+#include <stdbool.h>
 
 /*[clinic input]
 module marshal
@@ -87,6 +88,7 @@ typedef struct {
     const char *end;
     char *buf;
     _Py_hashtable_t *ref_indices;
+    ssize_t refs_numobjects;
     int version;
 } WFILE;
 
@@ -305,32 +307,63 @@ w_ref(PyObject *v, char *flag, WFILE *p)
 
     entry = _Py_hashtable_get_entry(p->ref_indices, v);
     if (entry != NULL) {
-        /* write the reference index to the stream */
         w = (int)(uintptr_t)entry->value;
-        /* we don't store "long" indices in the dict */
-        assert(0 <= w && w <= 0x7fffffff);
-        w_byte(TYPE_REF, p);
-        w_long(w, p);
-        return 1;
-    } else {
-        size_t s = p->ref_indices->nentries;
-        /* we don't support long indices */
-        if (s >= 0x7fffffff) {
-            PyErr_SetString(PyExc_ValueError, "too many objects");
-            goto err;
+        if (p->refs_numobjects < 0) {
+            /* It's an extra ref on the first pass. */
+            w -= 1;
+            entry->value = (void *)(uintptr_t)w;
+            w_byte(TYPE_REF, p);
+            w_long(-1, p);
+            return 1;
         }
-        w = (int)s;
-        Py_INCREF(v);
-        if (_Py_hashtable_set(p->ref_indices, v, (void *)(uintptr_t)w) < 0) {
-            Py_DECREF(v);
-            goto err;
+        else if (w >= 0) {
+            /* It's an extra ref on the second (or only) pass. */
+            /* write the reference index to the stream */
+            /* we don't store "long" indices in the dict */
+            assert(w <= 0x7fffffff);
+            w_byte(TYPE_REF, p);
+            w_long(w, p);
+            return 1;
         }
-        *flag |= FLAG_REF;
-        return 0;
+        else if (w == -1) {
+            /* It's the first ref on the second pass, with no extra refs.
+               So we treat it as though it has a refcount of 1. */
+            return 0;
+        }
+        else {
+            /* It's the first ref on the second pass, with extra refs, */
+            assert(w < 0);
+            entry->value = (void *)(uintptr_t)p->refs_numobjects;
+            p->refs_numobjects += 1;
+            *flag |= FLAG_REF;
+            return 0;
+        }
     }
-err:
-    p->error = WFERR_UNMARSHALLABLE;
-    return 1;
+
+    /* It's the object's first ref. */
+    if (p->refs_numobjects < 0) {
+        /* It's the first pass. */
+        w = -1;
+    }
+    else {
+        /* It's the second (or only) pass. */
+        /* we don't support long indices */
+        if (p->refs_numobjects >= 0x7fffffff) {
+            PyErr_SetString(PyExc_ValueError, "too many objects");
+            p->error = WFERR_UNMARSHALLABLE;
+            return 1;
+        }
+        w = (int)p->refs_numobjects;
+        p->refs_numobjects += 1;
+    }
+    Py_INCREF(v);
+    if (_Py_hashtable_set(p->ref_indices, v, (void *)(uintptr_t)w) < 0) {
+        Py_DECREF(v);
+        p->error = WFERR_UNMARSHALLABLE;
+        return 1;
+    }
+    *flag |= FLAG_REF;
+    return 0;
 }
 
 static void
@@ -1665,7 +1698,15 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
         Py_DECREF(wf.str);
         return NULL;
     }
+    /* Make a first pass tracking which objects have multiple refs. */
+    wf.refs_numobjects = -1;
     w_object(x, &wf);
+    /* Make a second pass de-duplicating the multiple refs. */
+    wf.refs_numobjects = 0;
+    wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
+    wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
+    w_object(x, &wf);
+
     w_clear_refs(&wf);
     if (wf.str != NULL) {
         const char *base = PyBytes_AS_STRING(wf.str);
