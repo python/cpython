@@ -1,0 +1,2 @@
+Make marshal output the same whether or not it's a debug build.  The fix has
+a side-effect of making un-marshaling a little faster.
