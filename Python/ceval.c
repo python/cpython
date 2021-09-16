@@ -4519,7 +4519,6 @@ check_eval_breaker:
             DEOPT_IF(!PyType_Check(cls), LOAD_METHOD);
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
                 LOAD_METHOD);
-            assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
 
             STAT_INC(LOAD_METHOD, hit);
