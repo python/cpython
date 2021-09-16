@@ -3,6 +3,8 @@
 import argparse
 import os
 import pathlib
+import sys
+import time
 import zipfile
 from urllib.request import urlretrieve
 
@@ -53,7 +55,20 @@ def main():
         verbose=args.verbose,
     )
     final_name = args.externals_dir / args.tag
-    extract_zip(args.externals_dir, zip_path).replace(final_name)
+    extracted = extract_zip(args.externals_dir, zip_path)
+    for _ in range(5):
+        try:
+            extracted.replace(final_name)
+            break
+        except PermissionError as ex:
+            print(f"Encountered permission error '{ex}'. Retrying in five seconds...", file=sys.stderr)
+            time.sleep(5)
+    else:
+        print(
+            f"ERROR: Failed to extract {final_name}.",
+            "You may need to restart your build",
+            file=sys.stderr,
+        )
 
 
 if __name__ == '__main__':
