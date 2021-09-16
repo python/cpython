@@ -87,7 +87,7 @@ typedef struct {
     char *ptr;
     const char *end;
     char *buf;
-    _Py_hashtable_t *ref_indices;
+    _Py_hashtable_t *hashtable;
     ssize_t refs_numobjects;
     int version;
 } WFILE;
@@ -298,14 +298,14 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     _Py_hashtable_entry_t *entry;
     int w;
 
-    if (p->version < 3 || p->ref_indices == NULL)
+    if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
     /* if it has only one reference, it definitely isn't shared */
     if (Py_REFCNT(v) == 1)
         return 0;
 
-    entry = _Py_hashtable_get_entry(p->ref_indices, v);
+    entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
         w = (int)(uintptr_t)entry->value;
         if (p->refs_numobjects < 0) {
@@ -357,7 +357,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         p->refs_numobjects += 1;
     }
     Py_INCREF(v);
-    if (_Py_hashtable_set(p->ref_indices, v, (void *)(uintptr_t)w) < 0) {
+    if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
         Py_DECREF(v);
         p->error = WFERR_UNMARSHALLABLE;
         return 1;
@@ -627,10 +627,10 @@ static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->ref_indices = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
-                                                 _Py_hashtable_compare_direct,
-                                                 w_decref_entry, NULL, NULL);
-        if (wf->ref_indices == NULL) {
+        wf->hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                               _Py_hashtable_compare_direct,
+                                               w_decref_entry, NULL, NULL);
+        if (wf->hashtable == NULL) {
             PyErr_NoMemory();
             return -1;
         }
@@ -641,8 +641,8 @@ w_init_refs(WFILE *wf, int version)
 static void
 w_clear_refs(WFILE *wf)
 {
-    if (wf->ref_indices != NULL) {
-        _Py_hashtable_destroy(wf->ref_indices);
+    if (wf->hashtable != NULL) {
+        _Py_hashtable_destroy(wf->hashtable);
     }
 }
 
