@@ -425,19 +425,31 @@ class NonCallableMock(Base):
         ):
         if parent is not None and not isinstance(parent, NonCallableMock):
             import warnings
-            if isinstance(self, MagicMock):
-                stacklevel = 4
-            else:
+            if isinstance(self, NonCallableMagicMock):
                 stacklevel = 3
-            warnings.warn('parents argument should be a Mock instance',
+            elif isinstance(self, MagicMock):
+                stacklevel = 4
+            elif isinstance(self, Mock):
+                stacklevel = 3
+            elif isinstance(self, NonCallableMock):
+                stacklevel = 2
+            else:
+                stacklevel = 1
+            warnings.warn('parent argument should be a Mock instance',
                           DeprecationWarning, stacklevel=stacklevel)
 
         if name is not None and not isinstance(name, str):
             import warnings
-            if isinstance(self, MagicMock):
-                stacklevel = 4
-            else:
+            if isinstance(self, NonCallableMagicMock):
                 stacklevel = 3
+            elif isinstance(self, MagicMock):
+                stacklevel = 4
+            elif isinstance(self, Mock):
+                stacklevel = 3
+            elif isinstance(self, NonCallableMock):
+                stacklevel = 2
+            else:
+                stacklevel = 1
             warnings.warn('name argument should be a string',
                           DeprecationWarning, stacklevel=stacklevel)
 
