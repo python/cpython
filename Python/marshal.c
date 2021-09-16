@@ -88,7 +88,7 @@ typedef struct {
     const char *end;
     char *buf;
     _Py_hashtable_t *hashtable;
-    ssize_t refs_numobjects;
+    Py_ssize_t refs_numobjects;
     int version;
 } WFILE;
 
