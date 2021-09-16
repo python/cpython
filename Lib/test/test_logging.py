@@ -4506,7 +4506,7 @@ class LogRecordTest(BaseTest):
         import multiprocessing
         import multiprocessing.connection
         from multiprocessing.connection import wait
-        connection = multiprocessing.connection   # It was AttributeError here
+        multiprocessing.connection   # It was AttributeError here
 
     def test_optional(self):
         r = logging.makeLogRecord({})
