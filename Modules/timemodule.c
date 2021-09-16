@@ -2124,6 +2124,7 @@ pysleep(_PyTime_t secs)
     FILETIME FileTime;
     LARGE_INTEGER deadline;
     HANDLE hTimer = NULL;
+    int timer_ready = 0;
 
     GetSystemTimePreciseAsFileTime(&FileTime);
     CopyMemory(&deadline, &FileTime, sizeof(FILETIME));
@@ -2137,43 +2138,50 @@ pysleep(_PyTime_t secs)
     }
 
     if (!SetWaitableTimer(hTimer, &deadline, 0, NULL, NULL, FALSE)) {
-        goto out;
+        ret = -1;
+        timer_ready = 0;
+    }
+    else {
+        timer_ready = 1;
     }
 
-    millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-    if (millisecs > LLONG_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "sleep length is too large");
-        goto out;
-    }
-    
-    /* Allow sleep(0) to maintain win32 semantics, and as decreed
-     * by Guido, only the main thread can be interrupted.
-     */
-    ul_millis = (unsigned long)millisecs;
-    if (ul_millis == 0 || !_PyOS_IsMainThread()) {
+    while (timer_ready) {
+        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
+        if (millisecs > LLONG_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                "sleep length is too large");
+            ret = -1;
+            break;
+        }
+
+        /* Allow sleep(0) to maintain win32 semantics, and as decreed
+         * by Guido, only the main thread can be interrupted.
+         */
+        ul_millis = (unsigned long)millisecs;
+        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
+            Py_BEGIN_ALLOW_THREADS
+            Sleep(ul_millis);
+            Py_END_ALLOW_THREADS
+            ret = 0;
+            break;
+        }
+
         Py_BEGIN_ALLOW_THREADS
-        Sleep(ul_millis);
+        rc = WaitForSingleObjectEx(hTimer, ul_millis, FALSE);
         Py_END_ALLOW_THREADS
-        ret = 0;
-        goto out;
-    }
-    
-    Py_BEGIN_ALLOW_THREADS
-    rc = WaitForSingleObjectEx(hTimer, ul_millis, FALSE);
-    Py_END_ALLOW_THREADS
-    
-    if ((rc != WAIT_OBJECT_0) && (rc != WAIT_TIMEOUT)) {
-        goto out;
+
+        if ((rc == WAIT_OBJECT_0) || (rc == WAIT_TIMEOUT)) {
+            ret = 0;
+            break;
+        }
+
+        /* sleep was interrupted by SIGINT */
+        if (PyErr_CheckSignals()) {
+            ret = -1;
+            break;
+        }
     }
 
-    /* sleep was interrupted by SIGINT */
-    if (PyErr_CheckSignals()) {
-        goto out;
-    }
-
-    ret = 0;
-out:
     CloseHandle(hTimer);
 #endif
 
