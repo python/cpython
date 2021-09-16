@@ -560,10 +560,9 @@ extern "C" {
 // Ask the compiler to always inline a static inline function. The compiler can
 // ignore it and decides to not inline the function.
 //
-// This attribute can be used to avoid increasing the stack memory usage when
+// It can be used to inline performance critical static inline functions when
 // building Python in debug mode with function inlining disabled. For example,
-// MSC disables function inlining when building in debug mode. It should be
-// used on the most commonly used static inline functions.
+// MSC disables function inlining when building in debug mode.
 //
 // Marking blindly a static inline function with Py_ALWAYS_INLINE can result in
 // worse performances (due to increased code size for example). The compiler is
