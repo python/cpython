@@ -1045,9 +1045,9 @@ is_unified_ideograph(Py_UCS4 code)
 {
     return
         (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FFC)   || /* CJK Ideograph */
-        (0x20000 <= code && code <= 0x2A6DD) || /* CJK Ideograph Extension B */
-        (0x2A700 <= code && code <= 0x2B734) || /* CJK Ideograph Extension C */
+        (0x4E00 <= code && code <= 0x9FFF)   || /* CJK Ideograph */
+        (0x20000 <= code && code <= 0x2A6DF) || /* CJK Ideograph Extension B */
+        (0x2A700 <= code && code <= 0x2B738) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
         (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
         (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
