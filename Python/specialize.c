@@ -601,23 +601,19 @@ specialize_dict_access(
         }
         // We found an instance with a __dict__.
         PyDictObject *dict = (PyDictObject *)*dictptr;
+        PyDictKeysObject *keys = dict->ma_keys;
         if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+            && keys == ((PyHeapTypeObject*)type)->ht_cached_keys
         ) {
             // Keys are shared
             assert(PyUnicode_CheckExact(name));
-            Py_hash_t hash = PyObject_Hash(name);
-            if (hash == -1) {
-                return -1;
-            }
-            PyObject *value;
-            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+            Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
             assert (index != DKIX_ERROR);
             if (index != (uint16_t)index) {
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
                 return 0;
             }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
             if (keys_version == 0) {
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_VERSIONS);
                 return 0;
@@ -1020,12 +1016,11 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(globals)) {
         goto fail;
     }
-    if (((PyDictObject *)globals)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+    Py_ssize_t index = _PyDictKeys_StringLookup(((PyDictObject *)globals)->ma_keys, name);
+    if (index == DKIX_ERROR) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    PyObject *value = NULL;
-    Py_ssize_t index = _PyDict_GetItemHint((PyDictObject *)globals, name, -1, &value);
-    assert (index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
             goto fail;
@@ -1042,20 +1037,22 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(builtins)) {
         goto fail;
     }
-    if (((PyDictObject *)builtins)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+    index = _PyDictKeys_StringLookup(((PyDictObject *)builtins)->ma_keys, name);
+    if (index == DKIX_ERROR) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    index = _PyDict_GetItemHint((PyDictObject *)builtins, name, -1, &value);
-    assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         goto fail;
     }
     uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)globals)->ma_keys);
     if (globals_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
     uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)builtins)->ma_keys);
     if (builtins_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
     cache1->module_keys_version = globals_version;

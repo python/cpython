@@ -734,24 +734,27 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
     Py_UNREACHABLE();
 }
 
-/* Lookup a string in a (shared) dict keys.
+/* Lookup a string in a (all unicode) dict keys.
  * Returns DKIX_ERROR if key is not a string,
  * or if the dict keys is not all strings.
  * If the keys is present then return the index of key.
- * If the key is not present return DKIX_EMPTY.
+ * If the key is not present then return DKIX_EMPTY.
  */
 Py_ssize_t
-_PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
+_PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
 {
     DictKeysKind kind = dk->dk_kind;
-    PyDictKeyEntry *ep0 = DK_ENTRIES(dk);
-    size_t mask = DK_MASK(dk);
-    size_t perturb = hash;
-    size_t i = (size_t)hash & mask;
-    Py_ssize_t ix;
     if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
         return DKIX_ERROR;
     }
+    PyDictKeyEntry *ep0 = DK_ENTRIES(dk);
+    size_t mask = DK_MASK(dk);
+    Py_hash_t hash = PyObject_Hash(key);
+    assert (hash != -1);
+    size_t perturb = hash;
+    size_t i = (size_t)hash & mask;
+    Py_ssize_t ix;
+
     /* Strings only */
     for (;;) {
         ix = dictkeys_get_index(dk, i);

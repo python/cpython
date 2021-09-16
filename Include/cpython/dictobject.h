@@ -87,4 +87,4 @@ PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
  * Returns the version number, or zero if it was not possible to get a version number. */
 uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
 
-Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key, Py_hash_t hash);
+Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
