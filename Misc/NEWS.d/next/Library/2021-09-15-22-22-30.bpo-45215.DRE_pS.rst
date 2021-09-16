@@ -1,0 +1,2 @@
+Expanded docs for :class:`~unittest.mock.Mock` *name* and *parent* arguments
+and deprecated passing of invalid object types for these arguments.
