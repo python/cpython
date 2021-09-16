@@ -4516,14 +4516,7 @@ check_eval_breaker:
             _PyObjectCache *cache2 = &caches[-2].obj;
 
             PyObject *cls = TOP();
-            PyTypeObject *cls_type = Py_TYPE(cls);
-            assert(cls_type->tp_dictoffset > 0);
-            PyObject *dict = *(PyObject **) ((char *)cls + cls_type->tp_dictoffset);
-            // All types should have a dict. dk_version is also an identity check
-            // to ensure `cls` is really a type object. Otherwise, reading
-            // tp_version_tag may segfault.
-            DEOPT_IF(dict == NULL || ((PyDictObject *)dict)->ma_keys->dk_version !=
-                cache1->dk_version_or_hint, LOAD_METHOD);
+            DEOPT_IF(!PyType_Check(cls), LOAD_METHOD);
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
                 LOAD_METHOD);
             assert(cache1->dk_version_or_hint != 0);
