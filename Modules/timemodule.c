@@ -2044,6 +2044,14 @@ PyInit_time(void)
     return PyModuleDef_Init(&timemodule);
 }
 
+#ifdef MS_WINDOWS
+enum event_indexes {
+    EVENT_TIMER,
+    EVENT_INTERRUPT,
+    EVENT_SIZE
+};
+#endif
+
 /* Implement pysleep() for various platforms.
    When interrupted (or when another error occurs), return -1 and
    set an exception; else return 0. */
@@ -2118,13 +2126,14 @@ pysleep(_PyTime_t secs)
 #endif
     } while (1);
 #else
+    int timer_ready = 0;
     _PyTime_t millisecs;
     DWORD ul_millis;
     DWORD rc;
     FILETIME FileTime;
     LARGE_INTEGER deadline;
-    HANDLE hTimer = NULL;
-    int timer_ready = 0;
+    /* hTimer, hInterruptEvent */
+    HANDLE hEvents[EVENT_SIZE] = {NULL, NULL};
 
     GetSystemTimePreciseAsFileTime(&FileTime);
     CopyMemory(&deadline, &FileTime, sizeof(FILETIME));
@@ -2132,12 +2141,12 @@ pysleep(_PyTime_t secs)
     /* convert to 100 nsec unit and add */
     deadline.QuadPart += _PyTime_As100Nanoseconds(secs, _PyTime_ROUND_CEILING);
 
-    hTimer = CreateWaitableTimerW(NULL, FALSE, NULL);
-    if (NULL == hTimer) {
+    hEvents[EVENT_TIMER] = CreateWaitableTimerW(NULL, FALSE, NULL);
+    if (NULL == hEvents[EVENT_TIMER]) {
         return -1;
     }
 
-    if (!SetWaitableTimer(hTimer, &deadline, 0, NULL, NULL, FALSE)) {
+    if (!SetWaitableTimer(hEvents[EVENT_TIMER], &deadline, 0, NULL, NULL, FALSE)) {
         ret = -1;
         timer_ready = 0;
     }
@@ -2166,11 +2175,24 @@ pysleep(_PyTime_t secs)
             break;
         }
 
+        hEvents[EVENT_INTERRUPT] = _PyOS_SigintEvent();
+        ResetEvent(hEvents[EVENT_INTERRUPT]);
+
         Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hTimer, ul_millis, FALSE);
+        rc = WaitForMultipleObjectsEx(EVENT_SIZE, hEvents, FALSE, ul_millis, FALSE);
         Py_END_ALLOW_THREADS
 
-        if ((rc == WAIT_OBJECT_0) || (rc == WAIT_TIMEOUT)) {
+        if (rc == WAIT_FAILED) {
+            ret = -1;
+            break;
+        }
+
+        if ((rc == (WAIT_OBJECT_0 + EVENT_TIMER)) || (rc == WAIT_TIMEOUT)) {
+            ret = 0;
+            break;
+        }
+
+        if (rc != (WAIT_OBJECT_0 + EVENT_INTERRUPT)) {
             ret = 0;
             break;
         }
@@ -2182,7 +2204,7 @@ pysleep(_PyTime_t secs)
         }
     }
 
-    CloseHandle(hTimer);
+    CloseHandle(hEvents[EVENT_TIMER]);
 #endif
 
     return ret;
