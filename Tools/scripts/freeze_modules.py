@@ -540,7 +540,7 @@ def regen_makefile(modules):
     rules = ['']
     for src in _iter_sources(modules):
         header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
-        frozenfiles.append(f'\t\t$(srcdir)/{header} \\')
+        frozenfiles.append(f'\t\t{header} \\')
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         # Note that we freeze the module to the target .h file
