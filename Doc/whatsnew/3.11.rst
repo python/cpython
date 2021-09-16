@@ -489,3 +489,7 @@ Removed
 * The behavior of returning a value from a :class:`~unittest.TestCase` and
   :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the default ``None``
   value), is now deprecated.
+
+* In :meth:`~unittest.mock.Mock.__init__` and :meth:`~unittest.mock.MagicMock.__init__`,
+  the behavior of accepting arbitrary types of objects as *name* and *parent* args is
+  deprecated -- only valid object types will be accepted; see :class:`~unittest.mock.Mock`.

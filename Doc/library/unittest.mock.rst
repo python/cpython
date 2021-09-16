@@ -282,10 +282,15 @@ the *new_callable* argument to :func:`patch`.
 
     * *name*: If the mock has a name then it will be used in the repr of the
       mock. This can be useful for debugging. The name is propagated to child
-      mocks. This argument should be a string.
+      mocks. This argument should be a string. Note that the mock's attribute
+      *name* created on the current Mock is an instance of :class:`Mock`. To
+      set the *name* attribute to an arbitrary value, use
+      :meth:`configure_mock`.
 
     * *parent*: Make current mock a child of *parent*, which should be a
-      :class:`Mock` or :class:`MagicMock` instance.
+      :class:`Mock` or :class:`MagicMock` instance. To set the *name* attribute
+      to an arbitrary value, use :meth:`configure_mock`.
+
 
     Mocks can also be called with arbitrary keyword arguments. These will be
     used to set attributes on the mock after it is created. See the
