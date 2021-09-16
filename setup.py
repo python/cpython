@@ -663,9 +663,26 @@ class PyBuildExt(build_ext):
         # Debian/Ubuntu multiarch support.
         # https://wiki.ubuntu.com/MultiarchSpec
         cc = sysconfig.get_config_var('CC')
-        tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+
+        tmpfile_sysroot = os.path.join(self.build_temp, 'sysroot')
+        ret_sysroot = run_command(
+            '%s -print-sysroot > %s 2> /dev/null' % (cc, tmpfile_sysroot))
+
+        try:
+            if ret_sysroot == 0:
+                with open(tmpfile_sysroot) as fp:
+                    sysroot = fp.readline().strip()
+                    # if the sysroot is not /, then we are not using
+                    # the compiler from debian/ubuntu
+                    if sysroot not in ['', '/']:
+                        return
+        finally:
+            os.unlink(tmpfile_sysroot)
+
+        tmpfile = os.path.join(self.build_temp, 'multiarch')
+
         ret = run_command(
             '%s -print-multiarch > %s 2> /dev/null' % (cc, tmpfile))
         multiarch_path_component = ''
