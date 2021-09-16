@@ -14,7 +14,6 @@
 #include "marshal.h"
 #include "pycore_hashtable.h"
 #include "pycore_code.h"        // _PyCode_New()
-#include <stdbool.h>
 
 /*[clinic input]
 module marshal
@@ -1679,7 +1678,7 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
 }
 
 static PyObject *
-write_object_to_string(PyObject *x, int version, bool stable)
+write_object_to_string(PyObject *x, int version, int stable)
 {
     WFILE wf;
 
