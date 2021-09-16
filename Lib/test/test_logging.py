@@ -4438,9 +4438,8 @@ class LogRecordTest(BaseTest):
 
             r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
 
+            # https://bugs.python.org/issue45128
             with support.swap_item(sys.modules, 'multiprocessing', None):
-                # We need to restore the previous `multiprocessing` module:
-                # https://bugs.python.org/issue45128
                 r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
@@ -4454,7 +4453,7 @@ class LogRecordTest(BaseTest):
         else:
             return results
 
-    def test_multiprocessing(self, first_pass=True):
+    def test_multiprocessing(self):
         multiprocessing_imported = 'multiprocessing' in sys.modules
         try:
             # logMultiprocessing is True by default
@@ -4489,16 +4488,6 @@ class LogRecordTest(BaseTest):
         finally:
             if multiprocessing_imported:
                 import multiprocessing
-
-        if first_pass:  # https://bugs.python.org/issue45128
-            import multiprocessing.queues
-
-            self.test_multiprocessing(first_pass=False)
-
-            import multiprocessing
-            import multiprocessing.connection
-            from multiprocessing.connection import wait
-            multiprocessing.connection   # It was AttributeError here
 
     def test_optional(self):
         r = logging.makeLogRecord({})
