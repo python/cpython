@@ -245,6 +245,46 @@
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
+    <None Include="..\Lib\abc.py">
+      <ModName>abc</ModName>
+      <IntFile>$(IntDir)abc.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
+    </None>
+    <None Include="..\Lib\io.py">
+      <ModName>io</ModName>
+      <IntFile>$(IntDir)io.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\io.h</OutFile>
+    </None>
+    <None Include="..\Lib\_collections_abc.py">
+      <ModName>_collections_abc</ModName>
+      <IntFile>$(IntDir)_collections_abc.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\_collections_abc.h</OutFile>
+    </None>
+    <None Include="..\Lib\_sitebuiltins.py">
+      <ModName>_sitebuiltins</ModName>
+      <IntFile>$(IntDir)_sitebuiltins.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\_sitebuiltins.h</OutFile>
+    </None>
+    <None Include="..\Lib\genericpath.py">
+      <ModName>genericpath</ModName>
+      <IntFile>$(IntDir)genericpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\genericpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\ntpath.py">
+      <ModName>ntpath</ModName>
+      <IntFile>$(IntDir)ntpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\ntpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\posixpath.py">
+      <ModName>posixpath</ModName>
+      <IntFile>$(IntDir)posixpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\stat.py">
+      <ModName>stat</ModName>
+      <IntFile>$(IntDir)stat.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
+    </None>
     <None Include="..\Lib\__hello__.py">
       <ModName>__hello__</ModName>
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
