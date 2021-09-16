@@ -293,12 +293,13 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: argval
 
-      resolved arg value (if known), otherwise same as arg
+      resolved arg value (if any), otherwise ``None``
 
 
    .. data:: argrepr
 
-      human readable description of operation argument
+      human readable description of operation argument (if any),
+      otherwise an empty string.
 
 
    .. data:: offset

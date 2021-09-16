@@ -23,6 +23,7 @@ import xml.etree.ElementTree
 import textwrap
 from io import StringIO
 from collections import namedtuple
+from test.support import import_helper
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
@@ -728,6 +729,7 @@ class PydocDocTest(unittest.TestCase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -OO and above')
     def test_synopsis_sourceless(self):
+        os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
         filename = os.__cached__
         synopsis = pydoc.synopsis(filename)

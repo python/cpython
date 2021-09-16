@@ -70,17 +70,6 @@ class DumpTests(unittest.TestCase):
         got = list(self.cx.iterdump())
         self.assertEqual(expected, got)
 
-def suite():
-    tests = [
-        DumpTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
 
 if __name__ == "__main__":
-    test()
+    unittest.main()
