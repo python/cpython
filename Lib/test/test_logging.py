@@ -4496,6 +4496,17 @@ class LogRecordTest(BaseTest):
             if multiprocessing_imported:
                 import multiprocessing
 
+    def test_multiprocessing_again(self):
+        # https://bugs.python.org/issue45128
+        import sys
+        import multiprocessing.queues
+
+        self.test_multiprocessing()
+
+        import multiprocessing
+        import multiprocessing.connection
+        from multiprocessing.connection import wait
+        connection = multiprocessing.connection   # It was AttributeError here
 
     def test_optional(self):
         r = logging.makeLogRecord({})
