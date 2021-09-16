@@ -1,0 +1,2 @@
+Fix crash ``test_multiprocessing_fork`` due to ``LogRecordTest`` and
+``sys.modules`` manipulation.

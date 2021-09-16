@@ -4432,12 +4432,17 @@ class LogRecordTest(BaseTest):
     def _extract_logrecord_process_name(key, logMultiprocessing, conn=None):
         prev_logMultiprocessing = logging.logMultiprocessing
         logging.logMultiprocessing = logMultiprocessing
+        old_mp = None
         try:
             import multiprocessing as mp
             name = mp.current_process().name
 
             r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
+
+            old_mp = sys.modules['multiprocessing']
             del sys.modules['multiprocessing']
+            assert old_mp
+
             r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
@@ -4446,6 +4451,10 @@ class LogRecordTest(BaseTest):
                       }
         finally:
             logging.logMultiprocessing = prev_logMultiprocessing
+            if old_mp is not None:
+                # We need to restore the previous `multiprocessing` module:
+                # https://bugs.python.org/issue45128
+                sys.modules['multiprocessing'] = old_mp
         if conn:
             conn.send(results)
         else:
