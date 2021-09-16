@@ -67,13 +67,10 @@ FROZEN = [
         'zipimport',
         ]),
     ('stdlib', [
-        # For the moment we skip codecs, encodings.*, os, and site.
-        # These modules have different generated files depending on
-        # if a debug or non-debug build.  (See bpo-45186 and bpo-45188.)
         # without site (python -S)
         'abc',
-        #'codecs',
-        # '<encodings.*>',
+        'codecs',
+         '<encodings.*>',
         'io',
         # with site
         '_collections_abc',
@@ -83,9 +80,9 @@ FROZEN = [
         'posixpath',
         # We must explicitly mark os.path as a frozen module
         # even though it will never be imported.
-        #f'{OS_PATH} : os.path',
-        #'os',
-        #'site',
+        f'{OS_PATH} : os.path',
+        'os',
+        'site',
         'stat',
         ]),
     ('Test module', [
