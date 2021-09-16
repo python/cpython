@@ -86,7 +86,7 @@ typedef struct {
     char *ptr;
     const char *end;
     char *buf;
-    _Py_hashtable_t *hashtable;
+    _Py_hashtable_t *ref_indices;
     int version;
 } WFILE;
 
@@ -296,14 +296,14 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     _Py_hashtable_entry_t *entry;
     int w;
 
-    if (p->version < 3 || p->hashtable == NULL)
+    if (p->version < 3 || p->ref_indices == NULL)
         return 0; /* not writing object references */
 
     /* if it has only one reference, it definitely isn't shared */
     if (Py_REFCNT(v) == 1)
         return 0;
 
-    entry = _Py_hashtable_get_entry(p->hashtable, v);
+    entry = _Py_hashtable_get_entry(p->ref_indices, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
         w = (int)(uintptr_t)entry->value;
@@ -313,7 +313,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         w_long(w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->nentries;
+        size_t s = p->ref_indices->nentries;
         /* we don't support long indices */
         if (s >= 0x7fffffff) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
@@ -321,7 +321,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         }
         w = (int)s;
         Py_INCREF(v);
-        if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
+        if (_Py_hashtable_set(p->ref_indices, v, (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
             goto err;
         }
@@ -594,10 +594,10 @@ static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
-                                               _Py_hashtable_compare_direct,
-                                               w_decref_entry, NULL, NULL);
-        if (wf->hashtable == NULL) {
+        wf->ref_indices = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                                 _Py_hashtable_compare_direct,
+                                                 w_decref_entry, NULL, NULL);
+        if (wf->ref_indices == NULL) {
             PyErr_NoMemory();
             return -1;
         }
@@ -608,8 +608,8 @@ w_init_refs(WFILE *wf, int version)
 static void
 w_clear_refs(WFILE *wf)
 {
-    if (wf->hashtable != NULL) {
-        _Py_hashtable_destroy(wf->hashtable);
+    if (wf->ref_indices != NULL) {
+        _Py_hashtable_destroy(wf->ref_indices);
     }
 }
 
