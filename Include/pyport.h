@@ -568,9 +568,7 @@ extern "C" {
 // worse performances (due to increased code size for example). The compiler is
 // usually smarter than the developer for the cost/benefit analysis.
 //
-// It must be specified before the function return type.
-//
-// Usage:
+// It must be specified before the function return type. Usage:
 //
 //     static inline Py_ALWAYS_INLINE int random(void) { return 4; }
 #if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
