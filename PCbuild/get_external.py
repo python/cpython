@@ -56,19 +56,24 @@ def main():
     )
     final_name = args.externals_dir / args.tag
     extracted = extract_zip(args.externals_dir, zip_path)
-    for _ in range(5):
+    for retries in range(5, 0, -1):
         try:
+            raise PermissionError("TEST")
             extracted.replace(final_name)
             break
         except PermissionError as ex:
-            print(f"Encountered permission error '{ex}'. Retrying in five seconds...", file=sys.stderr)
-            time.sleep(5)
+            if retries > 1:
+                print(f"Encountered permission error '{ex}'. Retrying in five seconds...", file=sys.stderr)
+                time.sleep(5)
+            else:
+                print(f"Encountered permission error '{ex}'", file=sys.stderr)
     else:
         print(
             f"ERROR: Failed to extract {final_name}.",
             "You may need to restart your build",
             file=sys.stderr,
         )
+        sys.exit(1)
 
 
 if __name__ == '__main__':
