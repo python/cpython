@@ -20,8 +20,9 @@ TOOLS_DIR = os.path.dirname(SCRIPTS_DIR)
 ROOT_DIR = os.path.dirname(TOOLS_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
-# If MODULES_DIR is changed then the .gitattributes file needs to be updated.
-MODULES_DIR = os.path.join(ROOT_DIR, 'Python/frozen_modules')
+# If MODULES_DIR is changed then the .gitattributes and .gitignore files
+# need to be updated.
+MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 
 if sys.platform != "win32":
     TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
@@ -576,10 +577,6 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     for src in _iter_sources(modules):
-        # For now we only require the essential frozen modules on Windows.
-        # See bpo-45186 and bpo-45188.
-        if src.id not in ESSENTIAL and src.id != '__hello__':
-            continue
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
