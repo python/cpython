@@ -797,25 +797,25 @@ class TestPegen(unittest.TestCase):
             | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { f"{l.string} = {n.string}"}
         """
         parser_class = make_parser(grammar)
-        self.assertEqual(parse_string("number 1", parser_class, verbose=True), 1)
-        self.assertEqual(parse_string("string 'b'", parser_class, verbose=True), "'b'")
+        self.assertEqual(parse_string("number 1", parser_class), 1)
+        self.assertEqual(parse_string("string 'b'", parser_class), "'b'")
         self.assertEqual(
-            parse_string("number test 1", parser_class, verbose=True), "test = 1"
+            parse_string("number test 1", parser_class), "test = 1"
         )
         assert (
-            parse_string("string test 'b'", parser_class, verbose=True) == "test = 'b'"
+            parse_string("string test 'b'", parser_class) == "test = 'b'"
         )
         with self.assertRaises(SyntaxError):
-            parse_string("test 1", parser_class, verbose=True)
+            parse_string("test 1", parser_class)
 
     def test_forced(self) -> None:
         grammar = """
         start: NAME &&':' | NAME
         """
         parser_class = make_parser(grammar)
-        self.assertTrue(parse_string("number :", parser_class, verbose=True))
+        self.assertTrue(parse_string("number :", parser_class))
         with self.assertRaises(SyntaxError) as e:
-            parse_string("a", parser_class, verbose=True)
+            parse_string("a", parser_class)
 
         self.assertIn("expected ':'", str(e.exception))
 
@@ -824,10 +824,10 @@ class TestPegen(unittest.TestCase):
         start: NAME &&(':' | ';') | NAME
         """
         parser_class = make_parser(grammar)
-        self.assertTrue(parse_string("number :", parser_class, verbose=True))
-        self.assertTrue(parse_string("number ;", parser_class, verbose=True))
+        self.assertTrue(parse_string("number :", parser_class))
+        self.assertTrue(parse_string("number ;", parser_class))
         with self.assertRaises(SyntaxError) as e:
-            parse_string("a", parser_class, verbose=True)
+            parse_string("a", parser_class)
         self.assertIn("expected (':' | ';')", e.exception.args[0])
 
     def test_unreachable_explicit(self) -> None:

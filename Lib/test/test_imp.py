@@ -16,6 +16,9 @@ with warnings.catch_warnings():
 import _imp
 
 
+OS_PATH_NAME = os.path.__name__
+
+
 def requires_load_dynamic(meth):
     """Decorator to skip a test if not running under CPython or lacking
     imp.load_dynamic()."""
@@ -213,15 +216,17 @@ class ImportTests(unittest.TestCase):
         # state after reversion. Reinitialising the module contents
         # and just reverting os.environ to its previous state is an OK
         # workaround
-        orig_path = os.path
-        orig_getenv = os.getenv
-        with os_helper.EnvironmentVarGuard():
-            x = imp.find_module("os")
-            self.addCleanup(x[0].close)
-            new_os = imp.load_module("os", *x)
-            self.assertIs(os, new_os)
-            self.assertIs(orig_path, new_os.path)
-            self.assertIsNot(orig_getenv, new_os.getenv)
+        with import_helper.CleanImport('os', 'os.path', OS_PATH_NAME):
+            import os
+            orig_path = os.path
+            orig_getenv = os.getenv
+            with os_helper.EnvironmentVarGuard():
+                x = imp.find_module("os")
+                self.addCleanup(x[0].close)
+                new_os = imp.load_module("os", *x)
+                self.assertIs(os, new_os)
+                self.assertIs(orig_path, new_os.path)
+                self.assertIsNot(orig_getenv, new_os.getenv)
 
     @requires_load_dynamic
     def test_issue15828_load_extensions(self):

@@ -843,6 +843,41 @@ success:
 }
 
 
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+load_method_fail_kind(DesciptorClassification kind)
+{
+    switch (kind) {
+        case OVERRIDING:
+            return SPEC_FAIL_OVERRIDING_DESCRIPTOR;
+        case METHOD:
+            return SPEC_FAIL_METHOD;
+        case PROPERTY:
+            return SPEC_FAIL_PROPERTY;
+        case OBJECT_SLOT:
+            return SPEC_FAIL_OBJECT_SLOT;
+        case OTHER_SLOT:
+            return SPEC_FAIL_NON_OBJECT_SLOT;
+        case DUNDER_CLASS:
+            return SPEC_FAIL_OTHER;
+        case MUTABLE:
+            return SPEC_FAIL_MUTABLE_CLASS;
+        case GETSET_OVERRIDDEN:
+            return SPEC_FAIL_OVERRIDDEN;
+        case BUILTIN_CLASSMETHOD:
+            return SPEC_FAIL_BUILTIN_CLASS_METHOD;
+        case PYTHON_CLASSMETHOD:
+            return SPEC_FAIL_CLASS_METHOD_OBJ;
+        case NON_OVERRIDING:
+            return SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR;
+        case NON_DESCRIPTOR:
+            return SPEC_FAIL_NOT_DESCRIPTOR;
+        case ABSENT:
+            return SPEC_FAIL_EXPECTED_ERROR;
+    }
+}
+#endif
+
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -900,48 +935,10 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     cache1->tp_version = owner_cls->tp_version_tag;
 
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
-    switch (kind) {
-        case OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
-            goto fail;
-        case METHOD:
-            break;
-        case PROPERTY:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_PROPERTY);
-            goto fail;
-        case OBJECT_SLOT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OBJECT_SLOT);
-            goto fail;
-        case OTHER_SLOT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NON_OBJECT_SLOT);
-            goto fail;
-        case DUNDER_CLASS:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
-            goto fail;
-        case MUTABLE:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_MUTABLE_CLASS);
-            goto fail;
-        case GETSET_OVERRIDDEN:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
-            goto fail;
-        case BUILTIN_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
-            goto fail;
-        case PYTHON_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
-            goto fail;
-        case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR);
-            goto fail;
-        case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_DESCRIPTOR);
-            goto fail;
-        case ABSENT:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_EXPECTED_ERROR);
-            goto fail;
+    if (kind != METHOD) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+        goto fail;
     }
-
-    assert(kind == METHOD);
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
     uint32_t keys_version = UINT32_MAX;
@@ -1117,6 +1114,7 @@ binary_subscr_faiL_kind(PyTypeObject *container_type, PyObject *sub)
     return SPEC_FAIL_OTHER;
 }
 #endif
+
 int
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
