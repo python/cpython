@@ -66,40 +66,11 @@ from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
+from .loader import makeSuite, getTestCaseNames, findTestCases
 
 # deprecated
 _TextTestResult = TextTestResult
 
-from .loader import (
-    makeSuite as _makeSuite,
-    findTestCases as _findTestCases,
-    getTestCaseNames as _getTestCaseNames,
-)
-
-import warnings
-def makeSuite(*args, **kwargs):
-    warnings.warn(
-        "unittest.makeSuite() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.loadTestsFromTestCase() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeSuite(*args, **kwargs)
-
-def getTestCaseNames(*args, **kwargs):
-    warnings.warn(
-        "unittest.getTestCaseNames() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.getTestCaseNames() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _getTestCaseNames(*args, **kwargs)
-
-def findTestCases(*args, **kwargs):
-    warnings.warn(
-        "unittest.findTestCases() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.loadTestsFromModule() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _findTestCases(*args, **kwargs)
 
 # There are no tests here, so don't try to run anything discovered from
 # introspecting the symbols (e.g. FunctionTestCase). Instead, all our
