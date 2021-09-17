@@ -45,6 +45,8 @@ The module also extends gdb with some python-specific commands.
 # compatible (2.6+ and 3.0+).  See #19308.
 
 from __future__ import print_function
+
+from numpy import interp
 import gdb
 import os
 import locale
@@ -988,6 +990,11 @@ class PyFramePtr:
     def _f_lasti(self):
         return self._f_special("f_lasti", int_from_int)
 
+    def depth(self):
+        return self._f_special("depth", int_from_int)
+
+    def previous(self):
+        return self._f_special("previous", PyFramePtr)
 
     def iter_globals(self):
         '''
@@ -1794,16 +1801,20 @@ class Frame(object):
 
     def print_summary(self):
         if self.is_evalframe():
-            pyop = self.get_pyop()
-            if pyop:
-                line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
-                write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
-                if not pyop.is_optimized_out():
-                    line = pyop.current_line()
-                    if line is not None:
-                        sys.stdout.write('    %s\n' % line.strip())
-            else:
-                sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
+            interp_frame = self.get_pyop()
+            while True:
+                if interp_frame:
+                    line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
+                    write_unicode(sys.stdout, '#%i %s\n' % (self.get_index(), line))
+                    if not interp_frame.is_optimized_out():
+                        line = interp_frame.current_line()
+                        if line is not None:
+                            sys.stdout.write('    %s\n' % line.strip())
+                    if interp_frame.depth() == 0:
+                        break
+                else:
+                    sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
+                interp_frame = interp_frame.previous()
         else:
             info = self.is_other_python_frame()
             if info:
@@ -1813,15 +1824,19 @@ class Frame(object):
 
     def print_traceback(self):
         if self.is_evalframe():
-            pyop = self.get_pyop()
-            if pyop:
-                pyop.print_traceback()
-                if not pyop.is_optimized_out():
-                    line = pyop.current_line()
-                    if line is not None:
-                        sys.stdout.write('    %s\n' % line.strip())
-            else:
-                sys.stdout.write('  (unable to read python frame information)\n')
+            interp_frame = self.get_pyop()
+            while True:
+                if interp_frame:
+                    interp_frame.print_traceback()
+                    if not interp_frame.is_optimized_out():
+                        line = interp_frame.current_line()
+                        if line is not None:
+                            sys.stdout.write('    %s\n' % line.strip())
+                    if interp_frame.depth() == 0:
+                        break
+                else:
+                    sys.stdout.write('  (unable to read python frame information)\n')
+                interp_frame = interp_frame.previous()
         else:
             info = self.is_other_python_frame()
             if info:

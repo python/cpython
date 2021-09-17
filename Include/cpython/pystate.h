@@ -47,6 +47,7 @@ typedef struct _cframe {
      */
     int use_tracing;
     struct _cframe *previous;
+    int depth;
 } CFrame;
 
 typedef struct _err_stackitem {
