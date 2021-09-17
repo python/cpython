@@ -429,6 +429,40 @@ def test_pdb_pp_repr_exc():
     (Pdb) continue
     """
 
+def test_pdb_bad_repr():
+    """Test that args/retval commands handle bad repr objects.
+
+    >>> class BadRepr:
+    ...     def __repr__(self):
+    ...         raise AttributeError("'BadRepr' object has no attribute 'foo'")
+    ...     def __str__(self):
+    ...         return '<BadRepr>'
+    >>> obj = BadRepr()
+
+    >>> def test_function(x):
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     return x
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    ...     'args',
+    ...     'return',
+    ...     'retval',
+    ...     'continue',
+    ... ]):
+    ...    x = test_function(obj)
+    > <doctest test.test_pdb.test_pdb_bad_repr[2]>(3)test_function()
+    -> return x
+    (Pdb) args
+    x = AttributeError("'BadRepr' object has no attribute 'foo'")
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_bad_repr[2]>(3)test_function()...
+    -> return x
+    (Pdb) retval
+    *** AttributeError: 'BadRepr' object has no attribute 'foo'
+    (Pdb) continue
+    """
+
 
 def do_nothing():
     pass
