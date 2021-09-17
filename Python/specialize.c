@@ -125,6 +125,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
+    err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -241,7 +242,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_ADD] = 0,
     [BINARY_SUBSCR] = 0,
-    [CALL_FUNCTION] = 1, /* _PyAdaptiveEntry */
+    [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
 
@@ -1214,11 +1215,13 @@ success:
 */
 int
 _Py_Specialize_CallFunction(
+    PyObject *builtins,
     PyObject **stack_pointer, uint8_t original_oparg,
     _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyObjectCache *cache1 = &cache[-1].obj;
 #if SPECIALIZATION_STATS
         PyTypeObject *type = Py_TYPE(callable);
 #endif
@@ -1230,10 +1233,19 @@ _Py_Specialize_CallFunction(
         }
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
-            case METH_O:
+            case METH_O: {
+                /* len(o) */
+                PyObject *builtin_len = PyDict_GetItemString(builtins, "len");
+                if (builtin_len == callable) {
+                    cache1->obj = builtin_len;  // borrowed
+                    *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_LEN,
+                        _Py_OPARG(*instr));
+                    goto success;
+                }
                 *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_O,
                     _Py_OPARG(*instr));
                 goto success;
+            }
             case METH_FASTCALL:
                 *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_FAST,
                     _Py_OPARG(*instr));

@@ -4626,6 +4626,7 @@ check_eval_breaker:
             if (cache->adaptive.counter == 0) {
                 next_instr--;
                 if (_Py_Specialize_CallFunction(
+                    BUILTINS(),
                     stack_pointer,
                     cache->adaptive.original_oparg, next_instr, cache) < 0) {
                     goto error;
@@ -4643,9 +4644,6 @@ check_eval_breaker:
         TARGET(CALL_FUNCTION_BUILTIN_O): {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            assert(cache0->original_oparg == 1);
 
             PyObject *callable = SECOND();
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
@@ -4660,7 +4658,6 @@ check_eval_breaker:
             Py_DECREF(arg);
             Py_DECREF(callable);
             SET_TOP(res);
-            record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
                 goto error;
@@ -4702,6 +4699,36 @@ check_eval_breaker:
                    'invalid'). In those cases an exception is set, so we must
                    handle it.
                 */
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_LEN): {
+            assert(cframe.use_tracing == 0);
+            /* len(o) */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            assert(cache0->original_oparg == 1);
+
+            PyObject *callable = SECOND();
+            DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
+
+            PyObject *res = NULL;
+            Py_ssize_t len_i = PyObject_Length(TOP());
+            if (len_i >= 0) {
+                res = PyLong_FromSsize_t(len_i);
+            }
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            Py_DECREF(POP());
+            Py_DECREF(callable);
+            SET_TOP(res);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+            if (res == NULL) {
                 goto error;
             }
             DISPATCH();
