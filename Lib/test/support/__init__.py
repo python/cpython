@@ -99,6 +99,13 @@ SHORT_TIMEOUT = 30.0
 # option.
 LONG_TIMEOUT = 5 * 60.0
 
+# TEST_HOME_DIR refers to the top level directory of the "test" package
+# that contains Python's regression test suite
+TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
+STDLIB_DIR = os.path.dirname(TEST_HOME_DIR)
+REPO_ROOT = os.path.dirname(STDLIB_DIR)
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -148,9 +155,7 @@ def load_package_tests(pkg_dir, loader, standard_tests, pattern):
     """
     if pattern is None:
         pattern = "test*"
-    top_dir = os.path.dirname(              # Lib
-                  os.path.dirname(              # test
-                      os.path.dirname(__file__)))   # support
+    top_dir = STDLIB_DIR
     package_tests = loader.discover(start_dir=pkg_dir,
                                     top_level_dir=top_dir,
                                     pattern=pattern)
@@ -458,11 +463,6 @@ PGO = False
 # Set by libregrtest/main.py if we are running the extended (time consuming)
 # PGO task.  If this is True, PGO is also True.
 PGO_EXTENDED = False
-
-# TEST_HOME_DIR refers to the top level directory of the "test" package
-# that contains Python's regression test suite
-TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 
 # TEST_DATA_DIR is used as a target download location for remote resources
 TEST_DATA_DIR = os.path.join(TEST_HOME_DIR, "data")
@@ -1390,7 +1390,7 @@ class PythonSymlink:
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
             if sysconfig.is_python_build(True):
-                self._env["PYTHONPATH"] = os.path.dirname(os.__file__)
+                self._env["PYTHONPATH"] = STDLIB_DIR
 
     def __enter__(self):
         os.symlink(self.real, self.link)
