@@ -12,7 +12,7 @@ import subprocess
 import sys
 import textwrap
 
-from update_file import updating_file_with_tmpfile
+from update_file import updating_file_with_tmpfile, update_file_with_tmpfile
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -549,13 +549,16 @@ def regen_makefile(modules):
         frozenfiles.append(f'\t\t{header} \\')
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
-        # Note that we freeze the module to the target .h file
-        # instead of going through an intermediate file like we used to.
-        rules.append(f'{header}: Programs/_freeze_module {pyfile}')
-        rules.append(
-            (f'\tPrograms/_freeze_module {src.frozenid} '
-             f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
-        rules.append('')
+        freeze = (f'Programs/_freeze_module {src.frozenid} '
+                  f'$(srcdir)/{pyfile} $(srcdir)/{header}.new')
+        update = (f'$(UPDATE_FILE) --create $(srcdir)/{header} '
+                  f'$(srcdir)/{header}.new')
+        rules.extend([
+            f'{header}: Programs/_freeze_module {pyfile}',
+            f'\t{freeze} && \\',
+            f'\t\t{update}',
+            '',
+        ])
 
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
@@ -642,7 +645,7 @@ def _freeze_module(frozenid, pyfile, frozenfile):
             sys.exit(f'ERROR: missing {TOOL}; you need to run "make regen-frozen"')
         raise  # re-raise
 
-    os.replace(tmpfile, frozenfile)
+    update_file_with_tmpfile(frozenfile, tmpfile, create=True)
 
 
 #######################################
