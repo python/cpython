@@ -127,26 +127,33 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 
-static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
+static inline Py_ssize_t Py_ALWAYS_INLINE
+_Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
 
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
+static inline PyTypeObject* Py_ALWAYS_INLINE
+_Py_TYPE(const PyObject *ob)
+{
     return ob->ob_type;
 }
 #define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
+static inline Py_ssize_t Py_ALWAYS_INLINE
+_Py_SIZE(const PyVarObject *ob)
+{
     return ob->ob_size;
 }
 #define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
 
 
-static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
+static inline int Py_ALWAYS_INLINE
+_Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type)
+{
     // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
     // object.
     return ob->ob_type == type;
@@ -154,19 +161,25 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
 
-static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+static inline void Py_ALWAYS_INLINE
+_Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt)
+{
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
 
 
-static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
+static inline void Py_ALWAYS_INLINE
+_Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{
     ob->ob_type = type;
 }
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
 
 
-static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+static inline void Py_ALWAYS_INLINE
+_Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+{
     ob->ob_size = size;
 }
 #define Py_SET_SIZE(ob, size) _Py_SET_SIZE(_PyVarObject_CAST(ob), size)
@@ -253,7 +266,9 @@ PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 
-static inline int _PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
+static inline int Py_ALWAYS_INLINE
+_PyObject_TypeCheck(PyObject *ob, PyTypeObject *type)
+{
     return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
 }
 #define PyObject_TypeCheck(ob, type) _PyObject_TypeCheck(_PyObject_CAST(ob), type)
@@ -468,7 +483,8 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-static inline void _Py_INCREF(PyObject *op)
+static inline void Py_ALWAYS_INLINE
+_Py_INCREF(PyObject *op)
 {
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
@@ -484,7 +500,8 @@ static inline void _Py_INCREF(PyObject *op)
 }
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
-static inline void _Py_DECREF(
+static inline void Py_ALWAYS_INLINE
+_Py_DECREF(
 #if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
     const char *filename, int lineno,
 #endif
@@ -562,7 +579,8 @@ static inline void _Py_DECREF(
     } while (0)
 
 /* Function to use in case the object pointer can be NULL: */
-static inline void _Py_XINCREF(PyObject *op)
+static inline void Py_ALWAYS_INLINE
+_Py_XINCREF(PyObject *op)
 {
     if (op != NULL) {
         Py_INCREF(op);
@@ -571,7 +589,8 @@ static inline void _Py_XINCREF(PyObject *op)
 
 #define Py_XINCREF(op) _Py_XINCREF(_PyObject_CAST(op))
 
-static inline void _Py_XDECREF(PyObject *op)
+static inline void Py_ALWAYS_INLINE
+_Py_XDECREF(PyObject *op)
 {
     if (op != NULL) {
         Py_DECREF(op);
@@ -587,13 +606,15 @@ PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
 // Similar to Py_NewRef(), but the object can be NULL.
 PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
 
-static inline PyObject* _Py_NewRef(PyObject *obj)
+static inline PyObject* Py_ALWAYS_INLINE
+_Py_NewRef(PyObject *obj)
 {
     Py_INCREF(obj);
     return obj;
 }
 
-static inline PyObject* _Py_XNewRef(PyObject *obj)
+static inline PyObject* Py_ALWAYS_INLINE
+_Py_XNewRef(PyObject *obj)
 {
     Py_XINCREF(obj);
     return obj;
@@ -728,7 +749,7 @@ times.
 #endif
 
 
-static inline int
+static inline int Py_ALWAYS_INLINE
 PyType_HasFeature(PyTypeObject *type, unsigned long feature)
 {
     unsigned long flags;
@@ -743,12 +764,16 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)
 
-static inline int _PyType_Check(PyObject *op) {
+static inline int Py_ALWAYS_INLINE
+_PyType_Check(PyObject *op)
+{
     return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
 }
 #define PyType_Check(op) _PyType_Check(_PyObject_CAST(op))
 
-static inline int _PyType_CheckExact(PyObject *op) {
+static inline int Py_ALWAYS_INLINE
+_PyType_CheckExact(PyObject *op)
+{
     return Py_IS_TYPE(op, &PyType_Type);
 }
 #define PyType_CheckExact(op) _PyType_CheckExact(_PyObject_CAST(op))
