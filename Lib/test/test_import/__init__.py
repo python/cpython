@@ -21,7 +21,7 @@ from unittest import mock
 from test.support import os_helper
 from test.support import (is_jython, swap_attr, swap_item, cpython_only)
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath)
+    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
 from test.support import script_helper
@@ -86,8 +86,10 @@ class ImportTests(unittest.TestCase):
             from importlib import something_that_should_not_exist_anywhere
 
     def test_from_import_missing_attr_has_name_and_path(self):
-        with self.assertRaises(ImportError) as cm:
-            from os import i_dont_exist
+        with CleanImport('os'):
+            import os
+            with self.assertRaises(ImportError) as cm:
+                from os import i_dont_exist
         self.assertEqual(cm.exception.name, 'os')
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")

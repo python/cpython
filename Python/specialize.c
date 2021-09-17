@@ -502,7 +502,7 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
-    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
     if (keys_version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
@@ -614,23 +614,19 @@ specialize_dict_access(
         }
         // We found an instance with a __dict__.
         PyDictObject *dict = (PyDictObject *)*dictptr;
+        PyDictKeysObject *keys = dict->ma_keys;
         if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+            && keys == ((PyHeapTypeObject*)type)->ht_cached_keys
         ) {
             // Keys are shared
             assert(PyUnicode_CheckExact(name));
-            Py_hash_t hash = PyObject_Hash(name);
-            if (hash == -1) {
-                return -1;
-            }
-            PyObject *value;
-            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+            Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
             assert (index != DKIX_ERROR);
             if (index != (uint16_t)index) {
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
                 return 0;
             }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
             if (keys_version == 0) {
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_VERSIONS);
                 return 0;
@@ -888,6 +884,7 @@ load_method_fail_kind(DesciptorClassification kind)
         case ABSENT:
             return SPEC_FAIL_EXPECTED_ERROR;
     }
+    Py_UNREACHABLE();
 }
 #endif
 
@@ -978,7 +975,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
                 goto fail;
             }
         }
-        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
+        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict->ma_keys);
         if (keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
@@ -986,20 +983,19 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         // Fall through.
     } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
 
-    /* `descr` is borrowed. Just check tp_version_tag before accessing in case
-    *  it's deleted.  This is safe for methods (even inherited ones from super
-    *  classes!) as long as tp_version_tag is validated for two main reasons:
+    /* `descr` is borrowed. This is safe for methods (even inherited ones from
+    *  super classes!) as long as tp_version_tag is validated for two main reasons:
     *
     *  1. The class will always hold a reference to the method so it will
     *  usually not be GC-ed. Should it be deleted in Python, e.g.
     *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
     *
     *  2. The pre-existing type method cache (MCACHE) uses the same principles
-    *  of caching a borrowed descriptor. It does all the heavy lifting for us.
-    *  E.g. it invalidates on any MRO modification, on any type object
-    *  change along said MRO, etc. (see PyType_Modified usages in typeobject.c).
-    *  The type method cache has been working since Python 2.6 and it's
-    *  battle-tested.
+    *  of caching a borrowed descriptor. The MCACHE infrastructure does all the
+    *  heavy lifting for us. E.g. it invalidates tp_version_tag on any MRO
+    *  modification, on any type object change along said MRO, etc. (see
+    *  PyType_Modified usages in typeobject.c). The MCACHE has been
+    *  working since Python 2.6 and it's battle-tested.
     */
     cache2->obj = descr;
     cache1->dk_version_or_hint = keys_version;
@@ -1033,17 +1029,17 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(globals)) {
         goto fail;
     }
-    if (((PyDictObject *)globals)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+    PyDictKeysObject * globals_keys = ((PyDictObject *)globals)->ma_keys;
+    Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
+    if (index == DKIX_ERROR) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    PyObject *value = NULL;
-    Py_ssize_t index = _PyDict_GetItemHint((PyDictObject *)globals, name, -1, &value);
-    assert (index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
             goto fail;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
         if (keys_version == 0) {
             goto fail;
         }
@@ -1055,20 +1051,23 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(builtins)) {
         goto fail;
     }
-    if (((PyDictObject *)builtins)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+    PyDictKeysObject * builtin_keys = ((PyDictObject *)builtins)->ma_keys;
+    index = _PyDictKeys_StringLookup(builtin_keys, name);
+    if (index == DKIX_ERROR) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    index = _PyDict_GetItemHint((PyDictObject *)builtins, name, -1, &value);
-    assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         goto fail;
     }
-    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
     if (globals_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(builtin_keys);
     if (builtins_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
     cache1->module_keys_version = globals_version;

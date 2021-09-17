@@ -734,6 +734,73 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
     Py_UNREACHABLE();
 }
 
+static Py_ssize_t
+dictkeys_stringlookup(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
+{
+    PyDictKeyEntry *ep0 = DK_ENTRIES(dk);
+    size_t mask = DK_MASK(dk);
+    size_t perturb = hash;
+    size_t i = (size_t)hash & mask;
+    Py_ssize_t ix;
+    for (;;) {
+        ix = dictkeys_get_index(dk, i);
+        if (ix >= 0) {
+            PyDictKeyEntry *ep = &ep0[ix];
+            assert(ep->me_key != NULL);
+            assert(PyUnicode_CheckExact(ep->me_key));
+            if (ep->me_key == key ||
+                    (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
+                return ix;
+            }
+        }
+        else if (ix == DKIX_EMPTY) {
+            return DKIX_EMPTY;
+        }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
+        ix = dictkeys_get_index(dk, i);
+        if (ix >= 0) {
+            PyDictKeyEntry *ep = &ep0[ix];
+            assert(ep->me_key != NULL);
+            assert(PyUnicode_CheckExact(ep->me_key));
+            if (ep->me_key == key ||
+                    (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
+                return ix;
+            }
+        }
+        else if (ix == DKIX_EMPTY) {
+            return DKIX_EMPTY;
+        }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
+    }
+    Py_UNREACHABLE();
+}
+
+/* Lookup a string in a (all unicode) dict keys.
+ * Returns DKIX_ERROR if key is not a string,
+ * or if the dict keys is not all strings.
+ * If the keys is present then return the index of key.
+ * If the key is not present then return DKIX_EMPTY.
+ */
+Py_ssize_t
+_PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
+{
+    DictKeysKind kind = dk->dk_kind;
+    if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
+        return DKIX_ERROR;
+    }
+    Py_hash_t hash = ((PyASCIIObject *)key)->hash;
+    if (hash == -1) {
+        hash = PyUnicode_Type.tp_hash(key);
+        if (hash == -1) {
+            PyErr_Clear();
+            return DKIX_ERROR;
+        }
+    }
+    return dictkeys_stringlookup(dk, key, hash);
+}
+
 /*
 The basic lookup function used by all operations.
 This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
@@ -756,49 +823,24 @@ _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **valu
 start:
     dk = mp->ma_keys;
     DictKeysKind kind = dk->dk_kind;
+    if (PyUnicode_CheckExact(key) && kind != DICT_KEYS_GENERAL) {
+        Py_ssize_t ix = dictkeys_stringlookup(dk, key, hash);
+        if (ix == DKIX_EMPTY) {
+            *value_addr = NULL;
+        }
+        else if (kind == DICT_KEYS_SPLIT) {
+            *value_addr = mp->ma_values[ix];
+        }
+        else {
+            *value_addr = DK_ENTRIES(dk)[ix].me_value;
+        }
+        return ix;
+    }
     PyDictKeyEntry *ep0 = DK_ENTRIES(dk);
     size_t mask = DK_MASK(dk);
     size_t perturb = hash;
     size_t i = (size_t)hash & mask;
     Py_ssize_t ix;
-    if (PyUnicode_CheckExact(key) && kind != DICT_KEYS_GENERAL) {
-        /* Strings only */
-        for (;;) {
-            ix = dictkeys_get_index(mp->ma_keys, i);
-            if (ix >= 0) {
-                PyDictKeyEntry *ep = &ep0[ix];
-                assert(ep->me_key != NULL);
-                assert(PyUnicode_CheckExact(ep->me_key));
-                if (ep->me_key == key ||
-                        (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
-                    goto found;
-                }
-            }
-            else if (ix == DKIX_EMPTY) {
-                *value_addr = NULL;
-                return DKIX_EMPTY;
-            }
-            perturb >>= PERTURB_SHIFT;
-            i = mask & (i*5 + perturb + 1);
-            ix = dictkeys_get_index(mp->ma_keys, i);
-            if (ix >= 0) {
-                PyDictKeyEntry *ep = &ep0[ix];
-                assert(ep->me_key != NULL);
-                assert(PyUnicode_CheckExact(ep->me_key));
-                if (ep->me_key == key ||
-                        (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
-                    goto found;
-                }
-            }
-            else if (ix == DKIX_EMPTY) {
-                *value_addr = NULL;
-                return DKIX_EMPTY;
-            }
-            perturb >>= PERTURB_SHIFT;
-            i = mask & (i*5 + perturb + 1);
-        }
-        Py_UNREACHABLE();
-    }
     for (;;) {
         ix = dictkeys_get_index(dk, i);
         if (ix == DKIX_EMPTY) {
@@ -4997,15 +5039,15 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
 
 static uint32_t next_dict_keys_version = 2;
 
-uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictObject *dict)
+uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
 {
-    if (dict->ma_keys->dk_version != 0) {
-        return dict->ma_keys->dk_version;
+    if (dictkeys->dk_version != 0) {
+        return dictkeys->dk_version;
     }
     if (next_dict_keys_version == 0) {
         return 0;
     }
     uint32_t v = next_dict_keys_version++;
-    dict->ma_keys->dk_version = v;
+    dictkeys->dk_version = v;
     return v;
 }
