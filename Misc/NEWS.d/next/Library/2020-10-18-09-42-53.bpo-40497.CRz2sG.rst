@@ -1,3 +1,4 @@
-Disallow passing a *check* parameter to :meth:`subprocess.check_output`,
-which would cause a confusing exception if set to ``False``.
-PR by Rémi Lapeyre.
+:meth:`subprocess.check_output` now raises :exc:`ValueError` when the
+invalid keyword argument *check* is passed by user code. Previously
+such use would fail later with a :exc:`TypeError`.
+Patch by Rémi Lapeyre.
