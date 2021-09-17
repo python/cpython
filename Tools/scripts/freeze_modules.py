@@ -15,9 +15,8 @@ import textwrap
 from update_file import updating_file_with_tmpfile
 
 
-SCRIPTS_DIR = os.path.abspath(os.path.dirname(__file__))
-TOOLS_DIR = os.path.dirname(SCRIPTS_DIR)
-ROOT_DIR = os.path.dirname(TOOLS_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+ROOT_DIR = os.path.abspath(ROOT_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # If MODULES_DIR is changed then the .gitattributes and .gitignore files
@@ -26,6 +25,13 @@ MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 
 if sys.platform != "win32":
     TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
+    if not os.path.isfile(TOOL):
+        # When building out of the source tree, get the tool from the current
+        # directory
+        TOOL = os.path.join('Programs', '_freeze_module')
+        TOOL = os.path.abspath(TOOL)
+        if not os.path.isfile(TOOL):
+            sys.exit("ERROR: missing _freeze_module")
 else:
     def find_tool():
         for arch in ['amd64', 'win32']:
@@ -547,7 +553,7 @@ def regen_makefile(modules):
         # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: Programs/_freeze_module {pyfile}')
         rules.append(
-            (f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} '
+            (f'\tPrograms/_freeze_module {src.frozenid} '
              f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
         rules.append('')
 
