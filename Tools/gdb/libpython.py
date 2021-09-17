@@ -46,7 +46,6 @@ The module also extends gdb with some python-specific commands.
 
 from __future__ import print_function
 
-from numpy import interp
 import gdb
 import os
 import locale

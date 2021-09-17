@@ -1522,6 +1522,24 @@ trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
     return 0;
 }
 
+/* Create a frame structure from a python function stealing ownership from an array of arguments.
+ * In case of error, it returns NULL and the caller still owns the references to all arguments */
+static InterpreterFrame*
+_PyEval_FrameFromPyFunctionAndArgs(PyThreadState *tstate, PyObject* const *args, int nargs, PyObject *function) {
+    assert(PyFunction_Check(function));
+    size_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
+    assert(PyVectorcall_Function(function) == _PyFunction_Vectorcall);
+    PyFrameConstructor *con = PyFunction_AS_FRAME_CONSTRUCTOR(function);
+    Py_ssize_t vector_nargs = PyVectorcall_NARGS(nargsf);
+    assert(vector_nargs >= 0);
+    assert(vector_nargs == 0 || args != NULL);
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    PyObject *locals = (code->co_flags & CO_OPTIMIZED) ? NULL : con->fc_globals;
+    assert(!(code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)));
+    return _PyEvalFramePushAndInit(tstate, con, locals, args, vector_nargs, NULL, 1);
+}
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int throwflag)
 {
@@ -4618,18 +4636,16 @@ check_eval_breaker:
             PREDICTED(CALL_FUNCTION);
             PyObject *res;
 
-            // ------------ Check if call cal be optimized -------------- //
+            // Check if the call can be inlined or not
             PyObject *function = *(stack_pointer - oparg - 1);
-
-            int optimize_call = 0;
+            int inline_call = 0;
             if (Py_TYPE(function) == &PyFunction_Type) {
-                PyCodeObject *co = (PyCodeObject*)((PyFunctionObject*)(function))->func_code;
-                int is_coro = co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-                optimize_call = (is_coro || cframe.use_tracing) ? 0 : 1;
+                PyCodeObject *code = (PyCodeObject*)((PyFunctionObject*)(function))->func_code;
+                int is_coro = code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+                inline_call = (is_coro || cframe.use_tracing) ? 0 : 1;
             }
-            // ----------------------------------------------------------- //
 
-            if (!optimize_call) {
+            if (!inline_call) {
                 PyObject **sp = stack_pointer;
                 res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
                 stack_pointer = sp;
@@ -4641,50 +4657,21 @@ check_eval_breaker:
                 DISPATCH();
             }
 
-            assert(PyFunction_Check(function));
-            size_t nargsf = oparg | PY_VECTORCALL_ARGUMENTS_OFFSET;
-            PyObject *const *args = stack_pointer - oparg;
-            assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
-            assert(PyVectorcall_Function(function) == _PyFunction_Vectorcall);
-            PyFrameConstructor *con = PyFunction_AS_FRAME_CONSTRUCTOR(function);
-            Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-            assert(nargs >= 0);
-            assert(nargs == 0 || args != NULL);
-            PyObject *locals = (((PyCodeObject *)con->fc_code)->co_flags & CO_OPTIMIZED) ? NULL : con->fc_globals;
-            PyCodeObject *code = (PyCodeObject *)con->fc_code;
-
-            assert(!(code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) || cframe.use_tracing);
-
-            InterpreterFrame *new_frame = _PyEvalFramePushAndInit(tstate, con, locals, args, nargs, NULL, 1);
+            assert(!cframe.use_tracing);
+            InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer-oparg, oparg, function);
             if (new_frame == NULL) {
                 // When we exit here, we own all variables in the stack (the frame creation has not stolen
                 // any variable) so we need to clean the whole stack (done in the "error" label).
                 goto error;
             }
             assert(tstate->interp->eval_frame != NULL);
-
-            Py_DECREF(function);
+            // The frame has stolen all the arguments from the stack, so there is no need to clean up them
             STACK_SHRINK(oparg + 1);
-            // TODO: Transform the following into a goto
+            Py_DECREF(function);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->depth = frame->depth + 1;
             tstate->frame = frame = new_frame;
             goto start_frame;
-//             res = _PyEval_EvalFrame(tstate, new_frame, 0);
-//             assert(_PyFrame_GetStackPointer(new_frame) == _PyFrame_Stackbase(new_frame));
-//             if (_PyEvalFrameClearAndPop(tstate, new_frame)) {
-//                 Py_XDECREF(res);
-//                 goto error;
-//             }
-//
-//             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-//
-//             PUSH(res);
-//             if (res == NULL) {
-//                 goto error;
-//             }
-//             CHECK_EVAL_BREAKER();
-//             DISPATCH();
         }
 
         TARGET(CALL_FUNCTION_KW): {
@@ -5653,6 +5640,9 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
     return gen;
 }
 
+// If *steal_args* is set, the function will steal the references to all the arguments.
+// In case of error, the function returns null and if *steal_args* is set, the caller
+// will still own all the arguments.
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
