@@ -1234,9 +1234,13 @@ _Py_Specialize_CallFunction(
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
             case METH_O: {
+                if (original_oparg != 1) {
+                    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_RANGE);
+                    goto fail;
+                }
                 /* len(o) */
                 PyObject *builtin_len = PyDict_GetItemString(builtins, "len");
-                if (builtin_len == callable) {
+                if (callable == builtin_len) {
                     cache1->obj = builtin_len;  // borrowed
                     *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_LEN,
                         _Py_OPARG(*instr));
@@ -1246,10 +1250,22 @@ _Py_Specialize_CallFunction(
                     _Py_OPARG(*instr));
                 goto success;
             }
-            case METH_FASTCALL:
+            case METH_FASTCALL: {
+                if (original_oparg == 2) {
+                    /* isinstance(o1, o2) */
+                    PyObject *builtin_isinstance = PyDict_GetItemString(
+                        builtins, "isinstance");
+                    if (callable == builtin_isinstance) {
+                        cache1->obj = builtin_isinstance;  // borrowed
+                        *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_ISINSTANCE,
+                            _Py_OPARG(*instr));
+                        goto success;
+                    }
+                }
                 *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_FAST,
                     _Py_OPARG(*instr));
                 goto success;
+            }
             case METH_VARARGS:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYCFUNCTION);
                 goto fail;

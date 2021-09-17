@@ -4715,14 +4715,39 @@ check_eval_breaker:
             PyObject *callable = SECOND();
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
 
-            PyObject *res = NULL;
             Py_ssize_t len_i = PyObject_Length(TOP());
-            if (len_i >= 0) {
-                res = PyLong_FromSsize_t(len_i);
-            }
+            PyObject *res = (len_i >= 0) ? PyLong_FromSsize_t(len_i) : NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
+            Py_DECREF(POP());
+            Py_DECREF(callable);
+            SET_TOP(res);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_ISINSTANCE): {
+            assert(cframe.use_tracing == 0);
+            /* isinstance(o, o2) */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            assert(cache0->original_oparg == 2);
+
+            PyObject *callable = THIRD();
+            DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
+
+            int retval = PyObject_IsInstance(SECOND(), TOP());
+            PyObject *res = (retval >= 0) ? PyBool_FromLong(retval) : NULL;
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            Py_DECREF(POP());
             Py_DECREF(POP());
             Py_DECREF(callable);
             SET_TOP(res);
