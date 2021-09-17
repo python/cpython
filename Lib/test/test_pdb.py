@@ -430,6 +430,8 @@ def test_pdb_pp_repr_exc():
     """
 
 def test_pdb_bad_repr():
+    # Note that return of test_function() needs to be assigned to a value;
+    # otherwise doctest tries to run repr() on it and fails.
     """Test that args/retval commands handle bad repr objects.
 
     >>> class BadRepr:
