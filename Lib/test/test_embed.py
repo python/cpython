@@ -1304,7 +1304,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 os.makedirs(lib_dynload)
                 # getpathp.c uses Lib\os.py as the LANDMARK
                 shutil.copyfile(
-                    os.path.join(support.REPO_ROOT, 'os.py'),
+                    os.path.join(support.STDLIB_DIR, 'os.py'),
                     os.path.join(lib_dynload, 'os.py'),
                 )
 
