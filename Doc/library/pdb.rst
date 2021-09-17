@@ -806,6 +806,9 @@ can be overridden by the local file.
 .. pdbcommand:: retval
 
    Print the return value for the last return of the current function.
+   This command must be used immediately after the return line is executed;
+   the *return* command can be used to jump to the location where *retval*
+   can be used.
 
 .. pdbcommand:: exceptions [excnumber]
 
