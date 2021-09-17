@@ -175,7 +175,7 @@ class MimeTypes:
         but non-standard types.
         """
         type = type.lower()
-        extensions = self.types_map_inv[True].get(type, [])
+        extensions = list(self.types_map_inv[True].get(type, []))
         if not strict:
             for ext in self.types_map_inv[False].get(type, []):
                 if ext not in extensions:

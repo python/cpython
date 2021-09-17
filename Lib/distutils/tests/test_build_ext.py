@@ -545,8 +545,8 @@ class ParallelBuildExtTestCase(BuildExtTestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(BuildExtTestCase))
-    suite.addTest(unittest.makeSuite(ParallelBuildExtTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(BuildExtTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(ParallelBuildExtTestCase))
     return suite
 
 if __name__ == '__main__':

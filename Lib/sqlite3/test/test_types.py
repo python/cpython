@@ -350,7 +350,7 @@ class ColNamesTests(unittest.TestCase):
         self.assertEqual(val, "<xxx>")
 
         # Check if the stripping of colnames works. Everything after the first
-        # '[' (and the preceeding space) should be stripped.
+        # '[' (and the preceding space) should be stripped.
         self.assertEqual(self.cur.description[0][0], "x y")
 
     def test_case_in_converter_name(self):
@@ -530,23 +530,6 @@ class DateTimeTests(unittest.TestCase):
         ts2 = self.cur.fetchone()[0]
         self.assertEqual(ts, ts2)
 
-def suite():
-    tests = [
-        BinaryConverterTests,
-        ColNamesTests,
-        CommonTableExpressionTests,
-        DateTimeTests,
-        DeclTypesTests,
-        ObjectAdaptationTests,
-        SqliteTypeTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
 
 if __name__ == "__main__":
-    test()
+    unittest.main()

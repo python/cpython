@@ -33,6 +33,32 @@
 #define HAVE_TRACE_V2
 #endif
 
+static int
+clinic_fsconverter(PyObject *pathlike, const char **result)
+{
+    PyObject *bytes = NULL;
+    Py_ssize_t len;
+    char *str;
+
+    if (!PyUnicode_FSConverter(pathlike, &bytes)) {
+        goto error;
+    }
+    if (PyBytes_AsStringAndSize(bytes, &str, &len) < 0) {
+        goto error;
+    }
+    if ((*result = (const char *)PyMem_Malloc(len+1)) == NULL) {
+        goto error;
+    }
+
+    memcpy((void *)(*result), str, len+1);
+    Py_DECREF(bytes);
+    return 1;
+
+error:
+    Py_XDECREF(bytes);
+    return 0;
+}
+
 #define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/connection.c.h"
 #undef clinic_state
@@ -81,10 +107,21 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
+/*[python input]
+class FSConverter_converter(CConverter):
+    type = "const char *"
+    converter = "clinic_fsconverter"
+    def converter_init(self):
+        self.c_default = "NULL"
+    def cleanup(self):
+        return f"PyMem_Free((void *){self.name});\n"
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=7b3be538bc4058c0]*/
+
 /*[clinic input]
 _sqlite3.Connection.__init__ as pysqlite_connection_init
 
-    database as database_obj: object(converter='PyUnicode_FSConverter')
+    database: FSConverter
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: object = NULL
@@ -96,22 +133,20 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
-                              PyObject *database_obj, double timeout,
+                              const char *database, double timeout,
                               int detect_types, PyObject *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri)
-/*[clinic end generated code: output=dc19df1c0e2b7b77 input=aa1f21bf12fe907a]*/
+/*[clinic end generated code: output=bc39e55eb0b68783 input=f8d1f7efc0d84104]*/
 {
     int rc;
 
-    if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+    if (PySys_Audit("sqlite3.connect", "s", database) < 0) {
         return -1;
     }
 
     pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     self->state = state;
-
-    const char *database = PyBytes_AsString(database_obj);
 
     self->begin_statement = NULL;
 
@@ -129,8 +164,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     Py_END_ALLOW_THREADS
-
-    Py_DECREF(database_obj);  // needed bco. the AC FSConverter
 
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(state, self->db);

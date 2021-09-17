@@ -111,6 +111,25 @@ complete listing.
 
    .. versionadded:: 3.3
 
+.. c:macro:: Py_ALWAYS_INLINE
+
+   Ask the compiler to always inline a static inline function. The compiler can
+   ignore it and decides to not inline the function.
+
+   It can be used to inline performance critical static inline functions when
+   building Python in debug mode with function inlining disabled. For example,
+   MSC disables function inlining when building in debug mode.
+
+   Marking blindly a static inline function with Py_ALWAYS_INLINE can result in
+   worse performances (due to increased code size for example). The compiler is
+   usually smarter than the developer for the cost/benefit analysis.
+
+   It must be specified before the function return type. Usage::
+
+       static inline Py_ALWAYS_INLINE int random(void) { return 4; }
+
+   .. versionadded:: 3.11
+
 .. c:macro:: Py_CHARMASK(c)
 
    Argument must be a character or an integer in the range [-128, 127] or [0,
