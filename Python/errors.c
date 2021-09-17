@@ -25,6 +25,7 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(__main__);
 _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
@@ -1297,7 +1298,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
     else {
-        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins)) {
+        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
+            !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__)) {
             if (PyFile_WriteObject(modulename, file, Py_PRINT_RAW) < 0) {
                 Py_DECREF(modulename);
                 return -1;

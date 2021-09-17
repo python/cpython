@@ -161,6 +161,58 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertEqual(result.skipped, [(test, "testing")])
         self.assertEqual(record, [])
 
+    def test_skip_in_setup(self):
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                self.skipTest("skip")
+            def test_skip_me(self):
+                self.fail("shouldn't come here")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_skip_me")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
+        self.assertEqual(result.skipped, [(test, "skip")])
+
+    def test_skip_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            def test_skip_me(self):
+                pass
+            def tearDown(self):
+                self.skipTest("skip")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_skip_me")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
+        self.assertEqual(result.skipped, [(test, "skip")])
+
+    def test_failure_and_skip_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            def test_skip_me(self):
+                self.fail("fail")
+            def tearDown(self):
+                self.skipTest("skip")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_skip_me")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'addFailure', 'stopTest'])
+        self.assertEqual(result.skipped, [(test, "skip")])
+
+    def test_skipping_and_fail_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            def test_skip_me(self):
+                self.skipTest("skip")
+            def tearDown(self):
+                self.fail("fail")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_skip_me")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events, ['startTest', 'addSkip', 'addFailure', 'stopTest'])
+        self.assertEqual(result.skipped, [(test, "skip")])
+
     def test_expected_failure(self):
         class Foo(unittest.TestCase):
             @unittest.expectedFailure
@@ -172,7 +224,9 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertIs(test.run(result), result)
         self.assertEqual(events,
                          ['startTest', 'addExpectedFailure', 'stopTest'])
+        self.assertFalse(result.failures)
         self.assertEqual(result.expectedFailures[0][0], test)
+        self.assertFalse(result.unexpectedSuccesses)
         self.assertTrue(result.wasSuccessful())
 
     def test_expected_failure_with_wrapped_class(self):
@@ -187,7 +241,9 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertIs(test.run(result), result)
         self.assertEqual(events,
                          ['startTest', 'addExpectedFailure', 'stopTest'])
+        self.assertFalse(result.failures)
         self.assertEqual(result.expectedFailures[0][0], test)
+        self.assertFalse(result.unexpectedSuccesses)
         self.assertTrue(result.wasSuccessful())
 
     def test_expected_failure_with_wrapped_subclass(self):
@@ -205,7 +261,9 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertIs(test.run(result), result)
         self.assertEqual(events,
                          ['startTest', 'addExpectedFailure', 'stopTest'])
+        self.assertFalse(result.failures)
         self.assertEqual(result.expectedFailures[0][0], test)
+        self.assertFalse(result.unexpectedSuccesses)
         self.assertTrue(result.wasSuccessful())
 
     def test_expected_failure_subtests(self):
@@ -229,8 +287,48 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertEqual(events,
                          ['startTest', 'addSubTestSuccess',
                           'addExpectedFailure', 'stopTest'])
+        self.assertFalse(result.failures)
         self.assertEqual(len(result.expectedFailures), 1)
         self.assertIs(result.expectedFailures[0][0], test)
+        self.assertFalse(result.unexpectedSuccesses)
+        self.assertTrue(result.wasSuccessful())
+
+    def test_expected_failure_and_fail_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_die(self):
+                self.fail("help me!")
+            def tearDown(self):
+                self.fail("bad tearDown")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_die")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events,
+                         ['startTest', 'addFailure', 'stopTest'])
+        self.assertEqual(len(result.failures), 1)
+        self.assertIn('AssertionError: bad tearDown', result.failures[0][1])
+        self.assertFalse(result.expectedFailures)
+        self.assertFalse(result.unexpectedSuccesses)
+        self.assertFalse(result.wasSuccessful())
+
+    def test_expected_failure_and_skip_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_die(self):
+                self.fail("help me!")
+            def tearDown(self):
+                self.skipTest("skip")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_die")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events,
+                         ['startTest', 'addSkip', 'stopTest'])
+        self.assertFalse(result.failures)
+        self.assertFalse(result.expectedFailures)
+        self.assertFalse(result.unexpectedSuccesses)
+        self.assertEqual(result.skipped, [(test, "skip")])
         self.assertTrue(result.wasSuccessful())
 
     def test_unexpected_success(self):
@@ -245,6 +343,7 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertEqual(events,
                          ['startTest', 'addUnexpectedSuccess', 'stopTest'])
         self.assertFalse(result.failures)
+        self.assertFalse(result.expectedFailures)
         self.assertEqual(result.unexpectedSuccesses, [test])
         self.assertFalse(result.wasSuccessful())
 
@@ -269,8 +368,47 @@ class Test_TestSkipping(unittest.TestCase):
                           'addSubTestSuccess', 'addSubTestSuccess',
                           'addUnexpectedSuccess', 'stopTest'])
         self.assertFalse(result.failures)
+        self.assertFalse(result.expectedFailures)
         self.assertEqual(result.unexpectedSuccesses, [test])
         self.assertFalse(result.wasSuccessful())
+
+    def test_unexpected_success_and_fail_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_die(self):
+                pass
+            def tearDown(self):
+                self.fail("bad tearDown")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_die")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events,
+                         ['startTest', 'addFailure', 'stopTest'])
+        self.assertEqual(len(result.failures), 1)
+        self.assertIn('AssertionError: bad tearDown', result.failures[0][1])
+        self.assertFalse(result.expectedFailures)
+        self.assertFalse(result.unexpectedSuccesses)
+        self.assertFalse(result.wasSuccessful())
+
+    def test_unexpected_success_and_skip_in_cleanup(self):
+        class Foo(unittest.TestCase):
+            @unittest.expectedFailure
+            def test_die(self):
+                pass
+            def tearDown(self):
+                self.skipTest("skip")
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test_die")
+        self.assertIs(test.run(result), result)
+        self.assertEqual(events,
+                         ['startTest', 'addSkip', 'stopTest'])
+        self.assertFalse(result.failures)
+        self.assertFalse(result.expectedFailures)
+        self.assertFalse(result.unexpectedSuccesses)
+        self.assertEqual(result.skipped, [(test, "skip")])
+        self.assertTrue(result.wasSuccessful())
 
     def test_skip_doesnt_run_setup(self):
         class Foo(unittest.TestCase):

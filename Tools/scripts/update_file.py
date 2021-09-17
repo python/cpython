@@ -28,7 +28,19 @@ def updating_file_with_tmpfile(filename, tmpfile=None):
     elif os.path.isdir(tmpfile):
         tmpfile = os.path.join(tmpfile, filename + '.tmp')
 
-    with open(tmpfile, 'w') as outfile:
+    with open(filename, 'rb') as infile:
+        line = infile.readline()
+
+    if line.endswith(b'\r\n'):
+        newline = "\r\n"
+    elif line.endswith(b'\r'):
+        newline = "\r"
+    elif line.endswith(b'\n'):
+        newline = "\n"
+    else:
+        raise ValueError(f"unknown end of line: {filename}: {line!a}")
+
+    with open(tmpfile, 'w', newline=newline) as outfile:
         with open(filename) as infile:
             yield infile, outfile
     update_file_with_tmpfile(filename, tmpfile)
