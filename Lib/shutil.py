@@ -279,7 +279,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
 
         # Issue 43219, raise a less confusing exception
         except IsADirectoryError as e:
-            if os.path.exists(dst):
+            if os.path.isdir(src) or os.path.isdir(dst):
                 raise
             else:
                 raise FileNotFoundError(f'Directory does not exist: {dst}') from e

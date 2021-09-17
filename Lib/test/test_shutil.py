@@ -1259,6 +1259,27 @@ class TestCopy(BaseTest, unittest.TestCase):
         write_file(src_file, 'foo')
         self.assertRaises(FileNotFoundError, shutil.copyfile, src_file, dst)
 
+    def test_copyfile_copy_dir(self):
+        # Issue 45234
+        # test copy() and copyfile() raising proper exceptions when src and/or
+        # dst are directories
+        src_dir = self.mkdtemp()
+        src_file = os.path.join(src_dir, 'foo')
+        dir2 = self.mkdtemp()
+        dst = os.path.join(src_dir, 'does_not_exist/')
+        write_file(src_file, 'foo')
+
+        self.assertRaises(IsADirectoryError, shutil.copyfile, src_dir, dst)
+        self.assertRaises(IsADirectoryError, shutil.copyfile, src_file, src_dir)
+        self.assertRaises(IsADirectoryError, shutil.copyfile, dir2, src_dir)
+        self.assertRaises(IsADirectoryError, shutil.copy, dir2, src_dir)
+        self.assertRaises(IsADirectoryError, shutil.copy2, dir2, src_dir)
+
+        # raise IsADirectoryError because of src rather than FileNotFoundError
+        # because of dst
+        self.assertRaises(IsADirectoryError, shutil.copy, dir2, dst)
+        shutil.copy(src_file, dir2)     # should not raise exceptions
+
 
 class TestArchives(BaseTest, unittest.TestCase):
 
