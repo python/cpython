@@ -1,0 +1,3 @@
+Windows builds now regenerate frozen modules as the first part of the build.
+Previously the regeneration was later in the build, which would require it
+to be restarted if any modules had changed.

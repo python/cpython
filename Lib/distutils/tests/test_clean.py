@@ -43,7 +43,7 @@ class cleanTestCase(support.TempdirManager,
         cmd.run()
 
 def test_suite():
-    return unittest.makeSuite(cleanTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(cleanTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

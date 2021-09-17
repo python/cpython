@@ -128,12 +128,11 @@ static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
     static int initialized = 0;
-    clock_t ticks;
 
     if (!initialized) {
         initialized = 1;
 
-        /* must sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
+        /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
            above cannot overflow */
         if ((_PyTime_t)CLOCKS_PER_SEC > _PyTime_MAX / SEC_TO_NS) {
             PyErr_SetString(PyExc_OverflowError,
@@ -149,14 +148,15 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
     }
 
-    ticks = clock();
+    clock_t ticks = clock();
     if (ticks == (clock_t)-1) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the processor time used is not available "
                         "or its value cannot be represented");
         return -1;
     }
-    *tp = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    *tp = _PyTime_FromNanoseconds(ns);
     return 0;
 }
 #endif /* HAVE_CLOCK */
@@ -1325,10 +1325,10 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
                 info->resolution = 1.0 / (double)ticks_per_second;
             }
 
-            _PyTime_t total;
-            total = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
-            total += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
-            *tp = total;
+            _PyTime_t ns;
+            ns = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
+            ns += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
+            *tp = _PyTime_FromNanoseconds(ns);
             return 0;
         }
     }
@@ -2053,8 +2053,13 @@ pysleep(_PyTime_t secs)
 {
     _PyTime_t deadline, monotonic;
 #ifndef MS_WINDOWS
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec timeout_abs;
+#else
     struct timeval timeout;
+#endif
     int err = 0;
+    int ret = 0;
 #else
     _PyTime_t millisecs;
     unsigned long ul_millis;
@@ -2066,20 +2071,38 @@ pysleep(_PyTime_t secs)
         return -1;
     }
     deadline = monotonic + secs;
+#if defined(HAVE_CLOCK_NANOSLEEP) && !defined(MS_WINDOWS)
+    if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
+        return -1;
+    }
+#endif
 
     do {
 #ifndef MS_WINDOWS
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0)
+#ifndef HAVE_CLOCK_NANOSLEEP
+        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0) {
             return -1;
+        }
+#endif
 
+#ifdef HAVE_CLOCK_NANOSLEEP
         Py_BEGIN_ALLOW_THREADS
-        err = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+        ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
         Py_END_ALLOW_THREADS
+        err = ret;
+#else
+        Py_BEGIN_ALLOW_THREADS
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+        Py_END_ALLOW_THREADS
+        err = errno;
+#endif
 
-        if (err == 0)
+        if (ret == 0) {
             break;
+        }
 
-        if (errno != EINTR) {
+        if (err != EINTR) {
+            errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
@@ -2114,9 +2137,11 @@ pysleep(_PyTime_t secs)
 #endif
 
         /* sleep was interrupted by SIGINT */
-        if (PyErr_CheckSignals())
+        if (PyErr_CheckSignals()) {
             return -1;
+        }
 
+#ifndef HAVE_CLOCK_NANOSLEEP
         if (get_monotonic(&monotonic) < 0) {
             return -1;
         }
@@ -2125,6 +2150,7 @@ pysleep(_PyTime_t secs)
             break;
         }
         /* retry with the recomputed delay */
+#endif
     } while (1);
 
     return 0;
