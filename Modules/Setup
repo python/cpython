@@ -184,6 +184,7 @@ _symtable symtablemodule.c
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 #_statistics _statisticsmodule.c # statistics accelerator
+#_typing _typingmodule.c # typing accelerator
 
 #unicodedata unicodedata.c -DPy_BUILD_CORE_BUILTIN   # static Unicode character database
 

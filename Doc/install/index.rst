@@ -953,7 +953,7 @@ Borland/CodeGear C++
 This subsection describes the necessary steps to use Distutils with the Borland
 C++ compiler version 5.5.  First you have to know that Borland's object file
 format (OMF) is different from the format used by the Python version you can
-download from the Python or ActiveState Web site.  (Python is built with
+download from the Python or ActiveState web site.  (Python is built with
 Microsoft Visual C++, which uses COFF as the object file format.) For this
 reason you have to convert Python's library :file:`python25.lib` into the
 Borland format.  You can do this as follows:

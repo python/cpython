@@ -1,0 +1,4 @@
+The ``Py_TPFLAGS_HAVE_VERSION_TAG`` type flag now does nothing. The
+``Py_TPFLAGS_HAVE_AM_SEND`` flag (which was added in 3.10) is removed. Both
+were unnecessary because it is not possible to have type objects with the
+relevant fields missing.

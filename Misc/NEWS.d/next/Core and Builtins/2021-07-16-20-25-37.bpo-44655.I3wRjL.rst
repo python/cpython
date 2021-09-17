@@ -1,0 +1,2 @@
+Don't include a missing attribute with the same name as the failing one when
+offering suggestions for missing attributes. Patch by Pablo Galindo

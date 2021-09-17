@@ -692,7 +692,7 @@ Running in Threads
 
    This coroutine function is primarily intended to be used for executing
    IO-bound functions/methods that would otherwise block the event loop if
-   they were ran in the main thread. For example::
+   they were run in the main thread. For example::
 
        def blocking_io():
            print(f"start blocking_io at {time.strftime('%X')}")

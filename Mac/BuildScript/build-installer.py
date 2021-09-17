@@ -2,6 +2,10 @@
 """
 This script is used to build "official" universal installers on macOS.
 
+NEW for 3.10 and backports:
+- support universal2 variant with arm64 and x86_64 archs
+- enable clang optimizations when building on 10.15+
+
 NEW for 3.9.0 and backports:
 - 2.7 end-of-life issues:
     - Python 3 installs now update the Current version link
@@ -236,17 +240,16 @@ THIRD_PARTY_LIBS = []
 def library_recipes():
     result = []
 
-    LT_10_5 = bool(getDeptargetTuple() < (10, 5))
-
     # Since Apple removed the header files for the deprecated system
     # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1k",
-              url="https://www.openssl.org/source/openssl-1.1.1k.tar.gz",
-              checksum='c4e7d95f782b08116afa27b30393dd27',
+              name="OpenSSL 1.1.1l",
+              url="https://www.openssl.org/source/openssl-1.1.1l.tar.gz",
+              checksum='ac0d4387f3ba0ad741b0580dd45f6ff3',
+              patches=['0001-Darwin-platform-allows-to-build-on-releases-before-Y.patch'],
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -356,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.35.5",
-              url="https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz",
-              checksum='d1d1aba394c8e0443077dc9f1a681bb8',
+              name="SQLite 3.36.0",
+              url="https://sqlite.org/2021/sqlite-autoconf-3360000.tar.gz",
+              checksum='f5752052fc5b8e1b539af86a3671eac7',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -367,54 +370,13 @@ def library_recipes():
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
-                 '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
+                            ),
               configure_pre=[
                   '--enable-threadsafe',
                   '--enable-shared=no',
                   '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
-          ),
-        ])
-
-    if getDeptargetTuple() < (10, 5):
-        result.extend([
-          dict(
-              name="Bzip2 1.0.6",
-              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
-              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
-              configure=None,
-              install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              name="ZLib 1.2.3",
-              url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-              checksum='debc62758716a169df9f62e6ab2bc634',
-              configure=None,
-              install='make install CC=%s CXX=%s, prefix=%s/usr/local/ CFLAGS="-arch %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-              ),
-          ),
-          dict(
-              # Note that GNU readline is GPL'd software
-              name="GNU Readline 6.1.2",
-              url="http://ftp.gnu.org/pub/gnu/readline/readline-6.1.tar.gz" ,
-              checksum='fc2f7e714fe792db1ce6ddc4c9fb4ef3',
-              patchlevel='0',
-              patches=[
-                  # The readline maintainers don't do actual micro releases, but
-                  # just ship a set of patches.
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
-                   'c642f2e84d820884b0bf9fd176bc6c3f'),
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
-                   '1a76781a1ea734e831588285db7ec9b1'),
               ]
           ),
         ])

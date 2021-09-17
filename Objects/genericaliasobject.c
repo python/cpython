@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_unionobject.h"   // _Py_union_as_number
+#include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -418,6 +418,8 @@ static const char* const attr_exceptions[] = {
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
     "__reduce__",
+    "__copy__",
+    "__deepcopy__",
     NULL,
 };
 
@@ -441,8 +443,7 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (!PyObject_TypeCheck(a, &Py_GenericAliasType) ||
-        !PyObject_TypeCheck(b, &Py_GenericAliasType) ||
+    if (!_PyGenericAlias_Check(b) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;
@@ -577,7 +578,7 @@ static PyGetSetDef ga_properties[] = {
 };
 
 /* A helper function to create GenericAlias' args tuple and set its attributes.
- * Returns 1 on success, 0 on failure. 
+ * Returns 1 on success, 0 on failure.
  */
 static inline int
 setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
@@ -622,7 +623,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyNumberMethods ga_as_number = {
-        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+        .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
 // TODO:

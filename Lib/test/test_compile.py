@@ -650,6 +650,17 @@ if 1:
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
         self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
 
+    # Stripping unused constants is not a strict requirement for the
+    # Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_strip_unused_consts(self):
+        # Python 3.10rc1 appended None to co_consts when None is not used
+        # at all. See bpo-45056.
+        def f1():
+            "docstring"
+            return 42
+        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
     # that peephole optimization was actually done though that isn't an
@@ -943,10 +954,20 @@ if 1:
         genexp_lines = [None, 1, 3, 1]
 
         genexp_code = return_genexp.__code__.co_consts[1]
-        code_lines = [None if line is None else line-return_genexp.__code__.co_firstlineno
+        code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
                       for (_, _, line) in genexp_code.co_lines() ]
         self.assertEqual(genexp_lines, code_lines)
 
+    def test_line_number_implicit_return_after_async_for(self):
+
+        async def test(aseq):
+            async for i in aseq:
+                body
+
+        expected_lines = [None, 1, 2, 1]
+        code_lines = [ None if line is None else line-test.__code__.co_firstlineno
+                      for (_, _, line) in test.__code__.co_lines() ]
+        self.assertEqual(expected_lines, code_lines)
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles

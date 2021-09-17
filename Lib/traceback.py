@@ -4,6 +4,7 @@ import collections
 import itertools
 import linecache
 import sys
+from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -168,7 +169,7 @@ def _some_str(value):
     try:
         return str(value)
     except:
-        return '<unprintable %s object>' % type(value).__name__
+        return '<exception str() failed>'
 
 # --
 
@@ -239,7 +240,7 @@ def clear_frames(tb):
 
 
 class FrameSummary:
-    """A single frame from a traceback.
+    """Information about a single frame from a traceback.
 
     - :attr:`filename` The filename for the frame.
     - :attr:`lineno` The line within filename for the frame that was
@@ -364,15 +365,15 @@ def _get_code_position(code, instruction_index):
 _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
 class StackSummary(list):
-    """A stack of frames."""
+    """A list of FrameSummary objects, representing a stack of frames."""
 
     @classmethod
     def extract(klass, frame_gen, *, limit=None, lookup_lines=True,
             capture_locals=False):
         """Create a StackSummary from a traceback or stack object.
 
-        :param frame_gen: A generator that yields (frame, lineno) tuples to
-            include in the stack.
+        :param frame_gen: A generator that yields (frame, lineno) tuples
+            whose summaries are to be included in the stack.
         :param limit: None to include all frames or the number of frames to
             include.
         :param lookup_lines: If True, lookup lines for each frame immediately,
@@ -393,7 +394,7 @@ class StackSummary(list):
             lookup_lines=True, capture_locals=False):
         # Same as extract but operates on a frame generator that yields
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
-        # Only lineno is required, the remaining fields can be empty if the
+        # Only lineno is required, the remaining fields can be None if the
         # information is not available.
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', None)
@@ -449,6 +450,57 @@ class StackSummary(list):
                 result.append(FrameSummary(filename, lineno, name, line=line))
         return result
 
+    def format_frame_summary(self, frame_summary):
+        """Format the lines for a single FrameSummary.
+
+        Returns a string representing one frame involved in the stack. This
+        gets called for every frame to be printed in the stack summary.
+        """
+        row = []
+        row.append('  File "{}", line {}, in {}\n'.format(
+            frame_summary.filename, frame_summary.lineno, frame_summary.name))
+        if frame_summary.line:
+            row.append('    {}\n'.format(frame_summary.line.strip()))
+
+            orig_line_len = len(frame_summary._original_line)
+            frame_line_len = len(frame_summary.line.lstrip())
+            stripped_characters = orig_line_len - frame_line_len
+            if (
+                frame_summary.colno is not None
+                and frame_summary.end_colno is not None
+            ):
+                colno = _byte_offset_to_character_offset(
+                    frame_summary._original_line, frame_summary.colno)
+                end_colno = _byte_offset_to_character_offset(
+                    frame_summary._original_line, frame_summary.end_colno)
+
+                anchors = None
+                if frame_summary.lineno == frame_summary.end_lineno:
+                    with suppress(Exception):
+                        anchors = _extract_caret_anchors_from_line_segment(
+                            frame_summary._original_line[colno - 1:end_colno - 1]
+                        )
+                else:
+                    end_colno = stripped_characters + len(frame_summary.line.strip())
+
+                row.append('    ')
+                row.append(' ' * (colno - stripped_characters))
+
+                if anchors:
+                    row.append(anchors.primary_char * (anchors.left_end_offset))
+                    row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
+                    row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
+                else:
+                    row.append('^' * (end_colno - colno))
+
+                row.append('\n')
+
+        if frame_summary.locals:
+            for name, value in sorted(frame_summary.locals.items()):
+                row.append('    {name} = {value}\n'.format(name=name, value=value))
+
+        return ''.join(row)
+
     def format(self):
         """Format the stack ready for printing.
 
@@ -466,57 +518,28 @@ class StackSummary(list):
         last_line = None
         last_name = None
         count = 0
-        for frame in self:
-            if (last_file is None or last_file != frame.filename or
-                last_line is None or last_line != frame.lineno or
-                last_name is None or last_name != frame.name):
+        for frame_summary in self:
+            formatted_frame = self.format_frame_summary(frame_summary)
+            if formatted_frame is None:
+                continue
+            if (last_file is None or last_file != frame_summary.filename or
+                last_line is None or last_line != frame_summary.lineno or
+                last_name is None or last_name != frame_summary.name):
                 if count > _RECURSIVE_CUTOFF:
                     count -= _RECURSIVE_CUTOFF
                     result.append(
                         f'  [Previous line repeated {count} more '
                         f'time{"s" if count > 1 else ""}]\n'
                     )
-                last_file = frame.filename
-                last_line = frame.lineno
-                last_name = frame.name
+                last_file = frame_summary.filename
+                last_line = frame_summary.lineno
+                last_name = frame_summary.name
                 count = 0
             count += 1
             if count > _RECURSIVE_CUTOFF:
                 continue
-            row = []
-            row.append('  File "{}", line {}, in {}\n'.format(
-                frame.filename, frame.lineno, frame.name))
-            if frame.line:
-                row.append('    {}\n'.format(frame.line.strip()))
+            result.append(formatted_frame)
 
-                stripped_characters = len(frame._original_line) - len(frame.line.lstrip())
-                if frame.end_lineno == frame.lineno and frame.end_colno != 0:
-                    colno = _byte_offset_to_character_offset(frame._original_line, frame.colno)
-                    end_colno = _byte_offset_to_character_offset(frame._original_line, frame.end_colno)
-
-                    try:
-                        anchors = _extract_caret_anchors_from_line_segment(
-                            frame._original_line[colno - 1:end_colno]
-                        )
-                    except Exception:
-                        anchors = None
-
-                    row.append('    ')
-                    row.append(' ' * (colno - stripped_characters))
-
-                    if anchors:
-                        row.append(anchors.primary_char * (anchors.left_end_offset))
-                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
-                        row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
-                    else:
-                        row.append('^' * (end_colno - colno))
-
-                    row.append('\n')
-
-            if frame.locals:
-                for name, value in sorted(frame.locals.items()):
-                    row.append('    {name} = {value}\n'.format(name=name, value=value))
-            result.append(''.join(row))
         if count > _RECURSIVE_CUTOFF:
             count -= _RECURSIVE_CUTOFF
             result.append(

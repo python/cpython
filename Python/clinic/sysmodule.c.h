@@ -965,24 +965,6 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
-PyDoc_STRVAR(sys__deactivate_opcache__doc__,
-"_deactivate_opcache($module, /)\n"
-"--\n"
-"\n"
-"Deactivate the opcode cache permanently");
-
-#define SYS__DEACTIVATE_OPCACHE_METHODDEF    \
-    {"_deactivate_opcache", (PyCFunction)sys__deactivate_opcache, METH_NOARGS, sys__deactivate_opcache__doc__},
-
-static PyObject *
-sys__deactivate_opcache_impl(PyObject *module);
-
-static PyObject *
-sys__deactivate_opcache(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys__deactivate_opcache_impl(module);
-}
-
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1010,4 +992,4 @@ sys__deactivate_opcache(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=e77bf636a177c5c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=855fc93b2347710b input=a9049054013a1b77]*/

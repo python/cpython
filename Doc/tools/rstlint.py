@@ -90,7 +90,6 @@ roles = [
     ":newsgroup:",
     ":code:",
     ":py:func:",
-    ":memory:",
     ":makevar:",
     ":guilabel:",
     ":title-reference:",
@@ -121,6 +120,13 @@ three_dot_directive_re = re.compile(r"\.\.\. %s::" % all_directives)
 # instead of:
 # :const:`None`
 double_backtick_role = re.compile(r"(?<!``)%s``" % all_roles)
+
+
+# Find role used with no backticks instead of simple backticks like:
+# :const:None
+# instead of:
+# :const:`None`
+role_with_no_backticks = re.compile(r"%s[^` ]" % all_roles)
 
 
 default_role_re = re.compile(r"(^| )`\w([^`]*?\w)?`($| )")
@@ -168,6 +174,8 @@ def check_suspicious_constructs(fn, lines):
             yield lno, "directive should start with two dots, not three."
         if double_backtick_role.search(line):
             yield lno, "role use a single backtick, double backtick found."
+        if role_with_no_backticks.search(line):
+            yield lno, "role use a single backtick, no backtick found."
         if ".. productionlist::" in line:
             inprod = True
         elif not inprod and default_role_re.search(line):

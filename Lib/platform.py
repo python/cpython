@@ -116,7 +116,6 @@ import collections
 import os
 import re
 import sys
-import subprocess
 import functools
 import itertools
 
@@ -188,11 +187,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         executable = sys.executable
 
     V = _comparable_version
-    if hasattr(os.path, 'realpath'):
-        # Python 2.2 introduced os.path.realpath(); it is used
-        # here to work around problems with Cygwin not being
-        # able to open symlinks for reading
-        executable = os.path.realpath(executable)
+    # We use os.path.realpath()
+    # here to work around problems with Cygwin not being
+    # able to open symlinks for reading
+    executable = os.path.realpath(executable)
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
@@ -748,6 +746,7 @@ class _Processor:
         """
         Fall back to `uname -p`
         """
+        import subprocess
         try:
             return subprocess.check_output(
                 ['uname', '-p'],

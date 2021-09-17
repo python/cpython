@@ -1,0 +1,1 @@
+Add typical examples to os.path.splitext docs

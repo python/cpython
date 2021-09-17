@@ -4,29 +4,6 @@
 extern "C" {
 #endif
 
-/* Legacy Opcache */
-
-typedef struct {
-    PyObject *ptr;  /* Cached pointer (borrowed reference) */
-    uint64_t globals_ver;  /* ma_version of global dict */
-    uint64_t builtins_ver; /* ma_version of builtin dict */
-} _PyOpcache_LoadGlobal;
-
-typedef struct {
-    PyTypeObject *type;
-    Py_ssize_t hint;
-    unsigned int tp_version_tag;
-} _PyOpCodeOpt_LoadAttr;
-
-struct _PyOpcache {
-    union {
-        _PyOpcache_LoadGlobal lg;
-        _PyOpCodeOpt_LoadAttr la;
-    } u;
-    char optimized;
-};
-
-
 /* PEP 659
  * Specialization and quickening structs and helper functions
  */
@@ -46,12 +23,17 @@ typedef struct {
 typedef struct {
     uint32_t tp_version;
     uint32_t dk_version_or_hint;
-} _PyLoadAttrCache;
+} _PyAttrCache;
 
 typedef struct {
     uint32_t module_keys_version;
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
+
+typedef struct {
+    /* Borrowed ref in LOAD_METHOD */
+    PyObject *obj;
+} _PyObjectCache;
 
 /* Add specialized versions of entries to this union.
  *
@@ -66,8 +48,9 @@ typedef struct {
 typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
-    _PyLoadAttrCache load_attr;
+    _PyAttrCache attr;
     _PyLoadGlobalCache load_global;
+    _PyObjectCache obj;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -310,22 +293,37 @@ too_many_cache_misses(_PyAdaptiveEntry *entry) {
     return entry->counter == saturating_zero();
 }
 
-#define BACKOFF 64
+#define ADAPTIVE_CACHE_BACKOFF 64
 
 static inline void
 cache_backoff(_PyAdaptiveEntry *entry) {
-    entry->counter = BACKOFF;
+    entry->counter = ADAPTIVE_CACHE_BACKOFF;
 }
 
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
+#define PRINT_SPECIALIZATION_STATS 0
+#define PRINT_SPECIALIZATION_STATS_DETAILED 0
+#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
 
-#if SPECIALIZATION_STATS
+#ifdef Py_DEBUG
+#define COLLECT_SPECIALIZATION_STATS 1
+#define COLLECT_SPECIALIZATION_STATS_DETAILED 1
+#else
+#define COLLECT_SPECIALIZATION_STATS PRINT_SPECIALIZATION_STATS
+#define COLLECT_SPECIALIZATION_STATS_DETAILED PRINT_SPECIALIZATION_STATS_DETAILED
+#endif
+
+#define SPECIALIZATION_FAILURE_KINDS 20
+
+#if COLLECT_SPECIALIZATION_STATS
 
 typedef struct _stats {
     uint64_t specialization_success;
@@ -335,16 +333,21 @@ typedef struct _stats {
     uint64_t miss;
     uint64_t deopt;
     uint64_t unquickened;
-#if SPECIALIZATION_STATS_DETAILED
-    PyObject *miss_types;
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+    uint64_t specialization_failure_kinds[SPECIALIZATION_FAILURE_KINDS];
 #endif
 } SpecializationStats;
 
 extern SpecializationStats _specialization_stats[256];
 #define STAT_INC(opname, name) _specialization_stats[opname].name++
+#define STAT_DEC(opname, name) _specialization_stats[opname].name--
 void _Py_PrintSpecializationStats(void);
+
+PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
+
 #else
 #define STAT_INC(opname, name) ((void)0)
+#define STAT_DEC(opname, name) ((void)0)
 #endif
 
 

@@ -165,7 +165,7 @@ Module functions and constants
    does not include the type, i. e. if you use something like
    ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
    everything until the first ``'['`` for the column name and strip
-   the preceeding space: the column name would simply be "Expiration date".
+   the preceding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
@@ -402,6 +402,10 @@ Connection Objects
 
          con.create_collation("reverse", None)
 
+      .. versionchanged:: 3.11
+         The collation name can contain any Unicode character.  Earlier, only
+         ASCII characters were allowed.
+
 
    .. method:: interrupt()
 
@@ -456,13 +460,21 @@ Connection Objects
       Registers *trace_callback* to be called for each SQL statement that is
       actually executed by the SQLite backend.
 
-      The only argument passed to the callback is the statement (as string) that
-      is being executed. The return value of the callback is ignored. Note that
-      the backend does not only run statements passed to the :meth:`Cursor.execute`
-      methods.  Other sources include the transaction management of the Python
-      module and the execution of triggers defined in the current database.
+      The only argument passed to the callback is the statement (as
+      :class:`str`) that is being executed. The return value of the callback is
+      ignored. Note that the backend does not only run statements passed to the
+      :meth:`Cursor.execute` methods.  Other sources include the
+      :ref:`transaction management <sqlite3-controlling-transactions>` of the
+      sqlite3 module and the execution of triggers defined in the current
+      database.
 
       Passing :const:`None` as *trace_callback* will disable the trace callback.
+
+      .. note::
+         Exceptions raised in the trace callback are not propagated. As a
+         development and debugging aid, use
+         :meth:`~sqlite3.enable_callback_tracebacks` to enable printing
+         tracebacks from exceptions raised in the trace callback.
 
       .. versionadded:: 3.3
 
@@ -654,7 +666,7 @@ Cursor Objects
       This is a nonstandard convenience method for executing multiple SQL statements
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
       gets as a parameter.  This method disregards :attr:`isolation_level`; any
-      transation control must be added to *sql_script*.
+      transaction control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 
@@ -831,6 +843,20 @@ Exceptions
 
    The base class of the other exceptions in this module.  It is a subclass
    of :exc:`Exception`.
+
+   .. attribute:: sqlite_errorcode
+
+      The numeric error code from the
+      `SQLite API <https://sqlite.org/rescode.html>`_
+
+      .. versionadded:: 3.11
+
+   .. attribute:: sqlite_errorname
+
+      The symbolic name of the numeric error code
+      from the `SQLite API <https://sqlite.org/rescode.html>`_
+
+      .. versionadded:: 3.11
 
 .. exception:: DatabaseError
 

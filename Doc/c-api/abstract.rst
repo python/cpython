@@ -24,3 +24,4 @@ but whose items have not been set to some non-\ ``NULL`` value yet.
    mapping.rst
    iter.rst
    buffer.rst
+   objbuffer.rst

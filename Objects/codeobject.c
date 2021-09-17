@@ -4,7 +4,7 @@
 #include "code.h"
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
-#include "pycore_code.h"          // _PyOpcache
+#include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -471,9 +471,11 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                                localsplusnames, localspluskinds);
     }
     // If any cells were args then nlocalsplus will have shrunk.
-    // We don't bother resizing localspluskinds.
-    if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0) {
-        goto error;
+    if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
+        if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
+                || _PyBytes_Resize(&localspluskinds, nlocalsplus) < 0) {
+            goto error;
+        }
     }
 
     struct _PyCodeConstructor con = {

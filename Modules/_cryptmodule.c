@@ -4,6 +4,9 @@
 #include "Python.h"
 
 #include <sys/types.h>
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
 
 /* Module crypt */
 

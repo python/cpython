@@ -77,7 +77,7 @@ Note that ``None`` as a type hint is a special case and is replaced by
 NewType
 =======
 
-Use the :func:`NewType` helper function to create distinct types::
+Use the :class:`NewType` helper class to create distinct types::
 
    from typing import NewType
 
@@ -106,15 +106,14 @@ accidentally creating a ``UserId`` in an invalid way::
 
 Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
-function that immediately returns whatever parameter you pass it. That means
+class that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
-any overhead beyond that of a regular function call.
+much overhead beyond that of a regular function call.
 
 More precisely, the expression ``some_value is Derived(some_value)`` is always
 true at runtime.
 
-This also means that it is not possible to create a subtype of ``Derived``
-since it is an identity function at runtime, not an actual type::
+It is invalid to create a subtype of ``Derived``::
 
    from typing import NewType
 
@@ -123,7 +122,7 @@ since it is an identity function at runtime, not an actual type::
    # Fails at runtime and does not typecheck
    class AdminUserId(UserId): pass
 
-However, it is possible to create a :func:`NewType` based on a 'derived' ``NewType``::
+However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
 
    from typing import NewType
 
@@ -150,6 +149,12 @@ See :pep:`484` for more details.
    errors with minimal runtime cost.
 
 .. versionadded:: 3.5.2
+
+.. versionchanged:: 3.10
+   ``NewType`` is now a class rather than a function.  There is some additional
+   runtime cost when calling ``NewType`` over a regular function.  However, this
+   cost will be reduced in 3.11.0.
+
 
 Callable
 ========
@@ -316,11 +321,11 @@ not generic but implicitly inherits from ``Iterable[Any]``::
 User defined generic type aliases are also supported. Examples::
 
    from collections.abc import Iterable
-   from typing import TypeVar, Union
+   from typing import TypeVar
    S = TypeVar('S')
-   Response = Union[Iterable[S], int]
+   Response = Iterable[S] | int
 
-   # Return type here is same as Union[Iterable[str], int]
+   # Return type here is same as Iterable[str] | int
    def response(query: str) -> Response[str]:
        ...
 
@@ -583,9 +588,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Union
 
-   Union type; ``Union[X, Y]`` means either X or Y.
+   Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
-   To define a union, use e.g. ``Union[int, str]``.  Details:
+   To define a union, use e.g. ``Union[int, str]`` or the shorthand ``int | str``.  Details:
 
    * The arguments must be types and there must be at least one.
 
@@ -599,17 +604,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    * Redundant arguments are skipped, e.g.::
 
-       Union[int, str, int] == Union[int, str]
+       Union[int, str, int] == Union[int, str] == int | str
 
    * When comparing unions, the argument order is ignored, e.g.::
 
        Union[int, str] == Union[str, int]
 
-   * You cannot subclass or instantiate a union.
+   * You cannot subclass or instantiate a ``Union``.
 
    * You cannot write ``Union[X][Y]``.
-
-   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
 
    .. versionchanged:: 3.7
       Don't remove explicit subclasses from unions at runtime.
@@ -622,7 +625,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Optional type.
 
-   ``Optional[X]`` is equivalent to ``Union[X, None]``.
+   ``Optional[X]`` is equivalent to ``X | None`` (or ``Union[X, None]``).
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
@@ -638,6 +641,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       def foo(arg: Optional[int] = None) -> None:
           ...
+
+   .. versionchanged:: 3.10
+      Optional can now be written as ``X | None``. See
+      :ref:`union type expressions<types-union>`.
 
 .. data:: Callable
 
@@ -765,7 +772,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    :ref:`type variables <generics>`, and unions of any of these types.
    For example::
 
-      def new_non_team_user(user_class: Type[Union[BasicUser, ProUser]]): ...
+      def new_non_team_user(user_class: Type[BasicUser | ProUser]): ...
 
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
@@ -946,7 +953,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    conditional code flow and applying the narrowing to a block of code.  The
    conditional expression here is sometimes referred to as a "type guard"::
 
-      def is_str(val: Union[str, float]):
+      def is_str(val: str | float):
           # "isinstance" type guard
           if isinstance(val, str):
               # Type of ``val`` is narrowed to ``str``
@@ -1306,16 +1313,20 @@ These are not used in annotations. They are building blocks for declaring types.
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
-.. function:: NewType(name, tp)
+.. class:: NewType(name, tp)
 
-   A helper function to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns a function that returns
-   its argument. Usage::
+   A helper class to indicate a distinct type to a typechecker,
+   see :ref:`distinct`. At runtime it returns an object that returns
+   its argument when called.
+   Usage::
 
       UserId = NewType('UserId', int)
       first_user = UserId(1)
 
    .. versionadded:: 3.5.2
+
+   .. versionchanged:: 3.10
+      ``NewType`` is now a class rather than a function.
 
 .. class:: TypedDict(dict)
 
@@ -1496,8 +1507,8 @@ Other concrete types
    :func:`open`.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.io`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.io`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
 .. class:: Pattern
            Match
@@ -1510,8 +1521,8 @@ Other concrete types
    ``Match[bytes]``.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.re`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.re`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
@@ -2004,6 +2015,13 @@ Introspection helpers
            'name': Annotated[str, 'some marker']
        }
 
+   .. note::
+
+      :func:`get_type_hints` does not work with imported
+      :ref:`type aliases <type-aliases>` that include forward references.
+      Enabling postponed evaluation of annotations (:pep:`563`) may remove
+      the need for most forward references.
+
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
 
@@ -2015,7 +2033,7 @@ Introspection helpers
    For a typing object of the form ``X[Y, Z, ...]`` these functions return
    ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
-   If ``X`` is a :class:`Union` or :class:`Literal` contained in another
+   If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
    For unsupported objects return ``None`` and ``()`` correspondingly.
@@ -2040,7 +2058,7 @@ Introspection helpers
           year: int
 
       is_typeddict(Film)  # => True
-      is_typeddict(Union[list, str])  # => False
+      is_typeddict(list | str)  # => False
 
    .. versionadded:: 3.10
 

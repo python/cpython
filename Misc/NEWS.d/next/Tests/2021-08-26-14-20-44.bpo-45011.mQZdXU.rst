@@ -1,0 +1,3 @@
+Made tests relying on the :mod:`_asyncio` C extension module optional to
+allow running on alternative Python implementations. Patch by Serhiy
+Storchaka.

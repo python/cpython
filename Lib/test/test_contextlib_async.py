@@ -1,7 +1,7 @@
 import asyncio
 from contextlib import (
     asynccontextmanager, AbstractAsyncContextManager,
-    AsyncExitStack, nullcontext, aclosing)
+    AsyncExitStack, nullcontext, aclosing, contextmanager)
 import functools
 from test import support
 import unittest
@@ -209,7 +209,18 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         async def woohoo():
             yield
 
-        for stop_exc in (StopIteration('spam'), StopAsyncIteration('ham')):
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        class StopAsyncIterationSubclass(StopAsyncIteration):
+            pass
+
+        for stop_exc in (
+            StopIteration('spam'),
+            StopAsyncIteration('ham'),
+            StopIterationSubclass('spam'),
+            StopAsyncIterationSubclass('spam')
+        ):
             with self.subTest(type=type(stop_exc)):
                 try:
                     async with woohoo():
@@ -346,14 +357,17 @@ class AclosingTestCase(unittest.TestCase):
     async def test_aclosing_bpo41229(self):
         state = []
 
-        class Resource:
-            def __del__(self):
+        @contextmanager
+        def sync_resource():
+            try:
+                yield
+            finally:
                 state.append(1)
 
         async def agenfunc():
-            r = Resource()
-            yield -1
-            yield -2
+            with sync_resource():
+                yield -1
+                yield -2
 
         x = agenfunc()
         self.assertEqual(state, [])
