@@ -277,6 +277,28 @@ Removed
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
 
+* Removed many old deprecated :mod:`unittest` features:
+
+  - :class:`~unittest.TestCase` method aliases ``failUnlessEqual``,
+    ``failIfEqual``, ``failUnless``, ``failIf``, ``failUnlessRaises``,
+    ``failUnlessAlmostEqual``, ``failIfAlmostEqual`` (deprecated in Python 3.1),
+    ``assertEquals``, ``assertNotEquals``, ``assert_``, ``assertAlmostEquals``,
+    ``assertNotAlmostEquals``, ``assertRegexpMatches``, ``assertRaisesRegexp``
+    (deprecated in Python 3.2), and ``assertNotRegexpMatches`` (deprecated in
+    Python 3.5).
+
+  - Undocumented and broken :class:`~unittest.TestCase` method
+    ``assertDictContainsSubset`` (deprecated in Python 3.2).
+
+  - Undocumented :meth:`<unittest.TestLoader.loadTestsFromModule>
+    TestLoader.loadTestsFromModule` parameter *use_load_tests* (deprecated
+    and ignored since Python 3.2).
+
+  - An alias of the :class:`~unittest.TextTestResult` class:
+    ``_TextTestResult`` (deprecated in Python 3.2).
+
+  (Contributed by Serhiy Storchaka in :issue:`45162`.)
+
 * The following deprecated functions and methods are removed in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
   :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.

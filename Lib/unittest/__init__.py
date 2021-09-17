@@ -68,9 +68,6 @@ from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
 from .loader import makeSuite, getTestCaseNames, findTestCases
 
-# deprecated
-_TextTestResult = TextTestResult
-
 
 # There are no tests here, so don't try to run anything discovered from
 # introspecting the symbols (e.g. FunctionTestCase). Instead, all our
