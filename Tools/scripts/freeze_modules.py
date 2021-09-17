@@ -66,8 +66,7 @@ FROZEN = [
         # on a builtin zip file instead of a filesystem.
         'zipimport',
         ]),
-    ('stdlib', [
-        # == without site (python -S) ==
+    ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
         # For now we do not freeze the encodings, due # to the noise all
@@ -75,7 +74,8 @@ FROZEN = [
         # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
         #'<encodings.*>',
         'io',
-        # == with site ==
+        ]),
+    ('stdlib - startup, with site', [
         '_collections_abc',
         '_sitebuiltins',
         'genericpath',

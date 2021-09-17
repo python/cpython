@@ -65,10 +65,12 @@ static const struct _frozen _PyImport_FrozenModules[] = {
         (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
 
-    /* stdlib */
+    /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
     {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs)},
     {"io", _Py_M__io, (int)sizeof(_Py_M__io)},
+
+    /* stdlib - startup, with site */
     {"_collections_abc", _Py_M___collections_abc,
         (int)sizeof(_Py_M___collections_abc)},
     {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
