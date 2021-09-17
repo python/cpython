@@ -352,6 +352,21 @@ Deprecated
   :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
   default ``None`` value), is now deprecated.
 
+* Deprecated the following :mod:`unittest` functions, scheduled for removal in
+  Python 3.13:
+
+  * :func:`unittest.findTestCases`
+  * :func:`unittest.makeSuite`
+  * :func:`unittest.getTestCaseNames`
+
+  Use :class:`~unittest.TestLoader` method instead:
+
+  * :meth:`unittest.TestLoader.loadTestsFromModule`
+  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
+  * :meth:`unittest.TestLoader.getTestCaseNames`
+
+  (Contributed by Erlend E. Aasland in :issue:`5846`.)
+
 
 Removed
 =======

@@ -88,24 +88,145 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Programs\_freeze_module.c" />
+    <ClCompile Include="..\PC\config_minimal.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="pythoncore.vcxproj">
-      <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
-      <Private>true</Private>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
+    <ClCompile Include="..\Modules\atexitmodule.c" />
+    <ClCompile Include="..\Modules\faulthandler.c" />
+    <ClCompile Include="..\Modules\gcmodule.c" />
+    <ClCompile Include="..\Modules\getbuildinfo.c" />
+    <ClCompile Include="..\Modules\posixmodule.c" />
+    <ClCompile Include="..\Modules\signalmodule.c" />
+    <ClCompile Include="..\Modules\_tracemalloc.c" />
+    <ClCompile Include="..\Modules\_io\_iomodule.c" />
+    <ClCompile Include="..\Modules\_io\bufferedio.c" />
+    <ClCompile Include="..\Modules\_io\bytesio.c" />
+    <ClCompile Include="..\Modules\_io\fileio.c" />
+    <ClCompile Include="..\Modules\_io\iobase.c" />
+    <ClCompile Include="..\Modules\_io\stringio.c" />
+    <ClCompile Include="..\Modules\_io\textio.c" />
+    <ClCompile Include="..\Modules\_io\winconsoleio.c" />
+    <ClCompile Include="..\Objects\abstract.c" />
+    <ClCompile Include="..\Objects\accu.c" />
+    <ClCompile Include="..\Objects\boolobject.c" />
+    <ClCompile Include="..\Objects\bytearrayobject.c" />
+    <ClCompile Include="..\Objects\bytes_methods.c" />
+    <ClCompile Include="..\Objects\bytesobject.c" />
+    <ClCompile Include="..\Objects\call.c" />
+    <ClCompile Include="..\Objects\capsule.c" />
+    <ClCompile Include="..\Objects\cellobject.c" />
+    <ClCompile Include="..\Objects\classobject.c" />
+    <ClCompile Include="..\Objects\codeobject.c" />
+    <ClCompile Include="..\Objects\complexobject.c" />
+    <ClCompile Include="..\Objects\descrobject.c" />
+    <ClCompile Include="..\Objects\dictobject.c" />
+    <ClCompile Include="..\Objects\enumobject.c" />
+    <ClCompile Include="..\Objects\exceptions.c" />
+    <ClCompile Include="..\Objects\fileobject.c" />
+    <ClCompile Include="..\Objects\floatobject.c" />
+    <ClCompile Include="..\Objects\frameobject.c" />
+    <ClCompile Include="..\Objects\funcobject.c" />
+    <ClCompile Include="..\Objects\genericaliasobject.c" />
+    <ClCompile Include="..\Objects\genobject.c" />
+    <ClCompile Include="..\Objects\interpreteridobject.c" />
+    <ClCompile Include="..\Objects\iterobject.c" />
+    <ClCompile Include="..\Objects\listobject.c" />
+    <ClCompile Include="..\Objects\longobject.c" />
+    <ClCompile Include="..\Objects\memoryobject.c" />
+    <ClCompile Include="..\Objects\methodobject.c" />
+    <ClCompile Include="..\Objects\moduleobject.c" />
+    <ClCompile Include="..\Objects\namespaceobject.c" />
+    <ClCompile Include="..\Objects\object.c" />
+    <ClCompile Include="..\Objects\obmalloc.c" />
+    <ClCompile Include="..\Objects\odictobject.c" />
+    <ClCompile Include="..\Objects\picklebufobject.c" />
+    <ClCompile Include="..\Objects\rangeobject.c" />
+    <ClCompile Include="..\Objects\setobject.c" />
+    <ClCompile Include="..\Objects\sliceobject.c" />
+    <ClCompile Include="..\Objects\structseq.c" />
+    <ClCompile Include="..\Objects\tupleobject.c" />
+    <ClCompile Include="..\Objects\typeobject.c" />
+    <ClCompile Include="..\Objects\unicodectype.c" />
+    <ClCompile Include="..\Objects\unicodeobject.c" />
+    <ClCompile Include="..\Objects\unionobject.c" />
+    <ClCompile Include="..\Objects\weakrefobject.c" />
+    <ClCompile Include="..\Parser\myreadline.c" />
+    <ClCompile Include="..\Parser\parser.c" />
+    <ClCompile Include="..\Parser\peg_api.c" />
+    <ClCompile Include="..\Parser\pegen.c" />
+    <ClCompile Include="..\Parser\string_parser.c" />
+    <ClCompile Include="..\Parser\token.c" />
+    <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\PC\getpathp.c" />
+    <ClCompile Include="..\PC\invalid_parameter_handler.c" />
+    <ClCompile Include="..\PC\msvcrtmodule.c" />
+    <ClCompile Include="..\PC\winreg.c" />
+    <ClCompile Include="..\Python\_warnings.c" />
+    <ClCompile Include="..\Python\asdl.c" />
+    <ClCompile Include="..\Python\ast.c" />
+    <ClCompile Include="..\Python\ast_opt.c" />
+    <ClCompile Include="..\Python\ast_unparse.c" />
+    <ClCompile Include="..\Python\bltinmodule.c" />
+    <ClCompile Include="..\Python\bootstrap_hash.c" />
+    <ClCompile Include="..\Python\ceval.c" />
+    <ClCompile Include="..\Python\codecs.c" />
+    <ClCompile Include="..\Python\compile.c" />
+    <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\dtoa.c" />
+    <ClCompile Include="..\Python\dynamic_annotations.c" />
+    <ClCompile Include="..\Python\dynload_win.c" />
+    <ClCompile Include="..\Python\errors.c" />
+    <ClCompile Include="..\Python\fileutils.c" />
+    <ClCompile Include="..\Python\formatter_unicode.c" />
+    <ClCompile Include="..\Python\frame.c" />
+    <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\getargs.c" />
+    <ClCompile Include="..\Python\getcompiler.c" />
+    <ClCompile Include="..\Python\getcopyright.c" />
+    <ClCompile Include="..\Python\getopt.c" />
+    <ClCompile Include="..\Python\getplatform.c" />
+    <ClCompile Include="..\Python\getversion.c" />
+    <ClCompile Include="..\Python\hamt.c" />
+    <ClCompile Include="..\Python\hashtable.c" />
+    <ClCompile Include="..\Python\import.c" />
+    <ClCompile Include="..\Python\importdl.c" />
+    <ClCompile Include="..\Python\initconfig.c" />
+    <ClCompile Include="..\Python\marshal.c" />
+    <ClCompile Include="..\Python\modsupport.c" />
+    <ClCompile Include="..\Python\mysnprintf.c" />
+    <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\pathconfig.c" />
+    <ClCompile Include="..\Python\preconfig.c" />
+    <ClCompile Include="..\Python\pyarena.c" />
+    <ClCompile Include="..\Python\pyctype.c" />
+    <ClCompile Include="..\Python\pyfpe.c" />
+    <ClCompile Include="..\Python\pyhash.c" />
+    <ClCompile Include="..\Python\pylifecycle.c" />
+    <ClCompile Include="..\Python\pymath.c" />
+    <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystrcmp.c" />
+    <ClCompile Include="..\Python\pystrhex.c" />
+    <ClCompile Include="..\Python\pystrtod.c" />
+    <ClCompile Include="..\Python\Python-ast.c" />
+    <ClCompile Include="..\Python\pythonrun.c" />
+    <ClCompile Include="..\Python\Python-tokenize.c" />
+    <ClCompile Include="..\Python\pytime.c" />
+    <ClCompile Include="..\Python\specialize.c" />
+    <ClCompile Include="..\Python\structmember.c" />
+    <ClCompile Include="..\Python\suggestions.c" />
+    <ClCompile Include="..\Python\symtable.c" />
+    <ClCompile Include="..\Python\sysmodule.c" />
+    <ClCompile Include="..\Python\thread.c" />
+    <ClCompile Include="..\Python\traceback.c" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -124,19 +245,59 @@
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
     </None>
-    <None Include="..\Tools\freeze\flag.py">
-      <ModName>hello</ModName>
-      <IntFile>$(IntDir)ello.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\hello.h</OutFile>
+    <None Include="..\Lib\abc.py">
+      <ModName>abc</ModName>
+      <IntFile>$(IntDir)abc.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
+    </None>
+    <None Include="..\Lib\io.py">
+      <ModName>io</ModName>
+      <IntFile>$(IntDir)io.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\io.h</OutFile>
+    </None>
+    <None Include="..\Lib\_collections_abc.py">
+      <ModName>_collections_abc</ModName>
+      <IntFile>$(IntDir)_collections_abc.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\_collections_abc.h</OutFile>
+    </None>
+    <None Include="..\Lib\_sitebuiltins.py">
+      <ModName>_sitebuiltins</ModName>
+      <IntFile>$(IntDir)_sitebuiltins.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\_sitebuiltins.h</OutFile>
+    </None>
+    <None Include="..\Lib\genericpath.py">
+      <ModName>genericpath</ModName>
+      <IntFile>$(IntDir)genericpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\genericpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\ntpath.py">
+      <ModName>ntpath</ModName>
+      <IntFile>$(IntDir)ntpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\ntpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\posixpath.py">
+      <ModName>posixpath</ModName>
+      <IntFile>$(IntDir)posixpath.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\stat.py">
+      <ModName>stat</ModName>
+      <IntFile>$(IntDir)stat.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
+    </None>
+    <None Include="..\Lib\__hello__.py">
+      <ModName>__hello__</ModName>
+      <IntFile>$(IntDir)__hello__.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\__hello__.h</OutFile>
     </None>
     <!-- END frozen modules -->
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="_RebuildFrozen">
+  <Target Name="_RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
-    
+
     <Copy SourceFiles="%(None.IntFile)"
           DestinationFiles="%(None.OutFile)"
           Condition="!Exists(%(None.OutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
@@ -145,18 +306,8 @@
 
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
-    <Warning Text="Frozen modules (e.g. importlib) were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
-             Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
-    <Error Text="Frozen (e.g. importlib) files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
-           Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
   </Target>
-  <Target Name="RebuildFrozen" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
-          DependsOnTargets="_RebuildFrozen">
-  </Target>
-  <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
-          DependsOnTargets="_RebuildFrozen">
-  </Target>
-  <Target Name="_CleanFrozen" BeforeTargets="CoreClean">
+  <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
     </ItemGroup>

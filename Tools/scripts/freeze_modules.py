@@ -6,7 +6,8 @@ See the notes at the top of Python/frozen.c for more info.
 from collections import namedtuple
 import hashlib
 import os
-import os.path
+import ntpath
+import posixpath
 import subprocess
 import sys
 import textwrap
@@ -19,9 +20,22 @@ TOOLS_DIR = os.path.dirname(SCRIPTS_DIR)
 ROOT_DIR = os.path.dirname(TOOLS_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
-# If MODULES_DIR is changed then the .gitattributes file needs to be updated.
-MODULES_DIR = os.path.join(ROOT_DIR, 'Python/frozen_modules')
-TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
+# If MODULES_DIR is changed then the .gitattributes and .gitignore files
+# need to be updated.
+MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
+
+if sys.platform != "win32":
+    TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
+else:
+    def find_tool():
+        for arch in ['amd64', 'win32']:
+            for exe in ['_freeze_module.exe', '_freeze_module_d.exe']:
+                tool = os.path.join(ROOT_DIR, 'PCbuild', arch, exe)
+                if os.path.isfile(tool):
+                    return tool
+        sys.exit("ERROR: missing _freeze_module.exe; you need to run PCbuild/build.bat")
+    TOOL = find_tool()
+    del find_tool
 
 MANIFEST = os.path.join(MODULES_DIR, 'MANIFEST')
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
@@ -29,6 +43,9 @@ MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
 TEST_CTYPES = os.path.join(STDLIB_DIR, 'ctypes', 'test', 'test_values.py')
+
+
+OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
 
 # These are modules that get frozen.
 FROZEN = [
@@ -43,10 +60,32 @@ FROZEN = [
         # on a builtin zip file instead of a filesystem.
         'zipimport',
         ]),
+    ('stdlib', [
+        # For the moment we skip codecs, encodings.*, os, and site.
+        # These modules have different generated files depending on
+        # if a debug or non-debug build.  (See bpo-45186 and bpo-45188.)
+        # without site (python -S)
+        'abc',
+        #'codecs',
+        # '<encodings.*>',
+        'io',
+        # with site
+        '_collections_abc',
+        '_sitebuiltins',
+        'genericpath',
+        'ntpath',
+        'posixpath',
+        # We must explicitly mark os.path as a frozen module
+        # even though it will never be imported.
+        #f'{OS_PATH} : os.path',
+        #'os',
+        #'site',
+        'stat',
+        ]),
     ('Test module', [
-        'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
-        'hello : <__phello__>',
-        'hello : __phello__.spam',
+        '__hello__',
+        '__hello__ : <__phello__>',
+        '__hello__ : __phello__.spam',
         ]),
 ]
 ESSENTIAL = {
@@ -54,6 +93,28 @@ ESSENTIAL = {
     'importlib._bootstrap_external',
     'zipimport',
 }
+
+
+#######################################
+# platform-specific helpers
+
+if os.path is posixpath:
+    relpath_for_posix_display = os.path.relpath
+
+    def relpath_for_windows_display(path, base):
+        return ntpath.relpath(
+            ntpath.join(*path.split(os.path.sep)),
+            ntpath.join(*base.split(os.path.sep)),
+        )
+
+else:
+    relpath_for_windows_display = ntpath.relpath
+
+    def relpath_for_posix_display(path, base):
+        return posixpath.relpath(
+            posixpath.join(*path.split(os.path.sep)),
+            posixpath.join(*base.split(os.path.sep)),
+        )
 
 
 #######################################
@@ -228,7 +289,7 @@ class FrozenModule(namedtuple('FrozenModule', 'name ispkg section source')):
         if source:
             source = f'<{source}>'
         else:
-            source = os.path.relpath(self.pyfile, ROOT_DIR)
+            source = relpath_for_posix_display(self.pyfile, ROOT_DIR)
         return {
             'module': self.name,
             'ispkg': self.ispkg,
@@ -372,7 +433,7 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
         raise Exception(f"End marker {end_marker!r} "
                         f"occurs before start marker {start_marker!r} "
                         f"in file {file}")
-    replacements = [line.rstrip() + os.linesep for line in replacements]
+    replacements = [line.rstrip() + '\n' for line in replacements]
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
@@ -421,7 +482,7 @@ def regen_frozen(modules):
     for src in _iter_sources(modules):
         # Adding a comment to separate sections here doesn't add much,
         # so we don't.
-        header = os.path.relpath(src.frozenfile, parentdir)
+        header = relpath_for_posix_display(src.frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
     deflines = []
@@ -478,17 +539,16 @@ def regen_makefile(modules):
     frozenfiles = []
     rules = ['']
     for src in _iter_sources(modules):
-        header = os.path.relpath(src.frozenfile, ROOT_DIR)
-        relfile = header.replace('\\', '/')
-        frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
+        header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
+        frozenfiles.append(f'\t\t{header} \\')
 
-        pyfile = os.path.relpath(src.pyfile, ROOT_DIR)
+        pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         # Note that we freeze the module to the target .h file
         # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: Programs/_freeze_module {pyfile}')
-        rules.append(f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} \\')
-        rules.append(f'\t\t$(srcdir)/{pyfile} \\')
-        rules.append(f'\t\t$(srcdir)/{header}')
+        rules.append(
+            (f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} '
+             f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
         rules.append('')
 
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
@@ -517,13 +577,9 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     for src in _iter_sources(modules):
-        # For now we only require the essential frozen modules on Windows.
-        # See bpo-45186 and bpo-45188.
-        if src.id not in ESSENTIAL and src.id != 'hello':
-            continue
-        pyfile = os.path.relpath(src.pyfile, ROOT_DIR).replace('/', '\\')
-        header = os.path.relpath(src.frozenfile, ROOT_DIR).replace('/', '\\')
-        intfile = header.split('\\')[-1].strip('.h') + '.g.h'
+        pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
+        header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
+        intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
@@ -575,7 +631,7 @@ def _freeze_module(frozenid, pyfile, frozenfile):
     print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)
     try:
         subprocess.run(argv, check=True)
-    except subprocess.CalledProcessError:
+    except (FileNotFoundError, subprocess.CalledProcessError):
         if not os.path.exists(TOOL):
             sys.exit(f'ERROR: missing {TOOL}; you need to run "make regen-frozen"')
         raise  # re-raise

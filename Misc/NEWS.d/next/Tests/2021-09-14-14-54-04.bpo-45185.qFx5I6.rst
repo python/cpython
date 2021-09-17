@@ -1,0 +1,1 @@
+Enables ``TestEnumerations`` test cases in ``test_ssl`` suite.
