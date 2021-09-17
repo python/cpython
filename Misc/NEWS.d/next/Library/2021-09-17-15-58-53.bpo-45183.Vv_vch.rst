@@ -1,0 +1,2 @@
+Have zipimport.find_spec() not raise an exception when the underlying zip
+file has been deleted.
