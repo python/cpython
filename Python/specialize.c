@@ -1016,7 +1016,8 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(globals)) {
         goto fail;
     }
-    Py_ssize_t index = _PyDictKeys_StringLookup(((PyDictObject *)globals)->ma_keys, name);
+    PyDictKeysObject * globals_keys = ((PyDictObject *)globals)->ma_keys;
+    Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
@@ -1025,7 +1026,7 @@ _Py_Specialize_LoadGlobal(
         if (index != (uint16_t)index) {
             goto fail;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)globals)->ma_keys);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
         if (keys_version == 0) {
             goto fail;
         }
@@ -1037,7 +1038,8 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(builtins)) {
         goto fail;
     }
-    index = _PyDictKeys_StringLookup(((PyDictObject *)builtins)->ma_keys, name);
+    PyDictKeysObject * builtin_keys = ((PyDictObject *)builtins)->ma_keys;
+    index = _PyDictKeys_StringLookup(builtin_keys, name);
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
@@ -1045,12 +1047,12 @@ _Py_Specialize_LoadGlobal(
     if (index != (uint16_t)index) {
         goto fail;
     }
-    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)globals)->ma_keys);
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
     if (globals_version == 0) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(((PyDictObject *)builtins)->ma_keys);
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(builtin_keys);
     if (builtins_version == 0) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
