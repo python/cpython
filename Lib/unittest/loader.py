@@ -494,6 +494,9 @@ class TestLoader(object):
 defaultTestLoader = TestLoader()
 
 
+# These functions are considered obsolete for long time.
+# They will be removed in Python 3.13.
+
 def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
     loader = TestLoader()
     loader.sortTestMethodsUsing = sortUsing
@@ -504,14 +507,32 @@ def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
     return loader
 
 def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNamePatterns=None):
+    import warnings
+    warnings.warn(
+        "unittest.getTestCaseNames() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.getTestCaseNames() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
 
 def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
               suiteClass=suite.TestSuite):
+    import warnings
+    warnings.warn(
+        "unittest.makeSuite() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.loadTestsFromTestCase() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
         testCaseClass)
 
 def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
                   suiteClass=suite.TestSuite):
+    import warnings
+    warnings.warn(
+        "unittest.findTestCases() is deprecated and will be removed in Python 3.13. "
+        "Please use unittest.TestLoader.loadTestsFromModule() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
         module)
