@@ -875,6 +875,7 @@ load_method_fail_kind(DesciptorClassification kind)
         case ABSENT:
             return SPEC_FAIL_EXPECTED_ERROR;
     }
+    Py_UNREACHABLE();
 }
 #endif
 
