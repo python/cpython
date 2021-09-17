@@ -288,8 +288,8 @@ the *new_callable* argument to :func:`patch`.
       :meth:`configure_mock`.
 
     * *parent*: Make current mock a child of *parent*, which should be a
-      :class:`Mock` or :class:`MagicMock` instance. To set the *name* attribute
-      to an arbitrary value, use :meth:`configure_mock`.
+      :class:`Mock` or :class:`MagicMock` instance. To set the *parent*
+      attribute to an arbitrary value, use :meth:`configure_mock`.
 
 
     Mocks can also be called with arbitrary keyword arguments. These will be
