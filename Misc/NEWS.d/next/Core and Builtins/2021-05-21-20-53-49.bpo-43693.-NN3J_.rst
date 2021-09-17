@@ -1,0 +1,3 @@
+``PyCodeObject`` gained ``co_fastlocalnames`` and ``co_fastlocalkinds`` as
+the the authoritative source of fast locals info.  Marshaled code objects
+have changed accordingly.

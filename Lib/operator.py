@@ -155,10 +155,10 @@ def contains(a, b):
     return b in a
 
 def countOf(a, b):
-    "Return the number of times b occurs in a."
+    "Return the number of items in a which are, or which equal, b."
     count = 0
     for i in a:
-        if i == b:
+        if i is b or i == b:
             count += 1
     return count
 
@@ -173,7 +173,7 @@ def getitem(a, b):
 def indexOf(a, b):
     "Return the first index of b in a."
     for i, j in enumerate(a):
-        if j == b:
+        if j is b or j == b:
             return i
     else:
         raise ValueError('sequence.index(x): x not in sequence')

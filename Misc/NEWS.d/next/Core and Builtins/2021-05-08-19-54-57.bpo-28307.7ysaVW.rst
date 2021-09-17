@@ -1,0 +1,3 @@
+Compiler now optimizes simple C-style formatting with literal format
+containing only format codes %s, %r and %a by converting them to f-string
+expressions.

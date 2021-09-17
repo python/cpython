@@ -158,7 +158,7 @@ which implements arithmetic based on rational numbers (so the numbers like
 1/3 can be represented exactly).
 
 If you are a heavy user of floating point operations you should take a look
-at the Numerical Python package and many other packages for mathematical and
+at the NumPy package and many other packages for mathematical and
 statistical operations supplied by the SciPy project. See <https://scipy.org>.
 
 Python provides tools that may help on those rare occasions when you really

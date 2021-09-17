@@ -1,5 +1,7 @@
+import errno
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.test_urllib2 import sanepathname2url
 
@@ -37,6 +39,39 @@ skip_ftp_test_on_travis = unittest.skipIf('TRAVIS' in os.environ,
 # the connection several times.
 _urlopen_with_retry = _wrap_with_retry_thrice(urllib.request.urlopen,
                                               urllib.error.URLError)
+
+
+class TransientResource(object):
+
+    """Raise ResourceDenied if an exception is raised while the context manager
+    is in effect that matches the specified exception and attributes."""
+
+    def __init__(self, exc, **kwargs):
+        self.exc = exc
+        self.attrs = kwargs
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_=None, value=None, traceback=None):
+        """If type_ is a subclass of self.exc and value has attributes matching
+        self.attrs, raise ResourceDenied.  Otherwise let the exception
+        propagate (if any)."""
+        if type_ is not None and issubclass(self.exc, type_):
+            for attr, attr_value in self.attrs.items():
+                if not hasattr(value, attr):
+                    break
+                if getattr(value, attr) != attr_value:
+                    break
+            else:
+                raise ResourceDenied("an optional resource is not available")
+
+# Context managers that raise ResourceDenied when various issues
+# with the internet connection manifest themselves as exceptions.
+# XXX deprecate these and use transient_internet() instead
+time_out = TransientResource(OSError, errno=errno.ETIMEDOUT)
+socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
+ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
 class AuthTests(unittest.TestCase):
@@ -114,7 +149,7 @@ class OtherNetworkTests(unittest.TestCase):
         self._test_urls(urls, self._extra_handlers())
 
     def test_file(self):
-        TESTFN = support.TESTFN
+        TESTFN = os_helper.TESTFN
         f = open(TESTFN, 'w')
         try:
             f.write('hi there\n')
@@ -237,12 +272,12 @@ class OtherNetworkTests(unittest.TestCase):
                             raise
                     else:
                         try:
-                            with support.time_out, \
-                                 support.socket_peer_reset, \
-                                 support.ioerror_peer_reset:
+                            with time_out, \
+                                 socket_peer_reset, \
+                                 ioerror_peer_reset:
                                 buf = f.read()
                                 debug("read %d bytes" % len(buf))
-                        except socket.timeout:
+                        except TimeoutError:
                             print("<timeout: %s>" % url, file=sys.stderr)
                         f.close()
                 time.sleep(0.1)

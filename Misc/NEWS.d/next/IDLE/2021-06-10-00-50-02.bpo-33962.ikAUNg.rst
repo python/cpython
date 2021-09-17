@@ -1,0 +1,2 @@
+Move the indent space setting from the Font tab to the new Windows tab.
+Patch by Mark Roseman and Terry Jan Reedy.

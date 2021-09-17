@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------
  * Licensed to PSF under a Contributor Agreement.
- * See http://www.python.org/psf/license for licensing details.
+ * See https://www.python.org/psf/license for licensing details.
  *
  * _elementtree - C accelerator for xml.etree.ElementTree
  * Copyright (c) 1999-2009 by Secret Labs AB.  All rights reserved.
@@ -2040,7 +2040,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
     if (!PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "attrib must be dict, not %.200s",
-                     value->ob_type->tp_name);
+                     Py_TYPE(value)->tp_name);
         return -1;
     }
     if (!self->extra) {

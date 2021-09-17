@@ -452,42 +452,6 @@ text
         self._run_check('<!spacer type="block" height="25">',
                         [('comment', 'spacer type="block" height="25"')])
 
-    def test_with_unquoted_attributes(self):
-        # see #12008
-        html = ("<html><body bgcolor=d0ca90 text='181008'>"
-                "<table cellspacing=0 cellpadding=1 width=100% ><tr>"
-                "<td align=left><font size=-1>"
-                "- <a href=/rabota/><span class=en> software-and-i</span></a>"
-                "- <a href='/1/'><span class=en> library</span></a></table>")
-        expected = [
-            ('starttag', 'html', []),
-            ('starttag', 'body', [('bgcolor', 'd0ca90'), ('text', '181008')]),
-            ('starttag', 'table',
-                [('cellspacing', '0'), ('cellpadding', '1'), ('width', '100%')]),
-            ('starttag', 'tr', []),
-            ('starttag', 'td', [('align', 'left')]),
-            ('starttag', 'font', [('size', '-1')]),
-            ('data', '- '), ('starttag', 'a', [('href', '/rabota/')]),
-            ('starttag', 'span', [('class', 'en')]), ('data', ' software-and-i'),
-            ('endtag', 'span'), ('endtag', 'a'),
-            ('data', '- '), ('starttag', 'a', [('href', '/1/')]),
-            ('starttag', 'span', [('class', 'en')]), ('data', ' library'),
-            ('endtag', 'span'), ('endtag', 'a'), ('endtag', 'table')
-        ]
-        self._run_check(html, expected)
-
-    def test_comma_between_attributes(self):
-        self._run_check('<form action="/xxx.php?a=1&amp;b=2&amp", '
-                        'method="post">', [
-                            ('starttag', 'form',
-                                [('action', '/xxx.php?a=1&b=2&'),
-                                 (',', None), ('method', 'post')])])
-
-    def test_weird_chars_in_unquoted_attribute_values(self):
-        self._run_check('<form action=bogus|&#()value>', [
-                            ('starttag', 'form',
-                                [('action', 'bogus|&#()value')])])
-
     def test_invalid_end_tags(self):
         # A collection of broken end tags. <br> is used as separator.
         # see http://www.w3.org/TR/html5/tokenization.html#end-tag-open-state
@@ -766,6 +730,62 @@ class AttributesTestCase(TestCaseBase):
                           [("href", "http://www.example.org/\">;")]),
                          ("data", "spam"), ("endtag", "a")])
 
+    def test_with_unquoted_attributes(self):
+        # see #12008
+        html = ("<html><body bgcolor=d0ca90 text='181008'>"
+                "<table cellspacing=0 cellpadding=1 width=100% ><tr>"
+                "<td align=left><font size=-1>"
+                "- <a href=/rabota/><span class=en> software-and-i</span></a>"
+                "- <a href='/1/'><span class=en> library</span></a></table>")
+        expected = [
+            ('starttag', 'html', []),
+            ('starttag', 'body', [('bgcolor', 'd0ca90'), ('text', '181008')]),
+            ('starttag', 'table',
+                [('cellspacing', '0'), ('cellpadding', '1'), ('width', '100%')]),
+            ('starttag', 'tr', []),
+            ('starttag', 'td', [('align', 'left')]),
+            ('starttag', 'font', [('size', '-1')]),
+            ('data', '- '), ('starttag', 'a', [('href', '/rabota/')]),
+            ('starttag', 'span', [('class', 'en')]), ('data', ' software-and-i'),
+            ('endtag', 'span'), ('endtag', 'a'),
+            ('data', '- '), ('starttag', 'a', [('href', '/1/')]),
+            ('starttag', 'span', [('class', 'en')]), ('data', ' library'),
+            ('endtag', 'span'), ('endtag', 'a'), ('endtag', 'table')
+        ]
+        self._run_check(html, expected)
+
+    def test_comma_between_attributes(self):
+        # see bpo 41478
+        # HTMLParser preserves duplicate attributes, leaving the task of
+        # removing duplicate attributes to a conformant html tree builder
+        html = ('<div class=bar,baz=asd>'        # between attrs (unquoted)
+                '<div class="bar",baz="asd">'    # between attrs (quoted)
+                '<div class=bar, baz=asd,>'      # after values (unquoted)
+                '<div class="bar", baz="asd",>'  # after values (quoted)
+                '<div class="bar",>'             # one comma values (quoted)
+                '<div class=,bar baz=,asd>'      # before values (unquoted)
+                '<div class=,"bar" baz=,"asd">'  # before values (quoted)
+                '<div ,class=bar ,baz=asd>'      # before names
+                '<div class,="bar" baz,="asd">'  # after names
+        )
+        expected = [
+            ('starttag', 'div', [('class', 'bar,baz=asd'),]),
+            ('starttag', 'div', [('class', 'bar'), (',baz', 'asd')]),
+            ('starttag', 'div', [('class', 'bar,'), ('baz', 'asd,')]),
+            ('starttag', 'div', [('class', 'bar'), (',', None),
+                                 ('baz', 'asd'), (',', None)]),
+            ('starttag', 'div', [('class', 'bar'), (',', None)]),
+            ('starttag', 'div', [('class', ',bar'), ('baz', ',asd')]),
+            ('starttag', 'div', [('class', ',"bar"'), ('baz', ',"asd"')]),
+            ('starttag', 'div', [(',class', 'bar'), (',baz', 'asd')]),
+            ('starttag', 'div', [('class,', 'bar'), ('baz,', 'asd')]),
+        ]
+        self._run_check(html, expected)
+
+    def test_weird_chars_in_unquoted_attribute_values(self):
+        self._run_check('<form action=bogus|&#()value>', [
+                            ('starttag', 'form',
+                                [('action', 'bogus|&#()value')])])
 
 if __name__ == "__main__":
     unittest.main()

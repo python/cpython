@@ -118,22 +118,21 @@ Operating System Utilities
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
-   Decode a byte string from the locale encoding with the :ref:`surrogateescape
-   error handler <surrogateescape>`: undecodable bytes are decoded as
-   characters in range U+DC80..U+DCFF. If a byte sequence can be decoded as a
-   surrogate character, escape the bytes using the surrogateescape error
-   handler instead of decoding them.
+   .. warning::
+      This function should not be called directly: use the :c:type:`PyConfig`
+      API with the :c:func:`PyConfig_SetBytesString` function which ensures
+      that :ref:`Python is preinitialized <c-preinit>`.
 
-   Encoding, highest priority to lowest priority:
+      This function must not be called before :ref:`Python is preinitialized
+      <c-preinit>` and so that the LC_CTYPE locale is properly configured: see
+      the :c:func:`Py_PreInitialize` function.
 
-   * ``UTF-8`` on macOS, Android, and VxWorks;
-   * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
-   * ``UTF-8`` if the Python UTF-8 mode is enabled;
-   * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
-     ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
-     and :c:func:`mbstowcs` and :c:func:`wcstombs` functions uses the
-     ``ISO-8859-1`` encoding.
-   * the current locale encoding.
+   Decode a byte string from the :term:`filesystem encoding and error handler`.
+   If the error handler is :ref:`surrogateescape error handler
+   <surrogateescape>`, undecodable bytes are decoded as characters in range
+   U+DC80..U+DCFF; and if a byte sequence can be decoded as a surrogate
+   character, the bytes are escaped using the surrogateescape error handler
+   instead of decoding them.
 
    Return a pointer to a newly allocated wide character string, use
    :c:func:`PyMem_RawFree` to free the memory. If size is not ``NULL``, write
@@ -142,6 +141,10 @@ Operating System Utilities
    Return ``NULL`` on decoding error or memory allocation error. If *size* is
    not ``NULL``, ``*size`` is set to ``(size_t)-1`` on memory error or set to
    ``(size_t)-2`` on decoding error.
+
+   The :term:`filesystem encoding and error handler` are selected by
+   :c:func:`PyConfig_Read`: see :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    Decoding errors should never happen, unless there is a bug in the C
    library.
@@ -157,7 +160,8 @@ Operating System Utilities
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.7
-      The function now uses the UTF-8 encoding in the UTF-8 mode.
+      The function now uses the UTF-8 encoding in the :ref:`Python UTF-8 Mode
+      <utf8-mode>`.
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
@@ -166,22 +170,10 @@ Operating System Utilities
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 
-   Encode a wide character string to the locale encoding with the
-   :ref:`surrogateescape error handler <surrogateescape>`: surrogate characters
-   in the range U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
-
-   Encoding, highest priority to lowest priority:
-
-   * ``UTF-8`` on macOS, Android, and VxWorks;
-   * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
-   * ``UTF-8`` if the Python UTF-8 mode is enabled;
-   * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
-     ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
-     and :c:func:`mbstowcs` and :c:func:`wcstombs` functions uses the
-     ``ISO-8859-1`` encoding.
-   * the current locale encoding.
-
-   The function uses the UTF-8 encoding in the Python UTF-8 mode.
+   Encode a wide character string to the :term:`filesystem encoding and error
+   handler`. If the error handler is :ref:`surrogateescape error handler
+   <surrogateescape>`, surrogate characters in the range U+DC80..U+DCFF are
+   converted to bytes 0x80..0xFF.
 
    Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
    to free the memory. Return ``NULL`` on encoding error or memory allocation
@@ -190,8 +182,17 @@ Operating System Utilities
    If error_pos is not ``NULL``, ``*error_pos`` is set to ``(size_t)-1`` on
    success,  or set to the index of the invalid character on encoding error.
 
+   The :term:`filesystem encoding and error handler` are selected by
+   :c:func:`PyConfig_Read`: see :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
+
    Use the :c:func:`Py_DecodeLocale` function to decode the bytes string back
    to a wide character string.
+
+   .. warning::
+      This function must not be called before :ref:`Python is preinitialized
+      <c-preinit>` and so that the LC_CTYPE locale is properly configured: see
+      the :c:func:`Py_PreInitialize` function.
 
    .. seealso::
 
@@ -201,7 +202,8 @@ Operating System Utilities
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.7
-      The function now uses the UTF-8 encoding in the UTF-8 mode.
+      The function now uses the UTF-8 encoding in the :ref:`Python UTF-8 Mode
+      <utf8-mode>`.
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
@@ -235,10 +237,20 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: void PySys_AddWarnOption(const wchar_t *s)
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.warnoptions` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
    Append *s* to :data:`sys.warnoptions`. This function must be called prior
    to :c:func:`Py_Initialize` in order to affect the warnings filter list.
 
+   .. deprecated:: 3.11
+
 .. c:function:: void PySys_AddWarnOptionUnicode(PyObject *unicode)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.warnoptions` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Append *unicode* to :data:`sys.warnoptions`.
 
@@ -247,6 +259,8 @@ accessible to C code.  They all work with the current interpreter thread's
    :mod:`warnings` in :c:func:`Py_Initialize` to be effective, but can't be
    called until enough of the runtime has been initialized to permit the
    creation of Unicode objects.
+
+   .. deprecated:: 3.11
 
 .. c:function:: void PySys_SetPath(const wchar_t *path)
 
@@ -292,11 +306,17 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: void PySys_AddXOption(const wchar_t *s)
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.xoptions` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
+
    Parse *s* as a set of :option:`-X` options and add them to the current
    options mapping as returned by :c:func:`PySys_GetXOptions`. This function
    may be called prior to :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.2
+
+   .. deprecated:: 3.11
 
 .. c:function:: PyObject *PySys_GetXOptions()
 

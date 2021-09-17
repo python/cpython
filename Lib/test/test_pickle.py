@@ -6,10 +6,12 @@ import io
 import collections
 import struct
 import sys
+import warnings
 import weakref
 
 import unittest
 from test import support
+from test.support import import_helper
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -366,7 +368,10 @@ def getmodule(module):
         return sys.modules[module]
     except KeyError:
         try:
-            __import__(module)
+            with warnings.catch_warnings():
+                action = 'always' if support.verbose else 'ignore'
+                warnings.simplefilter(action, DeprecationWarning)
+                __import__(module)
         except AttributeError as exc:
             if support.verbose:
                 print("Can't import module %r: %s" % (module, exc))
@@ -482,7 +487,8 @@ class CompatPickleTests(unittest.TestCase):
                 if exc in (BlockingIOError,
                            ResourceWarning,
                            StopAsyncIteration,
-                           RecursionError):
+                           RecursionError,
+                           EncodingWarning):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
@@ -499,7 +505,7 @@ class CompatPickleTests(unittest.TestCase):
                                      ('builtins', name))
 
     def test_multiprocessing_exceptions(self):
-        module = support.import_module('multiprocessing.context')
+        module = import_helper.import_module('multiprocessing.context')
         for name, exc in get_exceptions(module):
             with self.subTest(name):
                 self.assertEqual(reverse_mapping('multiprocessing.context', name),

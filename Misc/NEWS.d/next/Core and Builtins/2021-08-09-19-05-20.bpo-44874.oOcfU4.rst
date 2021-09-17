@@ -1,0 +1,1 @@
+Deprecate the old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``). They should be replaced by the new macros ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.

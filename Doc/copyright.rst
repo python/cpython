@@ -4,7 +4,7 @@ Copyright
 
 Python and this documentation is:
 
-Copyright © 2001-2020 Python Software Foundation. All rights reserved.
+Copyright © 2001-2021 Python Software Foundation. All rights reserved.
 
 Copyright © 2000 BeOpen.com. All rights reserved.
 

@@ -161,17 +161,19 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
-PyAPI_FUNC(void) _PyGC_InitState(struct _gc_runtime_state *);
+extern void _PyGC_InitState(struct _gc_runtime_state *);
+
+extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
 
 
 // Functions to clear types free lists
-extern void _PyFrame_ClearFreeList(void);
-extern void _PyTuple_ClearFreeList(void);
-extern void _PyFloat_ClearFreeList(void);
-extern void _PyList_ClearFreeList(void);
-extern void _PyDict_ClearFreeList(void);
-extern void _PyAsyncGen_ClearFreeLists(void);
-extern void _PyContext_ClearFreeList(void);
+extern void _PyFrame_ClearFreeList(PyInterpreterState *interp);
+extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
+extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
+extern void _PyList_ClearFreeList(PyInterpreterState *interp);
+extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
+extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
+extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

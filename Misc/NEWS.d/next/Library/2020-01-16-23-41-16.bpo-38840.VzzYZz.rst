@@ -1,0 +1,1 @@
+Fix ``test___all__`` on platforms lacking a shared memory implementation.

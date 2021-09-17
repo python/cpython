@@ -330,10 +330,9 @@ property::
    10 b'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
-The :func:`create_string_buffer` function replaces the :func:`c_buffer` function
-(which is still available as an alias), as well as the :func:`c_string` function
-from earlier ctypes releases.  To create a mutable memory block containing
-unicode characters of the C type :c:type:`wchar_t` use the
+The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
+function (which is still available as an alias).  To create a mutable memory
+block containing unicode characters of the C type :c:type:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
 
 
@@ -919,9 +918,9 @@ Let's try it. We create two instances of ``cell``, and let them point to each
 other, and finally follow the pointer chain a few times::
 
    >>> c1 = cell()
-   >>> c1.name = "foo"
+   >>> c1.name = b"foo"
    >>> c2 = cell()
-   >>> c2.name = "bar"
+   >>> c2.name = b"bar"
    >>> c1.next = pointer(c2)
    >>> c2.next = pointer(c1)
    >>> p = c1
@@ -1326,6 +1325,21 @@ way is to instantiate one of the following classes:
    libraries use the standard C calling convention, and are assumed to return
    :c:type:`int`.
 
+   On Windows creating a :class:`CDLL` instance may fail even if the DLL name
+   exists. When a dependent DLL of the loaded DLL is not found, a
+   :exc:`OSError` error is raised with the message *"[WinError 126] The
+   specified module could not be found".* This error message does not contain
+   the name of the missing DLL because the Windows API does not return this
+   information making this error hard to diagnose. To resolve this error and
+   determine which DLL is not found, you need to find the list of dependent
+   DLLs and determine which one is not found using Windows debugging and
+   tracing tools.
+
+.. seealso::
+
+    `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
+    -- A tool to find DLL dependents.
+
 
 .. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
@@ -1618,7 +1632,7 @@ They are instances of a private class:
    ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
-.. audit-event:: ctypes.call_function func_pointer,arguments ctype-foreign-functions
+.. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
    Some ways to invoke foreign function calls may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
@@ -2493,7 +2507,7 @@ other data types containing pointer type fields.
 Arrays and pointers
 ^^^^^^^^^^^^^^^^^^^
 
-.. class:: Array(\*args)
+.. class:: Array(*args)
 
    Abstract base class for arrays.
 
@@ -2545,4 +2559,3 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
-

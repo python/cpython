@@ -3,6 +3,7 @@ Various tests for synchronization primitives.
 """
 
 import os
+import gc
 import sys
 import time
 from _thread import start_new_thread, TIMEOUT_MAX
@@ -11,6 +12,7 @@ import unittest
 import weakref
 
 from test import support
+from test.support import threading_helper
 
 
 requires_fork = unittest.skipUnless(hasattr(os, 'fork'),
@@ -37,7 +39,7 @@ class Bunch(object):
         self.started = []
         self.finished = []
         self._can_exit = not wait_before_exit
-        self.wait_thread = support.wait_threads_exit()
+        self.wait_thread = threading_helper.wait_threads_exit()
         self.wait_thread.__enter__()
 
         def task():
@@ -73,10 +75,10 @@ class Bunch(object):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = support.threading_setup()
+        self._threads = threading_helper.threading_setup()
 
     def tearDown(self):
-        support.threading_cleanup(*self._threads)
+        threading_helper.threading_cleanup(*self._threads)
         support.reap_children()
 
     def assertTimeout(self, actual, expected):
@@ -220,6 +222,7 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         ref = weakref.ref(lock)
         del lock
+        gc.collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 
@@ -239,7 +242,7 @@ class LockTests(BaseLockTests):
             lock.acquire()
             phase.append(None)
 
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             start_new_thread(f, ())
             while len(phase) == 0:
                 _wait()

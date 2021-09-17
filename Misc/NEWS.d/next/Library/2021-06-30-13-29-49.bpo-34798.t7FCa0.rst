@@ -1,0 +1,1 @@
+Break up paragraph about :class:`pprint.PrettyPrinter` construction parameters to make it easier to read.

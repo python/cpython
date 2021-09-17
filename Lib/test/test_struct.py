@@ -671,6 +671,32 @@ class StructTest(unittest.TestCase):
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
 
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '2\0i', b'\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
+    @support.cpython_only
+    def test_issue45034_unsigned(self):
+        from _testcapi import USHRT_MAX
+        error_msg = f'ushort format requires 0 <= number <= {USHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('H', -1)  # too small
+
+    @support.cpython_only
+    def test_issue45034_signed(self):
+        from _testcapi import SHRT_MIN, SHRT_MAX
+        error_msg = f'short format requires {SHRT_MIN} <= number <= {SHRT_MAX}'
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', 70000)  # too large
+        with self.assertRaisesRegex(struct.error, error_msg):
+            struct.pack('h', -70000)  # too small
+
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).

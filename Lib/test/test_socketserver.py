@@ -14,8 +14,10 @@ import unittest
 import socketserver
 
 import test.support
-from test.support import reap_children, reap_threads, verbose
+from test.support import reap_children, verbose
+from test.support import os_helper
 from test.support import socket_helper
+from test.support import threading_helper
 
 
 test.support.requires("network")
@@ -120,7 +122,7 @@ class SocketServerTest(unittest.TestCase):
         self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
-    @reap_threads
+    @threading_helper.reap_threads
     def run_server(self, svrcls, hdlrbase, testfunc):
         server = self.make_server(self.pickaddr(svrcls.address_family),
                                   svrcls, hdlrbase)
@@ -249,7 +251,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_shutdown(self):
         # Issue #2302: shutdown() should always succeed in making an
         # other thread leave serve_forever().
@@ -275,6 +277,13 @@ class SocketServerTest(unittest.TestCase):
             t.join()
             s.server_close()
 
+    def test_close_immediately(self):
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), lambda: None)
+        server.server_close()
+
     def test_tcpserver_bind_leak(self):
         # Issue #22435: the server socket wouldn't be closed if bind()/listen()
         # failed.
@@ -298,7 +307,7 @@ class ErrorHandlerTest(unittest.TestCase):
     KeyboardInterrupt are not passed."""
 
     def tearDown(self):
-        test.support.unlink(test.support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
 
     def test_sync_handled(self):
         BaseErrorTestServer(ValueError)
@@ -314,8 +323,11 @@ class ErrorHandlerTest(unittest.TestCase):
         self.check_result(handled=True)
 
     def test_threading_not_handled(self):
-        ThreadingErrorTestServer(SystemExit)
-        self.check_result(handled=False)
+        with threading_helper.catch_threading_exception() as cm:
+            ThreadingErrorTestServer(SystemExit)
+            self.check_result(handled=False)
+
+            self.assertIs(cm.exc_type, SystemExit)
 
     @requires_forking
     def test_forking_handled(self):
@@ -328,7 +340,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.check_result(handled=False)
 
     def check_result(self, handled):
-        with open(test.support.TESTFN) as log:
+        with open(os_helper.TESTFN) as log:
             expected = 'Handler called\n' + 'Error handled\n' * handled
             self.assertEqual(log.read(), expected)
 
@@ -346,7 +358,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
         self.wait_done()
 
     def handle_error(self, request, client_address):
-        with open(test.support.TESTFN, 'a') as log:
+        with open(os_helper.TESTFN, 'a') as log:
             log.write('Error handled\n')
 
     def wait_done(self):
@@ -355,7 +367,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
 
 class BadHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        with open(test.support.TESTFN, 'a') as log:
+        with open(os_helper.TESTFN, 'a') as log:
             log.write('Handler called\n')
         raise self.server.exception('Test error')
 
@@ -487,6 +499,22 @@ class MiscTestCase(unittest.TestCase):
         s.close()
         server.handle_request()
         self.assertEqual(server.shutdown_called, 1)
+        server.server_close()
+
+    def test_threads_reaped(self):
+        """
+        In #37193, users reported a memory leak
+        due to the saving of every request thread. Ensure that
+        not all threads are kept forever.
+        """
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        for n in range(10):
+            with socket.create_connection(server.server_address):
+                server.handle_request()
+        self.assertLess(len(server._threads), 10)
         server.server_close()
 
 
