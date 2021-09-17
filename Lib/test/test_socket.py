@@ -6207,6 +6207,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def testWithTimeoutTriggeredSend(self):
         conn = self.accept_conn()
         conn.recv(88192)
+        # bpo-45212: the wait here needs to be longer than the client-side timeout (0.01s)
         time.sleep(1)
 
     # errors
