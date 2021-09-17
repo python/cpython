@@ -96,6 +96,7 @@ def collect_sys(info_add):
         'maxunicode',
         'path',
         'platform',
+        'platlibdir',
         'prefix',
         'thread_info',
         'version',

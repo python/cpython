@@ -1,0 +1,5 @@
+The ncurses function extended_color_content was introduced in 2017.
+https://invisible-island.net/ncurses/NEWS.html#index-t20170401) The
+ncurses-devel package in CentOS 7 had a older version ncurses resulted in
+compilation error.  For compiling ncurses with extended color support, we
+verify the version of the ncurses library >= 20170401.
