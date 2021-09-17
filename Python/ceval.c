@@ -1549,9 +1549,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     CFrame *prev_cframe = tstate->cframe;
     cframe.use_tracing = prev_cframe->use_tracing;
     cframe.previous = prev_cframe;
-    cframe.depth = 0;
     tstate->cframe = &cframe;
 
+    assert(frame->depth == 0);
     /* push frame */
     tstate->frame = frame;
 
@@ -1585,7 +1585,6 @@ start_frame:
     }
 
 resume_frame:
-    frame->depth = cframe.depth;
     co = frame->f_code;
     PyObject *names = co->co_names;
     PyObject *consts = co->co_consts;
@@ -4668,8 +4667,8 @@ check_eval_breaker:
             STACK_SHRINK(oparg + 1);
             // TODO: Transform the following into a goto
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->depth = frame->depth + 1;
             tstate->frame = frame = new_frame;
-            cframe.depth++;
             goto start_frame;
 //             res = _PyEval_EvalFrame(tstate, new_frame, 0);
 //             assert(_PyFrame_GetStackPointer(new_frame) == _PyFrame_Stackbase(new_frame));
@@ -5068,13 +5067,12 @@ exit_eval_frame:
         dtrace_function_return(frame);
     _Py_LeaveRecursiveCall(tstate);
 
-    if (cframe.depth) {
+    if (frame->depth) {
         _PyFrame_StackPush(frame->previous, retval);
         if (_PyEvalFrameClearAndPop(tstate, frame)) {
             retval = NULL;
         }
         frame = tstate->frame;
-        cframe.depth--;
         if (retval == NULL) {
             assert(_PyErr_Occurred(tstate));
             throwflag = 1;

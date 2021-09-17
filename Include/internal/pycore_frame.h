@@ -86,6 +86,7 @@ _PyFrame_InitializeSpecials(
     frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
+    frame->depth = 0;
 }
 
 /* Gets the pointer to the locals array
