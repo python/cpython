@@ -1926,11 +1926,16 @@ PyList()
 
 def move_in_stack(move_up):
     '''Move up or down the stack (for the py-up/py-down command)'''
+    # Important:
+    # The ammount of frames that are printed out depends on how many frames are inlined
+    # in the same evaluation loop. As this command links directly the C stack with the
+    # Python stack, the results are sensitive to the number of inlined frames and this
+    # is likely to change between versions and optimizations.
     frame = Frame.get_selected_python_frame()
     if not frame:
         print('Unable to locate python frame')
         return
-
+    
     while frame:
         if move_up:
             iter_frame = frame.older()
@@ -1952,9 +1957,10 @@ def move_in_stack(move_up):
         print('Unable to find an older python frame')
     else:
         print('Unable to find a newer python frame')
+    
 
 class PyUp(gdb.Command):
-    'Select and print the python stack frame that called this one (if any)'
+    'Select and print all python stack frame in the same eval loop starting from the one that called this one (if any)'
     def __init__(self):
         gdb.Command.__init__ (self,
                               "py-up",
@@ -1966,7 +1972,7 @@ class PyUp(gdb.Command):
         move_in_stack(move_up=True)
 
 class PyDown(gdb.Command):
-    'Select and print the python stack frame called by this one (if any)'
+    'Select and print all python stack frame in the same eval loop starting from the one called this one (if any)'
     def __init__(self):
         gdb.Command.__init__ (self,
                               "py-down",
@@ -2079,13 +2085,20 @@ class PyLocals(gdb.Command):
             return
 
         pyop_frame = frame.get_pyop()
-        if not pyop_frame:
-            print(UNABLE_READ_INFO_PYTHON_FRAME)
-            return
+        while True:
+            if not pyop_frame:
+                print(UNABLE_READ_INFO_PYTHON_FRAME)
 
-        for pyop_name, pyop_value in pyop_frame.iter_locals():
-            print('%s = %s'
-                   % (pyop_name.proxyval(set()),
-                      pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
+            sys.stdout.write('Locals for %s\n' % (pyop_frame.co_name.proxyval(set())))
+
+            for pyop_name, pyop_value in pyop_frame.iter_locals():
+                print('%s = %s'
+                    % (pyop_name.proxyval(set()),
+                        pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
+
+            if pyop_frame.depth() == 0:
+                break
+
+            pyop_frame = pyop_frame.previous()
 
 PyLocals()
