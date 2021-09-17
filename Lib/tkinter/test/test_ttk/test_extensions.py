@@ -301,6 +301,19 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         optmenu.destroy()
         optmenu2.destroy()
 
+    def test_trace_variable(self):
+        # prior to bpo45160, tracing a variable would cause the callback to be made twice
+        success = []
+        items = ('a', 'b', 'c')
+        textvar = tkinter.StringVar(self.root)
+        def cb_test(*args):
+            self.assertEqual(textvar.get(), items[1])
+            success.append(True)
+        optmenu = ttk.OptionMenu(self.root, textvar, "a", *items)
+        textvar.trace("w", cb_test)
+        optmenu['menu'].invoke(1)
+        self.assertEqual(success, [True])
+
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
