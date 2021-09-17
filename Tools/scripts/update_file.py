@@ -46,11 +46,19 @@ def updating_file_with_tmpfile(filename, tmpfile=None):
     update_file_with_tmpfile(filename, tmpfile)
 
 
-def update_file_with_tmpfile(filename, tmpfile):
-    with open(filename, 'rb') as f:
-        old_contents = f.read()
-    with open(tmpfile, 'rb') as f:
-        new_contents = f.read()
+def update_file_with_tmpfile(filename, tmpfile, *, create=False):
+    try:
+        targetfile = open(filename, 'rb')
+    except FileNotFoundError:
+        if not create:
+            raise  # re-raise
+        old_contents = ''
+        new_contents = '...'
+    else:
+        with targetfile:
+            old_contents = targetfile.read()
+        with open(tmpfile, 'rb') as f:
+            new_contents = f.read()
     if old_contents != new_contents:
         os.replace(tmpfile, filename)
     else:
@@ -58,7 +66,10 @@ def update_file_with_tmpfile(filename, tmpfile):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: %s <path to be updated> <path with new contents>" % (sys.argv[0],))
-        sys.exit(1)
-    update_file_with_tmpfile(sys.argv[1], sys.argv[2])
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--create', action='store_true')
+    parser.add_argument('filename', help='path to be updated')
+    parser.add_argument('tmpfile', help='path with new contents')
+    args = parser.parse_args()
+    update_file_with_tmpfile(**vars(args))
