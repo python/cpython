@@ -12,7 +12,7 @@
 
 import sys
 import unittest
-from test.support import captured_stdout
+from test.support import captured_stdout, import_helper
 
 
 class TestFrozen(unittest.TestCase):
@@ -20,8 +20,10 @@ class TestFrozen(unittest.TestCase):
         name = '__hello__'
         if name in sys.modules:
             del sys.modules[name]
-        with captured_stdout() as out:
+        with import_helper.frozen_modules():
             import __hello__
+        with captured_stdout() as out:
+            __hello__.main()
         self.assertEqual(out.getvalue(), 'Hello world!\n')
 
 

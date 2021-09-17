@@ -25,7 +25,31 @@
     <None Include="..\Lib\zipimport.py">
       <Filter>Python Files</Filter>
     </None>
-    <None Include="..\Tools\freeze\flag.py">
+    <None Include="..\Lib\abc.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\io.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\_collections_abc.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\_sitebuiltins.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\genericpath.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\ntpath.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\posixpath.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\stat.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\__hello__.py">
       <Filter>Python Files</Filter>
     </None>
     <!-- END frozen modules -->
