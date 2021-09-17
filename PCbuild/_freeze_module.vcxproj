@@ -250,6 +250,11 @@
       <IntFile>$(IntDir)abc.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
     </None>
+    <None Include="..\Lib\codecs.py">
+      <ModName>codecs</ModName>
+      <IntFile>$(IntDir)codecs.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\codecs.h</OutFile>
+    </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>
@@ -279,6 +284,16 @@
       <ModName>posixpath</ModName>
       <IntFile>$(IntDir)posixpath.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\os.py">
+      <ModName>os</ModName>
+      <IntFile>$(IntDir)os.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\os.h</OutFile>
+    </None>
+    <None Include="..\Lib\site.py">
+      <ModName>site</ModName>
+      <IntFile>$(IntDir)site.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\site.h</OutFile>
     </None>
     <None Include="..\Lib\stat.py">
       <ModName>stat</ModName>

@@ -8,6 +8,7 @@ from collections import namedtuple
 import contextlib
 import json
 import os
+import os.path
 import re
 import shutil
 import subprocess
@@ -52,15 +53,13 @@ def remove_python_envvars():
 
 class EmbeddingTestsMixin:
     def setUp(self):
-        here = os.path.abspath(__file__)
-        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
         exename = "_testembed"
         if MS_WINDOWS:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
             exepath = os.path.dirname(sys.executable)
         else:
-            exepath = os.path.join(basepath, "Programs")
+            exepath = os.path.join(support.REPO_ROOT, "Programs")
         self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
@@ -68,7 +67,7 @@ class EmbeddingTestsMixin:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
         self.oldcwd = os.getcwd()
-        os.chdir(basepath)
+        os.chdir(support.REPO_ROOT)
 
     def tearDown(self):
         os.chdir(self.oldcwd)
@@ -1304,7 +1303,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 lib_dynload = os.path.join(pyvenv_home, 'lib')
                 os.makedirs(lib_dynload)
                 # getpathp.c uses Lib\os.py as the LANDMARK
-                shutil.copyfile(os.__file__, os.path.join(lib_dynload, 'os.py'))
+                shutil.copyfile(
+                    os.path.join(support.STDLIB_DIR, 'os.py'),
+                    os.path.join(lib_dynload, 'os.py'),
+                )
 
             filename = os.path.join(tmpdir, 'pyvenv.cfg')
             with open(filename, "w", encoding="utf8") as fp:
