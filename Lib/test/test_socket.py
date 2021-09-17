@@ -199,7 +199,7 @@ class SocketUDPLITETest(SocketUDPTest):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
         self.port = socket_helper.bind_port(self.serv)
 
-class ThreadSafeCleanupTestCase(unittest.TestCase):
+class ThreadSafeCleanupTestCase:
     """Subclass of unittest.TestCase with thread-safe cleanup methods.
 
     This subclass protects the addCleanup() and doCleanups() methods
@@ -4448,7 +4448,7 @@ class RecvmsgIntoSCMRightsStreamTest(RecvmsgIntoMixin, SCMRightsTest,
 # threads alive during the test so that the OS cannot deliver the
 # signal to the wrong one.
 
-class InterruptedTimeoutBase(unittest.TestCase):
+class InterruptedTimeoutBase:
     # Base class for interrupted send/receive tests.  Installs an
     # empty handler for SIGALRM and removes it on teardown, along with
     # any scheduled alarms.
@@ -6636,84 +6636,10 @@ class SendRecvFdsTests(unittest.TestCase):
             self.assertEqual(data,  str(index).encode())
 
 
-def test_main():
-    tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
-             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest,
-             SendRecvFdsTests]
-
-    tests.extend([
-        NonBlockingTCPTests,
-        FileObjectClassTestCase,
-        UnbufferedFileObjectClassTestCase,
-        LineBufferedFileObjectClassTestCase,
-        SmallBufferedFileObjectClassTestCase,
-        UnicodeReadFileObjectClassTestCase,
-        UnicodeWriteFileObjectClassTestCase,
-        UnicodeReadWriteFileObjectClassTestCase,
-        NetworkConnectionNoServer,
-        NetworkConnectionAttributesTest,
-        NetworkConnectionBehaviourTest,
-        ContextManagersTest,
-        InheritanceTest,
-        NonblockConstantTest
-    ])
-    tests.append(BasicSocketPairTest)
-    tests.append(TestUnixDomain)
-    tests.append(TestLinuxAbstractNamespace)
-    tests.extend([TIPCTest, TIPCThreadableTest])
-    tests.extend([BasicCANTest, CANTest])
-    tests.extend([BasicRDSTest, RDSTest])
-    tests.append(LinuxKernelCryptoAPI)
-    tests.append(BasicQIPCRTRTest)
-    tests.extend([
-        BasicVSOCKTest,
-        ThreadedVSOCKSocketStreamTest,
-    ])
-    tests.append(BasicBluetoothTest)
-    tests.extend([
-        CmsgMacroTests,
-        SendmsgUDPTest,
-        RecvmsgUDPTest,
-        RecvmsgIntoUDPTest,
-        SendmsgUDP6Test,
-        RecvmsgUDP6Test,
-        RecvmsgRFC3542AncillaryUDP6Test,
-        RecvmsgIntoRFC3542AncillaryUDP6Test,
-        RecvmsgIntoUDP6Test,
-        SendmsgUDPLITETest,
-        RecvmsgUDPLITETest,
-        RecvmsgIntoUDPLITETest,
-        SendmsgUDPLITE6Test,
-        RecvmsgUDPLITE6Test,
-        RecvmsgRFC3542AncillaryUDPLITE6Test,
-        RecvmsgIntoRFC3542AncillaryUDPLITE6Test,
-        RecvmsgIntoUDPLITE6Test,
-        SendmsgTCPTest,
-        RecvmsgTCPTest,
-        RecvmsgIntoTCPTest,
-        SendmsgSCTPStreamTest,
-        RecvmsgSCTPStreamTest,
-        RecvmsgIntoSCTPStreamTest,
-        SendmsgUnixStreamTest,
-        RecvmsgUnixStreamTest,
-        RecvmsgIntoUnixStreamTest,
-        RecvmsgSCMRightsStreamTest,
-        RecvmsgIntoSCMRightsStreamTest,
-        # These are slow when setitimer() is not available
-        InterruptedRecvTimeoutTest,
-        InterruptedSendTimeoutTest,
-        TestSocketSharing,
-        SendfileUsingSendTest,
-        SendfileUsingSendfileTest,
-    ])
-    tests.append(TestMSWindowsTCPFlags)
-    tests.append(TestMacOSTCPFlags)
-
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    support.run_unittest(*tests)
-    threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
