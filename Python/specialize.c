@@ -182,6 +182,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
+    print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     if (out != stderr) {
         fclose(out);
     }
@@ -1222,17 +1223,17 @@ _Py_Specialize_CallFunction(
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyObjectCache *cache1 = &cache[-1].obj;
-#if SPECIALIZATION_STATS
+#if COLLECT_SPECIALIZATION_STATS
         PyTypeObject *type = Py_TYPE(callable);
 #endif
     /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
-        PyCFunctionObject *meth = (PyCFunctionObject *)callable;
         if (PyCFunction_GET_FUNCTION(callable) == NULL) {
             goto fail;
         }
-        switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
-            METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
+        switch (PyCFunction_GET_FLAGS(callable) &
+            (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+            METH_KEYWORDS | METH_METHOD)) {
             case METH_O: {
                 if (original_oparg != 1) {
                     SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_RANGE);
@@ -1290,7 +1291,7 @@ _Py_Specialize_CallFunction(
         }
     }
     /* These might be implemented in the future. Collecting stats for now. */
-#if SPECIALIZATION_STATS
+#if COLLECT_SPECIALIZATION_STATS
     if (PyFunction_Check(callable)) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYTHON_FUNCTION);
         goto fail;
@@ -1310,7 +1311,7 @@ _Py_Specialize_CallFunction(
         goto fail;
     }
     if (PyType_Check(callable)) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable,
+        SPECIALIZATION_FAIL(CALL_FUNCTION,
             PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE) ?
             SPEC_FAIL_IMMUTABLE_CLASS : SPEC_FAIL_MUTABLE_CLASS);
         goto fail;

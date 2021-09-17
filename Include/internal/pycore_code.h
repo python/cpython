@@ -300,9 +300,6 @@ cache_backoff(_PyAdaptiveEntry *entry) {
     entry->counter = ADAPTIVE_CACHE_BACKOFF;
 }
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
-
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
