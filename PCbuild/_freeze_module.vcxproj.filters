@@ -28,6 +28,9 @@
     <None Include="..\Lib\abc.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\codecs.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\io.py">
       <Filter>Python Files</Filter>
     </None>
@@ -44,6 +47,12 @@
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\posixpath.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\os.py">
+      <Filter>Python Files</Filter>
+    </None>
+    <None Include="..\Lib\site.py">
       <Filter>Python Files</Filter>
     </None>
     <None Include="..\Lib\stat.py">
