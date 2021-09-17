@@ -91,10 +91,6 @@ def _addSkip(result, test_case, reason):
                       RuntimeWarning, 2)
         result.addSuccess(test_case)
 
-#def _addSubTest(result, test, exc_info):
-    #if hasattr(result, "addSubTest"):
-        #result.addSubTest(test.test_case, test, exc_info)
-
 def _addError(result, test, exc_info):
     if result is not None and exc_info is not None:
         if issubclass(exc_info[0], test.failureException):
