@@ -176,6 +176,11 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
+* Until Python 3.10, compiler stored function docstring in ``code.co_consts[0]``.
+  Python 3.11 don't use code object to store docstring anymore. The docstring
+  is passed through the VM stack.
+  (Contributed by Inada Naoki in :issue:`36521`.)
+
 
 New Modules
 ===========
