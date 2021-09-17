@@ -1,0 +1,2 @@
+Allow :meth:`socket.socket.makefile` to handle line buffering properly
+(``buffering=1``). This is done by mimicking the behavior of :func:`open`.
