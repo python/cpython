@@ -344,7 +344,7 @@ class TestTimeZone(unittest.TestCase):
         with self.assertRaises(TypeError): timezone(ZERO) < timezone(ZERO)
         self.assertIn(timezone(ZERO), {timezone(ZERO)})
         self.assertTrue(timezone(ZERO) != None)
-        self.assertFalse(timezone(ZERO) ==  None)
+        self.assertFalse(timezone(ZERO) == None)
 
         tz = timezone(ZERO)
         self.assertTrue(tz == ALWAYS_EQ)

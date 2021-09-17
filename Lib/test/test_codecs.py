@@ -714,10 +714,22 @@ class UTF16Test(ReadTest, unittest.TestCase):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(s)
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            reader = codecs.open(os_helper.TESTFN, 'U', encoding=self.encoding)
-        with reader:
+        with codecs.open(os_helper.TESTFN, 'r',
+                         encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
+
+    def test_invalid_modes(self):
+        for mode in ('U', 'rU', 'r+U'):
+            with self.assertRaises(ValueError) as cm:
+                codecs.open(os_helper.TESTFN, mode, encoding=self.encoding)
+            self.assertIn('invalid mode', str(cm.exception))
+
+        for mode in ('rt', 'wt', 'at', 'r+t'):
+            with self.assertRaises(ValueError) as cm:
+                codecs.open(os_helper.TESTFN, mode, encoding=self.encoding)
+            self.assertIn("can't have text and binary mode at once",
+                          str(cm.exception))
+
 
 class UTF16LETest(ReadTest, unittest.TestCase):
     encoding = "utf-16-le"

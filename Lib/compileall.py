@@ -221,8 +221,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
-                                         0, mtime)
+                    expect = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
+                                         0, mtime & 0xFFFF_FFFF)
                     for cfile in opt_cfiles.values():
                         with open(cfile, 'rb') as chandle:
                             actual = chandle.read(12)

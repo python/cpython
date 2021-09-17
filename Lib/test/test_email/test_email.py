@@ -3003,6 +3003,8 @@ class TestMiscellaneous(TestEmailBase):
     def test_parsedate_returns_None_for_invalid_strings(self):
         self.assertIsNone(utils.parsedate(''))
         self.assertIsNone(utils.parsedate_tz(''))
+        self.assertIsNone(utils.parsedate(' '))
+        self.assertIsNone(utils.parsedate_tz(' '))
         self.assertIsNone(utils.parsedate('0'))
         self.assertIsNone(utils.parsedate_tz('0'))
         self.assertIsNone(utils.parsedate('A Complete Waste of Time'))

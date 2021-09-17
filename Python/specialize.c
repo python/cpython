@@ -121,7 +121,8 @@ _Py_GetSpecializationStats(void) {
     int err = 0;
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
-    err += add_stat_dict(stats, LOAD_GLOBAL, "load_method");
+    err += add_stat_dict(stats, LOAD_METHOD, "load_method");
+    err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     if (err < 0) {
@@ -177,6 +178,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
+    print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     if (out != stderr) {
@@ -226,6 +228,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
+    [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
@@ -235,6 +238,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
+    [BINARY_ADD] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -401,6 +405,7 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Common */
 
+#define SPEC_FAIL_OTHER 0
 #define SPEC_FAIL_NO_DICT 1
 #define SPEC_FAIL_OVERRIDDEN 2
 #define SPEC_FAIL_OUT_OF_VERSIONS 3
@@ -423,18 +428,28 @@ _Py_Quicken(PyCodeObject *code) {
 
 /* Methods */
 
-#define SPEC_FAIL_NEGATIVE_DICTOFFSET 14
 #define SPEC_FAIL_IS_ATTR 15
 #define SPEC_FAIL_DICT_SUBCLASS 16
 #define SPEC_FAIL_BUILTIN_CLASS_METHOD 17
 #define SPEC_FAIL_CLASS_METHOD_OBJ 18
-#define SPEC_FAIL_NOT_METHOD 19
+#define SPEC_FAIL_OBJECT_SLOT 19
 
 /* Binary subscr */
 
-#define SPEC_FAIL_LIST_NON_INT_SUBSCRIPT 8
-#define SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT 9
-#define SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT 10
+#define SPEC_FAIL_ARRAY_INT 8
+#define SPEC_FAIL_ARRAY_SLICE 9
+#define SPEC_FAIL_LIST_SLICE 10
+#define SPEC_FAIL_TUPLE_SLICE 11
+#define SPEC_FAIL_STRING_INT 12
+#define SPEC_FAIL_STRING_SLICE 13
+#define SPEC_FAIL_BUFFER_INT 15
+#define SPEC_FAIL_BUFFER_SLICE 16
+#define SPEC_FAIL_SEQUENCE_INT 17
+
+/* Binary add */
+
+#define SPEC_FAIL_NON_FUNCTION_SCOPE 11
+#define SPEC_FAIL_DIFFERENT_TYPES 12
 
 
 static int
@@ -828,6 +843,41 @@ success:
 }
 
 
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+load_method_fail_kind(DesciptorClassification kind)
+{
+    switch (kind) {
+        case OVERRIDING:
+            return SPEC_FAIL_OVERRIDING_DESCRIPTOR;
+        case METHOD:
+            return SPEC_FAIL_METHOD;
+        case PROPERTY:
+            return SPEC_FAIL_PROPERTY;
+        case OBJECT_SLOT:
+            return SPEC_FAIL_OBJECT_SLOT;
+        case OTHER_SLOT:
+            return SPEC_FAIL_NON_OBJECT_SLOT;
+        case DUNDER_CLASS:
+            return SPEC_FAIL_OTHER;
+        case MUTABLE:
+            return SPEC_FAIL_MUTABLE_CLASS;
+        case GETSET_OVERRIDDEN:
+            return SPEC_FAIL_OVERRIDDEN;
+        case BUILTIN_CLASSMETHOD:
+            return SPEC_FAIL_BUILTIN_CLASS_METHOD;
+        case PYTHON_CLASSMETHOD:
+            return SPEC_FAIL_CLASS_METHOD_OBJ;
+        case NON_OVERRIDING:
+            return SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR;
+        case NON_DESCRIPTOR:
+            return SPEC_FAIL_NOT_DESCRIPTOR;
+        case ABSENT:
+            return SPEC_FAIL_EXPECTED_ERROR;
+    }
+}
+#endif
+
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -860,7 +910,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     // Technically this is fine for bound method calls, but it's uncommon and
     // slightly slower at runtime to get dict.
     if (owner_cls->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NEGATIVE_DICTOFFSET);
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
     PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
@@ -885,21 +935,10 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     cache1->tp_version = owner_cls->tp_version_tag;
 
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
-    switch (kind) {
-        case METHOD:
-            break;
-        case BUILTIN_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
-            goto fail;
-        case PYTHON_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
-            goto fail;
-        default:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_METHOD);
-            goto fail;
+    if (kind != METHOD) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+        goto fail;
     }
-    
-    assert(kind == METHOD);
     // If o.__dict__ changes, the method might be found in o.__dict__
     // instead of old type lookup. So record o.__dict__'s keys.
     uint32_t keys_version = UINT32_MAX;
@@ -933,15 +972,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
         // Fall through.
     } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-        
+
     /* `descr` is borrowed. Just check tp_version_tag before accessing in case
     *  it's deleted.  This is safe for methods (even inherited ones from super
     *  classes!) as long as tp_version_tag is validated for two main reasons:
-    * 
+    *
     *  1. The class will always hold a reference to the method so it will
     *  usually not be GC-ed. Should it be deleted in Python, e.g.
     *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
-    * 
+    *
     *  2. The pre-existing type method cache (MCACHE) uses the same principles
     *  of caching a borrowed descriptor. It does all the heavy lifting for us.
     *  E.g. it invalidates on any MRO modification, on any type object
@@ -968,6 +1007,7 @@ fail:
     return 0;
 
 }
+
 int
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
@@ -1035,6 +1075,45 @@ success:
     return 0;
 }
 
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+binary_subscr_faiL_kind(PyTypeObject *container_type, PyObject *sub)
+{
+    if (container_type == &PyUnicode_Type) {
+        if (PyLong_CheckExact(sub)) {
+            return SPEC_FAIL_STRING_INT;
+        }
+        if (PySlice_Check(sub)) {
+            return SPEC_FAIL_STRING_SLICE;
+        }
+        return SPEC_FAIL_OTHER;
+    }
+    else if (strcmp(container_type->tp_name, "array.array") == 0) {
+        if (PyLong_CheckExact(sub)) {
+            return SPEC_FAIL_ARRAY_INT;
+        }
+        if (PySlice_Check(sub)) {
+            return SPEC_FAIL_ARRAY_SLICE;
+        }
+        return SPEC_FAIL_OTHER;
+    }
+    else if (container_type->tp_as_buffer) {
+        if (PyLong_CheckExact(sub)) {
+            return SPEC_FAIL_BUFFER_INT;
+        }
+        if (PySlice_Check(sub)) {
+            return SPEC_FAIL_BUFFER_SLICE;
+        }
+        return SPEC_FAIL_OTHER;
+    }
+    else if (container_type->tp_as_sequence) {
+        if (PyLong_CheckExact(sub) && container_type->tp_as_sequence->sq_item) {
+            return SPEC_FAIL_SEQUENCE_INT;
+        }
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
 
 int
 _Py_Specialize_BinarySubscr(
@@ -1045,25 +1124,26 @@ _Py_Specialize_BinarySubscr(
         if (PyLong_CheckExact(sub)) {
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
             goto success;
-        } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_LIST_NON_INT_SUBSCRIPT);
-            goto fail;
         }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_LIST_SLICE : SPEC_FAIL_OTHER);
+        goto fail;
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
             *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
             goto success;
-        } else {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_TUPLE_NON_INT_SUBSCRIPT);
-            goto fail;
         }
+        SPECIALIZATION_FAIL(BINARY_SUBSCR,
+            PySlice_Check(sub) ? SPEC_FAIL_TUPLE_SLICE : SPEC_FAIL_OTHER);
+        goto fail;
     }
     if (container_type == &PyDict_Type) {
         *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
         goto success;
     }
-    SPECIALIZATION_FAIL(BINARY_SUBSCR,SPEC_FAIL_NOT_TUPLE_LIST_OR_DICT);
+    SPECIALIZATION_FAIL(BINARY_SUBSCR,
+                        binary_subscr_faiL_kind(container_type, sub));
     goto fail;
 fail:
     STAT_INC(BINARY_SUBSCR, specialization_failure);
@@ -1076,3 +1156,43 @@ success:
     return 0;
 }
 
+int
+_Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *left_type = Py_TYPE(left);
+    if (left_type != Py_TYPE(right)) {
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_DIFFERENT_TYPES);
+        goto fail;
+    }
+    if (left_type == &PyUnicode_Type) {
+        int next_opcode = _Py_OPCODE(instr[1]);
+        if (next_opcode == STORE_FAST) {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+        }
+        else {
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+        }
+        goto success;
+    }
+    else if (left_type == &PyLong_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
+        goto success;
+    }
+    else if (left_type == &PyFloat_Type) {
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
+        goto success;
+
+    }
+    else {
+        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OTHER);
+    }
+fail:
+    STAT_INC(BINARY_ADD, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(BINARY_ADD, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}

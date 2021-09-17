@@ -4047,7 +4047,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         goto error;
     }
 
-    /* validata cadata type and load cadata */
+    /* validate cadata type and load cadata */
     if (cadata) {
         if (PyUnicode_Check(cadata)) {
             PyObject *cadata_ascii = PyUnicode_AsASCIIString(cadata);

@@ -8874,7 +8874,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    assert(f->f_frame->nlocalsplus > 0);
+    assert(f->f_frame->f_code->co_nlocalsplus > 0);
     PyObject *firstarg = _PyFrame_GetLocalsArray(f->f_frame)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {

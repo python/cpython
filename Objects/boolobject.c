@@ -153,6 +153,13 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
+static void _Py_NO_RETURN
+bool_dealloc(PyObject* Py_UNUSED(ignore))
+{
+    Py_FatalError("deallocating True or False likely caused by "
+                  "a refcount bug in a C extension");
+}
+
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
@@ -160,7 +167,7 @@ PyTypeObject PyBool_Type = {
     "bool",
     sizeof(struct _longobject),
     0,
-    0,                                          /* tp_dealloc */
+    bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

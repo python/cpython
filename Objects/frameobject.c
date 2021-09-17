@@ -397,9 +397,7 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
-    assert(f->f_frame->stackdepth > 0);
-    f->f_frame->stackdepth--;
-    PyObject *v = f->f_frame->stack[f->f_frame->stackdepth];
+    PyObject *v = _PyFrame_StackPop(f->f_frame);
     Py_DECREF(v);
 }
 
@@ -633,14 +631,10 @@ frame_dealloc(PyFrameObject *f)
         Py_CLEAR(frame->f_builtins);
         Py_CLEAR(frame->f_locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
-        for (int i = 0; i < co->co_nlocalsplus; i++) {
+        for (int i = 0; i < frame->stacktop; i++) {
             Py_CLEAR(locals[i]);
         }
-        /* stack */
-        for (int i = 0; i < frame->stackdepth; i++) {
-            Py_CLEAR(frame->stack[i]);
-        }
-        PyMem_Free(locals);
+        PyMem_Free(frame);
     }
     Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
@@ -686,17 +680,13 @@ frame_tp_clear(PyFrameObject *f)
 
     Py_CLEAR(f->f_trace);
 
-    /* locals */
+    /* locals and stack */
     PyObject **locals = _PyFrame_GetLocalsArray(f->f_frame);
-    for (int i = 0; i < f->f_frame->nlocalsplus; i++) {
+    assert(f->f_frame->stacktop >= 0);
+    for (int i = 0; i < f->f_frame->stacktop; i++) {
         Py_CLEAR(locals[i]);
     }
-
-    /* stack */
-    for (int i = 0; i < f->f_frame->stackdepth; i++) {
-        Py_CLEAR(f->f_frame->stack[i]);
-    }
-    f->f_frame->stackdepth = 0;
+    f->f_frame->stacktop = 0;
     return 0;
 }
 

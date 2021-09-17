@@ -76,15 +76,16 @@ def b64decode(s, altchars=None, validate=False):
     normal base-64 alphabet nor the alternative alphabet are discarded prior
     to the padding check.  If validate is True, these non-alphabet characters
     in the input result in a binascii.Error.
+    For more information about the strict base64 check, see:
+
+    https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
     """
     s = _bytes_from_decode_data(s)
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    if validate and not re.fullmatch(b'[A-Za-z0-9+/]*={0,2}', s):
-        raise binascii.Error('Non-base64 digit found')
-    return binascii.a2b_base64(s)
+    return binascii.a2b_base64(s, strict_mode=validate)
 
 
 def standard_b64encode(s):
