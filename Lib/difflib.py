@@ -42,7 +42,6 @@ def _calculate_ratio(matches, length):
     return 1.0
 
 class SequenceMatcher:
-
     """
     SequenceMatcher is a flexible class for comparing pairs of sequences of
     any type, so long as the sequence elements are hashable.  The basic
@@ -115,38 +114,6 @@ class SequenceMatcher:
     case.  SequenceMatcher is quadratic time for the worst case and has
     expected-case behavior dependent in a complicated way on how many
     elements the sequences have in common; best case time is linear.
-
-    Methods:
-
-    __init__(isjunk=None, a='', b='')
-        Construct a SequenceMatcher.
-
-    set_seqs(a, b)
-        Set the two sequences to be compared.
-
-    set_seq1(a)
-        Set the first sequence to be compared.
-
-    set_seq2(b)
-        Set the second sequence to be compared.
-
-    find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
-        Find longest matching block in a[alo:ahi] and b[blo:bhi].
-
-    get_matching_blocks()
-        Return list of triples describing matching subsequences.
-
-    get_opcodes()
-        Return list of 5-tuples describing how to turn a into b.
-
-    ratio()
-        Return a measure of the sequences' similarity (float in [0,1]).
-
-    quick_ratio()
-        Return an upper bound on .ratio() relatively quickly.
-
-    real_quick_ratio()
-        Return an upper bound on ratio() very quickly.
     """
 
     def __init__(self, isjunk=None, a='', b='', autojunk=True):
@@ -577,7 +544,7 @@ class SequenceMatcher:
         return answer
 
     def get_grouped_opcodes(self, n=3):
-        """ Isolate change clusters by eliminating ranges with no changes.
+        """Isolate change clusters by eliminating ranges with no changes.
 
         Return a generator of groups with up to n lines of context.
         Each group is in the same format as returned by get_opcodes().
@@ -837,14 +804,6 @@ class Differ:
     +   4. Complicated is better than complex.
     ?           ++++ ^                      ^
     +   5. Flat is better than nested.
-
-    Methods:
-
-    __init__(linejunk=None, charjunk=None)
-        Construct a text differencer, with optional filters.
-
-    compare(a, b)
-        Compare two sequences of lines; generate the resulting delta.
     """
 
     def __init__(self, linejunk=None, charjunk=None):
