@@ -272,7 +272,7 @@ def resolve_frozen_file(frozenid, destdir=MODULES_DIR):
         except AttributeError:
             raise ValueError(f'unsupported frozenid {frozenid!r}')
     # We use a consistent naming convention for all frozen modules.
-    frozenfile = frozenid.replace('.', '_') + '.h'
+    frozenfile = f'{frozenid}.h'
     if not destdir:
         return frozenfile
     return os.path.join(destdir, frozenfile)
