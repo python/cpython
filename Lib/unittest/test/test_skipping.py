@@ -460,5 +460,71 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertIs(suite.run(result), result)
         self.assertEqual(result.skipped, [(test, "")])
 
+    def test_debug_skipping(self):
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                events.append("setUp")
+            def tearDown(self):
+                events.append("tearDown")
+            def test1(self):
+                self.skipTest('skipping exception')
+                events.append("test1")
+            @unittest.skip("skipping decorator")
+            def test2(self):
+                events.append("test2")
+
+        events = []
+        test = Foo("test1")
+        with self.assertRaises(unittest.SkipTest) as cm:
+            test.debug()
+        self.assertIn("skipping exception", str(cm.exception))
+        self.assertEqual(events, ["setUp"])
+
+        events = []
+        test = Foo("test2")
+        with self.assertRaises(unittest.SkipTest) as cm:
+            test.debug()
+        self.assertIn("skipping decorator", str(cm.exception))
+        self.assertEqual(events, [])
+
+    def test_debug_skipping_class(self):
+        @unittest.skip("testing")
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                events.append("setUp")
+            def tearDown(self):
+                events.append("tearDown")
+            def test(self):
+                events.append("test")
+
+        events = []
+        test = Foo("test")
+        with self.assertRaises(unittest.SkipTest) as cm:
+            test.debug()
+        self.assertIn("testing", str(cm.exception))
+        self.assertEqual(events, [])
+
+    def test_debug_skipping_subtests(self):
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                events.append("setUp")
+            def tearDown(self):
+                events.append("tearDown")
+            def test(self):
+                with self.subTest(a=1):
+                    events.append('subtest')
+                    self.skipTest("skip subtest")
+                    events.append('end subtest')
+                events.append('end test')
+
+        events = []
+        result = LoggingResult(events)
+        test = Foo("test")
+        with self.assertRaises(unittest.SkipTest) as cm:
+            test.debug()
+        self.assertIn("skip subtest", str(cm.exception))
+        self.assertEqual(events, ['setUp', 'subtest'])
+
+
 if __name__ == "__main__":
     unittest.main()
