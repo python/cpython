@@ -42,6 +42,7 @@ def _calculate_ratio(matches, length):
     return 1.0
 
 class SequenceMatcher:
+
     """
     SequenceMatcher is a flexible class for comparing pairs of sequences of
     any type, so long as the sequence elements are hashable.  The basic
@@ -544,7 +545,7 @@ class SequenceMatcher:
         return answer
 
     def get_grouped_opcodes(self, n=3):
-        """Isolate change clusters by eliminating ranges with no changes.
+        """ Isolate change clusters by eliminating ranges with no changes.
 
         Return a generator of groups with up to n lines of context.
         Each group is in the same format as returned by get_opcodes().
