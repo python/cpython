@@ -653,8 +653,16 @@ class TestCase(object):
 
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
+        testMethod = getattr(self, self._testMethodName)
+        if (getattr(self.__class__, "__unittest_skip__", False) or
+            getattr(testMethod, "__unittest_skip__", False)):
+            # If the class or method was skipped.
+            skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
+                        or getattr(testMethod, '__unittest_skip_why__', ''))
+            raise SkipTest(skip_why)
+
         self.setUp()
-        getattr(self, self._testMethodName)()
+        testMethod()
         self.tearDown()
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop(-1)
