@@ -126,6 +126,8 @@ def _parsedate_tz(data):
             tss = 0
         elif len(tm) == 3:
             [thh, tmm, tss] = tm
+        else:
+            return None
     else:
         return None
     try:
