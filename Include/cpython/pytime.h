@@ -114,7 +114,8 @@ PyAPI_FUNC(_PyTime_t) _PyTime_AsMicroseconds(_PyTime_t t,
 /* Convert timestamp to a number of nanoseconds (10^-9 seconds). */
 PyAPI_FUNC(_PyTime_t) _PyTime_AsNanoseconds(_PyTime_t t);
 
-/* Convert timestamp to a number of 100 nanoseconds (10^-7 seconds). */
+/* Convert timestamp to a number of 100 nanoseconds (10^-7 seconds).
+   Can be used for Waitable timer object in Windows. */
 PyAPI_FUNC(_PyTime_t) _PyTime_As100Nanoseconds(_PyTime_t t,
     _PyTime_round_t round);
 

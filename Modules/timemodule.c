@@ -2126,7 +2126,7 @@ pysleep(_PyTime_t secs)
 #endif
     } while (1);
 #else
-    int timer_ready = 0;
+    int is_timer_ready = 0;
     _PyTime_t millisecs;
     DWORD ul_millis;
     DWORD rc;
@@ -2148,13 +2148,13 @@ pysleep(_PyTime_t secs)
 
     if (!SetWaitableTimer(hEvents[EVENT_TIMER], &deadline, 0, NULL, NULL, FALSE)) {
         ret = -1;
-        timer_ready = 0;
+        is_timer_ready = 0;
     }
     else {
-        timer_ready = 1;
+        is_timer_ready = 1;
     }
 
-    while (timer_ready) {
+    while (is_timer_ready) {
         millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
         if (millisecs > LLONG_MAX) {
             PyErr_SetString(PyExc_OverflowError,
