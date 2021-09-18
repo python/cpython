@@ -56,16 +56,14 @@ def main():
     )
     final_name = args.externals_dir / args.tag
     extracted = extract_zip(args.externals_dir, zip_path)
-    for retries in range(5, 0, -1):
+    for wait in [1, 2, 3, 5, 8, 0]:
         try:
             extracted.replace(final_name)
             break
         except PermissionError as ex:
-            if retries > 1:
-                print(f"Encountered permission error '{ex}'. Retrying in five seconds...", file=sys.stderr)
-                time.sleep(5)
-            else:
-                print(f"Encountered permission error '{ex}'", file=sys.stderr)
+            retry = f" Retrying in {wait}s..." if wait else ""
+            print(f"Encountered permission error '{ex}'.{retry}", file=sys.stderr)
+            time.sleep(wait)
     else:
         print(
             f"ERROR: Failed to extract {final_name}.",
