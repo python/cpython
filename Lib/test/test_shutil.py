@@ -1268,16 +1268,19 @@ class TestCopy(BaseTest, unittest.TestCase):
         dir2 = self.mkdtemp()
         dst = os.path.join(src_dir, 'does_not_exist/')
         write_file(src_file, 'foo')
+        if sys.platform == "win32":
+            err = PermissionError
+        else:
+            err = IsADirectoryError
 
-        self.assertRaises(IsADirectoryError, shutil.copyfile, src_dir, dst)
-        self.assertRaises(IsADirectoryError, shutil.copyfile, src_file, src_dir)
-        self.assertRaises(IsADirectoryError, shutil.copyfile, dir2, src_dir)
-        self.assertRaises(IsADirectoryError, shutil.copy, dir2, src_dir)
-        self.assertRaises(IsADirectoryError, shutil.copy2, dir2, src_dir)
+        self.assertRaises(err, shutil.copyfile, src_dir, dst)
+        self.assertRaises(err, shutil.copyfile, src_file, src_dir)
+        self.assertRaises(err, shutil.copyfile, dir2, src_dir)
+        self.assertRaises(err, shutil.copy, dir2, src_dir)
+        self.assertRaises(err, shutil.copy2, dir2, src_dir)
 
-        # raise IsADirectoryError because of src rather than FileNotFoundError
-        # because of dst
-        self.assertRaises(IsADirectoryError, shutil.copy, dir2, dst)
+        # raise *err* because of src rather than FileNotFoundError because of dst
+        self.assertRaises(err, shutil.copy, dir2, dst)
         shutil.copy(src_file, dir2)     # should not raise exceptions
 
 
