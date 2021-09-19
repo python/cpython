@@ -10,7 +10,6 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest
@@ -842,9 +841,5 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
 
 
-def test_main(verbose=None):
-    support.run_unittest(TestGzip, TestOpen, TestCommandLine)
-
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()
