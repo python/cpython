@@ -78,7 +78,8 @@ class TestCleanUp(unittest.TestCase):
                 pass
 
         test = TestableTest('testNothing')
-        outcome = test._outcome = _Outcome()
+        result = unittest.TestResult()
+        outcome = test._outcome = _Outcome(result=result)
 
         CleanUpExc = Exception('foo')
         exc2 = Exception('bar')
@@ -94,10 +95,13 @@ class TestCleanUp(unittest.TestCase):
         self.assertFalse(test.doCleanups())
         self.assertFalse(outcome.success)
 
-        ((_, (Type1, instance1, _)),
-         (_, (Type2, instance2, _))) = reversed(outcome.errors)
-        self.assertEqual((Type1, instance1), (Exception, CleanUpExc))
-        self.assertEqual((Type2, instance2), (Exception, exc2))
+        (_, msg2), (_, msg1) = result.errors
+        self.assertIn('in cleanup1', msg1)
+        self.assertIn('raise CleanUpExc', msg1)
+        self.assertIn('Exception: foo', msg1)
+        self.assertIn('in cleanup2', msg2)
+        self.assertIn('raise exc2', msg2)
+        self.assertIn('Exception: bar', msg2)
 
     def testCleanupInRun(self):
         blowUp = False
