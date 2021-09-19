@@ -197,7 +197,7 @@ class Test_TestSkipping(unittest.TestCase):
         result = LoggingResult(events)
         test = Foo("test_skip_me")
         self.assertIs(test.run(result), result)
-        self.assertEqual(events, ['startTest', 'addSkip', 'addFailure', 'stopTest'])
+        self.assertEqual(events, ['startTest', 'addFailure', 'addSkip', 'stopTest'])
         self.assertEqual(result.skipped, [(test, "skip")])
 
     def test_skipping_and_fail_in_cleanup(self):

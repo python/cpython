@@ -47,12 +47,10 @@ class _Outcome(object):
         self.result = result
         self.result_supports_subtests = hasattr(result, "addSubTest")
         self.success = True
-        self.skipped = []
         self.expectedFailure = None
-        self.errors = []
 
     @contextlib.contextmanager
-    def testPartExecutor(self, test_case, isTest=False):
+    def testPartExecutor(self, test_case, subTest=False):
         old_success = self.success
         self.success = True
         try:
@@ -61,7 +59,7 @@ class _Outcome(object):
             raise
         except SkipTest as e:
             self.success = False
-            self.skipped.append((test_case, str(e)))
+            _addSkip(self.result, test_case, str(e))
         except _ShouldStop:
             pass
         except:
@@ -70,16 +68,35 @@ class _Outcome(object):
                 self.expectedFailure = exc_info
             else:
                 self.success = False
-                self.errors.append((test_case, exc_info))
+                if subTest:
+                    self.result.addSubTest(test_case.test_case, test_case, exc_info)
+                else:
+                    _addError(self.result, test_case, exc_info)
             # explicitly break a reference cycle:
             # exc_info -> frame -> exc_info
             exc_info = None
         else:
-            if self.result_supports_subtests and self.success:
-                self.errors.append((test_case, None))
+            if subTest and self.success:
+                self.result.addSubTest(test_case.test_case, test_case, None)
         finally:
             self.success = self.success and old_success
 
+
+def _addSkip(result, test_case, reason):
+    addSkip = getattr(result, 'addSkip', None)
+    if addSkip is not None:
+        addSkip(test_case, reason)
+    else:
+        warnings.warn("TestResult has no addSkip method, skips not reported",
+                      RuntimeWarning, 2)
+        result.addSuccess(test_case)
+
+def _addError(result, test, exc_info):
+    if result is not None and exc_info is not None:
+        if issubclass(exc_info[0], test.failureException):
+            result.addFailure(test, exc_info)
+        else:
+            result.addError(test, exc_info)
 
 def _id(obj):
     return obj
@@ -467,15 +484,6 @@ class TestCase(object):
         return "<%s testMethod=%s>" % \
                (strclass(self.__class__), self._testMethodName)
 
-    def _addSkip(self, result, test_case, reason):
-        addSkip = getattr(result, 'addSkip', None)
-        if addSkip is not None:
-            addSkip(test_case, reason)
-        else:
-            warnings.warn("TestResult has no addSkip method, skips not reported",
-                          RuntimeWarning, 2)
-            result.addSuccess(test_case)
-
     @contextlib.contextmanager
     def subTest(self, msg=_subtest_msg_sentinel, **params):
         """Return a context manager that will return the enclosed block
@@ -494,7 +502,7 @@ class TestCase(object):
             params_map = parent.params.new_child(params)
         self._subtest = _SubTest(self, msg, params_map)
         try:
-            with self._outcome.testPartExecutor(self._subtest, isTest=True):
+            with self._outcome.testPartExecutor(self._subtest, subTest=True):
                 yield
             if not self._outcome.success:
                 result = self._outcome.result
@@ -506,16 +514,6 @@ class TestCase(object):
                 raise _ShouldStop
         finally:
             self._subtest = parent
-
-    def _feedErrorsToResult(self, result, errors):
-        for test, exc_info in errors:
-            if isinstance(test, _SubTest):
-                result.addSubTest(test.test_case, test, exc_info)
-            elif exc_info is not None:
-                if issubclass(exc_info[0], self.failureException):
-                    result.addFailure(test, exc_info)
-                else:
-                    result.addError(test, exc_info)
 
     def _addExpectedFailure(self, result, exc_info):
         try:
@@ -574,7 +572,7 @@ class TestCase(object):
                 # If the class or method was skipped.
                 skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
                             or getattr(testMethod, '__unittest_skip_why__', ''))
-                self._addSkip(result, self, skip_why)
+                _addSkip(result, self, skip_why)
                 return result
 
             expecting_failure = (
@@ -589,16 +587,13 @@ class TestCase(object):
                     self._callSetUp()
                 if outcome.success:
                     outcome.expecting_failure = expecting_failure
-                    with outcome.testPartExecutor(self, isTest=True):
+                    with outcome.testPartExecutor(self):
                         self._callTestMethod(testMethod)
                     outcome.expecting_failure = False
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
-
                 self.doCleanups()
-                for test, reason in outcome.skipped:
-                    self._addSkip(result, test, reason)
-                self._feedErrorsToResult(result, outcome.errors)
+
                 if outcome.success:
                     if expecting_failure:
                         if outcome.expectedFailure:
@@ -609,11 +604,10 @@ class TestCase(object):
                         result.addSuccess(self)
                 return result
             finally:
-                # explicitly break reference cycles:
-                # outcome.errors -> frame -> outcome -> outcome.errors
+                # explicitly break reference cycle:
                 # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
-                outcome.errors.clear()
                 outcome.expectedFailure = None
+                outcome = None
 
                 # clear the outcome, no more needed
                 self._outcome = None
