@@ -166,6 +166,19 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_TOOBIG",
             "SQLITE_TRANSACTION",
             "SQLITE_UPDATE",
+            # Run-time limit categories
+            "SQLITE_LIMIT_LENGTH",
+            "SQLITE_LIMIT_SQL_LENGTH",
+            "SQLITE_LIMIT_COLUMN",
+            "SQLITE_LIMIT_EXPR_DEPTH",
+            "SQLITE_LIMIT_COMPOUND_SELECT",
+            "SQLITE_LIMIT_VDBE_OP",
+            "SQLITE_LIMIT_FUNCTION_ARG",
+            "SQLITE_LIMIT_ATTACHED",
+            "SQLITE_LIMIT_LIKE_PATTERN_LENGTH",
+            "SQLITE_LIMIT_VARIABLE_NUMBER",
+            "SQLITE_LIMIT_TRIGGER_DEPTH",
+            "SQLITE_LIMIT_WORKER_THREADS",
         ]
         if sqlite.version_info >= (3, 7, 17):
             consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
@@ -330,6 +343,21 @@ class ConnectionTests(unittest.TestCase):
         for n in range(500):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
+
+    def test_connection_limits(self):
+        param = sqlite.SQLITE_LIMIT_SQL_LENGTH
+        setval = 10
+        ret1 = self.cx.getlimit(param)
+        try:
+            ret2 = self.cx.setlimit(param, setval)
+            self.assertEqual(ret1, ret2)
+            self.assertEqual(self.cx.getlimit(param), setval)
+            msg = "string or blob too big"
+            self.assertRaisesRegex(sqlite.DataError, msg,
+                                   self.cx.execute, "select 1 as '16'")
+        finally:  # restore old limit
+            print("restoring limit")
+            self.cx.setlimit(param, ret1)
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
@@ -766,6 +794,8 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.set_trace_callback(None),
             lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
+            lambda: self.con.setlimit(sqlite.SQLITE_LIMIT_LENGTH, -1),
+            lambda: self.con.getlimit(sqlite.SQLITE_LIMIT_LENGTH),
         ]
         for fn in fns:
             with self.subTest(fn=fn):

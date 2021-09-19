@@ -1892,6 +1892,53 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+_sqlite3.Connection.setlimit as setlimit
+
+    limit: int
+        The limit category to be set.
+    value: int
+        The new limit. If the new limit is a negative number, the limit is
+        unchanged.
+    /
+
+Set connection run-time limits. Non-standard.
+
+Attempts to increase a limit above its hard upper bound are silently truncated
+to the hard upper bound. Regardless of whether or not the limit was changed,
+the prior value of the limit is returned.
+[clinic start generated code]*/
+
+static PyObject *
+setlimit_impl(pysqlite_Connection *self, int limit, int value)
+/*[clinic end generated code: output=18d15e4be8a7a4ec input=e0990e0c90e747ee]*/
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    int previous_value = sqlite3_limit(self->db, limit, value);
+    return PyLong_FromLong(previous_value);
+}
+
+/*[clinic input]
+_sqlite3.Connection.getlimit as getlimit
+
+    limit: int
+        The limit category to be queried.
+    /
+
+Get connection run-time limits. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+getlimit_impl(pysqlite_Connection *self, int limit)
+/*[clinic end generated code: output=f90c9c8399170536 input=c339eaae3afe367a]*/
+{
+    return setlimit_impl(self, limit, -1);
+}
+
+
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
@@ -1923,6 +1970,8 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
+    SETLIMIT_METHODDEF
+    GETLIMIT_METHODDEF
     {NULL, NULL}
 };
 

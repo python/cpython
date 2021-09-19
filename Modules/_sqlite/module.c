@@ -392,6 +392,19 @@ static int add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3008003
     ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
 #endif
+    // Run-time limit categories
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_LENGTH);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_SQL_LENGTH);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_COLUMN);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_EXPR_DEPTH);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_COMPOUND_SELECT);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_VDBE_OP);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_FUNCTION_ARG);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_ATTACHED);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_VARIABLE_NUMBER);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_TRIGGER_DEPTH);
+    ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_WORKER_THREADS);
     return ret;
 }
 
