@@ -695,9 +695,8 @@ def check_sizeof(test, o, size):
 # Decorator for running a function in a different locale, correctly resetting
 # it afterwards.
 
+@contextlib.contextmanager
 def run_with_locale(catstr, *locales):
-    def decorator(func):
-        def inner(*args, **kwds):
             try:
                 import locale
                 category = getattr(locale, catstr)
@@ -716,16 +715,11 @@ def run_with_locale(catstr, *locales):
                     except:
                         pass
 
-            # now run the function, resetting the locale on exceptions
             try:
-                return func(*args, **kwds)
+                yield
             finally:
                 if locale and orig_locale:
                     locale.setlocale(category, orig_locale)
-        inner.__name__ = func.__name__
-        inner.__doc__ = func.__doc__
-        return inner
-    return decorator
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
