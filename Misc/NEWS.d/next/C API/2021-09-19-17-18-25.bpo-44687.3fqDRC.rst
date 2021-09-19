@@ -1,0 +1,1 @@
+Add a new :c:macro:`PEEK_CHECK_CLOSED` macro to check if a file is closed using a method specific to BufferedReader.peek()
