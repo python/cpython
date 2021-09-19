@@ -4437,8 +4437,10 @@ class LogRecordTest(BaseTest):
             name = mp.current_process().name
 
             r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
-            del sys.modules['multiprocessing']
-            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            # https://bugs.python.org/issue45128
+            with support.swap_item(sys.modules, 'multiprocessing', None):
+                r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
                        'r1.processName': r1.processName,
@@ -4486,7 +4488,6 @@ class LogRecordTest(BaseTest):
         finally:
             if multiprocessing_imported:
                 import multiprocessing
-
 
     def test_optional(self):
         r = logging.makeLogRecord({})
