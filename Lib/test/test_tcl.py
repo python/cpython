@@ -751,8 +751,5 @@ def setUpModule():
         print('patchlevel =', tcl.call('info', 'patchlevel'))
 
 
-def test_main():
-    support.run_unittest(TclTest, TkinterTest, BigmemTclTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

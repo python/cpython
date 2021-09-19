@@ -1515,16 +1515,10 @@ class FutureTests(BaseTestCase):
         self.assertEqual(f.exception(), e)
 
 
-_threads_key = None
-
 def setUpModule():
-    global _threads_key
-    _threads_key = threading_helper.threading_setup()
-
-
-def tearDownModule():
-    threading_helper.threading_cleanup(*_threads_key)
-    multiprocessing.util._cleanup_tests()
+    unittest.addModuleCleanup(multiprocessing.util._cleanup_tests)
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":
