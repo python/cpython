@@ -31,7 +31,7 @@ two types exist -- :ref:`GenericAlias <types-genericalias>` and
       static PyMethodDef my_obj_methods[] = {
           // Other methods.
           ...
-          {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"}
+          {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"}
           ...
       }
 
