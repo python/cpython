@@ -362,8 +362,6 @@ class BoolTest(unittest.TestCase):
         self.assertIs(type(False.real), int)
         self.assertIs(type(False.imag), int)
 
-def test_main():
-    support.run_unittest(BoolTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

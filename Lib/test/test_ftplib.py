@@ -12,6 +12,7 @@ import errno
 import os
 import threading
 import time
+import unittest
 try:
     import ssl
 except ImportError:
@@ -1136,18 +1137,10 @@ class MiscTestCase(TestCase):
         support.check__all__(self, ftplib, blacklist=blacklist)
 
 
-def test_main():
-    tests = [TestFTPClass, TestTimeouts,
-             TestIPv6Environment,
-             TestTLS_FTPClassMixin, TestTLS_FTPClass,
-             MiscTestCase]
-
+def setUpModule():
     thread_info = support.threading_setup()
-    try:
-        support.run_unittest(*tests)
-    finally:
-        support.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(support.threading_cleanup, *thread_info)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

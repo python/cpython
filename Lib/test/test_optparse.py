@@ -1655,8 +1655,5 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, optparse, blacklist=blacklist)
 
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

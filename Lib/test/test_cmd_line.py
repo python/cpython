@@ -841,9 +841,9 @@ class IgnoreEnvironmentTest(unittest.TestCase):
         )
 
 
-def test_main():
-    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

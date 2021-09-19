@@ -3,7 +3,7 @@ import os
 import string
 import unittest
 import shutil
-from test.support import TESTFN, run_unittest, unlink, reap_children
+from test.support import TESTFN, unlink, reap_children
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')
@@ -194,9 +194,10 @@ class SimplePipeTests(unittest.TestCase):
         self.assertNotEqual(id(t.steps), id(u.steps))
         self.assertEqual(t.debugging, u.debugging)
 
-def test_main():
-    run_unittest(SimplePipeTests)
+
+def tearDownModule():
     reap_children()
 
+
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

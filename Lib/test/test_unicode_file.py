@@ -5,7 +5,7 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.support import (run_unittest, rmtree, change_cwd,
+from test.support import (rmtree, change_cwd,
     TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
 
 if not os.path.supports_unicode_filenames:
@@ -133,8 +133,6 @@ class TestUnicodeFiles(unittest.TestCase):
             self._do_directory(TESTFN_UNENCODABLE+ext,
                                TESTFN_UNENCODABLE+ext)
 
-def test_main():
-    run_unittest(__name__)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

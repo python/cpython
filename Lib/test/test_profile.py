@@ -6,7 +6,7 @@ import unittest
 import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import TESTFN, run_unittest, unlink, temp_dir, change_cwd
+from test.support import TESTFN, unlink, temp_dir, change_cwd
 from contextlib import contextmanager
 
 import profile
@@ -155,12 +155,10 @@ def silent():
     finally:
         sys.stdout = stdout
 
-def test_main():
-    run_unittest(ProfileTest)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, ProfileTest)
 

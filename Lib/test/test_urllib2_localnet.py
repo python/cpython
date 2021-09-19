@@ -660,17 +660,10 @@ class TestUrlopen(unittest.TestCase):
         self.assertEqual(index + 1, len(lines))
 
 
-threads_key = None
-
 def setUpModule():
-    # Store the threading_setup in a key and ensure that it is cleaned up
-    # in the tearDown
-    global threads_key
-    threads_key = support.threading_setup()
+    thread_info = support.threading_setup()
+    unittest.addModuleCleanup(support.threading_cleanup, *thread_info)
 
-def tearDownModule():
-    if threads_key:
-        support.threading_cleanup(*threads_key)
 
 if __name__ == "__main__":
     unittest.main()
