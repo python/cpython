@@ -162,19 +162,11 @@ class IsolatedAsyncioTestCase(TestCase):
         finally:
             self._tearDownAsyncioLoop()
 
-    def doCleanups(self):
-        if self._asyncioTestLoop is None:
-            self._setupAsyncioLoop()
-            try:
-                return super().doCleanups()
-            finally:
-                self._tearDownAsyncioLoop()
-        else:
-            return super().doCleanups()
-
     def debug(self):
         self._setupAsyncioLoop()
-        try:
-            super().debug()
-        finally:
+        super().debug()
+        self._tearDownAsyncioLoop()
+
+    def __del__(self):
+        if self._asyncioTestLoop is not None:
             self._tearDownAsyncioLoop()
