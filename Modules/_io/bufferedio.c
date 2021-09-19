@@ -848,7 +848,7 @@ _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
 
     CHECK_INITIALIZED(self)
 
-    // use a check specific to peek if the previous operation was not a read
+    // use a check specific to peek if the previous file operation was not a read
     if (Py_SAFE_DOWNCAST(self->pos, Py_off_t, Py_ssize_t) == 0) {
         PEEK_CHECK_CLOSED(self, "peek of closed file")
     } else {
