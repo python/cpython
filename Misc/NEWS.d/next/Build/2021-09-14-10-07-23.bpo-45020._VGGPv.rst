@@ -1,0 +1,4 @@
+Freeze stdlib modules that are imported during startup.  This provides
+significant performance improvements to startup.  If necessary, use the
+previously added "-X frozen_modules=off" commandline option to force
+importing the source modules.
