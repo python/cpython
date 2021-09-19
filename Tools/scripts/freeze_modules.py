@@ -15,16 +15,23 @@ import textwrap
 from update_file import updating_file_with_tmpfile
 
 
-SCRIPTS_DIR = os.path.abspath(os.path.dirname(__file__))
-TOOLS_DIR = os.path.dirname(SCRIPTS_DIR)
-ROOT_DIR = os.path.dirname(TOOLS_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+ROOT_DIR = os.path.abspath(ROOT_DIR)
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
-# If MODULES_DIR is changed then the .gitattributes file needs to be updated.
-MODULES_DIR = os.path.join(ROOT_DIR, 'Python/frozen_modules')
+# If MODULES_DIR is changed then the .gitattributes and .gitignore files
+# need to be updated.
+MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 
 if sys.platform != "win32":
     TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
+    if not os.path.isfile(TOOL):
+        # When building out of the source tree, get the tool from the current
+        # directory
+        TOOL = os.path.join('Programs', '_freeze_module')
+        TOOL = os.path.abspath(TOOL)
+        if not os.path.isfile(TOOL):
+            sys.exit("ERROR: missing _freeze_module")
 else:
     def find_tool():
         for arch in ['amd64', 'win32']:
@@ -59,16 +66,16 @@ FROZEN = [
         # on a builtin zip file instead of a filesystem.
         'zipimport',
         ]),
-    ('stdlib', [
-        # For the moment we skip codecs, encodings.*, os, and site.
-        # These modules have different generated files depending on
-        # if a debug or non-debug build.  (See bpo-45186 and bpo-45188.)
-        # without site (python -S)
+    ('stdlib - startup, without site (python -S)', [
         'abc',
-        #'codecs',
-        # '<encodings.*>',
+        'codecs',
+        # For now we do not freeze the encodings, due # to the noise all
+        # those extra modules add to the text printed during the build.
+        # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
+        #'<encodings.*>',
         'io',
-        # with site
+        ]),
+    ('stdlib - startup, with site', [
         '_collections_abc',
         '_sitebuiltins',
         'genericpath',
@@ -76,9 +83,9 @@ FROZEN = [
         'posixpath',
         # We must explicitly mark os.path as a frozen module
         # even though it will never be imported.
-        #f'{OS_PATH} : os.path',
-        #'os',
-        #'site',
+        f'{OS_PATH} : os.path',
+        'os',
+        'site',
         'stat',
         ]),
     ('Test module', [
@@ -539,14 +546,14 @@ def regen_makefile(modules):
     rules = ['']
     for src in _iter_sources(modules):
         header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
-        frozenfiles.append(f'\t\t$(srcdir)/{header} \\')
+        frozenfiles.append(f'\t\t{header} \\')
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         # Note that we freeze the module to the target .h file
         # instead of going through an intermediate file like we used to.
         rules.append(f'{header}: Programs/_freeze_module {pyfile}')
         rules.append(
-            (f'\t$(srcdir)/Programs/_freeze_module {src.frozenid} '
+            (f'\tPrograms/_freeze_module {src.frozenid} '
              f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
         rules.append('')
 
@@ -576,10 +583,6 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     for src in _iter_sources(modules):
-        # For now we only require the essential frozen modules on Windows.
-        # See bpo-45186 and bpo-45188.
-        if src.id not in ESSENTIAL and src.id != '__hello__':
-            continue
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
         intfile = ntpath.splitext(ntpath.basename(header))[0] + '.g.h'

@@ -42,12 +42,15 @@
 #include "frozen_modules/importlib__bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
 #include "frozen_modules/abc.h"
+#include "frozen_modules/codecs.h"
 #include "frozen_modules/io.h"
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
 #include "frozen_modules/genericpath.h"
 #include "frozen_modules/ntpath.h"
 #include "frozen_modules/posixpath.h"
+#include "frozen_modules/os.h"
+#include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
 #include "frozen_modules/__hello__.h"
 /* End includes */
@@ -62,15 +65,21 @@ static const struct _frozen _PyImport_FrozenModules[] = {
         (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
 
-    /* stdlib */
+    /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
+    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs)},
     {"io", _Py_M__io, (int)sizeof(_Py_M__io)},
+
+    /* stdlib - startup, with site */
     {"_collections_abc", _Py_M___collections_abc,
         (int)sizeof(_Py_M___collections_abc)},
     {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
     {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath)},
     {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath)},
     {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
+    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
+    {"os", _Py_M__os, (int)sizeof(_Py_M__os)},
+    {"site", _Py_M__site, (int)sizeof(_Py_M__site)},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
 
     /* Test module */
