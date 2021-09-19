@@ -431,31 +431,22 @@ static int
 begin_transaction(pysqlite_Connection *self)
 {
     int rc;
-    sqlite3_stmt *statement;
 
     Py_BEGIN_ALLOW_THREADS
+    sqlite3_stmt *statement;
     rc = sqlite3_prepare_v2(self->db, self->begin_statement, -1, &statement,
                             NULL);
+    if (rc == SQLITE_OK) {
+        (void)sqlite3_step(statement);
+        rc = sqlite3_finalize(statement);
+    }
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->state, self->db);
-        goto error;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    sqlite3_step(statement);
-    rc = sqlite3_finalize(statement);
-    Py_END_ALLOW_THREADS
-
-    if (rc != SQLITE_OK && !PyErr_Occurred()) {
-        _pysqlite_seterror(self->state, self->db);
-    }
-
-error:
-    if (PyErr_Occurred()) {
+        (void)_pysqlite_seterror(self->state, self->db);
         return -1;
     }
+
     return 0;
 }
 
