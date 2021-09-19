@@ -705,5 +705,16 @@ class TestSupport(unittest.TestCase):
     # SuppressCrashReport
 
 
+def _warn_about_deprecation():
+    # In 3.10+ this lives in test.support.warnings_helper
+    warnings.warn(
+        "This is used in test_support test to ensure"
+        " support.ignore_deprecations_from() works as expected."
+        " You should not be seeing this.",
+        DeprecationWarning,
+        stacklevel=0,
+    )
+
+
 if __name__ == '__main__':
     unittest.main()
