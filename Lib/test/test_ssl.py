@@ -2344,6 +2344,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
 
 
+@support.requires_resource('network')
 class NetworkedTests(unittest.TestCase):
 
     def test_timeout_connect_ex(self):
@@ -5014,7 +5015,7 @@ class TestEnumerations(unittest.TestCase):
         enum._test_simple_enum(CheckedVerifyMode, ssl.VerifyMode)
 
 
-def test_main(verbose=False):
+def setUpModule():
     if support.verbose:
         plats = {
             'Mac': platform.mac_ver,
@@ -5045,20 +5046,11 @@ def test_main(verbose=False):
         if not os.path.exists(filename):
             raise support.TestFailed("Can't read certificate file %r" % filename)
 
-    tests = [
-        ContextTests, BasicSocketTests, SSLErrorTests, MemoryBIOTests,
-        SSLObjectTests, SimpleBackgroundTests, ThreadedTests,
-        TestPostHandshakeAuth, TestSSLDebug, TestEnumerations,
-    ]
 
-    if support.is_resource_enabled('network'):
-        tests.append(NetworkedTests)
-
+def setUpModule():
     thread_info = threading_helper.threading_setup()
-    try:
-        support.run_unittest(*tests)
-    finally:
-        threading_helper.threading_cleanup(*thread_info)
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
