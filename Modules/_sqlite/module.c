@@ -321,7 +321,8 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_NOTICE),
     DECLARE_ERROR_CODE(SQLITE_WARNING),
 #endif
-    // Extended result code list
+    /* Extended result code list.
+     * See also https://www.sqlite.org/c3ref/c_abort_rollback.html */
     DECLARE_ERROR_CODE(SQLITE_ABORT_ROLLBACK),
     DECLARE_ERROR_CODE(SQLITE_BUSY_RECOVERY),
     DECLARE_ERROR_CODE(SQLITE_CANTOPEN_FULLPATH),
