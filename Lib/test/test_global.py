@@ -49,9 +49,7 @@ x = 2
 
 
 def setUpModule():
-    cm = warnings.catch_warnings()
-    cm.__enter__()
-    unittest.addModuleCleanup(cm.__exit__, None, None, None)
+    unittest.enterModuleContext(warnings.catch_warnings())
     warnings.filterwarnings("error", module="<test string>")
 
 
