@@ -178,12 +178,13 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_LIMIT_LIKE_PATTERN_LENGTH",
             "SQLITE_LIMIT_VARIABLE_NUMBER",
             "SQLITE_LIMIT_TRIGGER_DEPTH",
-            "SQLITE_LIMIT_WORKER_THREADS",
         ]
         if sqlite.version_info >= (3, 7, 17):
             consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
         if sqlite.version_info >= (3, 8, 3):
             consts.append("SQLITE_RECURSIVE")
+        if sqlite.version_info >= (3, 8, 7):
+            consts.append("SQLITE_LIMIT_WORKER_THREADS")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         for const in consts:
             with self.subTest(const=const):
