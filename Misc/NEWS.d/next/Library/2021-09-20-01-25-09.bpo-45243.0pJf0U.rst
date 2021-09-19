@@ -1,0 +1,4 @@
+Add :meth:`~sqlite3.Connection.setlimit` and
+:meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
+setting and getting SQLite limits by connection basis. Patch by Erlend E.
+Aasland.
