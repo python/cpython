@@ -311,6 +311,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out.rstrip(), "Py_RunMain(): sys.argv=['-c', 'arg2']")
         self.assertEqual(err, '')
 
+    def test_run_main_loop(self):
+        # bpo-40413: Calling Py_InitializeFromConfig()+Py_RunMain() multiple
+        # times must not crash.
+        nloop = 5
+        out, err = self.run_embedded_interpreter("test_run_main_loop")
+        self.assertEqual(out, "Py_RunMain(): sys.argv=['-c', 'arg2']\n" * nloop)
+        self.assertEqual(err, '')
+
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
