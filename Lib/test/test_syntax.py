@@ -1266,6 +1266,7 @@ Corner-cases that used to crash:
 """
 
 import re
+import doctest
 import unittest
 
 from test import support
@@ -1554,10 +1555,10 @@ while 1:
         self._check_error(source, "too many statically nested blocks")
 
 
-def test_main():
-    support.run_unittest(SyntaxTestCase)
-    from test import test_syntax
-    support.run_doctest(test_syntax, verbosity=True)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
