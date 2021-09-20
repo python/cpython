@@ -395,7 +395,7 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 # A constant likely larger than the underlying OS socket buffer size, to make
 # writes blocking.
 # The socket buffer sizes can usually be tuned system-wide (e.g. through sysctl
-# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF). See issue #18643
+# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF). (see issue #18643
 # for a discussion of this number).
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 

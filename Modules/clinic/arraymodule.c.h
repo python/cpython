@@ -359,7 +359,7 @@ PyDoc_STRVAR(array_array_frombytes__doc__,
 "frombytes($self, buffer, /)\n"
 "--\n"
 "\n"
-"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).");
+"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.");
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
     {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},

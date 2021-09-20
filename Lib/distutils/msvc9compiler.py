@@ -672,7 +672,7 @@ class MSVCCompiler(CCompiler) :
     def manifest_get_embed_info(self, target_desc, ld_args):
         # If a manifest should be embedded, return a tuple of
         # (manifest_filename, resource_id).  Returns None if no manifest
-        # should be embedded.  See http://bugs.python.org/issue7833 for why
+        # should be embedded.  (see http://bugs.python.org/issue7833 for why
         # we want to avoid any manifest for extension modules if we can)
         for arg in ld_args:
             if arg.startswith("/MANIFESTFILE:"):
