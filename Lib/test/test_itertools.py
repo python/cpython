@@ -2646,10 +2646,11 @@ True
 >>> list(odds)
 [1, 3, 5, 7, 9]
 
->>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
->>> str.join('', all_upper)
+>>> it = iter('ABCdEfGhI')
+>>> all_upper, remainder = before_and_after(str.isupper, it)
+>>> ''.join(all_upper)
 'ABC'
->>> str.join('', remainder)
+>>> ''.join(remainder)
 'dEfGhI'
 
 >>> list(powerset([1,2,3]))
