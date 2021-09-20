@@ -1297,12 +1297,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #if USE_COMPUTED_GOTOS
 #define TARGET(op) op: TARGET_##op
-#define DISPATCH_GOTO() goto *opcode_targets[opcode]
-#else
-#define TARGET(op) op
-#define DISPATCH_GOTO() goto dispatch_opcode
-#endif
-
 #define DISPATCH() \
     { \
         if (trace_info.cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
@@ -1310,8 +1304,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
         } \
         f->f_lasti = INSTR_OFFSET(); \
         NEXTOPARG(); \
-        DISPATCH_GOTO(); \
+        goto *opcode_targets[opcode]; \
     }
+#else
+#define TARGET(op) op
+#define DISPATCH() goto predispatch;
+#endif
+
 
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
@@ -1827,7 +1826,16 @@ main_loop:
             }
         }
 #endif
+#if USE_COMPUTED_GOTOS == 0
+    goto dispatch_opcode;
 
+    predispatch:
+        if (trace_info.cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) {
+            goto tracing_dispatch;
+        }
+        f->f_lasti = INSTR_OFFSET();
+        NEXTOPARG();
+#endif
     dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
