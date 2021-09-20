@@ -246,8 +246,5 @@ class DirCompareTestCase(unittest.TestCase):
             self.assertEqual(report_lines, expected_report_lines)
 
 
-def test_main():
-    support.run_unittest(FileCompareTestCase, DirCompareTestCase)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

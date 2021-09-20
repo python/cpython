@@ -1499,7 +1499,7 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
