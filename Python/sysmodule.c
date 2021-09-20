@@ -253,7 +253,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
 
         /* Disallow tracing in hooks unless explicitly enabled */
         ts->tracing++;
-        ts->cframe->use_tracing = 0;
+        ts->use_tracing = ts->cframe->use_tracing = 0;
         while ((hook = PyIter_Next(hooks)) != NULL) {
             _Py_IDENTIFIER(__cantrace__);
             PyObject *o;
@@ -266,14 +266,15 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 break;
             }
             if (canTrace) {
-                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+                ts->use_tracing = ts->cframe->use_tracing =
+                    (ts->c_tracefunc || ts->c_profilefunc);
                 ts->tracing--;
             }
             PyObject* args[2] = {eventName, eventArgs};
             o = _PyObject_FastCallTstate(ts, hook, args, 2);
             if (canTrace) {
                 ts->tracing++;
-                ts->cframe->use_tracing = 0;
+                ts->use_tracing = ts->cframe->use_tracing = 0;
             }
             if (!o) {
                 break;
@@ -281,7 +282,8 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
             Py_DECREF(o);
             Py_CLEAR(hook);
         }
-        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+        ts->use_tracing = ts->cframe->use_tracing =
+            (ts->c_tracefunc || ts->c_profilefunc);
         ts->tracing--;
         if (_PyErr_Occurred(ts)) {
             goto exit;
