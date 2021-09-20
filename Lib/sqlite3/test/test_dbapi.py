@@ -234,12 +234,12 @@ class ModuleTests(unittest.TestCase):
             ]
         if sqlite.version_info >= (3, 8, 1):
             consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
-        if sqlite.version_info >= (3, 8, 10):
-            consts += [
-                "SQLITE_AUTH_USER",
-                "SQLITE_CONSTRAINT_ROWID",
-                "SQLITE_READONLY_DBMOVED",
-            ]
+        if sqlite.version_info >= (3, 8, 2):
+            consts.append("SQLITE_CONSTRAINT_ROWID")
+        if sqlite.version_info >= (3, 8, 3):
+            consts.append("SQLITE_READONLY_DBMOVED")
+        if sqlite.version_info >= (3, 8, 7):
+            consts.append("SQLITE_AUTH_USER")
         if sqlite.version_info >= (3, 9, 0):
             consts.append("SQLITE_IOERR_VNODE")
         if sqlite.version_info >= (3, 10, 0):
