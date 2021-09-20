@@ -1,0 +1,3 @@
+Generate lines in relevant files for frozen modules.  Up until now each of
+the files had to be edited manually.  This change makes it easier to add to
+and modify the frozen modules.

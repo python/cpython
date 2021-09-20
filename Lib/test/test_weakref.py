@@ -1,5 +1,6 @@
 import gc
 import sys
+import doctest
 import unittest
 import collections
 import weakref
@@ -12,6 +13,7 @@ import random
 
 from test import support
 from test.support import script_helper, ALWAYS_EQ
+from test.support import gc_collect
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -135,6 +137,7 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
         del o
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(ref1(), "expected reference to be invalidated")
         self.assertIsNone(ref2(), "expected reference to be invalidated")
         self.assertEqual(self.cbcalled, 2,
@@ -168,13 +171,16 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.proxy(o, self.callback)
         ref2 = weakref.proxy(o, self.callback)
         del o
+        gc_collect()  # For PyPy or other GCs.
 
         def check(proxy):
             proxy.bar
 
         self.assertRaises(ReferenceError, check, ref1)
         self.assertRaises(ReferenceError, check, ref2)
-        self.assertRaises(ReferenceError, bool, weakref.proxy(C()))
+        ref3 = weakref.proxy(C())
+        gc_collect()  # For PyPy or other GCs.
+        self.assertRaises(ReferenceError, bool, ref3)
         self.assertEqual(self.cbcalled, 2)
 
     def check_basic_ref(self, factory):
@@ -191,6 +197,7 @@ class ReferencesTestCase(TestBase):
         o = factory()
         ref = weakref.ref(o, self.callback)
         del o
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(self.cbcalled, 1,
                      "callback did not properly set 'cbcalled'")
         self.assertIsNone(ref(),
@@ -215,6 +222,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(weakref.getweakrefcount(o), 2,
                      "wrong weak ref count for object")
         del proxy
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefcount(o), 1,
                      "wrong weak ref count for object after deleting proxy")
 
@@ -480,6 +488,7 @@ class ReferencesTestCase(TestBase):
                      "got wrong number of weak reference objects")
 
         del ref1, ref2, proxy1, proxy2
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefcount(o), 0,
                      "weak reference objects not unlinked from"
                      " referent when discarded.")
@@ -493,6 +502,7 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
         del ref1
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefs(o), [ref2],
                      "list of refs does not match")
 
@@ -500,10 +510,12 @@ class ReferencesTestCase(TestBase):
         ref1 = weakref.ref(o, self.callback)
         ref2 = weakref.ref(o, self.callback)
         del ref2
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefs(o), [ref1],
                      "list of refs does not match")
 
         del ref1
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(weakref.getweakrefs(o), [],
                      "list of refs not cleared")
 
@@ -989,6 +1001,7 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertTrue(mr.called)
         self.assertEqual(mr.value, 24)
         del o
+        gc_collect()  # For PyPy or other GCs.
         self.assertIsNone(mr())
         self.assertTrue(mr.called)
 
@@ -1291,15 +1304,18 @@ class MappingTestCase(TestBase):
         del items1, items2
         self.assertEqual(len(dict), self.COUNT)
         del objects[0]
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), self.COUNT - 1,
                      "deleting object did not cause dictionary update")
         del objects, o
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), 0,
                      "deleting the values did not clear the dictionary")
         # regression on SF bug #447152:
         dict = weakref.WeakValueDictionary()
         self.assertRaises(KeyError, dict.__getitem__, 1)
         dict[2] = C()
+        gc_collect()  # For PyPy or other GCs.
         self.assertRaises(KeyError, dict.__getitem__, 2)
 
     def test_weak_keys(self):
@@ -1320,9 +1336,11 @@ class MappingTestCase(TestBase):
         del items1, items2
         self.assertEqual(len(dict), self.COUNT)
         del objects[0]
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), (self.COUNT - 1),
                      "deleting object did not cause dictionary update")
         del objects, o
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(dict), 0,
                      "deleting the keys did not clear the dictionary")
         o = Object(42)
@@ -1821,6 +1839,7 @@ class MappingTestCase(TestBase):
         for o in objs:
             count += 1
             del d[o]
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(d), 0)
         self.assertEqual(count, 2)
 
@@ -2129,6 +2148,7 @@ class FinalizeTestCase(unittest.TestCase):
 
 libreftest = """ Doctest for examples in the library reference: weakref.rst
 
+>>> from test.support import gc_collect
 >>> import weakref
 >>> class Dict(dict):
 ...     pass
@@ -2148,6 +2168,7 @@ True
 >>> o is o2
 True
 >>> del o, o2
+>>> gc_collect()  # For PyPy or other GCs.
 >>> print(r())
 None
 
@@ -2200,6 +2221,7 @@ True
 >>> id2obj(a_id) is a
 True
 >>> del a
+>>> gc_collect()  # For PyPy or other GCs.
 >>> try:
 ...     id2obj(a_id)
 ... except KeyError:
@@ -2212,18 +2234,10 @@ OK
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main():
-    support.run_unittest(
-        ReferencesTestCase,
-        WeakMethodTestCase,
-        MappingTestCase,
-        WeakValueDictionaryTestCase,
-        WeakKeyDictionaryTestCase,
-        SubclassableWeakrefTestCase,
-        FinalizeTestCase,
-        )
-    support.run_doctest(sys.modules[__name__])
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

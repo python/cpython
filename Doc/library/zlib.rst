@@ -47,7 +47,7 @@ The available exception and functions in this module are:
       platforms, use ``adler32(data) & 0xffffffff``.
 
 
-.. function:: compress(data, /, level=-1)
+.. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
    *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
@@ -55,26 +55,8 @@ The available exception and functions in this module are:
    is slowest and produces the most.  ``0`` (Z_NO_COMPRESSION) is no compression.
    The default value is ``-1`` (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
    compromise between speed and compression (currently equivalent to level 6).
-   Raises the :exc:`error` exception if any error occurs.
 
-   .. versionchanged:: 3.6
-      *level* can now be used as a keyword parameter.
-
-
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
-
-   Returns a compression object, to be used for compressing data streams that won't
-   fit into memory at once.
-
-   *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
-   A value of ``1`` (Z_BEST_SPEED) is fastest and produces the least compression,
-   while a value of ``9`` (Z_BEST_COMPRESSION) is slowest and produces the most.
-   ``0`` (Z_NO_COMPRESSION) is no compression.  The default value is ``-1`` (Z_DEFAULT_COMPRESSION).
-   Z_DEFAULT_COMPRESSION represents a default compromise between speed and compression
-   (currently equivalent to level 6).
-
-   *method* is the compression algorithm. Currently, the only supported value is
-   :const:`DEFLATED`.
+   .. _compress-wbits:
 
    The *wbits* argument controls the size of the history buffer (or the
    "window size") used when compressing data, and whether a header and
@@ -93,6 +75,34 @@ The available exception and functions in this module are:
    * +25 to +31 = 16 + (9 to 15): Uses the low 4 bits of the value as the
      window size logarithm, while including a basic :program:`gzip` header
      and trailing checksum in the output.
+
+   Raises the :exc:`error` exception if any error occurs.
+
+   .. versionchanged:: 3.6
+      *level* can now be used as a keyword parameter.
+
+   .. versionchanged:: 3.11
+      The *wbits* parameter is now available to set window bits and
+      compression type.
+
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
+
+   Returns a compression object, to be used for compressing data streams that won't
+   fit into memory at once.
+
+   *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
+   A value of ``1`` (Z_BEST_SPEED) is fastest and produces the least compression,
+   while a value of ``9`` (Z_BEST_COMPRESSION) is slowest and produces the most.
+   ``0`` (Z_NO_COMPRESSION) is no compression.  The default value is ``-1`` (Z_DEFAULT_COMPRESSION).
+   Z_DEFAULT_COMPRESSION represents a default compromise between speed and compression
+   (currently equivalent to level 6).
+
+   *method* is the compression algorithm. Currently, the only supported value is
+   :const:`DEFLATED`.
+
+   The *wbits* parameter controls the size of the history buffer (or the
+   "window size"), and what header and trailer format will be used. It has
+   the same meaning as `described for compress() <#compress-wbits>`__.
 
    The *memLevel* argument controls the amount of memory used for the
    internal compression state. Valid values range from ``1`` to ``9``.

@@ -1610,6 +1610,16 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
             isinstance(1, P)
 
+    def test_super_call_init(self):
+        class P(Protocol):
+            x: int
+
+        class Foo(P):
+            def __init__(self):
+                super().__init__()
+
+        Foo()  # Previously triggered RecursionError
+
 
 class GenericTests(BaseTestCase):
 
@@ -4567,6 +4577,11 @@ class AnnotatedTests(BaseTestCase):
     def test_annotated_in_other_types(self):
         X = List[Annotated[T, 5]]
         self.assertEqual(X[int], List[Annotated[int, 5]])
+
+    def test_annotated_mro(self):
+        class X(Annotated[int, (1, 10)]): ...
+        self.assertEqual(X.__mro__, (X, int, object),
+                         "Annotated should be transparent.")
 
 
 class TypeAliasTests(BaseTestCase):

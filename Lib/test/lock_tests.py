@@ -3,6 +3,7 @@ Various tests for synchronization primitives.
 """
 
 import os
+import gc
 import sys
 import time
 from _thread import start_new_thread, TIMEOUT_MAX
@@ -221,6 +222,7 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         ref = weakref.ref(lock)
         del lock
+        gc.collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 

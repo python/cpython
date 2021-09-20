@@ -6,6 +6,7 @@ import threading
 import time
 import unittest
 import weakref
+from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
 
@@ -590,6 +591,7 @@ class BaseSimpleQueueTest:
             q.put(C())
         for i in range(N):
             wr = weakref.ref(q.get())
+            gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
 

@@ -111,6 +111,9 @@ PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
 PyAPI_FUNC(_PyTime_t) _PyTime_AsMicroseconds(_PyTime_t t,
     _PyTime_round_t round);
 
+/* Convert timestamp to a number of nanoseconds (10^-9 seconds). */
+PyAPI_FUNC(_PyTime_t) _PyTime_AsNanoseconds(_PyTime_t t);
+
 /* Convert timestamp to a number of nanoseconds (10^-9 seconds) as a Python int
    object. */
 PyAPI_FUNC(PyObject *) _PyTime_AsNanosecondsObject(_PyTime_t t);

@@ -167,6 +167,7 @@ class TestPartial:
         p = proxy(f)
         self.assertEqual(f.func, p.func)
         f = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'func')
 
     def test_with_bound_and_unbound_methods(self):

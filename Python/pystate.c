@@ -2045,21 +2045,21 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     size_t size = nlocalsplus + code->co_stacksize +
         FRAME_SPECIALS_SIZE;
     assert(size < INT_MAX/sizeof(PyObject *));
-    PyObject **localsarray = tstate->datastack_top;
-    PyObject **top = localsarray + size;
+    PyObject **base = tstate->datastack_top;
+    PyObject **top = base + size;
     if (top >= tstate->datastack_limit) {
-        localsarray = push_chunk(tstate, (int)size);
-        if (localsarray == NULL) {
+        base = push_chunk(tstate, (int)size);
+        if (base == NULL) {
             return NULL;
         }
     }
     else {
         tstate->datastack_top = top;
     }
-    InterpreterFrame * frame = (InterpreterFrame *)(localsarray + nlocalsplus);
+    InterpreterFrame *frame  = (InterpreterFrame *)base;
     _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
-        localsarray[i] = NULL;
+        frame->localsplus[i] = NULL;
     }
     return frame;
 }
@@ -2067,8 +2067,8 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
 void
 _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
 {
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
-    if (locals == &tstate->datastack_chunk->data[0]) {
+    PyObject **base = (PyObject **)frame;
+    if (base == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
         tstate->datastack_top = &previous->data[previous->top];
@@ -2077,8 +2077,8 @@ _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
         tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
     }
     else {
-        assert(tstate->datastack_top >= locals);
-        tstate->datastack_top = locals;
+        assert(tstate->datastack_top >= base);
+        tstate->datastack_top = base;
     }
 }
 

@@ -1,0 +1,10 @@
+The ``binhex`` module, deprecated in Python 3.9, is now removed. The
+following :mod:`binascii` functions, deprecated in Python 3.9, are now also
+removed:
+
+* ``a2b_hqx()``, ``b2a_hqx()``;
+* ``rlecode_hqx()``, ``rledecode_hqx()``.
+
+The :func:`binascii.crc_hqx` function remains available.
+
+Patch by Victor Stinner.

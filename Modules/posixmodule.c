@@ -10066,9 +10066,11 @@ os_isatty_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=6a48c8b4e644ca00 input=08ce94aa1eaf7b5e]*/
 {
     int return_value;
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     return_value = isatty(fd);
     _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     return return_value;
 }
 
@@ -13489,8 +13491,10 @@ _Py_COMP_DIAG_POP
     if (self->dir_fd != DEFAULT_DIR_FD) {
 #ifdef HAVE_FSTATAT
       if (HAVE_FSTATAT_RUNTIME) {
+        Py_BEGIN_ALLOW_THREADS
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+        Py_END_ALLOW_THREADS
       } else
 
 #endif /* HAVE_FSTATAT */
@@ -13503,10 +13507,14 @@ _Py_COMP_DIAG_POP
     else
 #endif
     {
-        if (follow_symlinks)
+        Py_BEGIN_ALLOW_THREADS
+        if (follow_symlinks) {
             result = STAT(path, &st);
-        else
+        }
+        else {
             result = LSTAT(path, &st);
+        }
+        Py_END_ALLOW_THREADS
     }
 #if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(path);
@@ -13771,7 +13779,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
-    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",       Py_GenericAlias,
     METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
     {NULL}
 };

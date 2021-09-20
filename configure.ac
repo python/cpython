@@ -2595,6 +2595,47 @@ case $ac_sys_system/$ac_sys_release in
 	;;
 esac
 
+AC_MSG_CHECKING(for --with-address-sanitizer)
+AC_ARG_WITH(address_sanitizer,
+            AS_HELP_STRING([--with-address-sanitizer],
+                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-memory-sanitizer)
+AC_ARG_WITH(memory_sanitizer,
+            AS_HELP_STRING([--with-memory-sanitizer],
+                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
+AC_ARG_WITH(undefined_behavior_sanitizer,
+            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
+                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_ubsan="yes"
+],
+[
+AC_MSG_RESULT(no)
+with_ubsan="no"
+])
+
 # Set info about shared libraries.
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(LDSHARED)
@@ -2695,7 +2736,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*|VxWorks*)
+	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -2764,6 +2805,7 @@ then
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
+	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -2798,9 +2840,18 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-		# Note: This matches the value of THREAD_STACK_SIZE in
-		# thread_pthread.h
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
+    stack_size="1000000"  # 16 MB
+    if test "$with_ubsan" == "yes"
+    then
+        # Undefined behavior sanitizer requires an even deeper stack
+        stack_size="4000000"  # 64 MB
+    fi
+
+    LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+    AC_DEFINE_UNQUOTED(THREAD_STACK_SIZE,
+        0x$stack_size,
+        [Custom thread stack size depending on chosen sanitizer runtimes.])
 
 		if test "$enable_framework"
 		then
@@ -3044,46 +3095,12 @@ esac
  AC_MSG_RESULT("$TZPATH")])
 AC_SUBST(TZPATH)
 
-AC_MSG_CHECKING(for --with-address-sanitizer)
-AC_ARG_WITH(address_sanitizer,
-            AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
-# ASan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-],
-[AC_MSG_RESULT(no)])
-
-AC_MSG_CHECKING(for --with-memory-sanitizer)
-AC_ARG_WITH(memory_sanitizer,
-            AS_HELP_STRING([--with-memory-sanitizer],
-                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-# MSan works by controlling memory allocation, our own malloc interferes.
-with_pymalloc="no"
-],
-[AC_MSG_RESULT(no)])
-
-AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
-AC_ARG_WITH(undefined_behavior_sanitizer,
-            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
-                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
-[
-AC_MSG_RESULT($withval)
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
-],
-[AC_MSG_RESULT(no)])
-
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
+
+# Haiku system library
+AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
@@ -4095,6 +4112,12 @@ AC_CHECK_FUNCS(clock_getres, [], [
 AC_CHECK_FUNCS(clock_settime, [], [
     AC_CHECK_LIB(rt, clock_settime, [
         AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+    ])
+])
+
+AC_CHECK_FUNCS(clock_nanosleep, [], [
+    AC_CHECK_LIB(rt, clock_nanosleep, [
+        AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1)
     ])
 ])
 

@@ -95,8 +95,6 @@ class PythonCallMakerVisitor(GrammarVisitor):
     def __init__(self, parser_generator: ParserGenerator):
         self.gen = parser_generator
         self.cache: Dict[Any, Any] = {}
-        self.keywords: Set[str] = set()
-        self.soft_keywords: Set[str] = set()
 
     def visit_NameLeaf(self, node: NameLeaf) -> Tuple[Optional[str], str]:
         name = node.value
@@ -111,12 +109,6 @@ class PythonCallMakerVisitor(GrammarVisitor):
         return name, f"self.{name}()"
 
     def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, str]:
-        val = ast.literal_eval(node.value)
-        if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
-            if node.value.endswith("'"):
-                self.keywords.add(val)
-            else:
-                self.soft_keywords.add(val)
         return "literal", f"self.expect({node.value})"
 
     def visit_Rhs(self, node: Rhs) -> Tuple[Optional[str], str]:
@@ -125,7 +117,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         if len(node.alts) == 1 and len(node.alts[0].items) == 1:
             self.cache[node] = self.visit(node.alts[0].items[0])
         else:
-            name = self.gen.name_node(node)
+            name = self.gen.artifical_rule_from_rhs(node)
             self.cache[node] = name, f"self.{name}()"
         return self.cache[node]
 
@@ -163,21 +155,21 @@ class PythonCallMakerVisitor(GrammarVisitor):
     def visit_Repeat0(self, node: Repeat0) -> Tuple[str, str]:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.name_loop(node.node, False)
+        name = self.gen.artificial_rule_from_repeat(node.node, False)
         self.cache[node] = name, f"self.{name}(),"  # Also a trailing comma!
         return self.cache[node]
 
     def visit_Repeat1(self, node: Repeat1) -> Tuple[str, str]:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.name_loop(node.node, True)
+        name = self.gen.artificial_rule_from_repeat(node.node, True)
         self.cache[node] = name, f"self.{name}()"  # But no trailing comma here!
         return self.cache[node]
 
     def visit_Gather(self, node: Gather) -> Tuple[str, str]:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.name_gather(node)
+        name = self.gen.artifical_rule_from_gather(node)
         self.cache[node] = name, f"self.{name}()"  # No trailing comma here either!
         return self.cache[node]
 
@@ -219,6 +211,7 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         )
 
     def generate(self, filename: str) -> None:
+        self.collect_rules()
         header = self.grammar.metas.get("header", MODULE_PREFIX)
         if header is not None:
             self.print(header.rstrip("\n").format(filename=filename))
@@ -228,17 +221,15 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         cls_name = self.grammar.metas.get("class", "GeneratedParser")
         self.print("# Keywords and soft keywords are listed at the end of the parser definition.")
         self.print(f"class {cls_name}(Parser):")
-        while self.todo:
-            for rulename, rule in list(self.todo.items()):
-                del self.todo[rulename]
-                self.print()
-                with self.indent():
-                    self.visit(rule)
+        for rule in self.all_rules.values():
+            self.print()
+            with self.indent():
+                self.visit(rule)
 
         self.print()
         with self.indent():
-            self.print(f"KEYWORDS = {tuple(self.callmakervisitor.keywords)}")
-            self.print(f"SOFT_KEYWORDS = {tuple(self.callmakervisitor.soft_keywords)}")
+            self.print(f"KEYWORDS = {tuple(self.keywords)}")
+            self.print(f"SOFT_KEYWORDS = {tuple(self.soft_keywords)}")
 
         trailer = self.grammar.metas.get("trailer", MODULE_SUFFIX.format(class_name=cls_name))
         if trailer is not None:
@@ -270,8 +261,6 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"def {node.name}(self) -> Optional[{node_type}]:")
         with self.indent():
             self.print(f"# {node.name}: {rhs}")
-            if node.nullable:
-                self.print(f"# nullable={node.nullable}")
             self.print("mark = self._mark()")
             if self.alts_uses_locations(node.rhs.alts):
                 self.print("tok = self._tokenizer.peek()")

@@ -3,7 +3,7 @@ import os
 import string
 import unittest
 import shutil
-from test.support import run_unittest, reap_children, unix_shell
+from test.support import reap_children, unix_shell
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -199,9 +199,10 @@ class SimplePipeTests(unittest.TestCase):
         self.assertNotEqual(id(t.steps), id(u.steps))
         self.assertEqual(t.debugging, u.debugging)
 
-def test_main():
-    run_unittest(SimplePipeTests)
+
+def tearDownModule():
     reap_children()
 
+
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

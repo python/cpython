@@ -2608,7 +2608,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type, a tuple of types or a union"))
+            "isinstance() arg 2 must be a type, a tuple of types, or a union"))
             return -1;
         retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
         if (icls != NULL) {
@@ -2704,7 +2704,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 
     if (!_PyUnion_Check(cls) && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
-                            " a tuple of classes, or a union.")) {
+                            " a tuple of classes, or a union")) {
         return -1;
     }
 
@@ -2816,18 +2816,18 @@ PyObject_GetIter(PyObject *o)
 }
 
 PyObject *
-PyObject_GetAiter(PyObject *o) {
+PyObject_GetAIter(PyObject *o) {
     PyTypeObject *t = Py_TYPE(o);
     unaryfunc f;
 
     if (t->tp_as_async == NULL || t->tp_as_async->am_aiter == NULL) {
-        return type_error("'%.200s' object is not an AsyncIterable", o);
+        return type_error("'%.200s' object is not an async iterable", o);
     }
     f = t->tp_as_async->am_aiter;
     PyObject *it = (*f)(o);
-    if (it != NULL && !PyAiter_Check(it)) {
+    if (it != NULL && !PyAIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-                     "aiter() returned non-AsyncIterator of type '%.100s'",
+                     "aiter() returned not an async iterator of type '%.100s'",
                      Py_TYPE(it)->tp_name);
         Py_DECREF(it);
         it = NULL;
@@ -2844,12 +2844,10 @@ PyIter_Check(PyObject *obj)
 }
 
 int
-PyAiter_Check(PyObject *obj)
+PyAIter_Check(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     return (tp->tp_as_async != NULL &&
-            tp->tp_as_async->am_aiter != NULL &&
-            tp->tp_as_async->am_aiter != &_PyObject_NextNotImplemented &&
             tp->tp_as_async->am_anext != NULL &&
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }

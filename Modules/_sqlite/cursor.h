@@ -46,9 +46,6 @@ typedef struct
     int locked;
     int initialized;
 
-    /* the next row to be returned, NULL if no next row available */
-    PyObject* next_row;
-
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Cursor;
 
