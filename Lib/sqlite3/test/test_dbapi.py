@@ -156,6 +156,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_PERM",
             "SQLITE_PRAGMA",
             "SQLITE_PROTOCOL",
+            "SQLITE_RANGE",
             "SQLITE_READ",
             "SQLITE_READONLY",
             "SQLITE_REINDEX",
