@@ -1,1 +1,1 @@
-In Windows operating system, :func:`time.sleep` now uses the ``waitable timer`` object, which allows to sleep for an interval specified with microsecond precision.
+In Windows operating system, :func:`time.sleep` now uses the ``waitable timer`` object, which allows to sleep for an interval absolute time. Desired sleep time can be set in 100 nsecs resolution.
