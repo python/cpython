@@ -184,7 +184,11 @@ def _sum(data):
     T = int
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
-        for n, d in map(_exact_ratio, values):
+        for value in values:
+            try:
+                n, d = value.as_integer_ratio()
+            except Exception:
+                n, d = _exact_ratio(value)
             count += 1
             partials[d] += n
     if None in partials:
