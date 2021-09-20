@@ -321,8 +321,17 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_NOTICE),
     DECLARE_ERROR_CODE(SQLITE_WARNING),
 #endif
-    /* Extended result code list.
-     * See also https://www.sqlite.org/c3ref/c_abort_rollback.html */
+    /* Extended result code list. See also:
+     * - https://www.sqlite.org/c3ref/c_abort_rollback.html
+     * - https://sqlite.org/changes.html#version_3_3_8
+     * - https://sqlite.org/changes.html#version_3_7_16
+     * - https://sqlite.org/changes.html#version_3_7_17
+     * - https://sqlite.org/changes.html#version_3_8_0
+     * - https://sqlite.org/changes.html#version_3_8_3
+     * - https://sqlite.org/changes.html#version_3_14
+     *
+     * Note, not all result codes are mentioned in the SQLite release history.
+     */
     DECLARE_ERROR_CODE(SQLITE_ABORT_ROLLBACK),
     DECLARE_ERROR_CODE(SQLITE_BUSY_RECOVERY),
     DECLARE_ERROR_CODE(SQLITE_CANTOPEN_FULLPATH),
