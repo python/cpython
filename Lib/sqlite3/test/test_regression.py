@@ -456,6 +456,20 @@ class RegressionTests(unittest.TestCase):
         con.execute("drop table t")
         con.commit()
 
+    def test_table_lock_cursor_non_readonly_select(self):
+        con = sqlite.connect(":memory:")
+        con.execute("create table t(t)")
+        con.executemany("insert into t values(?)", ((v,) for v in range(5)))
+        con.commit()
+        def dup(v):
+            con.execute("insert into t values(?)", (v,))
+            return
+        con.create_function("dup", 1, dup)
+        cur = con.execute("select dup(t) from t")
+        del cur
+        con.execute("drop table t")
+        con.commit()
+
 
 if __name__ == "__main__":
     unittest.main()
