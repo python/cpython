@@ -396,6 +396,15 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent, i
     if (filename == NULL)
         return 0;
 
+    /* Do not attempt to open things like <string> or <stdin> */
+    assert(PyUnicode_Check(filename));
+    if (PyUnicode_READ_CHAR(filename, 0) == '<') {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
+        if (len > 0 && PyUnicode_READ_CHAR(filename, len - 1) == '>') {
+            return 0;
+        }
+    }
+
     io = PyImport_ImportModuleNoBlock("io");
     if (io == NULL)
         return -1;
