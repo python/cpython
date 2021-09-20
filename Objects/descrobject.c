@@ -1144,7 +1144,7 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.items() -> list of D's (key, value) pairs, as 2-tuples")},
     {"copy",      (PyCFunction)mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {"__reversed__", (PyCFunction)mappingproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator")},

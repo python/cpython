@@ -599,6 +599,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def unset(self, envvar):
         del self[envvar]
 
+    def copy(self):
+        # We do what os.environ.copy() does.
+        return dict(self)
+
     def __enter__(self):
         return self
 
