@@ -766,15 +766,9 @@ class BadFileZipImportTestCase(unittest.TestCase):
             zipimport._zip_directory_cache.clear()
 
 
-def test_main():
-    try:
-        support.run_unittest(
-              UncompressedZipImportTestCase,
-              CompressedZipImportTestCase,
-              BadFileZipImportTestCase,
-            )
-    finally:
-        support.unlink(TESTMOD)
+def tearDownModule():
+    support.unlink(TESTMOD)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

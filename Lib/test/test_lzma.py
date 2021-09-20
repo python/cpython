@@ -10,7 +10,7 @@ from test import support
 import unittest
 
 from test.support import (
-    _4G, TESTFN, import_module, bigmemtest, run_unittest, unlink
+    _4G, TESTFN, import_module, bigmemtest, unlink
 )
 
 lzma = import_module("lzma")
@@ -1936,14 +1936,5 @@ ISSUE_21872_DAT = (
 )
 
 
-def test_main():
-    run_unittest(
-        CompressorDecompressorTestCase,
-        CompressDecompressFunctionTestCase,
-        FileTestCase,
-        OpenTestCase,
-        MiscellaneousTestCase,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -6,7 +6,7 @@ import struct
 import sys
 import unittest
 from multiprocessing import Process
-from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
+from test.support import (verbose, TESTFN, unlink, import_module,
                           cpython_only)
 
 # Skip test if no fcntl module.
@@ -188,8 +188,6 @@ class TestFcntl(unittest.TestCase):
         res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
         self.assertEqual(expected, res)
 
-def test_main():
-    run_unittest(TestFcntl)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

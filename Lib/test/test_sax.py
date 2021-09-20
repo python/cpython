@@ -22,7 +22,7 @@ import shutil
 from urllib.error import URLError
 import urllib.request
 from test import support
-from test.support import findfile, run_unittest, FakePath, TESTFN
+from test.support import findfile, FakePath, TESTFN
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
@@ -1353,19 +1353,5 @@ class XmlReaderTest(XmlTestBase):
         self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
-def test_main():
-    run_unittest(MakeParserTest,
-                 ParseTest,
-                 SaxutilsTest,
-                 PrepareInputSourceTest,
-                 StringXmlgenTest,
-                 BytesXmlgenTest,
-                 WriterXmlgenTest,
-                 StreamWriterXmlgenTest,
-                 StreamReaderWriterXmlgenTest,
-                 ExpatReaderTest,
-                 ErrorReportingTest,
-                 XmlReaderTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

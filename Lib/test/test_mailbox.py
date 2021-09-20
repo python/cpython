@@ -2299,15 +2299,9 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, mailbox, blacklist=blacklist)
 
 
-def test_main():
-    tests = (TestMailboxSuperclass, TestMaildir, TestMbox, TestMMDF, TestMH,
-             TestBabyl, TestMessage, TestMaildirMessage, TestMboxMessage,
-             TestMHMessage, TestBabylMessage, TestMMDFMessage,
-             TestMessageConversion, TestProxyFile, TestPartialFile,
-             MaildirTestCase, TestFakeMailBox, MiscTestCase)
-    support.run_unittest(*tests)
+def tearDownModule():
     support.reap_children()
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -716,9 +716,5 @@ def _warn_about_deprecation():
     )
 
 
-def test_main():
-    tests = [TestSupport]
-    support.run_unittest(*tests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
