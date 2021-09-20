@@ -652,15 +652,17 @@ def main():
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs(destdir=MODULES_DIR))
 
+    # Regen build-related files.
+    regen_makefile(modules)
+    regen_pcbuild(modules)
+
     # Freeze the target modules.
     for src in _iter_sources(modules):
         _freeze_module(src.frozenid, src.pyfile, src.frozenfile)
 
-    # Regen build-related files.
-    regen_manifest(modules)
+    # Regen files dependent of frozen file details.
     regen_frozen(modules)
-    regen_makefile(modules)
-    regen_pcbuild(modules)
+    regen_manifest(modules)
 
 
 if __name__ == '__main__':
