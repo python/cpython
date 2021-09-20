@@ -2481,6 +2481,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 long b;
                 overflow = 0;
+                /* Single digits are common, fast, and cannot overflow on unpacking. */
                 switch (Py_SIZE(item)) {
                     case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
                     case  0: continue;
