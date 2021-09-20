@@ -542,6 +542,7 @@ def regen_frozen(modules):
 
 
 def regen_makefile(modules):
+    pyfiles = []
     frozenfiles = []
     rules = ['']
     for src in _iter_sources(modules):
@@ -549,6 +550,8 @@ def regen_makefile(modules):
         frozenfiles.append(f'\t\t{header} \\')
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
+        pyfiles.append(f'\t\t{pyfile} \\')
+
         freeze = (f'Programs/_freeze_module {src.frozenid} '
                   f'$(srcdir)/{pyfile} $(srcdir)/{header}.new')
         update = (f'$(UPDATE_FILE) --create $(srcdir)/{header} '
@@ -559,7 +562,7 @@ def regen_makefile(modules):
             f'\t\t{update}',
             '',
         ])
-
+    pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
     print(f'# Updating {os.path.relpath(MAKEFILE)}')
@@ -567,8 +570,15 @@ def regen_makefile(modules):
         lines = infile.readlines()
         lines = replace_block(
             lines,
-            "FROZEN_FILES =",
-            "# End FROZEN_FILES",
+            "FROZEN_FILES_IN =",
+            "# End FROZEN_FILES_IN",
+            pyfiles,
+            MAKEFILE,
+        )
+        lines = replace_block(
+            lines,
+            "FROZEN_FILES_OUT =",
+            "# End FROZEN_FILES_OUT",
             frozenfiles,
             MAKEFILE,
         )
