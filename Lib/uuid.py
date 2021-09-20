@@ -186,7 +186,7 @@ class UUID:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
-            int = int_.from_bytes(bytes)  # big_endian
+            int = int_.from_bytes(bytes)  # big endian
         if fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
