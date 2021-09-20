@@ -137,7 +137,7 @@ from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter, mul
-from collections import Counter, namedtuple
+from collections import Counter, namedtuple, defaultdict
 
 # === Exceptions ===
 
@@ -180,14 +180,13 @@ def _sum(data):
     allowed.
     """
     count = 0
-    partials = {}
-    partials_get = partials.get
+    partials = defaultdict(int)
     T = int
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
             count += 1
-            partials[d] = partials_get(d, 0) + n
+            partials[d] += n
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
