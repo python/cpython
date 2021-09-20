@@ -1573,7 +1573,8 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: sorted(iterable, *, key=None, reverse=False)
 
-   Return a new sorted list from the items in *iterable*.
+   Return a new sorted list from the items in *iterable*, using only ``<``
+   comparisons between items.
 
    Has two optional arguments which must be specified as keyword arguments.
 

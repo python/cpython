@@ -2324,7 +2324,8 @@ sorted as builtin_sorted
     key as keyfunc: object = None
     reverse: object = False
 
-Return a new list containing all items from the iterable in ascending order.
+Return a new list containing all items from the iterable, sorted in ascending
+order, using only < comparisons between items.
 
 A custom key function can be supplied to customize the sort order, and the
 reverse flag can be set to request the result in descending order.
