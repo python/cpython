@@ -237,7 +237,7 @@ except ImportError:
         while len(dkey) < dklen:
             prev = prf(salt + loop.to_bytes(4))
             # endianness doesn't matter here as long to / from use the same
-            rkey = int.from_bytes(prev)
+            rkey = from_bytes(prev)
             for i in range(iterations - 1):
                 prev = prf(prev)
                 # rkey = rkey ^ prev
