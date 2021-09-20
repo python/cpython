@@ -560,6 +560,10 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         sqlite3_result_blob(context, view.buf, (int)view.len, SQLITE_TRANSIENT);
         PyBuffer_Release(&view);
     } else {
+        callback_context *ctx = (callback_context *)sqlite3_user_data(context);
+        PyErr_Format(ctx->state->ProgrammingError,
+                     "UDF's cannot return '%s' values to SQLite",
+                     Py_TYPE(py_val)->tp_name);
         return -1;
     }
     return 0;

@@ -452,6 +452,12 @@ class FunctionTests(unittest.TestCase):
             with self.assertRaises(sqlite.DataError):
                 cur.execute("select largeblob()")
 
+    def test_func_return_illegal_value(self):
+        self.con.create_function("badreturn", 0, lambda: self)
+        msg = "user-defined function raised exception"
+        self.assertRaisesRegex(sqlite.OperationalError, msg,
+                               self.con.execute, "select badreturn()")
+
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
