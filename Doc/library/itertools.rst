@@ -859,10 +859,11 @@ which incur interpreter overhead.
        """ Variant of takewhile() that allows complete
            access to the remainder of the iterator.
 
-           >>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
-           >>> str.join('', all_upper)
+           >>> it = iter('ABCdEfGhI')
+           >>> all_upper, remainder = before_and_after(str.isupper, it)
+           >>> ''.join(all_upper)
            'ABC'
-           >>> str.join('', remainder)
+           >>> ''.join(remainder)     # takewhile() would lose the 'd'
            'dEfGhI'
 
            Note that the first iterator must be fully
