@@ -194,8 +194,9 @@ def _sum(data):
         total = partials[None]
         assert not _isfinite(total)
     else:
-        # Sum all the partial sums using builtin sum.
-        total = sum(Fraction(n, d) for d, n in partials.items())
+        common_multiple = math.lcm(*partials)
+        numerators = sum(common_multiple // d * n for d, n in partials.items())
+        total = Fraction(numerators, common_multiple)
     return (T, total, count)
 
 
