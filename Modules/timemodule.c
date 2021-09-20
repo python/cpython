@@ -2126,7 +2126,6 @@ pysleep(_PyTime_t secs)
 #endif
     } while (1);
 #else
-    int is_timer_ready = 0;
     _PyTime_t millisecs;
     DWORD ul_millis;
     DWORD rc;
@@ -2148,15 +2147,12 @@ pysleep(_PyTime_t secs)
 
     if (!SetWaitableTimer(hEvents[EVENT_TIMER], &deadline, 0, NULL, NULL, FALSE)) {
         ret = -1;
-        is_timer_ready = 0;
-    }
-    else {
-        is_timer_ready = 1;
+        goto exit;
     }
 
-    while (is_timer_ready) {
+    do {
         millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-        if (millisecs > LLONG_MAX) {
+        if (millisecs > ((_PyTime_t)ULONG_MAX)) {
             PyErr_SetString(PyExc_OverflowError,
                 "sleep length is too large");
             ret = -1;
@@ -2179,31 +2175,40 @@ pysleep(_PyTime_t secs)
         ResetEvent(hEvents[EVENT_INTERRUPT]);
 
         Py_BEGIN_ALLOW_THREADS
-        rc = WaitForMultipleObjectsEx(EVENT_SIZE, hEvents, FALSE, ul_millis, FALSE);
+        rc = WaitForMultipleObjectsEx(EVENT_SIZE, hEvents, FALSE, INFINITE, FALSE);
         Py_END_ALLOW_THREADS
 
+        /* Something went wrong */
         if (rc == WAIT_FAILED) {
             ret = -1;
             break;
         }
 
-        if ((rc == (WAIT_OBJECT_0 + EVENT_TIMER)) || (rc == WAIT_TIMEOUT)) {
+        /* Timer signaled: we are done */
+        if (rc == (WAIT_OBJECT_0 + EVENT_TIMER)) {
             ret = 0;
             break;
         }
 
-        if (rc != (WAIT_OBJECT_0 + EVENT_INTERRUPT)) {
-            ret = 0;
-            break;
-        }
+        /* Does it make sense to check? */
+        //if (rc != (WAIT_OBJECT_0 + EVENT_INTERRUPT)) {
+        //    ret = 0;
+        //    break;
+        //}
 
         /* sleep was interrupted by SIGINT */
         if (PyErr_CheckSignals()) {
             ret = -1;
             break;
         }
-    }
 
+        /* The SIGINT signal handler was called and did not raise a Python exception.
+         * Restart sleeping. The timer deadline doesn't need to be recomputed:
+         * SetWaitableTimer() uses absolute time.
+         */
+    } while (1);
+
+exit:
     CloseHandle(hEvents[EVENT_TIMER]);
 #endif
 
