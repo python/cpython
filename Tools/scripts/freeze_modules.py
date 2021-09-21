@@ -34,7 +34,7 @@ if sys.platform != "win32":
             sys.exit("ERROR: missing _freeze_module")
 else:
     def find_tool():
-        for arch in ['amd64', 'win32']:
+        for arch in ['amd64', 'win32', 'arm64']:
             for exe in ['_freeze_module.exe', '_freeze_module_d.exe']:
                 tool = os.path.join(ROOT_DIR, 'PCbuild', arch, exe)
                 if os.path.isfile(tool):

@@ -17,7 +17,7 @@
     <FreezeProjects>
       <Platform>$(Platform)</Platform>
       <Platform Condition="$(Platform) == 'ARM'">Win32</Platform>
-      <Platform Condition="$(Platform) == 'ARM64'">x64</Platform>
+      <Platform Condition="$(Platform) == 'ARM64'">ARM64</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
       <Properties></Properties>
