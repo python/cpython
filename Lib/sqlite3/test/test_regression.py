@@ -469,6 +469,7 @@ class RegressionTests(unittest.TestCase):
         del cur
         con.execute("drop table t")
         con.commit()
+        con.close()
 
 
 if __name__ == "__main__":
