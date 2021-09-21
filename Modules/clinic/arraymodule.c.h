@@ -572,4 +572,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=376001addedc67ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f130a994f98f1227 input=a9049054013a1b77]*/
