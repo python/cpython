@@ -62,12 +62,6 @@ except ImportError:
     HAS_SHAREDCTYPES = False
 
 try:
-    from multiprocessing import shared_memory
-    HAS_SHMEM = True
-except ImportError:
-    HAS_SHMEM = False
-
-try:
     import msvcrt
 except ImportError:
     msvcrt = None
@@ -3758,7 +3752,8 @@ class _TestSharedCTypes(BaseTestCase):
         self.assertEqual(bar.z, 2 ** 33)
 
 
-@unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
+@unittest.skipUnless(multiprocessing.managers.HAS_SHMEM,
+                     'requires multiprocessing.shared_memory')
 @hashlib_helper.requires_hashdigest('md5')
 class _TestSharedMemory(BaseTestCase):
 
