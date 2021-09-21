@@ -28,6 +28,8 @@ import weakref
 import functools
 from test import support
 
+from .test_dbapi import managed_connect
+
 class RegressionTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -437,38 +439,41 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(val, b'')
 
     def test_table_lock_cursor_replace_stmt(self):
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
-        cur.execute("create table t(t)")
-        cur.executemany("insert into t values(?)", ((v,) for v in range(5)))
-        con.commit()
-        cur.execute("select t from t")
-        cur.execute("drop table t")
-        con.commit()
+        with managed_connect(":memory:", in_mem=True) as con:
+            cur = con.cursor()
+            cur.execute("create table t(t)")
+            cur.executemany("insert into t values(?)",
+                            ((v,) for v in range(5)))
+            con.commit()
+            cur.execute("select t from t")
+            cur.execute("drop table t")
+            con.commit()
 
     def test_table_lock_cursor_dealloc(self):
-        con = sqlite.connect(":memory:")
-        con.execute("create table t(t)")
-        con.executemany("insert into t values(?)", ((v,) for v in range(5)))
-        con.commit()
-        cur = con.execute("select t from t")
-        del cur
-        con.execute("drop table t")
-        con.commit()
+        with managed_connect(":memory:", in_mem=True) as con:
+            con.execute("create table t(t)")
+            con.executemany("insert into t values(?)",
+                            ((v,) for v in range(5)))
+            con.commit()
+            cur = con.execute("select t from t")
+            del cur
+            con.execute("drop table t")
+            con.commit()
 
     def test_table_lock_cursor_non_readonly_select(self):
-        con = sqlite.connect(":memory:")
-        con.execute("create table t(t)")
-        con.executemany("insert into t values(?)", ((v,) for v in range(5)))
-        con.commit()
-        def dup(v):
-            con.execute("insert into t values(?)", (v,))
-            return
-        con.create_function("dup", 1, dup)
-        cur = con.execute("select dup(t) from t")
-        del cur
-        con.execute("drop table t")
-        con.commit()
+        with managed_connect(":memory:", in_mem=True) as con:
+            con.execute("create table t(t)")
+            con.executemany("insert into t values(?)",
+                            ((v,) for v in range(5)))
+            con.commit()
+            def dup(v):
+                con.execute("insert into t values(?)", (v,))
+                return
+            con.create_function("dup", 1, dup)
+            cur = con.execute("select dup(t) from t")
+            del cur
+            con.execute("drop table t")
+            con.commit()
 
 
 if __name__ == "__main__":
