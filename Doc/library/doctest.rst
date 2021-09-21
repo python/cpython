@@ -485,8 +485,8 @@ Some details you should read once, but won't need to remember:
 
 .. index:: single: ^ (caret); marker
 
-* For some exceptions, Python displays the position of the
-  syntax error, using ``^`` markers and tildes::
+* For some exceptions, Python displays the position of the error, using ``^``
+  markers and tildes::
 
      >>> 1 + None
        File "<stdin>", line 1
