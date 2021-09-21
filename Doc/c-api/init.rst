@@ -110,7 +110,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Suppress error messages when calculating the module search path in
    :c:func:`Py_GetPath`.
 
-   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
+   Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
 .. c:var:: int Py_HashRandomizationFlag
 

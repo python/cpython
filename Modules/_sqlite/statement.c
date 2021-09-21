@@ -359,6 +359,28 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
+void
+pysqlite_statement_reset(pysqlite_Statement *self)
+{
+    sqlite3_stmt *stmt = self->st;
+    if (stmt == NULL) {
+        return;
+    }
+
+#if SQLITE_VERSION_NUMBER >= 3020000
+    /* Check if the statement has been run (that is, sqlite3_step() has been
+     * called at least once). Third parameter is non-zero in order to reset the
+     * run count. */
+    if (sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, 1) == 0) {
+        return;
+    }
+#endif
+
+    Py_BEGIN_ALLOW_THREADS
+    (void)sqlite3_reset(stmt);
+    Py_END_ALLOW_THREADS
+}
+
 static void
 stmt_dealloc(pysqlite_Statement *self)
 {

@@ -339,6 +339,7 @@ PARSER_HEADERS= \
 PYTHON_OBJS=	\
 		Python/_warnings.o \
 		Python/Python-ast.o \
+		Python/Python-tokenize.o \
 		Python/asdl.o \
 		Python/ast.o \
 		Python/ast_opt.o \
@@ -573,8 +574,8 @@ coverage-lcov:
 	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
 	@echo
 
-# Force regeneration of parser and importlib
-coverage-report: regen-token regen-importlib
+# Force regeneration of parser and frozen modules
+coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
@@ -727,51 +728,91 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	# Regenerate Programs/test_frozenmain.h
 	# from Programs/test_frozenmain.py
 	# using Programs/freeze_test_frozenmain.py
-	$(RUNSHARED) ./$(BUILDPYTHON) Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
-# Importlib
+# frozen modules (including importlib)
 
-Programs/_freeze_importlib.o: Programs/_freeze_importlib.c Makefile
+Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
-Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
+Tools/scripts/freeze_modules.py: Programs/_freeze_module
+
+.PHONY: regen-frozen
+regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+	@echo "The Makefile was updated, you may need to re-run make."
+
+# BEGIN: freezing modules
+
+Python/frozen_modules/importlib__bootstrap.h: Programs/_freeze_module Lib/importlib/_bootstrap.py
+	Programs/_freeze_module importlib._bootstrap $(srcdir)/Lib/importlib/_bootstrap.py $(srcdir)/Python/frozen_modules/importlib__bootstrap.h
+
+Python/frozen_modules/importlib__bootstrap_external.h: Programs/_freeze_module Lib/importlib/_bootstrap_external.py
+	Programs/_freeze_module importlib._bootstrap_external $(srcdir)/Lib/importlib/_bootstrap_external.py $(srcdir)/Python/frozen_modules/importlib__bootstrap_external.h
+
+Python/frozen_modules/zipimport.h: Programs/_freeze_module Lib/zipimport.py
+	Programs/_freeze_module zipimport $(srcdir)/Lib/zipimport.py $(srcdir)/Python/frozen_modules/zipimport.h
+
+Python/frozen_modules/abc.h: Programs/_freeze_module Lib/abc.py
+	Programs/_freeze_module abc $(srcdir)/Lib/abc.py $(srcdir)/Python/frozen_modules/abc.h
+
+Python/frozen_modules/codecs.h: Programs/_freeze_module Lib/codecs.py
+	Programs/_freeze_module codecs $(srcdir)/Lib/codecs.py $(srcdir)/Python/frozen_modules/codecs.h
+
+Python/frozen_modules/io.h: Programs/_freeze_module Lib/io.py
+	Programs/_freeze_module io $(srcdir)/Lib/io.py $(srcdir)/Python/frozen_modules/io.h
+
+Python/frozen_modules/_collections_abc.h: Programs/_freeze_module Lib/_collections_abc.py
+	Programs/_freeze_module _collections_abc $(srcdir)/Lib/_collections_abc.py $(srcdir)/Python/frozen_modules/_collections_abc.h
+
+Python/frozen_modules/_sitebuiltins.h: Programs/_freeze_module Lib/_sitebuiltins.py
+	Programs/_freeze_module _sitebuiltins $(srcdir)/Lib/_sitebuiltins.py $(srcdir)/Python/frozen_modules/_sitebuiltins.h
+
+Python/frozen_modules/genericpath.h: Programs/_freeze_module Lib/genericpath.py
+	Programs/_freeze_module genericpath $(srcdir)/Lib/genericpath.py $(srcdir)/Python/frozen_modules/genericpath.h
+
+Python/frozen_modules/ntpath.h: Programs/_freeze_module Lib/ntpath.py
+	Programs/_freeze_module ntpath $(srcdir)/Lib/ntpath.py $(srcdir)/Python/frozen_modules/ntpath.h
+
+Python/frozen_modules/posixpath.h: Programs/_freeze_module Lib/posixpath.py
+	Programs/_freeze_module posixpath $(srcdir)/Lib/posixpath.py $(srcdir)/Python/frozen_modules/posixpath.h
+
+Python/frozen_modules/os.h: Programs/_freeze_module Lib/os.py
+	Programs/_freeze_module os $(srcdir)/Lib/os.py $(srcdir)/Python/frozen_modules/os.h
+
+Python/frozen_modules/site.h: Programs/_freeze_module Lib/site.py
+	Programs/_freeze_module site $(srcdir)/Lib/site.py $(srcdir)/Python/frozen_modules/site.h
+
+Python/frozen_modules/stat.h: Programs/_freeze_module Lib/stat.py
+	Programs/_freeze_module stat $(srcdir)/Lib/stat.py $(srcdir)/Python/frozen_modules/stat.h
+
+Python/frozen_modules/__hello__.h: Programs/_freeze_module Lib/__hello__.py
+	Programs/_freeze_module __hello__ $(srcdir)/Lib/__hello__.py $(srcdir)/Python/frozen_modules/__hello__.h
+
+# END: freezing modules
+
+# We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
-regen-importlib: Programs/_freeze_importlib
-	# Regenerate Python/importlib_external.h
-	# from Lib/importlib/_bootstrap_external.py using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap_external \
-	    $(srcdir)/Lib/importlib/_bootstrap_external.py \
-	    $(srcdir)/Python/importlib_external.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_external.h $(srcdir)/Python/importlib_external.h.new
-	# Regenerate Python/importlib.h from Lib/importlib/_bootstrap.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib importlib._bootstrap \
-	    $(srcdir)/Lib/importlib/_bootstrap.py \
-	    $(srcdir)/Python/importlib.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
-	# Regenerate Python/importlib_zipimport.h from Lib/zipimport.py
-	# using _freeze_importlib
-	./Programs/_freeze_importlib zipimport \
-	    $(srcdir)/Lib/zipimport.py \
-	    $(srcdir)/Python/importlib_zipimport.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
+regen-importlib: regen-frozen
 
+############################################################################
+# ABI
 
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
-
 
 ############################################################################
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
+	regen-token regen-ast regen-keyword regen-frozen clinic \
+	regen-pegen-metaparser regen-pegen regen-test-frozenmain
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
@@ -883,15 +924,6 @@ regen-opcode:
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
-.PHONY: regen-frozen
-regen-frozen: Programs/_freeze_importlib
-	# Regenerate code for frozen module "__hello__".
-	./Programs/_freeze_importlib hello \
-		$(srcdir)/Tools/freeze/flag.py \
-		$(srcdir)/Python/frozen_hello.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
-		$(srcdir)/Python/frozen_hello.h.new
-
 .PHONY: regen-token
 regen-token:
 	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
@@ -994,8 +1026,26 @@ regen-opcode-targets:
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
 		$(srcdir)/Python/condvar.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
-		$(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/frozen_hello.h
+# FROZEN_FILES is auto-generated by Tools/scripts/freeze_modules.py.
+FROZEN_FILES = \
+		Python/frozen_modules/importlib__bootstrap.h \
+		Python/frozen_modules/importlib__bootstrap_external.h \
+		Python/frozen_modules/zipimport.h \
+		Python/frozen_modules/abc.h \
+		Python/frozen_modules/codecs.h \
+		Python/frozen_modules/io.h \
+		Python/frozen_modules/_collections_abc.h \
+		Python/frozen_modules/_sitebuiltins.h \
+		Python/frozen_modules/genericpath.h \
+		Python/frozen_modules/ntpath.h \
+		Python/frozen_modules/posixpath.h \
+		Python/frozen_modules/os.h \
+		Python/frozen_modules/site.h \
+		Python/frozen_modules/stat.h \
+		Python/frozen_modules/__hello__.h
+# End FROZEN_FILES
+
+Python/frozen.o: $(FROZEN_FILES)
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -1917,7 +1967,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f Lib/lib2to3/*Grammar*.pickle
-	-rm -f Programs/_testembed Programs/_freeze_importlib
+	-rm -f Programs/_testembed Programs/_freeze_module
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
@@ -1955,6 +2005,8 @@ distclean: clobber
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
+	-rm -f Python/frozen_modules/*.h
+	-rm -f Python/frozen_modules/MANIFEST
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before
 	# arguments are passed to find. So LC_ALL=C must be set as a separate

@@ -1,0 +1,4 @@
+:mod:`collections.abc` documentation has been expanded to explicitly cover
+how instance and subclass checks work, with additional doctest examples and
+an exhaustive list of ABCs which test membership purely by presence of the
+right :term:`special method`\s. Patch by Raymond Hettinger.

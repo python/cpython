@@ -1,0 +1,1 @@
+Allow the Argument Clinic tool to handle ``__complex__`` special methods.

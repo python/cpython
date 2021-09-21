@@ -1691,7 +1691,7 @@ class BlockPrinter:
         dsl_name = block.dsl_name
         write = self.f.write
 
-        assert not ((dsl_name == None) ^ (output == None)), "you must specify dsl_name and output together, dsl_name " + repr(dsl_name)
+        assert not ((dsl_name is None) ^ (output is None)), "you must specify dsl_name and output together, dsl_name " + repr(dsl_name)
 
         if not dsl_name:
             write(input)
@@ -2179,9 +2179,7 @@ unsupported_special_methods = set("""
 __abs__
 __add__
 __and__
-__bytes__
 __call__
-__complex__
 __delitem__
 __divmod__
 __eq__
@@ -3005,7 +3003,7 @@ class int_converter(CConverter):
             self.format_unit = 'C'
         elif accept != {int}:
             fail("int_converter: illegal 'accept' argument " + repr(accept))
-        if type != None:
+        if type is not None:
             self.type = type
 
     def parse_arg(self, argname, displayname):
@@ -3737,10 +3735,16 @@ class self_converter(CConverter):
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
             type_object = self.function.cls.type_object
+            prefix = (type_object[1:] + '.' if type_object[0] == '&' else
+                      type_object + '->')
             if kind == METHOD_NEW:
-                type_check = '({} == {})'.format(self.name, type_object)
+                type_check = ('({0} == {1} ||\n        '
+                              ' {0}->tp_init == {2}tp_init)'
+                             ).format(self.name, type_object, prefix)
             else:
-                type_check = 'Py_IS_TYPE({}, {})'.format(self.name, type_object)
+                type_check = ('(Py_IS_TYPE({0}, {1}) ||\n        '
+                              ' Py_TYPE({0})->tp_new == {2}tp_new)'
+                             ).format(self.name, type_object, prefix)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line

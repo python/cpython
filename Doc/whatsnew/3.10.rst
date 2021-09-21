@@ -883,6 +883,8 @@ Other Language Changes
   collisions when creating dictionaries and sets containing multiple NaNs.
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
+*  A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting the :const:`__debug__` constant. (Contributed by Dong-hee Na in :issue:`45000`.)
+
 New Modules
 ===========
 
@@ -929,6 +931,12 @@ bdb
 
 Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
 (Contributed by Irit Katriel in :issue:`24160`.)
+
+bisect
+------
+
+Added the possibility of providing a *key* function to the APIs in the :mod:`bisect`
+module. (Contributed by Raymond Hettinger in :issue:`4356`.)
 
 codecs
 ------
@@ -981,8 +989,67 @@ they are provided by the underlying curses library.
 dataclasses
 -----------
 
-Add ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+__slots__
+~~~~~~~~~
+
+Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
+
+Keyword-only fields
+~~~~~~~~~~~~~~~~~~~
+
+dataclassses now supports fields that are keyword-only in the
+generated __init__ method.  There are a number of ways of specifying
+keyword-only fields.
+
+You can say that every field is keyword-only:
+
+.. code-block:: python
+
+    from dataclasses import dataclass
+
+    @dataclass(kw_only=True)
+    class Birthday:
+        name: str
+        birthday: datetime.date
+
+Both ``name`` and ``birthday`` are keyword-only parameters to the
+generated __init__ method.
+
+You can specify keyword-only on a per-field basis:
+
+.. code-block:: python
+
+    from dataclasses import dataclass
+
+    @dataclass
+    class Birthday:
+        name: str
+        birthday: datetime.date = field(kw_only=True)
+
+Here only ``birthday`` is keyword-only.  If you set ``kw_only`` on
+individual fields, be aware that there are rules about re-ordering
+fields due to keyword-only fields needing to follow non-keyword-only
+fields.  See the full dataclasses documentation for details.
+
+You can also specify that all fields following a KW_ONLY marker are
+keyword-only.  This will probably be the most common usage:
+
+.. code-block:: python
+
+    from dataclasses import dataclass, KW_ONLY
+
+    @dataclass
+    class Point:
+        x: float
+        y: float
+        _: KW_ONLY
+        z: float = 0.0
+        t: float = 0.0
+
+Here, ``z`` and ``t`` are keyword-only parameters, while ``x`` and
+``y`` are not.
+(Contributed by Eric V. Smith in :issue:`43532`)
 
 .. _distutils-deprecated:
 
@@ -1401,6 +1468,13 @@ subclasses with the :func:`runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`)
 
+Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
+:exc:`DeprecationWarning`.  These submodules have been deprecated since
+Python 3.8 and will be removed in a future version of Python.  Anything
+belonging to those submodules should be imported directly from
+:mod:`typing` instead.
+(Contributed by Sebastian Rittau in :issue:`38291`)
+
 unittest
 --------
 
@@ -1696,6 +1770,12 @@ Deprecated
   requires a :ref:`debug build of Python <debug-build>`.
   (Contributed by Victor Stinner in :issue:`44584`.)
 
+* Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
+  :exc:`DeprecationWarning`.  These submodules will be removed in a future version
+  of Python.  Anything belonging to these submodules should be imported directly
+  from :mod:`typing` instead.
+  (Contributed by Sebastian Rittau in :issue:`38291`)
+
 .. _whatsnew310-removed:
 
 Removed
@@ -1773,7 +1853,7 @@ Changes in the Python syntax
 
 * Deprecation warning is now emitted when compiling previously valid syntax
   if the numeric literal is immediately followed by a keyword (like in ``0in x``).
-  If future releases it will be changed to syntax warning, and finally to a
+  In future releases it will be changed to syntax warning, and finally to a
   syntax error.  To get rid of the warning and make the code compatible with
   future releases just add a space between the numeric literal and the
   following keyword.
@@ -1873,6 +1953,13 @@ Changes in the C API
        result = PyObject_CallMethod(fileobject, "close", "");
        source_buf = PyBytes_AsString(source_bytes_object);
        code = Py_CompileString(source_buf, filename, Py_file_input);
+
+  * For ``FrameObject`` objects, the ``f_lasti`` member now represents a wordcode
+    offset instead of a simple offset into the bytecode string. This means that this
+    number needs to be multiplied by 2 to be used with APIs that expect a byte offset
+    instead (like :c:func:`PyCode_Addr2Line` for example). Notice as well that the
+    ``f_lasti`` member of ``FrameObject`` objects is not considered stable: please
+    use :c:func:`PyFrame_GetLineNumber` instead.
 
 CPython bytecode changes
 ========================

@@ -1,0 +1,2 @@
+Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+Patch by Erlend E. Aasland.
