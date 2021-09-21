@@ -298,8 +298,8 @@ class ModuleTests(unittest.TestCase):
             self.assertEqual(e.sqlite_errorcode, err_code)
             self.assertTrue(e.sqlite_errorname.startswith("SQLITE_CANTOPEN"))
 
-    @unittest.skipIf(sqlite.sqlite_version_info <= (3, 10, 0),
-                     "Requires SQLite 3.10.0 or newer")
+    @unittest.skipIf(sqlite.sqlite_version_info <= (3, 7, 16),
+                     "Requires SQLite 3.7.16 or newer")
     def test_extended_error_code_on_exception(self):
         con = sqlite.connect(":memory:")
         with con:
