@@ -2608,7 +2608,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type, a tuple of types or a union"))
+            "isinstance() arg 2 must be a type, a tuple of types, or a union"))
             return -1;
         retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
         if (icls != NULL) {
@@ -2704,7 +2704,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 
     if (!_PyUnion_Check(cls) && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
-                            " a tuple of classes, or a union.")) {
+                            " a tuple of classes, or a union")) {
         return -1;
     }
 

@@ -1636,7 +1636,7 @@ static PyMethodDef deque_methods[] = {
         METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},
-    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",       Py_GenericAlias,
         METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
@@ -2104,7 +2104,7 @@ static PyMethodDef defdict_methods[] = {
      defdict_copy_doc},
     {"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
      reduce_doc},
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {NULL}
 };

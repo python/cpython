@@ -3,7 +3,6 @@
 
 import os, sys, errno
 import unittest
-from test import support
 from test.support import import_helper
 import threading
 from platform import machine, win32_edition
@@ -490,12 +489,9 @@ class Win64WinregTests(BaseWinregTests):
         with self.assertRaises(FileNotFoundError) as ctx:
             QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
 
-def test_main():
-    support.run_unittest(LocalWinregTests, RemoteWinregTests,
-                         Win64WinregTests)
 
 if __name__ == "__main__":
     if not REMOTE_NAME:
         print("Remote registry calls can be tested using",
               "'test_winreg.py --remote \\\\machine_name'")
-    test_main()
+    unittest.main()
