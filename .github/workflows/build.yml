@@ -267,4 +267,4 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test_ctypes test_crypt test_decimal test_faulthandler test_interpreters test___all__ test_idle test_tix test_tk test_ttk_guionly test_ttk_textonly"
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu -x test_ctypes test_crypt test_decimal test_faulthandler test_interpreters test___all__ test_idle test_tix test_tk test_ttk_guionly test_ttk_textonly test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn"
