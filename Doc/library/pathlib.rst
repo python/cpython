@@ -552,7 +552,7 @@ Pure paths provide the following methods and properties:
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
         File "pathlib.py", line 694, in relative_to
-          .format(str(self), str(formatted))
+          .format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
 
    NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
