@@ -4636,10 +4636,10 @@ check_eval_breaker:
             PyObject *res;
 
             // Check if the call can be inlined or not
-            PyObject *function = *(stack_pointer - oparg - 1);
+            PyObject *function = PEEK(oparg + 1);
             int inline_call = 0;
             if (Py_TYPE(function) == &PyFunction_Type) {
-                PyCodeObject *code = (PyCodeObject*)((PyFunctionObject*)(function))->func_code;
+                PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
                 int is_coro = code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
                 inline_call = (is_coro || cframe.use_tracing) ? 0 : 1;
             }

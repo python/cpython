@@ -1926,7 +1926,7 @@ PyList()
 def move_in_stack(move_up):
     '''Move up or down the stack (for the py-up/py-down command)'''
     # Important:
-    # The ammount of frames that are printed out depends on how many frames are inlined
+    # The amount of frames that are printed out depends on how many frames are inlined
     # in the same evaluation loop. As this command links directly the C stack with the
     # Python stack, the results are sensitive to the number of inlined frames and this
     # is likely to change between versions and optimizations.
@@ -1934,7 +1934,6 @@ def move_in_stack(move_up):
     if not frame:
         print('Unable to locate python frame')
         return
-    
     while frame:
         if move_up:
             iter_frame = frame.older()
