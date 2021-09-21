@@ -416,7 +416,7 @@ enum PyUnicode_Kind {
 
 
 /* Fast check to determine whether an object is ready. Equivalent to
-   PyUnicode_IS_COMPACT(op) || ((PyUnicodeObject*)(op))->data.any) */
+   PyUnicode_IS_COMPACT(op) || ((PyUnicodeObject*)(op))->data.any */
 
 #define PyUnicode_IS_READY(op) (((PyASCIIObject*)op)->state.ready)
 
