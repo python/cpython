@@ -48,6 +48,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
+#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
@@ -212,6 +213,24 @@ extern "C" {
 #endif
 
 
+/* Forward declaration */
+static inline int
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
+static inline void
+_PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer);
+static PyObject *
+unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
+                    const char *errors);
+static PyObject *
+unicode_decode_utf8(const char *s, Py_ssize_t size,
+                    _Py_error_handler error_handler, const char *errors,
+                    Py_ssize_t *consumed);
+#ifdef Py_DEBUG
+static inline int unicode_is_finalizing(void);
+static int unicode_is_singleton(PyObject *unicode);
+#endif
+
+
 static struct _Py_unicode_state*
 get_unicode_state(void)
 {
@@ -278,19 +297,6 @@ unicode_fill(enum PyUnicode_Kind kind, void *data, Py_UCS4 value,
     }
 }
 
-
-/* Forward declaration */
-static inline int
-_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
-static inline void
-_PyUnicodeWriter_InitWithBuffer(_PyUnicodeWriter *writer, PyObject *buffer);
-static PyObject *
-unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
-                    const char *errors);
-static PyObject *
-unicode_decode_utf8(const char *s, Py_ssize_t size,
-                    _Py_error_handler error_handler, const char *errors,
-                    Py_ssize_t *consumed);
 
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
@@ -1930,6 +1936,12 @@ _PyUnicode_Ready(PyObject *unicode)
 static void
 unicode_dealloc(PyObject *unicode)
 {
+#ifdef Py_DEBUG
+    if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
+        _Py_FatalRefcountError("deallocating an Unicode singleton");
+    }
+#endif
+
     switch (PyUnicode_CHECK_INTERNED(unicode)) {
     case SSTATE_NOT_INTERNED:
         break;
@@ -1982,11 +1994,8 @@ unicode_is_singleton(PyObject *unicode)
     if (unicode == state->empty_string) {
         return 1;
     }
-    PyASCIIObject *ascii = (PyASCIIObject *)unicode;
-    if (ascii->state.kind != PyUnicode_WCHAR_KIND && ascii->length == 1)
-    {
-        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
-        if (ch < 256 && state->latin1[ch] == unicode) {
+    for (Py_ssize_t i = 0; i < 256; i++) {
+        if (unicode == state->latin1[i]) {
             return 1;
         }
     }
@@ -15980,6 +15989,16 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
     config->filesystem_errors = errors;
 
     return init_fs_codec(interp);
+}
+#endif
+
+
+#ifdef Py_DEBUG
+static inline int
+unicode_is_finalizing(void)
+{
+    struct _Py_unicode_state *state = get_unicode_state();
+    return (state->interned == NULL);
 }
 #endif
 
