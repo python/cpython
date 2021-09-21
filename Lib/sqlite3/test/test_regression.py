@@ -124,13 +124,14 @@ class RegressionTests(unittest.TestCase):
         """
         SELECT = "select * from foo"
         con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
-        con.execute("create table foo(bar timestamp)")
-        con.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
-        con.execute(SELECT).close()
-        con.execute("drop table foo")
-        con.execute("create table foo(bar integer)")
-        con.execute("insert into foo(bar) values (5)")
-        con.execute(SELECT).close()
+        cur = con.cursor()
+        cur.execute("create table foo(bar timestamp)")
+        cur.execute("insert into foo(bar) values (?)", (datetime.datetime.now(),))
+        cur.execute(SELECT)
+        cur.execute("drop table foo")
+        cur.execute("create table foo(bar integer)")
+        cur.execute("insert into foo(bar) values (5)")
+        cur.execute(SELECT)
 
     def test_bind_mutating_list(self):
         # Issue41662: Crash when mutate a list of parameters during iteration.
@@ -434,6 +435,40 @@ class RegressionTests(unittest.TestCase):
         cur = self.con.execute("select X''")
         val = cur.fetchone()[0]
         self.assertEqual(val, b'')
+
+    def test_table_lock_cursor_replace_stmt(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        cur.execute("create table t(t)")
+        cur.executemany("insert into t values(?)", ((v,) for v in range(5)))
+        con.commit()
+        cur.execute("select t from t")
+        cur.execute("drop table t")
+        con.commit()
+
+    def test_table_lock_cursor_dealloc(self):
+        con = sqlite.connect(":memory:")
+        con.execute("create table t(t)")
+        con.executemany("insert into t values(?)", ((v,) for v in range(5)))
+        con.commit()
+        cur = con.execute("select t from t")
+        del cur
+        con.execute("drop table t")
+        con.commit()
+
+    def test_table_lock_cursor_non_readonly_select(self):
+        con = sqlite.connect(":memory:")
+        con.execute("create table t(t)")
+        con.executemany("insert into t values(?)", ((v,) for v in range(5)))
+        con.commit()
+        def dup(v):
+            con.execute("insert into t values(?)", (v,))
+            return
+        con.create_function("dup", 1, dup)
+        cur = con.execute("select dup(t) from t")
+        del cur
+        con.execute("drop table t")
+        con.commit()
 
 
 if __name__ == "__main__":
