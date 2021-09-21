@@ -160,7 +160,7 @@ def sysroot_paths(make_vars, subdirs):
     for var_name in make_vars:
         var = sysconfig.get_config_var(var_name)
         if var is not None:
-            m = re.search(r'--sysroot=([^"]\S*|"[^"]+")', var)
+            m = re.search(r'(?:--sysroot|-isysroot)=([^"]\S*|"[^"]+")', var)
             if m is not None:
                 sysroot = m.group(1).strip('"')
                 for subdir in subdirs:
