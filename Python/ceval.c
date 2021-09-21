@@ -4496,6 +4496,7 @@ check_eval_breaker:
         }
 
         TARGET(LOAD_METHOD_MODULE): {
+            /* LOAD_METHOD, for module methods */
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -4515,15 +4516,9 @@ check_eval_breaker:
             _PyObjectCache *cache2 = &caches[-2].obj;
 
             PyObject *cls = TOP();
-            PyTypeObject *cls_type = Py_TYPE(cls);
-            assert(cls_type->tp_dictoffset > 0);
-            PyObject *dict = *(PyObject **) ((char *)cls + cls_type->tp_dictoffset);
-            // Don't care if no dict -- tp_version_tag should catch anything wrong.
-            DEOPT_IF(dict != NULL && ((PyDictObject *)dict)->ma_keys->dk_version !=
-                cache1->dk_version_or_hint, LOAD_METHOD);
+            DEOPT_IF(!PyType_Check(cls), LOAD_METHOD);
             DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
                 LOAD_METHOD);
-            assert(cache1->dk_version_or_hint != 0);
             assert(cache1->tp_version != 0);
 
             STAT_INC(LOAD_METHOD, hit);
