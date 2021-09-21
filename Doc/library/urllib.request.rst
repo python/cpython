@@ -655,7 +655,7 @@ OpenerDirector Objects
    optional *timeout* parameter specifies a timeout in seconds for blocking
    operations like the connection attempt (if not specified, the global default
    timeout setting will be used). The timeout feature actually works only for
-   HTTP, HTTPS and FTP connections).
+   HTTP, HTTPS and FTP connections.
 
 
 .. method:: OpenerDirector.error(proto, *args)
