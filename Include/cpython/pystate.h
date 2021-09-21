@@ -76,7 +76,6 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
-    int use_tracing;
 
     /* Pointer to current CFrame in the C stack frame of the currently,
      * or most recently, executing _PyEval_EvalFrameDefault. */
@@ -149,6 +148,7 @@ struct _ts {
     uint64_t id;
 
     CFrame root_cframe;
+    int use_tracing;
 
     /* XXX signal handlers should also be here */
 
