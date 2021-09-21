@@ -2298,6 +2298,7 @@ class SyntaxErrorTests(unittest.TestCase):
                 except SyntaxError as exc:
                     with support.captured_stderr() as err:
                         sys.__excepthook__(*sys.exc_info())
+                    self.assertIn(expected, err.getvalue())
                     the_exception = exc
 
     def test_encodings(self):
