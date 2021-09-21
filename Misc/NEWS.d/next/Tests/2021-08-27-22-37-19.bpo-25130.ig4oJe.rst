@@ -1,0 +1,1 @@
+Add calls of :func:`gc.collect` in tests to support PyPy.

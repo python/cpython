@@ -245,6 +245,33 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
 
+    def test_keywords_in_subclass(self):
+        class subclass(float):
+            pass
+        u = subclass(2.5)
+        self.assertIs(type(u), subclass)
+        self.assertEqual(float(u), 2.5)
+        with self.assertRaises(TypeError):
+            subclass(x=0)
+
+        class subclass_with_init(float):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(float):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
         self.assertTrue((1.).is_integer())
@@ -1467,6 +1494,20 @@ class HexFloatTestCase(unittest.TestCase):
         self.identical(fromHex('0x1.0000000000001ep0'), 1.0+2*EPS)
         self.identical(fromHex('0X1.0000000000001fp0'), 1.0+2*EPS)
         self.identical(fromHex('0x1.00000000000020p0'), 1.0+2*EPS)
+
+        # Regression test for a corner-case bug reported in b.p.o. 44954
+        self.identical(fromHex('0x.8p-1074'), 0.0)
+        self.identical(fromHex('0x.80p-1074'), 0.0)
+        self.identical(fromHex('0x.81p-1074'), TINY)
+        self.identical(fromHex('0x8p-1078'), 0.0)
+        self.identical(fromHex('0x8.0p-1078'), 0.0)
+        self.identical(fromHex('0x8.1p-1078'), TINY)
+        self.identical(fromHex('0x80p-1082'), 0.0)
+        self.identical(fromHex('0x81p-1082'), TINY)
+        self.identical(fromHex('.8p-1074'), 0.0)
+        self.identical(fromHex('8p-1078'), 0.0)
+        self.identical(fromHex('-.8p-1074'), -0.0)
+        self.identical(fromHex('+8p-1078'), 0.0)
 
     def test_roundtrip(self):
         def roundtrip(x):

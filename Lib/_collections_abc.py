@@ -426,22 +426,16 @@ class _CallableGenericAlias(GenericAlias):
     __slots__ = ()
 
     def __new__(cls, origin, args):
-        return cls.__create_ga(origin, args)
-
-    @classmethod
-    def __create_ga(cls, origin, args):
-        if not isinstance(args, tuple) or len(args) != 2:
+        if not (isinstance(args, tuple) and len(args) == 2):
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
-        if isinstance(t_args, (list, tuple)):
-            ga_args = tuple(t_args) + (t_result,)
-        # This relaxes what t_args can be on purpose to allow things like
-        # PEP 612 ParamSpec.  Responsibility for whether a user is using
-        # Callable[...] properly is deferred to static type checkers.
-        else:
-            ga_args = args
-        return super().__new__(cls, origin, ga_args)
+        if isinstance(t_args, list):
+            args = (*t_args, t_result)
+        elif not _is_param_expr(t_args):
+            raise TypeError(f"Expected a list of types, an ellipsis, "
+                            f"ParamSpec, or Concatenate. Got {t_args}")
+        return super().__new__(cls, origin, args)
 
     @property
     def __parameters__(self):
@@ -456,7 +450,7 @@ class _CallableGenericAlias(GenericAlias):
         return tuple(dict.fromkeys(params))
 
     def __repr__(self):
-        if _has_special_args(self.__args__):
+        if len(self.__args__) == 2 and _is_param_expr(self.__args__[0]):
             return super().__repr__()
         return (f'collections.abc.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
@@ -464,7 +458,7 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not _has_special_args(args):
+        if not (len(args) == 2 and _is_param_expr(args[0])):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -479,10 +473,11 @@ class _CallableGenericAlias(GenericAlias):
         param_len = len(self.__parameters__)
         if param_len == 0:
             raise TypeError(f'{self} is not a generic class')
-        if (param_len == 1
-                and isinstance(item, (tuple, list))
-                and len(item) > 1) or not isinstance(item, tuple):
+        if not isinstance(item, tuple):
             item = (item,)
+        if (param_len == 1 and _is_param_expr(self.__parameters__[0])
+                and item and not _is_param_expr(item[0])):
+            item = (list(item),)
         item_len = len(item)
         if item_len != param_len:
             raise TypeError(f'Too {"many" if item_len > param_len else "few"}'
@@ -492,7 +487,13 @@ class _CallableGenericAlias(GenericAlias):
         new_args = []
         for arg in self.__args__:
             if _is_typevarlike(arg):
-                arg = subst[arg]
+                if _is_param_expr(arg):
+                    arg = subst[arg]
+                    if not _is_param_expr(arg):
+                        raise TypeError(f"Expected a list of types, an ellipsis, "
+                                        f"ParamSpec, or Concatenate. Got {arg}")
+                else:
+                    arg = subst[arg]
             # Looks like a GenericAlias
             elif hasattr(arg, '__parameters__') and isinstance(arg.__parameters__, tuple):
                 subparams = arg.__parameters__
@@ -502,11 +503,12 @@ class _CallableGenericAlias(GenericAlias):
             new_args.append(arg)
 
         # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
-        if not isinstance(new_args[0], (tuple, list)):
+        if not isinstance(new_args[0], list):
             t_result = new_args[-1]
             t_args = new_args[:-1]
             new_args = (t_args, t_result)
         return _CallableGenericAlias(Callable, tuple(new_args))
+
 
 def _is_typevarlike(arg):
     obj = type(arg)
@@ -514,19 +516,17 @@ def _is_typevarlike(arg):
     return (obj.__module__ == 'typing'
             and obj.__name__ in {'ParamSpec', 'TypeVar'})
 
-def _has_special_args(args):
-    """Checks if args[0] matches either ``...``, ``ParamSpec`` or
+def _is_param_expr(obj):
+    """Checks if obj matches either a list of types, ``...``, ``ParamSpec`` or
     ``_ConcatenateGenericAlias`` from typing.py
     """
-    if len(args) != 2:
-        return False
-    obj = args[0]
     if obj is Ellipsis:
+        return True
+    if isinstance(obj, list):
         return True
     obj = type(obj)
     names = ('ParamSpec', '_ConcatenateGenericAlias')
     return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
-
 
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).

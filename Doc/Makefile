@@ -45,7 +45,7 @@ help:
 	@echo "  check      to run a check for frequent markup errors"
 	@echo "  serve      to serve the documentation on the localhost (8000)"
 
-build: venv
+build:
 	-mkdir -p build
 # Look first for a Misc/NEWS file (building from a source release tarball
 # or old repo) and use that, otherwise look for a Misc/NEWS.d directory
@@ -145,7 +145,8 @@ clean-venv:
 
 venv:
 	@if [ -d $(VENVDIR) ] ; then \
-		echo "venv already exists"; \
+		echo "venv already exists."; \
+		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		$(PYTHON) -m venv $(VENVDIR); \
 		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \

@@ -1,0 +1,2 @@
+Fixed an issue wherein the ``__name__`` and ``__qualname__`` attributes of
+subscribed specialforms could be ``None``.

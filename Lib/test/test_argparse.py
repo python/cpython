@@ -12,7 +12,6 @@ import argparse
 
 from io import StringIO
 
-from test import support
 from test.support import os_helper
 from unittest import mock
 class StdIOBuffer(StringIO):
@@ -3079,6 +3078,12 @@ class TestSetDefaults(TestCase):
         xparser.set_defaults(foo=2)
         self.assertEqual(NS(foo=2), parser.parse_args(['X']))
 
+    def test_set_defaults_on_subparser_with_namespace(self):
+        parser = argparse.ArgumentParser()
+        xparser = parser.add_subparsers().add_parser('X')
+        xparser.set_defaults(foo=1)
+        self.assertEqual(NS(foo=2), parser.parse_args(['X'], NS(foo=2)))
+
     def test_set_defaults_same_as_add_argument(self):
         parser = ErrorRaisingArgumentParser()
         parser.set_defaults(w='W', x='X', y='Y', z='Z')
@@ -4281,6 +4286,9 @@ class TestHelpArgumentDefaults(HelpTestCase):
     argument_signatures = [
         Sig('--foo', help='foo help - oh and by the way, %(default)s'),
         Sig('--bar', action='store_true', help='bar help'),
+        Sig('--taz', action=argparse.BooleanOptionalAction,
+            help='Whether to taz it', default=True),
+        Sig('--quux', help="Set the quux", default=42),
         Sig('spam', help='spam help'),
         Sig('badger', nargs='?', default='wooden', help='badger help'),
     ]
@@ -4289,25 +4297,29 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--baz BAZ] spam [badger]
+        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--quux QUUX]
+                    [--baz BAZ]
+                    spam [badger]
         '''
     help = usage + '''\
 
         description
 
         positional arguments:
-          spam        spam help
-          badger      badger help (default: wooden)
+          spam             spam help
+          badger           badger help (default: wooden)
 
         options:
-          -h, --help  show this help message and exit
-          --foo FOO   foo help - oh and by the way, None
-          --bar       bar help (default: False)
+          -h, --help       show this help message and exit
+          --foo FOO        foo help - oh and by the way, None
+          --bar            bar help (default: False)
+          --taz, --no-taz  Whether to taz it (default: True)
+          --quux QUUX      Set the quux (default: 42)
 
         title:
           description
 
-          --baz BAZ   baz help (default: 42)
+          --baz BAZ        baz help (default: 42)
         '''
     version = ''
 
@@ -5403,13 +5415,11 @@ class TestExitOnError(TestCase):
             self.parser.parse_args('--integers a'.split())
 
 
-def test_main():
-    support.run_unittest(__name__)
+def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
     WFile.seen = set()
 
 
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

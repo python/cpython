@@ -951,7 +951,8 @@ Miscellaneous
    use.  The number of usable CPUs can be obtained with
    ``len(os.sched_getaffinity(0))``
 
-   May raise :exc:`NotImplementedError`.
+   When the number of CPUs cannot be determined a :exc:`NotImplementedError`
+   is raised.
 
    .. seealso::
       :func:`os.cpu_count`
@@ -1187,6 +1188,7 @@ For example:
     >>> arr2
     array('i', [0, 1, 2, 3, 4, 0, 0, 0, 0, 0])
 
+.. _multiprocessing-recv-pickle-security:
 
 .. warning::
 

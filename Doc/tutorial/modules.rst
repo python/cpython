@@ -533,6 +533,8 @@ importing module needs to use submodules with the same name from different
 packages.
 
 
+.. _intra-package-references:
+
 Intra-package References
 ------------------------
 

@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import run_unittest, verbose, requires_IEEE_754
+from test.support import verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
@@ -2225,13 +2225,10 @@ class IsCloseTests(unittest.TestCase):
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
 
 
-def test_main():
+def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(MathTests))
-    suite.addTest(unittest.makeSuite(IsCloseTests))
-    suite.addTest(DocFileSuite("ieee754.txt"))
-    run_unittest(suite)
+    tests.addTest(DocFileSuite("ieee754.txt"))
+    return tests
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -480,6 +480,12 @@ Miscellaneous options
      objects and pyc files are desired as well as supressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
+   * ``-X frozen_modules`` determines whether or not frozen modules are
+     ignored by the import machinery.  A value of "on" means they get
+     imported and "off" means they are ignored.  The default is "on"
+     for non-debug builds (the normal case) and "off" for debug builds.
+     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
+     frozen modules are always used, even if this flag is set to "off".
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -517,6 +523,9 @@ Miscellaneous options
 
    .. versionadded:: 3.11
       The ``-X no_debug_ranges`` option.
+
+   .. versionadded:: 3.11
+      The ``-X frozen_modules`` option.
 
 
 Options you shouldn't use
@@ -962,9 +971,11 @@ Debug-mode variables
 
 .. envvar:: PYTHONTHREADDEBUG
 
-   If set, Python will print threading debug info.
+   If set, Python will print threading debug info into stdout.
 
    Need a :ref:`debug build of Python <debug-build>`.
+
+   .. deprecated-removed:: 3.10 3.12
 
 
 .. envvar:: PYTHONDUMPREFS
@@ -973,3 +984,12 @@ Debug-mode variables
    shutting down the interpreter.
 
    Need Python configured with the :option:`--with-trace-refs` build option.
+
+.. envvar:: PYTHONDUMPREFSFILE=FILENAME
+
+   If set, Python will dump objects and reference counts still alive
+   after shutting down the interpreter into a file called *FILENAME*.
+
+   Need Python configured with the :option:`--with-trace-refs` build option.
+
+   .. versionadded:: 3.11

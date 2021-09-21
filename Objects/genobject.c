@@ -190,8 +190,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
-    frame->stack[frame->stackdepth] = result;
-    frame->stackdepth++;
+    _PyFrame_StackPush(frame, result);
 
     frame->previous = tstate->frame;
 
@@ -350,8 +349,7 @@ _PyGen_yf(PyGenObject *gen)
 
         if (code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
-        assert(frame->stackdepth > 0);
-        yf = frame->stack[frame->stackdepth-1];
+        yf = _PyFrame_StackPeek(frame);
         Py_INCREF(yf);
     }
 
@@ -469,9 +467,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (!ret) {
             PyObject *val;
             /* Pop subiterator from stack */
-            assert(gen->gi_xframe->stackdepth > 0);
-            gen->gi_xframe->stackdepth--;
-            ret = gen->gi_xframe->stack[gen->gi_xframe->stackdepth];
+            ret = _PyFrame_StackPop(gen->gi_xframe);
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
@@ -1503,7 +1499,7 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };

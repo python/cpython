@@ -132,6 +132,11 @@ write code that handles both IP versions correctly.  Address objects are
       The above change was also included in Python 3.9 starting with
       version 3.9.5.
 
+   .. versionchanged:: 3.8.12
+
+      The above change was also included in Python 3.8 starting with
+      version 3.8.12.
+
    .. attribute:: version
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.

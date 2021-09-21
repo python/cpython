@@ -471,9 +471,11 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                                localsplusnames, localspluskinds);
     }
     // If any cells were args then nlocalsplus will have shrunk.
-    // We don't bother resizing localspluskinds.
-    if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0) {
-        goto error;
+    if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
+        if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
+                || _PyBytes_Resize(&localspluskinds, nlocalsplus) < 0) {
+            goto error;
+        }
     }
 
     struct _PyCodeConstructor con = {

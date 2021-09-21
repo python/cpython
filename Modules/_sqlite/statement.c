@@ -56,9 +56,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_ssize_t size;
     const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
     if (sql_cstr == NULL) {
-        PyErr_Format(connection->Warning,
-                     "SQL is of wrong type ('%s'). Must be string.",
-                     Py_TYPE(sql)->tp_name);
         return NULL;
     }
 
@@ -121,7 +118,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     self->st = stmt;
     self->in_use = 0;
     self->is_dml = is_dml;
-    self->in_weakreflist = NULL;
 
     PyObject_GC_Track(self);
     return self;
@@ -364,40 +360,31 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-int pysqlite_statement_finalize(pysqlite_Statement* self)
+void
+pysqlite_statement_reset(pysqlite_Statement *self)
 {
-    int rc;
-
-    rc = SQLITE_OK;
-    if (self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_finalize(self->st);
-        Py_END_ALLOW_THREADS
-        self->st = NULL;
+    sqlite3_stmt *stmt = self->st;
+    if (stmt == NULL || self->in_use == 0) {
+        return;
     }
 
-    self->in_use = 0;
-
-    return rc;
-}
-
-int pysqlite_statement_reset(pysqlite_Statement* self)
-{
-    int rc;
-
-    rc = SQLITE_OK;
-
-    if (self->in_use && self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_reset(self->st);
-        Py_END_ALLOW_THREADS
-
-        if (rc == SQLITE_OK) {
-            self->in_use = 0;
-        }
+#if SQLITE_VERSION_NUMBER >= 3020000
+    /* Check if the statement has been run (that is, sqlite3_step() has been
+     * called at least once). Third parameter is non-zero in order to reset the
+     * run count. */
+    if (sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, 1) == 0) {
+        return;
     }
+#endif
 
-    return rc;
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_reset(stmt);
+    Py_END_ALLOW_THREADS
+
+    if (rc == SQLITE_OK) {
+        self->in_use = 0;
+    }
 }
 
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
@@ -410,9 +397,6 @@ stmt_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
     if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
@@ -500,12 +484,7 @@ static int pysqlite_check_remaining_sql(const char* tail)
     return 0;
 }
 
-static PyMemberDef stmt_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Statement, in_weakreflist), READONLY},
-    {NULL},
-};
 static PyType_Slot stmt_slots[] = {
-    {Py_tp_members, stmt_members},
     {Py_tp_dealloc, stmt_dealloc},
     {Py_tp_traverse, stmt_traverse},
     {0, NULL},

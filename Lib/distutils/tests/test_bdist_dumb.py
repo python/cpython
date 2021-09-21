@@ -91,7 +91,7 @@ class BuildDumbTestCase(support.TempdirManager,
         self.assertEqual(contents, sorted(wanted))
 
 def test_suite():
-    return unittest.makeSuite(BuildDumbTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(BuildDumbTestCase)
 
 if __name__ == '__main__':
     run_unittest(test_suite())
