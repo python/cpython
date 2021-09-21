@@ -49,6 +49,9 @@ import multiprocessing.queues
 
 from multiprocessing import util
 
+if multiprocessing.managers.HAS_SHMEM:
+    from multiprocessing import shared_memory
+
 try:
     from multiprocessing import reduction
     HAS_REDUCTION = reduction.HAVE_SEND_HANDLE
