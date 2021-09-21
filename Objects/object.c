@@ -1563,8 +1563,7 @@ none_repr(PyObject *op)
 static void _Py_NO_RETURN
 none_dealloc(PyObject* Py_UNUSED(ignore))
 {
-    Py_FatalError("deallocating None likely caused by a refcount bug "
-                  "in a C extension");
+    _Py_FatalRefcountError("deallocating None");
 }
 
 static PyObject *
