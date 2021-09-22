@@ -282,7 +282,22 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-/* SQLite API error codes */
+/* SQLite C API result codes. See also:
+ * - https://www.sqlite.org/c3ref/c_abort_rollback.html
+ * - https://sqlite.org/changes.html#version_3_3_8
+ * - https://sqlite.org/changes.html#version_3_7_16
+ * - https://sqlite.org/changes.html#version_3_7_17
+ * - https://sqlite.org/changes.html#version_3_8_0
+ * - https://sqlite.org/changes.html#version_3_8_3
+ * - https://sqlite.org/changes.html#version_3_14
+ *
+ * Note: the SQLite changelogs rarely mention new result codes, so in order to
+ * keep the 'error_codes' table in sync with SQLite, we must manually inspect
+ * sqlite3.h for every release.
+ *
+ * We keep the SQLITE_VERSION_NUMBER checks in order to easily declutter the
+ * code when we adjust the SQLite version requirement.
+ */
 static const struct {
     const char *name;
     long value;
@@ -322,17 +337,7 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_NOTICE),
     DECLARE_ERROR_CODE(SQLITE_WARNING),
 #endif
-    /* Extended result code list. See also:
-     * - https://www.sqlite.org/c3ref/c_abort_rollback.html
-     * - https://sqlite.org/changes.html#version_3_3_8
-     * - https://sqlite.org/changes.html#version_3_7_16
-     * - https://sqlite.org/changes.html#version_3_7_17
-     * - https://sqlite.org/changes.html#version_3_8_0
-     * - https://sqlite.org/changes.html#version_3_8_3
-     * - https://sqlite.org/changes.html#version_3_14
-     *
-     * Note, not all result codes are mentioned in the SQLite release history.
-     */
+    // Extended result code list
     DECLARE_ERROR_CODE(SQLITE_ABORT_ROLLBACK),
     DECLARE_ERROR_CODE(SQLITE_BUSY_RECOVERY),
     DECLARE_ERROR_CODE(SQLITE_CANTOPEN_FULLPATH),
