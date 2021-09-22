@@ -367,8 +367,9 @@ time_sleep(PyObject *self, PyObject *obj)
                         "sleep length must be non-negative");
         return NULL;
     }
-    if (pysleep(secs) != 0)
+    if (pysleep(secs) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2044,47 +2045,42 @@ PyInit_time(void)
     return PyModuleDef_Init(&timemodule);
 }
 
-/* Implement pysleep() for various platforms.
-   When interrupted (or when another error occurs), return -1 and
-   set an exception; else return 0. */
 
+// time.sleep() implementation.
+// On error, raise an exception and return -1.
+// On success, return 0.
 static int
 pysleep(_PyTime_t secs)
 {
-    _PyTime_t deadline, monotonic;
+    assert(secs >= 0);
+
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
     struct timespec timeout_abs;
 #else
     struct timeval timeout;
 #endif
+    _PyTime_t deadline, monotonic;
     int err = 0;
-    int ret = 0;
-#else
-    _PyTime_t millisecs;
-    unsigned long ul_millis;
-    DWORD rc;
-    HANDLE hInterruptEvent;
-#endif
 
     if (get_monotonic(&monotonic) < 0) {
         return -1;
     }
     deadline = monotonic + secs;
-#if defined(HAVE_CLOCK_NANOSLEEP) && !defined(MS_WINDOWS)
+#ifdef HAVE_CLOCK_NANOSLEEP
     if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
         return -1;
     }
 #endif
 
     do {
-#ifndef MS_WINDOWS
 #ifndef HAVE_CLOCK_NANOSLEEP
         if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0) {
             return -1;
         }
 #endif
 
+        int ret;
 #ifdef HAVE_CLOCK_NANOSLEEP
         Py_BEGIN_ALLOW_THREADS
         ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
@@ -2106,35 +2102,6 @@ pysleep(_PyTime_t secs)
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
-#else
-        millisecs = _PyTime_AsMilliseconds(secs, _PyTime_ROUND_CEILING);
-        if (millisecs > (double)ULONG_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "sleep length is too large");
-            return -1;
-        }
-
-        /* Allow sleep(0) to maintain win32 semantics, and as decreed
-         * by Guido, only the main thread can be interrupted.
-         */
-        ul_millis = (unsigned long)millisecs;
-        if (ul_millis == 0 || !_PyOS_IsMainThread()) {
-            Py_BEGIN_ALLOW_THREADS
-            Sleep(ul_millis);
-            Py_END_ALLOW_THREADS
-            break;
-        }
-
-        hInterruptEvent = _PyOS_SigintEvent();
-        ResetEvent(hInterruptEvent);
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
-        Py_END_ALLOW_THREADS
-
-        if (rc != WAIT_OBJECT_0)
-            break;
-#endif
 
         /* sleep was interrupted by SIGINT */
         if (PyErr_CheckSignals()) {
@@ -2154,4 +2121,104 @@ pysleep(_PyTime_t secs)
     } while (1);
 
     return 0;
+#else  // MS_WINDOWS
+    _PyTime_t timeout = _PyTime_As100Nanoseconds(secs, _PyTime_ROUND_CEILING);
+
+    // Maintain Windows Sleep() semantics for time.sleep(0)
+    if (timeout == 0) {
+        Py_BEGIN_ALLOW_THREADS
+        // A value of zero causes the thread to relinquish the remainder of its
+        // time slice to any other thread that is ready to run. If there are no
+        // other threads ready to run, the function returns immediately, and
+        // the thread continues execution.
+        Sleep(0);
+        Py_END_ALLOW_THREADS
+        return 0;
+    }
+
+    LARGE_INTEGER relative_timeout;
+    // No need to check for integer overflow, both types are signed
+    assert(sizeof(relative_timeout) == sizeof(timeout));
+    // SetWaitableTimer(): a negative due time indicates relative time
+    relative_timeout.QuadPart = -timeout;
+
+    HANDLE timer = CreateWaitableTimerW(NULL, FALSE, NULL);
+    if (timer == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+
+    if (!SetWaitableTimer(timer, &relative_timeout,
+                          // period: the timer is signaled once
+                          0,
+                          // no completion routine
+                          NULL, NULL,
+                          // Don't restore a system in suspended power
+                          // conservation mode when the timer is signaled.
+                          FALSE))
+    {
+        PyErr_SetFromWindowsErr(0);
+        goto error;
+    }
+
+    // Only the main thread can be interrupted by SIGINT.
+    // Signal handlers are only executed in the main thread.
+    if (_PyOS_IsMainThread()) {
+        HANDLE sigint_event = _PyOS_SigintEvent();
+
+        while (1) {
+            // Check for pending SIGINT signal before resetting the event
+            if (PyErr_CheckSignals()) {
+                goto error;
+            }
+            ResetEvent(sigint_event);
+
+            HANDLE events[] = {timer, sigint_event};
+            DWORD rc;
+
+            Py_BEGIN_ALLOW_THREADS
+            rc = WaitForMultipleObjects(Py_ARRAY_LENGTH(events), events,
+                                        // bWaitAll
+                                        FALSE,
+                                        // No wait timeout
+                                        INFINITE);
+            Py_END_ALLOW_THREADS
+
+            if (rc == WAIT_FAILED) {
+                PyErr_SetFromWindowsErr(0);
+                goto error;
+            }
+
+            if (rc == WAIT_OBJECT_0) {
+                // Timer signaled: we are done
+                break;
+            }
+
+            assert(rc == (WAIT_OBJECT_0 + 1));
+            // The sleep was interrupted by SIGINT: restart sleeping
+        }
+    }
+    else {
+        DWORD rc;
+
+        Py_BEGIN_ALLOW_THREADS
+        rc = WaitForSingleObject(timer, INFINITE);
+        Py_END_ALLOW_THREADS
+
+        if (rc == WAIT_FAILED) {
+            PyErr_SetFromWindowsErr(0);
+            goto error;
+        }
+
+        assert(rc == WAIT_OBJECT_0);
+        // Timer signaled: we are done
+    }
+
+    CloseHandle(timer);
+    return 0;
+
+error:
+    CloseHandle(timer);
+    return -1;
+#endif
 }
