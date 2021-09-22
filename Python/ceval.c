@@ -1723,6 +1723,7 @@ check_eval_breaker:
         /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
         TARGET(LOAD_CLOSURE):
         TARGET(LOAD_FAST): {
+            PREDICTED(LOAD_FAST);
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -1748,6 +1749,7 @@ check_eval_breaker:
         }
 
         TARGET(LOAD_FAST__LOAD_FAST): {
+            PREDICTED(LOAD_FAST__LOAD_FAST);
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -2973,6 +2975,49 @@ check_eval_breaker:
             }
             Py_DECREF(seq);
             DISPATCH();
+        }
+
+        TARGET(UNPACK_SEQUENCE_ST): {
+            PREDICTED(UNPACK_SEQUENCE_ST);
+            PyObject *seq = POP(), *item, **items;
+            if (PyTuple_CheckExact(seq) &&
+                PyTuple_GET_SIZE(seq) == oparg) {
+                items = ((PyTupleObject *)seq)->ob_item;
+                int i = -1, next_oparg;
+                while (++i < oparg) {
+                    item = items[i];
+                    Py_INCREF(item);
+                    next_oparg= _Py_OPARG(*(next_instr++));
+                    SETLOCAL(next_oparg, item);
+                }
+            } else if (PyList_CheckExact(seq) &&
+                       PyList_GET_SIZE(seq) == oparg) {
+                items = ((PyListObject *)seq)->ob_item;
+                int i = -1, next_oparg;
+                while (++i < oparg) {
+                    item = items[i];
+                    Py_INCREF(item);
+                    next_oparg= _Py_OPARG(*(next_instr++));
+                    SETLOCAL(next_oparg, item);
+                }
+            } else if (unpack_iterable(tstate, seq, oparg, -1,
+                                       stack_pointer + oparg)) {
+                items = stack_pointer + oparg - 1;
+                int i = -1, next_oparg;
+                while (++i < oparg) {
+                    item = *(items - i);
+                    next_oparg= _Py_OPARG(*(next_instr++));
+                    SETLOCAL(next_oparg, item);
+                }
+            } else {
+                /* unpack_iterable() raised an exception */
+                Py_DECREF(seq);
+                goto error;
+            }
+            Py_DECREF(seq);
+            PREDICT(LOAD_FAST__LOAD_FAST);
+            PREDICT(LOAD_FAST);
+            NOTRACE_DISPATCH();
         }
 
         TARGET(UNPACK_EX): {
@@ -4242,6 +4287,7 @@ check_eval_breaker:
             if (next != NULL) {
                 PUSH(next);
                 PREDICT(STORE_FAST);
+                PREDICT(UNPACK_SEQUENCE_ST);
                 PREDICT(UNPACK_SEQUENCE);
                 DISPATCH();
             }
