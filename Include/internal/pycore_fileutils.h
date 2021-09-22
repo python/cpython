@@ -65,6 +65,12 @@ extern int _Py_EncodeNonUnicodeWchar_InPlace(
     Py_ssize_t size);
 #endif
 
+extern wchar_t * _Py_join_relfile(const wchar_t *dirname,
+                                  const wchar_t *relfile);
+extern int _Py_add_relfile(wchar_t *dirname,
+                           const wchar_t *relfile,
+                           size_t bufsize);
+
 #ifdef __cplusplus
 }
 #endif

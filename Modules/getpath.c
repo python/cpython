@@ -235,28 +235,18 @@ isdir(const wchar_t *filename)
 static PyStatus
 joinpath(wchar_t *path, const wchar_t *path2, size_t path_len)
 {
-    size_t n;
-    if (!_Py_isabs(path2)) {
-        n = wcslen(path);
-        if (n >= path_len) {
+    if (_Py_isabs(path2)) {
+        if (wcslen(path2) >= path_len) {
             return PATHLEN_ERR();
         }
-
-        if (n > 0 && path[n-1] != SEP) {
-            path[n++] = SEP;
-        }
+        wcscpy(path, path2);
     }
     else {
-        n = 0;
+        if (_Py_add_relfile(path, path2, path_len) < 0) {
+            return PATHLEN_ERR();
+        }
+        return _PyStatus_OK();
     }
-
-    size_t k = wcslen(path2);
-    if (n + k >= path_len) {
-        return PATHLEN_ERR();
-    }
-    wcsncpy(path + n, path2, k);
-    path[n + k] = '\0';
-
     return _PyStatus_OK();
 }
 
@@ -283,23 +273,7 @@ joinpath2(const wchar_t *path, const wchar_t *path2)
     if (_Py_isabs(path2)) {
         return _PyMem_RawWcsdup(path2);
     }
-
-    size_t len = wcslen(path);
-    int add_sep = (len > 0 && path[len - 1] != SEP);
-    len += add_sep;
-    len += wcslen(path2);
-
-    wchar_t *new_path = PyMem_RawMalloc((len + 1) * sizeof(wchar_t));
-    if (new_path == NULL) {
-        return NULL;
-    }
-
-    wcscpy(new_path, path);
-    if (add_sep) {
-        wcscat(new_path, separator);
-    }
-    wcscat(new_path, path2);
-    return new_path;
+    return _Py_join_relfile(path, path2);
 }
 
 
