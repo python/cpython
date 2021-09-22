@@ -6,6 +6,7 @@
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include <stdbool.h>
 #include <wchar.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
@@ -811,6 +812,45 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
 
     /* not found */
     return _PyStatus_OK();
+}
+
+
+/* locating the stdlib */
+
+/* Decide if the given directory hold the stdlib. */
+bool
+_Py_IsStdlibDir(const wchar_t *stdlibdir, bool checkpyc)
+{
+    // Build the filename to look for.
+    wchar_t filename[MAXPATHLEN + 1];
+    assert(stdlibdir != NULL);
+#ifdef MS_WINDOWS
+    wcscpy_s(filename, MAXPATHLEN + 1, stdlibdir);
+#else
+    wcscpy(filename, stdlibdir);
+#endif
+#ifndef LANDMARK
+#define LANDMARK L"os.py"
+#endif
+    _Py_add_relfile(filename, LANDMARK, MAXPATHLEN + 1);
+
+    // Check if the file exists.
+    struct stat buf;
+    if (_Py_wstat(filename, &buf) == 0 && S_ISREG(buf.st_mode)) {
+        return true;
+    }
+
+    // Check for the compiled version. */
+    if (checkpyc) {
+        size_t len = wcslen(filename);
+        filename[len] = 'c';
+        filename[len + 1] = '\0';
+        if (_Py_wstat(filename, &buf) == 0 && S_ISREG(buf.st_mode)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 #ifdef __cplusplus

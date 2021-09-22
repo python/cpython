@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include <stdbool.h>
+
 typedef struct _PyPathConfig {
     /* Full path to the Python program */
     wchar_t *program_full_path;
@@ -66,6 +68,11 @@ extern wchar_t* _Py_GetDLLPath(void);
 extern PyStatus _PyConfig_WritePathConfig(const PyConfig *config);
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 extern PyObject* _PyPathConfig_AsDict(void);
+
+
+/* locating the stdlib */
+
+extern bool _Py_IsStdlibDir(const wchar_t *stdlibdir, bool checkpyc);
 
 #ifdef __cplusplus
 }

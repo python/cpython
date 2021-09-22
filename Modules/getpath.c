@@ -109,10 +109,6 @@ extern "C" {
 #error "PREFIX, EXEC_PREFIX, VERSION and VPATH macros must be defined"
 #endif
 
-#ifndef LANDMARK
-#define LANDMARK L"os.py"
-#endif
-
 #define BUILD_LANDMARK L"Modules/Setup.local"
 
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
@@ -325,33 +321,7 @@ absolutize(wchar_t **path_p)
 static PyStatus
 ismodule(const wchar_t *path, int *result)
 {
-    wchar_t *filename = joinpath2(path, LANDMARK);
-    if (filename == NULL) {
-        return _PyStatus_NO_MEMORY();
-    }
-
-    if (isfile(filename)) {
-        PyMem_RawFree(filename);
-        *result = 1;
-        return _PyStatus_OK();
-    }
-
-    /* Check for the compiled version of prefix. */
-    size_t len = wcslen(filename);
-    wchar_t *pyc = PyMem_RawMalloc((len + 2) * sizeof(wchar_t));
-    if (pyc == NULL) {
-        PyMem_RawFree(filename);
-        return _PyStatus_NO_MEMORY();
-    }
-
-    memcpy(pyc, filename, len * sizeof(wchar_t));
-    pyc[len] = L'c';
-    pyc[len + 1] = L'\0';
-    *result = isfile(pyc);
-
-    PyMem_RawFree(filename);
-    PyMem_RawFree(pyc);
-
+    *result = _Py_IsStdlibDir(path, true) ? 1 : 0;
     return _PyStatus_OK();
 }
 

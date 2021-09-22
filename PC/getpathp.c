@@ -84,6 +84,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig
 #include "osdefs.h"               // SEP, ALTSEP
 #include <wchar.h>
+#include <stdbool.h>
 
 #ifndef MS_WINDOWS
 #error getpathp.c should only be built on Windows
@@ -114,10 +115,6 @@
  * Py_SetPath() can be used to override this mechanism.  Call Py_SetPath
  * with a semicolon separated path prior to calling Py_Initialize.
  */
-
-#ifndef LANDMARK
-#  define LANDMARK L"lib\\os.py"
-#endif
 
 #define INIT_ERR_BUFFER_OVERFLOW() _PyStatus_ERR("buffer overflow")
 
@@ -212,34 +209,6 @@ exists(const wchar_t *filename)
 }
 
 
-/* Is module -- check for .pyc too.
-   Assumes 'filename' MAXPATHLEN+1 bytes long -
-   may extend 'filename' by one character. */
-static int
-ismodule(wchar_t *filename, int update_filename)
-{
-    size_t n;
-
-    if (exists(filename)) {
-        return 1;
-    }
-
-    /* Check for the compiled version of prefix. */
-    n = wcsnlen_s(filename, MAXPATHLEN+1);
-    if (n < MAXPATHLEN) {
-        int exist = 0;
-        filename[n] = L'c';
-        filename[n + 1] = L'\0';
-        exist = exists(filename);
-        if (!update_filename) {
-            filename[n] = L'\0';
-        }
-        return exist;
-    }
-    return 0;
-}
-
-
 /* Add a path component, by appending stuff to buffer.
    buffer must have at least MAXPATHLEN + 1 bytes allocated, and contain a
    NUL-terminated string with no more than MAXPATHLEN characters (not counting
@@ -274,29 +243,19 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
 }
 
 
-/* gotlandmark only called by search_for_prefix, which ensures
-   'prefix' is null terminated in bounds.  join() ensures
-   'landmark' can not overflow prefix if too long. */
-static int
-gotlandmark(const wchar_t *prefix, const wchar_t *landmark)
-{
-    wchar_t filename[MAXPATHLEN+1];
-    memset(filename, 0, sizeof(filename));
-    wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
-    join(filename, landmark);
-    return ismodule(filename, FALSE);
-}
-
-
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
-search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path, const wchar_t *landmark)
+search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
 {
     /* Search from argv0_path, until landmark is found */
     wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
+    wchar_t stdlibdir[MAXPATHLEN + 1];
+    wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
+    _Py_add_relfile(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), L"lib");
     do {
-        if (gotlandmark(prefix, landmark)) {
+        wcscpy(&stdlibdir[wcslen(prefix) + 1], L"lib");
+        if (_Py_IsStdlibDir(stdlibdir, true)) {
             return 1;
         }
         reduce(prefix);
@@ -758,7 +717,7 @@ calculate_home_prefix(PyCalculatePath *calculate,
             reduce(prefix);
             calculate->home = prefix;
         }
-        else if (search_for_prefix(prefix, argv0_path, LANDMARK)) {
+        else if (search_for_prefix(prefix, argv0_path)) {
             calculate->home = prefix;
         }
         else {
@@ -936,7 +895,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
             lookBuf[nchars] = L'\0';
             /* Up one level to the parent */
             reduce(lookBuf);
-            if (search_for_prefix(prefix, lookBuf, LANDMARK)) {
+            if (search_for_prefix(prefix, lookBuf)) {
                 break;
             }
             /* If we are out of paths to search - give up */
