@@ -85,6 +85,7 @@
 #include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "osdefs.h"               // SEP, ALTSEP
 #include <wchar.h>
+#include <stdbool.h>
 
 #ifndef MS_WINDOWS
 #error getpathp.c should only be built on Windows
@@ -209,33 +210,6 @@ exists(const wchar_t *filename)
 }
 
 
-/* Is module -- check for .pyc too.
-   Assumes 'filename' MAXPATHLEN+1 bytes long -
-   may extend 'filename' by one character. */
-static int
-ismodule(wchar_t *filename)
-{
-    size_t n;
-
-    if (exists(filename)) {
-        return 1;
-    }
-
-    /* Check for the compiled version of prefix. */
-    n = wcsnlen_s(filename, MAXPATHLEN+1);
-    if (n < MAXPATHLEN) {
-        int exist = 0;
-        filename[n] = L'c';
-        filename[n + 1] = L'\0';
-        exist = exists(filename);
-        // Drop the 'c' we just added.
-        filename[n] = L'\0';
-        return exist;
-    }
-    return 0;
-}
-
-
 /* Add a path component, by appending stuff to buffer.
    buffer must have at least MAXPATHLEN + 1 bytes allocated, and contain a
    NUL-terminated string with no more than MAXPATHLEN characters (not counting
@@ -269,18 +243,6 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
     return _PyStatus_OK();
 }
 
-static int
-is_stdlibdir(wchar_t *stdlibdir)
-{
-    wchar_t *filename = stdlibdir;
-#ifndef LANDMARK
-#  define LANDMARK L"os.py"
-#endif
-    /* join() ensures 'landmark' can not overflow prefix if too long. */
-    join(filename, LANDMARK);
-    return ismodule(filename);
-}
-
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
@@ -299,7 +261,7 @@ search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
         /* Due to reduce() and our initial value, this result
            is guaranteed to fit. */
         wcscpy(&stdlibdir[wcslen(prefix) + 1], L"lib");
-        if (is_stdlibdir(stdlibdir)) {
+        if (_Py_IsStdlibDir(stdlibdir, true)) {
             return 1;
         }
         reduce(prefix);
