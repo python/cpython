@@ -479,7 +479,6 @@ is semantically equivalent to::
       The specification, background, and examples for the Python :keyword:`with`
       statement.
 
-
 .. index::
    single: parameter; function definition
 

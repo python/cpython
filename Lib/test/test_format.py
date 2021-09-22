@@ -249,7 +249,7 @@ class FormatTest(unittest.TestCase):
         # base marker shouldn't change the size
         testcommon("%0#35.33o", big, "0o012345670123456701234567012345670")
 
-        # Some small ints, in both Python int and flavors).
+        # Some small ints, in both Python int and flavors.
         testcommon("%d", 42, "42")
         testcommon("%d", -42, "-42")
         testcommon("%d", 42.0, "42")
