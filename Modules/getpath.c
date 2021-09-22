@@ -115,11 +115,6 @@ extern "C" {
 
 #define BUILD_LANDMARK L"Modules/Setup.local"
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    ((LEN) == (size_t)-2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY()
-
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
 
 typedef struct {

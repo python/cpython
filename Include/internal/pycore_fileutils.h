@@ -10,6 +10,12 @@ extern "C" {
 
 #include <locale.h>   /* struct lconv */
 
+// This is used after getting NULL back from Py_DecodeLocale().
+#define DECODE_LOCALE_ERR(NAME, LEN) \
+    ((LEN) == (size_t)-2) \
+     ? _PyStatus_ERR("cannot decode " NAME) \
+     : _PyStatus_NO_MEMORY()
+
 PyAPI_DATA(int) _Py_HasFileSystemDefaultEncodeErrors;
 
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
