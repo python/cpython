@@ -39,6 +39,9 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     Py_ssize_t arglen,
     size_t *wlen);
 
+extern int
+_Py_wstat(const wchar_t *, struct stat *);
+
 PyAPI_FUNC(int) _Py_GetForceASCII(void);
 
 /* Reset "force ASCII" mode (if it was initialized).

@@ -144,23 +144,6 @@ static const wchar_t delimiter[2] = {DELIM, '\0'};
 static const wchar_t separator[2] = {SEP, '\0'};
 
 
-/* Get file status. Encode the path to the locale encoding. */
-static int
-_Py_wstat(const wchar_t* path, struct stat *buf)
-{
-    int err;
-    char *fname;
-    fname = _Py_EncodeLocaleRaw(path, NULL);
-    if (fname == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    err = stat(fname, buf);
-    PyMem_RawFree(fname);
-    return err;
-}
-
-
 static void
 reduce(wchar_t *dir)
 {
