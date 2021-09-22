@@ -777,13 +777,6 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-Tools/scripts/freeze_modules.py: Programs/_freeze_module
-
-.PHONY: regen-frozen
-regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
-	@echo "The Makefile was updated, you may need to re-run make."
-
 # BEGIN: freezing modules
 
 Python/frozen_modules/importlib._bootstrap.h: Programs/_freeze_module Lib/importlib/_bootstrap.py
@@ -847,6 +840,13 @@ Python/frozen_modules/__hello__.h: Programs/_freeze_module Lib/__hello__.py
 		$(UPDATE_FILE) --create $(srcdir)/Python/frozen_modules/__hello__.h $(srcdir)/Python/frozen_modules/__hello__.h.new
 
 # END: freezing modules
+
+Tools/scripts/freeze_modules.py: Programs/_freeze_module
+
+.PHONY: regen-frozen
+regen-frozen: Tools/scripts/freeze_modules.py $(FROZEN_FILES_IN)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/freeze_modules.py
+	@echo "The Makefile was updated, you may need to re-run make."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
