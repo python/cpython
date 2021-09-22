@@ -1206,6 +1206,31 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
     return 0;
 }
 
+/* Like _Py_stat() but with a raw filename. */
+int
+_Py_wstat(const wchar_t* path, struct stat *buf)
+{
+    int err;
+#ifdef MS_WINDOWS
+    struct _stat wstatbuf;
+    err = _wstat(wpath, &wstatbuf);
+    if (!err) {
+        buf->st_mode = wstatbuf.st_mode;
+    }
+#else
+    char *fname;
+    fname = _Py_EncodeLocaleRaw(path, NULL);
+    if (fname == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    err = stat(fname, buf);
+    PyMem_RawFree(fname);
+#endif
+    return err;
+}
+
+
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
@@ -1227,9 +1252,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     if (wpath == NULL)
         return -2;
 
-    err = _wstat(wpath, &wstatbuf);
-    if (!err)
-        statbuf->st_mode = wstatbuf.st_mode;
+    err = _Py_wstat(wpath, statbuf);
 #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
 #endif /* USE_UNICODE_WCHAR_CACHE */
