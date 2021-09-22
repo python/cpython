@@ -1994,8 +1994,10 @@ unicode_is_singleton(PyObject *unicode)
     if (unicode == state->empty_string) {
         return 1;
     }
-    for (Py_ssize_t i = 0; i < 256; i++) {
-        if (unicode == state->latin1[i]) {
+    PyASCIIObject *ascii = (PyASCIIObject *)unicode;
+    if (ascii->state.kind != PyUnicode_WCHAR_KIND && ascii->length == 1) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
+        if (ch < 256 && state->latin1[ch] == unicode) {
             return 1;
         }
     }
