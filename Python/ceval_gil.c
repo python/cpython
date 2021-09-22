@@ -179,43 +179,6 @@ is_tstate_valid(PyThreadState *tstate)
 
 #include "condvar.h"
 
-#define MUTEX_INIT(mut) \
-    if (PyMUTEX_INIT(&(mut))) { \
-        Py_FatalError("PyMUTEX_INIT(" #mut ") failed"); };
-#define MUTEX_FINI(mut) \
-    if (PyMUTEX_FINI(&(mut))) { \
-        Py_FatalError("PyMUTEX_FINI(" #mut ") failed"); };
-#define MUTEX_LOCK(mut) \
-    if (PyMUTEX_LOCK(&(mut))) { \
-        Py_FatalError("PyMUTEX_LOCK(" #mut ") failed"); };
-#define MUTEX_UNLOCK(mut) \
-    if (PyMUTEX_UNLOCK(&(mut))) { \
-        Py_FatalError("PyMUTEX_UNLOCK(" #mut ") failed"); };
-
-#define COND_INIT(cond) \
-    if (PyCOND_INIT(&(cond))) { \
-        Py_FatalError("PyCOND_INIT(" #cond ") failed"); };
-#define COND_FINI(cond) \
-    if (PyCOND_FINI(&(cond))) { \
-        Py_FatalError("PyCOND_FINI(" #cond ") failed"); };
-#define COND_SIGNAL(cond) \
-    if (PyCOND_SIGNAL(&(cond))) { \
-        Py_FatalError("PyCOND_SIGNAL(" #cond ") failed"); };
-#define COND_WAIT(cond, mut) \
-    if (PyCOND_WAIT(&(cond), &(mut))) { \
-        Py_FatalError("PyCOND_WAIT(" #cond ") failed"); };
-#define COND_TIMED_WAIT(cond, mut, microseconds, timeout_result) \
-    { \
-        int r = PyCOND_TIMEDWAIT(&(cond), &(mut), (microseconds)); \
-        if (r < 0) \
-            Py_FatalError("PyCOND_WAIT(" #cond ") failed"); \
-        if (r) /* 1 == timeout, 2 == impl. can't say, so assume timeout */ \
-            timeout_result = 1; \
-        else \
-            timeout_result = 0; \
-    } \
-
-
 #define DEFAULT_INTERVAL 5000
 
 static void _gil_initialize(struct _gil_runtime_state *gil)
@@ -346,12 +309,12 @@ take_gil(PyThreadState *tstate)
 
     if (tstate_must_exit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
-           thread which called Py_Finalize(), exit immediately the thread.
+           thread which called Py_Finalize(), bpo-42969: hang the thread.
 
            This code path can be reached by a daemon thread after Py_Finalize()
            completes. In this case, tstate is a dangling pointer: points to
            PyThreadState freed memory. */
-        PyThread_exit_thread();
+        _PyThread_hang_thread();
     }
 
     assert(is_tstate_valid(tstate));
@@ -384,7 +347,8 @@ take_gil(PyThreadState *tstate)
         {
             if (tstate_must_exit(tstate)) {
                 MUTEX_UNLOCK(gil->mutex);
-                PyThread_exit_thread();
+                /* bpo-42969: hang the thread */
+                _PyThread_hang_thread();
             }
             assert(is_tstate_valid(tstate));
 
@@ -414,7 +378,7 @@ _ready:
 
     if (tstate_must_exit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
-           the thread which called Py_Finalize(), exit immediately the
+           the thread which called Py_Finalize(), bpo-42969: hang the
            thread.
 
            This code path can be reached by a daemon thread which was waiting
@@ -422,7 +386,7 @@ _ready:
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
         drop_gil(ceval, ceval2, tstate);
-        PyThread_exit_thread();
+        _PyThread_hang_thread();
     }
     assert(is_tstate_valid(tstate));
 

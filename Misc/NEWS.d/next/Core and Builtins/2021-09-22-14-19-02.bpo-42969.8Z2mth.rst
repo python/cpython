@@ -1,0 +1,3 @@
+Daemon threads and other threads not created by Python are now paused rather
+than unsafely terminated if they attempt to acquire the GIL during Python
+finalization.

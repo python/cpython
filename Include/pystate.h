@@ -119,6 +119,53 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
+/* Attempts to acquire a block on interpreter finalization.
+
+   Returns 1 on success, or 0 if the interpreter is already waiting to finalize.
+
+   While the lock is held, the interpreter will not enter the finalization
+   state.
+
+   Each call that returns 1 must be paired with a subsequent call to
+   `PyThread_ReleaseFinalizeBlock`.
+
+   It is not necessary to hold the GIL.  While holding a block on interpreter
+   finalization, a non-main thread can safely acquire the GIL without risking
+   becoming permanently blocked.
+ */
+PyAPI_FUNC(int) PyThread_TryAcquireFinalizeBlock(void);
+
+/* Releases the block acquired by a successful call to
+   `PyThread_TryAcquireFinalizeBlock`. */
+PyAPI_FUNC(void) PyThread_ReleaseFinalizeBlock(void);
+
+typedef enum {
+  PyGILState_TRY_LOCK_FAILED,
+  PyGILState_TRY_LOCK_LOCKED,
+  PyGILState_TRY_LOCK_UNLOCKED
+} PyGILState_TRY_STATE;
+
+/* Attempts to acquire a finalize block, and if successful, acquires the GIL.
+
+   This is a simple convenience interface that saves having to call
+   `PyThread_TryAcquireFinalizeBlock()` and `PyGILState_Ensure()` separately.
+
+   Returns `PyGILState_TRY_LOCK_FAILED` (equal to 0) if the interpreter is
+   already waiting to finalize.  In this case, the GIL is not acquired and
+   Python C APIs that require the GIL must not be called.
+
+   Otherwise, acquires a finalize block and then acquires the GIL.
+
+   Each call that is successful (i.e. returns a non-zero `PyGILState_TRY_STATE`
+   value) must be paired with a subsequent call to
+   `PyGILState_ReleaseGILAndFinalizeBlock` with the same value returned by this
+   function.  Calling `PyGILState_ReleaseGILAndFinalizeBlock` with the error
+   value `PyGILState_TRY_LOCK_FAILED` is safe and does nothing. */
+PyAPI_FUNC(PyGILState_TRY_STATE) PyGILState_TryAcquireFinalizeBlockAndGIL(void);
+
+/* Releases any locks acquired by the corresponding call to
+   `PyGILState_TryAcquireFinalizeBlockAndGIL`. */
+PyAPI_FUNC(void) PyGILState_ReleaseGILAndFinalizeBlock(PyGILState_TRY_STATE);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "condvar.h"
 #include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
@@ -1746,6 +1747,38 @@ finalize_interp_delete(PyInterpreterState *interp)
     PyInterpreterState_Delete(interp);
 }
 
+/* Prevents new exit blocks from being acquired and waits for existing blocks to
+ * be released.
+ *
+ * This is only to be called from `Py_FinalizeEx`.
+ */
+static void wait_for_exit_blocks_to_be_released()
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    /* We release the GIL to avoid deadlock. */
+    Py_BEGIN_ALLOW_THREADS
+
+    MUTEX_LOCK(runtime->ceval.gil.mutex)
+    runtime->finalize_blocks |= 1;
+    /* Note: It is possible that there is another concurrent call to
+       `Py_FinalizeEx` in a different thread.  In that case, the LSB of
+       `runtime->finalize_blocks` may have already been set to 1.  Finalization
+       will still work correctly, though, because only one thread will
+       successfully acquire the GIL from `Py_END_ALLOW_THREADS` below.  That
+       thread will then initiate finalization, and the other thread will then
+       hang in `Py_END_ALLOW_THREADS` until the process exits.
+
+       Calling `Py_FinalizeEx` recursively, e.g. by an atexit handler, is *not*
+       allowed and will not work correctly.
+    */
+    while(runtime->finalize_blocks != 1) {
+        COND_WAIT(runtime->ceval.gil.cond, runtime->ceval.gil.mutex)
+    }
+    MUTEX_UNLOCK(runtime->ceval.gil.mutex)
+
+    Py_END_ALLOW_THREADS
+}
 
 int
 Py_FinalizeEx(void)
@@ -1777,6 +1810,8 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
+
+    wait_for_exit_blocks_to_be_released();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */

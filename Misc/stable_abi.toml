@@ -2286,3 +2286,11 @@
     added = '3.12'
 [typedef.vectorcallfunc]
     added = '3.12'
+[function.PyGILState_ReleaseGILAndFinalizeBlock]
+    added = '3.12'
+[function.PyGILState_TryAcquireFinalizeBlockAndGIL]
+    added = '3.12'
+[function.PyThread_ReleaseFinalizeBlock]
+    added = '3.12'
+[function.PyThread_TryAcquireFinalizeBlock]
+    added = '3.12'

@@ -2,6 +2,7 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "condvar.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"           // stats
 #include "pycore_frame.h"
@@ -1753,6 +1754,54 @@ PyGILState_Release(PyGILState_STATE oldstate)
         PyEval_SaveThread();
 }
 
+int
+PyThread_TryAcquireFinalizeBlock(void)
+{
+    int ret;
+    _PyRuntimeState *runtime = &_PyRuntime;
+    MUTEX_LOCK(runtime->ceval.gil.mutex)
+    if (runtime->finalize_blocks & 1) {
+        ret = 0;
+    } else {
+        ret = 1;
+        runtime->finalize_blocks += 2;
+    }
+    MUTEX_UNLOCK(runtime->ceval.gil.mutex)
+    return ret;
+}
+
+void
+PyThread_ReleaseFinalizeBlock(void)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    MUTEX_LOCK(runtime->ceval.gil.mutex)
+    assert(runtime->finalize_blocks >= 2);
+    if ((runtime->finalize_blocks -= 2) == 0) {
+        COND_BROADCAST(runtime->ceval.gil.cond)
+    }
+    MUTEX_UNLOCK(runtime->ceval.gil.mutex)
+}
+
+PyGILState_TRY_STATE
+PyGILState_TryAcquireFinalizeBlockAndGIL(void)
+{
+    if (!PyThread_TryAcquireFinalizeBlock()) {
+        return PyGILState_TRY_LOCK_FAILED;
+    }
+    return PyGILState_Ensure() == PyGILState_LOCKED
+               ? PyGILState_TRY_LOCK_LOCKED
+               : PyGILState_TRY_LOCK_UNLOCKED;
+}
+
+void
+PyGILState_ReleaseGILAndFinalizeBlock(PyGILState_TRY_STATE state) {
+    if (state == PyGILState_TRY_LOCK_FAILED) {
+        return;
+    }
+    PyGILState_Release(state == PyGILState_TRY_LOCK_LOCKED
+                           ? PyGILState_LOCKED
+                           : PyGILState_UNLOCKED);
+}
 
 /**************************/
 /* cross-interpreter data */

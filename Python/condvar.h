@@ -306,4 +306,44 @@ PyCOND_BROADCAST(PyCOND_T *cv)
 
 #endif /* _POSIX_THREADS, NT_THREADS */
 
+/* Convenience interfaces that terminate the program in case of an error. */
+#define MUTEX_INIT(mut) \
+    if (PyMUTEX_INIT(&(mut))) { \
+        Py_FatalError("PyMUTEX_INIT(" #mut ") failed"); };
+#define MUTEX_FINI(mut) \
+    if (PyMUTEX_FINI(&(mut))) { \
+        Py_FatalError("PyMUTEX_FINI(" #mut ") failed"); };
+#define MUTEX_LOCK(mut) \
+    if (PyMUTEX_LOCK(&(mut))) { \
+        Py_FatalError("PyMUTEX_LOCK(" #mut ") failed"); };
+#define MUTEX_UNLOCK(mut) \
+    if (PyMUTEX_UNLOCK(&(mut))) { \
+        Py_FatalError("PyMUTEX_UNLOCK(" #mut ") failed"); };
+
+#define COND_INIT(cond) \
+    if (PyCOND_INIT(&(cond))) { \
+        Py_FatalError("PyCOND_INIT(" #cond ") failed"); };
+#define COND_FINI(cond) \
+    if (PyCOND_FINI(&(cond))) { \
+        Py_FatalError("PyCOND_FINI(" #cond ") failed"); };
+#define COND_SIGNAL(cond) \
+    if (PyCOND_SIGNAL(&(cond))) { \
+        Py_FatalError("PyCOND_SIGNAL(" #cond ") failed"); };
+#define COND_BROADCAST(cond) \
+    if (PyCOND_BROADCAST(&(cond))) { \
+        Py_FatalError("PyCOND_BROADCAST(" #cond ") failed"); };
+#define COND_WAIT(cond, mut) \
+    if (PyCOND_WAIT(&(cond), &(mut))) { \
+        Py_FatalError("PyCOND_WAIT(" #cond ") failed"); };
+#define COND_TIMED_WAIT(cond, mut, microseconds, timeout_result) \
+    { \
+        int r = PyCOND_TIMEDWAIT(&(cond), &(mut), (microseconds)); \
+        if (r < 0) \
+            Py_FatalError("PyCOND_WAIT(" #cond ") failed"); \
+        if (r) /* 1 == timeout, 2 == impl. can't say, so assume timeout */ \
+            timeout_result = 1; \
+        else \
+            timeout_result = 0; \
+    } \
+
 #endif /* _CONDVAR_IMPL_H_ */

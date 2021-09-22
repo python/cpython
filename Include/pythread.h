@@ -17,7 +17,37 @@ typedef enum PyLockStatus {
 
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+/* Terminates the current thread.
+ *
+ * WARNING: This function is only safe to call if all functions in the full call
+ * stack are written to safely allow it.  Additionally, the behavior is
+ * platform-dependent.  This function should be avoided, and is no longer called
+ * by Python itself.  It is retained only for compatibility with existing C
+ * extension code.
+ *
+ * With pthreads, calls `pthread_exit` which attempts to unwind the stack and
+ * call C++ destructors.  If a `noexcept` function is reached, the program is
+ * terminated.
+ *
+ * On Windows, calls `_endthreadex` which kills the thread without calling C++
+ * destructors.
+ *
+ * In either case there is a risk of invalid references remaining to data on the
+ * thread stack.
+ */
+Py_DEPRECATED(3.12) PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+
+#ifndef Py_LIMITED_API
+/* Hangs the thread indefinitely without exiting it.
+ *
+ * bpo-42969: There is no safe way to exit a thread other than returning
+ * normally from its start function.  This is used during finalization in lieu
+ * of actually exiting the thread.  Since the program is expected to terminate
+ * soon anyway, it does not matter if the thread stack stays around until then.
+ */
+PyAPI_FUNC(void) _Py_NO_RETURN _PyThread_hang_thread(void);
+#endif  /* !Py_LIMITED_API */
+
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
 #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \

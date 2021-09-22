@@ -356,6 +356,16 @@ PyThread_exit_thread(void)
     pthread_exit(0);
 }
 
+void _Py_NO_RETURN
+_PyThread_hang_thread(void)
+{
+    while (1) { /* loop just in case sigsuspend returns for some reason */
+        sigset_t set; /* we don't want to receive any signal */
+        sigfillset(&set);
+        sigsuspend(&set);
+    }
+}
+
 #ifdef USE_SEMAPHORES
 
 /*

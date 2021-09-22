@@ -5458,6 +5458,48 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+// Used by `finalize_thread_hang`.
+#ifdef _POSIX_THREADS
+static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
+    // Should not reach here.
+    assert(0 && "pthread thread termination was triggered unexpectedly");
+}
+#endif
+
+// Tests that finalization does not trigger pthread cleanup.
+//
+// Must be called with a single nullary callable function that should block
+// (with GIL released) until finalization is in progress.
+static PyObject *
+finalize_thread_hang(PyObject *self, PyObject *arg)
+{
+#ifdef _POSIX_THREADS
+    pthread_cleanup_push(finalize_thread_hang_cleanup_callback, NULL);
+#endif
+    PyObject_CallNoArgs(arg);
+    // Should not reach here.
+    assert(0 && "thread unexpectedly did not hang");
+#ifdef _POSIX_THREADS
+    pthread_cleanup_pop(0);
+#endif
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
+acquire_finalize_block(PyObject *self, PyObject *Py_UNUSED(args)) {
+    PyObject *result;
+    result = PyThread_TryAcquireFinalizeBlock() ? Py_True : Py_False;
+    Py_INCREF(result);
+    return result;
+}
+
+static PyObject *
+release_finalize_block(PyObject *self, PyObject *Py_UNUSED(args)) {
+    PyThread_ReleaseFinalizeBlock();
+    Py_INCREF(Py_None);
+    return Py_None;
+}
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -5734,6 +5776,9 @@ static PyMethodDef TestMethods[] = {
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
+    {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
+    {"acquire_finalize_block", acquire_finalize_block, METH_NOARGS, NULL},
+    {"release_finalize_block", release_finalize_block, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
