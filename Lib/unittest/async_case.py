@@ -72,15 +72,15 @@ class IsolatedAsyncioTestCase(TestCase):
         self._callMaybeAsync(function, *args, **kwargs)
 
     def _callAsync(self, func, /, *args, **kwargs):
-        assert self._asyncioTestLoop is not None
+        assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
         ret = func(*args, **kwargs)
-        assert inspect.isawaitable(ret)
+        assert inspect.isawaitable(ret), f'{func!r} returned non-awaitable'
         fut = self._asyncioTestLoop.create_future()
         self._asyncioCallsQueue.put_nowait((fut, ret))
         return self._asyncioTestLoop.run_until_complete(fut)
 
     def _callMaybeAsync(self, func, /, *args, **kwargs):
-        assert self._asyncioTestLoop is not None
+        assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
         ret = func(*args, **kwargs)
         if inspect.isawaitable(ret):
             fut = self._asyncioTestLoop.create_future()
@@ -109,7 +109,7 @@ class IsolatedAsyncioTestCase(TestCase):
                     fut.set_exception(ex)
 
     def _setupAsyncioLoop(self):
-        assert self._asyncioTestLoop is None
+        assert self._asyncioTestLoop is None, 'asyncio test loop already initialized'
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.set_debug(True)
@@ -119,7 +119,7 @@ class IsolatedAsyncioTestCase(TestCase):
         loop.run_until_complete(fut)
 
     def _tearDownAsyncioLoop(self):
-        assert self._asyncioTestLoop is not None
+        assert self._asyncioTestLoop is not None, 'asyncio test loop is not initialized'
         loop = self._asyncioTestLoop
         self._asyncioTestLoop = None
         self._asyncioCallsQueue.put_nowait(None)
@@ -157,4 +157,13 @@ class IsolatedAsyncioTestCase(TestCase):
         try:
             return super().run(result)
         finally:
+            self._tearDownAsyncioLoop()
+
+    def debug(self):
+        self._setupAsyncioLoop()
+        super().debug()
+        self._tearDownAsyncioLoop()
+
+    def __del__(self):
+        if self._asyncioTestLoop is not None:
             self._tearDownAsyncioLoop()
