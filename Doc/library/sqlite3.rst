@@ -1132,7 +1132,7 @@ committed:
 .. rubric:: Footnotes
 
 .. [#f1] The sqlite3 module is not built with loadable extension support by
-   default, because some platforms (notably Mac OS X) have SQLite
+   default, because some platforms (notably macOS) have SQLite
    libraries which are compiled without this feature. To get loadable
    extension support, you must pass the
    :option:`--enable-loadable-sqlite-extensions` option to configure.

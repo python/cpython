@@ -783,7 +783,7 @@ For an example of the usage of queues for interprocess communication see
       multithreading/multiprocessing semantics, this number is not reliable.
 
       Note that this may raise :exc:`NotImplementedError` on Unix platforms like
-      Mac OS X where ``sem_getvalue()`` is not implemented.
+      macOS where ``sem_getvalue()`` is not implemented.
 
    .. method:: empty()
 
@@ -1235,7 +1235,7 @@ object -- see :ref:`multiprocessing-managers`.
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
    .. note::
-      On Mac OS X, this is indistinguishable from :class:`Semaphore` because
+      On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
 
 .. class:: Condition([lock])
@@ -1374,7 +1374,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. note::
 
-   On Mac OS X, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
+   On macOS, ``sem_timedwait`` is unsupported, so calling ``acquire()`` with
    a timeout will emulate that function's behavior using a sleeping loop.
 
 .. note::
