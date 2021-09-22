@@ -1,9 +1,9 @@
 
 .. _using-on-mac:
 
-***************************
+*********************
 Using Python on a Mac
-***************************
+*********************
 
 :Author: Bob Savage <bobsavage@mac.com>
 
@@ -17,7 +17,7 @@ the IDE and the Package Manager that are worth pointing out.
 Getting and Installing MacPython
 ================================
 
-macOS 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
+macOS since version 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
 are invited to install the most recent version of Python 3 from the Python
 website (https://www.python.org).  A current "universal binary" build of Python,
 which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
@@ -150,7 +150,7 @@ https://www.activestate.com; it can also be built from source.
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
 macOS. Packages and documentation are available from https://www.wxpython.org.
 
-*PyQt* is another popular cross-platform GUI toolkit that runs natively on Mac
+*PyQt* is another popular cross-platform GUI toolkit that runs natively on
 macOS. More information can be found at
 https://riverbankcomputing.com/software/pyqt/intro.
 

@@ -226,7 +226,7 @@ Windows Platform
 
 
 macOS Platform
----------------
+--------------
 
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
