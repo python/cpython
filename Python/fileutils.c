@@ -7,6 +7,7 @@
 #ifdef MS_WINDOWS
 #  include <malloc.h>
 #  include <windows.h>
+#  include <pathcch.h>            // PathCchCombineEx
 extern int winerror_to_errno(int);
 #endif
 
@@ -2069,6 +2070,77 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
     *abspath = 0;
     return 0;
 #endif
+}
+
+
+// The caller must ensure "buffer" is big enough.
+static int
+join_relfile(wchar_t *buffer, size_t bufsize,
+             const wchar_t *dirname, const wchar_t *relfile)
+{
+    assert(!_Py_isabs(relfile));
+#ifdef MS_WINDOWS
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 0))) {
+        return -1;
+    }
+#else
+    size_t dirlen = wcslen(dirname);
+    size_t rellen = wcslen(relfile);
+    size_t maxlen = bufsize - 1;
+    if (maxlen > MAXPATHLEN || dirlen >= maxlen || rellen >= maxlen - dirlen) {
+        return -1;
+    }
+    if (dirlen == 0) {
+        // We do not add a leading separator.
+        wcscpy(buffer, relfile);
+    }
+    else {
+        if (dirname != buffer) {
+            wcscpy(buffer, dirname);
+        }
+        size_t relstart = dirlen;
+        if (dirlen > 1 && dirname[dirlen - 1] != SEP) {
+            buffer[dirlen] = SEP;
+            relstart += 1;
+        }
+        wcscpy(&buffer[relstart], relfile);
+    }
+#endif
+    return 0;
+}
+
+/* Join the two paths together, like os.path.join().  Return NULL
+   if memory could not be allocated.  The caller is responsible
+   for calling PyMem_RawFree() on the result. */
+wchar_t *
+_Py_join_relfile(const wchar_t *dirname, const wchar_t *relfile)
+{
+    assert(dirname != NULL && relfile != NULL);
+    assert(!_Py_isabs(relfile));
+    size_t maxlen = wcslen(dirname) + 1 + wcslen(relfile);
+    size_t bufsize = maxlen + 1;
+    wchar_t *filename = PyMem_RawMalloc(bufsize * sizeof(wchar_t));
+    if (filename == NULL) {
+        return NULL;
+    }
+    assert(wcslen(dirname) < MAXPATHLEN);
+    assert(wcslen(relfile) < MAXPATHLEN - wcslen(dirname));
+    join_relfile(filename, bufsize, dirname, relfile);
+    return filename;
+}
+
+/* Join the two paths together, like os.path.join().
+     dirname: the target buffer with the dirname already in place,
+              including trailing NUL
+     relfile: this must be a relative path
+     bufsize: total allocated size of the buffer
+   Return -1 if anything is wrong with the path lengths. */
+int
+_Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
+{
+    assert(dirname != NULL && relfile != NULL);
+    assert(bufsize > 0);
+    return join_relfile(dirname, bufsize, dirname, relfile);
 }
 
 

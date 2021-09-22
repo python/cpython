@@ -253,7 +253,7 @@ ismodule(wchar_t *filename, int update_filename)
 static void
 join(wchar_t *buffer, const wchar_t *stuff)
 {
-    if (FAILED(PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
+    if (_Py_add_relfile(buffer, stuff, MAXPATHLEN+1) < 0) {
         Py_FatalError("buffer overflow in getpathp.c's join()");
     }
 }
