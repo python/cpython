@@ -169,8 +169,8 @@ The :mod:`urllib.request` module defines the following functions:
    This helper function returns a dictionary of scheme to proxy server URL
    mappings. It scans the environment for variables named ``<scheme>_proxy``,
    in a case insensitive approach, for all operating systems first, and when it
-   cannot find it, looks for proxy information from Mac OSX System
-   Configuration for Mac OS X and Windows Systems Registry for Windows.
+   cannot find it, looks for proxy information from System
+   Configuration for macOS and Windows Systems Registry for Windows.
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
@@ -303,8 +303,8 @@ The following classes are provided:
    the list of proxies from the environment variables
    ``<protocol>_proxy``.  If no proxy environment variables are set, then
    in a Windows environment proxy settings are obtained from the registry's
-   Internet Settings section, and in a Mac OS X environment proxy information
-   is retrieved from the OS X System Configuration Framework.
+   Internet Settings section, and in a macOS environment proxy information
+   is retrieved from the System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
 

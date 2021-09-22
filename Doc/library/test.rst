@@ -684,8 +684,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_mac_version(*min_version)
 
-   Decorator for the minimum version when running test on Mac OS X.  If the
-   MAC OS X version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Decorator for the minimum version when running test on macOS.  If the
+   macOS version is less than the minimum, raise :exc:`unittest.SkipTest`.
 
 
 .. decorator:: requires_IEEE_754
