@@ -587,11 +587,6 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
 /* --- PyConfig ---------------------------------------------- */
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
-
 #define MAX_HASH_SEED 4294967295UL
 
 
