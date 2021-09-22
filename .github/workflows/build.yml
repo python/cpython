@@ -11,6 +11,9 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
+    paths-ignore:
+    - 'Doc/**'
+    - 'Misc/**'
   pull_request:
     branches:
     - 'main'
@@ -18,6 +21,9 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
+    paths-ignore:
+    - 'Doc/**'
+    - 'Misc/**'
 
 jobs:
   check_source:
