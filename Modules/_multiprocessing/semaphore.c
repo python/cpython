@@ -235,11 +235,11 @@ sem_timedwait_save(sem_t *sem, struct timespec *deadline, PyThreadState *_save)
 {
     int res;
     unsigned long delay, difference;
-    struct timeval now, tvdeadline, tvdelay;
+    struct timespec tsdeadline, tsdelay;
+    struct timeval now;
 
     errno = 0;
-    tvdeadline.tv_sec = deadline->tv_sec;
-    tvdeadline.tv_usec = deadline->tv_nsec / 1000;
+    tsdeadline = *deadline;
 
     for (delay = 0 ; ; delay += 1000) {
         /* poll */
@@ -253,16 +253,16 @@ sem_timedwait_save(sem_t *sem, struct timespec *deadline, PyThreadState *_save)
             return MP_STANDARD_ERROR;
 
         /* check for timeout */
-        if (tvdeadline.tv_sec < now.tv_sec ||
-            (tvdeadline.tv_sec == now.tv_sec &&
-             tvdeadline.tv_usec <= now.tv_usec)) {
+        if (tsdeadline.tv_sec < now.tv_sec ||
+            (tsdeadline.tv_sec == now.tv_sec &&
+             tsdeadline.tv_nsec <= (now.tv_usec*1000))) {
             errno = ETIMEDOUT;
             return MP_STANDARD_ERROR;
         }
 
         /* calculate how much time is left */
-        difference = (tvdeadline.tv_sec - now.tv_sec) * 1000000 +
-            (tvdeadline.tv_usec - now.tv_usec);
+        difference = (tsdeadline.tv_sec - now.tv_sec) * 1000000 +
+            ((tsdeadline.tv_nsec/1000) - now.tv_usec);
 
         /* check delay not too long -- maximum is 20 msecs */
         if (delay > 20000)
@@ -271,9 +271,9 @@ sem_timedwait_save(sem_t *sem, struct timespec *deadline, PyThreadState *_save)
             delay = difference;
 
         /* sleep */
-        tvdelay.tv_sec = delay / 1000000;
-        tvdelay.tv_usec = delay % 1000000;
-        if (select(0, NULL, NULL, NULL, &tvdelay) < 0)
+        tsdelay.tv_sec = delay / 1000000;
+        tsdelay.tv_nsec = (delay % 1000000) * 1000;
+        if (nanosleep(&tsdelay, NULL) < 0)
             return MP_STANDARD_ERROR;
 
         /* check for signals */
