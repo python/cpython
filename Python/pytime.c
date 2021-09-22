@@ -33,6 +33,7 @@
 /* Conversion from nanoseconds */
 #define NS_TO_MS (1000 * 1000)
 #define NS_TO_US (1000)
+#define NS_TO_100NS (100)
 
 
 static void
@@ -566,6 +567,16 @@ _PyTime_AsNanoseconds(_PyTime_t t)
 {
     return pytime_as_nanoseconds(t);
 }
+
+
+#ifdef MS_WINDOWS
+_PyTime_t
+_PyTime_As100Nanoseconds(_PyTime_t t, _PyTime_round_t round)
+{
+    _PyTime_t ns = pytime_as_nanoseconds(t);
+    return pytime_divide(ns, NS_TO_100NS, round);
+}
+#endif
 
 
 _PyTime_t
