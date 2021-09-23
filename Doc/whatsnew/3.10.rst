@@ -2305,3 +2305,6 @@ Removed
   These functions were undocumented, excluded from the limited C API, and were
   only used internally by the compiler.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* The ``PyThreadState.use_tracing`` member has been removed to optimize Python.
+  (Contributed by Mark Shannon in :issue:`43760`.)
