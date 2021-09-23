@@ -2057,8 +2057,10 @@ pysleep(_PyTime_t secs)
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
     struct timespec timeout_abs;
-#else
+#elif defined(HAVE_NANOSLEEP)
     struct timespec timeout;
+#else
+    struct timeval timeout;
 #endif
     _PyTime_t deadline, monotonic;
     int err = 0;
@@ -2074,8 +2076,12 @@ pysleep(_PyTime_t secs)
 #endif
 
     do {
-#ifndef HAVE_CLOCK_NANOSLEEP
+#if defined(HAVE_NANOSLEEP) && !defined(HAVE_CLOCK_NANOSLEEP)
         if (_PyTime_AsTimespec(secs, &timeout) < 0) {
+            return -1;
+        }
+#elif !defined(HAVE_CLOCK_NANOSLEEP)
+        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0) {
             return -1;
         }
 #endif
@@ -2088,7 +2094,11 @@ pysleep(_PyTime_t secs)
         err = ret;
 #else
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_NANOSLEEP
         ret = nanosleep(&timeout, NULL);
+#else
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+#endif
         Py_END_ALLOW_THREADS
         err = errno;
 #endif
