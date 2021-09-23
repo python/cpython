@@ -5005,37 +5005,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
             res = PyDict_DelItem(dict, key);
         }
         else {
-            int was_shared = (cached == ((PyDictObject *)dict)->ma_keys);
             res = PyDict_SetItem(dict, key, value);
-            if (was_shared &&
-                    (cached = CACHED_KEYS(tp)) != NULL &&
-                    cached != ((PyDictObject *)dict)->ma_keys &&
-                    cached->dk_nentries <= SHARED_KEYS_MAX_SIZE) {
-                /* PyDict_SetItem() may call dictresize and convert split table
-                 * into combined table.  In such case, convert it to split
-                 * table again and update type's shared key only when this is
-                 * the only dict sharing key with the type.
-                 *
-                 * This is to allow using shared key in class like this:
-                 *
-                 *     class C:
-                 *         def __init__(self):
-                 *             # one dict resize happens
-                 *             self.a, self.b, self.c = 1, 2, 3
-                 *             self.d, self.e, self.f = 4, 5, 6
-                 *     a = C()
-                 */
-                if (cached->dk_refcnt == 1) {
-                    PyDictKeysObject *new_cached = make_keys_shared(dict);
-                    if (new_cached != NULL) {
-                        CACHED_KEYS(tp) = new_cached;
-                        dictkeys_decref(cached);
-                    }
-                    else if (PyErr_Occurred()) {
-                        return -1;
-                    }
-                }
-            }
         }
     } else {
         dict = *dictptr;
