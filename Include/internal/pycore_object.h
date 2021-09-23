@@ -181,6 +181,15 @@ extern int _Py_CheckSlotResult(
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
+extern int _PyObject_StoreInlineAttribute(PyObject *obj, PyDictValues *values,
+                                          PyObject *name, PyObject *value);
+PyObject * _PyObject_GetInlineAttribute(PyObject *obj, PyDictValues *values,
+                                        PyObject *name);
+PyDictValues ** _PyObject_ValuesPointer(PyObject *);
+PyObject ** _PyObject_DictPointer(PyObject *);
+int _PyObject_VisitInlineAttributes(PyObject *self, visitproc visit, void *arg);
+void _PyObject_ClearInlineAttributes(PyObject *self);
+void _PyObject_FreeInlineAttributes(PyObject *self);
 
 #ifdef __cplusplus
 }

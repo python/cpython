@@ -4,6 +4,7 @@
 #include "pycore_dict.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
+#include "pycore_object.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
@@ -383,6 +384,7 @@ _Py_Quicken(PyCodeObject *code) {
     if (code->co_quickened) {
         return 0;
     }
+    return 0;
     Py_ssize_t size = PyBytes_GET_SIZE(code->co_code);
     int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
     if (instr_count > MAX_SIZE_TO_QUICKEN) {
@@ -910,7 +912,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
-    PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
+    PyObject **owner_dictptr = _PyObject_DictPointer(owner);
     int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
     owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
     // Make sure dict doesn't get GC-ed halfway.
