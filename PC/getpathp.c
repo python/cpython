@@ -29,7 +29,7 @@
      - If we DO have a Python Home: The relevant sub-directories (Lib,
        DLLs, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
-       loaded from the registry.  This is the main PythonPath key,
+       loaded from the registry.  (This is the main PythonPath key,
        and both HKLM and HKCU are combined to form the path)
 
    * Iff - we can not locate the Python Home, have not had a PYTHONPATH
