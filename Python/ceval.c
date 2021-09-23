@@ -4646,19 +4646,7 @@ check_eval_breaker:
             if (Py_TYPE(function) == &PyFunction_Type) {
                 PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
                 STACK_SHRINK(oparg + 1);
-                if (code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-                    PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
-                    res = make_coro(
-                        tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer+1, oparg, NULL);
-                    for (int i = 0; i < oparg+1; i++) {
-                        Py_DECREF(stack_pointer[i]);
-                    }
-                    PUSH(res);
-                    if (res == NULL) {
-                        goto error;
-                    }
-                }
-                else {
+                if ((code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
                     InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer+1, oparg, function);
                     if (new_frame == NULL) {
                         // When we exit here, we own all variables in the stack (the frame creation has not stolen
@@ -4673,15 +4661,23 @@ check_eval_breaker:
                     tstate->frame = frame = new_frame;
                     goto start_frame;
                 }
+                else {
+                    /* Callable is a generator or coroutine function: create coroutine or generator. */
+                    PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
+                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer+1, oparg, NULL);
+                    for (int i = 0; i < oparg+1; i++) {
+                        Py_DECREF(stack_pointer[i]);
+                    }
+                }
             }
             else {
                 PyObject **sp = stack_pointer;
                 res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
                 stack_pointer = sp;
-                PUSH(res);
-                if (res == NULL) {
-                    goto error;
-                }
+            }
+            PUSH(res);
+            if (res == NULL) {
+                goto error;
             }
             CHECK_EVAL_BREAKER();
             DISPATCH();
