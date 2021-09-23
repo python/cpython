@@ -151,7 +151,7 @@ def _type_convert(arg, module=None):
     return arg
 
 
-def _type_check(arg, msg, is_argument=True, module=None):
+def _type_check(arg, msg, is_argument=True, is_class=False, module=None):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -164,8 +164,10 @@ def _type_check(arg, msg, is_argument=True, module=None):
     We append the repr() of the actual value (truncated to 100 chars).
     """
     invalid_generic_forms = (Generic, Protocol)
-    if is_argument:
+    if is_argument and not is_class:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
+    elif not is_argument and not is_class:  # module / local level
+        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
 
     arg = _type_convert(arg, module=module)
     if (isinstance(arg, _GenericAlias) and
@@ -662,9 +664,10 @@ class ForwardRef(_Final, _root=True):
 
     __slots__ = ('__forward_arg__', '__forward_code__',
                  '__forward_evaluated__', '__forward_value__',
-                 '__forward_is_argument__', '__forward_module__')
+                 '__forward_is_argument__', '__forward_is_class__',
+                 '__forward_module__')
 
-    def __init__(self, arg, is_argument=True, module=None):
+    def __init__(self, arg, is_argument=True, is_class=False, module=None):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
@@ -676,6 +679,7 @@ class ForwardRef(_Final, _root=True):
         self.__forward_evaluated__ = False
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
+        self.__forward_is_class__ = is_class
         self.__forward_module__ = module
 
     def _evaluate(self, globalns, localns, recursive_guard):
@@ -692,10 +696,11 @@ class ForwardRef(_Final, _root=True):
                 globalns = getattr(
                     sys.modules.get(self.__forward_module__, None), '__dict__', globalns
                 )
-            type_ =_type_check(
+            type_ = _type_check(
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
                 is_argument=self.__forward_is_argument__,
+                is_class=self.__forward_is_class__,
             )
             self.__forward_value__ = _eval_type(
                 type_, globalns, localns, recursive_guard | {self.__forward_arg__}
@@ -1799,7 +1804,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
-                    value = ForwardRef(value, is_argument=False)
+                    value = ForwardRef(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
@@ -1832,7 +1837,10 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             value = type(None)
         if isinstance(value, str):
             value = ForwardRef(
-                value, is_argument=not isinstance(obj, types.ModuleType))
+                value,
+                is_argument=not isinstance(obj, types.ModuleType),
+                is_class=False,
+            )
         value = _eval_type(value, globalns, localns)
         if name in defaults and defaults[name] is None:
             value = Optional[value]
