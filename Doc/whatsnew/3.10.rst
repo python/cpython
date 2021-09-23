@@ -2194,11 +2194,6 @@ Porting to Python 3.10
   limited API. The function is mainly useful for custom builds of Python.
   (Contributed by Petr Viktorin in :issue:`26241`)
 
-* The ``PyThreadState.use_tracing`` member has been removed to optimize Python:
-  ``tstate->use_tracing`` must be replaced with
-  ``tstate->cframe->use_tracing``.
-  (Contributed by Mark Shannon in :issue:`43760`.)
-
 Deprecated
 ----------
 
@@ -2310,3 +2305,6 @@ Removed
   These functions were undocumented, excluded from the limited C API, and were
   only used internally by the compiler.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* The ``PyThreadState.use_tracing`` member has been removed to optimize Python.
+  (Contributed by Mark Shannon in :issue:`43760`.)
