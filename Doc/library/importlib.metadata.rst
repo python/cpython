@@ -8,12 +8,10 @@
    :synopsis: The implementation of the importlib metadata.
 
 .. versionadded:: 3.8
+.. versionchanged:: 3.10
+   ``importlib.metadata`` is no longer provisional.
 
 **Source code:** :source:`Lib/importlib/metadata.py`
-
-.. note::
-   This functionality is provisional and may deviate from the usual
-   version semantics of the standard library.
 
 ``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library
@@ -169,6 +167,19 @@ the values are returned unparsed from the distribution metadata::
 
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+
+``PackageMetadata`` also presents a ``json`` attribute that returns
+all the metadata in a JSON-compatible form per :PEP:`566`::
+
+    >>> wheel_metadata.json['requires_python']
+    '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+
+.. versionchanged:: 3.10
+   The ``Description`` is now included in the metadata when presented
+   through the payload. Line continuation characters have been removed.
+
+.. versionadded:: 3.10
+   The ``json`` attribute was added.
 
 
 .. _version:

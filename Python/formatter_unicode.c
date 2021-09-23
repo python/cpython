@@ -773,8 +773,14 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* sign is not allowed on strings */
     if (format->sign != '\0') {
-        PyErr_SetString(PyExc_ValueError,
-                        "Sign not allowed in string format specifier");
+        if (format->sign == ' ') {
+            PyErr_SetString(PyExc_ValueError,
+                "Space not allowed in string format specifier");
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError,
+                "Sign not allowed in string format specifier");
+        }
         goto done;
     }
 

@@ -775,16 +775,34 @@ _counter = _count(1).__next__
 def _newname(name_template):
     return name_template % _counter()
 
-# Active thread administration
-_active_limbo_lock = _allocate_lock()
+# Active thread administration.
+#
+# bpo-44422: Use a reentrant lock to allow reentrant calls to functions like
+# threading.enumerate().
+_active_limbo_lock = RLock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
 _dangling = WeakSet()
+
 # Set of Thread._tstate_lock locks of non-daemon threads used by _shutdown()
 # to wait until all Python thread states get deleted:
 # see Thread._set_tstate_lock().
 _shutdown_locks_lock = _allocate_lock()
 _shutdown_locks = set()
+
+def _maintain_shutdown_locks():
+    """
+    Drop any shutdown locks that don't correspond to running threads anymore.
+
+    Calling this from time to time avoids an ever-growing _shutdown_locks
+    set when Thread objects are not joined explicitly. See bpo-37788.
+
+    This must be called with _shutdown_locks_lock acquired.
+    """
+    # If a lock was released, the corresponding thread has exited
+    to_remove = [lock for lock in _shutdown_locks if not lock.locked()]
+    _shutdown_locks.difference_update(to_remove)
+
 
 # Main class for threads
 
@@ -968,6 +986,7 @@ class Thread:
 
         if not self.daemon:
             with _shutdown_locks_lock:
+                _maintain_shutdown_locks()
                 _shutdown_locks.add(self._tstate_lock)
 
     def _bootstrap_inner(self):
@@ -991,13 +1010,7 @@ class Thread:
             except:
                 self._invoke_excepthook(self)
         finally:
-            with _active_limbo_lock:
-                try:
-                    # We don't call self._delete() because it also
-                    # grabs _active_limbo_lock.
-                    del _active[get_ident()]
-                except:
-                    pass
+            self._delete()
 
     def _stop(self):
         # After calling ._stop(), .is_alive() returns False and .join() returns
@@ -1023,7 +1036,8 @@ class Thread:
         self._tstate_lock = None
         if not self.daemon:
             with _shutdown_locks_lock:
-                _shutdown_locks.discard(lock)
+                # Remove our lock and other released locks from _shutdown_locks
+                _maintain_shutdown_locks()
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -1130,8 +1144,8 @@ class Thread:
         """Return whether the thread is alive.
 
         This method returns True just before the run() method starts until just
-        after the run() method terminates. The module function enumerate()
-        returns a list of all alive threads.
+        after the run() method terminates. See also the module function
+        enumerate().
 
         """
         assert self._initialized, "Thread.__init__() not called"
@@ -1547,7 +1561,7 @@ def _after_fork():
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
     global _active_limbo_lock, _main_thread
     global _shutdown_locks_lock, _shutdown_locks
-    _active_limbo_lock = _allocate_lock()
+    _active_limbo_lock = RLock()
 
     # fork() only copied the current thread; clear references to others.
     new_active = {}

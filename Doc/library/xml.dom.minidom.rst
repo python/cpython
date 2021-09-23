@@ -145,7 +145,7 @@ module documentation.  This section lists the differences between the API and
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
-   Silimarly, explicitly stating the *standalone* argument causes the
+   Similarly, explicitly stating the *standalone* argument causes the
    standalone document declarations to be added to the prologue of the XML
    document.
    If the value is set to `True`, `standalone="yes"` is added,

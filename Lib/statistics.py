@@ -94,7 +94,7 @@ for two inputs:
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
 >>> linear_regression(x, y)  #doctest:
-LinearRegression(intercept=1.5, slope=0.1)
+LinearRegression(slope=0.1, intercept=1.5)
 
 
 Exceptions
@@ -107,9 +107,12 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [
     'NormalDist',
     'StatisticsError',
+    'correlation',
+    'covariance',
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'linear_regression',
     'mean',
     'median',
     'median_grouped',
@@ -122,9 +125,6 @@ __all__ = [
     'quantiles',
     'stdev',
     'variance',
-    'correlation',
-    'covariance',
-    'linear_regression',
 ]
 
 import math
@@ -136,7 +136,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter
+from operator import itemgetter, mul
 from collections import Counter, namedtuple
 
 # === Exceptions ===
@@ -147,21 +147,17 @@ class StatisticsError(ValueError):
 
 # === Private utilities ===
 
-def _sum(data, start=0):
-    """_sum(data [, start]) -> (type, sum, count)
+def _sum(data):
+    """_sum(data) -> (type, sum, count)
 
     Return a high-precision sum of the given numeric data as a fraction,
     together with the type to be converted to and the count of items.
 
-    If optional argument ``start`` is given, it is added to the total.
-    If ``data`` is empty, ``start`` (defaulting to 0) is returned.
-
-
     Examples
     --------
 
-    >>> _sum([3, 2.25, 4.5, -0.5, 1.0], 0.75)
-    (<class 'float'>, Fraction(11, 1), 5)
+    >>> _sum([3, 2.25, 4.5, -0.5, 0.25])
+    (<class 'float'>, Fraction(19, 2), 5)
 
     Some sources of round-off error will be avoided:
 
@@ -184,10 +180,9 @@ def _sum(data, start=0):
     allowed.
     """
     count = 0
-    n, d = _exact_ratio(start)
-    partials = {d: n}
+    partials = {}
     partials_get = partials.get
-    T = _coerce(int, type(start))
+    T = int
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
         for n, d in map(_exact_ratio, values):
@@ -200,8 +195,7 @@ def _sum(data, start=0):
         assert not _isfinite(total)
     else:
         # Sum all the partial sums using builtin sum.
-        # FIXME is this faster if we sum them in order of the denominator?
-        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total, count)
 
 
@@ -252,27 +246,19 @@ def _exact_ratio(x):
     x is expected to be an int, Fraction, Decimal or float.
     """
     try:
-        # Optimise the common case of floats. We expect that the most often
-        # used numeric type will be builtin floats, so try to make this as
-        # fast as possible.
-        if type(x) is float or type(x) is Decimal:
-            return x.as_integer_ratio()
-        try:
-            # x may be an int, Fraction, or Integral ABC.
-            return (x.numerator, x.denominator)
-        except AttributeError:
-            try:
-                # x may be a float or Decimal subclass.
-                return x.as_integer_ratio()
-            except AttributeError:
-                # Just give up?
-                pass
+        return x.as_integer_ratio()
+    except AttributeError:
+        pass
     except (OverflowError, ValueError):
         # float NAN or INF.
         assert not _isfinite(x)
         return (x, None)
-    msg = "can't convert type '{}' to numerator/denominator"
-    raise TypeError(msg.format(type(x).__name__))
+    try:
+        # x may be an Integral ABC.
+        return (x.numerator, x.denominator)
+    except AttributeError:
+        msg = f"can't convert type '{type(x).__name__}' to numerator/denominator"
+        raise TypeError(msg)
 
 
 def _convert(value, T):
@@ -345,7 +331,7 @@ def mean(data):
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -363,13 +349,24 @@ def fmean(data):
             nonlocal n
             for n, x in enumerate(iterable, start=1):
                 yield x
-        total = fsum(count(data))
-    else:
+        data = count(data)
+    if weights is None:
         total = fsum(data)
-    try:
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
         return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+    try:
+        num_weights = len(weights)
+    except TypeError:
+        weights = list(weights)
+        num_weights = len(weights)
+    num = fsum(map(mul, data, weights))
+    if n != num_weights:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
+    return num / den
 
 
 def geometric_mean(data):
@@ -717,16 +714,22 @@ def _ss(data, c=None):
     lead to garbage results.
     """
     if c is not None:
-        T, total, count = _sum((x-c)**2 for x in data)
+        T, total, count = _sum((d := x - c) * d for x in data)
         return (T, total)
-    c = mean(data)
-    T, total, count = _sum((x-c)**2 for x in data)
-    # The following sum should mathematically equal zero, but due to rounding
-    # error may not.
-    U, total2, count2 = _sum((x - c) for x in data)
-    assert T == U and count == count2
-    total -= total2 ** 2 / len(data)
-    assert not total < 0, 'negative sum of square deviations: %f' % total
+    T, total, count = _sum(data)
+    mean_n, mean_d = (total / count).as_integer_ratio()
+    partials = Counter()
+    for n, d in map(_exact_ratio, data):
+        diff_n = n * mean_d - d * mean_n
+        diff_d = d * mean_d
+        partials[diff_d * diff_d] += diff_n * diff_n
+    if None in partials:
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = partials[None]
+        assert not _isfinite(total)
+    else:
+        total = sum(Fraction(n, d) for d, n in partials.items())
     return (T, total)
 
 
@@ -830,6 +833,9 @@ def stdev(data, xbar=None):
     1.0810874155219827
 
     """
+    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
+    # remain because there are two rounding steps.  The first occurs in
+    # the _convert() step for variance(), the second occurs in math.sqrt().
     var = variance(data, xbar)
     try:
         return var.sqrt()
@@ -846,6 +852,9 @@ def pstdev(data, mu=None):
     0.986893273527251
 
     """
+    # Fixme: Despite the exact sum of squared deviations, some inaccuracy
+    # remain because there are two rounding steps.  The first occurs in
+    # the _convert() step for pvariance(), the second occurs in math.sqrt().
     var = pvariance(data, mu)
     try:
         return var.sqrt()
@@ -882,10 +891,10 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
-    xbar = mean(x)
-    ybar = mean(y)
-    total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    return total / (n - 1)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return sxy / (n - 1)
 
 
 def correlation(x, y, /):
@@ -910,54 +919,60 @@ def correlation(x, y, /):
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    cov = covariance(x, y)
-    stdx = stdev(x)
-    stdy = stdev(y)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxx = fsum((d := xi - xbar) * d for xi in x)
+    syy = fsum((d := yi - ybar) * d for yi in y)
     try:
-        return cov / (stdx * stdy)
+        return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
 
-LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
-def linear_regression(regressor, dependent_variable, /):
-    """Intercept and slope for simple linear regression
+def linear_regression(x, y, /):
+    """Slope and intercept for simple linear regression.
 
-    Return the intercept and slope of simple linear regression
+    Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between *regressor* and
-    *dependent variable* in terms of linear function::
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of linear function:
 
-        dependent_variable = intercept + slope * regressor + noise
+        y = slope * x + intercept + noise
 
-    where ``intercept`` and ``slope`` are the regression parameters that are
-    estimated, and noise term is an unobserved random variable, for the
-    variability of the data that was not explained by the linear regression
-    (it is equal to the difference between prediction and the actual values
-    of dependent variable).
+    where *slope* and *intercept* are the regression parameters that are
+    estimated, and noise represents the variability of the data that was
+    not explained by the linear regression (it is equal to the
+    difference between predicted and actual values of the dependent
+    variable).
 
     The parameters are returned as a named tuple.
 
-    >>> regressor = [1, 2, 3, 4, 5]
+    >>> x = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
-    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
-    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
     """
-    n = len(regressor)
-    if len(dependent_variable) != n:
+    n = len(x)
+    if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxx = fsum((d := xi - xbar) * d for xi in x)
     try:
-        slope = covariance(regressor, dependent_variable) / variance(regressor)
+        slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
-        raise StatisticsError('regressor is constant')
-    intercept = mean(dependent_variable) - slope * mean(regressor)
-    return LinearRegression(intercept=intercept, slope=slope)
+        raise StatisticsError('x is constant')
+    intercept = ybar - slope * xbar
+    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################
@@ -1077,10 +1092,11 @@ class NormalDist:
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
-        variance = self._sigma ** 2.0
+        variance = self._sigma * self._sigma
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
-        return exp((x - self._mu)**2.0 / (-2.0*variance)) / sqrt(tau*variance)
+        diff = x - self._mu
+        return exp(diff * diff / (-2.0 * variance)) / sqrt(tau * variance)
 
     def cdf(self, x):
         "Cumulative distribution function.  P(X <= x)"
@@ -1144,7 +1160,7 @@ class NormalDist:
         if not dv:
             return 1.0 - erf(dm / (2.0 * X._sigma * sqrt(2.0)))
         a = X._mu * Y_var - Y._mu * X_var
-        b = X._sigma * Y._sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+        b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
@@ -1187,7 +1203,7 @@ class NormalDist:
     @property
     def variance(self):
         "Square of the standard deviation."
-        return self._sigma ** 2.0
+        return self._sigma * self._sigma
 
     def __add__(x1, x2):
         """Add a constant or another NormalDist instance.

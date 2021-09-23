@@ -1,4 +1,0 @@
-The :mod:`ssl` module now uses ``SSL_read_ex`` and ``SSL_write_ex``
-internally. The functions support reading and writing of data larger
-than 2 GB. Writing zero-length data no longer fails with a protocol
-violation error.

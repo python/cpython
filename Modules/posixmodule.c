@@ -23,6 +23,10 @@
 #  include <pathcch.h>
 #endif
 
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#define EX_OK EXIT_SUCCESS
+#endif
+
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
@@ -10062,9 +10066,11 @@ os_isatty_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=6a48c8b4e644ca00 input=08ce94aa1eaf7b5e]*/
 {
     int return_value;
+    Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     return_value = isatty(fd);
     _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
     return return_value;
 }
 
@@ -13415,14 +13421,6 @@ typedef struct {
 #endif
 } DirEntry;
 
-static PyObject *
-_disabled_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 DirEntry_dealloc(DirEntry *entry)
 {
@@ -13493,8 +13491,10 @@ _Py_COMP_DIAG_POP
     if (self->dir_fd != DEFAULT_DIR_FD) {
 #ifdef HAVE_FSTATAT
       if (HAVE_FSTATAT_RUNTIME) {
+        Py_BEGIN_ALLOW_THREADS
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+        Py_END_ALLOW_THREADS
       } else
 
 #endif /* HAVE_FSTATAT */
@@ -13507,10 +13507,14 @@ _Py_COMP_DIAG_POP
     else
 #endif
     {
-        if (follow_symlinks)
+        Py_BEGIN_ALLOW_THREADS
+        if (follow_symlinks) {
             result = STAT(path, &st);
-        else
+        }
+        else {
             result = LSTAT(path, &st);
+        }
+        Py_END_ALLOW_THREADS
     }
 #if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(path);
@@ -13775,13 +13779,12 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
-    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",       Py_GenericAlias,
     METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
     {NULL}
 };
 
 static PyType_Slot DirEntryType_slots[] = {
-    {Py_tp_new, _disabled_new},
     {Py_tp_dealloc, DirEntry_dealloc},
     {Py_tp_repr, DirEntry_repr},
     {Py_tp_methods, DirEntry_methods},
@@ -13793,7 +13796,7 @@ static PyType_Spec DirEntryType_spec = {
     MODNAME ".DirEntry",
     sizeof(DirEntry),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     DirEntryType_slots
 };
 
@@ -14213,7 +14216,6 @@ static PyMethodDef ScandirIterator_methods[] = {
 };
 
 static PyType_Slot ScandirIteratorType_slots[] = {
-    {Py_tp_new, _disabled_new},
     {Py_tp_dealloc, ScandirIterator_dealloc},
     {Py_tp_finalize, ScandirIterator_finalize},
     {Py_tp_iter, PyObject_SelfIter},
@@ -14228,7 +14230,8 @@ static PyType_Spec ScandirIteratorType_spec = {
     0,
     // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
     // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
+    (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     ScandirIteratorType_slots
 };
 

@@ -1,2 +1,0 @@
-Fix :exc:`KeyError` raised in :func:`typing.get_type_hints` due to
-synthetic modules that don't appear in ``sys.modules``.

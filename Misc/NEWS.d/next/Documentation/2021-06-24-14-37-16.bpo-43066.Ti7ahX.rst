@@ -1,0 +1,2 @@
+Added a warning to :mod:`zipfile` docs: filename arg with a leading slash may cause archive to
+be un-openable on Windows systems.

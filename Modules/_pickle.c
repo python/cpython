@@ -2570,7 +2570,7 @@ save_picklebuffer(PicklerObject *self, PyObject *obj)
     return 0;
 }
 
-/* A copy of PyUnicode_EncodeRawUnicodeEscape() that also translates
+/* A copy of PyUnicode_AsRawUnicodeEscapeString() that also translates
    backslash and newline characters to \uXXXX escapes. */
 static PyObject *
 raw_unicode_escape(PyObject *obj)

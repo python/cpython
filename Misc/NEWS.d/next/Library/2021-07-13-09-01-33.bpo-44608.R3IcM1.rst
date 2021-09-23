@@ -1,0 +1,2 @@
+Fix memory leak in :func:`_tkinter._flatten` if it is called with a sequence
+or set, but not list or tuple.

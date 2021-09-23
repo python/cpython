@@ -552,6 +552,18 @@ PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
     *allocator = _PyObject_Arena;
 }
 
+void *
+_PyObject_VirtualAlloc(size_t size)
+{
+    return _PyObject_Arena.alloc(_PyObject_Arena.ctx, size);
+}
+
+void
+_PyObject_VirtualFree(void *obj, size_t size)
+{
+    _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
+}
+
 void
 PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 {
@@ -3035,7 +3047,7 @@ _PyObject_DebugMallocStats(FILE *out)
 
     fputc('\n', out);
 
-    /* Account for what all of those arena bytes are being used for. */ 
+    /* Account for what all of those arena bytes are being used for. */
     total = printone(out, "# bytes in allocated blocks", allocated_bytes);
     total += printone(out, "# bytes in available blocks", available_bytes);
 

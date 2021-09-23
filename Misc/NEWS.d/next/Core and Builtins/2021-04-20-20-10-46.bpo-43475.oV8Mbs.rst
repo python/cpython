@@ -1,3 +1,0 @@
-Hashes of NaN values now depend on object identity.  Formerly, they always
-hashed to 0 even though NaN values are not equal to one another.  Having the
-same hash for unequal values caused pile-ups in hash tables.

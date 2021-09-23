@@ -125,7 +125,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
         with metadata.open('w', encoding='utf-8') as fp:
-            fp.write('Description: pôrˈtend\n')
+            fp.write('Description: pôrˈtend')
         return 'portend'
 
     @staticmethod
@@ -145,7 +145,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
 
                 pôrˈtend
                 """
-                ).lstrip()
+                ).strip()
             )
         return 'portend'
 
@@ -157,7 +157,7 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     def test_metadata_loads_egg_info(self):
         pkg_name = self.pkg_with_non_ascii_description_egg_info(self.site_dir)
         meta = metadata(pkg_name)
-        assert meta.get_payload() == 'pôrˈtend\n'
+        assert meta['Description'] == 'pôrˈtend'
 
 
 class DiscoveryTests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):

@@ -1,2 +1,0 @@
-Fixed decoding of host names in :func:`socket.gethostbyaddr` and
-:func:`socket.gethostbyname_ex`.

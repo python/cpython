@@ -1,6 +1,7 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
+#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 #include "longintrepr.h"
 
 /* We define bool_repr to return "False" or "True" */
@@ -153,6 +154,12 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
+static void _Py_NO_RETURN
+bool_dealloc(PyObject* Py_UNUSED(ignore))
+{
+    _Py_FatalRefcountError("deallocating True or False");
+}
+
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
@@ -160,7 +167,7 @@ PyTypeObject PyBool_Type = {
     "bool",
     sizeof(struct _longobject),
     0,
-    0,                                          /* tp_dealloc */
+    bool_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

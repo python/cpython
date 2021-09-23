@@ -1,0 +1,3 @@
+:func:`email.utils.getaddresses` now accepts
+:class:`email.header.Header` objects along with string values.
+Patch by Zackery Spytz.

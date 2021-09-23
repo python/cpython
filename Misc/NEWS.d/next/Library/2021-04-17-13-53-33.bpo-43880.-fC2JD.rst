@@ -1,3 +1,0 @@
-:mod:`ssl` now raises DeprecationWarning for OP_NO_SSL/TLS* options, old TLS
-versions, old protocols, and other features that have been deprecated since
-Python 3.6, 3.7, or OpenSSL 1.1.0.

@@ -1,2 +1,0 @@
-:mod:`urllib` can now convert Windows paths with ``\\?\`` prefixes into URL
-paths.

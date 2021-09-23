@@ -221,6 +221,12 @@ or request "multi-phase initialization" by returning the definition struct itsel
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
+      Like :c:member:`PyTypeObject.tp_clear`, this function is not *always*
+      called before a module is deallocated. For example, when reference
+      counting is enough to determine that an object is no longer used,
+      the cyclic garbage collector is not involved and
+      :c:member:`~PyModuleDef.m_free` is called directly.
+
       .. versionchanged:: 3.9
          No longer called before the module state is allocated.
 

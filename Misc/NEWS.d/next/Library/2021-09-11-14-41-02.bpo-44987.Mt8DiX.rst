@@ -1,0 +1,2 @@
+Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
+Patch by Dong-hee Na.

@@ -1,0 +1,3 @@
+argparse actions store_const and append_const each receive a default value
+of None when the ``const`` kwarg is not provided. Previously, this raised a
+:exc:`TypeError`.

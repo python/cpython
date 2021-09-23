@@ -1468,11 +1468,11 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     long std_offset = 1 << 20;
     long dst_offset = 1 << 20;
 
-    char *tz_str = PyBytes_AsString(tz_str_obj);
+    const char *tz_str = PyBytes_AsString(tz_str_obj);
     if (tz_str == NULL) {
         return -1;
     }
-    char *p = tz_str;
+    const char *p = tz_str;
 
     // Read the `std` abbreviation, which must be at least 3 characters long.
     Py_ssize_t num_chars = parse_abbr(p, &std_abbr);

@@ -1,0 +1,4 @@
+Emit a deprecation warning if the numeric literal is immediately followed by
+one of keywords: and, else, for, if, in, is, or. Raise a syntax error with
+more informative message if it is immediately followed by other keyword or
+identifier.

@@ -874,6 +874,13 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
 
+    def test_s_hash_int(self):
+        # "s#" without PY_SSIZE_T_CLEAN defined.
+        from _testcapi import getargs_s_hash_int
+        self.assertRaises(SystemError, getargs_s_hash_int, "abc")
+        self.assertRaises(SystemError, getargs_s_hash_int, x=42)
+        # getargs_s_hash_int() don't raise SystemError because skipitem() is not called.
+
     def test_z(self):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')

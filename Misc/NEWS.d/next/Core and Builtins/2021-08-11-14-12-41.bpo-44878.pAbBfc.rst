@@ -1,0 +1,2 @@
+Remove the loop from the bytecode interpreter. All instructions end with a
+DISPATCH macro, so the loop is now redundant.

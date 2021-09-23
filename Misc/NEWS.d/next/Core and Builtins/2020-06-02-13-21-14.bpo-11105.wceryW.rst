@@ -1,0 +1,3 @@
+When compiling :class:`ast.AST` objects with recursive references
+through :func:`compile`, the interpreter doesn't crash anymore instead
+it raises a :exc:`RecursionError`.

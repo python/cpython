@@ -1,0 +1,2 @@
+Include interpreter's typo fix suggestions in message line for
+NameErrors and AttributeErrors.  Patch by E. Paine.

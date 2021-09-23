@@ -1,3 +1,0 @@
-:func:`os.path.realpath` now accepts a *strict* keyword-only argument.
-When set to ``True``, :exc:`OSError` is raised if a path doesn't exist
-or a symlink loop is encountered.

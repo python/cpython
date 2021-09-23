@@ -1,0 +1,2 @@
+Fix ``UserWarning: resource_tracker`` warning in
+``_test_multiprocessing._TestSharedMemory.test_shared_memory_cleaned_after_process_termination``

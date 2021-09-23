@@ -164,7 +164,7 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
     if (descr_check((PyDescrObject *)descr, obj, &res))
         return res;
 
-    if (descr->d_member->flags & READ_RESTRICTED) {
+    if (descr->d_member->flags & PY_AUDIT_READ) {
         if (PySys_Audit("object.__getattr__", "Os",
             obj ? obj : Py_None, descr->d_member->name) < 0) {
             return NULL;
@@ -1144,7 +1144,7 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.items() -> list of D's (key, value) pairs, as 2-tuples")},
     {"copy",      (PyCFunction)mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
     {"__reversed__", (PyCFunction)mappingproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator")},
@@ -1614,10 +1614,13 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     propertyobject *gs = (propertyobject *)self;
     PyObject *func, *res;
 
-    if (value == NULL)
+    if (value == NULL) {
         func = gs->prop_del;
-    else
+    }
+    else {
         func = gs->prop_set;
+    }
+
     if (func == NULL) {
         if (gs->prop_name != NULL) {
             PyErr_Format(PyExc_AttributeError,
@@ -1625,7 +1628,8 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
                         "can't delete attribute %R" :
                         "can't set attribute %R",
                         gs->prop_name);
-        } else {
+        }
+        else {
             PyErr_SetString(PyExc_AttributeError,
                             value == NULL ?
                             "can't delete attribute" :
@@ -1633,12 +1637,19 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         }
         return -1;
     }
-    if (value == NULL)
+
+    if (value == NULL) {
         res = PyObject_CallOneArg(func, obj);
-    else
-        res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
-    if (res == NULL)
+    }
+    else {
+        PyObject *args[] = { obj, value };
+        res = PyObject_Vectorcall(func, args, 2, NULL);
+    }
+
+    if (res == NULL) {
         return -1;
+    }
+
     Py_DECREF(res);
     return 0;
 }
@@ -1852,7 +1863,8 @@ PyTypeObject PyDictProxy_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_MAPPING,                     /* tp_flags */
     0,                                          /* tp_doc */
     mappingproxy_traverse,                      /* tp_traverse */
     0,                                          /* tp_clear */

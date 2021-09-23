@@ -140,8 +140,10 @@ typedef struct PyConfig {
     int faulthandler;
     int tracemalloc;
     int import_time;
+    int no_debug_ranges;
     int show_ref_count;
     int dump_refs;
+    wchar_t *dump_refs_file;
     int malloc_stats;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
@@ -170,6 +172,7 @@ typedef struct PyConfig {
     int legacy_windows_stdio;
 #endif
     wchar_t *check_hash_pycs_mode;
+    int use_frozen_modules;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;

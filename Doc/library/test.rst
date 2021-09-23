@@ -267,10 +267,10 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: INTERNET_TIMEOUT
 
-   Timeout in seconds for network requests going to the Internet.
+   Timeout in seconds for network requests going to the internet.
 
    The timeout is short enough to prevent a test to wait for too long if the
-   Internet request is blocked for whatever reason.
+   internet request is blocked for whatever reason.
 
    Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
    failed, but skip the test instead: see
@@ -684,8 +684,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_mac_version(*min_version)
 
-   Decorator for the minimum version when running test on Mac OS X.  If the
-   MAC OS X version is less than the minimum, raise :exc:`unittest.SkipTest`.
+   Decorator for the minimum version when running test on macOS.  If the
+   macOS version is less than the minimum, raise :exc:`unittest.SkipTest`.
 
 
 .. decorator:: requires_IEEE_754
@@ -928,7 +928,15 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
+.. function:: check_disallow_instantiation(test_case, tp, *args, **kwds)
+
+   Assert that type *tp* cannot be instantiated using *args* and *kwds*.
+
+   .. versionadded:: 3.10
+
+
 The :mod:`test.support` module defines the following classes:
+
 
 .. class:: SuppressCrashReport()
 

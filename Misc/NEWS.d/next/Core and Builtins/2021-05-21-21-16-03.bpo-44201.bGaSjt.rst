@@ -1,0 +1,3 @@
+Avoid side effects of checking for specialized syntax errors in the REPL
+that was causing it to ask for extra tokens after a syntax error had been
+detected. Patch by Pablo Galindo

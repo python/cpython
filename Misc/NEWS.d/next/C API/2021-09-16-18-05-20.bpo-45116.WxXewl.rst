@@ -1,0 +1,3 @@
+Add the :c:macro:`Py_ALWAYS_INLINE` macro to ask the compiler to always
+inline a static inline function. The compiler can ignore it and decides to
+not inline the function. Patch by Victor Stinner.

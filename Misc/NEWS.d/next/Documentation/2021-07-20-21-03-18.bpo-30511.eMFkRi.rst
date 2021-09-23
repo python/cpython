@@ -1,0 +1,2 @@
+Clarify that :func:`shutil.make_archive` is not thread-safe due to
+reliance on changing the current working directory.

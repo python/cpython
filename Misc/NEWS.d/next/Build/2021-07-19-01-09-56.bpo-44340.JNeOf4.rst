@@ -1,0 +1,2 @@
+Add support for building with clang thin lto via --with-lto=thin/full. Patch
+by Dong-hee Na and Brett Holman.

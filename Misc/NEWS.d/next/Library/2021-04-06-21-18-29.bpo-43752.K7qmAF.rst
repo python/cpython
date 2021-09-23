@@ -1,3 +1,0 @@
-Fix :mod:`sqlite3` regression for zero-sized blobs with converters, where
-``b""`` was returned instead of ``None``. The regression was introduced by
-GH-24723. Patch by Erlend E. Aasland.

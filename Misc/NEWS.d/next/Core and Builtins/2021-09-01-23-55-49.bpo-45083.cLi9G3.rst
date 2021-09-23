@@ -1,0 +1,3 @@
+When the interpreter renders an exception, its name now has a complete qualname. Previously only the class name was concatenated to the module name, which sometimes resulted in an incorrect full name being displayed.
+
+(This issue impacted only the C code exception rendering, the :mod:`traceback` module was using qualname already).

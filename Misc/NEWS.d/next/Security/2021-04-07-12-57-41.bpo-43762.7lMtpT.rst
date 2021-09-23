@@ -1,3 +1,0 @@
-Add audit events for :func:`sqlite3.connect/handle`,
-:meth:`sqlite3.Connection.enable_load_extension`, and
-:meth:`sqlite3.Connection.load_extension`. Patch by Erlend E. Aasland.

@@ -734,7 +734,7 @@ The :keyword:`!import` statement
               : ("," `identifier` ["as" `identifier`])*
               : | "from" `relative_module` "import" "(" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])* [","] ")"
-              : | "from" `module` "import" "*"
+              : | "from" `relative_module` "import" "*"
    module: (`identifier` ".")* `identifier`
    relative_module: "."* `module` | "."+
 

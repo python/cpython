@@ -1,0 +1,2 @@
+Parameter substitution of the union type with wrong types now raises
+``TypeError`` instead of returning ``NotImplemented``.

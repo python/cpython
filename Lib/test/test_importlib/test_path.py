@@ -3,10 +3,10 @@ import unittest
 
 from importlib import resources
 from . import data01
-from . import util
+from .resources import util
 
 
-class CommonTests(util.CommonResourceTests, unittest.TestCase):
+class CommonTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
         with resources.path(package, path):
             pass

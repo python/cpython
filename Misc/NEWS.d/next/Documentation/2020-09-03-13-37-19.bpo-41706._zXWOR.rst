@@ -1,0 +1,2 @@
+Fix docs about how methods like ``__add__`` are invoked when evaluating
+operator expressions.

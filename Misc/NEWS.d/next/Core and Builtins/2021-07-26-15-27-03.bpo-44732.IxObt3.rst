@@ -1,0 +1,1 @@
+Rename ``types.Union`` to ``types.UnionType``.

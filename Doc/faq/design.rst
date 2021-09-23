@@ -708,6 +708,15 @@ bindings are resolved at run-time in Python, and the second version only needs
 to perform the resolution once.
 
 
+Why don't generators support the with statement?
+------------------------------------------------
+
+For technical reasons, a generator used directly as a context manager
+would not work correctly.  When, as is most common, a generator is used as
+an iterator run to completion, no closing is needed.  When it is, wrap
+it as "contextlib.closing(generator)" in the 'with' statment.
+
+
 Why are colons required for the if/while/def/class statements?
 --------------------------------------------------------------
 

@@ -1,0 +1,1 @@
+Declare readers.MultiplexedPath.name as a property per the spec.

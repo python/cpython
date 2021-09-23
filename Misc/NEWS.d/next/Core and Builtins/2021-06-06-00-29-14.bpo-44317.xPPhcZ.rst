@@ -1,0 +1,1 @@
+Improve tokenizer error with improved locations. Patch by Pablo Galindo.

@@ -1,0 +1,5 @@
+Add auditing events to the :mod:`marshal` module, and stop raising
+``code.__init__`` events for every unmarshalled code object. Directly
+instantiated code objects will continue to raise an event, and audit event
+handlers should inspect or collect the raw marshal data. This reduces a
+significant performance overhead when loading from ``.pyc`` files.

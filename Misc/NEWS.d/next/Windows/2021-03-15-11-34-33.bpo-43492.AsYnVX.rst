@@ -1,1 +1,0 @@
-Upgrade Windows installer to use SQLite 3.35.5.
