@@ -1,0 +1,3 @@
+Add ``CALL_METHOD_KW`` opcode to speed up method calls with keyword
+arguments.  Idea originated from PyPy.  A side effect is executing
+``CALL_METHOD`` is now branchless in the evaluation loop.

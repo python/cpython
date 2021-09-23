@@ -37,7 +37,7 @@ Large File Support
 
 .. sectionauthor:: Steve Clift <clift@mail.anacapa.net>
 
-Several operating systems (including AIX, HP-UX, Irix and Solaris) provide
+Several operating systems (including AIX, HP-UX and Solaris) provide
 support for files that are larger than 2 GiB from a C programming model where
 :c:type:`int` and :c:type:`long` are 32-bit values. This is typically accomplished
 by defining the relevant size and offset types as 64-bit values. Such files are
@@ -47,8 +47,8 @@ Large file support is enabled in Python when the size of an :c:type:`off_t` is
 larger than a :c:type:`long` and the :c:type:`long long` is at least as large
 as an :c:type:`off_t`.
 It may be necessary to configure and compile Python with certain compiler flags
-to enable this mode. For example, it is enabled by default with recent versions
-of Irix, but with Solaris 2.6 and 2.7 you need to do something like::
+to enable this mode. For example, with Solaris 2.6 and 2.7 you need to do
+something like::
 
    CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
            ./configure

@@ -1,0 +1,3 @@
+Remove the pass-through for :func:`hash` of :class:`weakref.proxy` objects
+to prevent unintended consequences when the original referred object
+dies while the proxy is part of a hashable object. Patch by Pablo Galindo.

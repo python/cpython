@@ -530,6 +530,53 @@ PyDoc_STRVAR(builtin_hex__doc__,
 #define BUILTIN_HEX_METHODDEF    \
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
+PyDoc_STRVAR(builtin_aiter__doc__,
+"aiter($module, async_iterable, /)\n"
+"--\n"
+"\n"
+"Return an AsyncIterator for an AsyncIterable object.");
+
+#define BUILTIN_AITER_METHODDEF    \
+    {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
+
+PyDoc_STRVAR(builtin_anext__doc__,
+"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"async anext(aiterator[, default])\n"
+"\n"
+"Return the next item from the async iterator.  If default is given and the async\n"
+"iterator is exhausted, it is returned instead of raising StopAsyncIteration.");
+
+#define BUILTIN_ANEXT_METHODDEF    \
+    {"anext", (PyCFunction)(void(*)(void))builtin_anext, METH_FASTCALL, builtin_anext__doc__},
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value);
+
+static PyObject *
+builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *aiterator;
+    PyObject *default_value = NULL;
+
+    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
+        goto exit;
+    }
+    aiterator = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = builtin_anext_impl(module, aiterator, default_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
 "--\n"
@@ -624,6 +671,80 @@ skip_optional_pos:
     return_value = builtin_pow_impl(module, base, exp, mod);
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(builtin_print__doc__,
+"print($module, /, *args, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
+"--\n"
+"\n"
+"Prints the values to a stream, or to sys.stdout by default.\n"
+"\n"
+"  sep\n"
+"    string inserted between values, default a space.\n"
+"  end\n"
+"    string appended after the last value, default a newline.\n"
+"  file\n"
+"    a file-like object (stream); defaults to the current sys.stdout.\n"
+"  flush\n"
+"    whether to forcibly flush the stream.");
+
+#define BUILTIN_PRINT_METHODDEF    \
+    {"print", (PyCFunction)(void(*)(void))builtin_print, METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
+
+static PyObject *
+builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
+                   PyObject *end, PyObject *file, int flush);
+
+static PyObject *
+builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"sep", "end", "file", "flush", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "print", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *__clinic_args = NULL;
+    PyObject *sep = Py_None;
+    PyObject *end = Py_None;
+    PyObject *file = Py_None;
+    int flush = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        sep = args[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        end = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        file = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    flush = PyObject_IsTrue(args[4]);
+    if (flush < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = builtin_print_impl(module, __clinic_args, sep, end, file, flush);
+
+exit:
+    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -800,11 +921,11 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "issubclass($module, cls, class_or_tuple, /)\n"
 "--\n"
 "\n"
-"Return whether \'cls\' is a derived from another class or is the same class.\n"
+"Return whether \'cls\' is derived from another class or is the same class.\n"
 "\n"
 "A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
 "check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
-"or ...`` etc.");
+"or ...``.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
     {"issubclass", (PyCFunction)(void(*)(void))builtin_issubclass, METH_FASTCALL, builtin_issubclass__doc__},
@@ -830,4 +951,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=780fd9712ec6a6db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=77ace832b3fb38e0 input=a9049054013a1b77]*/

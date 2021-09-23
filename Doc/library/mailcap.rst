@@ -9,16 +9,16 @@
 --------------
 
 Mailcap files are used to configure how MIME-aware applications such as mail
-readers and Web browsers react to files with different MIME types. (The name
+readers and web browsers react to files with different MIME types. (The name
 "mailcap" is derived from the phrase "mail capability".)  For example, a mailcap
 file might contain a line like ``video/mpeg; xmpeg %s``.  Then, if the user
-encounters an email message or Web document with the MIME type
+encounters an email message or web document with the MIME type
 :mimetype:`video/mpeg`, ``%s`` will be replaced by a filename (usually one
 belonging to a temporary file) and the :program:`xmpeg` program can be
 automatically started to view the file.
 
 The mailcap format is documented in :rfc:`1524`, "A User Agent Configuration
-Mechanism For Multimedia Mail Format Information", but is not an Internet
+Mechanism For Multimedia Mail Format Information", but is not an internet
 standard.  However, mailcap files are supported on most Unix systems.
 
 

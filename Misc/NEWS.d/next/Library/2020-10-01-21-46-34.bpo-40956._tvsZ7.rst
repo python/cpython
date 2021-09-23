@@ -1,0 +1,1 @@
+Use Argument Clinic in :mod:`sqlite3`.  Patches by Erlend E. Aasland.

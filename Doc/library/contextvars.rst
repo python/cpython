@@ -26,7 +26,7 @@ See also :pep:`567` for additional details.
 Context Variables
 -----------------
 
-.. class:: ContextVar(name, [\*, default])
+.. class:: ContextVar(name, [*, default])
 
    This class is used to declare a new Context Variable, e.g.::
 
@@ -146,7 +146,7 @@ Manual Context Management
 
    Context implements the :class:`collections.abc.Mapping` interface.
 
-   .. method:: run(callable, \*args, \*\*kwargs)
+   .. method:: run(callable, *args, **kwargs)
 
       Execute ``callable(*args, **kwargs)`` code in the context object
       the *run* method is called on.  Return the result of the execution

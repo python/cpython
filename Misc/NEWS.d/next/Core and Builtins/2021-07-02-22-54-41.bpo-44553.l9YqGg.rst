@@ -1,0 +1,2 @@
+Implement GC methods for ``types.Union`` to break reference cycles and
+prevent memory leaks.

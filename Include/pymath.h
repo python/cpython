@@ -163,12 +163,7 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
         #pragma float_control(push)
         #pragma float_control(precise, on)
         #pragma float_control(except,  on)
-        #if defined(_MSC_VER)
-            __declspec(noinline)
-        #else /* Linux */
-            __attribute__((noinline))
-        #endif /* _MSC_VER */
-        static double __icc_nan()
+        Py_NO_INLINE static double __icc_nan()
         {
             return sqrt(-1.0);
         }
@@ -226,13 +221,5 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * integral type that cannot represent *v*'s integral part is undefined
  * behavior. */
 #define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
-
-/* Return the smallest integer k such that n < 2**k, or 0 if n == 0.
- * Equivalent to floor(log2(x))+1.  Also equivalent to: bitwidth_of_type -
- * count_leading_zero_bits(x)
- */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(unsigned int) _Py_bit_length(unsigned long d);
-#endif
 
 #endif /* Py_PYMATH_H */

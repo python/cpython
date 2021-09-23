@@ -79,8 +79,12 @@ import glob
 import pprint
 import signal
 import inspect
+import tokenize
+import functools
 import traceback
 import linecache
+
+from typing import Union
 
 
 class Restart(Exception):
@@ -93,7 +97,7 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
-        fp = open(filename)
+        fp = tokenize.open(filename)
     except OSError:
         return None
     # consumer of this info expects the first line to be 1
@@ -125,6 +129,81 @@ class _rstr(str):
     """String that doesn't quote its repr."""
     def __repr__(self):
         return self
+
+
+class ScriptTarget(str):
+    def __new__(cls, val):
+        # Mutate self to be the "real path".
+        res = super().__new__(cls, os.path.realpath(val))
+
+        # Store the original path for error reporting.
+        res.orig = val
+
+        return res
+
+    def check(self):
+        if not os.path.exists(self):
+            print('Error:', self.orig, 'does not exist')
+            sys.exit(1)
+
+        # Replace pdb's dir with script's dir in front of module search path.
+        sys.path[0] = os.path.dirname(self)
+
+    @property
+    def filename(self):
+        return self
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=self,
+            __builtins__=__builtins__,
+        )
+
+    @property
+    def code(self):
+        with io.open(self) as fp:
+            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
+
+
+class ModuleTarget(str):
+    def check(self):
+        try:
+            self._details
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
+    @functools.cached_property
+    def _details(self):
+        import runpy
+        return runpy._get_module_details(self)
+
+    @property
+    def filename(self):
+        return self.code.co_filename
+
+    @property
+    def code(self):
+        name, spec, code = self._details
+        return code
+
+    @property
+    def _spec(self):
+        name, spec, code = self._details
+        return spec
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=os.path.normcase(os.path.abspath(self.filename)),
+            __package__=self._spec.parent,
+            __loader__=self._spec.loader,
+            __spec__=self._spec,
+            __builtins__=__builtins__,
+        )
 
 
 # Interaction prompt line will separate file and call info from code
@@ -165,12 +244,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.rcLines = []
         if readrc:
             try:
-                with open(os.path.expanduser('~/.pdbrc')) as rcFile:
+                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
             try:
-                with open(".pdbrc") as rcFile:
+                with open(".pdbrc", encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
@@ -383,8 +462,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = save_stdin
                 sys.displayhook = save_displayhook
         except:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
@@ -473,7 +551,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             ret = []
         # Then, try to complete file names as well.
-        globs = glob.glob(text + '*')
+        globs = glob.glob(glob.escape(text) + '*')
         for fn in globs:
             if os.path.isdir(fn):
                 ret.append(fn + '/')
@@ -562,6 +640,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except:
                 self.error("Usage: commands [bnum]\n        ...\n        end")
                 return
+        try:
+            self.get_bpbynumber(bnum)
+        except ValueError as err:
+            self.error('cannot set commands: %s' % err)
+            return
+
         self.commands_bnum = bnum
         # Save old definitions for the case of a keyboard interrupt.
         if bnum in self.commands:
@@ -751,7 +835,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
-        globs = self.curframe.f_globals if hasattr(self, 'curframe') else None
+        frame = getattr(self, 'curframe', None)
+        globs = frame.f_globals if frame else None
         line = linecache.getline(filename, lineno, globs)
         if not line:
             self.message('End of file')
@@ -892,7 +977,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except ValueError:
                 err = "Invalid line number (%s)" % arg
             else:
-                bplist = self.get_breaks(filename, lineno)
+                bplist = self.get_breaks(filename, lineno)[:]
                 err = self.clear_break(filename, lineno)
             if err:
                 self.error(err)
@@ -1025,7 +1110,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             import shlex
             argv0 = sys.argv[0:1]
-            sys.argv = shlex.split(arg)
+            try:
+                sys.argv = shlex.split(arg)
+            except ValueError as e:
+                self.error('Cannot run %s: %s' % (arg, e))
+                return
             sys.argv[:0] = argv0
         # this is caught in the main debugger loop
         raise Restart
@@ -1102,8 +1191,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             sys.call_tracing(p.run, (arg, globals, locals))
         except Exception:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
         self.message("LEAVING RECURSIVE DEBUGGER")
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
@@ -1161,8 +1249,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             return eval(arg, self.curframe.f_globals, self.curframe_locals)
         except:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
             raise
 
     def _getval_except(self, arg, frame=None):
@@ -1176,23 +1263,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             err = traceback.format_exception_only(*exc_info)[-1].strip()
             return _rstr('** raised %s **' % err)
 
+    def _error_exc(self):
+        exc_info = sys.exc_info()[:2]
+        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+
+    def _msg_val_func(self, arg, func):
+        try:
+            val = self._getval(arg)
+        except:
+            return  # _getval() has displayed the error
+        try:
+            self.message(func(val))
+        except:
+            self._error_exc()
+
     def do_p(self, arg):
         """p expression
         Print the value of the expression.
         """
-        try:
-            self.message(repr(self._getval(arg)))
-        except:
-            pass
+        self._msg_val_func(arg, repr)
 
     def do_pp(self, arg):
         """pp expression
         Pretty-print the value of the expression.
         """
-        try:
-            self.message(pprint.pformat(self._getval(arg)))
-        except:
-            pass
+        self._msg_val_func(arg, pprint.pformat)
 
     complete_print = _complete_expression
     complete_p = _complete_expression
@@ -1311,14 +1406,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # _getval() already printed the error
             return
         code = None
-        # Is it a function?
-        try:
-            code = value.__code__
-        except Exception:
-            pass
-        if code:
-            self.message('Function %s' % code.co_name)
-            return
         # Is it an instance method?
         try:
             code = value.__func__.__code__
@@ -1326,6 +1413,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         if code:
             self.message('Method %s' % code.co_name)
+            return
+        # Is it a function?
+        try:
+            code = value.__code__
+        except Exception:
+            pass
+        if code:
+            self.message('Function %s' % code.co_name)
             return
         # Is it a class?
         if value.__class__ is type:
@@ -1527,49 +1622,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _runmodule(self, module_name):
-        self._wait_for_mainpyfile = True
-        self._user_requested_quit = False
-        import runpy
-        mod_name, mod_spec, code = runpy._get_module_details(module_name)
-        self.mainpyfile = self.canonic(code.co_filename)
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update({
-            "__name__": "__main__",
-            "__file__": self.mainpyfile,
-            "__package__": mod_spec.parent,
-            "__loader__": mod_spec.loader,
-            "__spec__": mod_spec,
-            "__builtins__": __builtins__,
-        })
-        self.run(code)
-
-    def _runscript(self, filename):
-        # The script has to run in __main__ namespace (or imports from
-        # __main__ will break).
-        #
-        # So we clear up the __main__ and set several special variables
-        # (this gets rid of pdb's globals and cleans old variables on restarts).
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update({"__name__"    : "__main__",
-                                  "__file__"    : filename,
-                                  "__builtins__": __builtins__,
-                                 })
-
-        # When bdb sets tracing, a number of call and line events happens
+    def _run(self, target: Union[ModuleTarget, ScriptTarget]):
+        # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
-        # events depends on python version). So we take special measures to
-        # avoid stopping before we reach the main script (see user_line and
+        # events depends on python version). Take special measures to
+        # avoid stopping before reaching the main script (see user_line and
         # user_call for details).
         self._wait_for_mainpyfile = True
-        self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = False
-        with io.open_code(filename) as fp:
-            statement = "exec(compile(%r, %r, 'exec'))" % \
-                        (fp.read(), self.mainpyfile)
-        self.run(statement)
+
+        self.mainpyfile = self.canonic(target.filename)
+
+        # The target has to run in __main__ namespace (or imports from
+        # __main__ will break). Clear __main__ and replace with
+        # the target namespace.
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update(target.namespace)
+
+        self.run(target.code)
+
 
 # Collect all command help into docstring, if not run with -OO
 
@@ -1658,6 +1730,7 @@ To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
 
+
 def main():
     import getopt
 
@@ -1667,27 +1740,19 @@ def main():
         print(_usage)
         sys.exit(2)
 
-    commands = []
-    run_as_module = False
-    for opt, optarg in opts:
-        if opt in ['-h', '--help']:
-            print(_usage)
-            sys.exit()
-        elif opt in ['-c', '--command']:
-            commands.append(optarg)
-        elif opt in ['-m']:
-            run_as_module = True
+    if any(opt in ['-h', '--help'] for opt, optarg in opts):
+        print(_usage)
+        sys.exit()
 
-    mainpyfile = args[0]     # Get script filename
-    if not run_as_module and not os.path.exists(mainpyfile):
-        print('Error:', mainpyfile, 'does not exist')
-        sys.exit(1)
+    commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
+
+    module_indicated = any(opt in ['-m'] for opt, optarg in opts)
+    cls = ModuleTarget if module_indicated else ScriptTarget
+    target = cls(args[0])
+
+    target.check()
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
-
-    # Replace pdb's dir with script's dir in front of module search path.
-    if not run_as_module:
-        sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -1697,16 +1762,13 @@ def main():
     pdb.rcLines.extend(commands)
     while True:
         try:
-            if run_as_module:
-                pdb._runmodule(mainpyfile)
-            else:
-                pdb._runscript(mainpyfile)
+            pdb._run(target)
             if pdb._user_requested_quit:
                 break
             print("The program finished and will be restarted")
         except Restart:
-            print("Restarting", mainpyfile, "with arguments:")
-            print("\t" + " ".join(args))
+            print("Restarting", target, "with arguments:")
+            print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')
@@ -1720,7 +1782,7 @@ def main():
             print("Running 'cont' or 'step' will restart the program")
             t = sys.exc_info()[2]
             pdb.interaction(None, t)
-            print("Post mortem debugger finished. The " + mainpyfile +
+            print("Post mortem debugger finished. The " + target +
                   " will be restarted")
 
 

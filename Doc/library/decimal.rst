@@ -1357,6 +1357,9 @@ In addition to the three supplied contexts, new contexts can be created with the
       The rounding mode of the context is used. Results are always correctly-rounded
       in the Python version.
 
+      ``Decimal(0) ** Decimal(0)`` results in ``InvalidOperation``, and if ``InvalidOperation``
+      is not trapped, then results in ``Decimal('NaN')``.
+
       .. versionchanged:: 3.3
          The C module computes :meth:`power` in terms of the correctly-rounded
          :meth:`exp` and :meth:`ln` functions. The result is well-defined but
@@ -1481,7 +1484,8 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_CONTEXTVAR
 
-   The default value is ``True``. If Python is compiled ``--without-decimal-contextvar``,
+   The default value is ``True``. If Python is :option:`configured using
+   the --without-decimal-contextvar option <--without-decimal-contextvar>`,
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 
@@ -2193,4 +2197,3 @@ are expected to be exact.
 .. [#]
     .. versionchanged:: 3.9
        This approach now works for all exact results except for non-integer powers.
-       Also backported to 3.7 and 3.8.

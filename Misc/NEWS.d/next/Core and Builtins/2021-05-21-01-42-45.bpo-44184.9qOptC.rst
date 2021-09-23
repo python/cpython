@@ -1,0 +1,3 @@
+Fix a crash at Python exit when a deallocator function removes the last strong
+reference to a heap type.
+Patch by Victor Stinner.

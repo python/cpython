@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,13 +27,13 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 #include <assert.h>
+#include <stdio.h>
+
+#include "basearith.h"
 #include "constants.h"
 #include "typearith.h"
-#include "basearith.h"
 
 
 /*********************************************************************/
@@ -337,6 +337,7 @@ _mpd_basedivmod(mpd_uint_t *q, mpd_uint_t *r,
 
     /* D2: loop */
     for (j=m; j != MPD_SIZE_MAX; j--) {
+        assert(2 <= j+n && j+n <= nplusm); /* annotation for scan-build */
 
         /* D3: calculate qhat and rhat */
         rhat = _mpd_shortdiv(w2, u+j+n-1, 2, v[n-1]);
@@ -652,6 +653,3 @@ _mpd_shortdiv_b(mpd_uint_t *w, const mpd_uint_t *u, mpd_size_t n,
 
     return rem;
 }
-
-
-

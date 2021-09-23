@@ -1,0 +1,2 @@
+In :mod:`posix`, release GIL during ``stat()``, ``lstat()``, and
+``fstatat()`` syscalls made by :func:`os.DirEntry.stat`. Patch by Stanisław Skonieczny.

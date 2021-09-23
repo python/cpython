@@ -14,6 +14,18 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
+    <FreezeProjects>
+      <Platform>$(Platform)</Platform>
+      <Platform Condition="$(Platform) == 'ARM'">Win32</Platform>
+      <Platform Condition="$(Platform) == 'ARM64'">x64</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>false</BuildInParallel>
+    </FreezeProjects>
     <Projects>
       <Platform>$(Platform)</Platform>
       <Configuration>$(Configuration)</Configuration>
@@ -66,13 +78,14 @@
     <!-- Test modules -->
     <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole" />
     <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
+    <TestModules Include="xxlimited_35" Condition="'$(Configuration)' == 'Release'" />
     <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
       <!-- Disable parallel build for test modules -->
       <BuildInParallel>false</BuildInParallel>
     </Projects>
 
-    <!-- _freeze_importlib -->
-    <Projects2 Condition="$(Platform) != 'ARM' and $(Platform) != 'ARM64'" Include="_freeze_importlib.vcxproj" />
+    <!-- _freeze_module -->
+    <FreezeProjects Include="_freeze_module.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
     <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
@@ -81,6 +94,11 @@
   </ItemGroup>
 
   <Target Name="Build">
+    <MSBuild Projects="@(FreezeProjects)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
     <MSBuild Projects="@(Projects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"

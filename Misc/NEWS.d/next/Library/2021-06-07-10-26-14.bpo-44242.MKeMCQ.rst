@@ -1,0 +1,2 @@
+Remove missing flag check from Enum creation and move into a ``verify``
+decorator.

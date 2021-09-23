@@ -1,0 +1,2 @@
+Mapping patterns in ``match`` statements with two or more equal literal
+keys will now raise a :exc:`SyntaxError` at compile-time.

@@ -1,0 +1,2 @@
+:class:`smtpd.MailmanProxy` is now removed as it is unusable without an
+external module, ``mailman``. Patch by Dong-hee Na.

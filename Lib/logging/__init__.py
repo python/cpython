@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-           'lastResort', 'raiseExceptions']
+           'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
 
 import threading
 
@@ -116,9 +116,12 @@ _nameToLevel = {
     'NOTSET': NOTSET,
 }
 
+def getLevelNamesMapping():
+    return _nameToLevel.copy()
+
 def getLevelName(level):
     """
-    Return the textual representation of logging level 'level'.
+    Return the textual or numeric representation of logging level 'level'.
 
     If the level is one of the predefined levels (CRITICAL, ERROR, WARNING,
     INFO, DEBUG) then you get the corresponding string. If you have
@@ -128,7 +131,11 @@ def getLevelName(level):
     If a numeric value corresponding to one of the defined levels is passed
     in, the corresponding string representation is returned.
 
-    Otherwise, the string "Level %s" % level is returned.
+    If a string representation of the level is passed in, the corresponding
+    numeric value is returned.
+
+    If no matching numeric or string value is passed in, the string
+    'Level %s' % level is returned.
     """
     # See Issues #22386, #27937 and #29220 for why it's this way
     result = _levelToName.get(level)
@@ -194,7 +201,8 @@ def _checkLevel(level):
             raise ValueError("Unknown level: %r" % level)
         rv = _nameToLevel[level]
     else:
-        raise TypeError("Level not an integer or a valid string: %r" % level)
+        raise TypeError("Level not an integer or a valid string: %r"
+                        % (level,))
     return rv
 
 #---------------------------------------------------------------------------
@@ -411,8 +419,9 @@ class PercentStyle(object):
     asctime_search = '%(asctime)'
     validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
-    def __init__(self, fmt):
+    def __init__(self, fmt, *, defaults=None):
         self._fmt = fmt or self.default_format
+        self._defaults = defaults
 
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
@@ -423,7 +432,11 @@ class PercentStyle(object):
             raise ValueError("Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0]))
 
     def _format(self, record):
-        return self._fmt % record.__dict__
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._fmt % values
 
     def format(self, record):
         try:
@@ -441,7 +454,11 @@ class StrFormatStyle(PercentStyle):
     field_spec = re.compile(r'^(\d+|\w+)(\.\w+|\[[^]]+\])*$')
 
     def _format(self, record):
-        return self._fmt.format(**record.__dict__)
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._fmt.format(**values)
 
     def validate(self):
         """Validate the input format, ensure it is the correct string formatting style"""
@@ -467,8 +484,8 @@ class StringTemplateStyle(PercentStyle):
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
 
-    def __init__(self, fmt):
-        self._fmt = fmt or self.default_format
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._tpl = Template(self._fmt)
 
     def usesTime(self):
@@ -490,7 +507,11 @@ class StringTemplateStyle(PercentStyle):
             raise ValueError('invalid format: no fields')
 
     def _format(self, record):
-        return self._tpl.substitute(**record.__dict__)
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._tpl.substitute(**values)
 
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
@@ -509,7 +530,7 @@ class Formatter(object):
     responsible for converting a LogRecord to (usually) a string which can
     be interpreted by either a human or an external system. The base Formatter
     allows a formatting string to be specified. If none is supplied, the
-    the style-dependent default value, "%(message)s", "{message}", or
+    style-dependent default value, "%(message)s", "{message}", or
     "${message}", is used.
 
     The Formatter can be initialized with a format string which makes use of
@@ -546,7 +567,8 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, *,
+                 defaults=None):
         """
         Initialize the formatter with specified format strings.
 
@@ -565,7 +587,7 @@ class Formatter(object):
         if style not in _STYLES:
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
-        self._style = _STYLES[style][0](fmt)
+        self._style = _STYLES[style][0](fmt, defaults=defaults)
         if validate:
             self._style.validate()
 
@@ -748,8 +770,8 @@ class Filter(object):
         """
         Determine if the specified record is to be logged.
 
-        Is the specified record to be logged? Returns 0 for no, nonzero for
-        yes. If deemed appropriate, the record may be modified in-place.
+        Returns True if the record should be logged, or False otherwise.
+        If deemed appropriate, the record may be modified in-place.
         """
         if self.nlen == 0:
             return True
@@ -826,8 +848,9 @@ def _removeHandlerRef(wr):
     if acquire and release and handlers:
         acquire()
         try:
-            if wr in handlers:
-                handlers.remove(wr)
+            handlers.remove(wr)
+        except ValueError:
+            pass
         finally:
             release()
 
@@ -859,6 +882,7 @@ class Handler(Filterer):
         self._name = None
         self.level = _checkLevel(level)
         self.formatter = None
+        self._closed = False
         # Add the handler to the global _handlerList (for cleanup on shutdown)
         _addHandlerRef(self)
         self.createLock()
@@ -977,6 +1001,7 @@ class Handler(Filterer):
         #get the module data lock, as we're updating a shared structure.
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
+            self._closed = True
             if self._name and self._name in _handlers:
                 del _handlers[self._name]
         finally:
@@ -1131,8 +1156,14 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        if "b" not in mode:
+            self.encoding = io.text_encoding(encoding)
         self.errors = errors
         self.delay = delay
+        # bpo-26789: FileHandler keeps a reference to the builtin open()
+        # function to be able to open or reopen the file during Python
+        # finalization.
+        self._builtin_open = open
         if delay:
             #We don't open the stream, but we still need to call the
             #Handler constructor to set level, formatter, lock etc.
@@ -1159,6 +1190,8 @@ class FileHandler(StreamHandler):
             finally:
                 # Issue #19523: call unconditionally to
                 # prevent a handler leak when delay is set
+                # Also see Issue #42378: we also rely on
+                # self._closed being set to True there
                 StreamHandler.close(self)
         finally:
             self.release()
@@ -1168,8 +1201,9 @@ class FileHandler(StreamHandler):
         Open the current base file with the (original) mode and encoding.
         Return the resulting stream.
         """
-        return open(self.baseFilename, self.mode, encoding=self.encoding,
-                    errors=self.errors)
+        open_func = self._builtin_open
+        return open_func(self.baseFilename, self.mode,
+                         encoding=self.encoding, errors=self.errors)
 
     def emit(self, record):
         """
@@ -1177,10 +1211,15 @@ class FileHandler(StreamHandler):
 
         If the stream was not opened because 'delay' was specified in the
         constructor, open it before calling the superclass's emit.
+
+        If stream is not open, current mode is 'w' and `_closed=True`, record
+        will not be emitted (see Issue #42378).
         """
         if self.stream is None:
-            self.stream = self._open()
-        StreamHandler.emit(self, record)
+            if self.mode != 'w' or not self._closed:
+                self.stream = self._open()
+        if self.stream:
+            StreamHandler.emit(self, record)
 
     def __repr__(self):
         level = getLevelName(self.level)
@@ -1268,6 +1307,14 @@ class Manager(object):
         self.loggerDict = {}
         self.loggerClass = None
         self.logRecordFactory = None
+
+    @property
+    def disable(self):
+        return self._disable
+
+    @disable.setter
+    def disable(self, value):
+        self._disable = _checkLevel(value)
 
     def getLogger(self, name):
         """
@@ -1480,7 +1527,11 @@ class Logger(Filterer):
         if self.isEnabledFor(CRITICAL):
             self._log(CRITICAL, msg, args, **kwargs)
 
-    fatal = critical
+    def fatal(self, msg, *args, **kwargs):
+        """
+        Don't use this method, use critical() instead.
+        """
+        self.critical(msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
         """
@@ -1986,8 +2037,10 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    if 'b'in mode:
+                    if 'b' in mode:
                         errors = None
+                    else:
+                        encoding = io.text_encoding(encoding)
                     h = FileHandler(filename, mode,
                                     encoding=encoding, errors=errors)
                 else:
@@ -2039,7 +2092,11 @@ def critical(msg, *args, **kwargs):
         basicConfig()
     root.critical(msg, *args, **kwargs)
 
-fatal = critical
+def fatal(msg, *args, **kwargs):
+    """
+    Don't use this function, use critical() instead.
+    """
+    critical(msg, *args, **kwargs)
 
 def error(msg, *args, **kwargs):
     """

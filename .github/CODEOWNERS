@@ -9,10 +9,17 @@
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1
+**/*genobject*                @1st1 @markshannon
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
-Objects/dict*                 @methane
+Objects/dict*                 @methane @markshannon
+Objects/type*                 @markshannon
+Objects/codeobject.c          @markshannon
+Objects/frameobject.c         @markshannon
+Objects/call.c                @markshannon
+Python/ceval.c                @markshannon
+Python/compile.c              @markshannon
+Python/ast_opt.c              @isidentical
 
 # Hashing
 **/*hashlib*                  @python/crypto-team @tiran
@@ -46,11 +53,11 @@ Objects/dict*                 @methane
 
 
 # SSL
-**/*ssl*                      @python/crypto-team @tiran
-**/*.pem                      @python/crypto-team @tiran
+**/*ssl*                      @python/crypto-team
+**/*.pem                      @python/crypto-team
 
 # CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team @tiran
+Python/bootstrap_hash.c       @python/crypto-team
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -72,10 +79,21 @@ Include/pytime.h              @pganssle @abalkin
 /Modules/gcmodule.c           @pablogsal
 /Doc/library/gc.rst           @pablogsal
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
-/Parser/pegen/                @pablogsal
-/Tools/peg_generator/         @pablogsal
+# Parser
+/Parser/                      @pablogsal @lysnikolaou
+/Tools/peg_generator/         @pablogsal @lysnikolaou
+/Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
+/Grammar/python.gram          @pablogsal @lysnikolaou
+
+# AST
+Python/ast.c                  @isidentical
+Parser/asdl.py                @isidentical
+Parser/asdl_c.py              @isidentical
+Lib/ast.py                    @isidentical
+
+# Mock
+/Lib/unittest/mock.py         @cjw296
+/Lib/unittest/test/testmock/* @cjw296
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag
@@ -110,7 +128,7 @@ Include/pytime.h              @pganssle @abalkin
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @ilevkivskyi
+**/*typing*                   @gvanrossum @Fidget-Spinner
 
 **/*asyncore                  @giampaolo
 **/*asynchat                  @giampaolo

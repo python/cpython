@@ -1,0 +1,7 @@
+Implement adaptive specialization for LOAD_GLOBAL
+
+Two specialized forms of LOAD_GLOBAL are added:
+
+* LOAD_GLOBAL_MODULE
+
+* LOAD_GLOBAL_BUILTIN

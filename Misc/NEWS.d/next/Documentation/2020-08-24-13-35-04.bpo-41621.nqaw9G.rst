@@ -1,0 +1,1 @@
+Document that :class:`collections.defaultdict` parameter ``default_factory`` defaults to None and is positional-only.

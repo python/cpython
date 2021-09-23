@@ -262,6 +262,9 @@ def expanduser(path):
             # password database, return the path unchanged
             return path
         userhome = pwent.pw_dir
+    # if no user home, return the path unchanged on VxWorks
+    if userhome is None and sys.platform == "vxworks":
+        return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
         root = b'/'
@@ -349,6 +352,7 @@ def normpath(path):
     initial_slashes = path.startswith(sep)
     # POSIX allows one or two initial slashes, but treats three or more
     # as single slash.
+    # (see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
     if (initial_slashes and
         path.startswith(sep*2) and not path.startswith(sep*3)):
         initial_slashes = 2
@@ -384,16 +388,16 @@ def abspath(path):
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
 
-def realpath(filename):
+def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, {})
+    path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
-def _joinrealpath(path, rest, seen):
+def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
         curdir = b'.'
@@ -422,7 +426,15 @@ def _joinrealpath(path, rest, seen):
                 path = pardir
             continue
         newpath = join(path, name)
-        if not islink(newpath):
+        try:
+            st = os.lstat(newpath)
+        except OSError:
+            if strict:
+                raise
+            is_link = False
+        else:
+            is_link = stat.S_ISLNK(st.st_mode)
+        if not is_link:
             path = newpath
             continue
         # Resolve the symbolic link
@@ -433,10 +445,14 @@ def _joinrealpath(path, rest, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            # Return already resolved part + rest of the path unchanged.
-            return join(newpath, rest), False
+            if strict:
+                # Raise OSError(errno.ELOOP)
+                os.stat(newpath)
+            else:
+                # Return already resolved part + rest of the path unchanged.
+                return join(newpath, rest), False
         seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), seen)
+        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
         if not ok:
             return join(path, rest), False
         seen[newpath] = path # resolved symlink

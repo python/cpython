@@ -1,0 +1,5 @@
+``typing.ParamSpec`` will no longer be found in the ``__parameters__`` of
+most :mod:`typing` generics except in valid use locations specified by
+:pep:`612`. This prevents incorrect usage like ``typing.List[P][int]``. This
+change means incorrect usage which may have passed silently in 3.10 beta 1
+and earlier will now error.

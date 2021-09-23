@@ -1421,11 +1421,13 @@ class ServerProxy:
         # establish a "logical" server connection
 
         # get the url
-        p = urllib.parse.urlparse(uri)
+        p = urllib.parse.urlsplit(uri)
         if p.scheme not in ("http", "https"):
             raise OSError("unsupported XML-RPC protocol")
         self.__host = p.netloc
-        self.__handler = p.path or "/RPC2"
+        self.__handler = urllib.parse.urlunsplit(["", "", *p[2:]])
+        if not self.__handler:
+            self.__handler = "/RPC2"
 
         if transport is None:
             if p.scheme == "https":

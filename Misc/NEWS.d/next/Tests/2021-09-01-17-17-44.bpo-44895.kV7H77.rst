@@ -1,0 +1,5 @@
+libregrtest now clears the type cache later to reduce the risk of false alarm
+when checking for reference leaks. Previously, the type cache was cleared too
+early and libregrtest raised a false alarm about reference leaks under very
+specific conditions.
+Patch by Irit Katriel and Victor Stinner.

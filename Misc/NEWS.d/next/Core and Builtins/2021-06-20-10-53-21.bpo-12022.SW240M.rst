@@ -1,0 +1,4 @@
+A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+:keyword:`with` and :keyword:`async with` statements for objects which do
+not support the :term:`context manager` or :term:`asynchronous context
+manager` protocols correspondingly.

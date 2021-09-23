@@ -4,7 +4,9 @@ import os
 import pathlib
 import unittest
 import warnings
-from test.support import findfile, TESTFN, unlink
+from test.support import findfile
+from test.support.os_helper import TESTFN, unlink
+
 
 TEST_FILES = (
     ('python.png', 'png'),
@@ -14,6 +16,7 @@ TEST_FILES = (
     ('python.pgm', 'pgm'),
     ('python.pbm', 'pbm'),
     ('python.jpg', 'jpeg'),
+    ('python-raw.jpg', 'jpeg'),  # raw JPEG without JFIF/EXIF markers
     ('python.ras', 'rast'),
     ('python.sgi', 'rgb'),
     ('python.tiff', 'tiff'),

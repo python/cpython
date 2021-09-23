@@ -101,7 +101,9 @@ typedef intptr_t        Py_intptr_t;
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
  * unsigned integral type).  See PEP 353 for details.
  */
-#ifdef HAVE_SSIZE_T
+#ifdef HAVE_PY_SSIZE_T
+
+#elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
@@ -116,12 +118,8 @@ typedef Py_ssize_t Py_hash_t;
 #define SIZEOF_PY_UHASH_T SIZEOF_SIZE_T
 typedef size_t Py_uhash_t;
 
-/* Only used for compatibility with code that may not be PY_SSIZE_T_CLEAN. */
-#ifdef PY_SSIZE_T_CLEAN
+/* Now PY_SSIZE_T_CLEAN is mandatory. This is just for backward compatibility. */
 typedef Py_ssize_t Py_ssize_clean_t;
-#else
-typedef int Py_ssize_clean_t;
-#endif
 
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
@@ -131,7 +129,9 @@ typedef int Py_ssize_clean_t;
 /* Smallest negative value of type Py_ssize_t. */
 #define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
-/* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
+/* Macro kept for backward compatibility: use "z" in new code.
+ *
+ * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
  * format to convert an argument with the width of a size_t or Py_ssize_t.
  * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
  * Since MSVC supports "z" since (at least) 2015, we can just use "z"
@@ -179,8 +179,9 @@ typedef int Py_ssize_clean_t;
 
 #if defined(_MSC_VER)
 #  if defined(PY_LOCAL_AGGRESSIVE)
-   /* enable more aggressive optimization for visual studio */
-#  pragma optimize("agtw", on)
+   /* enable more aggressive optimization for MSVC */
+   /* active in both release and debug builds - see bpo-43271 */
+#  pragma optimize("gt", on)
 #endif
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)
@@ -513,6 +514,26 @@ extern "C" {
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
 
+#if defined(__clang__)
+#define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_POP _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
+#define _Py_COMP_DIAG_PUSH _Pragma("GCC diagnostic push")
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_POP _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+#define _Py_COMP_DIAG_PUSH __pragma(warning(push))
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS __pragma(warning(disable: 4996))
+#define _Py_COMP_DIAG_POP __pragma(warning(pop))
+#else
+#define _Py_COMP_DIAG_PUSH
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#define _Py_COMP_DIAG_POP
+#endif
 
 /* _Py_HOT_FUNCTION
  * The hot attribute on a function is used to inform the compiler that the
@@ -536,19 +557,51 @@ extern "C" {
 #define _Py_HOT_FUNCTION
 #endif
 
-/* _Py_NO_INLINE
- * Disable inlining on a function. For example, it helps to reduce the C stack
- * consumption.
- *
- * Usage:
- *    int _Py_NO_INLINE x(void) { return 3; }
- */
-#if defined(_MSC_VER)
-#  define _Py_NO_INLINE __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__ ((noinline))
+// Ask the compiler to always inline a static inline function. The compiler can
+// ignore it and decides to not inline the function.
+//
+// It can be used to inline performance critical static inline functions when
+// building Python in debug mode with function inlining disabled. For example,
+// MSC disables function inlining when building in debug mode.
+//
+// Marking blindly a static inline function with Py_ALWAYS_INLINE can result in
+// worse performances (due to increased code size for example). The compiler is
+// usually smarter than the developer for the cost/benefit analysis.
+//
+// If Python is built in debug mode (if the Py_DEBUG macro is defined), the
+// Py_ALWAYS_INLINE macro does nothing.
+//
+// It must be specified before the function return type. Usage:
+//
+//     static inline Py_ALWAYS_INLINE int random(void) { return 4; }
+#if defined(Py_DEBUG)
+   // If Python is built in debug mode, usually compiler optimizations are
+   // disabled. In this case, Py_ALWAYS_INLINE can increase a lot the stack
+   // memory usage. For example, forcing inlining using gcc -O0 increases the
+   // stack usage from 6 KB to 15 KB per Python function call.
+#  define Py_ALWAYS_INLINE
+#elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#  define Py_ALWAYS_INLINE __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#  define Py_ALWAYS_INLINE __forceinline
 #else
-#  define _Py_NO_INLINE
+#  define Py_ALWAYS_INLINE
+#endif
+
+// Py_NO_INLINE
+// Disable inlining on a function. For example, it reduces the C stack
+// consumption: useful on LTO+PGO builds which heavily inline code (see
+// bpo-33720).
+//
+// Usage:
+//
+//    Py_NO_INLINE static int random(void) { return 4; }
+#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#  define Py_NO_INLINE __attribute__ ((noinline))
+#elif defined(_MSC_VER)
+#  define Py_NO_INLINE __declspec(noinline)
+#else
+#  define Py_NO_INLINE
 #endif
 
 /**************************************************************************
@@ -819,20 +872,25 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif
 
 #if defined(__ANDROID__) || defined(__VXWORKS__)
-   /* Ignore the locale encoding: force UTF-8 */
+   // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
+   // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()
+   // and PyUnicode_EncodeLocale().
 #  define _Py_FORCE_UTF8_LOCALE
 #endif
 
 #if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
-   /* Use UTF-8 as filesystem encoding */
+   // Use UTF-8 as the filesystem encoding.
+   // See PyUnicode_DecodeFSDefaultAndSize(), PyUnicode_EncodeFSDefault(),
+   // Py_DecodeLocale() and Py_EncodeLocale().
 #  define _Py_FORCE_UTF8_FS_ENCODING
 #endif
 
 /* Mark a function which cannot return. Example:
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
-   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
+   XLC support is intentionally omitted due to bpo-40244 */
+#ifndef _Py_NO_RETURN
 #if defined(__clang__) || \
-    defined(__xlc__) || \
     (defined(__GNUC__) && \
      ((__GNUC__ >= 3) || \
       (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
@@ -842,5 +900,18 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #else
 #  define _Py_NO_RETURN
 #endif
+#endif
+
+
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
 
 #endif /* Py_PYPORT_H */

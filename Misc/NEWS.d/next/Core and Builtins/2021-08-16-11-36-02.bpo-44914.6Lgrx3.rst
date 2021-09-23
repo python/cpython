@@ -1,0 +1,5 @@
+Class version tags are no longer recycled.
+
+This means that a version tag serves as a unique identifier for the state of
+a class. We rely on this for effective specialization of the LOAD_ATTR and
+other instructions.

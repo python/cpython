@@ -102,8 +102,6 @@ PyAPI_FUNC(long long) PyLong_AsLongLongAndOverflow(PyObject *, int *);
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);
 #ifndef Py_LIMITED_API
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
 PyAPI_FUNC(PyObject *) PyLong_FromUnicodeObject(PyObject *u, int base);
 PyAPI_FUNC(PyObject *) _PyLong_FromBytes(const char *, Py_ssize_t, int);
 #endif
@@ -212,9 +210,6 @@ PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
 #endif /* !Py_LIMITED_API */
 
 #ifndef Py_LIMITED_API
-PyAPI_DATA(PyObject *) _PyLong_Zero;
-PyAPI_DATA(PyObject *) _PyLong_One;
-
 PyAPI_FUNC(PyObject *) _PyLong_Rshift(PyObject *, size_t);
 PyAPI_FUNC(PyObject *) _PyLong_Lshift(PyObject *, size_t);
 #endif

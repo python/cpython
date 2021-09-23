@@ -3,7 +3,7 @@
 Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
-
+from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, HTTPServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
@@ -19,7 +19,7 @@ import shutil
 import email.message
 import email.utils
 import html
-import http.client
+import http, http.client
 import urllib.parse
 import tempfile
 import time
@@ -30,6 +30,7 @@ from io import BytesIO
 
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import threading_helper
 
 
@@ -66,7 +67,7 @@ class TestServerThread(threading.Thread):
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self._threads = threading_helper.threading_setup()
-        os.environ = support.EnvironmentVarGuard()
+        os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
         self.thread = TestServerThread(self, self.request_handler)
         self.thread.start()
@@ -391,13 +392,13 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                      'undecodable name cannot always be decoded on macOS')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
-    @unittest.skipUnless(support.TESTFN_UNDECODABLE,
-                         'need support.TESTFN_UNDECODABLE')
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
         enc = sys.getfilesystemencoding()
-        filename = os.fsdecode(support.TESTFN_UNDECODABLE) + '.txt'
+        filename = os.fsdecode(os_helper.TESTFN_UNDECODABLE) + '.txt'
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
-            f.write(support.TESTFN_UNDECODABLE)
+            f.write(os_helper.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
         if sys.platform == 'darwin':
             # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
@@ -414,7 +415,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                       .encode(enc, 'surrogateescape'), body)
         response = self.request(self.base_url + '/' + quotedname)
         self.check_status_and_reason(response, HTTPStatus.OK,
-                                     data=support.TESTFN_UNDECODABLE)
+                                     data=os_helper.TESTFN_UNDECODABLE)
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
@@ -427,6 +428,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.assertEqual(response.getheader("Content-Length"), "0")
         response = self.request(self.base_url + '/?hi=2')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url + '?hi=1')
@@ -540,7 +542,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         fullpath = os.path.join(self.tempdir, filename)
 
         try:
-            open(fullpath, 'w').close()
+            open(fullpath, 'wb').close()
         except OSError:
             raise unittest.SkipTest('Can not create file %s on current file '
                                     'system' % filename)
@@ -587,6 +589,24 @@ print()
 print(os.environ["%s"])
 """
 
+cgi_file6 = """\
+#!%s
+import os
+
+print("X-ambv: was here")
+print("Content-type: text/html")
+print()
+print("<pre>")
+for k, v in os.environ.items():
+    try:
+        k.encode('ascii')
+        v.encode('ascii')
+    except UnicodeEncodeError:
+        continue  # see: BPO-44647
+    print(f"{k}={v}")
+print("</pre>")
+"""
+
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
         "This test can't be run reliably as root (issue #13308).")
@@ -620,7 +640,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
         self._pythonexe_symlink = None
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
             self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
         else:
@@ -636,7 +656,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             self.skipTest("Python executable path is not encodable to utf-8")
 
         self.nocgi_path = os.path.join(self.parent_dir, 'nocgi.py')
-        with open(self.nocgi_path, 'w') as fp:
+        with open(self.nocgi_path, 'w', encoding='utf-8') as fp:
             fp.write(cgi_file1 % self.pythonexe)
         os.chmod(self.nocgi_path, 0o777)
 
@@ -665,6 +685,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file5.write(cgi_file1 % self.pythonexe)
         os.chmod(self.file5_path, 0o777)
 
+        self.file6_path = os.path.join(self.cgi_dir, 'file6.py')
+        with open(self.file6_path, 'w', encoding='utf-8') as file6:
+            file6.write(cgi_file6 % self.pythonexe)
+        os.chmod(self.file6_path, 0o777)
+
         os.chdir(self.parent_dir)
 
     def tearDown(self):
@@ -684,6 +709,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 os.remove(self.file4_path)
             if self.file5_path:
                 os.remove(self.file5_path)
+            if self.file6_path:
+                os.remove(self.file6_path)
             os.rmdir(self.cgi_child_dir)
             os.rmdir(self.cgi_dir)
             os.rmdir(self.cgi_dir_in_sub_dir)
@@ -817,6 +844,23 @@ class CGIHTTPServerTestCase(BaseTestCase):
         finally:
             CGIHTTPRequestHandler.cgi_directories.remove('/sub/dir/cgi-bin')
 
+    def test_accept(self):
+        browser_accept = \
+                    'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        tests = (
+            ((('Accept', browser_accept),), browser_accept),
+            ((), ''),
+            # Hack case to get two values for the one header
+            ((('Accept', 'text/html'), ('ACCEPT', 'text/plain')),
+               'text/html,text/plain'),
+        )
+        for headers, expected in tests:
+            headers = OrderedDict(headers)
+            with self.subTest(headers):
+                res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
+                self.assertEqual(http.HTTPStatus.OK, res.status)
+                expected = f"HTTP_ACCEPT={expected}".encode('ascii')
+                self.assertIn(expected, res.read())
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
@@ -1188,9 +1232,9 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test_all(self):
         expected = []
-        blacklist = {'executable', 'nobody_uid', 'test'}
+        denylist = {'executable', 'nobody_uid', 'test'}
         for name in dir(server):
-            if name.startswith('_') or name in blacklist:
+            if name.startswith('_') or name in denylist:
                 continue
             module_object = getattr(server, name)
             if getattr(module_object, '__module__', None) == 'http.server':
@@ -1258,21 +1302,9 @@ class ScriptTestCase(unittest.TestCase):
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
 
-def test_main(verbose=None):
-    cwd = os.getcwd()
-    try:
-        support.run_unittest(
-            RequestHandlerLoggingTestCase,
-            BaseHTTPRequestHandlerTestCase,
-            BaseHTTPServerTestCase,
-            SimpleHTTPServerTestCase,
-            CGIHTTPServerTestCase,
-            SimpleHTTPRequestHandlerTestCase,
-            MiscTestCase,
-            ScriptTestCase
-        )
-    finally:
-        os.chdir(cwd)
+def setUpModule():
+    unittest.addModuleCleanup(os.chdir, os.getcwd())
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

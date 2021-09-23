@@ -1,0 +1,2 @@
+Corrent the syntax error message regarding multiple exception types to not
+refer to "exception groups". Patch by Pablo Galindo

@@ -1,0 +1,1 @@
+Added a separate error message for discontinuous padding in *binascii.a2b_base64* strict mode.

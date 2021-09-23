@@ -1,0 +1,2 @@
+Prohibit previously deprecated potentially disruptive operations on
+:class:`asyncio.trsock.TransportSocket`. Patch by Illia Volochii.

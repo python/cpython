@@ -1815,8 +1815,7 @@ names.
    ===============================   ==============================
 
   Likewise, the ``TestCase.fail*`` methods deprecated in Python 3.1 are expected
-  to be removed in Python 3.3.  Also see the :ref:`deprecated-aliases` section in
-  the :mod:`unittest` documentation.
+  to be removed in Python 3.3.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
@@ -1921,7 +1920,7 @@ inspect
 pydoc
 -----
 
-The :mod:`pydoc` module now provides a much-improved Web server interface, as
+The :mod:`pydoc` module now provides a much-improved web server interface, as
 well as a new command-line option ``-b`` to automatically open a browser window
 to display that server:
 
@@ -2311,7 +2310,7 @@ Multi-threading
 ===============
 
 * The mechanism for serializing execution of concurrently running Python threads
-  (generally known as the :term:`GIL` or :term:`Global Interpreter Lock`) has
+  (generally known as the :term:`GIL` or Global Interpreter Lock) has
   been rewritten.  Among the objectives were more predictable switching
   intervals and reduced overhead due to lock contention and the number of
   ensuing system calls.  The notion of a "check interval" to allow thread

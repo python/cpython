@@ -70,6 +70,11 @@ __all__ = __always_supported + ('new', 'algorithms_guaranteed',
 
 __builtin_constructor_cache = {}
 
+# Prefer our blake2 implementation
+# OpenSSL 1.1.0 comes with a limited implementation of blake2b/s. The OpenSSL
+# implementations neither support keyed blake2 (blake2 MAC) nor advanced
+# features like salt, personalization, or tree hashing. OpenSSL hash-only
+# variants are available as 'blake2b512' and 'blake2s256', though.
 __block_openssl_constructor = {
     'blake2b', 'blake2s',
 }
@@ -120,7 +125,7 @@ def __get_builtin_constructor(name):
 
 def __get_openssl_constructor(name):
     if name in __block_openssl_constructor:
-        # Prefer our blake2 and sha3 implementation.
+        # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)
     try:
         # MD5, SHA1, and SHA2 are in all supported OpenSSL versions
@@ -149,10 +154,7 @@ def __hash_new(name, data=b'', **kwargs):
     optionally initialized with data (which must be a bytes-like object).
     """
     if name in __block_openssl_constructor:
-        # Prefer our blake2 and sha3 implementation
-        # OpenSSL 1.1.0 comes with a limited implementation of blake2b/s.
-        # It does neither support keyed blake2 nor advanced features like
-        # salt, personal, tree hashing or SSE.
+        # Prefer our builtin blake2 implementation.
         return __get_builtin_constructor(name)(data, **kwargs)
     try:
         return _hashlib.new(name, data, **kwargs)
@@ -171,6 +173,7 @@ try:
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
 except ImportError:
+    _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
 
@@ -178,6 +181,7 @@ try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
     from _hashlib import pbkdf2_hmac
 except ImportError:
+    from warnings import warn as _warn
     _trans_5C = bytes((x ^ 0x5C) for x in range(256))
     _trans_36 = bytes((x ^ 0x36) for x in range(256))
 
@@ -188,6 +192,11 @@ except ImportError:
         as OpenSSL's PKCS5_PBKDF2_HMAC for short passwords and much faster
         for long passwords.
         """
+        _warn(
+            "Python implementation of pbkdf2_hmac() is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
         if not isinstance(hash_name, str):
             raise TypeError(hash_name)
 
@@ -226,15 +235,15 @@ except ImportError:
         loop = 1
         from_bytes = int.from_bytes
         while len(dkey) < dklen:
-            prev = prf(salt + loop.to_bytes(4, 'big'))
+            prev = prf(salt + loop.to_bytes(4))
             # endianness doesn't matter here as long to / from use the same
-            rkey = int.from_bytes(prev, 'big')
+            rkey = from_bytes(prev)
             for i in range(iterations - 1):
                 prev = prf(prev)
                 # rkey = rkey ^ prev
-                rkey ^= from_bytes(prev, 'big')
+                rkey ^= from_bytes(prev)
             loop += 1
-            dkey += rkey.to_bytes(inner.digest_size, 'big')
+            dkey += rkey.to_bytes(inner.digest_size)
 
         return dkey[:dklen]
 

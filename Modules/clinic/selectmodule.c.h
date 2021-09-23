@@ -65,7 +65,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -91,7 +92,7 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -139,7 +140,7 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
@@ -173,7 +174,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!fildes_converter(arg, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_poll_unregister_impl(self, fd);
@@ -226,7 +227,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -254,7 +256,7 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -275,7 +277,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
-"modify($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"modify($self, fd,\n"
+"       eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Modify a possible already registered file descriptor.\n"
@@ -303,7 +306,7 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (nargs < 2) {
@@ -341,7 +344,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!fildes_converter(arg, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_devpoll_unregister_impl(self, fd);
@@ -630,7 +633,8 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_register__doc__,
-"register($self, /, fd, eventmask=EPOLLIN | EPOLLPRI | EPOLLOUT)\n"
+"register($self, /, fd,\n"
+"         eventmask=select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
@@ -664,7 +668,7 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     if (!noptargs) {
@@ -717,7 +721,7 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -762,7 +766,7 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
     if (!args) {
         goto exit;
     }
-    if (!fildes_converter(args[0], &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = select_epoll_unregister_impl(self, fd);
@@ -929,11 +933,13 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == _selectstate_global->kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
+         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == _selectstate_global->kqueue_queue_Type) &&
+    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
+         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1175,4 +1181,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a055330869acbd16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed1e5a658863244c input=a9049054013a1b77]*/

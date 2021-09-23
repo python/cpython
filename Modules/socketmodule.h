@@ -342,7 +342,8 @@ typedef struct {
 
 */
 
-/* C API for usage by other Python modules */
+/* C API for usage by other Python modules.
+ * Always add new things to the end for binary compatibility. */
 typedef struct {
     PyTypeObject *Sock_Type;
     PyObject *error;

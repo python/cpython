@@ -1,0 +1,3 @@
+Added a new optional :code:`strict_mode` parameter to *binascii.a2b_base64*.
+When :code:`scrict_mode` is set to :code:`True`, the *a2b_base64* function will accept only valid base64 content.
+More details about what "valid base64 content" is, can be found in the function's documentation.

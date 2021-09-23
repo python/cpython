@@ -23,7 +23,7 @@ See also the `Examples`_ section below.
 Queue
 =====
 
-.. class:: Queue(maxsize=0, \*, loop=None)
+.. class:: Queue(maxsize=0)
 
    A first in, first out (FIFO) queue.
 
@@ -35,9 +35,6 @@ Queue
    Unlike the standard library threading :mod:`queue`, the size of
    the queue is always known and can be returned by calling the
    :meth:`qsize` method.
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
 
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
@@ -107,6 +104,13 @@ Queue
 
       Raises :exc:`ValueError` if called more times than there were
       items placed in the queue.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 
 Priority Queue

@@ -1,5 +1,4 @@
 """Abstract base classes related to import."""
-from . import _bootstrap
 from . import _bootstrap_external
 from . import machinery
 try:
@@ -12,8 +11,10 @@ try:
     import _frozen_importlib_external
 except ImportError:
     _frozen_importlib_external = _bootstrap_external
+from ._abc import Loader
 import abc
 import warnings
+from typing import BinaryIO, Iterable, Text
 from typing import Protocol, runtime_checkable
 
 
@@ -40,15 +41,27 @@ class Finder(metaclass=abc.ABCMeta):
     Deprecated since Python 3.3
     """
 
+    def __init__(self):
+        warnings.warn("the Finder ABC is deprecated and "
+                       "slated for removal in Python 3.12; use MetaPathFinder "
+                       "or PathEntryFinder instead",
+                       DeprecationWarning)
+
     @abc.abstractmethod
     def find_module(self, fullname, path=None):
         """An abstract method that should find a module.
         The fullname is a str and the optional path is a str or None.
         Returns a Loader object or None.
         """
+        warnings.warn("importlib.abc.Finder along with its find_module() "
+                      "method are deprecated and "
+                       "slated for removal in Python 3.12; use "
+                       "MetaPathFinder.find_spec() or "
+                       "PathEntryFinder.find_spec() instead",
+                       DeprecationWarning)
 
 
-class MetaPathFinder(Finder):
+class MetaPathFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for import finders on sys.meta_path."""
 
@@ -67,8 +80,8 @@ class MetaPathFinder(Finder):
 
         """
         warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec() "
-                      "(available since 3.4)",
+                      "3.4 in favor of MetaPathFinder.find_spec() and is "
+                      "slated for removal in Python 3.12",
                       DeprecationWarning,
                       stacklevel=2)
         if not hasattr(self, 'find_spec'):
@@ -85,7 +98,7 @@ _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
 
 
-class PathEntryFinder(Finder):
+class PathEntryFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for path entry finders used by PathFinder."""
 
@@ -132,53 +145,6 @@ class PathEntryFinder(Finder):
         """
 
 _register(PathEntryFinder, machinery.FileFinder)
-
-
-class Loader(metaclass=abc.ABCMeta):
-
-    """Abstract base class for import loaders."""
-
-    def create_module(self, spec):
-        """Return a module to initialize and into which to load.
-
-        This method should raise ImportError if anything prevents it
-        from creating a new module.  It may return None to indicate
-        that the spec should create the new module.
-        """
-        # By default, defer to default semantics for the new module.
-        return None
-
-    # We don't define exec_module() here since that would break
-    # hasattr checks we do to support backward compatibility.
-
-    def load_module(self, fullname):
-        """Return the loaded module.
-
-        The module must be added to sys.modules and have import-related
-        attributes set properly.  The fullname is a str.
-
-        ImportError is raised on failure.
-
-        This method is deprecated in favor of loader.exec_module(). If
-        exec_module() exists then it is used to provide a backwards-compatible
-        functionality for this method.
-
-        """
-        if not hasattr(self, 'exec_module'):
-            raise ImportError
-        return _bootstrap._load_module_shim(self, fullname)
-
-    def module_repr(self, module):
-        """Return a module's repr.
-
-        Used by the module type when the method does not raise
-        NotImplementedError.
-
-        This method is deprecated.
-
-        """
-        # The exception will cause ModuleType.__repr__ to ignore this method.
-        raise NotImplementedError
 
 
 class ResourceLoader(Loader):
@@ -344,49 +310,45 @@ _register(SourceLoader, machinery.SourceFileLoader)
 
 
 class ResourceReader(metaclass=abc.ABCMeta):
-
-    """Abstract base class to provide resource-reading support.
-
-    Loaders that support resource reading are expected to implement
-    the ``get_resource_reader(fullname)`` method and have it either return None
-    or an object compatible with this ABC.
-    """
+    """Abstract base class for loaders to provide resource reading support."""
 
     @abc.abstractmethod
-    def open_resource(self, resource):
+    def open_resource(self, resource: Text) -> BinaryIO:
         """Return an opened, file-like object for binary reading.
 
-        The 'resource' argument is expected to represent only a file name
-        and thus not contain any subdirectory components.
-
+        The 'resource' argument is expected to represent only a file name.
         If the resource cannot be found, FileNotFoundError is raised.
         """
+        # This deliberately raises FileNotFoundError instead of
+        # NotImplementedError so that if this method is accidentally called,
+        # it'll still do the right thing.
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def resource_path(self, resource):
+    def resource_path(self, resource: Text) -> Text:
         """Return the file system path to the specified resource.
 
-        The 'resource' argument is expected to represent only a file name
-        and thus not contain any subdirectory components.
-
+        The 'resource' argument is expected to represent only a file name.
         If the resource does not exist on the file system, raise
         FileNotFoundError.
         """
+        # This deliberately raises FileNotFoundError instead of
+        # NotImplementedError so that if this method is accidentally called,
+        # it'll still do the right thing.
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def is_resource(self, name):
-        """Return True if the named 'name' is consider a resource."""
+    def is_resource(self, path: Text) -> bool:
+        """Return True if the named 'path' is a resource.
+
+        Files are resources, directories are not.
+        """
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def contents(self):
-        """Return an iterable of strings over the contents of the package."""
-        return []
-
-
-_register(ResourceReader, machinery.SourceFileLoader)
+    def contents(self) -> Iterable[str]:
+        """Return an iterable of entries in `package`."""
+        raise FileNotFoundError
 
 
 @runtime_checkable
@@ -402,26 +364,28 @@ class Traversable(Protocol):
         Yield Traversable objects in self
         """
 
-    @abc.abstractmethod
     def read_bytes(self):
         """
         Read contents of self as bytes
         """
+        with self.open('rb') as strm:
+            return strm.read()
 
-    @abc.abstractmethod
     def read_text(self, encoding=None):
         """
-        Read contents of self as bytes
+        Read contents of self as text
         """
+        with self.open(encoding=encoding) as strm:
+            return strm.read()
 
     @abc.abstractmethod
-    def is_dir(self):
+    def is_dir(self) -> bool:
         """
         Return True if self is a dir
         """
 
     @abc.abstractmethod
-    def is_file(self):
+    def is_file(self) -> bool:
         """
         Return True if self is a file
         """
@@ -432,11 +396,11 @@ class Traversable(Protocol):
         Return Traversable child in self
         """
 
-    @abc.abstractmethod
     def __truediv__(self, child):
         """
         Return Traversable child in self
         """
+        return self.joinpath(child)
 
     @abc.abstractmethod
     def open(self, mode='r', *args, **kwargs):
@@ -449,14 +413,18 @@ class Traversable(Protocol):
         """
 
     @abc.abstractproperty
-    def name(self):
-        # type: () -> str
+    def name(self) -> str:
         """
         The base name of this object without any parent references.
         """
 
 
 class TraversableResources(ResourceReader):
+    """
+    The required interface for providing traversable
+    resources.
+    """
+
     @abc.abstractmethod
     def files(self):
         """Return a Traversable object for the loaded package."""
@@ -468,7 +436,7 @@ class TraversableResources(ResourceReader):
         raise FileNotFoundError(resource)
 
     def is_resource(self, path):
-        return self.files().joinpath(path).isfile()
+        return self.files().joinpath(path).is_file()
 
     def contents(self):
         return (item.name for item in self.files().iterdir())
