@@ -4654,7 +4654,7 @@ check_eval_breaker:
                         goto error;
                     }
                     assert(tstate->interp->eval_frame != NULL);
-                    // The frame has stolen all the arguments from the stack, so there is no need to clean up them
+                    // The frame has stolen all the arguments from the stack, so there is no need to clean them up.```
                     Py_DECREF(function);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     new_frame->depth = frame->depth + 1;
