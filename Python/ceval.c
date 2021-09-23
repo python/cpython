@@ -1541,6 +1541,12 @@ _PyEval_FrameFromPyFunctionAndArgs(PyThreadState *tstate, PyObject* const *args,
     return _PyEvalFramePushAndInit(tstate, con, locals, args, vector_nargs, NULL, 1);
 }
 
+static PyObject *
+make_coro(PyThreadState *tstate, PyFrameConstructor *con,
+          PyObject *locals,
+          PyObject* const* args, size_t argcount,
+          PyObject *kwnames);
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int throwflag)
 {
@@ -4637,40 +4643,44 @@ check_eval_breaker:
 
             // Check if the call can be inlined or not
             PyObject *function = PEEK(oparg + 1);
-            int inline_call = 0;
             if (Py_TYPE(function) == &PyFunction_Type) {
                 PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
-                int is_coro = code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-                inline_call = (is_coro || cframe.use_tracing) ? 0 : 1;
+                STACK_SHRINK(oparg + 1);
+                if ((code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                    InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer+1, oparg, function);
+                    if (new_frame == NULL) {
+                        // When we exit here, we own all variables in the stack (the frame creation has not stolen
+                        // any variable) so we need to clean the whole stack (done in the "error" label).
+                        goto error;
+                    }
+                    assert(tstate->interp->eval_frame != NULL);
+                    // The frame has stolen all the arguments from the stack, so there is no need to clean up them
+                    Py_DECREF(function);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    new_frame->depth = frame->depth + 1;
+                    tstate->frame = frame = new_frame;
+                    goto start_frame;
+                }
+                else {
+                    /* Callable is a generator or coroutine function: create coroutine or generator. */
+                    PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
+                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer+1, oparg, NULL);
+                    for (int i = 0; i < oparg+1; i++) {
+                        Py_DECREF(stack_pointer[i]);
+                    }
+                }
             }
-
-            if (!inline_call) {
+            else {
                 PyObject **sp = stack_pointer;
                 res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
                 stack_pointer = sp;
-                PUSH(res);
-                if (res == NULL) {
-                    goto error;
-                }
-                CHECK_EVAL_BREAKER();
-                DISPATCH();
             }
-
-            assert(!cframe.use_tracing);
-            InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer-oparg, oparg, function);
-            if (new_frame == NULL) {
-                // When we exit here, we own all variables in the stack (the frame creation has not stolen
-                // any variable) so we need to clean the whole stack (done in the "error" label).
+            PUSH(res);
+            if (res == NULL) {
                 goto error;
             }
-            assert(tstate->interp->eval_frame != NULL);
-            // The frame has stolen all the arguments from the stack, so there is no need to clean up them
-            STACK_SHRINK(oparg + 1);
-            Py_DECREF(function);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            new_frame->depth = frame->depth + 1;
-            tstate->frame = frame = new_frame;
-            goto start_frame;
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
         }
 
         TARGET(CALL_FUNCTION_KW): {
