@@ -4641,7 +4641,7 @@ check_eval_breaker:
             if (Py_TYPE(function) == &PyFunction_Type) {
                 PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
                 int is_coro = code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-                inline_call = (is_coro || cframe.use_tracing) ? 0 : 1;
+                inline_call = !is_coro;
             }
 
             if (!inline_call) {
@@ -4656,7 +4656,6 @@ check_eval_breaker:
                 DISPATCH();
             }
 
-            assert(!cframe.use_tracing);
             InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer-oparg, oparg, function);
             if (new_frame == NULL) {
                 // When we exit here, we own all variables in the stack (the frame creation has not stolen
