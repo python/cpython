@@ -52,24 +52,41 @@ def update_file_with_tmpfile(filename, tmpfile, *, create=False):
     except FileNotFoundError:
         if not create:
             raise  # re-raise
-        old_contents = ''
-        new_contents = '...'
+        outcome = 'created'
+        os.replace(tmpfile, filename)
     else:
         with targetfile:
             old_contents = targetfile.read()
         with open(tmpfile, 'rb') as f:
             new_contents = f.read()
-    if old_contents != new_contents:
-        os.replace(tmpfile, filename)
-    else:
-        os.unlink(tmpfile)
+        # Now compare!
+        if old_contents != new_contents:
+            outcome = 'updated'
+            os.replace(tmpfile, filename)
+        else:
+            outcome = 'same'
+            os.unlink(tmpfile)
+    return outcome
 
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--create', action='store_true')
+    parser.add_argument('--exitcode', action='store_true')
     parser.add_argument('filename', help='path to be updated')
     parser.add_argument('tmpfile', help='path with new contents')
     args = parser.parse_args()
-    update_file_with_tmpfile(**vars(args))
+    kwargs = vars(args)
+    setexitcode = kwargs.pop('exitcode')
+
+    outcome = update_file_with_tmpfile(**kwargs)
+    if setexitcode:
+        if outcome == 'same':
+            sys.exit(0)
+        elif outcome == 'updated':
+            sys.exit(1)
+        elif outcome == 'created':
+            sys.exit(2)
+        else:
+            raise NotImplementedError
