@@ -116,18 +116,18 @@ class _RLock:
         self._count = 0
 
     def __repr__(self):
+        cls = self.__class__
         owner = self._owner
         try:
             owner = _active[owner].name
         except KeyError:
             pass
-        return "<%s %s.%s object owner=%r count=%d at %s>" % (
+        return "<%s %s.%s object owner=%r count=%d at %#x>" % (
             "locked" if self._block.locked() else "unlocked",
-            self.__class__.__module__,
-            self.__class__.__qualname__,
+            cls.__module__, cls.__qualname__,
             owner,
             self._count,
-            hex(id(self))
+            id(self)
         )
 
     def _at_fork_reinit(self):
@@ -419,8 +419,9 @@ class Semaphore:
         self._value = value
 
     def __repr__(self):
+        cls = self.__class__
         return '<%s.%s: %r at %#x>' % (
-            self.__class__.__module__, self.__class__.__name__,
+            cls.__module__, cls.__qualname__,
             self._value, id(self)
         )
 
@@ -511,8 +512,9 @@ class BoundedSemaphore(Semaphore):
         self._initial_value = value
 
     def __repr__(self):
+        cls = self.__class__
         return '<%s.%s: %r/%r at %#x>' % (
-            self.__class__.__module__, self.__class__.__name__,
+            cls.__module__, cls.__qualname__,
             self._value, self._initial_value, id(self)
         )
 
@@ -552,8 +554,9 @@ class Event:
         self._flag = False
 
     def __repr__(self):
+        cls = self.__class__
         return '<%s.%s: %s at %#x>' % (
-            self.__class__.__module__, self.__class__.__name__,
+            cls.__module__, cls.__qualname__,
             'set' if self._flag else 'unset', id(self)
         )
 
@@ -656,8 +659,9 @@ class Barrier:
         self._count = 0
 
     def __repr__(self):
+        cls = self.__class__
         return '<%s.%s: %r/%r%s at %#x>' % (
-            self.__class__.__module__, self.__class__.__name__,
+            cls.__module__, cls.__qualname__,
             self.n_waiting, self.parties,
             ', broken' if self.broken else '', id(self)
         )
