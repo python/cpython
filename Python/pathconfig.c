@@ -817,6 +817,17 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
 
 /* locating the stdlib */
 
+static int
+file_exists(const wchar_t *filename)
+{
+#ifdef MS_WINDOWS
+    return GetFileAttributesW(filename) != 0xFFFFFFFF;
+#else
+    struct stat buf;
+    return _Py_wstat(filename, &buf) == 0 && S_ISREG(buf.st_mode);
+#endif
+}
+
 /* Decide if the given directory hold the stdlib. */
 bool
 _Py_IsStdlibDir(const wchar_t *stdlibdir, bool checkpyc)
@@ -835,8 +846,7 @@ _Py_IsStdlibDir(const wchar_t *stdlibdir, bool checkpyc)
     _Py_add_relfile(filename, LANDMARK, MAXPATHLEN + 1);
 
     // Check if the file exists.
-    struct stat buf;
-    if (_Py_wstat(filename, &buf) == 0 && S_ISREG(buf.st_mode)) {
+    if (file_exists(filename)) {
         return true;
     }
 
@@ -845,7 +855,7 @@ _Py_IsStdlibDir(const wchar_t *stdlibdir, bool checkpyc)
     if (checkpyc && len < MAXPATHLEN) {
         filename[len] = 'c';
         filename[len + 1] = '\0';
-        if (_Py_wstat(filename, &buf) == 0 && S_ISREG(buf.st_mode)) {
+        if (file_exists(filename)) {
             return true;
         }
     }
