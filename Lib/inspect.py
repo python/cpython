@@ -323,7 +323,7 @@ def isabstract(object):
                 return True
     return False
 
-def getmembers(object, predicate=None):
+def getmembers(object, predicate=None, sort_result: bool=True):
     """Return all members of an object as (name, value) pairs sorted by name.
     Optionally, only return members that satisfy a given predicate."""
     if isclass(object):
@@ -364,7 +364,10 @@ def getmembers(object, predicate=None):
         if not predicate or predicate(value):
             results.append((key, value))
         processed.add(key)
-    results.sort(key=lambda pair: pair[0])
+    
+    if sort_result:
+        results.sort(key=lambda pair: pair[0])
+    
     return results
 
 Attribute = namedtuple('Attribute', 'name kind defining_class object')
