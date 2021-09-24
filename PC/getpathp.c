@@ -213,7 +213,7 @@ exists(const wchar_t *filename)
    Assumes 'filename' MAXPATHLEN+1 bytes long -
    may extend 'filename' by one character. */
 static int
-ismodule(wchar_t *filename, int update_filename)
+ismodule(wchar_t *filename)
 {
     size_t n;
 
@@ -228,9 +228,8 @@ ismodule(wchar_t *filename, int update_filename)
         filename[n] = L'c';
         filename[n + 1] = L'\0';
         exist = exists(filename);
-        if (!update_filename) {
-            filename[n] = L'\0';
-        }
+        // Drop the 'c' we just added.
+        filename[n] = L'\0';
         return exist;
     }
     return 0;
@@ -284,7 +283,7 @@ gotlandmark(const wchar_t *prefix)
 #  define LANDMARK L"lib\\os.py"
 #endif
     join(filename, LANDMARK);
-    return ismodule(filename, FALSE);
+    return ismodule(filename);
 }
 
 
