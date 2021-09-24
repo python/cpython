@@ -838,237 +838,46 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(FROZEN_READY)
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-$(FROZEN_FILES_OUT): Programs/_freeze_module
-
 have_frozen_files=$(wildcard $(FROZEN_FILES_OUT))
 
+$(FROZEN_DATA)/%.h: Programs/_freeze_module
+	$(eval exists = $(wildcard $@))
+	$(eval pyfile = Lib/$(subst .,/,$(*F)).py)
+	$(eval pyfilefull = $(srcdir)/$(pyfile))
+	@if ( mkdir $(FROZEN_GENERATED) ) 2> /dev/null; then \
+		chmod 555 $(FROZEN_GENERATED); \
+		echo "=== Re-generating the frozen modules. ==="; \
+		echo "(For verbose output, run make regen-frozen.)"; \
+	else \
+		touch $(FROZEN_GENERATED); \
+	fi
+	@rm -f $(FROZEN_READY)
+	@Programs/_freeze_module $(*F) "$(pyfilefull)" $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
+		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
+		if test $@ -ot "$(pyfilefull)"; then touch -r "$(pyfilefull)" $@; fi; \
+	fi
+	@if test -n "$(exists)" && test -n "$(findstring $(pyfile),$?)"; then echo -n " $(@F) "; \
+	elif test -z "$(have_frozen_files)"; then echo -n "."; \
+	elif test -z "$(exists)"; then echo -n " $(@F) "; \
+	else echo -n "."; fi
+
 # BEGIN: freezing modules
-
 Python/frozen_modules/importlib._bootstrap.h: $(srcdir)/Lib/importlib/_bootstrap.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/importlib/_bootstrap.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module importlib._bootstrap "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/importlib._bootstrap_external.h: $(srcdir)/Lib/importlib/_bootstrap_external.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/importlib/_bootstrap_external.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module importlib._bootstrap_external "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/zipimport.h: $(srcdir)/Lib/zipimport.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/zipimport.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module zipimport "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/abc.h: $(srcdir)/Lib/abc.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/abc.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module abc "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/codecs.h: $(srcdir)/Lib/codecs.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/codecs.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module codecs "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/io.h: $(srcdir)/Lib/io.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/io.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module io "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/_collections_abc.h: $(srcdir)/Lib/_collections_abc.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/_collections_abc.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module _collections_abc "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/_sitebuiltins.h: $(srcdir)/Lib/_sitebuiltins.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/_sitebuiltins.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module _sitebuiltins "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/genericpath.h: $(srcdir)/Lib/genericpath.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/genericpath.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module genericpath "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/ntpath.h: $(srcdir)/Lib/ntpath.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/ntpath.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module ntpath "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/posixpath.h: $(srcdir)/Lib/posixpath.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/posixpath.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module posixpath "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/os.h: $(srcdir)/Lib/os.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/os.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module os "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/site.h: $(srcdir)/Lib/site.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/site.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module site "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/stat.h: $(srcdir)/Lib/stat.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/stat.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module stat "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 Python/frozen_modules/__hello__.h: $(srcdir)/Lib/__hello__.py
-	$(eval exists = $(wildcard $@))
-	$(eval pyfile_dep = Lib/__hello__.py)
-	$(eval pyfile = $(srcdir)/$(pyfile_dep))
-	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module __hello__ "$(pyfile)" $@.new
-	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
-		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \
-	fi
-	@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \
-	elif test -z "$(have_frozen_files)"; then echo -n "."; \
-	elif test -z "$(exists)"; then echo -n " $(@F) "; \
-	else echo -n "."; fi
-
 # END: freezing modules
 
 Tools/scripts/freeze_modules.py: Programs/_freeze_module
