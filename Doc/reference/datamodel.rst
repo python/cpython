@@ -1774,28 +1774,6 @@ class' :attr:`~object.__dict__`.
    Called to delete the attribute on an instance *instance* of the owner class.
 
 
-.. method:: object.__set_name__(self, owner, name)
-
-   Called at the time the owning class *owner* is created. The
-   descriptor has been assigned to *name*.
-
-   .. note::
-
-      :meth:`__set_name__` is only called implicitly as part of the
-      :class:`type` constructor, so it will need to be called explicitly with
-      the appropriate parameters when a descriptor is added to a class after
-      initial creation::
-
-         class A:
-            pass
-         descr = custom_descriptor()
-         A.attr = descr
-         descr.__set_name__(A, 'attr')
-
-      See :ref:`class-object-creation` for more details.
-
-   .. versionadded:: 3.6
-
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
 appropriately can assist in runtime introspection of dynamic class attributes).
@@ -1984,6 +1962,33 @@ class defining the method.
    .. versionadded:: 3.6
 
 
+When a class is created, :meth:`type.__new__` scans the class variables
+and makes callbacks to those with a :meth:`__set_name__` hook.
+
+.. method:: object.__set_name__(self, owner, name)
+
+   Automatically called at the time the owning class *owner* is
+   created. The object has been assigned to *name* in that class::
+
+       class A:
+           x = C()  # Automatically calls: x.__set_name__(A, 'x')
+
+   If the class variable is assigned after the class is created,
+   :meth:`__set_name__` will not be called automatically.
+   If needed, :meth:`__set_name__` can be called directly::
+
+       class A:
+          pass
+
+       c = C()
+       A.x = c                  # The hook is not called
+       c.__set_name__(A, 'x')   # Manually invoke the hook
+
+   See :ref:`class-object-creation` for more details.
+
+   .. versionadded:: 3.6
+
+
 .. _metaclasses:
 
 Metaclasses
@@ -2133,15 +2138,15 @@ current call is identified based on the first argument passed to the method.
    Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
-calls ``type.__new__``, the following additional customisation steps are
+calls ``type.__new__``, the following additional customization steps are
 invoked after creating the class object:
 
-* first, ``type.__new__`` collects all of the descriptors in the class
-  namespace that define a :meth:`~object.__set_name__` method;
-* second, all of these ``__set_name__`` methods are called with the class
-  being defined and the assigned name of that particular descriptor;
-* finally, the :meth:`~object.__init_subclass__` hook is called on the
-  immediate parent of the new class in its method resolution order.
+1) The ``type.__new__`` method collects all of the attributes in the class
+   namespace that define a :meth:`~object.__set_name__` method;
+2) Those ``__set_name__`` methods are called with the class
+   being defined and the assigned name of that particular attribute;
+3) The :meth:`~object.__init_subclass__` hook is called on the
+   immediate parent of the new class in its method resolution order.
 
 After the class object is created, it is passed to the class decorators
 included in the class definition (if any) and the resulting object is bound

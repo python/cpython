@@ -932,6 +932,12 @@ bdb
 Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
 (Contributed by Irit Katriel in :issue:`24160`.)
 
+bisect
+------
+
+Added the possibility of providing a *key* function to the APIs in the :mod:`bisect`
+module. (Contributed by Raymond Hettinger in :issue:`4356`.)
+
 codecs
 ------
 
@@ -2299,3 +2305,6 @@ Removed
   These functions were undocumented, excluded from the limited C API, and were
   only used internally by the compiler.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* The ``PyThreadState.use_tracing`` member has been removed to optimize Python.
+  (Contributed by Mark Shannon in :issue:`43760`.)

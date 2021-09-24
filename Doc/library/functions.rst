@@ -1592,6 +1592,15 @@ are always available.  They are listed here in alphabetical order.
    compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
 
+   The sort algorithm uses only ``<`` comparisons between items.  While
+   defining an :meth:`~object.__lt__` method will suffice for sorting,
+   :PEP:`8` recommends that all six :ref:`rich comparisons
+   <comparisons>` be implemented.  This will help avoid bugs when using
+   the same data with other ordering tools such as :func:`max` that rely
+   on a different underlying method.  Implementing all six comparisons
+   also helps avoid confusion for mixed type comparisons which can call
+   reflected the :meth:`~object.__gt__` method.
+
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
 .. decorator:: staticmethod

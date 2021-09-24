@@ -480,6 +480,12 @@ Miscellaneous options
      objects and pyc files are desired as well as supressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
+   * ``-X frozen_modules`` determines whether or not frozen modules are
+     ignored by the import machinery.  A value of "on" means they get
+     imported and "off" means they are ignored.  The default is "on"
+     for non-debug builds (the normal case) and "off" for debug builds.
+     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
+     frozen modules are always used, even if this flag is set to "off".
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -517,6 +523,9 @@ Miscellaneous options
 
    .. versionadded:: 3.11
       The ``-X no_debug_ranges`` option.
+
+   .. versionadded:: 3.11
+      The ``-X frozen_modules`` option.
 
 
 Options you shouldn't use
@@ -647,7 +656,7 @@ conflict.
 .. envvar:: PYTHONCASEOK
 
    If this is set, Python ignores case in :keyword:`import` statements.  This
-   only works on Windows and OS X.
+   only works on Windows and macOS.
 
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
@@ -730,7 +739,7 @@ conflict.
 
    If this environment variable is set, ``sys.argv[0]`` will be set to its
    value instead of the value got through the C runtime.  Only works on
-   Mac OS X.
+   macOS.
 
 .. envvar:: PYTHONWARNINGS
 
