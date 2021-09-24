@@ -554,13 +554,10 @@ def regen_makefile(modules):
         pyfiles.append(f'\t\t{pyfile} \\')
 
         freeze = (f'Programs/_freeze_module {src.frozenid} '
-                  f'$(srcdir)/{pyfile} $(srcdir)/{header}.new')
-        update = (f'$(UPDATE_FILE) --create $(srcdir)/{header} '
-                  f'$(srcdir)/{header}.new')
+                  f'$(srcdir)/{pyfile} $(srcdir)/{header}')
         rules.extend([
             f'{header}: Programs/_freeze_module {pyfile}',
             f'\t{freeze}',
-            f'\t{update}',
             '',
         ])
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
