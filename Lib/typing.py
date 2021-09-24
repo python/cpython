@@ -667,7 +667,7 @@ class ForwardRef(_Final, _root=True):
                  '__forward_is_argument__', '__forward_is_class__',
                  '__forward_module__')
 
-    def __init__(self, arg, is_argument=True, is_class=False, module=None):
+    def __init__(self, arg, is_argument=True, module=None, *, is_class=False):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
         try:
