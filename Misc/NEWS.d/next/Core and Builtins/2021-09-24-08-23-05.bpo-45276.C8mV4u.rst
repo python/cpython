@@ -1,0 +1,1 @@
+make weak collection's copy() atomic and use this feature to avoid race conditions in asyncio and threading
