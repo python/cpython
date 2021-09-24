@@ -1836,6 +1836,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         if value is None:
             value = type(None)
         if isinstance(value, str):
+            # class-level forward refs were handled above, this must be either
+            # a module-level annotation or a function argument annotation
             value = ForwardRef(
                 value,
                 is_argument=not isinstance(obj, types.ModuleType),
