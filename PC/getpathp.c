@@ -116,10 +116,6 @@
  * with a semicolon separated path prior to calling Py_Initialize.
  */
 
-#ifndef LANDMARK
-#  define LANDMARK L"lib\\os.py"
-#endif
-
 #define INIT_ERR_BUFFER_OVERFLOW() _PyStatus_ERR("buffer overflow")
 
 
@@ -279,12 +275,15 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
    'prefix' is null terminated in bounds.  join() ensures
    'landmark' can not overflow prefix if too long. */
 static int
-gotlandmark(const wchar_t *prefix, const wchar_t *landmark)
+gotlandmark(const wchar_t *prefix)
 {
     wchar_t filename[MAXPATHLEN+1];
     memset(filename, 0, sizeof(filename));
     wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
-    join(filename, landmark);
+#ifndef LANDMARK
+#  define LANDMARK L"lib\\os.py"
+#endif
+    join(filename, LANDMARK);
     return ismodule(filename, FALSE);
 }
 
@@ -292,12 +291,12 @@ gotlandmark(const wchar_t *prefix, const wchar_t *landmark)
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
-search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path, const wchar_t *landmark)
+search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
 {
     /* Search from argv0_path, until landmark is found */
     wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
     do {
-        if (gotlandmark(prefix, landmark)) {
+        if (gotlandmark(prefix)) {
             return 1;
         }
         reduce(prefix);
@@ -759,7 +758,7 @@ calculate_home_prefix(PyCalculatePath *calculate,
             reduce(prefix);
             calculate->home = prefix;
         }
-        else if (search_for_prefix(prefix, argv0_path, LANDMARK)) {
+        else if (search_for_prefix(prefix, argv0_path)) {
             calculate->home = prefix;
         }
         else {
@@ -937,7 +936,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
             lookBuf[nchars] = L'\0';
             /* Up one level to the parent */
             reduce(lookBuf);
-            if (search_for_prefix(prefix, lookBuf, LANDMARK)) {
+            if (search_for_prefix(prefix, lookBuf)) {
                 break;
             }
             /* If we are out of paths to search - give up */
