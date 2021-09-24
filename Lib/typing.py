@@ -151,7 +151,7 @@ def _type_convert(arg, module=None):
     return arg
 
 
-def _type_check(arg, msg, is_argument=True, is_class=False, module=None):
+def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
