@@ -521,64 +521,30 @@ class FormatTest(unittest.TestCase):
 
     def test_better_error_message_format(self):
         # https://bugs.python.org/issue20524
-        complex_err = re.escape(
-            "Invalid format specifier '%M' for object of type 'complex'")
-        with self.assertRaisesRegex(ValueError, complex_err):
-            "{l:%M}".format(l=complex(12))
+        for value in [12j, 12, 12.0, "12"]:
+            with self.subTest(value=value):
+                # The format spec must be invalid for all types we're testing.
+                # '%M' will suffice.
+                bad_format_spec = '%M'
+                err = re.escape("Invalid format specifier "
+                                f"'{bad_format_spec}' for object of type "
+                                f"'{type(value).__name__}'")
+                with self.assertRaisesRegex(ValueError, err):
+                    f"xx{{value:{bad_format_spec}}}yy".format(value=value)
 
-        int_err = re.escape(
-            "Invalid format specifier '%M:%S' "
-            "for object of type 'int'")
-        with self.assertRaisesRegex(ValueError, int_err):
-            "{length:%M:%S}".format(length=12)
+                # Also test the builtin format() function.
+                with self.assertRaisesRegex(ValueError, err):
+                    format(value, bad_format_spec)
 
-        float_err = re.escape(
-            "Invalid format specifier '%S' for object of type 'float'")
-        with self.assertRaisesRegex(ValueError, float_err):
-            "{0:%S}".format(12.5)
-
-        str_err = re.escape(
-            "Invalid format specifier '%%k' for object of type 'str'")
-        with self.assertRaisesRegex(ValueError, str_err):
-            "{a:%%k}".format(a='a')
+                # Also test f-strings.
+                with self.assertRaisesRegex(ValueError, err):
+                    eval("f'xx{value:{bad_format_spec}}yy'")
 
     def test_unicode_in_error_message(self):
         str_err = re.escape(
             "Invalid format specifier '%ЫйЯЧ' for object of type 'str'")
         with self.assertRaisesRegex(ValueError, str_err):
             "{a:%ЫйЯЧ}".format(a='a')
-
-    def test_better_error_message_format_function(self):
-        str_err = re.escape(
-            "Unknown format code 'q' for object of type 'str'")
-        with self.assertRaisesRegex(ValueError, str_err):
-            format('abc', 'q')
-
-        int_err = re.escape(
-            "Invalid format specifier '%d' for object of type 'int'")
-        with self.assertRaisesRegex(ValueError, int_err):
-            format(12, '%d')
-
-        float_err = re.escape(
-            "Invalid format specifier '%%d' for object of type 'float'")
-        with self.assertRaisesRegex(ValueError, float_err):
-            format(12.5, '%%d')
-
-    def test_better_error_message_fstring(self):
-        str_err = re.escape(
-            "Invalid format specifier 'str' for object of type 'str'")
-        with self.assertRaisesRegex(ValueError, str_err):
-            f'{"a":str}'
-
-        int_err = re.escape(
-            "Invalid format specifier '%d' for object of type 'int'")
-        with self.assertRaisesRegex(ValueError, int_err):
-            f'{1:%d}'
-
-        float_err = re.escape(
-            "Invalid format specifier 'fl:ac' for object of type 'float'")
-        with self.assertRaisesRegex(ValueError, float_err):
-            f'{0.5:fl:ac}'
 
 
 if __name__ == "__main__":
