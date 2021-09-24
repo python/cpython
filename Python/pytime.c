@@ -1049,7 +1049,7 @@ py_win_perf_counter_frequency(LONGLONG *pfrequency, int raise)
 {
     LONGLONG frequency;
 
-    LARGE_INTEGER freq = 0;
+    LARGE_INTEGER freq;
     // Since Windows XP, the function cannot fail.
     (void)QueryPerformanceFrequency(&freq);
     frequency = freq.QuadPart;
