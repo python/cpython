@@ -84,21 +84,18 @@ class WeakSet:
                 getattr(self, '__dict__', None))
 
     def add(self, item):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         self.data.add(ref(item, self._remove))
 
     def clear(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         self.data.clear()
 
     def copy(self):
         return self.__class__(self)
 
     def pop(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         while True:
             try:
                 itemref = self.data.pop()
@@ -109,18 +106,15 @@ class WeakSet:
                 return item
 
     def remove(self, item):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         self.data.remove(ref(item))
 
     def discard(self, item):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         self.data.discard(ref(item))
 
     def update(self, other):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         for element in other:
             self.add(element)
 
@@ -137,8 +131,7 @@ class WeakSet:
     def difference_update(self, other):
         self.__isub__(other)
     def __isub__(self, other):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         if self is other:
             self.data.clear()
         else:
@@ -152,8 +145,7 @@ class WeakSet:
     def intersection_update(self, other):
         self.__iand__(other)
     def __iand__(self, other):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         self.data.intersection_update(ref(item) for item in other)
         return self
 
@@ -185,8 +177,7 @@ class WeakSet:
     def symmetric_difference_update(self, other):
         self.__ixor__(other)
     def __ixor__(self, other):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         if self is other:
             self.data.clear()
         else:

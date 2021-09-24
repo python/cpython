@@ -132,8 +132,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             _atomic_removal(d, key)
 
     def __getitem__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         o = self.data[key]()
         if o is None:
             raise KeyError(key)
@@ -141,18 +140,15 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             return o
 
     def __delitem__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         del self.data[key]
 
     def __len__(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         return len(self.data)
 
     def __contains__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         try:
             o = self.data[key]()
         except KeyError:
@@ -163,13 +159,11 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
     def __setitem__(self, key, value):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         self.data[key] = KeyedRef(value, self._remove, key)
 
     def copy(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         new = WeakValueDictionary()
         with _IterationGuard(self):
             for key, wr in self.data.items():
@@ -182,8 +176,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
 
     def __deepcopy__(self, memo):
         from copy import deepcopy
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         new = self.__class__()
         with _IterationGuard(self):
             for key, wr in self.data.items():
@@ -193,8 +186,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         return new
 
     def get(self, key, default=None):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         try:
             wr = self.data[key]
         except KeyError:
@@ -208,8 +200,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 return o
 
     def items(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         with _IterationGuard(self):
             for k, wr in self.data.items():
                 v = wr()
@@ -217,8 +208,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                     yield k, v
 
     def keys(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         with _IterationGuard(self):
             for k, wr in self.data.items():
                 if wr() is not None:
@@ -236,14 +226,12 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         keep the values around longer than needed.
 
         """
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         with _IterationGuard(self):
             yield from self.data.values()
 
     def values(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         with _IterationGuard(self):
             for wr in self.data.values():
                 obj = wr()
@@ -251,8 +239,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                     yield obj
 
     def popitem(self):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         while True:
             key, wr = self.data.popitem()
             o = wr()
@@ -260,8 +247,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 return key, o
 
     def pop(self, key, *args):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         try:
             o = self.data.pop(key)()
         except KeyError:
@@ -280,16 +266,14 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         except KeyError:
             o = None
         if o is None:
-            if self._pending_removals:
-                self._commit_removals()
+            self._commit_removals()
             self.data[key] = KeyedRef(default, self._remove, key)
             return default
         else:
             return o
 
     def update(self, other=None, /, **kwargs):
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         d = self.data
         if other is not None:
             if not hasattr(other, "items"):
@@ -309,8 +293,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         keep the values around longer than needed.
 
         """
-        if self._pending_removals:
-            self._commit_removals()
+        self._commit_removals()
         return list(self.data.values())
 
     def __ior__(self, other):
