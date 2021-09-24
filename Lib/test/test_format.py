@@ -519,34 +519,67 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
 
-    def test_better_error_message(self):
+    def test_better_error_message_format(self):
         # https://bugs.python.org/issue20524
         complex_err = re.escape(
-            "Invalid format specifier '{l:%M}' for object of type 'complex'")
+            "Invalid format specifier '%M' for object of type 'complex'")
         with self.assertRaisesRegex(ValueError, complex_err):
             "{l:%M}".format(l=complex(12))
 
         int_err = re.escape(
-            "Invalid format specifier '{length:%M:%S}' "
+            "Invalid format specifier '%M:%S' "
             "for object of type 'int'")
         with self.assertRaisesRegex(ValueError, int_err):
             "{length:%M:%S}".format(length=12)
 
         float_err = re.escape(
-            "Invalid format specifier '{0:%S}' for object of type 'float'")
+            "Invalid format specifier '%S' for object of type 'float'")
         with self.assertRaisesRegex(ValueError, float_err):
             "{0:%S}".format(12.5)
 
         str_err = re.escape(
-            "Invalid format specifier '{a:%k}' for object of type 'str'")
+            "Invalid format specifier '%%k' for object of type 'str'")
         with self.assertRaisesRegex(ValueError, str_err):
-            "{a:%k}".format(a='a')
+            "{a:%%k}".format(a='a')
 
     def test_unicode_in_error_message(self):
         str_err = re.escape(
-            "Invalid format specifier '{a:%ЫйЯЧ}' for object of type 'str'")
+            "Invalid format specifier '%ЫйЯЧ' for object of type 'str'")
         with self.assertRaisesRegex(ValueError, str_err):
             "{a:%ЫйЯЧ}".format(a='a')
+
+    def test_better_error_message_format_function(self):
+        str_err = re.escape(
+            "Unknown format code 'q' for object of type 'str'")
+        with self.assertRaisesRegex(ValueError, str_err):
+            format('abc', 'q')
+
+        int_err = re.escape(
+            "Invalid format specifier '%d' for object of type 'int'")
+        with self.assertRaisesRegex(ValueError, int_err):
+            format(12, '%d')
+
+        float_err = re.escape(
+            "Invalid format specifier '%%d' for object of type 'float'")
+        with self.assertRaisesRegex(ValueError, float_err):
+            format(12.5, '%%d')
+
+    def test_better_error_message_fstring(self):
+        str_err = re.escape(
+            "Invalid format specifier 'str' for object of type 'str'")
+        with self.assertRaisesRegex(ValueError, str_err):
+            f'{"a":str}'
+
+        int_err = re.escape(
+            "Invalid format specifier '%d' for object of type 'int'")
+        with self.assertRaisesRegex(ValueError, int_err):
+            f'{1:%d}'
+
+        float_err = re.escape(
+            "Invalid format specifier 'fl:ac' for object of type 'float'")
+        with self.assertRaisesRegex(ValueError, float_err):
+            f'{0.5:fl:ac}'
+
 
 if __name__ == "__main__":
     unittest.main()

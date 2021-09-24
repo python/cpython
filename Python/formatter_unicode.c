@@ -280,11 +280,19 @@ parse_internal_render_format_spec(PyObject *obj,
     /* Finally, parse the type field. */
 
     if (end-pos > 1) {
-        /* More than one char remain, invalid format specifier. */
-        PyErr_Format(PyExc_ValueError,
-                     "Invalid format specifier '%s' for object of type '%.200s'",
-                     PyUnicode_AsUTF8(format_spec),
-                     Py_TYPE(obj)->tp_name);
+        /* More than one char remains, so this is an invalid format
+           specifier. */
+        /* Create a temporary object that contains the format spec we're
+           operating on.  It's format_spec[start:end] (in Python syntax). */
+        PyObject* actual_format_spec = PyUnicode_FromKindAndData(kind,
+                                         (char*)data + kind*start,
+                                         end-start);
+        if (actual_format_spec != NULL) {
+            PyErr_Format(PyExc_ValueError,
+                "Invalid format specifier '%U' for object of type '%.200s'",
+                actual_format_spec, Py_TYPE(obj)->tp_name);
+            Py_DECREF(actual_format_spec);
+        }
         return 0;
     }
 
