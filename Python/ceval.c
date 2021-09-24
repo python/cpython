@@ -4645,14 +4645,14 @@ check_eval_breaker:
             PyObject *function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyFunction_Type) {
                 PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
-                STACK_SHRINK(oparg + 1);
                 if ((code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
-                    InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer+1, oparg, function);
+                    InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer-oparg, oparg, function);
                     if (new_frame == NULL) {
                         // When we exit here, we own all variables in the stack (the frame creation has not stolen
                         // any variable) so we need to clean the whole stack (done in the "error" label).
                         goto error;
                     }
+                    STACK_SHRINK(oparg + 1);
                     assert(tstate->interp->eval_frame != NULL);
                     // The frame has stolen all the arguments from the stack, so there is no need to clean them up.```
                     Py_DECREF(function);
@@ -4664,8 +4664,9 @@ check_eval_breaker:
                 else {
                     /* Callable is a generator or coroutine function: create coroutine or generator. */
                     PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
-                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer+1, oparg, NULL);
-                    for (int i = 0; i < oparg+1; i++) {
+                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer-oparg, oparg, NULL);
+                    STACK_SHRINK(oparg + 1);
+                    for (int i = 0; i < oparg + 1; i++) {
                         Py_DECREF(stack_pointer[i]);
                     }
                 }
