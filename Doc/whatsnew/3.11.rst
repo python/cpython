@@ -205,6 +205,14 @@ math
   Dickinson in :issue:`44339`.)
 
 
+operator
+--------
+
+* A new function ``operator.call`` has been added, such that
+  ``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.
+  (Contributed by Antony Lee in :issue:`44019`.)
+
+
 os
 --
 
