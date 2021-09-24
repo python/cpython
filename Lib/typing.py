@@ -164,10 +164,10 @@ def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
     We append the repr() of the actual value (truncated to 100 chars).
     """
     invalid_generic_forms = (Generic, Protocol)
-    if is_argument and not is_class:
-        invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
-    elif not is_argument and not is_class:  # module / local level
-        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
+    if not is_class:
+        invalid_generic_forms += (ClassVar,)
+        if is_argument:
+            invalid_generic_forms += (Final,)
 
     arg = _type_convert(arg, module=module)
     if (isinstance(arg, _GenericAlias) and
