@@ -44,7 +44,7 @@ def all_tasks(loop=None):
         loop = events.get_running_loop()
     # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
     # thread while we do so. Therefore we copy it prior to filtering.
-    return {t for t in tasks.copy()
+    return {t for t in _all_tasks.copy()
             if futures._get_loop(t) is loop and not t.done()}
 
 
