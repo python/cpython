@@ -1,0 +1,1 @@
+Added additional checks to :c:macro:`CHECK_CLOSED` macro to fix unintended closing file error when peeking a BufferedReader object
