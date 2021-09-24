@@ -1523,24 +1523,6 @@ trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
     return 0;
 }
 
-/* Create a frame structure from a python function stealing ownership from an array of arguments.
- * In case of error, it returns NULL and the caller still owns the references to all arguments */
-static InterpreterFrame*
-_PyEval_FrameFromPyFunctionAndArgs(PyThreadState *tstate, PyObject* const *args, int nargs, PyObject *function) {
-    assert(PyFunction_Check(function));
-    size_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
-    assert(PyVectorcall_Function(function) == _PyFunction_Vectorcall);
-    PyFrameConstructor *con = PyFunction_AS_FRAME_CONSTRUCTOR(function);
-    Py_ssize_t vector_nargs = PyVectorcall_NARGS(nargsf);
-    assert(vector_nargs >= 0);
-    assert(vector_nargs == 0 || args != NULL);
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
-    PyObject *locals = (code->co_flags & CO_OPTIMIZED) ? NULL : con->fc_globals;
-    assert(!(code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)));
-    return _PyEvalFramePushAndInit(tstate, con, locals, args, vector_nargs, NULL, 1);
-}
-
 static PyObject *
 make_coro(PyThreadState *tstate, PyFrameConstructor *con,
           PyObject *locals,
@@ -4645,14 +4627,16 @@ check_eval_breaker:
             PyObject *function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyFunction_Type) {
                 PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
-                STACK_SHRINK(oparg + 1);
+                PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 if ((code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
-                    InterpreterFrame *new_frame = _PyEval_FrameFromPyFunctionAndArgs(tstate, stack_pointer+1, oparg, function);
+                    InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                        tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer-oparg, oparg, NULL, 1);
                     if (new_frame == NULL) {
                         // When we exit here, we own all variables in the stack (the frame creation has not stolen
                         // any variable) so we need to clean the whole stack (done in the "error" label).
                         goto error;
                     }
+                    STACK_SHRINK(oparg + 1);
                     assert(tstate->interp->eval_frame != NULL);
                     // The frame has stolen all the arguments from the stack, so there is no need to clean them up.```
                     Py_DECREF(function);
@@ -4663,9 +4647,9 @@ check_eval_breaker:
                 }
                 else {
                     /* Callable is a generator or coroutine function: create coroutine or generator. */
-                    PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
-                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer+1, oparg, NULL);
-                    for (int i = 0; i < oparg+1; i++) {
+                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer-oparg, oparg, NULL);
+                    STACK_SHRINK(oparg + 1);
+                    for (int i = 0; i < oparg + 1; i++) {
                         Py_DECREF(stack_pointer[i]);
                     }
                 }
