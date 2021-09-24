@@ -1,0 +1,1 @@
+refactor to avoid redundant _pending_removals guard for _commit_removals in weak collections
