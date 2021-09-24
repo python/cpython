@@ -843,153 +843,168 @@ $(FROZEN_FILES_OUT): Programs/_freeze_module
 # BEGIN: freezing modules
 
 Python/frozen_modules/importlib._bootstrap.h: Lib/importlib/_bootstrap.py
+	$(eval pyfile = "$(srcdir)/Lib/importlib/_bootstrap.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module importlib._bootstrap $(srcdir)/Lib/importlib/_bootstrap.py $(srcdir)/Python/frozen_modules/importlib._bootstrap.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/importlib._bootstrap.h $(srcdir)/Python/frozen_modules/importlib._bootstrap.h.new; then \
+	@Programs/_freeze_module importlib._bootstrap $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/importlib/_bootstrap.py; then touch -r Lib/importlib/_bootstrap.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/importlib/_bootstrap.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/importlib._bootstrap_external.h: Lib/importlib/_bootstrap_external.py
+	$(eval pyfile = "$(srcdir)/Lib/importlib/_bootstrap_external.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module importlib._bootstrap_external $(srcdir)/Lib/importlib/_bootstrap_external.py $(srcdir)/Python/frozen_modules/importlib._bootstrap_external.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/importlib._bootstrap_external.h $(srcdir)/Python/frozen_modules/importlib._bootstrap_external.h.new; then \
+	@Programs/_freeze_module importlib._bootstrap_external $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/importlib/_bootstrap_external.py; then touch -r Lib/importlib/_bootstrap_external.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/importlib/_bootstrap_external.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/zipimport.h: Lib/zipimport.py
+	$(eval pyfile = "$(srcdir)/Lib/zipimport.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module zipimport $(srcdir)/Lib/zipimport.py $(srcdir)/Python/frozen_modules/zipimport.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/zipimport.h $(srcdir)/Python/frozen_modules/zipimport.h.new; then \
+	@Programs/_freeze_module zipimport $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/zipimport.py; then touch -r Lib/zipimport.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/zipimport.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/abc.h: Lib/abc.py
+	$(eval pyfile = "$(srcdir)/Lib/abc.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module abc $(srcdir)/Lib/abc.py $(srcdir)/Python/frozen_modules/abc.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/abc.h $(srcdir)/Python/frozen_modules/abc.h.new; then \
+	@Programs/_freeze_module abc $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/abc.py; then touch -r Lib/abc.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/abc.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/codecs.h: Lib/codecs.py
+	$(eval pyfile = "$(srcdir)/Lib/codecs.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module codecs $(srcdir)/Lib/codecs.py $(srcdir)/Python/frozen_modules/codecs.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/codecs.h $(srcdir)/Python/frozen_modules/codecs.h.new; then \
+	@Programs/_freeze_module codecs $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/codecs.py; then touch -r Lib/codecs.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/codecs.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/io.h: Lib/io.py
+	$(eval pyfile = "$(srcdir)/Lib/io.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module io $(srcdir)/Lib/io.py $(srcdir)/Python/frozen_modules/io.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/io.h $(srcdir)/Python/frozen_modules/io.h.new; then \
+	@Programs/_freeze_module io $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/io.py; then touch -r Lib/io.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/io.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/_collections_abc.h: Lib/_collections_abc.py
+	$(eval pyfile = "$(srcdir)/Lib/_collections_abc.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module _collections_abc $(srcdir)/Lib/_collections_abc.py $(srcdir)/Python/frozen_modules/_collections_abc.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/_collections_abc.h $(srcdir)/Python/frozen_modules/_collections_abc.h.new; then \
+	@Programs/_freeze_module _collections_abc $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/_collections_abc.py; then touch -r Lib/_collections_abc.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/_collections_abc.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/_sitebuiltins.h: Lib/_sitebuiltins.py
+	$(eval pyfile = "$(srcdir)/Lib/_sitebuiltins.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module _sitebuiltins $(srcdir)/Lib/_sitebuiltins.py $(srcdir)/Python/frozen_modules/_sitebuiltins.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/_sitebuiltins.h $(srcdir)/Python/frozen_modules/_sitebuiltins.h.new; then \
+	@Programs/_freeze_module _sitebuiltins $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/_sitebuiltins.py; then touch -r Lib/_sitebuiltins.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/_sitebuiltins.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/genericpath.h: Lib/genericpath.py
+	$(eval pyfile = "$(srcdir)/Lib/genericpath.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module genericpath $(srcdir)/Lib/genericpath.py $(srcdir)/Python/frozen_modules/genericpath.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/genericpath.h $(srcdir)/Python/frozen_modules/genericpath.h.new; then \
+	@Programs/_freeze_module genericpath $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/genericpath.py; then touch -r Lib/genericpath.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/genericpath.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/ntpath.h: Lib/ntpath.py
+	$(eval pyfile = "$(srcdir)/Lib/ntpath.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module ntpath $(srcdir)/Lib/ntpath.py $(srcdir)/Python/frozen_modules/ntpath.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/ntpath.h $(srcdir)/Python/frozen_modules/ntpath.h.new; then \
+	@Programs/_freeze_module ntpath $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/ntpath.py; then touch -r Lib/ntpath.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/ntpath.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/posixpath.h: Lib/posixpath.py
+	$(eval pyfile = "$(srcdir)/Lib/posixpath.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module posixpath $(srcdir)/Lib/posixpath.py $(srcdir)/Python/frozen_modules/posixpath.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/posixpath.h $(srcdir)/Python/frozen_modules/posixpath.h.new; then \
+	@Programs/_freeze_module posixpath $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/posixpath.py; then touch -r Lib/posixpath.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/posixpath.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/os.h: Lib/os.py
+	$(eval pyfile = "$(srcdir)/Lib/os.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module os $(srcdir)/Lib/os.py $(srcdir)/Python/frozen_modules/os.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/os.h $(srcdir)/Python/frozen_modules/os.h.new; then \
+	@Programs/_freeze_module os $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/os.py; then touch -r Lib/os.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/os.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/site.h: Lib/site.py
+	$(eval pyfile = "$(srcdir)/Lib/site.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module site $(srcdir)/Lib/site.py $(srcdir)/Python/frozen_modules/site.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/site.h $(srcdir)/Python/frozen_modules/site.h.new; then \
+	@Programs/_freeze_module site $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/site.py; then touch -r Lib/site.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/site.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/stat.h: Lib/stat.py
+	$(eval pyfile = "$(srcdir)/Lib/stat.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module stat $(srcdir)/Lib/stat.py $(srcdir)/Python/frozen_modules/stat.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/stat.h $(srcdir)/Python/frozen_modules/stat.h.new; then \
+	@Programs/_freeze_module stat $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/stat.py; then touch -r Lib/stat.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/stat.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 Python/frozen_modules/__hello__.h: Lib/__hello__.py
+	$(eval pyfile = "$(srcdir)/Lib/__hello__.py")
 	@$(MAKE) --quiet .generating-frozen-module
-	@Programs/_freeze_module __hello__ $(srcdir)/Lib/__hello__.py $(srcdir)/Python/frozen_modules/__hello__.h.new
-	@if $(UPDATE_FILE) --create --exitcode $(srcdir)/Python/frozen_modules/__hello__.h $(srcdir)/Python/frozen_modules/__hello__.h.new; then \
+	@Programs/_freeze_module __hello__ $(pyfile) $@.new
+	@if $(UPDATE_FILE) --create --exitcode $@ $@.new; then \
 		if test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \
-		if test $@ -ot Lib/__hello__.py; then touch -r Lib/__hello__.py $@; fi; \
+		if test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \
 	fi
-	@if test -n "$(findstring Lib/__hello__.py,$?)" -a -e $@; then echo -n " $(@F) "; \
+	@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \
 	else echo -n "."; fi
 
 # END: freezing modules
