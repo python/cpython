@@ -11,6 +11,7 @@ import posixpath
 import subprocess
 import sys
 import textwrap
+import platform
 
 from update_file import updating_file_with_tmpfile
 
@@ -34,7 +35,10 @@ if sys.platform != "win32":
             sys.exit("ERROR: missing _freeze_module")
 else:
     def find_tool():
-        for arch in ['amd64', 'win32', 'arm64']:
+        archs = ['amd64', 'win32']
+        if platform.machine() == "ARM64":
+             archs.append('arm64')
+        for arch in archs:
             for exe in ['_freeze_module.exe', '_freeze_module_d.exe']:
                 tool = os.path.join(ROOT_DIR, 'PCbuild', arch, exe)
                 if os.path.isfile(tool):
