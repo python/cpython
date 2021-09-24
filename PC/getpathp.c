@@ -269,25 +269,32 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
     return _PyStatus_OK();
 }
 
+static int
+is_stdlibdir(wchar_t *stdlibdir)
+{
+    wchar_t *filename = stdlibdir;
+#ifndef LANDMARK
+#  define LANDMARK L"os.py"
+#endif
+    /* join() ensures 'landmark' can not overflow prefix if too long. */
+    join(filename, LANDMARK);
+    return ismodule(filename);
+}
 
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
 search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
 {
-    wchar_t filename[MAXPATHLEN+1];
-    memset(filename, 0, sizeof(filename));
+    wchar_t stdlibdir[MAXPATHLEN+1];
     /* Search from argv0_path, until LANDMARK is found.
        We guarantee 'prefix' is null terminated in bounds. */
     wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
     do {
-        wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
-#ifndef LANDMARK
-#  define LANDMARK L"lib\\os.py"
-#endif
-       /* join() ensures 'landmark' can not overflow prefix if too long. */
-        join(filename, LANDMARK);
-        if (ismodule(filename)) {
+        memset(stdlibdir, 0, sizeof(stdlibdir));
+        wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
+        join(stdlibdir, L"lib");
+        if (is_stdlibdir(stdlibdir)) {
             return 1;
         }
         reduce(prefix);
