@@ -11,6 +11,7 @@ import posixpath
 import subprocess
 import sys
 import textwrap
+import time
 
 from update_file import updating_file_with_tmpfile, update_file_with_tmpfile
 
@@ -638,13 +639,15 @@ def regen_pcbuild(modules):
 
 def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
     """Generate the frozen module .h file for the given module."""
+    tmpsuffix = f'.{int(time.time())}'
     for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
         frozenfile = resolve_frozen_file(modname, destdir)
-        _freeze_module(modname, pyfile, frozenfile)
+        _freeze_module(modname, pyfile, frozenfile, tmpsuffix)
 
 
-def _freeze_module(frozenid, pyfile, frozenfile):
-    tmpfile = frozenfile + '.new'
+def _freeze_module(frozenid, pyfile, frozenfile, tmpsuffix):
+    tmpfile = f'{frozenfile}.{int(time.time())}'
+    print(tmpfile)
 
     argv = [TOOL, frozenid, pyfile, tmpfile]
     print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)
@@ -670,8 +673,9 @@ def main():
     regen_pcbuild(modules)
 
     # Freeze the target modules.
+    tmpsuffix = f'.{int(time.time())}'
     for src in _iter_sources(modules):
-        _freeze_module(src.frozenid, src.pyfile, src.frozenfile)
+        _freeze_module(src.frozenid, src.pyfile, src.frozenfile, tmpsuffix)
 
     # Regen files dependent of frozen file details.
     regen_frozen(modules)
