@@ -341,12 +341,6 @@ _enter_buffered_busy(buffered *self)
      : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self)) { \
-        PyErr_SetString(PyExc_ValueError, error_msg); \
-        return NULL; \
-    }
-
-#define PEEK_CHECK_CLOSED(self, error_msg) \
     if (IS_CLOSED(self) & (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
         PyErr_SetString(PyExc_ValueError, error_msg); \
         return NULL; \
@@ -534,6 +528,9 @@ buffered_close(buffered *self, PyObject *args)
         _PyErr_ChainExceptions(exc, val, tb);
         Py_CLEAR(res);
     }
+
+    self->read_end = 0;
+    self->pos = 0;
 
 end:
     LEAVE_BUFFERED(self)
@@ -847,13 +844,7 @@ _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
-
-    // use a check specific to peek if the previous file operation was not a read
-    if (Py_SAFE_DOWNCAST(self->pos, Py_off_t, Py_ssize_t) == 0) {
-        PEEK_CHECK_CLOSED(self, "peek of closed file")
-    } else {
-        CHECK_CLOSED(self, "peek of closed file")
-    }
+    CHECK_CLOSED(self, "peek of closed file")
 
     if (!ENTER_BUFFERED(self))
         return NULL;
