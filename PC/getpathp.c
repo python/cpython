@@ -290,7 +290,6 @@ search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
        We guarantee 'prefix' is null terminated in bounds. */
     wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
     wchar_t stdlibdir[MAXPATHLEN+1];
-    memset(stdlibdir, 0, sizeof(stdlibdir));
     wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
     /* We initialize with the longest possible path, in case it doesn't fit.
        This also gives us an initial SEP at stdlibdir[wcslen(prefix)]. */
