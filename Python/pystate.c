@@ -1201,6 +1201,22 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 }
 
 
+void
+PyThreadState_EnterTracing(PyThreadState *tstate)
+{
+    tstate->tracing++;
+    _PyThreadState_DisableTracing(tstate);
+}
+
+void
+PyThreadState_LeaveTracing(PyThreadState *tstate)
+{
+    tstate->tracing--;
+    _PyThreadState_ResetTracing(tstate);
+}
+
+
+
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 

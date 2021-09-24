@@ -476,6 +476,11 @@ New Features
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
+* Add new :c:func:`PyThreadState_EnterTracing` and
+  :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
+  suspend and resume tracing and profiling.
+  (Contributed by Victor Stinner in :issue:`43760`.)
+
 Porting to Python 3.11
 ----------------------
 
