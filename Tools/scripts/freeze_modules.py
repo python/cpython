@@ -545,7 +545,7 @@ def regen_frozen(modules):
 def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
-    rules = ['']
+    rules = []
     for src in _iter_sources(modules):
         header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
         frozenfiles.append(f'\t\t{header} \\')
@@ -556,9 +556,7 @@ def regen_makefile(modules):
         freeze = (f'Programs/_freeze_module {src.frozenid} '
                   f'$(srcdir)/{pyfile} $(srcdir)/{header}')
         rules.extend([
-            f'{header}: Programs/_freeze_module {pyfile}',
-            f'\t{freeze}',
-            '',
+            f'{header}: {pyfile}',
         ])
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
