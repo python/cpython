@@ -270,32 +270,24 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
 }
 
 
-/* gotlandmark only called by search_for_prefix, which ensures
-   'prefix' is null terminated in bounds.  join() ensures
-   'landmark' can not overflow prefix if too long. */
-static int
-gotlandmark(const wchar_t *prefix)
-{
-    wchar_t filename[MAXPATHLEN+1];
-    memset(filename, 0, sizeof(filename));
-    wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
-#ifndef LANDMARK
-#  define LANDMARK L"lib\\os.py"
-#endif
-    join(filename, LANDMARK);
-    return ismodule(filename);
-}
-
-
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
 search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
 {
-    /* Search from argv0_path, until landmark is found */
-    wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
+    wchar_t filename[MAXPATHLEN+1];
+    memset(filename, 0, sizeof(filename));
+    /* Search from argv0_path, until LANDMARK is found.
+       We guarantee 'prefix' is null terminated in bounds. */
+    wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
     do {
-        if (gotlandmark(prefix)) {
+        wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
+#ifndef LANDMARK
+#  define LANDMARK L"lib\\os.py"
+#endif
+       /* join() ensures 'landmark' can not overflow prefix if too long. */
+        join(filename, LANDMARK);
+        if (ismodule(filename)) {
             return 1;
         }
         reduce(prefix);
