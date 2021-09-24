@@ -32,8 +32,8 @@ typedef struct _NRMUTEX
 } NRMUTEX;
 typedef NRMUTEX *PNRMUTEX;
 
-PNRMUTEX
-AllocNonRecursiveMutex()
+static PNRMUTEX
+AllocNonRecursiveMutex(void)
 {
     PNRMUTEX m = (PNRMUTEX)PyMem_RawMalloc(sizeof(NRMUTEX));
     if (!m)
@@ -51,7 +51,7 @@ fail:
     return NULL;
 }
 
-VOID
+static VOID
 FreeNonRecursiveMutex(PNRMUTEX mutex)
 {
     if (mutex) {
@@ -61,7 +61,7 @@ FreeNonRecursiveMutex(PNRMUTEX mutex)
     }
 }
 
-DWORD
+static DWORD
 EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
 {
     DWORD result = WAIT_OBJECT_0;
@@ -101,7 +101,7 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
     return result;
 }
 
-BOOL
+static BOOL
 LeaveNonRecursiveMutex(PNRMUTEX mutex)
 {
     BOOL result;
@@ -119,26 +119,26 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
 /* NR-locks based on a kernel mutex */
 #define PNRMUTEX HANDLE
 
-PNRMUTEX
-AllocNonRecursiveMutex()
+static PNRMUTEX
+AllocNonRecursiveMutex(void)
 {
     return CreateSemaphore(NULL, 1, 1, NULL);
 }
 
-VOID
+static VOID
 FreeNonRecursiveMutex(PNRMUTEX mutex)
 {
     /* No in-use check */
     CloseHandle(mutex);
 }
 
-DWORD
+static DWORD
 EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
 {
     return WaitForSingleObjectEx(mutex, milliseconds, FALSE);
 }
 
-BOOL
+static BOOL
 LeaveNonRecursiveMutex(PNRMUTEX mutex)
 {
     return ReleaseSemaphore(mutex, 1, NULL);
