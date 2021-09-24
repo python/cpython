@@ -555,12 +555,18 @@ def regen_makefile(modules):
 
         freeze = (f'Programs/_freeze_module {src.frozenid} '
                   f'$(srcdir)/{pyfile} $(srcdir)/{header}.new')
-        update = (f'$(UPDATE_FILE) --create $(srcdir)/{header} '
-                  f'$(srcdir)/{header}.new')
+        update = (f'$(UPDATE_FILE) --create --exitcode '
+                  f'$(srcdir)/{header} $(srcdir)/{header}.new')
         rules.extend([
-            f'{header}: Programs/_freeze_module {pyfile}',
-            f'\t{freeze}',
-            f'\t{update}',
+            f'{header}: {pyfile}',
+            '\t@$(MAKE) --quiet .generating-frozen-module',
+            f'\t@{freeze}',
+            f'\t@if {update}; then \\',
+            '\t\tif test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \\',
+            f'\t\tif test $@ -ot {pyfile}; then touch -r {pyfile} $@; fi; \\',
+            '\tfi',
+            f'\t@if test -n "$(findstring {pyfile},$?)" -a -e $@; then echo -n " $(@F) "; \\',
+            '\telse echo -n "."; fi',
             '',
         ])
     pyfiles[-1] = pyfiles[-1].rstrip(" \\")
