@@ -553,18 +553,22 @@ def regen_makefile(modules):
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
         pyfiles.append(f'\t\t{pyfile} \\')
 
-        freeze = f'Programs/_freeze_module {src.frozenid} $(pyfile) $@.new'
+        freeze = f'Programs/_freeze_module {src.frozenid} "$(pyfile)" $@.new'
         update = '$(UPDATE_FILE) --create --exitcode $@ $@.new'
         rules.extend([
-            f'{header}: {pyfile}',
-            f'\t$(eval pyfile = "$(srcdir)/{pyfile}")',
+            f'{header}: $(srcdir)/{pyfile}',
+            f'\t$(eval exists = $(wildcard $@))',
+            f'\t$(eval pyfile_dep = {pyfile})',
+            f'\t$(eval pyfile = $(srcdir)/$(pyfile_dep))',
             '\t@$(MAKE) --quiet .generating-frozen-module',
             f'\t@{freeze}',
             f'\t@if {update}; then \\',
             '\t\tif test $@ -ot Python/frozen.o; then touch -r Python/frozen.o $@; fi; \\',
-            f'\t\tif test $@ -ot $(pyfile); then touch -r $(pyfile) $@; fi; \\',
+            f'\t\tif test $@ -ot $(pyfile); then touch -r "$(pyfile)" $@; fi; \\',
             '\tfi',
-            f'\t@if test -n "$(findstring $(pyfile),$?)" -a -e $@; then echo -n " $(@F) "; \\',
+            f'\t@if test -n "$(exists)" && test -n "$(findstring $(pyfile_dep),$?)"; then echo -n " $(@F) "; \\',
+            '\telif test -z "$(have_frozen_files)"; then echo -n "."; \\',
+            '\telif test -z "$(exists)"; then echo -n " $(@F) "; \\',
             '\telse echo -n "."; fi',
             '',
         ])
