@@ -253,7 +253,7 @@ Operations which work with sequences (some of them with mappings too) include:
 
 The following operation works with callables:
 
-.. function:: call(obj, / *args, **kwargs)
+.. function:: call(obj, /, *args, **kwargs)
               __call__(obj, /, *args, **kwargs)
 
    Return ``obj(*args, **kwargs)``.
