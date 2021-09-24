@@ -1055,7 +1055,7 @@ subject value:
    patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
+   I. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
 
       * If this raises an exception, the exception bubbles up.
 

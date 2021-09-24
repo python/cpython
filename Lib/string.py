@@ -45,7 +45,7 @@ def capwords(s, sep=None):
     sep is used to split and join the words.
 
     """
-    return (sep or ' ').join(x.capitalize() for x in s.split(sep))
+    return (sep or ' ').join(map(str.capitalize, s.split(sep)))
 
 
 ####################################################################
