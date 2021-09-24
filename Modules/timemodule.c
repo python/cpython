@@ -2092,18 +2092,16 @@ pysleep(_PyTime_t timeout)
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
         ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
+        err = ret;
 #elif defined(HAVE_NANOSLEEP)
         ret = nanosleep(&timeout_ts, NULL);
+        err = errno;
 #else
         ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout_tv);
+        err = errno;
 #endif
         Py_END_ALLOW_THREADS
 
-#ifdef HAVE_CLOCK_NANOSLEEP
-        err = ret;
-#else
-        err = errno;
-#endif
         if (ret == 0) {
             break;
         }
