@@ -286,14 +286,20 @@ is_stdlibdir(wchar_t *stdlibdir)
 static int
 search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
 {
-    wchar_t stdlibdir[MAXPATHLEN+1];
     /* Search from argv0_path, until LANDMARK is found.
        We guarantee 'prefix' is null terminated in bounds. */
     wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
+    wchar_t stdlibdir[MAXPATHLEN+1];
+    memset(stdlibdir, 0, sizeof(stdlibdir));
+    wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
+    /* We initialize with the longest possible path, in case it doesn't fit.
+       This also gives us an initial SEP at stdlibdir[wcslen(prefix)]. */
+    join(stdlibdir, L"lib");
     do {
-        memset(stdlibdir, 0, sizeof(stdlibdir));
-        wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
-        join(stdlibdir, L"lib");
+        assert(stdlibdir[wcslen(prefix)] == SEP);
+        /* Due to reduce() and our initial value, this result
+           is guaranteed to fit. */
+        wcscpy(&stdlibdir[wcslen(prefix) + 1], L"lib");
         if (is_stdlibdir(stdlibdir)) {
             return 1;
         }
