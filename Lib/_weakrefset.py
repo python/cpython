@@ -90,7 +90,13 @@ class WeakSet:
         self.data.clear()
 
     def copy(self):
-        return self.__class__(self)
+        new = WeakSet()
+        add = new.add
+        for key in self.data.copy():
+            o = key()
+            if o is not None:
+                add(o)
+        return new
 
     def pop(self):
         if self._pending_removals:

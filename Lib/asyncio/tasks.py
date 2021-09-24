@@ -43,21 +43,8 @@ def all_tasks(loop=None):
     if loop is None:
         loop = events.get_running_loop()
     # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
-    # thread while we do so. Therefore we cast it to list prior to filtering. The list
-    # cast itself requires iteration, so we repeat it several times ignoring
-    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
-    # details.
-    i = 0
-    while True:
-        try:
-            tasks = list(_all_tasks)
-        except RuntimeError:
-            i += 1
-            if i >= 1000:
-                raise
-        else:
-            break
-    return {t for t in tasks
+    # thread while we do so. Therefore we copy it prior to filtering.
+    return {t for t in tasks.copy()
             if futures._get_loop(t) is loop and not t.done()}
 
 

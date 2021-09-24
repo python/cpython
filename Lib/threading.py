@@ -1570,7 +1570,7 @@ def _after_fork():
         # Dangling thread instances must still have their locks reset,
         # because someone may join() them.
         threads = set(_enumerate())
-        threads.update(_dangling)
+        threads.update(_dangling.copy())
         for thread in threads:
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.

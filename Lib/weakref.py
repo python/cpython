@@ -168,11 +168,10 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         if self._pending_removals:
             self._commit_removals()
         new = WeakValueDictionary()
-        with _IterationGuard(self):
-            for key, wr in self.data.items():
-                o = wr()
-                if o is not None:
-                    new[key] = o
+        for key, wr in self.data.copy().items():
+            o = wr()
+            if o is not None:
+                new[key] = o
         return new
 
     __copy__ = copy
@@ -419,11 +418,10 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
 
     def copy(self):
         new = WeakKeyDictionary()
-        with _IterationGuard(self):
-            for key, value in self.data.items():
-                o = key()
-                if o is not None:
-                    new[o] = value
+        for key, value in self.data.copy().items():
+            o = key()
+            if o is not None:
+                new[o] = value
         return new
 
     __copy__ = copy
