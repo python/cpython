@@ -1,1 +1,1 @@
-Added additional checks to :c:macro:`CHECK_CLOSED` macro to fix unintended closing file error when peeking a BufferedReader object
+:meth:`BufferedReader.peek` no longer raises :exc:`ValueError` when the entire file has already been buffered.
