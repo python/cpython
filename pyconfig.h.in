@@ -736,6 +736,9 @@
 /* Define to 1 if you have the `mremap' function. */
 #undef HAVE_MREMAP
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
