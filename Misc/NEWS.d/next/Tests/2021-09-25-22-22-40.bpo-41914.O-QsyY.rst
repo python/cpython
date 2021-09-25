@@ -1,0 +1,4 @@
+Fix issue running test_pdb inside GNU `screen`: for some reason, two tests
+in test_pdb failed when running inside GNU `screen`.  The `screen`
+environment injects an ANSI control sequence into the output from `pdb`,
+which did not match the expected output.
