@@ -883,7 +883,12 @@ Other Language Changes
   collisions when creating dictionaries and sets containing multiple NaNs.
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
-*  A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting the :const:`__debug__` constant. (Contributed by Dong-hee Na in :issue:`45000`.)
+* A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting
+  the :const:`__debug__` constant.  (Contributed by Dong-hee Na in :issue:`45000`.)
+
+* :exc:`SyntaxError` exceptions now have ``end_lineno`` and
+  ``end_offset`` attributes.  They will be ``None`` if not determined.
+  (Contributed by Pablo Galindo in :issue:`43914`.)
 
 New Modules
 ===========
