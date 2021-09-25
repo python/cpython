@@ -63,7 +63,7 @@
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
-static int pysleep(_PyTime_t);
+static int pysleep(_PyTime_t timeout);
 
 
 static PyObject*
@@ -357,17 +357,17 @@ Return the clk_id of a thread's CPU time clock.");
 #endif /* HAVE_PTHREAD_GETCPUCLOCKID */
 
 static PyObject *
-time_sleep(PyObject *self, PyObject *obj)
+time_sleep(PyObject *self, PyObject *timeout_obj)
 {
-    _PyTime_t secs;
-    if (_PyTime_FromSecondsObject(&secs, obj, _PyTime_ROUND_TIMEOUT))
+    _PyTime_t timeout;
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
-    if (secs < 0) {
+    if (timeout < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "sleep length must be non-negative");
         return NULL;
     }
-    if (pysleep(secs) != 0) {
+    if (pysleep(timeout) != 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2050,15 +2050,17 @@ PyInit_time(void)
 // On error, raise an exception and return -1.
 // On success, return 0.
 static int
-pysleep(_PyTime_t secs)
+pysleep(_PyTime_t timeout)
 {
-    assert(secs >= 0);
+    assert(timeout >= 0);
 
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
     struct timespec timeout_abs;
+#elif defined(HAVE_NANOSLEEP)
+    struct timespec timeout_ts;
 #else
-    struct timeval timeout;
+    struct timeval timeout_tv;
 #endif
     _PyTime_t deadline, monotonic;
     int err = 0;
@@ -2066,7 +2068,7 @@ pysleep(_PyTime_t secs)
     if (get_monotonic(&monotonic) < 0) {
         return -1;
     }
-    deadline = monotonic + secs;
+    deadline = monotonic + timeout;
 #ifdef HAVE_CLOCK_NANOSLEEP
     if (_PyTime_AsTimespec(deadline, &timeout_abs) < 0) {
         return -1;
@@ -2074,24 +2076,31 @@ pysleep(_PyTime_t secs)
 #endif
 
     do {
-#ifndef HAVE_CLOCK_NANOSLEEP
-        if (_PyTime_AsTimeval(secs, &timeout, _PyTime_ROUND_CEILING) < 0) {
+#ifdef HAVE_CLOCK_NANOSLEEP
+        // use timeout_abs
+#elif defined(HAVE_NANOSLEEP)
+        if (_PyTime_AsTimespec(timeout, &timeout_ts) < 0) {
+            return -1;
+        }
+#else
+        if (_PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_CEILING) < 0) {
             return -1;
         }
 #endif
 
         int ret;
+        Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
-        Py_BEGIN_ALLOW_THREADS
         ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timeout_abs, NULL);
-        Py_END_ALLOW_THREADS
         err = ret;
+#elif defined(HAVE_NANOSLEEP)
+        ret = nanosleep(&timeout_ts, NULL);
+        err = errno;
 #else
-        Py_BEGIN_ALLOW_THREADS
-        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
-        Py_END_ALLOW_THREADS
+        ret = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout_tv);
         err = errno;
 #endif
+        Py_END_ALLOW_THREADS
 
         if (ret == 0) {
             break;
@@ -2112,8 +2121,8 @@ pysleep(_PyTime_t secs)
         if (get_monotonic(&monotonic) < 0) {
             return -1;
         }
-        secs = deadline - monotonic;
-        if (secs < 0) {
+        timeout = deadline - monotonic;
+        if (timeout < 0) {
             break;
         }
         /* retry with the recomputed delay */
@@ -2122,10 +2131,11 @@ pysleep(_PyTime_t secs)
 
     return 0;
 #else  // MS_WINDOWS
-    _PyTime_t timeout = _PyTime_As100Nanoseconds(secs, _PyTime_ROUND_CEILING);
+    _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
+                                                       _PyTime_ROUND_CEILING);
 
     // Maintain Windows Sleep() semantics for time.sleep(0)
-    if (timeout == 0) {
+    if (timeout_100ns == 0) {
         Py_BEGIN_ALLOW_THREADS
         // A value of zero causes the thread to relinquish the remainder of its
         // time slice to any other thread that is ready to run. If there are no
@@ -2138,9 +2148,9 @@ pysleep(_PyTime_t secs)
 
     LARGE_INTEGER relative_timeout;
     // No need to check for integer overflow, both types are signed
-    assert(sizeof(relative_timeout) == sizeof(timeout));
+    assert(sizeof(relative_timeout) == sizeof(timeout_100ns));
     // SetWaitableTimer(): a negative due time indicates relative time
-    relative_timeout.QuadPart = -timeout;
+    relative_timeout.QuadPart = -timeout_100ns;
 
     HANDLE timer = CreateWaitableTimerW(NULL, FALSE, NULL);
     if (timer == NULL) {
