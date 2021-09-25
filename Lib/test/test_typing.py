@@ -2975,7 +2975,10 @@ else:
 
 # Definitions needed for features introduced in Python 3.6
 
-from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
+from test import (
+    ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
+    ann_module7,
+)
 from typing import AsyncContextManager
 
 class A:
@@ -3070,7 +3073,8 @@ class GetTypeHintTests(BaseTestCase):
             gth(None)
 
     def test_get_type_hints_modules(self):
-        ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str, 'u': int | float}
+        ann_module_type_hints = {1: int, 'f': Tuple[int, int],
+                                 'x': int, 'y': str, 'u': int | float}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
@@ -3088,7 +3092,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
         self.assertIsInstance(gth(ann_module.j_class), dict)
-        self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
+        self.assertEqual(gth(ann_module.M), {'123': int, 'o': type})
         self.assertEqual(gth(ann_module.D),
                          {'j': str, 'k': str, 'y': Optional[ann_module.C]})
         self.assertEqual(gth(ann_module.Y), {'z': int})
@@ -3276,6 +3280,86 @@ class GetTypeHintTests(BaseTestCase):
         self.assertNotIn('bad', sys.modules)
         self.assertEqual(get_type_hints(BadType), {'foo': tuple, 'bar': list})
 
+    def test_type_check_error_message_during_get_type_hints(self):
+        class InvalidTupleAnnotation:
+            x: (1, 2)
+        with self.assertRaisesRegex(
+            TypeError,
+            re.escape(
+                'get_type_hint() got invalid type annotation. Got (1, 2).',
+            ),
+        ):
+            get_type_hints(InvalidTupleAnnotation)
+
+    def test_invalid_class_level_annotations(self):
+        class InvalidIntAnnotation:
+            x: 1 = 1
+        class InvalidStrAnnotation:
+            x: '1'
+        class InvalidListAnnotation1:
+            x: []
+        class InvalidListAnnotation2:
+            x: '[1, 2]'
+
+        for fixture in [
+                InvalidIntAnnotation,
+                InvalidStrAnnotation,
+                InvalidListAnnotation1,
+                InvalidListAnnotation2]:
+            with self.subTest(fixture=fixture):
+                with self.assertRaises(TypeError):
+                    get_type_hints(fixture)
+
+    def test_invalid_function_arg_annotations(self):
+        def invalid_arg_type(arg: 1): pass
+        def invalid_arg_type2(arg: '1'): pass
+        def invalid_return_type() -> 1: pass
+        def invalid_return_type2() -> '1': pass
+        def class_var_arg(arg: ClassVar): pass
+        def class_var_arg2(arg: ClassVar[int]): pass
+        def class_var_return_type() -> ClassVar: pass
+        def class_var_return_type2() -> ClassVar[int]: pass
+        def final_var_arg(arg: Final): pass
+        def final_var_arg2(arg: Final[int]): pass
+        def final_var_return_type() -> Final: pass
+        def final_var_return_type2() -> Final[int]: pass
+
+        for func in [
+                invalid_arg_type,
+                invalid_arg_type2,
+                invalid_return_type,
+                invalid_return_type2,
+                class_var_arg,
+                class_var_arg2,
+                class_var_return_type,
+                class_var_return_type2,
+                final_var_arg,
+                final_var_arg2,
+                final_var_return_type,
+                final_var_return_type2]:
+            with self.subTest(func=func):
+                with self.assertRaises(TypeError):
+                    get_type_hints(func)
+
+    def test_forward_ref_and_final(self):
+        # https://bugs.python.org/issue45166
+        hints = get_type_hints(ann_module5)
+        self.assertEqual(hints, {'name': Final[str]})
+
+        hints = get_type_hints(ann_module5.MyClass)
+        self.assertEqual(hints, {'value': Final})
+
+    def test_top_level_class_var(self):
+        # https://bugs.python.org/issue45166
+        # https://bugs.python.org/issue45283
+        for obj in [ann_module6, ann_module7]:
+            with self.subTest(obj=obj):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    r'typing.ClassVar\[int\] is not valid as type argument',
+                ):
+                    get_type_hints(obj)
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -3338,22 +3422,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
                          (Concatenate[int, P], int))
         self.assertEqual(get_args(list | str), (list, str))
-
-    def test_forward_ref_and_final(self):
-        # https://bugs.python.org/issue45166
-        hints = get_type_hints(ann_module5)
-        self.assertEqual(hints, {'name': Final[str]})
-
-        hints = get_type_hints(ann_module5.MyClass)
-        self.assertEqual(hints, {'value': Final})
-
-    def test_top_level_class_var(self):
-        # https://bugs.python.org/issue45166
-        with self.assertRaisesRegex(
-            TypeError,
-            r'typing.ClassVar\[int\] is not valid as type argument',
-        ):
-            get_type_hints(ann_module6)
 
 
 class CollectionsAbcTests(BaseTestCase):

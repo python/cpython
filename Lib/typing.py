@@ -170,8 +170,11 @@ def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
             invalid_generic_forms += (Final,)
 
     arg = _type_convert(arg, module=module)
-    if (isinstance(arg, _GenericAlias) and
-            arg.__origin__ in invalid_generic_forms):
+    if (
+        (isinstance(arg, _GenericAlias) and
+            arg.__origin__ in invalid_generic_forms) or
+        (is_argument and arg == Final)  # Raw `Final` is not `_GenericAlias`
+    ):
         raise TypeError(f"{arg} is not valid as type argument")
     if arg in (Any, NoReturn, Final):
         return arg
@@ -1780,6 +1783,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
     if getattr(obj, '__no_type_check__', None):
         return {}
+
+    error_msg = "get_type_hint() got invalid type annotation."
+
     # Classes require a special treatment.
     if isinstance(obj, type):
         hints = {}
@@ -1805,6 +1811,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False, is_class=True)
+                else:
+                    value = _type_check(value, error_msg,
+                                        is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
@@ -1843,6 +1852,11 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
+        else:
+            value = _type_check(value,
+                                error_msg,
+                                is_argument=not isinstance(obj, types.ModuleType),
+                                is_class=False)
         value = _eval_type(value, globalns, localns)
         if name in defaults and defaults[name] is None:
             value = Optional[value]
