@@ -1,0 +1,1 @@
+Adds a test case for empty ``typing.NamedTuple`` in ``test_typing``.
