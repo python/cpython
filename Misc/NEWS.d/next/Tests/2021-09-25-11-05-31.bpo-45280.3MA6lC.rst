@@ -1,0 +1,1 @@
+Add a test case for empty :class:`typing.NamedTuple`.
