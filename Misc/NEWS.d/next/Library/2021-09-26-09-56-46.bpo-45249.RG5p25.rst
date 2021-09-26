@@ -1,0 +1,2 @@
+Fixed display of :exc:`SyntaxError` errors in :mod:`doctest` to show full
+error range indicator rather than a single caret (``^``).
