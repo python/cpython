@@ -532,7 +532,9 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 }
 
 PyTypeObject *
-PyStructSequence_NewType(PyStructSequence_Desc *desc)
+PyStructSequence_FromModuleAndDesc(PyObject *module,
+                                   PyStructSequence_Desc *desc,
+                                   unsigned long tp_flags)
 {
     PyMemberDef *members;
     PyTypeObject *type;
@@ -565,14 +567,17 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.name = desc->name;
     spec.basicsize = sizeof(PyStructSequence) - sizeof(PyObject *);
     spec.itemsize = sizeof(PyObject *);
-    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     spec.slots = slots;
 
-    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, (PyObject *)&PyTuple_Type);
+    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec,
+        (PyObject *)&PyTuple_Type);
     PyMem_Free(members);
     if (type == NULL) {
         return NULL;
     }
+    Py_XINCREF(module);
+    ((PyHeapTypeObject *)type)->ht_module = module;
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
@@ -581,6 +586,12 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     }
 
     return type;
+}
+
+PyTypeObject *
+PyStructSequence_NewType(PyStructSequence_Desc *desc)
+{
+    return PyStructSequence_FromModuleAndDesc(NULL, desc, 0);
 }
 
 int _PyStructSequence_Init(void)

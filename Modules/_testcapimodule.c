@@ -3920,6 +3920,30 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
 }
 
 static PyObject *
+test_structseq_newtype_from_heap(PyObject *Py_UNUSED(self),
+                                 PyObject *Py_UNUSED(args))
+{
+    PyStructSequence_Desc descr;
+    PyStructSequence_Field descr_fields[2];
+
+    descr_fields[0] = (PyStructSequence_Field){"foo", "foo value"};
+    descr_fields[1] = (PyStructSequence_Field){0, NULL};
+
+    descr.name = "_testcapi.test_descr";
+    descr.fields = descr_fields;
+    descr.doc = "This is used to test for creating a new type from heap";
+    descr.n_in_sequence = 1;
+
+    PyTypeObject* structseq_type =
+        (PyTypeObject *)PyStructSequence_FromModuleAndDesc(NULL, &descr, 0);
+    assert(structseq_type != NULL);
+    assert(PyType_Check(structseq_type));
+    Py_DECREF(structseq_type);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyLong_FromLong(0);
@@ -5691,6 +5715,8 @@ static PyMethodDef TestMethods[] = {
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
+    {"test_structseq_newtype_from_heap",
+        test_structseq_newtype_from_heap, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},

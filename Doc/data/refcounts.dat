@@ -2089,6 +2089,11 @@ PyState_FindModule:PyModuleDef*:def::
 PyState_RemoveModule:int:::
 PyState_RemoveModule:PyModuleDef*:def::
 
+PyStructSequence_FromModuleAndDesc:PyTypeObject*::+1:
+PyStructSequence_FromModuleAndDesc:PyObject*:module:+1:
+PyStructSequence_FromModuleAndDesc:PyStructSequence_Desc*:desc::
+PyStructSequence_FromModuleAndDesc:unsigned long:tp_flags::
+
 PyStructSequence_GET_ITEM:PyObject*::0:
 PyStructSequence_GET_ITEM:PyObject*:p:0:
 PyStructSequence_GET_ITEM:Py_ssize_t:pos::

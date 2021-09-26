@@ -42,6 +42,10 @@ typedef PyTupleObject PyStructSequence;
 
 PyAPI_FUNC(void) PyStructSequence_SetItem(PyObject*, Py_ssize_t, PyObject*);
 PyAPI_FUNC(PyObject*) PyStructSequence_GetItem(PyObject*, Py_ssize_t);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+PyAPI_FUNC(PyTypeObject *) PyStructSequence_FromModuleAndDesc(
+    PyObject *, PyStructSequence_Desc *, unsigned long);
+#endif
 
 #ifdef __cplusplus
 }

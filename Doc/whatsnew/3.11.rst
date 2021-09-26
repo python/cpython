@@ -455,6 +455,10 @@ New Features
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
+* Add a new :c:func:`PyStructSequence_FromModuleAndDesc` function to create
+  a new struct sequence type from the desc.
+  (Contributed by Hai Shi in :issue:`45113`.)
+
 Porting to Python 3.11
 ----------------------
 

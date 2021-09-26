@@ -1,0 +1,2 @@
+Add a new :c:func:`PyStructSequence_FromModuleAndDesc` function to create a new
+struct sequence type in heap.
