@@ -4115,6 +4115,19 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.typename, 'foo')
         self.assertEqual(a.fields, [('bar', tuple)])
 
+    def test_empty_namedtuple(self):
+        NT = NamedTuple('NT')
+
+        class CNT(NamedTuple):
+            pass  # empty body
+
+        for struct in [NT, CNT]:
+            with self.subTest(struct=struct):
+                self.assertEqual(struct._fields, ())
+                self.assertEqual(struct._field_defaults, {})
+                self.assertEqual(struct.__annotations__, {})
+                self.assertIsInstance(struct(), struct)
+
     def test_namedtuple_errors(self):
         with self.assertRaises(TypeError):
             NamedTuple.__new__()
