@@ -566,10 +566,10 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
     }
     if (desc_cls->tp_descr_get) {
         if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
+            if (Py_IS_TYPE(descriptor, &PyClassMethodDescr_Type)) {
+                return BUILTIN_CLASSMETHOD;
+            }
             return METHOD;
-        }
-        if (Py_IS_TYPE(descriptor, &PyClassMethodDescr_Type)) {
-            return BUILTIN_CLASSMETHOD;
         }
         if (Py_IS_TYPE(descriptor, &PyClassMethod_Type)) {
             return PYTHON_CLASSMETHOD;

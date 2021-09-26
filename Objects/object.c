@@ -1120,11 +1120,17 @@ _PyObject_NextNotImplemented(PyObject *self)
 
    `method` will point to the resolved attribute or NULL.  In the
    latter case, an error will be set.
+
+   Also works with C METH_CLASS methods, such as dict.fromkeys or int.from_bytes.
+
+   When a method is found, *method* is set to an unbound method or unbound classmethod.
 */
 int
 _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
 {
     int meth_found = 0;
+    int is_classmethod = 0;
+    int is_valid_classmethod = 1;
 
     assert(*method == NULL);
 
@@ -1136,17 +1142,46 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_Check(name)) {
-        *method = PyObject_GetAttr(obj, name);
-        return 0;
+        if (PyType_Check(obj) && PyType_CheckExact(tp)) {
+            is_classmethod = 1;
+        }
+        else {
+            *method = PyObject_GetAttr(obj, name);
+            return 0;
+        }
     }
 
-    PyObject *descr = _PyType_Lookup(tp, name);
     descrgetfunc f = NULL;
+    PyObject *descr = NULL;
+    if (is_classmethod) {
+        descr = _PyType_Lookup((PyTypeObject *)obj, name);
+        if (descr == NULL) {
+            *method = PyObject_GetAttr(obj, name);
+            return 0;
+        }
+        // Currently doesn't work for Python @classmethod(func) objects.
+        // For unbound classmethods, obj must be the type to work.
+        // E.g. {}.fromkeys() is rejected, while dict.fromkeys() works.
+        if (!Py_IS_TYPE(descr, &PyClassMethodDescr_Type) ||
+            (obj != (PyObject *)PyDescr_TYPE(descr))) {
+            *method = PyObject_GetAttr(obj, name);
+            return 0;
+        }
+    }
+    else {
+        descr = _PyType_Lookup(tp, name);
+        if (descr != NULL && Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
+            is_valid_classmethod = (obj == (PyObject *)PyDescr_TYPE(descr));
+        }
+    }
+
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR) &&
+            is_valid_classmethod) {
             meth_found = 1;
-        } else {
+        }
+        else {
             f = Py_TYPE(descr)->tp_descr_get;
             if (f != NULL && PyDescr_IsData(descr)) {
                 *method = f(descr, obj, (PyObject *)Py_TYPE(obj));
@@ -1156,26 +1191,29 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
     }
 
-    PyObject **dictptr = _PyObject_GetDictPtr(obj);
-    PyObject *dict;
-    if (dictptr != NULL && (dict = *dictptr) != NULL) {
-        Py_INCREF(dict);
-        PyObject *attr = PyDict_GetItemWithError(dict, name);
-        if (attr != NULL) {
-            *method = Py_NewRef(attr);
+    // _PyType_Lookup did this for classmethods already.
+    if (!is_classmethod) {
+        PyObject **dictptr = _PyObject_GetDictPtr(obj);
+        PyObject *dict;
+        if (dictptr != NULL && (dict = *dictptr) != NULL) {
+            Py_INCREF(dict);
+            PyObject *attr = PyDict_GetItemWithError(dict, name);
+            if (attr != NULL) {
+                *method = Py_NewRef(attr);
+                Py_DECREF(dict);
+                Py_XDECREF(descr);
+                return 0;
+            }
             Py_DECREF(dict);
-            Py_XDECREF(descr);
-            return 0;
-        }
-        Py_DECREF(dict);
 
-        if (PyErr_Occurred()) {
-            Py_XDECREF(descr);
-            return 0;
+            if (PyErr_Occurred()) {
+                Py_XDECREF(descr);
+                return 0;
+            }
         }
     }
 
-    if (meth_found) {
+    if (meth_found && is_valid_classmethod) {
         *method = descr;
         return 1;
     }
