@@ -243,8 +243,8 @@ time
 ----
 
 * On Unix, :func:`time.sleep` now uses the ``clock_nanosleep()`` or
-  ``nanosleep()`` function, if available, which has a resolution of 1 ns (10^-6
-  sec), rather than using ``select()`` which has a resolution of 1 us (10^-9
+  ``nanosleep()`` function, if available, which has a resolution of 1 ns (10^-9
+  sec), rather than using ``select()`` which has a resolution of 1 us (10^-6
   sec).
   (Contributed by Livius and Victor Stinner in :issue:`21302`.)
 
