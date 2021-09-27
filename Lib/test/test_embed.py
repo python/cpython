@@ -434,7 +434,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': 0,
+        'use_frozen_modules': 0 if support.Py_DEBUG else 1,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({

@@ -106,6 +106,8 @@ TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 STDLIB_DIR = os.path.dirname(TEST_HOME_DIR)
 REPO_ROOT = os.path.dirname(STDLIB_DIR)
 
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
