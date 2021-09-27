@@ -29,7 +29,7 @@ class BadConstructorArgs(unittest.TestCase):
             _ = ExceptionGroup(None, [ValueError(12)])
 
     def test_bad_EG_construction__bad_excs_sequence(self):
-        MSG = 'Expected a non-empty sequence'
+        MSG = 'argument 2 must be a non-empty sequence'
         with self.assertRaisesRegex(TypeError, MSG):
             _ = ExceptionGroup('errors not sequence', {ValueError(42)})
         with self.assertRaisesRegex(TypeError, MSG):
@@ -38,7 +38,7 @@ class BadConstructorArgs(unittest.TestCase):
             _ = ExceptionGroup("eg", None)
 
     def test_bad_EG_construction__nested_non_exceptions(self):
-        MSG = 'Nested exceptions must derive from BaseException'
+        MSG = 'Item [0-9]+ of argument 2 is not an exception'
         with self.assertRaisesRegex(TypeError, MSG):
             _ = ExceptionGroup('bad error', ["not an exception"])
         with self.assertRaisesRegex(TypeError, MSG):

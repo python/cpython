@@ -657,7 +657,8 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         numexcs = PySequence_Length(excs);
     }
     if (numexcs <= 0) {
-        PyErr_SetString(PyExc_TypeError, "Expected a non-empty sequence");
+        PyErr_SetString(PyExc_TypeError,
+                        "argument 2 must be a non-empty sequence");
         return NULL;
     }
 
@@ -668,8 +669,9 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         if (!PyExceptionInstance_Check(exc)) {
-            PyErr_SetString(PyExc_TypeError,
-                "Nested exceptions must derive from BaseException");
+            PyErr_Format(
+                PyExc_TypeError,
+                "Item %d of argument 2 is not an exception", i);
             Py_DECREF(exc);
             return NULL;
         }
