@@ -116,18 +116,18 @@ class _RLock:
         self._count = 0
 
     def __repr__(self):
-        cls = self.__class__
         owner = self._owner
         try:
             owner = _active[owner].name
         except KeyError:
             pass
-        return "<%s %s.%s object owner=%r count=%d at %#x>" % (
+        return "<%s %s.%s object owner=%r count=%d at %s>" % (
             "locked" if self._block.locked() else "unlocked",
-            cls.__module__, cls.__qualname__,
+            self.__class__.__module__,
+            self.__class__.__qualname__,
             owner,
             self._count,
-            id(self)
+            hex(id(self))
         )
 
     def _at_fork_reinit(self):
