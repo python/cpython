@@ -1121,9 +1121,10 @@ _PyObject_NextNotImplemented(PyObject *self)
    `method` will point to the resolved attribute or NULL.  In the
    latter case, an error will be set.
 
-   Also works with C METH_CLASS methods, such as dict.fromkeys or int.from_bytes.
+   Also works with C METH_CLASS methods, such as dict.fromkeys.
 
-   When a method is found, *method* is set to an unbound method or unbound classmethod.
+   When a method is found, *method* is set to an unbound method, unbound
+   classmethod or wrapper descriptor.
 */
 int
 _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
