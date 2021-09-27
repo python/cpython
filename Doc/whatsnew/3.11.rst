@@ -205,6 +205,14 @@ math
   Dickinson in :issue:`44339`.)
 
 
+operator
+--------
+
+* A new function ``operator.call`` has been added, such that
+  ``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.
+  (Contributed by Antony Lee in :issue:`44019`.)
+
+
 os
 --
 
@@ -234,15 +242,83 @@ sqlite3
 time
 ----
 
-* In Unix operating systems, :func:`time.sleep` now uses the
-  ``clock_nanosleep()`` function, if available, which allows to sleep for an
-  interval specified with nanosecond precision.
+* On Unix, :func:`time.sleep` now uses the ``clock_nanosleep()`` or
+  ``nanosleep()`` function, if available, which has a resolution of 1 ns (10^-6
+  sec), rather than using ``select()`` which has a resolution of 1 us (10^-9
+  sec).
+  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+
+* On Windows, :func:`time.sleep` now uses a waitable timer which has a
+  resolution of 100 ns (10^-7 sec). Previously, it had a solution of 1 ms
+  (10^-3 sec).
   (Contributed by Livius and Victor Stinner in :issue:`21302`.)
 
 unicodedata
 -----------
 
 * The Unicode database has been updated to version 14.0.0. (:issue:`45190`).
+
+
+Optimizations
+=============
+
+* Compiler now optimizes simple C-style formatting with literal format
+  containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
+  fast as corresponding f-string expression.
+  (Contributed by Serhiy Storchaka in :issue:`28307`.)
+
+* "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
+  almost eliminated when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Method calls with keywords are now faster due to bytecode
+  changes which avoid creating bound method instances. Previously, this
+  optimization was applied only to method calls with purely positional
+  arguments.
+  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
+  implemented in PyPy.)
+
+* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
+  (Contributed by Dong-hee Na in :issue:`44987`.)
+
+
+CPython bytecode changes
+========================
+
+* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
+  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
+  in tandem with :opcode:`LOAD_METHOD`.
+
+
+Deprecated
+==========
+
+* The :mod:`lib2to3` package is now deprecated and may not be able to parse
+  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
+  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+  It is untested and undocumented and also not used by webbrowser itself.
+  (Contributed by Dong-hee Na in :issue:`42255`.)
+
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
+  default ``None`` value), is now deprecated.
+
+* Deprecated the following :mod:`unittest` functions, scheduled for removal in
+  Python 3.13:
+
+  * :func:`unittest.findTestCases`
+  * :func:`unittest.makeSuite`
+  * :func:`unittest.getTestCaseNames`
+
+  Use :class:`~unittest.TestLoader` method instead:
+
+  * :meth:`unittest.TestLoader.loadTestsFromModule`
+  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
+  * :meth:`unittest.TestLoader.getTestCaseNames`
+
+  (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
 
 Removed
@@ -318,81 +394,6 @@ Removed
   deprecated since Python 3.2.
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
-
-Optimizations
-=============
-
-* Compiler now optimizes simple C-style formatting with literal format
-  containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
-  fast as corresponding f-string expression.
-  (Contributed by Serhiy Storchaka in :issue:`28307`.)
-
-* "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
-  almost eliminated when no exception is raised.
-  (Contributed by Mark Shannon in :issue:`40222`.)
-
-* Method calls with keywords are now faster due to bytecode
-  changes which avoid creating bound method instances. Previously, this
-  optimization was applied only to method calls with purely positional
-  arguments.
-  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
-  implemented in PyPy.)
-
-* :file:`.pdbrc` is now read with ``'utf-8'`` encoding.
-
-* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
-  (Contributed by Dong-hee Na in :issue:`44987`.)
-
-
-CPython bytecode changes
-========================
-
-* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
-  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
-  in tandem with :opcode:`LOAD_METHOD`.
-
-
-Build Changes
-=============
-
-* CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
-  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
-
-
-Deprecated
-==========
-
-* The :mod:`lib2to3` package is now deprecated and may not be able to parse
-  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
-  (Contributed by Victor Stinner in :issue:`40360`.)
-
-* :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
-  It is untested and undocumented and also not used by webbrowser itself.
-  (Contributed by Dong-hee Na in :issue:`42255`.)
-
-* The behavior of returning a value from a :class:`~unittest.TestCase` and
-  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
-  default ``None`` value), is now deprecated.
-
-* Deprecated the following :mod:`unittest` functions, scheduled for removal in
-  Python 3.13:
-
-  * :func:`unittest.findTestCases`
-  * :func:`unittest.makeSuite`
-  * :func:`unittest.getTestCaseNames`
-
-  Use :class:`~unittest.TestLoader` method instead:
-
-  * :meth:`unittest.TestLoader.loadTestsFromModule`
-  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
-  * :meth:`unittest.TestLoader.getTestCaseNames`
-
-  (Contributed by Erlend E. Aasland in :issue:`5846`.)
-
-
-Removed
-=======
-
 * The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
   legacy generator-based coroutines to be compatible with async/await code.
   The function has been deprecated since Python 3.8 and the removal was
@@ -430,17 +431,29 @@ Changes in the Python API
   how universal newlines works.
   (Contributed by Victor Stinner in :issue:`37330`.)
 
+* The :mod:`pdb` module now reads the :file:`.pdbrc` configuration file with
+  the ``'utf-8'`` encoding.
+  (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
+
+
+Build Changes
+=============
+
+* CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
+  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
+
 
 C API Changes
 =============
+
+New Features
+------------
+
 * Add a new :c:func:`PyType_GetName` function to get type's short name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
-
-New Features
-------------
 
 Porting to Python 3.11
 ----------------------

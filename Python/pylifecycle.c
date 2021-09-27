@@ -2806,6 +2806,16 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
 
 
 void _Py_NO_RETURN
+_Py_FatalRefcountErrorFunc(const char *func, const char *msg)
+{
+    _Py_FatalErrorFormat(func,
+                         "%s: bug likely caused by a refcount error "
+                         "in a C extension",
+                         msg);
+}
+
+
+void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
 {
     if (_PyStatus_IS_EXIT(status)) {

@@ -33,6 +33,7 @@
 /* Conversion from nanoseconds */
 #define NS_TO_MS (1000 * 1000)
 #define NS_TO_US (1000)
+#define NS_TO_100NS (100)
 
 
 static void
@@ -568,6 +569,16 @@ _PyTime_AsNanoseconds(_PyTime_t t)
 }
 
 
+#ifdef MS_WINDOWS
+_PyTime_t
+_PyTime_As100Nanoseconds(_PyTime_t t, _PyTime_round_t round)
+{
+    _PyTime_t ns = pytime_as_nanoseconds(t);
+    return pytime_divide(ns, NS_TO_100NS, round);
+}
+#endif
+
+
 _PyTime_t
 _PyTime_AsMicroseconds(_PyTime_t t, _PyTime_round_t round)
 {
@@ -1039,26 +1050,14 @@ py_win_perf_counter_frequency(LONGLONG *pfrequency, int raise)
     LONGLONG frequency;
 
     LARGE_INTEGER freq;
-    if (!QueryPerformanceFrequency(&freq)) {
-        if (raise) {
-            PyErr_SetFromWindowsErr(0);
-        }
-        return -1;
-    }
+    // Since Windows XP, the function cannot fail.
+    (void)QueryPerformanceFrequency(&freq);
     frequency = freq.QuadPart;
 
-    /* Sanity check: should never occur in practice */
-    if (frequency < 1) {
-        if (raise) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "invalid QueryPerformanceFrequency");
-        }
-        return -1;
-    }
+    // Since Windows XP, frequency cannot be zero.
+    assert(frequency >= 1);
 
-    /* Check that frequency can be casted to _PyTime_t.
-
-       Make also sure that (ticks * SEC_TO_NS) cannot overflow in
+    /* Make also sure that (ticks * SEC_TO_NS) cannot overflow in
        _PyTime_MulDiv(), with ticks < frequency.
 
        Known QueryPerformanceFrequency() values:
@@ -1067,10 +1066,8 @@ py_win_perf_counter_frequency(LONGLONG *pfrequency, int raise)
        * 3,579,545 Hz (3.6 MHz): 279 ns resolution
 
        None of these frequencies can overflow with 64-bit _PyTime_t, but
-       check for overflow, just in case. */
-    if (frequency > _PyTime_MAX
-        || frequency > (LONGLONG)_PyTime_MAX / (LONGLONG)SEC_TO_NS)
-    {
+       check for integer overflow just in case. */
+    if (frequency > _PyTime_MAX / SEC_TO_NS) {
         if (raise) {
             PyErr_SetString(PyExc_OverflowError,
                             "QueryPerformanceFrequency is too large");

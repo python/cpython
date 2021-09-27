@@ -1,0 +1,2 @@
+Remove extra documentation listing methods in ``difflib``. It was rendering
+twice in pydoc and was outdated in some places.

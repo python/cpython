@@ -2484,7 +2484,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
                 switch (Py_SIZE(item)) {
                     case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
-                    case  0: continue;
+                    // Note: the continue goes to the top of the "while" loop that iterates over the elements
+                    case  0: Py_DECREF(item); continue; 
                     case  1: b = ((PyLongObject*)item)->ob_digit[0]; break;
                     default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
                 }

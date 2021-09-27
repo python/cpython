@@ -38,8 +38,8 @@
 #include "Python.h"
 
 /* Includes for frozen modules: */
-#include "frozen_modules/importlib__bootstrap.h"
-#include "frozen_modules/importlib__bootstrap_external.h"
+#include "frozen_modules/importlib._bootstrap.h"
+#include "frozen_modules/importlib._bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
 #include "frozen_modules/abc.h"
 #include "frozen_modules/codecs.h"

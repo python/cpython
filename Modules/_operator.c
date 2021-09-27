@@ -886,6 +886,27 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
     return PyBool_FromLong(rc);
 }
 
+PyDoc_STRVAR(_operator_call__doc__,
+"call($module, obj, /, *args, **kwargs)\n"
+"--\n"
+"\n"
+"Same as obj(*args, **kwargs).");
+
+#define _OPERATOR_CALL_METHODDEF    \
+    {"call", (PyCFunction)(void(*)(void))_operator_call, METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
+
+static PyObject *
+_operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (!_PyArg_CheckPositional("call", nargs, 1, PY_SSIZE_T_MAX)) {
+        return NULL;
+    }
+    return PyObject_Vectorcall(
+            args[0],
+            &args[1], (PyVectorcall_NARGS(nargs) - 1) | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            kwnames);
+}
+
 /* operator methods **********************************************************/
 
 static struct PyMethodDef operator_methods[] = {
@@ -942,6 +963,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
+    _OPERATOR_CALL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 
 };
