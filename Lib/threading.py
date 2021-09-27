@@ -1517,19 +1517,28 @@ def _shutdown():
 
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True
-    # Main thread
-    tlock = _main_thread._tstate_lock
-    # The main thread isn't finished yet, so its thread state lock can't have
-    # been released.
-    assert tlock is not None
-    assert tlock.locked()
-    tlock.release()
-    _main_thread._stop()
 
     # Call registered threading atexit functions before threads are joined.
     # Order is reversed, similar to atexit.
     for atexit_call in reversed(_threading_atexits):
         atexit_call()
+
+    # Main thread
+    if _main_thread.ident == get_ident():
+        tlock = _main_thread._tstate_lock
+        # The main thread isn't finished yet, so its thread state lock can't
+        # have been released.
+        assert tlock is not None
+        assert tlock.locked()
+        tlock.release()
+        _main_thread._stop()
+    else:
+        # bpo-1596321: _shutdown() must be called in the main thread.
+        # If the threading module was not imported by the main thread,
+        # _main_thread is the thread which imported the threading module.
+        # In this case, ignore _main_thread, similar behavior than for threads
+        # spawned by C libraries or using _thread.start_new_thread().
+        pass
 
     # Join all non-deamon threads
     while True:
