@@ -1094,11 +1094,24 @@ class Thread:
         # If the lock is acquired, the C code is done, and self._stop() is
         # called.  That sets ._is_stopped to True, and ._tstate_lock to None.
         lock = self._tstate_lock
-        if lock is None:  # already determined that the C code is done
+        if lock is None:
+            # already determined that the C code is done
             assert self._is_stopped
-        elif lock.acquire(block, timeout):
-            lock.release()
-            self._stop()
+            return
+
+        try:
+            if lock.acquire(block, timeout):
+                lock.release()
+                self._stop()
+        except:
+            if lock.locked():
+                # bpo-45274: lock.acquire() acquired the lock, but the function
+                # was interrupted with an exception before reaching the
+                # lock.release(). It can happen if a signal handler raises an
+                # exception, like CTRL+C which raises KeyboardInterrupt.
+                lock.release()
+                self._stop()
+            raise
 
     @property
     def name(self):
