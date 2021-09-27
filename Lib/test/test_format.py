@@ -519,5 +519,33 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
 
+    def test_better_error_message_format(self):
+        # https://bugs.python.org/issue20524
+        for value in [12j, 12, 12.0, "12"]:
+            with self.subTest(value=value):
+                # The format spec must be invalid for all types we're testing.
+                # '%M' will suffice.
+                bad_format_spec = '%M'
+                err = re.escape("Invalid format specifier "
+                                f"'{bad_format_spec}' for object of type "
+                                f"'{type(value).__name__}'")
+                with self.assertRaisesRegex(ValueError, err):
+                    f"xx{{value:{bad_format_spec}}}yy".format(value=value)
+
+                # Also test the builtin format() function.
+                with self.assertRaisesRegex(ValueError, err):
+                    format(value, bad_format_spec)
+
+                # Also test f-strings.
+                with self.assertRaisesRegex(ValueError, err):
+                    eval("f'xx{value:{bad_format_spec}}yy'")
+
+    def test_unicode_in_error_message(self):
+        str_err = re.escape(
+            "Invalid format specifier '%ЫйЯЧ' for object of type 'str'")
+        with self.assertRaisesRegex(ValueError, str_err):
+            "{a:%ЫйЯЧ}".format(a='a')
+
+
 if __name__ == "__main__":
     unittest.main()

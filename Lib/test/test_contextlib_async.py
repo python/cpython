@@ -318,6 +318,82 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         self.assertEqual(ncols, 10)
         self.assertEqual(depth, 0)
 
+    @_async_test
+    async def test_decorator(self):
+        entered = False
+
+        @asynccontextmanager
+        async def context():
+            nonlocal entered
+            entered = True
+            yield
+            entered = False
+
+        @context()
+        async def test():
+            self.assertTrue(entered)
+
+        self.assertFalse(entered)
+        await test()
+        self.assertFalse(entered)
+
+    @_async_test
+    async def test_decorator_with_exception(self):
+        entered = False
+
+        @asynccontextmanager
+        async def context():
+            nonlocal entered
+            try:
+                entered = True
+                yield
+            finally:
+                entered = False
+
+        @context()
+        async def test():
+            self.assertTrue(entered)
+            raise NameError('foo')
+
+        self.assertFalse(entered)
+        with self.assertRaisesRegex(NameError, 'foo'):
+            await test()
+        self.assertFalse(entered)
+
+    @_async_test
+    async def test_decorating_method(self):
+
+        @asynccontextmanager
+        async def context():
+            yield
+
+
+        class Test(object):
+
+            @context()
+            async def method(self, a, b, c=None):
+                self.a = a
+                self.b = b
+                self.c = c
+
+        # these tests are for argument passing when used as a decorator
+        test = Test()
+        await test.method(1, 2)
+        self.assertEqual(test.a, 1)
+        self.assertEqual(test.b, 2)
+        self.assertEqual(test.c, None)
+
+        test = Test()
+        await test.method('a', 'b', 'c')
+        self.assertEqual(test.a, 'a')
+        self.assertEqual(test.b, 'b')
+        self.assertEqual(test.c, 'c')
+
+        test = Test()
+        await test.method(a=1, b=2)
+        self.assertEqual(test.a, 1)
+        self.assertEqual(test.b, 2)
+
 
 class AclosingTestCase(unittest.TestCase):
 

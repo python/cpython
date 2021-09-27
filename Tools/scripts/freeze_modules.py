@@ -11,8 +11,9 @@ import posixpath
 import subprocess
 import sys
 import textwrap
+import time
 
-from update_file import updating_file_with_tmpfile
+from update_file import updating_file_with_tmpfile, update_file_with_tmpfile
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -272,7 +273,7 @@ def resolve_frozen_file(frozenid, destdir=MODULES_DIR):
         except AttributeError:
             raise ValueError(f'unsupported frozenid {frozenid!r}')
     # We use a consistent naming convention for all frozen modules.
-    frozenfile = frozenid.replace('.', '_') + '.h'
+    frozenfile = f'{frozenid}.h'
     if not destdir:
         return frozenfile
     return os.path.join(destdir, frozenfile)
@@ -542,6 +543,7 @@ def regen_frozen(modules):
 
 
 def regen_makefile(modules):
+    pyfiles = []
     frozenfiles = []
     rules = ['']
     for src in _iter_sources(modules):
@@ -549,14 +551,16 @@ def regen_makefile(modules):
         frozenfiles.append(f'\t\t{header} \\')
 
         pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
-        # Note that we freeze the module to the target .h file
-        # instead of going through an intermediate file like we used to.
-        rules.append(f'{header}: Programs/_freeze_module {pyfile}')
-        rules.append(
-            (f'\tPrograms/_freeze_module {src.frozenid} '
-             f'$(srcdir)/{pyfile} $(srcdir)/{header}'))
-        rules.append('')
+        pyfiles.append(f'\t\t{pyfile} \\')
 
+        freeze = (f'Programs/_freeze_module {src.frozenid} '
+                  f'$(srcdir)/{pyfile} $(srcdir)/{header}')
+        rules.extend([
+            f'{header}: Programs/_freeze_module {pyfile}',
+            f'\t{freeze}',
+            '',
+        ])
+    pyfiles[-1] = pyfiles[-1].rstrip(" \\")
     frozenfiles[-1] = frozenfiles[-1].rstrip(" \\")
 
     print(f'# Updating {os.path.relpath(MAKEFILE)}')
@@ -564,8 +568,15 @@ def regen_makefile(modules):
         lines = infile.readlines()
         lines = replace_block(
             lines,
-            "FROZEN_FILES =",
-            "# End FROZEN_FILES",
+            "FROZEN_FILES_IN =",
+            "# End FROZEN_FILES_IN",
+            pyfiles,
+            MAKEFILE,
+        )
+        lines = replace_block(
+            lines,
+            "FROZEN_FILES_OUT =",
+            "# End FROZEN_FILES_OUT",
             frozenfiles,
             MAKEFILE,
         )
@@ -625,13 +636,15 @@ def regen_pcbuild(modules):
 
 def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
     """Generate the frozen module .h file for the given module."""
+    tmpsuffix = f'.{int(time.time())}'
     for modname, pyfile, ispkg in resolve_modules(modname, pyfile):
         frozenfile = resolve_frozen_file(modname, destdir)
-        _freeze_module(modname, pyfile, frozenfile)
+        _freeze_module(modname, pyfile, frozenfile, tmpsuffix)
 
 
-def _freeze_module(frozenid, pyfile, frozenfile):
-    tmpfile = frozenfile + '.new'
+def _freeze_module(frozenid, pyfile, frozenfile, tmpsuffix):
+    tmpfile = f'{frozenfile}.{int(time.time())}'
+    print(tmpfile)
 
     argv = [TOOL, frozenid, pyfile, tmpfile]
     print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)
@@ -642,7 +655,7 @@ def _freeze_module(frozenid, pyfile, frozenfile):
             sys.exit(f'ERROR: missing {TOOL}; you need to run "make regen-frozen"')
         raise  # re-raise
 
-    os.replace(tmpfile, frozenfile)
+    update_file_with_tmpfile(frozenfile, tmpfile, create=True)
 
 
 #######################################
@@ -652,15 +665,18 @@ def main():
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs(destdir=MODULES_DIR))
 
-    # Freeze the target modules.
-    for src in _iter_sources(modules):
-        _freeze_module(src.frozenid, src.pyfile, src.frozenfile)
-
     # Regen build-related files.
-    regen_manifest(modules)
-    regen_frozen(modules)
     regen_makefile(modules)
     regen_pcbuild(modules)
+
+    # Freeze the target modules.
+    tmpsuffix = f'.{int(time.time())}'
+    for src in _iter_sources(modules):
+        _freeze_module(src.frozenid, src.pyfile, src.frozenfile, tmpsuffix)
+
+    # Regen files dependent of frozen file details.
+    regen_frozen(modules)
+    regen_manifest(modules)
 
 
 if __name__ == '__main__':
