@@ -752,13 +752,9 @@ BaseExceptionGroup_traverse(PyBaseExceptionGroupObject *self, visitproc visit, v
 static PyObject *
 BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 {
-    if (self->msg && PyUnicode_CheckExact(self->msg)) {
-        Py_INCREF(self->msg);
-        return self->msg;
-    }
-    else {
-        return BaseException_str((PyBaseExceptionObject *)self);
-    }
+    assert(self->msg);
+    assert(PyUnicode_Check(self->msg));
+    return Py_NewRef(self->msg);
 }
 
 static PyObject *
