@@ -671,7 +671,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (!PyExceptionInstance_Check(exc)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "Item %d of argument 2 is not an exception", i);
+                "Item %d of argument 2 is not an exception instance", i);
             Py_DECREF(exc);
             return NULL;
         }

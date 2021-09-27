@@ -38,7 +38,9 @@ class BadConstructorArgs(unittest.TestCase):
             _ = ExceptionGroup("eg", None)
 
     def test_bad_EG_construction__nested_non_exceptions(self):
-        MSG = 'Item [0-9]+ of argument 2 is not an exception'
+        MSG = 'Item [0-9]+ of argument 2 is not an exception instance'
+        with self.assertRaisesRegex(TypeError, MSG):
+            _ = ExceptionGroup('expect instance, not type', [ValueError]);
         with self.assertRaisesRegex(TypeError, MSG):
             _ = ExceptionGroup('bad error', ["not an exception"])
         with self.assertRaisesRegex(TypeError, MSG):
