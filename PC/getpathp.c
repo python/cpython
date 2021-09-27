@@ -1016,14 +1016,9 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
 done:
     if (pathconfig->stdlib_dir == NULL) {
-        if (calculate->home != NULL) {
-            pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->home);
-        }
-        else {
-            pathconfig->stdlib_dir = _Py_join_relfile(prefix, STDLIB_SUBDIR);
-            if (pathconfig->stdlib_dir == NULL) {
-                return _PyStatus_NO_MEMORY();
-            }
+        pathconfig->stdlib_dir = _Py_join_relfile(prefix, STDLIB_SUBDIR);
+        if (pathconfig->stdlib_dir == NULL) {
+            return _PyStatus_NO_MEMORY();
         }
     }
     if (pathconfig->prefix == NULL) {
