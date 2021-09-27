@@ -436,6 +436,9 @@ def _generate_posix_vars():
     if _PYTHON_BUILD:
         vars['BLDSHARED'] = vars['LDSHARED']
 
+    Py_DEBUG = bool(vars['Py_DEBUG'])
+    vars['FROZEN_MODULES_DEFAULT'] = 0 if Py_DEBUG else 1
+
     # There's a chicken-and-egg situation on OS X with regards to the
     # _sysconfigdata module after the changes introduced by #15298:
     # get_config_vars() is called by get_platform() as part of the
@@ -490,6 +493,10 @@ def _init_non_posix(vars):
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     vars['TZPATH'] = ''
+    # infer build vars
+    Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+    vars['Py_DEBUG'] = 1 if Py_DEBUG else 0
+    vars['FROZEN_MODULES_DEFAULT'] = 0 if Py_DEBUG else 1
 
 #
 # public APIs
