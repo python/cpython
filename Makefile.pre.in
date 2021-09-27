@@ -777,8 +777,8 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Programs/_freeze_module: Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-$(FROZEN_DATA)/%.h: Programs/_freeze_module
-	$(eval frozenid = $(*F))
+$(FROZEN_FILES_OUT): Programs/_freeze_module
+	$(eval frozenid = $(basename $(@F)))
 	$(eval pyfile = "$(srcdir)/Lib/$(subst .,/,$(frozenid)).py")
 	Programs/_freeze_module $(frozenid) $(pyfile) $@
 
