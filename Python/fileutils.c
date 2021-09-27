@@ -2100,12 +2100,12 @@ static int
 join_relfile(wchar_t *buffer, size_t bufsize,
              const wchar_t *dirname, const wchar_t *relfile)
 {
-    assert(!_Py_isabs(relfile));
 #ifdef MS_WINDOWS
     if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 0))) {
         return -1;
     }
 #else
+    assert(!_Py_isabs(relfile));
     size_t dirlen = wcslen(dirname);
     size_t rellen = wcslen(relfile);
     size_t maxlen = bufsize - 1;
