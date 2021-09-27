@@ -22,7 +22,7 @@ class BadConstructorArgs(unittest.TestCase):
             _ = ExceptionGroup('eg', [ValueError('too')], [TypeError('many')])
 
     def test_bad_EG_construction__bad_message(self):
-        MSG = 'Expected a message'
+        MSG = 'argument 1 must be str, not '
         with self.assertRaisesRegex(TypeError, MSG):
             _ = ExceptionGroup(ValueError(12), SyntaxError('bad syntax'))
         with self.assertRaisesRegex(TypeError, MSG):

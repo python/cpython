@@ -649,11 +649,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *msg = NULL;
     PyObject *excs = NULL;
 
-    if (!PyArg_ParseTuple(args, "OO", &msg, &excs)) {
-        return NULL;
-    }
-    if (!PyUnicode_CheckExact(msg)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a message");
+    if (!PyArg_ParseTuple(args, "UO", &msg, &excs)) {
         return NULL;
     }
     Py_ssize_t numexcs = -1;
