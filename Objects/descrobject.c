@@ -71,15 +71,62 @@ wrapperdescr_repr(PyWrapperDescrObject *descr)
                       "<slot wrapper '%V' of '%s' objects>");
 }
 
-static int
-descr_check(PyDescrObject *descr, PyObject *obj, PyObject **pres)
+Py_LOCAL_INLINE(int)
+classmethod_typecheck(PyMethodDescrObject *descr, PyObject *obj, PyObject **t)
 {
+    PyObject *type = *t;
+    /* Ensure a valid type.  Class methods ignore obj. */
+    if (type == NULL) {
+        if (obj != NULL) {
+            type = *t = (PyObject *)Py_TYPE(obj);
+        }
+        else {
+            /* Wot - no type?! */
+            PyErr_Format(PyExc_TypeError,
+                         "descriptor '%V' for type '%.100s' "
+                         "needs either an object or a type",
+                         descr_name((PyDescrObject *)descr), "?",
+                         PyDescr_TYPE(descr)->tp_name);
+            return 1;
+        }
+    }
+    assert(type != NULL);
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' for type '%.100s' "
+                     "needs a type, not a '%.100s' as arg 2",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name,
+                     Py_TYPE(type)->tp_name);
+        return 1;
+    }
+    if (!PyType_IsSubtype((PyTypeObject *)type, PyDescr_TYPE(descr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor '%V' requires a subtype of '%.100s' "
+                     "but received '%.100s'",
+                     descr_name((PyDescrObject *)descr), "?",
+                     PyDescr_TYPE(descr)->tp_name,
+                     ((PyTypeObject *)type)->tp_name);
+        return 1;
+    }
+    return 0;
+}
+
+static int
+descr_check(PyDescrObject *descr, PyObject *o, PyObject **pres)
+{
+    PyObject *obj = o;
     if (obj == NULL) {
         Py_INCREF(descr);
         *pres = (PyObject *)descr;
         return 1;
     }
-    // obj == (PyObject *)descr->d_type is a special case for METH_CLASS
+    if (Py_IS_TYPE(descr, &PyClassMethodDescr_Type)) {
+        if (classmethod_typecheck((PyMethodDescrObject *)descr, NULL, &obj)) {
+            return 1;
+        }
+        return 0;
+    }
     if (obj != (PyObject *)descr->d_type &&
         !PyObject_TypeCheck(obj, descr->d_type)) {
         PyErr_Format(PyExc_TypeError,
@@ -95,38 +142,10 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyObject **pres)
 }
 
 static PyObject *
-classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
+classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *t)
 {
-    /* Ensure a valid type.  Class methods ignore obj. */
-    if (type == NULL) {
-        if (obj != NULL)
-            type = (PyObject *)Py_TYPE(obj);
-        else {
-            /* Wot - no type?! */
-            PyErr_Format(PyExc_TypeError,
-                         "descriptor '%V' for type '%.100s' "
-                         "needs either an object or a type",
-                         descr_name((PyDescrObject *)descr), "?",
-                         PyDescr_TYPE(descr)->tp_name);
-            return NULL;
-        }
-    }
-    if (!PyType_Check(type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' for type '%.100s' "
-                     "needs a type, not a '%.100s' as arg 2",
-                     descr_name((PyDescrObject *)descr), "?",
-                     PyDescr_TYPE(descr)->tp_name,
-                     Py_TYPE(type)->tp_name);
-        return NULL;
-    }
-    if (!PyType_IsSubtype((PyTypeObject *)type, PyDescr_TYPE(descr))) {
-        PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' requires a subtype of '%.100s' "
-                     "but received '%.100s'",
-                     descr_name((PyDescrObject *)descr), "?",
-                     PyDescr_TYPE(descr)->tp_name,
-                     ((PyTypeObject *)type)->tp_name);
+    PyObject *type = t;
+    if (classmethod_typecheck(descr, obj, &type)) {
         return NULL;
     }
     PyTypeObject *cls = NULL;

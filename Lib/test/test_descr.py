@@ -1630,8 +1630,8 @@ order (MRO) for bases """
             spam_cm()
         self.assertEqual(
             str(cm.exception),
-            "descriptor 'classmeth' of 'xxsubtype.spamlist' "
-            "object needs an argument")
+            "unbound method spamlist.classmeth() "
+            "needs an argument")
 
         with self.assertRaises(TypeError) as cm:
             spam_cm(spam.spamlist())
