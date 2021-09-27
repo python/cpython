@@ -2138,7 +2138,9 @@ wchar_t *
 _Py_join_relfile(const wchar_t *dirname, const wchar_t *relfile)
 {
     assert(dirname != NULL && relfile != NULL);
+#ifndef MS_WINDOWS
     assert(!_Py_isabs(relfile));
+#endif
     size_t maxlen = wcslen(dirname) + 1 + wcslen(relfile);
     size_t bufsize = maxlen + 1;
     wchar_t *filename = PyMem_RawMalloc(bufsize * sizeof(wchar_t));
