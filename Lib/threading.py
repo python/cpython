@@ -420,10 +420,8 @@ class Semaphore:
 
     def __repr__(self):
         cls = self.__class__
-        return '<%s.%s: %r at %#x>' % (
-            cls.__module__, cls.__qualname__,
-            self._value, id(self)
-        )
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" value={self._value}>")
 
     def acquire(self, blocking=True, timeout=None):
         """Acquire a semaphore, decrementing the internal counter by one.
@@ -513,10 +511,8 @@ class BoundedSemaphore(Semaphore):
 
     def __repr__(self):
         cls = self.__class__
-        return '<%s.%s: %r/%r at %#x>' % (
-            cls.__module__, cls.__qualname__,
-            self._value, self._initial_value, id(self)
-        )
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" value={self._value}/{self._initial_value}>")
 
     def release(self, n=1):
         """Release a semaphore, incrementing the internal counter by one or more.
@@ -555,10 +551,8 @@ class Event:
 
     def __repr__(self):
         cls = self.__class__
-        return '<%s.%s: %s at %#x>' % (
-            cls.__module__, cls.__qualname__,
-            'set' if self._flag else 'unset', id(self)
-        )
+        status = 'set' if self._flag else 'unset'
+        return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
         # Private method called by Thread._reset_internal_locks()
@@ -660,11 +654,10 @@ class Barrier:
 
     def __repr__(self):
         cls = self.__class__
-        return '<%s.%s: %r/%r%s at %#x>' % (
-            cls.__module__, cls.__qualname__,
-            self.n_waiting, self.parties,
-            ', broken' if self.broken else '', id(self)
-        )
+        if self.broken:
+            return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: broken>"
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" waiters={self.n_waiting}/{self.parties}>")
 
     def wait(self, timeout=None):
         """Wait for the barrier.

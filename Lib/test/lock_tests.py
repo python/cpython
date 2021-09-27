@@ -457,9 +457,9 @@ class EventTests(BaseTestCase):
 
     def test_repr(self):
         evt = self.eventtype()
-        self.assertRegex(repr(evt), r"<\w+\.Event: unset at .*>")
+        self.assertRegex(repr(evt), r"<\w+\.Event at .*: unset>")
         evt.set()
-        self.assertRegex(repr(evt), r"<\w+\.Event: set at .*>")
+        self.assertRegex(repr(evt), r"<\w+\.Event at .*: set>")
 
 
 class ConditionTests(BaseTestCase):
@@ -810,12 +810,12 @@ class SemaphoreTests(BaseSemaphoreTests):
 
     def test_repr(self):
         sem = self.semtype(3)
-        self.assertRegex(repr(sem), r"<\w+\.Semaphore: 3 at .*>")
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=3>")
         sem.acquire()
-        self.assertRegex(repr(sem), r"<\w+\.Semaphore: 2 at .*>")
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=2>")
         sem.release()
         sem.release()
-        self.assertRegex(repr(sem), r"<\w+\.Semaphore: 4 at .*>")
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=4>")
 
 
 class BoundedSemaphoreTests(BaseSemaphoreTests):
@@ -833,9 +833,9 @@ class BoundedSemaphoreTests(BaseSemaphoreTests):
 
     def test_repr(self):
         sem = self.semtype(3)
-        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore: 3/3 at .*>")
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore at .*: value=3/3>")
         sem.acquire()
-        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore: 2/3 at .*>")
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore at .*: value=2/3>")
 
 
 class BarrierTests(BaseTestCase):
@@ -1032,15 +1032,15 @@ class BarrierTests(BaseTestCase):
 
     def test_repr(self):
         b = self.barriertype(3)
-        self.assertRegex(repr(b), r"<\w+\.Barrier: 0/3 at .*>")
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=0/3>")
         def f():
             b.wait(3)
         bunch = Bunch(f, 2)
         bunch.wait_for_started()
         time.sleep(0.2)
-        self.assertRegex(repr(b), r"<\w+\.Barrier: 2/3 at .*>")
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=2/3>")
         b.wait(3)
         bunch.wait_for_finished()
-        self.assertRegex(repr(b), r"<\w+\.Barrier: 0/3 at .*>")
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=0/3>")
         b.abort()
-        self.assertRegex(repr(b), r"<\w+\.Barrier: 0/3, broken at .*>")
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: broken>")
