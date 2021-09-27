@@ -650,7 +650,7 @@ Glossary
       are required to have an :meth:`__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
       places where other iterables are accepted.  One notable exception is code
-      which attempts multiple iteration passes.  A container object (such as a
+      which attempts multiple iterations passes.  A container object (such as a
       :class:`list`) produces a fresh new iterator each time you pass it to the
       :func:`iter` function or use it in a :keyword:`for` loop.  Attempting this
       with an iterator will just return the same exhausted iterator object used
