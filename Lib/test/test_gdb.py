@@ -890,7 +890,9 @@ id(42)
         ):
             for obj in (
                 '_testcapi',
-                '_testcapi.MethClass',
+                # From bpo-45295, classmethods are unbound and don't give
+                # nice tracebacks.
+                # '_testcapi.MethClass',
                 '_testcapi.MethClass()',
                 '_testcapi.MethStatic()',
 
