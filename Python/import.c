@@ -556,6 +556,23 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     return mod;
 }
 
+PyObject *
+_PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *mod = import_find_extension(tstate, name, filename);
+    if (mod) {
+        PyObject *ref = PyWeakref_NewRef(mod, NULL);
+        Py_DECREF(mod);
+        if (ref == NULL) {
+            return NULL;
+        }
+        mod = PyWeakref_GetObject(ref);
+        Py_DECREF(ref);
+    }
+    return mod; /* borrowed reference */
+}
+
 
 /* Get the module object corresponding to a module name.
    First check the modules dictionary if there's one there,
