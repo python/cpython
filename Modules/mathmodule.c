@@ -3082,14 +3082,13 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
     }
 
     if (result == NULL) {
-        result = PyLong_FromLong(1);
+        result = _PyLong_GetOne();
         if (result == NULL) {
             Py_DECREF(iter);
             return NULL;
         }
-    } else {
-        Py_INCREF(result);
-    }
+    } 
+    Py_INCREF(result);
 #ifndef SLOW_PROD
     /* Fast paths for integers keeping temporary products in C.
      * Assumes all inputs are the same type.
@@ -3105,7 +3104,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
         }
         /* Loop over all the items in the iterable until we finish, we overflow
          * or we found a non integer element */
-        while(result == NULL) {
+        while (result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
                 Py_DECREF(iter);
