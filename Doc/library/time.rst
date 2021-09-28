@@ -364,16 +364,18 @@ Functions
    threads ready to run, the function returns immediately, and the thread
    continues execution.
 
-   Implementation:
+   Unix implementation:
 
-   * On Unix, ``clock_nanosleep()`` is used if available (resolution: 1 ns),
-     or ``select()`` is used otherwise (resolution: 1 us).
-   * On Windows, a waitable timer is used (resolution: 100 ns). If *secs* is
-     zero, ``Sleep(0)`` is used.
+   * Use ``clock_nanosleep()`` if available (resolution: 1 ns);
+   * Or use ``nanosleep()`` if available (resolution: 1 ns);
+   * Or use ``select()`` (resolution: 1 us).
+
+   On Windows, a waitable timer is used (resolution: 100 ns). If *secs* is
+   zero, ``Sleep(0)`` is used.
 
    .. versionchanged:: 3.11
-      On Unix, the ``clock_nanosleep()`` function is now used if available.
-      On Windows, a waitable timer is now used.
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
 
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
