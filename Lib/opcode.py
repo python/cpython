@@ -247,7 +247,7 @@ _specialized_instructions = [
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
     # Super instructions
-    "UNPACK_SEQUENCE_ST",
+    "UNPACK_SEQUENCE__STORE_FAST",
     "LOAD_FAST__LOAD_FAST",
     "STORE_FAST__LOAD_FAST",
     "LOAD_FAST__LOAD_CONST",

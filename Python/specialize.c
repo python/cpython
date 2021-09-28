@@ -352,7 +352,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                         }
                     }
                     if (j == (oparg+1)) {
-                        instructions[i] = _Py_MAKECODEUNIT(UNPACK_SEQUENCE_ST, oparg);
+                        instructions[i] = _Py_MAKECODEUNIT(UNPACK_SEQUENCE__STORE_FAST, oparg);
                         i += oparg;
                     }
                     break;

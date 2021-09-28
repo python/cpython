@@ -2977,8 +2977,8 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(UNPACK_SEQUENCE_ST): {
-            PREDICTED(UNPACK_SEQUENCE_ST);
+        TARGET(UNPACK_SEQUENCE__STORE_FAST): {
+            PREDICTED(UNPACK_SEQUENCE__STORE_FAST);
             PyObject *seq = POP(), *item, **items;
             if (PyTuple_CheckExact(seq) &&
                 PyTuple_GET_SIZE(seq) == oparg) {
@@ -4287,7 +4287,7 @@ check_eval_breaker:
             if (next != NULL) {
                 PUSH(next);
                 PREDICT(STORE_FAST);
-                PREDICT(UNPACK_SEQUENCE_ST);
+                PREDICT(UNPACK_SEQUENCE__STORE_FAST);
                 PREDICT(UNPACK_SEQUENCE);
                 DISPATCH();
             }
