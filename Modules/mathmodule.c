@@ -3083,11 +3083,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (result == NULL) {
         result = _PyLong_GetOne();
-        if (result == NULL) {
-            Py_DECREF(iter);
-            return NULL;
-        }
-    } 
+    }
     Py_INCREF(result);
 #ifndef SLOW_PROD
     /* Fast paths for integers keeping temporary products in C.
