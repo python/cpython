@@ -22,6 +22,18 @@ class PosReturn:
             self.pos = len(exc.object)
         return ("<?>", oldpos)
 
+class RepeatedPosReturn:
+    def __init__(self, repl="<?>"):
+        self.repl = repl
+        self.pos = 0
+        self.count = 0
+
+    def handle(self, exc):
+        if self.count > 0:
+            self.count -= 1
+            return (self.repl, self.pos)
+        return (self.repl, exc.end)
+
 # A UnicodeEncodeError object with a bad start attribute
 class BadStartUnicodeEncodeError(UnicodeEncodeError):
     def __init__(self):
@@ -939,6 +951,46 @@ class CodecCallbackTest(unittest.TestCase):
             self.assertRaises(UnicodeError, codecs.charmap_encode, "\xff", err, {0xff: None})
             self.assertRaises(ValueError, codecs.charmap_encode, "\xff", err, D())
             self.assertRaises(TypeError, codecs.charmap_encode, "\xff", err, {0xff: 300})
+
+    def test_decodehelper_bug36819(self):
+        handler = RepeatedPosReturn("x")
+        codecs.register_error("test.bug36819", handler.handle)
+
+        testcases = [
+            ("ascii", b"abcd\xff"),
+            ("utf-8", b"abcd\xff"),
+            ("utf-16be", b'\x00a\x00b\x00c\x00d\xdc\xff'),
+            ("utf-32be", b'\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\xdc\xff'),
+            ("iso-8859-6", b"abcd\xff"),
+        ]
+        for enc, data in testcases:
+            with self.subTest(encoding=enc):
+                handler.count = 50
+                decoded = data.decode(enc, "test.bug36819")
+                self.assertEqual(decoded, 'abcdx' * 51)
+
+    def test_encodehelper_bug36819(self):
+        handler = RepeatedPosReturn("x")
+        codecs.register_error("test.bug36819", handler.handle)
+
+        string = "abcd\udcff"
+        encodings = ["ascii", "latin1", "utf-8", "utf-16", "utf-32"]  # built-in
+        encodings += ["iso-8859-15"]  # charmap codec
+        if sys.platform == 'win32':
+            encodings = ["mbcs", "oem"]  # code page codecs
+        for enc in encodings:
+            with self.subTest(encoding=enc):
+                # The interpreter should segfault after a handful of attempts.
+                # 50 was chosen to try to ensure a segfault without a fix,
+                # but not OOM a machine with one.
+                handler.count = 50
+                encoded = string.encode(enc, "test.bug36819")
+                self.assertEqual(encoded.decode(enc), "abcdx" * 51)
+        if sys.platform == "win32":
+            handler.count = 50
+            encoded = codecs.code_page_encode(437, string, "test.bug36819")
+            self.assertEqual(encoded[0].decode(), "abcdx" * 51)
+            self.assertEqual(encoded[1], len(string))
 
     def test_translatehelper(self):
         # enhance coverage of:
