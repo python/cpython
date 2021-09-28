@@ -242,44 +242,6 @@ def _indent(s, indent=4):
     # This regexp matches the start of non-blank lines:
     return re.sub('(?m)^(?!$)', indent*' ', s)
 
-def _traceback_format_syntax_error(self, stype):
-    """Format SyntaxError exceptions (internal helper). Copied from
-    traceback.py
-    """
-    # Show exactly where the problem was found.
-    filename_suffix = ''
-    if self.lineno is not None:
-        yield '  File "{}", line {}\n'.format(
-            self.filename or "<string>", self.lineno)
-    elif self.filename is not None:
-        filename_suffix = ' ({})'.format(self.filename)
-
-    text = self.text
-    if text is not None:
-        # text  = "   foo\n"
-        # rtext = "   foo"
-        # ltext =    "foo"
-        rtext = text.rstrip('\n')
-        ltext = rtext.lstrip(' \n\f')
-        spaces = len(rtext) - len(ltext)
-        yield '    {}\n'.format(ltext)
-        # Convert 1-based column offset to 0-based index into stripped text
-        caret = (self.offset or 0) - 1 - spaces
-        if caret >= 0:
-            # non-space whitespace (likes tabs) must be kept for alignment
-            caretspace = ((c if c.isspace() else ' ') for c in ltext[:caret])
-            yield '    {}{}\n'.format(''.join(caretspace), '^'*(self.exc_value.end_offset-self.offset))
-    msg = self.msg or "<no detail available>"
-    yield "{}: {}{}\n".format(stype, msg, filename_suffix)
-
-def _print_exception(exc, /, value, tb, limit=None, file=None, chain=True):
-    """Copied from traceback.py"""
-    value, tb = traceback._parse_value_tb(exc, value, tb)
-    te = traceback.TracebackException(type(value), value, tb, limit=limit, compact=True)
-    te._format_syntax_error = types.MethodType(_traceback_format_syntax_error, te)
-    te.exc_value = value
-    te.print(file=file, chain=chain)
-
 def _exception_traceback(exc_info):
     """
     Return a string containing a traceback message for the given
@@ -288,7 +250,7 @@ def _exception_traceback(exc_info):
     # Get a traceback message.
     excout = StringIO()
     exc_type, exc_val, exc_tb = exc_info
-    _print_exception(exc_type, exc_val, exc_tb, file=excout)
+    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
     return excout.getvalue()
 
 # Override some StringIO methods.
