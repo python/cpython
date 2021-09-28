@@ -1,2 +1,2 @@
-Restore private C API function :func:`_PyImport_FindExtensionObject`. It
+Restore the private C API function :func:`_PyImport_FindExtensionObject`. It
 will be removed in Python 3.11.
