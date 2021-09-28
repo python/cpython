@@ -568,10 +568,19 @@ extern "C" {
 // worse performances (due to increased code size for example). The compiler is
 // usually smarter than the developer for the cost/benefit analysis.
 //
+// If Python is built in debug mode (if the Py_DEBUG macro is defined), the
+// Py_ALWAYS_INLINE macro does nothing.
+//
 // It must be specified before the function return type. Usage:
 //
 //     static inline Py_ALWAYS_INLINE int random(void) { return 4; }
-#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#if defined(Py_DEBUG)
+   // If Python is built in debug mode, usually compiler optimizations are
+   // disabled. In this case, Py_ALWAYS_INLINE can increase a lot the stack
+   // memory usage. For example, forcing inlining using gcc -O0 increases the
+   // stack usage from 6 KB to 15 KB per Python function call.
+#  define Py_ALWAYS_INLINE
+#elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
 #  define Py_ALWAYS_INLINE __attribute__((always_inline))
 #elif defined(_MSC_VER)
 #  define Py_ALWAYS_INLINE __forceinline

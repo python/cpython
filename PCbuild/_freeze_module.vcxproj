@@ -232,13 +232,13 @@
     <!-- BEGIN frozen modules -->
     <None Include="..\Lib\importlib\_bootstrap.py">
       <ModName>importlib._bootstrap</ModName>
-      <IntFile>$(IntDir)importlib__bootstrap.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib__bootstrap.h</OutFile>
+      <IntFile>$(IntDir)importlib._bootstrap.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
       <ModName>importlib._bootstrap_external</ModName>
-      <IntFile>$(IntDir)importlib__bootstrap_external.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib__bootstrap_external.h</OutFile>
+      <IntFile>$(IntDir)importlib._bootstrap_external.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h</OutFile>
     </None>
     <None Include="..\Lib\zipimport.py">
       <ModName>zipimport</ModName>
@@ -249,6 +249,11 @@
       <ModName>abc</ModName>
       <IntFile>$(IntDir)abc.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
+    </None>
+    <None Include="..\Lib\codecs.py">
+      <ModName>codecs</ModName>
+      <IntFile>$(IntDir)codecs.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\codecs.h</OutFile>
     </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
@@ -279,6 +284,16 @@
       <ModName>posixpath</ModName>
       <IntFile>$(IntDir)posixpath.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
+    </None>
+    <None Include="..\Lib\os.py">
+      <ModName>os</ModName>
+      <IntFile>$(IntDir)os.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\os.h</OutFile>
+    </None>
+    <None Include="..\Lib\site.py">
+      <ModName>site</ModName>
+      <IntFile>$(IntDir)site.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\site.h</OutFile>
     </None>
     <None Include="..\Lib\stat.py">
       <ModName>stat</ModName>

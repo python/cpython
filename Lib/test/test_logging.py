@@ -4437,8 +4437,10 @@ class LogRecordTest(BaseTest):
             name = mp.current_process().name
 
             r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
-            del sys.modules['multiprocessing']
-            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            # https://bugs.python.org/issue45128
+            with support.swap_item(sys.modules, 'multiprocessing', None):
+                r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
                        'r1.processName': r1.processName,
@@ -4486,7 +4488,6 @@ class LogRecordTest(BaseTest):
         finally:
             if multiprocessing_imported:
                 import multiprocessing
-
 
     def test_optional(self):
         r = logging.makeLogRecord({})
@@ -5514,25 +5515,11 @@ class MiscTestCase(unittest.TestCase):
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
-@support.run_with_locale('LC_ALL', '')
-def test_main():
-    tests = [
-        BuiltinLevelsTest, BasicFilterTest, CustomLevelsAndFiltersTest,
-        HandlerTest, MemoryHandlerTest, ConfigFileTest, SocketHandlerTest,
-        DatagramHandlerTest, MemoryTest, EncodingTest, WarningsTest,
-        ConfigDictTest, ManagerTest, FormatterTest, BufferingFormatterTest,
-        StreamHandlerTest, LogRecordFactoryTest, ChildLoggerTest,
-        QueueHandlerTest, ShutdownTest, ModuleLevelMiscTest, BasicConfigTest,
-        LoggerAdapterTest, LoggerTest, SMTPHandlerTest, FileHandlerTest,
-        RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
-        ExceptionTest, SysLogHandlerTest, IPv6SysLogHandlerTest, HTTPHandlerTest,
-        NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
-        UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
-        MiscTestCase
-    ]
-    if hasattr(logging.handlers, 'QueueListener'):
-        tests.append(QueueListenerTest)
-    support.run_unittest(*tests)
+def setUpModule():
+    cm = support.run_with_locale('LC_ALL', '')
+    cm.__enter__()
+    unittest.addModuleCleanup(cm.__exit__, None, None, None)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

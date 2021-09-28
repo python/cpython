@@ -351,21 +351,36 @@ Functions
 
    Suspend execution of the calling thread for the given number of seconds.
    The argument may be a floating point number to indicate a more precise sleep
-   time. The actual suspension time may be less than that requested because any
-   caught signal will terminate the :func:`sleep` following execution of that
-   signal's catching routine.  Also, the suspension time may be longer than
-   requested by an arbitrary amount because of the scheduling of other activity
-   in the system.
+   time.
+
+   If the sleep is interrupted by a signal and no exception is raised by the
+   signal handler, the sleep is restarted with a recomputed timeout.
+
+   The suspension time may be longer than requested by an arbitrary amount,
+   because of the scheduling of other activity in the system.
+
+   On Windows, if *secs* is zero, the thread relinquishes the remainder of its
+   time slice to any other thread that is ready to run. If there are no other
+   threads ready to run, the function returns immediately, and the thread
+   continues execution.
+
+   Unix implementation:
+
+   * Use ``clock_nanosleep()`` if available (resolution: 1 ns);
+   * Or use ``nanosleep()`` if available (resolution: 1 ns);
+   * Or use ``select()`` (resolution: 1 us).
+
+   On Windows, a waitable timer is used (resolution: 100 ns). If *secs* is
+   zero, ``Sleep(0)`` is used.
+
+   .. versionchanged:: 3.11
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
 
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
-
-   .. versionchanged:: 3.11
-      In Unix operating systems, the ``clock_nanosleep()`` function is now
-      used, if available: it allows to sleep for an interval specified with
-      nanosecond precision.
 
 
 .. index::

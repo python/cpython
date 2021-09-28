@@ -1,0 +1,3 @@
+Added missing behavior to :func:`contextlib.asynccontextmanager` to match
+:func:`contextlib.contextmanager` so decorated functions can themselves be
+decorators.

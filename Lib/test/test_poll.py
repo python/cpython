@@ -7,7 +7,7 @@ import select
 import threading
 import time
 import unittest
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 from test.support import threading_helper
 from test.support.os_helper import TESTFN
 
@@ -229,8 +229,5 @@ class PollTests(unittest.TestCase):
             os.close(w)
 
 
-def test_main():
-    run_unittest(PollTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -29,7 +29,7 @@
      - If we DO have a Python Home: The relevant sub-directories (Lib,
        DLLs, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
-       loaded from the registry.  This is the main PythonPath key,
+       loaded from the registry.  (This is the main PythonPath key,
        and both HKLM and HKCU are combined to form the path)
 
    * Iff - we can not locate the Python Home, have not had a PYTHONPATH
@@ -82,6 +82,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"    // PyStatus
 #include "pycore_pathconfig.h"    // _PyPathConfig
+#include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "osdefs.h"               // SEP, ALTSEP
 #include <wchar.h>
 
@@ -114,10 +115,6 @@
  * Py_SetPath() can be used to override this mechanism.  Call Py_SetPath
  * with a semicolon separated path prior to calling Py_Initialize.
  */
-
-#ifndef LANDMARK
-#  define LANDMARK L"lib\\os.py"
-#endif
 
 #define INIT_ERR_BUFFER_OVERFLOW() _PyStatus_ERR("buffer overflow")
 
@@ -216,7 +213,7 @@ exists(const wchar_t *filename)
    Assumes 'filename' MAXPATHLEN+1 bytes long -
    may extend 'filename' by one character. */
 static int
-ismodule(wchar_t *filename, int update_filename)
+ismodule(wchar_t *filename)
 {
     size_t n;
 
@@ -231,9 +228,8 @@ ismodule(wchar_t *filename, int update_filename)
         filename[n] = L'c';
         filename[n + 1] = L'\0';
         exist = exists(filename);
-        if (!update_filename) {
-            filename[n] = L'\0';
-        }
+        // Drop the 'c' we just added.
+        filename[n] = L'\0';
         return exist;
     }
     return 0;
@@ -253,7 +249,7 @@ ismodule(wchar_t *filename, int update_filename)
 static void
 join(wchar_t *buffer, const wchar_t *stuff)
 {
-    if (FAILED(PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
+    if (_Py_add_relfile(buffer, stuff, MAXPATHLEN+1) < 0) {
         Py_FatalError("buffer overflow in getpathp.c's join()");
     }
 }
@@ -273,30 +269,37 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
     return _PyStatus_OK();
 }
 
-
-/* gotlandmark only called by search_for_prefix, which ensures
-   'prefix' is null terminated in bounds.  join() ensures
-   'landmark' can not overflow prefix if too long. */
 static int
-gotlandmark(const wchar_t *prefix, const wchar_t *landmark)
+is_stdlibdir(wchar_t *stdlibdir)
 {
-    wchar_t filename[MAXPATHLEN+1];
-    memset(filename, 0, sizeof(filename));
-    wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
-    join(filename, landmark);
-    return ismodule(filename, FALSE);
+    wchar_t *filename = stdlibdir;
+#ifndef LANDMARK
+#  define LANDMARK L"os.py"
+#endif
+    /* join() ensures 'landmark' can not overflow prefix if too long. */
+    join(filename, LANDMARK);
+    return ismodule(filename);
 }
-
 
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
-search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path, const wchar_t *landmark)
+search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
 {
-    /* Search from argv0_path, until landmark is found */
-    wcscpy_s(prefix, MAXPATHLEN + 1, argv0_path);
+    /* Search from argv0_path, until LANDMARK is found.
+       We guarantee 'prefix' is null terminated in bounds. */
+    wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
+    wchar_t stdlibdir[MAXPATHLEN+1];
+    wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
+    /* We initialize with the longest possible path, in case it doesn't fit.
+       This also gives us an initial SEP at stdlibdir[wcslen(prefix)]. */
+    join(stdlibdir, L"lib");
     do {
-        if (gotlandmark(prefix, landmark)) {
+        assert(stdlibdir[wcslen(prefix)] == SEP);
+        /* Due to reduce() and our initial value, this result
+           is guaranteed to fit. */
+        wcscpy(&stdlibdir[wcslen(prefix) + 1], L"lib");
+        if (is_stdlibdir(stdlibdir)) {
             return 1;
         }
         reduce(prefix);
@@ -758,7 +761,7 @@ calculate_home_prefix(PyCalculatePath *calculate,
             reduce(prefix);
             calculate->home = prefix;
         }
-        else if (search_for_prefix(prefix, argv0_path, LANDMARK)) {
+        else if (search_for_prefix(prefix, argv0_path)) {
             calculate->home = prefix;
         }
         else {
@@ -936,7 +939,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
             lookBuf[nchars] = L'\0';
             /* Up one level to the parent */
             reduce(lookBuf);
-            if (search_for_prefix(prefix, lookBuf, LANDMARK)) {
+            if (search_for_prefix(prefix, lookBuf)) {
                 break;
             }
             /* If we are out of paths to search - give up */
