@@ -305,6 +305,17 @@ class FrozenModule(namedtuple('FrozenModule', 'name ispkg section source')):
     def modname(self):
         return self.name
 
+    @property
+    def orig(self):
+        return self.source.modname
+
+    @property
+    def isalias(self):
+        orig = self.source.modname
+        if not orig:
+            return True
+        return self.name != orig
+
     def summarize(self):
         source = self.source.modname
         if source:
@@ -507,6 +518,7 @@ def regen_frozen(modules):
         headerlines.append(f'#include "{header}"')
 
     deflines = []
+    aliaslines = []
     indent = '    '
     lastsection = None
     for mod in modules:
@@ -527,6 +539,10 @@ def regen_frozen(modules):
             line1, _, line2 = line.rpartition(' ')
             deflines.append(line1)
             deflines.append(indent + line2)
+
+        if mod.isalias:
+            entry = '{"%s", "%s"},' % (mod.name, mod.orig or "")
+            aliaslines.append(indent + entry)
 
     if not deflines[0]:
         del deflines[0]
@@ -549,8 +565,15 @@ def regen_frozen(modules):
         lines = replace_block(
             lines,
             "static const struct _frozen _PyImport_FrozenModules[] =",
-            "/* sentinel */",
+            "/* modules sentinel */",
             deflines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
+            "const struct _module_alias aliases[] =",
+            "/* aliases sentinel */",
+            aliaslines,
             FROZEN_FILE,
         )
         outfile.writelines(lines)
