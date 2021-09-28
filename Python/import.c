@@ -1046,6 +1046,29 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 }
 
 
+/* Return true if the name is an alias.  In that case, "alias" is set
+   to the original module name.  If it is an alias but the original
+   module isn't known then "alias" is set to NULL while true is returned. */
+static bool
+resolve_module_alias(const char *name, const struct _module_alias *aliases,
+                     const char **alias)
+{
+    const struct _module_alias *entry;
+    for (entry = aliases; ; entry++) {
+        if (entry->name == NULL) {
+            /* It isn't an alias. */
+            return false;
+        }
+        if (strcmp(name, entry->name) == 0) {
+            if (alias != NULL) {
+                *alias = entry->orig;
+            }
+            return true;
+        }
+    }
+}
+
+
 /* Frozen modules */
 
 static bool
