@@ -1812,7 +1812,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, prod, [{2:3}]*2, start={2:3})
         self.assertRaises(TypeError, prod, [[1], [2], [3]], start=[])
         with self.assertRaises(TypeError):
-            prod([10, 20], [30, 40])     # start is a keyword-only argument
+            prod([10, 20], 1)     # start is a keyword-only argument
 
         self.assertEqual(prod([0, 1, 2, 3]), 0)
         self.assertEqual(prod([1, 0, 2, 3]), 0)
