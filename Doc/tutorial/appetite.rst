@@ -42,7 +42,7 @@ calls, sockets, and even interfaces to graphical user interface toolkits like
 Tk.
 
 Python is an interpreted language, which can save you considerable time during
-program development because no compilation and linking is necessary.  The
+program development because no compilation and linking are necessary.  The
 interpreter can be used interactively, which makes it easy to experiment with
 features of the language, to write throw-away programs, or to test functions
 during bottom-up program development. It is also a handy desk calculator.
