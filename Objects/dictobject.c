@@ -88,10 +88,10 @@ DK_ENTRIES(keys)[index] if index >= 0):
 /*
 Preserving insertion order
 
-It's simple for combined table.  Since dk_entries is mostly append only, we can
-get insertion order by just iterating dk_entries.
+It's simple for combined table.  Since dk_entries is mostly appended only, we
+can get insertion order by just iterating dk_entries.
 
-One exception is .popitem().  It removes last item in dk_entries and decrement
+One exception is .popitem().  It removes last item in dk_entries and decreases
 dk_nentries to achieve amortized O(1).  Since there are DKIX_DUMMY remains in
 dk_indices, we can't increment dk_usable even though dk_nentries is
 decremented.
