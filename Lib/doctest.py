@@ -101,7 +101,6 @@ import pdb
 import re
 import sys
 import traceback
-import types
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
