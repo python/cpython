@@ -184,6 +184,7 @@ typedef struct PyConfig {
     /* --- Path configuration outputs ----------- */
     int module_search_paths_set;
     PyWideStringList module_search_paths;
+    wchar_t *stdlib_dir;
     wchar_t *executable;
     wchar_t *base_executable;
     wchar_t *prefix;
