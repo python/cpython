@@ -116,6 +116,8 @@
  * with a semicolon separated path prior to calling Py_Initialize.
  */
 
+#define STDLIB_SUBDIR L"lib"
+
 #define INIT_ERR_BUFFER_OVERFLOW() _PyStatus_ERR("buffer overflow")
 
 
@@ -293,12 +295,12 @@ search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
     wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
     /* We initialize with the longest possible path, in case it doesn't fit.
        This also gives us an initial SEP at stdlibdir[wcslen(prefix)]. */
-    join(stdlibdir, L"lib");
+    join(stdlibdir, STDLIB_SUBDIR);
     do {
         assert(stdlibdir[wcslen(prefix)] == SEP);
         /* Due to reduce() and our initial value, this result
            is guaranteed to fit. */
-        wcscpy(&stdlibdir[wcslen(prefix) + 1], L"lib");
+        wcscpy(&stdlibdir[wcslen(prefix) + 1], STDLIB_SUBDIR);
         if (is_stdlibdir(stdlibdir)) {
             return 1;
         }
@@ -1013,6 +1015,12 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
 done:
+    if (pathconfig->stdlib_dir == NULL) {
+        pathconfig->stdlib_dir = _Py_join_relfile(prefix, STDLIB_SUBDIR);
+        if (pathconfig->stdlib_dir == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+    }
     if (pathconfig->prefix == NULL) {
         pathconfig->prefix = _PyMem_RawWcsdup(prefix);
         if (pathconfig->prefix == NULL) {
