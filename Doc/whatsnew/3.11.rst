@@ -455,7 +455,7 @@ New Features
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
-* Added ``Py_Version`` to the C API data to export the interpreter hex
+* Added :c:data:`Py_Version` to the C API data to export the interpreter hex
   version.
   (Contributed by  Gabriele N. Tornetta in :issue:`43931`.)
 

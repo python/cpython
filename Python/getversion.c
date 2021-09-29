@@ -14,5 +14,5 @@ Py_GetVersion(void)
     return version;
 }
 
-/* Export version as API data */
+// Export the Python hex version as a constant.
 const long Py_Version = PY_VERSION_HEX;

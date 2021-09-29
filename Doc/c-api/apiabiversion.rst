@@ -61,4 +61,12 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
    Starting with Python 3.11, this information is also available via the
    exported symbol `Py_Version`.
 
+.. c:var:: const long Py_Version
+
+   Exported symbol that provides the same version information as
+   ``PY_VERSION_HEX``. Useful for determining the version of Python without
+   having to run it, or when it is embedded into other binaries.
+
+   .. versionadded:: 3.11
+
 All the given macros are defined in :source:`Include/patchlevel.h`.
