@@ -863,6 +863,9 @@ class FrozenImporter:
             data, = spec.loader_state
         except Exception:
             data = None
+        else:
+            # We clear the extra data we got from the finder, to save memory.
+            spec.loader_state = None
         code = _call_with_frames_removed(_imp.get_frozen_object, name, data)
         exec(code, module.__dict__)
 
