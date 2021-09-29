@@ -850,13 +850,19 @@ class FrozenImporter:
         if info is None:
             return None
         data, ispkg, origname = info
+        filename = pkgdir = None
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
         spec.loader_state = type(sys.implementation)(
             data=data,
+            filename=filename,
             origname=origname,
         )
+        if ispkg and filename:
+            assert filename.endswith('__init__.py'), filename
+            assert pkgdir, pkgdir
+            spec.submodule_search_locations.insert(0, pkgdir)
         return spec
 
     @classmethod
@@ -873,7 +879,16 @@ class FrozenImporter:
 
     @staticmethod
     def create_module(spec):
-        """Use default semantics for module creation."""
+        """Set __file__, if able."""
+        module = _new_module(spec.name)
+        try:
+            filename = spec.loader_state.filename
+        except AttributeError:
+            pass
+        else:
+            if filename:
+                module.__file__ = filename
+        return module
 
     @staticmethod
     def exec_module(module):
@@ -904,6 +919,9 @@ class FrozenImporter:
         """
         # Warning about deprecation implemented in _load_module_shim().
         return _load_module_shim(cls, fullname)
+
+    # XXX We should also add get_filename(), but when we do we need
+    # to fix spec_from_loader().
 
     @classmethod
     @_requires_frozen
