@@ -1,0 +1,2 @@
+tarfile.open raises :exc:`~tarfile.ReadError` when a zlib error occurs
+during file extraction.
