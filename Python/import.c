@@ -1184,16 +1184,15 @@ struct frozen_info {
     const char *data;
     Py_ssize_t size;
     bool is_package;
+    bool is_alias;
+    const char *origname;
 };
 
 static frozen_status
 find_frozen(PyObject *nameobj, struct frozen_info *info)
 {
     if (info != NULL) {
-        info->nameobj = NULL;
-        info->data = NULL;
-        info->size = 0;
-        info->is_package = false;
+        memset(info, 0, sizeof(*info));
     }
 
     if (nameobj == NULL || nameobj == Py_None) {
@@ -1228,6 +1227,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         info->data = (const char *)p->code;
         info->size = p->size < 0 ? -(p->size) : p->size;
         info->is_package = p->size < 0 ? true : false;
+        info->origname = name;
+        info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
+                                              &info->origname);
     }
 
     if (p->code == NULL) {
