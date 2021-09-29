@@ -826,11 +826,9 @@ class FrozenImporter:
 
     @classmethod
     def _setup_module(cls, module):
-        assert not hasattr(module, '__file__'), module.__file__
         ispkg = hasattr(module, '__path__')
-        assert not ispkg or not module.__path__, module.__path__
         spec = module.__spec__
-        assert not ispkg or not spec.submodule_search_locations
+        assert not ispkg or spec.submodule_search_locations is not None
 
         if spec.loader_state is None:
             spec.loader_state = type(sys.implementation)(
@@ -845,23 +843,39 @@ class FrozenImporter:
             spec.loader_state.origname = origname
 
     @classmethod
+    def _resolve_filename(cls, fullname, ispkg):
+        if not fullname or not getattr(sys, '_stdlib_dir', None):
+            return None, None
+        try:
+            sep = cls._SEP
+        except AttributeError:
+            sep = cls._SEP = '\\' if sys.platform == 'win32' else '/'
+
+        relfile = fullname.replace('.', sep)
+        if ispkg:
+            pkgdir = f'{sys._stdlib_dir}{sep}{relfile}'
+            filename = f'{pkgdir}{sep}__init__.py'
+        else:
+            pkgdir = None
+            filename = f'{sys._stdlib_dir}{sep}{relfile}.py'
+        return filename, pkgdir
+
+    @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
             return None
         data, ispkg, origname = info
-        filename = pkgdir = None
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
+        filename, pkgdir = cls._resolve_filename(origname, ispkg)
         spec.loader_state = type(sys.implementation)(
             data=data,
             filename=filename,
             origname=origname,
         )
-        if ispkg and filename:
-            assert filename.endswith('__init__.py'), filename
-            assert pkgdir, pkgdir
+        if pkgdir:
             spec.submodule_search_locations.insert(0, pkgdir)
         return spec
 

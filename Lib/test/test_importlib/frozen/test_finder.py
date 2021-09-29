@@ -44,6 +44,7 @@ class FindSpecTests(abc.FinderTests):
         if not filename:
             if not origname:
                 origname = spec.name
+            filename = resolve_stdlib_file(origname)
 
         actual = dict(vars(spec.loader_state))
 
@@ -61,13 +62,17 @@ class FindSpecTests(abc.FinderTests):
         # Check the rest of spec.loader_state.
         expected = dict(
             origname=origname,
+            filename=filename,
         )
         self.assertDictEqual(actual, expected)
 
-    def check_search_locations(self, spec):
-        # Frozen packages do not have any path entries.
-        # (See https://bugs.python.org/issue21736.)
-        expected = []
+    def check_search_location(self, spec):
+        missing = object()
+        filename = getattr(spec.loader_state, 'filename', missing)
+        if filename is missing:
+            # We deal with this in check_loader_state().
+            return
+        expected = [os.path.dirname(filename)] if filename else []
         self.assertListEqual(spec.submodule_search_locations, expected)
 
     def test_module(self):
