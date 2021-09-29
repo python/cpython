@@ -463,8 +463,9 @@ static PyDictValues empty_values_struct = { 0, { NULL }};
 static inline int
 get_index_from_order(PyDictObject *mp, int i)
 {
-    int shift = (mp->ma_used-1-i)*4;
-    return (mp->ma_values->mv_order >> shift) & 15;
+    assert(mp->ma_used <= 16);
+    int shift = (int)(mp->ma_used-1-i)*4;
+    return (int)(mp->ma_values->mv_order >> shift) & 15;
 }
 
 int
@@ -1039,7 +1040,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         ep->me_key = key;
         ep->me_hash = hash;
         if (mp->ma_values) {
-            int index = mp->ma_keys->dk_nentries;
+            Py_ssize_t index = mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert((mp->ma_values->mv_order >> 60) == 0);
             mp->ma_values->mv_order = (mp->ma_values->mv_order)<<4 | index;
@@ -1188,7 +1189,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
          * Note that values of split table is always dense.
          */
         for (Py_ssize_t i = 0; i < numentries; i++) {
-            int index = oldvalues->mv_order >> ((numentries-1-i)*4)&15;
+            int index = oldvalues->mv_order >> ((numentries-1-i)*4) & 15;
             assert(oldvalues->values[index] != NULL);
             PyDictKeyEntry *ep = &oldentries[index];
             PyObject *key = ep->me_key;
@@ -1502,9 +1503,6 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
 /* Fast version of global value lookup (LOAD_GLOBAL).
  * Lookup in globals, then builtins.
  *
- *
- *
- *
  * Raise an exception and return NULL if an error occurred (ex: computing the
  * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
  * exist. Return the value if the key exists.
@@ -1616,7 +1614,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
             if (((mp->ma_values->mv_order >> i) & 15) == (uint64_t)ix) {
                 /* Remove 4 bits at ith position */
                 uint64_t order = mp->ma_values->mv_order;
-                uint64_t high = order >> i >> 4 << i;
+                uint64_t high = ((order>>i)>>4)<<i;
                 uint64_t low = order & ((((uint64_t)1)<<i)-1);
                 mp->ma_values->mv_order = high | low;
                 break;
@@ -3012,7 +3010,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         ep->me_key = key;
         ep->me_hash = hash;
         if (_PyDict_HasSplitTable(mp)) {
-            int index = mp->ma_keys->dk_nentries;
+            int index = (int)mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert(mp->ma_values->values[index] == NULL);
             mp->ma_values->values[index] = value;
