@@ -4,7 +4,7 @@ from tkinter import ttk, TclError
 from test.support import requires, gc_collect
 import sys
 
-from tkinter.test.test_ttk.test_functions import MockTclObj
+from test.test_ttk_textonly import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
