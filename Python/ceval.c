@@ -5648,7 +5648,12 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
     PyObject **localsarray = _PyFrame_GetLocalsArray(frame);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames, steal_args)) {
         if (steal_args) {
-            for (int i = 0; i < frame->stacktop; i++) {
+            // If we failed to initialize locals, make sure the caller still own all the
+            // arguments. Notice that we only need to increase the reference count of the
+            // *valid* arguments (i.e. the ones that fit into the frame). 
+            PyCodeObject *co = (PyCodeObject*)con->fc_code;
+            const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
+            for (Py_ssize_t i = 0; i < Py_MIN(argcount, total_args); i++) {
                 Py_XINCREF(frame->localsplus[i]);
             }
         }
