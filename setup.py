@@ -677,6 +677,10 @@ class PyBuildExt(build_ext):
                     # if the sysroot is not /, then we are not using
                     # the compiler from debian/ubuntu
                     if sysroot not in ['', '/']:
+                        add_dir_to_list(self.compiler.library_dirs,
+                            '/usr/lib/')
+                        add_dir_to_list(self.compiler.include_dirs,
+                            '/usr/include/')
                         return
         finally:
             os.unlink(tmpfile_sysroot)
