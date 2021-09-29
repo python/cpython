@@ -1158,7 +1158,7 @@ struct frozen_info {
     bool is_package;
 };
 
-frozen_status
+static frozen_status
 find_frozen(PyObject *nameobj, struct frozen_info *info)
 {
     if (info != NULL) {
