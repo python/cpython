@@ -1994,20 +1994,37 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
 _imp.get_frozen_object
 
     name: unicode
+    data as dataobj: object = None
     /
 
 Create a code object for a frozen module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_get_frozen_object_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name,
+                            PyObject *dataobj)
+/*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
     struct frozen_info info;
-    frozen_status status = find_frozen(name, &info);
-    if (status != FROZEN_OKAY) {
-        set_frozen_error(status, name);
+    if (PyBytes_Check(dataobj)) {
+        info.name = name;
+        info.data = PyBytes_AS_STRING(dataobj);
+        info.size = PyBytes_Size(dataobj);
+        if (info.size == 0) {
+            set_frozen_error(FROZEN_INVALID, name);
+            return NULL;
+        }
+    }
+    else if (dataobj != Py_None) {
+        _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
         return NULL;
+    }
+    else {
+        frozen_status status = find_frozen(name, &info);
+        if (status != FROZEN_OKAY) {
+            set_frozen_error(status, name);
+            return NULL;
+        }
     }
     return unmarshal_frozen_code(&info);
 }
