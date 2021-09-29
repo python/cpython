@@ -1,4 +1,4 @@
-Header files of the ``Include/cpython/`` subdirectory now get a "cpython_"
+Header files of the ``Include/cpython/`` subdirectory now get a ``cpython_``
 prefix in their filename to avoid confusion between ``Include/<header>.h``
 and ``Include/cpython/<header.h>`` (previously both files had the same
 name), especially when a cpython header file includes another cpython header
