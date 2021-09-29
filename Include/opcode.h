@@ -108,6 +108,7 @@ extern "C" {
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126
+#define UNPACK_SEQUENCE__STORE_FAST 127
 #define GEN_START               129
 #define RAISE_VARARGS           130
 #define CALL_FUNCTION           131
@@ -162,7 +163,6 @@ extern "C" {
 #define STORE_ATTR_SPLIT_KEYS   120
 #define STORE_ATTR_SLOT         122
 #define STORE_ATTR_WITH_HINT    123
-#define UNPACK_SEQUENCE__STORE_FAST 127
 #define LOAD_FAST__LOAD_FAST    128
 #define STORE_FAST__LOAD_FAST   134
 #define LOAD_FAST__LOAD_CONST   140

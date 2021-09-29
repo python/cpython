@@ -174,6 +174,7 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
+def_op('UNPACK_SEQUENCE__STORE_FAST', 127)
 
 def_op('GEN_START', 129)        # Kind of generator/coroutine
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
@@ -247,7 +248,6 @@ _specialized_instructions = [
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
     # Super instructions
-    "UNPACK_SEQUENCE__STORE_FAST",
     "LOAD_FAST__LOAD_FAST",
     "STORE_FAST__LOAD_FAST",
     "LOAD_FAST__LOAD_CONST",

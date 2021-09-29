@@ -1092,6 +1092,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_NAME:
             return 0;
         case UNPACK_SEQUENCE:
+        case UNPACK_SEQUENCE__STORE_FAST:
             return oparg-1;
         case UNPACK_EX:
             return (oparg&0xFF) + (oparg>>8);
@@ -4009,9 +4010,24 @@ assignment_helper(struct compiler *c, asdl_expr_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     RETURN_IF_FALSE(unpack_helper(c, elts));
+    basicblock *bb = c->u->u_curblock;
+    int idx = bb->b_iused-1;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
+    }
+    struct instr *stmt = &bb->b_instr[idx];
+    if (stmt->i_opcode == UNPACK_SEQUENCE) {
+        int count = stmt->i_oparg;
+        int i = 1;
+        for (; i <= count; ++i) {
+            if ((stmt + i)->i_opcode != STORE_FAST) {
+                break;
+            }
+        }
+        if (i > count) {
+            stmt->i_opcode = UNPACK_SEQUENCE__STORE_FAST;
+        }
     }
     return 1;
 }
@@ -5962,6 +5978,8 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
                                Py_ssize_t star, pattern_context *pc)
 {
     RETURN_IF_FALSE(pattern_unpack_helper(c, patterns));
+    basicblock *bb = c->u->u_curblock;
+    int idx = bb->b_iused-1;
     Py_ssize_t size = asdl_seq_LEN(patterns);
     // We've now got a bunch of new subjects on the stack. They need to remain
     // there after each subpattern match:
@@ -5971,6 +5989,19 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
+    }
+    struct instr *stmt = &bb->b_instr[idx];
+    if (stmt->i_opcode == UNPACK_SEQUENCE) {
+        int count = stmt->i_oparg;
+        int i = 1;
+        for (; i <= count; ++i) {
+            if ((stmt + i)->i_opcode != STORE_FAST) {
+                break;
+            }
+        }
+        if (i > count) {
+            stmt->i_opcode = UNPACK_SEQUENCE__STORE_FAST;
+        }
     }
     return 1;
 }

@@ -344,17 +344,8 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
             /* Super instructions don't use the cache,
              * so no need to update the offset. */
             switch (opcode) {
-                case UNPACK_SEQUENCE: {
-                    int j = 1;
-                    for (; j <= oparg; ++j) {
-                        if (_Py_OPCODE(instructions[i+j]) != STORE_FAST) {
-                            break;
-                        }
-                    }
-                    if (j == (oparg+1)) {
-                        instructions[i] = _Py_MAKECODEUNIT(UNPACK_SEQUENCE__STORE_FAST, oparg);
-                        i += oparg;
-                    }
+                case UNPACK_SEQUENCE__STORE_FAST: {
+                    i += oparg;
                     break;
                 }
                 case JUMP_ABSOLUTE:
