@@ -1152,7 +1152,7 @@ set_frozen_error(frozen_status status, PyObject *modname)
 }
 
 struct frozen_info {
-    PyObject *name;
+    PyObject *nameobj;
     const char *data;
     Py_ssize_t size;
     bool is_package;
@@ -1162,7 +1162,7 @@ static frozen_status
 find_frozen(PyObject *nameobj, struct frozen_info *info)
 {
     if (info != NULL) {
-        info->name = NULL;
+        info->nameobj = NULL;
         info->data = NULL;
         info->size = 0;
         info->is_package = false;
@@ -1192,7 +1192,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         }
     }
     if (info != NULL) {
-        info->name = nameobj;  // borrowed
+        info->nameobj = nameobj;  // borrowed
         info->data = (const char *)p->code;
         info->size = p->size < 0 ? -(p->size) : p->size;
         info->is_package = p->size < 0 ? true : false;
@@ -1213,14 +1213,14 @@ unmarshal_frozen_code(struct frozen_info *info)
 {
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
-        set_frozen_error(FROZEN_INVALID, info->name);
+        set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }
     if (!PyCode_Check(co)) {
         // We stick with TypeError for backward compatibility.
         PyErr_Format(PyExc_TypeError,
                      "frozen object %R is not a code object",
-                     info->name);
+                     info->nameobj);
         Py_DECREF(co);
         return NULL;
     }
@@ -2050,7 +2050,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
 {
     struct frozen_info info;
     if (PyBytes_Check(dataobj)) {
-        info.name = name;
+        info.nameobj = name;
         info.data = PyBytes_AS_STRING(dataobj);
         info.size = PyBytes_Size(dataobj);
         if (info.size == 0) {
