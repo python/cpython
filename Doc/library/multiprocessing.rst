@@ -412,7 +412,7 @@ For example::
            multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
            print([res.get(timeout=1) for res in multiple_results])
 
-           # make a single worker sleep for 10 secs
+           # make a single worker sleep for 10 seconds
            res = pool.apply_async(time.sleep, (10,))
            try:
                print(res.get(timeout=1))

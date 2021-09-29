@@ -366,11 +366,11 @@ Functions
 
    Unix implementation:
 
-   * Use ``clock_nanosleep()`` if available (resolution: 1 ns);
-   * Or use ``nanosleep()`` if available (resolution: 1 ns);
-   * Or use ``select()`` (resolution: 1 us).
+   * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
+   * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
+   * Or use ``select()`` (resolution: 1 microsecond).
 
-   On Windows, a waitable timer is used (resolution: 100 ns). If *secs* is
+   On Windows, a waitable timer is used (resolution: 100 nanosecond). If *secs* is
    zero, ``Sleep(0)`` is used.
 
    .. versionchanged:: 3.11
