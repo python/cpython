@@ -50,7 +50,30 @@ PGO_TESTS = [
     'test_xml_etree_c',
 ]
 
+def ceval_warmup():
+    # MSVC needs additional ceval-loop counts for better performance.
+    import sys
+    if sys.platform != 'win32':
+        return
+
+    def noop_trace(frame, event, arg):
+        return noop_trace
+
+    print("warmup for tests on Windows...")
+    old_trace = sys.gettrace()
+    sys.settrace(noop_trace)
+    try:
+        jobcnt = len(PGO_TESTS)
+        for j in range(1, 1 + jobcnt):
+            print(f'{j}/{jobcnt}')
+            for i in range(800000):
+                pass
+    finally:
+        sys.settrace(old_trace)
+
+
 def setup_pgo_tests(ns):
+    ceval_warmup()
     if not ns.args and not ns.pgo_extended:
         # run default set of tests for PGO training
         ns.args = PGO_TESTS[:]
