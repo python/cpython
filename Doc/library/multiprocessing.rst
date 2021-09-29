@@ -103,7 +103,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows and macOS.
+    Available on Unix, Windows and macOS.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
