@@ -2264,7 +2264,7 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
     if (!_PyIsSelectable_fd(s->sock_fd))
         return SOCKET_TOO_LARGE_FOR_SELECT;
 
-    _PyTime_AsTimeval_noraise(timeout, &tv, _PyTime_ROUND_CEILING);
+    _PyTime_AsTimeval_clamp(timeout, &tv, _PyTime_ROUND_CEILING);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
