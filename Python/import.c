@@ -1194,9 +1194,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (info != NULL) {
         info->name = nameobj;  // borrowed
         info->data = (const char *)p->code;
-        int size = p->size < 0 ? -(p->size) : p->size;
-        assert(size <= PY_SSIZE_T_MAX);
-        info->size = (Py_ssize_t)size;
+        info->size = p->size < 0 ? -(p->size) : p->size;
         info->is_package = p->size < 0 ? true : false;
     }
 
