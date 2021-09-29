@@ -1208,6 +1208,25 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     return FROZEN_OKAY;
 }
 
+static PyObject *
+unmarshal_frozen_code(struct frozen_info *info)
+{
+    PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
+    if (co == NULL) {
+        set_frozen_error(FROZEN_INVALID, info->name);
+        return NULL;
+    }
+    if (!PyCode_Check(co)) {
+        // We stick with TypeError for backward compatibility.
+        PyErr_Format(PyExc_TypeError,
+                     "frozen object %R is not a code object",
+                     info->name);
+        Py_DECREF(co);
+        return NULL;
+    }
+    return co;
+}
+
 
 /* Initialize a frozen module.
    Return 1 for success, 0 if the module is not found, and -1 with
@@ -1229,16 +1248,9 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         set_frozen_error(status, name);
         return -1;
     }
-    co = PyMarshal_ReadObjectFromString(info.data, info.size);
+    co = unmarshal_frozen_code(&info);
     if (co == NULL) {
-        set_frozen_error(FROZEN_INVALID, name);
         return -1;
-    }
-    if (!PyCode_Check(co)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "frozen object %R is not a code object",
-                      name);
-        goto err_return;
     }
     if (info.is_package) {
         /* Set __path__ to the empty list */
@@ -1997,12 +2009,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name)
         set_frozen_error(status, name);
         return NULL;
     }
-    PyObject *code = PyMarshal_ReadObjectFromString(info.data, info.size);
-    if (code == NULL) {
-        set_frozen_error(FROZEN_INVALID, name);
-        return NULL;
-    }
-    return code;
+    return unmarshal_frozen_code(&info);
 }
 
 /*[clinic input]
