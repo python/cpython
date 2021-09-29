@@ -169,6 +169,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp_find_frozen__doc__,
+"find_frozen($module, name, /)\n"
+"--\n"
+"\n"
+"Return info about the corresponding frozen module (if there is one) or None.\n"
+"\n"
+"The returned info (a 2-tuple):\n"
+"\n"
+" * data         the raw marshalled bytes\n"
+" * is_package   whether or not it is a package");
+
+#define _IMP_FIND_FROZEN_METHODDEF    \
+    {"find_frozen", (PyCFunction)_imp_find_frozen, METH_O, _imp_find_frozen__doc__},
+
+static PyObject *
+_imp_find_frozen_impl(PyObject *module, PyObject *name);
+
+static PyObject *
+_imp_find_frozen(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("find_frozen", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
+    return_value = _imp_find_frozen_impl(module, name);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_imp_get_frozen_object__doc__,
 "get_frozen_object($module, name, data=None, /)\n"
 "--\n"
@@ -508,4 +545,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=3689300c18fe73a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a31e1c00653359ff input=a9049054013a1b77]*/

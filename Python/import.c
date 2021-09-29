@@ -1991,6 +1991,43 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
 }
 
 /*[clinic input]
+_imp.find_frozen
+
+    name: unicode
+    /
+
+Return info about the corresponding frozen module (if there is one) or None.
+
+The returned info (a 2-tuple):
+
+ * data         the raw marshalled bytes
+ * is_package   whether or not it is a package
+[clinic start generated code]*/
+
+static PyObject *
+_imp_find_frozen_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=3fd17da90d417e4e input=4e52b3ac95f6d7ab]*/
+{
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
+        Py_RETURN_NONE;
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+    PyObject *data = PyBytes_FromStringAndSize(info.data, info.size);
+    if (data == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyTuple_Pack(2, data,
+                                    info.is_package ? Py_True : Py_False);
+    Py_DECREF(data);
+    return result;
+}
+
+/*[clinic input]
 _imp.get_frozen_object
 
     name: unicode
@@ -2276,6 +2313,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_LOCK_HELD_METHODDEF
     _IMP_ACQUIRE_LOCK_METHODDEF
     _IMP_RELEASE_LOCK_METHODDEF
+    _IMP_FIND_FROZEN_METHODDEF
     _IMP_GET_FROZEN_OBJECT_METHODDEF
     _IMP_IS_FROZEN_PACKAGE_METHODDEF
     _IMP_CREATE_BUILTIN_METHODDEF
