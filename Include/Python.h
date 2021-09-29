@@ -147,7 +147,7 @@
 #include "tracemalloc.h"
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
-PyAPI_DATA(const long int) Py_Version;
+PyAPI_DATA(const long) Py_Version;
 #endif
 
 #endif /* !Py_PYTHON_H */
