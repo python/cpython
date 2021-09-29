@@ -457,6 +457,7 @@ New Features
 
 * Added ``Py_Version`` to the C API data to export the interpreter hex
   version.
+  (Contributed by  Gabriele N. Tornetta in :issue:`43931`.)
 
 
 Porting to Python 3.11
