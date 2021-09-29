@@ -23,7 +23,7 @@ Run "pydoc -p <port>" to start an HTTP server on the given port on the
 local machine.  Port number 0 can be used to get an arbitrary unused port.
 
 Run "pydoc -b" to start an HTTP server on an arbitrary unused port and
-open a Web browser to interactively browse documentation.  Combine with
+open a web browser to interactively browse documentation.  Combine with
 the -n and -p options to control the hostname and port used.
 
 Run "pydoc -w <name>" to write out the HTML documentation for a module
@@ -504,7 +504,7 @@ class Doc:
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
             object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
-                docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__.lower())
+                docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
             else:
                 docloc = os.path.join(docloc, object.__name__.lower() + ".html")
         else:
@@ -694,7 +694,7 @@ class HTMLDoc(Doc):
                 url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'http://www.python.org/dev/peps/pep-%04d/' % int(pep)
+                url = 'https://www.python.org/dev/peps/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif selfdot:
                 # Create a link for methods like 'self.method(...)'
@@ -1594,9 +1594,10 @@ def plain(text):
 def pipepager(text, cmd):
     """Page through text by feeding it to another program."""
     import subprocess
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
+    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                            errors='backslashreplace')
     try:
-        with io.TextIOWrapper(proc.stdin, errors='backslashreplace') as pipe:
+        with proc.stdin as pipe:
             try:
                 pipe.write(text)
             except KeyboardInterrupt:
@@ -1617,13 +1618,14 @@ def pipepager(text, cmd):
 def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
-    filename = tempfile.mktemp()
-    with open(filename, 'w', errors='backslashreplace') as file:
-        file.write(text)
-    try:
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, 'pydoc.out')
+        with open(filename, 'w', errors='backslashreplace',
+                  encoding=os.device_encoding(0) if
+                  sys.platform == 'win32' else None
+                  ) as file:
+            file.write(text)
         os.system(cmd + ' "' + filename + '"')
-    finally:
-        os.unlink(filename)
 
 def _escape_stdout(text):
     # Escape non-encodable characters to avoid encoding errors later
@@ -1774,24 +1776,18 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
         output=None):
     """Display text documentation, given an object or a path to an object."""
-    try:
-        if output is None:
-            pager(render_doc(thing, title, forceload))
-        else:
-            output.write(render_doc(thing, title, forceload, plaintext))
-    except (ImportError, ErrorDuringImport) as value:
-        print(value)
+    if output is None:
+        pager(render_doc(thing, title, forceload))
+    else:
+        output.write(render_doc(thing, title, forceload, plaintext))
 
 def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""
-    try:
-        object, name = resolve(thing, forceload)
-        page = html.page(describe(object), html.document(object, name))
-        with open(name + '.html', 'w', encoding='utf-8') as file:
-            file.write(page)
-        print('wrote', name + '.html')
-    except (ImportError, ErrorDuringImport) as value:
-        print(value)
+    object, name = resolve(thing, forceload)
+    page = html.page(describe(object), html.document(object, name))
+    with open(name + '.html', 'w', encoding='utf-8') as file:
+        file.write(page)
+    print('wrote', name + '.html')
 
 def writedocs(dir, pkgpath='', done=None):
     """Write out HTML documentation for all modules in a directory tree."""
@@ -2064,7 +2060,7 @@ has the same effect as typing a particular string at the help> prompt.
 Welcome to Python {0}'s help utility!
 
 If this is your first time using Python, you should definitely check out
-the tutorial on the Internet at https://docs.python.org/{0}/tutorial/.
+the tutorial on the internet at https://docs.python.org/{0}/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
 Python programs and using Python modules.  To quit this help utility and
@@ -2278,13 +2274,13 @@ def apropos(key):
         warnings.filterwarnings('ignore') # ignore problems during import
         ModuleScanner().run(callback, key, onerror=onerror)
 
-# --------------------------------------- enhanced Web browser interface
+# --------------------------------------- enhanced web browser interface
 
 def _start_server(urlhandler, hostname, port):
     """Start an HTTP server thread on a specific port.
 
     Start an HTML/text server thread, so HTML or text documents can be
-    browsed dynamically and interactively with a Web browser.  Example use:
+    browsed dynamically and interactively with a web browser.  Example use:
 
         >>> import time
         >>> import pydoc
@@ -2456,9 +2452,6 @@ def _url_handler(url, content_type="text/html"):
 %s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
 </body></html>''' % (title, css_link, html_navbar(), contents)
 
-        def filelink(self, url, path):
-            return '<a href="getfile?key=%s">%s</a>' % (url, path)
-
 
     html = _HTMLDoc()
 
@@ -2543,19 +2536,6 @@ def _url_handler(url, content_type="text/html"):
         contents = heading + html.bigsection(
             'key = %s' % key, '#ffffff', '#ee77aa', '<br>'.join(results))
         return 'Search Results', contents
-
-    def html_getfile(path):
-        """Get and display a source file listing safely."""
-        path = urllib.parse.unquote(path)
-        with tokenize.open(path) as fp:
-            lines = html.escape(fp.read())
-        body = '<pre>%s</pre>' % lines
-        heading = html.heading(
-            '<big><big><strong>File Listing</strong></big></big>',
-            '#ffffff', '#7799ee')
-        contents = heading + html.bigsection(
-            'File: %s' % path, '#ffffff', '#ee77aa', body)
-        return 'getfile %s' % path, contents
 
     def html_topics():
         """Index of topic texts available."""
@@ -2648,8 +2628,6 @@ def _url_handler(url, content_type="text/html"):
                 op, _, url = url.partition('=')
                 if op == "search?key":
                     title, content = html_search(url)
-                elif op == "getfile?key":
-                    title, content = html_getfile(url)
                 elif op == "topic?key":
                     # try topics first, then objects.
                     try:
@@ -2688,7 +2666,7 @@ def _url_handler(url, content_type="text/html"):
 
 
 def browse(port=0, *, open_browser=True, hostname='localhost'):
-    """Start the enhanced pydoc Web server and open a Web browser.
+    """Start the enhanced pydoc web server and open a web browser.
 
     Use port '0' to start the server on an arbitrary port.
     Set open_browser to False to suppress opening a browser.
@@ -2803,7 +2781,7 @@ def cli():
         for arg in args:
             if ispath(arg) and not os.path.exists(arg):
                 print('file %r does not exist' % arg)
-                break
+                sys.exit(1)
             try:
                 if ispath(arg) and os.path.isfile(arg):
                     arg = importfile(arg)
@@ -2814,8 +2792,9 @@ def cli():
                         writedoc(arg)
                 else:
                     help.help(arg)
-            except ErrorDuringImport as value:
+            except (ImportError, ErrorDuringImport) as value:
                 print(value)
+                sys.exit(1)
 
     except (getopt.error, BadUsage):
         cmd = os.path.splitext(os.path.basename(sys.argv[0]))[0]
@@ -2840,7 +2819,7 @@ def cli():
     number 0 can be used to get an arbitrary unused port.
 
 {cmd} -b
-    Start an HTTP server on an arbitrary unused port and open a Web browser
+    Start an HTTP server on an arbitrary unused port and open a web browser
     to interactively browse documentation.  This option can be used in
     combination with -n and/or -p.
 

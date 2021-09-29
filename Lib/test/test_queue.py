@@ -6,11 +6,13 @@ import threading
 import time
 import unittest
 import weakref
-from test import support
+from test.support import gc_collect
+from test.support import import_helper
 from test.support import threading_helper
 
-py_queue = support.import_fresh_module('queue', blocked=['_queue'])
-c_queue = support.import_fresh_module('queue', fresh=['_queue'])
+
+py_queue = import_helper.import_fresh_module('queue', blocked=['_queue'])
+c_queue = import_helper.import_fresh_module('queue', fresh=['_queue'])
 need_c_queue = unittest.skipUnless(c_queue, "No _queue module found")
 
 QUEUE_SIZE = 5
@@ -589,6 +591,7 @@ class BaseSimpleQueueTest:
             q.put(C())
         for i in range(N):
             wr = weakref.ref(q.get())
+            gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
 

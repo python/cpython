@@ -1,6 +1,7 @@
 import errno
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.test_urllib2 import sanepathname2url
 
@@ -66,7 +67,7 @@ class TransientResource(object):
                 raise ResourceDenied("an optional resource is not available")
 
 # Context managers that raise ResourceDenied when various issues
-# with the Internet connection manifest themselves as exceptions.
+# with the internet connection manifest themselves as exceptions.
 # XXX deprecate these and use transient_internet() instead
 time_out = TransientResource(OSError, errno=errno.ETIMEDOUT)
 socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
@@ -148,7 +149,7 @@ class OtherNetworkTests(unittest.TestCase):
         self._test_urls(urls, self._extra_handlers())
 
     def test_file(self):
-        TESTFN = support.TESTFN
+        TESTFN = os_helper.TESTFN
         f = open(TESTFN, 'w')
         try:
             f.write('hi there\n')
@@ -276,7 +277,7 @@ class OtherNetworkTests(unittest.TestCase):
                                  ioerror_peer_reset:
                                 buf = f.read()
                                 debug("read %d bytes" % len(buf))
-                        except socket.timeout:
+                        except TimeoutError:
                             print("<timeout: %s>" % url, file=sys.stderr)
                         f.close()
                 time.sleep(0.1)

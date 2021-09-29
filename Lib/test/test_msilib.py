@@ -1,7 +1,8 @@
 """ Test suite for the code in msilib """
 import os
 import unittest
-from test.support import TESTFN, import_module, unlink
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
 msilib = import_module('msilib')
 import msilib.schema
 

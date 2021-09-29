@@ -2,17 +2,19 @@
 
 import unittest
 import glob
-import test.support
+import os
+from test.support import import_helper
+from test.support import os_helper
 
 # Skip tests if dbm module doesn't exist.
-dbm = test.support.import_module('dbm')
+dbm = import_helper.import_module('dbm')
 
 try:
     from dbm import ndbm
 except ImportError:
     ndbm = None
 
-_fname = test.support.TESTFN
+_fname = os_helper.TESTFN
 
 #
 # Iterates over every database module supported by dbm currently available,
@@ -34,7 +36,7 @@ def delete_files():
     # we don't know the precise name the underlying database uses
     # so we use glob to locate all names
     for f in glob.glob(glob.escape(_fname) + "*"):
-        test.support.unlink(f)
+        os_helper.unlink(f)
 
 
 class AnyDBMTestCase:
@@ -74,7 +76,7 @@ class AnyDBMTestCase:
 
     def test_anydbm_creation_n_file_exists_with_invalid_contents(self):
         # create an empty file
-        test.support.create_empty_file(_fname)
+        os_helper.create_empty_file(_fname)
         with dbm.open(_fname, 'n') as f:
             self.assertEqual(len(f), 0)
 
@@ -128,6 +130,15 @@ class AnyDBMTestCase:
         assert(f[key] == b"Python:")
         f.close()
 
+    def test_open_with_bytes(self):
+        dbm.open(os.fsencode(_fname), "c").close()
+
+    def test_open_with_pathlib_path(self):
+        dbm.open(os_helper.FakePath(_fname), "c").close()
+
+    def test_open_with_pathlib_path_bytes(self):
+        dbm.open(os_helper.FakePath(os.fsencode(_fname)), "c").close()
+
     def read_helper(self, f):
         keys = self.keys_helper(f)
         for key in self._dict:
@@ -143,44 +154,51 @@ class AnyDBMTestCase:
 
 class WhichDBTestCase(unittest.TestCase):
     def test_whichdb(self):
-        for module in dbm_iterator():
-            # Check whether whichdb correctly guesses module name
-            # for databases opened with "module" module.
-            # Try with empty files first
-            name = module.__name__
-            if name == 'dbm.dumb':
-                continue   # whichdb can't support dbm.dumb
-            delete_files()
-            f = module.open(_fname, 'c')
-            f.close()
-            self.assertEqual(name, self.dbm.whichdb(_fname))
-            # Now add a key
-            f = module.open(_fname, 'w')
-            f[b"1"] = b"1"
-            # and test that we can find it
-            self.assertIn(b"1", f)
-            # and read it
-            self.assertEqual(f[b"1"], b"1")
-            f.close()
-            self.assertEqual(name, self.dbm.whichdb(_fname))
+        _bytes_fname = os.fsencode(_fname)
+        for path in [_fname, os_helper.FakePath(_fname),
+                     _bytes_fname, os_helper.FakePath(_bytes_fname)]:
+            for module in dbm_iterator():
+                # Check whether whichdb correctly guesses module name
+                # for databases opened with "module" module.
+                # Try with empty files first
+                name = module.__name__
+                if name == 'dbm.dumb':
+                    continue   # whichdb can't support dbm.dumb
+                delete_files()
+                f = module.open(path, 'c')
+                f.close()
+                self.assertEqual(name, self.dbm.whichdb(path))
+                # Now add a key
+                f = module.open(path, 'w')
+                f[b"1"] = b"1"
+                # and test that we can find it
+                self.assertIn(b"1", f)
+                # and read it
+                self.assertEqual(f[b"1"], b"1")
+                f.close()
+                self.assertEqual(name, self.dbm.whichdb(path))
 
     @unittest.skipUnless(ndbm, reason='Test requires ndbm')
     def test_whichdb_ndbm(self):
         # Issue 17198: check that ndbm which is referenced in whichdb is defined
         db_file = '{}_ndbm.db'.format(_fname)
         with open(db_file, 'w'):
-            self.addCleanup(test.support.unlink, db_file)
+            self.addCleanup(os_helper.unlink, db_file)
+        db_file_bytes = os.fsencode(db_file)
         self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
+        self.assertIsNone(self.dbm.whichdb(os_helper.FakePath(db_file[:-3])))
+        self.assertIsNone(self.dbm.whichdb(db_file_bytes[:-3]))
+        self.assertIsNone(self.dbm.whichdb(os_helper.FakePath(db_file_bytes[:-3])))
 
     def tearDown(self):
         delete_files()
 
     def setUp(self):
         delete_files()
-        self.filename = test.support.TESTFN
+        self.filename = os_helper.TESTFN
         self.d = dbm.open(self.filename, 'c')
         self.d.close()
-        self.dbm = test.support.import_fresh_module('dbm')
+        self.dbm = import_helper.import_fresh_module('dbm')
 
     def test_keys(self):
         self.d = dbm.open(self.filename, 'c')
@@ -203,9 +221,8 @@ def load_tests(loader, tests, pattern):
         classes.append(type("TestCase-" + mod.__name__,
                             (AnyDBMTestCase, unittest.TestCase),
                             {'module': mod}))
-    suites = [unittest.makeSuite(c) for c in classes]
-
-    tests.addTests(suites)
+    for c in classes:
+        tests.addTest(loader.loadTestsFromTestCase(c))
     return tests
 
 if __name__ == "__main__":

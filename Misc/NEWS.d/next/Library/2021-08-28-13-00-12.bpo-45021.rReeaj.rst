@@ -1,0 +1,1 @@
+Fix a potential deadlock at shutdown of forked children when using :mod:`concurrent.futures` module

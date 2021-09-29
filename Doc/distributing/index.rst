@@ -101,7 +101,7 @@ by invoking the ``pip`` module at the command line::
 
 .. note::
 
-   For POSIX users (including Mac OS X and Linux users), these instructions
+   For POSIX users (including macOS and Linux users), these instructions
    assume the use of a :term:`virtual environment`.
 
    For Windows users, these instructions assume that the option to
@@ -131,11 +131,11 @@ involved in creating and publishing a project:
 * `The .pypirc file`_
 
 .. _Project structure: \
-    https://packaging.python.org/tutorials/distributing-packages/
+    https://packaging.python.org/tutorials/packaging-projects/#packaging-python-projects
 .. _Building and packaging the project: \
-   https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
+   https://packaging.python.org/tutorials/packaging-projects/#creating-the-package-files
 .. _Uploading the project to the Python Packaging Index: \
-   https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+   https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives
 .. _The .pypirc file: \
    https://packaging.python.org/specifications/pypirc/
 

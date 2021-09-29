@@ -1,0 +1,1 @@
+Pass multiprocessing BaseProxy argument ``manager_owned`` through AutoProxy.

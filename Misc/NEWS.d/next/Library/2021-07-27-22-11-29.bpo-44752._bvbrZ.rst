@@ -1,0 +1,2 @@
+:mod:`rcompleter` does not call :func:`getattr` on :class:`property` objects
+to avoid the side-effect of  evaluating the corresponding method.

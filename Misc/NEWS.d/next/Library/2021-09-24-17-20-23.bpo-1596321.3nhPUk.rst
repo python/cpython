@@ -1,0 +1,3 @@
+Fix the :func:`threading._shutdown` function when the :mod:`threading` module
+was imported first from a thread different than the main thread: no longer log
+an error at Python exit.

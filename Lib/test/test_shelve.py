@@ -1,7 +1,11 @@
 import unittest
 import shelve
 import glob
+import pickle
+import os
+
 from test import support
+from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -45,7 +49,7 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         for f in glob.glob(self.fn+"*"):
-            support.unlink(f)
+            os_helper.unlink(f)
 
     def test_close(self):
         d1 = {}
@@ -62,29 +66,32 @@ class TestCase(unittest.TestCase):
         else:
             self.fail('Closed shelf should not find a key')
 
-    def test_ascii_file_shelf(self):
-        s = shelve.open(self.fn, protocol=0)
+    def test_open_template(self, filename=None, protocol=None):
+        s = shelve.open(filename=filename if filename is not None else self.fn,
+                        protocol=protocol)
         try:
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
         finally:
             s.close()
+
+    def test_ascii_file_shelf(self):
+        self.test_open_template(protocol=0)
 
     def test_binary_file_shelf(self):
-        s = shelve.open(self.fn, protocol=1)
-        try:
-            s['key1'] = (1,2,3,4)
-            self.assertEqual(s['key1'], (1,2,3,4))
-        finally:
-            s.close()
+        self.test_open_template(protocol=1)
 
     def test_proto2_file_shelf(self):
-        s = shelve.open(self.fn, protocol=2)
-        try:
-            s['key1'] = (1,2,3,4)
-            self.assertEqual(s['key1'], (1,2,3,4))
-        finally:
-            s.close()
+        self.test_open_template(protocol=2)
+
+    def test_pathlib_path_file_shelf(self):
+        self.test_open_template(filename=os_helper.FakePath(self.fn))
+
+    def test_bytes_path_file_shelf(self):
+        self.test_open_template(filename=os.fsencode(self.fn))
+
+    def test_pathlib_bytes_path_file_shelf(self):
+        self.test_open_template(filename=os_helper.FakePath(os.fsencode(self.fn)))
 
     def test_in_memory_shelf(self):
         d1 = byteskeydict()
@@ -159,7 +166,7 @@ class TestCase(unittest.TestCase):
 
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
-            self.assertEqual(s._protocol, 3)
+            self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
 from test import mapping_tests
 
@@ -186,7 +193,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         self._db = []
         if not self._in_mem:
             for f in glob.glob(self.fn+"*"):
-                support.unlink(f)
+                os_helper.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
     _args={'protocol':0}

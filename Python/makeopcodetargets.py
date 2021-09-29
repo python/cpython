@@ -34,6 +34,11 @@ def write_contents(f):
     targets = ['_unknown_opcode'] * 256
     for opname, op in opcode.opmap.items():
         targets[op] = "TARGET_%s" % opname
+    next_op = 1
+    for opname in opcode._specialized_instructions:
+        while targets[next_op] != '_unknown_opcode':
+            next_op += 1
+        targets[next_op] = "TARGET_%s" % opname
     f.write("static void *opcode_targets[256] = {\n")
     f.write(",\n".join(["    &&%s" % s for s in targets]))
     f.write("\n};\n")

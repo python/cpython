@@ -3,8 +3,12 @@ import unittest
 
 from contextlib import ExitStack
 from importlib.metadata import (
-    distribution, entry_points, files, PackageNotFoundError,
-    version, distributions,
+    PackageNotFoundError,
+    distribution,
+    distributions,
+    entry_points,
+    files,
+    version,
 )
 from importlib import resources
 
@@ -37,7 +41,7 @@ class TestZip(unittest.TestCase):
             version('definitely-not-installed')
 
     def test_zip_entry_points(self):
-        scripts = dict(entry_points()['console_scripts'])
+        scripts = entry_points(group='console_scripts')
         entry_point = scripts['example']
         self.assertEqual(entry_point.value, 'example:main')
         entry_point = scripts['Example']
@@ -72,3 +76,7 @@ class TestEgg(TestZip):
         for file in files('example'):
             path = str(file.dist.locate_file(file))
             assert '.egg/' in path, path
+
+    def test_normalized_name(self):
+        dist = distribution('example')
+        assert dist._normalized_name == 'example'

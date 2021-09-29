@@ -1,0 +1,2 @@
+Fix :meth:`~email.message.MIMEPart.as_string` to pass unixfrom properly.
+Patch by Dong-hee Na.

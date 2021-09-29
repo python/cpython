@@ -1,0 +1,5 @@
+Add a deallocator to the bool type to detect refcount bugs in C extensions
+which call Py_DECREF(Py_True) or Py_DECREF(Py_False) by mistake. Detect also
+refcount bugs when the empty tuple singleton or the Unicode empty string
+singleton is destroyed by mistake.
+Patch by Victor Stinner.

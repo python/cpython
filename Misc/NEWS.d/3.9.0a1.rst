@@ -213,7 +213,7 @@ objects. Patch by Dong-hee Na and Inada Naoki.
 .. section: Core and Builtins
 
 :class:`bytearray`, :class:`~array.array` and :class:`~mmap.mmap` objects
-allow now to export more than 2**31 buffers at a time.
+allow now to export more than ``2**31`` buffers at a time.
 
 ..
 
@@ -5081,7 +5081,7 @@ Stop adding newline when saving an IDLE shell window.
 
 Add an option to toggle IDLE's cursor blink for shell, editor, and output
 windows.  See Settings, General, Window Preferences, Cursor Blink. Patch by
-Zachary Spytz.
+Zackery Spytz.
 
 ..
 

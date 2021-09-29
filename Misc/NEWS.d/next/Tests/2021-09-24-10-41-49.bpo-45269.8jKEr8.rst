@@ -1,0 +1,1 @@
+Cover case when invalid ``markers`` type is supplied to ``c_make_encoder``.

@@ -1,0 +1,20 @@
+Remove 4 private trashcan C API functions which were only kept for the backward
+compatibility of the stable ABI with Python 3.8 and older, since the trashcan
+API was not usable with the limited C API on Python 3.8 and older. The
+trashcan API was excluded from the limited C API in Python 3.9.
+
+Removed functions:
+
+* _PyTrash_deposit_object()
+* _PyTrash_destroy_chain()
+* _PyTrash_thread_deposit_object()
+* _PyTrash_thread_destroy_chain()
+
+The trashcan C API was never usable with the limited C API, since old trashcan
+macros accessed directly :c:type:`PyThreadState` members like
+``_tstate->trash_delete_nesting``, whereas the :c:type:`PyThreadState`
+structure is opaque in the limited C API.
+
+Exclude also the the ``PyTrash_UNWIND_LEVEL`` constant from the C API.
+
+Patch by Victor Stinner.

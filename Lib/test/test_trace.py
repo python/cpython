@@ -1,6 +1,7 @@
 import os
 import sys
-from test.support import TESTFN, TESTFN_UNICODE, FS_NONASCII, rmtree, unlink, captured_stdout
+from test.support import captured_stdout
+from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
 import unittest
@@ -375,7 +376,7 @@ class TestCoverage(unittest.TestCase):
 
     def test_coverage_ignore(self):
         # Ignore all files, nothing should be traced nor printed
-        libpath = os.path.normpath(os.path.dirname(os.__file__))
+        libpath = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
                              libpath], trace=0, count=1)

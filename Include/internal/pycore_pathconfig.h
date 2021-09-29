@@ -13,6 +13,7 @@ typedef struct _PyPathConfig {
     wchar_t *program_full_path;
     wchar_t *prefix;
     wchar_t *exec_prefix;
+    wchar_t *stdlib_dir;
     /* Set by Py_SetPath(), or computed by _PyConfig_InitPathConfig() */
     wchar_t *module_search_path;
     /* Python program name */
@@ -65,6 +66,7 @@ extern wchar_t* _Py_GetDLLPath(void);
 
 extern PyStatus _PyConfig_WritePathConfig(const PyConfig *config);
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
+extern PyObject* _PyPathConfig_AsDict(void);
 
 #ifdef __cplusplus
 }

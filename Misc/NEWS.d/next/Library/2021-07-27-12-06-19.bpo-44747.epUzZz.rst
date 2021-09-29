@@ -1,0 +1,2 @@
+Refactor usage of ``sys._getframe`` in ``typing`` module. Patch provided by
+Yurii Karabas.

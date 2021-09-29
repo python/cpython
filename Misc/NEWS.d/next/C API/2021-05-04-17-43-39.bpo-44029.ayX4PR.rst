@@ -1,0 +1,9 @@
+Remove deprecated ``Py_UNICODE`` APIs: ``PyUnicode_Encode``,
+``PyUnicode_EncodeUTF7``, ``PyUnicode_EncodeUTF8``,
+``PyUnicode_EncodeUTF16``, ``PyUnicode_EncodeUTF32``,
+``PyUnicode_EncodeLatin1``, ``PyUnicode_EncodeMBCS``,
+``PyUnicode_EncodeDecimal``, ``PyUnicode_EncodeRawUnicodeEscape``,
+``PyUnicode_EncodeCharmap``, ``PyUnicode_EncodeUnicodeEscape``,
+``PyUnicode_TransformDecimalToASCII``, ``PyUnicode_TranslateCharmap``,
+``PyUnicodeEncodeError_Create``, ``PyUnicodeTranslateError_Create``. See
+:pep:`393` and :pep:`624` for reference.

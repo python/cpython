@@ -84,7 +84,7 @@ dependencies from the Python Packaging Index::
 
 .. note::
 
-   For POSIX users (including Mac OS X and Linux users), the examples in
+   For POSIX users (including macOS and Linux users), the examples in
    this guide assume the use of a :term:`virtual environment`.
 
    For Windows users, the examples in this guide assume that the option to
@@ -163,7 +163,7 @@ rather than attempting to install them with ``pip``.
 ... work with multiple versions of Python installed in parallel?
 ----------------------------------------------------------------
 
-On Linux, Mac OS X, and other POSIX systems, use the versioned Python commands
+On Linux, macOS, and other POSIX systems, use the versioned Python commands
 in combination with the ``-m`` switch to run the appropriate copy of
 ``pip``::
 
@@ -225,7 +225,7 @@ users being expected to compile extension modules from source as part of
 the installation process.
 
 With the introduction of support for the binary ``wheel`` format, and the
-ability to publish wheels for at least Windows and Mac OS X through the
+ability to publish wheels for at least Windows and macOS through the
 Python Packaging Index, this problem is expected to diminish over time,
 as users are more regularly able to install pre-built extensions rather
 than needing to build them themselves.

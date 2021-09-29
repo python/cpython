@@ -1,0 +1,1 @@
+Make :mod:`pprint` (like the builtin ``print``) not attempt to write to ``stdout`` when it is ``None``.

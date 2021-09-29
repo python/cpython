@@ -13,28 +13,15 @@ import sysconfig
 import time
 import types
 import unittest
-
-from .import_helper import (
-    CleanImport, DirsOnSysPath, _ignore_deprecated_imports,
-    _save_and_block_module, _save_and_remove_module,
-    forget, import_fresh_module, import_module, make_legacy_pyc,
-    modules_cleanup, modules_setup, unload)
-from .os_helper import (
-    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_ASCII, TESTFN_NONASCII,
-    TESTFN_UNENCODABLE, TESTFN_UNDECODABLE,
-    TESTFN_UNICODE, can_symlink, can_xattr,
-    change_cwd, create_empty_file, fd_count,
-    fs_is_case_insensitive, make_bad_fd, rmdir,
-    rmtree, skip_unless_symlink, skip_unless_xattr,
-    temp_cwd, temp_dir, temp_umask, unlink,
-    EnvironmentVarGuard, FakePath, _longpath)
-from .warnings_helper import (
-    WarningsRecorder, _filterwarnings,
-    check_no_resource_warning, check_no_warnings,
-    check_syntax_warning, check_warnings, ignore_warnings)
+import warnings
 
 from .testresult import get_test_runner
 
+
+try:
+    from _testcapi import unicode_legacy_string
+except ImportError:
+    unicode_legacy_string = None
 
 __all__ = [
     # globals
@@ -54,6 +41,7 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
+    "check_disallow_instantiation",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -62,7 +50,7 @@ __all__ = [
     # processes
     "reap_children",
     # miscellaneous
-    "run_with_locale", "swap_item", "findfile",
+    "run_with_locale", "swap_item", "findfile", "infinite_recursion",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
@@ -84,9 +72,11 @@ if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
     LOOPBACK_TIMEOUT = 10
+elif sys.platform == 'vxworks':
+    LOOPBACK_TIMEOUT = 10
 
-# Timeout in seconds for network requests going to the Internet. The timeout is
-# short enough to prevent a test to wait for too long if the Internet request
+# Timeout in seconds for network requests going to the internet. The timeout is
+# short enough to prevent a test to wait for too long if the internet request
 # is blocked for whatever reason.
 #
 # Usually, a timeout using INTERNET_TIMEOUT should not mark a test as failed,
@@ -109,12 +99,30 @@ SHORT_TIMEOUT = 30.0
 # option.
 LONG_TIMEOUT = 5 * 60.0
 
+# TEST_HOME_DIR refers to the top level directory of the "test" package
+# that contains Python's regression test suite
+TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
+STDLIB_DIR = os.path.dirname(TEST_HOME_DIR)
+REPO_ROOT = os.path.dirname(STDLIB_DIR)
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures):
+        self.msg = msg
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures)
+
+    def __str__(self):
+        return self.msg
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -147,9 +155,7 @@ def load_package_tests(pkg_dir, loader, standard_tests, pattern):
     """
     if pattern is None:
         pattern = "test*"
-    top_dir = os.path.dirname(              # Lib
-                  os.path.dirname(              # test
-                      os.path.dirname(__file__)))   # support
+    top_dir = STDLIB_DIR
     package_tests = loader.discover(start_dir=pkg_dir,
                                     top_level_dir=top_dir,
                                     pattern=pattern)
@@ -389,8 +395,8 @@ PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 # A constant likely larger than the underlying OS socket buffer size, to make
 # writes blocking.
 # The socket buffer sizes can usually be tuned system-wide (e.g. through sysctl
-# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF). See issue #18643
-# for a discussion of this number).
+# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF).  See issue #18643
+# for a discussion of this number.
 SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
 # decorator for skipping tests on non-IEEE 754 platforms
@@ -426,11 +432,22 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
+def has_no_debug_ranges():
+    import _testinternalcapi
+    config = _testinternalcapi.get_config()
+    return bool(config['no_debug_ranges'])
+
+def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
+    return unittest.skipIf(has_no_debug_ranges(), reason)
+
+requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
+                        'requires legacy Unicode C API')
+
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
 
-if sys.platform != 'win32':
+if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
@@ -447,13 +464,26 @@ PGO = False
 # PGO task.  If this is True, PGO is also True.
 PGO_EXTENDED = False
 
-# TEST_HOME_DIR refers to the top level directory of the "test" package
-# that contains Python's regression test suite
-TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
-
 # TEST_DATA_DIR is used as a target download location for remote resources
 TEST_DATA_DIR = os.path.join(TEST_HOME_DIR, "data")
+
+
+def darwin_malloc_err_warning(test_name):
+    """Assure user that loud errors generated by macOS libc's malloc are
+    expected."""
+    if sys.platform != 'darwin':
+        return
+
+    import shutil
+    msg = ' NOTICE '
+    detail = (f'{test_name} may generate "malloc can\'t allocate region"\n'
+              'warnings on macOS systems. This behavior is known. Do not\n'
+              'report a bug unless tests are also failing. See bpo-40928.')
+
+    padding, _ = shutil.get_terminal_size()
+    print(msg.center(padding, '-'))
+    print(detail)
+    print('-' * padding)
 
 
 def findfile(filename, subdir=None):
@@ -496,6 +526,7 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
+    from .os_helper import unlink
     try:
         import gzip
     except ImportError:
@@ -664,9 +695,8 @@ def check_sizeof(test, o, size):
 # Decorator for running a function in a different locale, correctly resetting
 # it afterwards.
 
+@contextlib.contextmanager
 def run_with_locale(catstr, *locales):
-    def decorator(func):
-        def inner(*args, **kwds):
             try:
                 import locale
                 category = getattr(locale, catstr)
@@ -685,16 +715,11 @@ def run_with_locale(catstr, *locales):
                     except:
                         pass
 
-            # now run the function, resetting the locale on exceptions
             try:
-                return func(*args, **kwds)
+                yield
             finally:
                 if locale and orig_locale:
                     locale.setlocale(category, orig_locale)
-        inner.__name__ = func.__name__
-        inner.__doc__ = func.__doc__
-        return inner
-    return decorator
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -979,7 +1004,9 @@ def _run_suite(suite):
         else:
             err = "multiple errors occurred"
             if not verbose: err += "; run in verbose mode for details"
-        raise TestFailed(err)
+        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
+        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
+        raise TestFailedWithDetails(err, errors, failures)
 
 
 # By default, don't filter tests
@@ -1075,17 +1102,18 @@ def _compile_match_function(patterns):
 def run_unittest(*classes):
     """Run tests from unittest.TestCase-derived classes."""
     valid_types = (unittest.TestSuite, unittest.TestCase)
+    loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for cls in classes:
         if isinstance(cls, str):
             if cls in sys.modules:
-                suite.addTest(unittest.findTestCases(sys.modules[cls]))
+                suite.addTest(loader.loadTestsFromModule(sys.modules[cls]))
             else:
                 raise ValueError("str arguments must be keys in sys.modules")
         elif isinstance(cls, valid_types):
             suite.addTest(cls)
         else:
-            suite.addTest(unittest.makeSuite(cls))
+            suite.addTest(loader.loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
     _run_suite(suite)
 
@@ -1316,6 +1344,8 @@ def skip_if_buggy_ucrt_strfptime(test):
 class PythonSymlink:
     """Creates a symlink for the current Python executable"""
     def __init__(self, link=None):
+        from .os_helper import TESTFN
+
         self.link = link or os.path.abspath(TESTFN)
         self._linked = []
         self.real = os.path.realpath(sys.executable)
@@ -1354,7 +1384,7 @@ class PythonSymlink:
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
             if sysconfig.is_python_build(True):
-                self._env["PYTHONPATH"] = os.path.dirname(os.__file__)
+                self._env["PYTHONPATH"] = STDLIB_DIR
 
     def __enter__(self):
         os.symlink(self.real, self.link)
@@ -1416,7 +1446,7 @@ def detect_api_mismatch(ref_api, other_api, *, ignore=()):
 
 
 def check__all__(test_case, module, name_of_module=None, extra=(),
-                 blacklist=()):
+                 not_exported=()):
     """Assert that the __all__ variable of 'module' contains all public names.
 
     The module's public names (its API) are detected automatically based on
@@ -1433,7 +1463,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     '__module__' attribute. If provided, it will be added to the
     automatically detected ones.
 
-    The 'blacklist' argument can be a set of names that must not be treated
+    The 'not_exported' argument can be a set of names that must not be treated
     as part of the public API even though their names indicate otherwise.
 
     Usage:
@@ -1449,10 +1479,10 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
         class OtherTestCase(unittest.TestCase):
             def test__all__(self):
                 extra = {'BAR_CONST', 'FOO_CONST'}
-                blacklist = {'baz'}  # Undocumented name.
+                not_exported = {'baz'}  # Undocumented name.
                 # bar imports part of its API from _bar.
                 support.check__all__(self, bar, ('bar', '_bar'),
-                                     extra=extra, blacklist=blacklist)
+                                     extra=extra, not_exported=not_exported)
 
     """
 
@@ -1464,7 +1494,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     expected = set(extra)
 
     for name in dir(module):
-        if name.startswith('_') or name in blacklist:
+        if name.startswith('_') or name in not_exported:
             continue
         obj = getattr(module, name)
         if (getattr(obj, '__module__', None) in name_of_module or
@@ -1673,9 +1703,16 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from distutils import ccompiler, sysconfig, spawn
+    # TODO (PEP 632): alternate check without using distutils
+    from distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
+    if compiler.compiler_type == "msvc":
+        # MSVC has no executables, so check whether initialization succeeds
+        try:
+            compiler.initialize()
+        except errors.DistutilsPlatformError:
+            return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
             continue
@@ -1964,6 +2001,7 @@ def skip_if_broken_multiprocessing_synchronize():
     is no available semaphore implementation, or if creating a lock raises an
     OSError (on Linux only).
     """
+    from .import_helper import import_module
 
     # Skip tests if the _multiprocessing extension is missing.
     import_module('_multiprocessing')
@@ -1980,3 +2018,63 @@ def skip_if_broken_multiprocessing_synchronize():
             synchronize.Lock(ctx=None)
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
+
+
+def check_disallow_instantiation(testcase, tp, *args, **kwds):
+    """
+    Check that given type cannot be instantiated using *args and **kwds.
+
+    See bpo-43916: Add Py_TPFLAGS_DISALLOW_INSTANTIATION type flag.
+    """
+    mod = tp.__module__
+    name = tp.__name__
+    if mod != 'builtins':
+        qualname = f"{mod}.{name}"
+    else:
+        qualname = f"{name}"
+    msg = f"cannot create '{re.escape(qualname)}' instances"
+    testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
+
+@contextlib.contextmanager
+def infinite_recursion(max_depth=75):
+    """Set a lower limit for tests that interact with infinite recursions
+    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
+    debug windows builds, due to not enough functions being inlined the
+    stack size might not handle the default recursion limit (1000). See
+    bpo-11105 for details."""
+
+    original_depth = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(max_depth)
+        yield
+    finally:
+        sys.setrecursionlimit(original_depth)
+
+def ignore_deprecations_from(module: str, *, like: str) -> object:
+    token = object()
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=module,
+        message=like + fr"(?#support{id(token)})",
+    )
+    return token
+
+def clear_ignored_deprecations(*tokens: object) -> None:
+    if not tokens:
+        raise ValueError("Provide token or tokens returned by ignore_deprecations_from")
+
+    new_filters = []
+    endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
+    for action, message, category, module, lineno in warnings.filters:
+        if action == "ignore" and category is DeprecationWarning:
+            if isinstance(message, re.Pattern):
+                msg = message.pattern
+            else:
+                msg = message or ""
+            if msg.endswith(endswith):
+                continue
+        new_filters.append((action, message, category, module, lineno))
+    if warnings.filters != new_filters:
+        warnings.filters[:] = new_filters
+        warnings._filters_mutated()

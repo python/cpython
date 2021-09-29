@@ -101,6 +101,5 @@ anything except backslash or colon.
 .. % \subsection{\protect\command{bdist}}
 .. % \subsection{\protect\command{bdist\_dumb}}
 .. % \subsection{\protect\command{bdist\_rpm}}
-.. % \subsection{\protect\command{bdist\_wininst}}
 
 

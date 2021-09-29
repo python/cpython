@@ -165,11 +165,11 @@ WIN32 is still required for the locale module.
 
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
-typedef __int64 ssize_t;
+typedef __int64 Py_ssize_t;
 #else
-typedef _W64 int ssize_t;
+typedef _W64 int Py_ssize_t;
 #endif
-#define HAVE_SSIZE_T 1
+#define HAVE_PY_SSIZE_T 1
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #if defined(_M_IX86)
@@ -193,7 +193,6 @@ typedef int pid_t;
 #define Py_IS_NAN _isnan
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
-#define copysign _copysign
 
 /* define some ANSI types that are not defined in earlier Win headers */
 #if _MSC_VER >= 1200
@@ -269,11 +268,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         file in their Makefile (other compilers are
                         generally taken care of by distutils.) */
 #                       if defined(_DEBUG)
-#                               pragma comment(lib,"python310_d.lib")
+#                               pragma comment(lib,"python311_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python310.lib")
+#                               pragma comment(lib,"python311.lib")
 #                       endif /* _DEBUG */
 #               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
@@ -290,6 +289,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_FPOS_T 8
 #       define SIZEOF_HKEY 8
 #       define SIZEOF_SIZE_T 8
+#       define ALIGNOF_SIZE_T 8
 /* configure.ac defines HAVE_LARGEFILE_SUPPORT iff
    sizeof(off_t) > sizeof(long), and sizeof(long long) >= sizeof(off_t).
    On Win64 the second condition is not true, but if fpos_t replaces off_t
@@ -304,6 +304,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_FPOS_T 8
 #       define SIZEOF_HKEY 4
 #       define SIZEOF_SIZE_T 4
+#       define ALIGNOF_SIZE_T 4
         /* MS VS2005 changes time_t to a 64-bit type on all platforms */
 #       if defined(_MSC_VER) && _MSC_VER >= 1400
 #       define SIZEOF_TIME_T 8
@@ -322,6 +323,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_SHORT 2
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
+#define ALIGNOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 #define SIZEOF_DOUBLE 8
 #define SIZEOF_FLOAT 4

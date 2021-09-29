@@ -61,9 +61,8 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, \*args, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Create a subprocess.
 
@@ -78,11 +77,14 @@ Creating Subprocesses
 
    .. deprecated-removed:: 3.8 3.10
 
-      The *loop* parameter.
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Run the *cmd* shell command.
 
@@ -106,14 +108,15 @@ Creating Subprocesses
 
    .. deprecated-removed:: 3.8 3.10
 
-      The *loop* parameter.
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 .. note::
 
-   The default asyncio event loop implementation on **Windows** does not
-   support subprocesses. Subprocesses are available for Windows if a
-   :class:`ProactorEventLoop` is used.
-   See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
+   Subprocesses are available for Windows if a :class:`ProactorEventLoop` is
+   used. See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
    for details.
 
 .. seealso::
@@ -253,7 +256,7 @@ their completion.
 
    .. method:: kill()
 
-      Kill the child.
+      Kill the child process.
 
       On POSIX systems this method sends :py:data:`SIGKILL` to the child
       process.
