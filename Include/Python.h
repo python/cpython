@@ -35,19 +35,6 @@
 #ifndef MS_WINDOWS
 #include <unistd.h>
 #endif
-#ifdef HAVE_CRYPT_H
-#if defined(HAVE_CRYPT_R) && !defined(_GNU_SOURCE)
-/* Required for glibc to expose the crypt_r() function prototype. */
-#  define _GNU_SOURCE
-#  define _Py_GNU_SOURCE_FOR_CRYPT
-#endif
-#include <crypt.h>
-#ifdef _Py_GNU_SOURCE_FOR_CRYPT
-/* Don't leak the _GNU_SOURCE define to other headers. */
-#  undef _GNU_SOURCE
-#  undef _Py_GNU_SOURCE_FOR_CRYPT
-#endif
-#endif
 
 /* For size_t? */
 #ifdef HAVE_STDDEF_H
