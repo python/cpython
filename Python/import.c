@@ -1244,6 +1244,9 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
         return 0;
     }
+    else if (status == FROZEN_BAD_NAME) {
+        return 0;
+    }
     else if (status != FROZEN_OKAY) {
         set_frozen_error(status, name);
         return -1;
@@ -2011,6 +2014,9 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
     if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
+        Py_RETURN_NONE;
+    }
+    else if (status == FROZEN_BAD_NAME) {
         Py_RETURN_NONE;
     }
     else if (status != FROZEN_OKAY) {
