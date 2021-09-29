@@ -58,5 +58,7 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
    Thus ``3.4.1a2`` is hexversion ``0x030401a2`` and ``3.10.0`` is
    hexversion ``0x030a00f0``.
 
+   Starting with Python 3.11, this information is also available via the
+   exported symbol `Py_Version`.
 
 All the given macros are defined in :source:`Include/patchlevel.h`.
