@@ -1208,36 +1208,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     return FROZEN_OKAY;
 }
 
-static PyObject *
-get_frozen_object(PyObject *name)
-{
-    struct frozen_info info;
-    frozen_status status = find_frozen(name, &info);
-    if (status != FROZEN_OKAY) {
-        set_frozen_error(status, name);
-        return NULL;
-    }
-    PyObject *code = PyMarshal_ReadObjectFromString(info.data, info.size);
-    if (code == NULL) {
-        set_frozen_error(FROZEN_INVALID, name);
-        return NULL;
-    }
-    return code;
-}
-
-static PyObject *
-is_frozen_package(PyObject *name)
-{
-    struct frozen_info info;
-    frozen_status status = find_frozen(name, &info);
-    if (status != FROZEN_OKAY && status != FROZEN_EXCLUDED) {
-        set_frozen_error(status, name);
-        return NULL;
-    }
-    return PyBool_FromLong(info.is_package);
-    //return _Py_NewReference(info.is_package ? Py_True : Py_False);
-}
-
 
 /* Initialize a frozen module.
    Return 1 for success, 0 if the module is not found, and -1 with
@@ -2021,7 +1991,18 @@ static PyObject *
 _imp_get_frozen_object_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
 {
-    return get_frozen_object(name);
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+    PyObject *code = PyMarshal_ReadObjectFromString(info.data, info.size);
+    if (code == NULL) {
+        set_frozen_error(FROZEN_INVALID, name);
+        return NULL;
+    }
+    return code;
 }
 
 /*[clinic input]
@@ -2037,7 +2018,13 @@ static PyObject *
 _imp_is_frozen_package_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=e70cbdb45784a1c9 input=81b6cdecd080fbb8]*/
 {
-    return is_frozen_package(name);
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY && status != FROZEN_EXCLUDED) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+    return PyBool_FromLong(info.is_package);
 }
 
 /*[clinic input]
