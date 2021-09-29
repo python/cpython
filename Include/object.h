@@ -723,7 +723,7 @@ times.
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJECT_H
-#  include  "cpython/object.h"
+#  include "cpython/cpython_object.h"
 #  undef Py_CPYTHON_OBJECT_H
 #endif
 

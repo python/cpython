@@ -15,7 +15,7 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_COMPILE_H
-#  include "cpython/compile.h"
+#  include "cpython/cpython_compile.h"
 #  undef Py_CPYTHON_COMPILE_H
 #endif
 

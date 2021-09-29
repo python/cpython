@@ -76,7 +76,7 @@
 #include "typeslots.h"
 #include "pyhash.h"
 
-#include "cpython/pydebug.h"
+#include "cpython/cpython_pydebug.h"
 
 #include "bytearrayobject.h"
 #include "bytesobject.h"
@@ -91,7 +91,7 @@
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
-#include "cpython/odictobject.h"
+#include "cpython/cpython_odictobject.h"
 #include "enumobject.h"
 #include "setobject.h"
 #include "methodobject.h"
@@ -113,13 +113,13 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 #include "namespaceobject.h"
-#include "cpython/picklebufobject.h"
-#include "cpython/pytime.h"
+#include "cpython/cpython_picklebufobject.h"
+#include "cpython/cpython_pytime.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
 
-#include "cpython/initconfig.h"
+#include "cpython/cpython_initconfig.h"
 #include "pythread.h"
 #include "pystate.h"
 #include "context.h"
@@ -139,11 +139,11 @@
 
 #include "eval.h"
 
-#include "cpython/pyctype.h"
+#include "cpython/cpython_pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "fileutils.h"
-#include "cpython/pyfpe.h"
+#include "cpython/cpython_pyfpe.h"
 #include "tracemalloc.h"
 
 #endif /* !Py_PYTHON_H */

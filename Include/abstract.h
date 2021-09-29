@@ -863,7 +863,7 @@ PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ABSTRACTOBJECT_H
-#  include  "cpython/abstract.h"
+#  include "cpython/cpython_abstract.h"
 #  undef Py_CPYTHON_ABSTRACTOBJECT_H
 #endif
 

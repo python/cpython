@@ -1175,38 +1175,38 @@ PYTHON_HEADERS= \
 		pyconfig.h \
 		$(PARSER_HEADERS) \
 		\
-		$(srcdir)/Include/cpython/abstract.h \
-		$(srcdir)/Include/cpython/bytearrayobject.h \
-		$(srcdir)/Include/cpython/bytesobject.h \
-		$(srcdir)/Include/cpython/ceval.h \
-		$(srcdir)/Include/cpython/code.h \
-		$(srcdir)/Include/cpython/compile.h \
-		$(srcdir)/Include/cpython/dictobject.h \
-		$(srcdir)/Include/cpython/fileobject.h \
-		$(srcdir)/Include/cpython/fileutils.h \
-		$(srcdir)/Include/cpython/frameobject.h \
-		$(srcdir)/Include/cpython/import.h \
-		$(srcdir)/Include/cpython/initconfig.h \
-		$(srcdir)/Include/cpython/interpreteridobject.h \
-		$(srcdir)/Include/cpython/listobject.h \
-		$(srcdir)/Include/cpython/methodobject.h \
-		$(srcdir)/Include/cpython/object.h \
-		$(srcdir)/Include/cpython/objimpl.h \
-		$(srcdir)/Include/cpython/odictobject.h \
-		$(srcdir)/Include/cpython/picklebufobject.h \
-		$(srcdir)/Include/cpython/pyctype.h \
-		$(srcdir)/Include/cpython/pydebug.h \
-		$(srcdir)/Include/cpython/pyerrors.h \
-		$(srcdir)/Include/cpython/pyfpe.h \
-		$(srcdir)/Include/cpython/pylifecycle.h \
-		$(srcdir)/Include/cpython/pymem.h \
-		$(srcdir)/Include/cpython/pystate.h \
-		$(srcdir)/Include/cpython/pythonrun.h \
-		$(srcdir)/Include/cpython/pytime.h \
-		$(srcdir)/Include/cpython/sysmodule.h \
-		$(srcdir)/Include/cpython/traceback.h \
-		$(srcdir)/Include/cpython/tupleobject.h \
-		$(srcdir)/Include/cpython/unicodeobject.h \
+		$(srcdir)/Include/cpython/cpython_abstract.h \
+		$(srcdir)/Include/cpython/cpython_bytearrayobject.h \
+		$(srcdir)/Include/cpython/cpython_bytesobject.h \
+		$(srcdir)/Include/cpython/cpython_ceval.h \
+		$(srcdir)/Include/cpython/cpython_code.h \
+		$(srcdir)/Include/cpython/cpython_compile.h \
+		$(srcdir)/Include/cpython/cpython_dictobject.h \
+		$(srcdir)/Include/cpython/cpython_fileobject.h \
+		$(srcdir)/Include/cpython/cpython_fileutils.h \
+		$(srcdir)/Include/cpython/cpython_frameobject.h \
+		$(srcdir)/Include/cpython/cpython_import.h \
+		$(srcdir)/Include/cpython/cpython_initconfig.h \
+		$(srcdir)/Include/cpython/cpython_interpreteridobject.h \
+		$(srcdir)/Include/cpython/cpython_listobject.h \
+		$(srcdir)/Include/cpython/cpython_methodobject.h \
+		$(srcdir)/Include/cpython/cpython_object.h \
+		$(srcdir)/Include/cpython/cpython_objimpl.h \
+		$(srcdir)/Include/cpython/cpython_odictobject.h \
+		$(srcdir)/Include/cpython/cpython_picklebufobject.h \
+		$(srcdir)/Include/cpython/cpython_pyctype.h \
+		$(srcdir)/Include/cpython/cpython_pydebug.h \
+		$(srcdir)/Include/cpython/cpython_pyerrors.h \
+		$(srcdir)/Include/cpython/cpython_pyfpe.h \
+		$(srcdir)/Include/cpython/cpython_pylifecycle.h \
+		$(srcdir)/Include/cpython/cpython_pymem.h \
+		$(srcdir)/Include/cpython/cpython_pystate.h \
+		$(srcdir)/Include/cpython/cpython_pythonrun.h \
+		$(srcdir)/Include/cpython/cpython_pytime.h \
+		$(srcdir)/Include/cpython/cpython_sysmodule.h \
+		$(srcdir)/Include/cpython/cpython_traceback.h \
+		$(srcdir)/Include/cpython/cpython_tupleobject.h \
+		$(srcdir)/Include/cpython/cpython_unicodeobject.h \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_accu.h \

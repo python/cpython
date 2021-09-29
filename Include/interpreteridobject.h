@@ -7,7 +7,7 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_INTERPRETERIDOBJECT_H
-#  include  "cpython/interpreteridobject.h"
+#  include "cpython/cpython_interpreteridobject.h"
 #  undef Py_CPYTHON_INTERPRETERIDOBJECT_H
 #endif
 

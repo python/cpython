@@ -1,0 +1,4 @@
+Fix building Python on macOS Framework: fix include from
+Include/cpython/pystate.h to Include/cpython/initconfig.h. Header files of
+the Include/cpython/ subdirectory now get a "cpython_" prefix in their
+filename to avoid confusion.

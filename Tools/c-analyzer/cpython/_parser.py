@@ -162,29 +162,29 @@ Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
 Modules/_pickle.c	Py_BUILD_CORE_BUILTIN	1
 Modules/_testinternalcapi.c	Py_BUILD_CORE_BUILTIN	1
 
-Include/cpython/abstract.h	Py_CPYTHON_ABSTRACTOBJECT_H	1
-Include/cpython/bytearrayobject.h	Py_CPYTHON_BYTEARRAYOBJECT_H	1
-Include/cpython/bytesobject.h	Py_CPYTHON_BYTESOBJECT_H	1
-Include/cpython/ceval.h	Py_CPYTHON_CEVAL_H	1
-Include/cpython/code.h	Py_CPYTHON_CODE_H	1
-Include/cpython/dictobject.h	Py_CPYTHON_DICTOBJECT_H	1
-Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
-Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
-Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
-Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
-Include/cpython/interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
-Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
-Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
-Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1
-Include/cpython/objimpl.h	Py_CPYTHON_OBJIMPL_H	1
-Include/cpython/pyerrors.h	Py_CPYTHON_ERRORS_H	1
-Include/cpython/pylifecycle.h	Py_CPYTHON_PYLIFECYCLE_H	1
-Include/cpython/pymem.h	Py_CPYTHON_PYMEM_H	1
-Include/cpython/pystate.h	Py_CPYTHON_PYSTATE_H	1
-Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
-Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
-Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
-Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
+Include/cpython/cpython_abstract.h	Py_CPYTHON_ABSTRACTOBJECT_H	1
+Include/cpython/cpython_bytearrayobject.h	Py_CPYTHON_BYTEARRAYOBJECT_H	1
+Include/cpython/cpython_bytesobject.h	Py_CPYTHON_BYTESOBJECT_H	1
+Include/cpython/cpython_ceval.h	Py_CPYTHON_CEVAL_H	1
+Include/cpython/cpython_code.h	Py_CPYTHON_CODE_H	1
+Include/cpython/cpython_dictobject.h	Py_CPYTHON_DICTOBJECT_H	1
+Include/cpython/cpython_fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
+Include/cpython/cpython_fileutils.h	Py_CPYTHON_FILEUTILS_H	1
+Include/cpython/cpython_frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
+Include/cpython/cpython_import.h	Py_CPYTHON_IMPORT_H	1
+Include/cpython/cpython_interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
+Include/cpython/cpython_listobject.h	Py_CPYTHON_LISTOBJECT_H	1
+Include/cpython/cpython_methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
+Include/cpython/cpython_object.h	Py_CPYTHON_OBJECT_H	1
+Include/cpython/cpython_objimpl.h	Py_CPYTHON_OBJIMPL_H	1
+Include/cpython/cpython_pyerrors.h	Py_CPYTHON_ERRORS_H	1
+Include/cpython/cpython_pylifecycle.h	Py_CPYTHON_PYLIFECYCLE_H	1
+Include/cpython/cpython_pymem.h	Py_CPYTHON_PYMEM_H	1
+Include/cpython/cpython_pystate.h	Py_CPYTHON_PYSTATE_H	1
+Include/cpython/cpython_sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
+Include/cpython/cpython_traceback.h	Py_CPYTHON_TRACEBACK_H	1
+Include/cpython/cpython_tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
+Include/cpython/cpython_unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
 
 # implied include of pyport.h
 Include/**/*.h	PyAPI_DATA(RTYPE)	extern RTYPE
