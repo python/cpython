@@ -649,7 +649,7 @@ class Barrier:
         self._action = action
         self._timeout = timeout
         self._parties = parties
-        self._state = 0 #0 filling, 1, draining, -1 resetting, -2 broken
+        self._state = 0  # 0 filling, 1 draining, -1 resetting, -2 broken
         self._count = 0
 
     def __repr__(self):
