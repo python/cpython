@@ -885,10 +885,6 @@ _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
 }
 
 
-/* Forward */
-static const struct _frozen * find_frozen(PyObject *);
-
-
 /* Helper to test for built-in module */
 
 static int
@@ -1117,75 +1113,129 @@ list_frozen_module_names()
     return names;
 }
 
-static const struct _frozen *
-find_frozen(PyObject *modname)
+typedef enum {
+    FROZEN_OKAY,
+    FROZEN_BAD_NAME,    // The given module name wasn't valid.
+    FROZEN_NOT_FOUND,   // It wasn't in PyImport_FrozenModules.
+    FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
+    FROZEN_EXCLUDED,    // The PyImport_FrozenModules entry has NULL "code".
+    FROZEN_INVALID,     // The PyImport_FrozenModules entry is bogus.
+} frozen_status;
+
+static inline void
+set_frozen_error(frozen_status status, PyObject *modname)
 {
-    if (modname == NULL) {
-        return NULL;
+    switch (status) {
+        case FROZEN_BAD_NAME:
+        case FROZEN_NOT_FOUND:
+        case FROZEN_DISABLED:
+            PyErr_Format(PyExc_ImportError,
+                         "No such frozen object named %R",
+                         modname);
+            break;
+        case FROZEN_EXCLUDED:
+            PyErr_Format(PyExc_ImportError,
+                         "Excluded frozen object named %R",
+                         modname);
+            break;
+        case FROZEN_INVALID:
+            PyErr_Format(PyExc_ImportError,
+                         "Frozen object named %R is invalid",
+                         modname);
+            break;
+        case FROZEN_OKAY:
+            // There was no error.
+            break;
+        default:
+            Py_UNREACHABLE();
     }
-    const char *name = PyUnicode_AsUTF8(modname);
+}
+
+struct frozen_info {
+    PyObject *name;
+    const char *data;
+    int size;
+    bool is_package;
+};
+
+frozen_status
+find_frozen(PyObject *nameobj, struct frozen_info *info)
+{
+    if (info != NULL) {
+        info->name = NULL;
+        info->data = NULL;
+        info->size = 0;
+        info->is_package = false;
+    }
+
+    if (nameobj == NULL || nameobj == Py_None) {
+        return FROZEN_BAD_NAME;
+    }
+    const char *name = PyUnicode_AsUTF8(nameobj);
     if (name == NULL) {
         PyErr_Clear();
-        return NULL;
+        return FROZEN_BAD_NAME;
     }
+
     if (!use_frozen() && !is_essential_frozen_module(name)) {
-        return NULL;
+        return FROZEN_DISABLED;
     }
+
     const struct _frozen *p;
     for (p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
-            return NULL;
+            // We hit the end-of-list sentinel value.
+            return FROZEN_NOT_FOUND;
         }
         if (strcmp(name, p->name) == 0) {
             break;
         }
     }
-    return p;
+    if (info != NULL) {
+        info->name = nameobj;  // borrowed
+        info->data = (const char *)p->code;
+        info->size = p->size < 0 ? -(p->size) : p->size;
+        info->is_package = p->size < 0 ? true : false;
+    }
+
+    if (p->code == NULL) {
+        /* It is frozen but marked as un-importable. */
+        return FROZEN_EXCLUDED;
+    }
+    if (p->code[0] == '\0' || p->size == 0) {
+        return FROZEN_INVALID;
+    }
+    return FROZEN_OKAY;
 }
 
 static PyObject *
 get_frozen_object(PyObject *name)
 {
-    const struct _frozen *p = find_frozen(name);
-    int size;
-
-    if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %R",
-                     name);
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
         return NULL;
     }
-    if (p->code == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "Excluded frozen object named %R",
-                     name);
+    PyObject *code = PyMarshal_ReadObjectFromString(info.data, info.size);
+    if (code == NULL) {
+        set_frozen_error(FROZEN_INVALID, name);
         return NULL;
     }
-    size = p->size;
-    if (size < 0)
-        size = -size;
-    return PyMarshal_ReadObjectFromString((const char *)p->code, size);
+    return code;
 }
 
 static PyObject *
 is_frozen_package(PyObject *name)
 {
-    const struct _frozen *p = find_frozen(name);
-    int size;
-
-    if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %R",
-                     name);
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY && status != FROZEN_EXCLUDED) {
+        set_frozen_error(status, name);
         return NULL;
     }
-
-    size = p->size;
-
-    if (size < 0)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    return PyBool_FromLong(info.is_package);
+    //return _Py_NewReference(info.is_package ? Py_True : Py_False);
 }
 
 
@@ -1198,35 +1248,29 @@ int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    const struct _frozen *p;
     PyObject *co, *m, *d;
-    int ispackage;
-    int size;
 
-    p = find_frozen(name);
-
-    if (p == NULL)
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
         return 0;
-    if (p->code == NULL) {
-        _PyErr_Format(tstate, PyExc_ImportError,
-                      "Excluded frozen object named %R",
-                      name);
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
         return -1;
     }
-    size = p->size;
-    ispackage = (size < 0);
-    if (ispackage)
-        size = -size;
-    co = PyMarshal_ReadObjectFromString((const char *)p->code, size);
-    if (co == NULL)
+    co = PyMarshal_ReadObjectFromString(info.data, info.size);
+    if (co == NULL) {
+        set_frozen_error(FROZEN_INVALID, name);
         return -1;
+    }
     if (!PyCode_Check(co)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "frozen object %R is not a code object",
                       name);
         goto err_return;
     }
-    if (ispackage) {
+    if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
         int err;
@@ -2025,10 +2069,12 @@ static PyObject *
 _imp_is_frozen_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
-    const struct _frozen *p;
-
-    p = find_frozen(name);
-    return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY) {
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_TRUE;
 }
 
 /*[clinic input]
