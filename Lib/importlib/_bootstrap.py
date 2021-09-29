@@ -856,12 +856,12 @@ class FrozenImporter:
     def exec_module(module):
         spec = module.__spec__
         name = spec.name
-        if not _imp.is_frozen(name):
-            raise ImportError('{!r} is not a frozen module'.format(name),
-                              name=name)
         try:
             data, = spec.loader_state
         except Exception:
+            if not _imp.is_frozen(name):
+                raise ImportError('{!r} is not a frozen module'.format(name),
+                                  name=name)
             data = None
         else:
             # We clear the extra data we got from the finder, to save memory.
