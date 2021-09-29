@@ -1154,7 +1154,7 @@ set_frozen_error(frozen_status status, PyObject *modname)
 struct frozen_info {
     PyObject *name;
     const char *data;
-    int size;
+    Py_ssize_t size;
     bool is_package;
 };
 
@@ -1194,7 +1194,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (info != NULL) {
         info->name = nameobj;  // borrowed
         info->data = (const char *)p->code;
-        info->size = p->size < 0 ? -(p->size) : p->size;
+        int size = p->size < 0 ? -(p->size) : p->size;
+        assert(size <= PY_SSIZE_T_MAX);
+        info->size = (Py_ssize_t)size;
         info->is_package = p->size < 0 ? true : false;
     }
 
