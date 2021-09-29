@@ -312,7 +312,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
         if (microseconds % 1000 > 0)
             ++milliseconds;
         if (milliseconds > PY_DWORD_MAX) {
-            Py_FatalError("Timeout larger than PY_TIMEOUT_MAX");
+            // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
+            // overflow to the caller, so clamp the timeout to
+            // [0, PY_DWORD_MAX] milliseconds.
+            //
+            // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
+            // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
+            milliseconds = PY_DWORD_MAX;
         }
     }
     else {
