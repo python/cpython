@@ -418,6 +418,11 @@ class Semaphore:
         self._cond = Condition(Lock())
         self._value = value
 
+    def __repr__(self):
+        cls = self.__class__
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" value={self._value}>")
+
     def acquire(self, blocking=True, timeout=None):
         """Acquire a semaphore, decrementing the internal counter by one.
 
@@ -504,6 +509,11 @@ class BoundedSemaphore(Semaphore):
         Semaphore.__init__(self, value)
         self._initial_value = value
 
+    def __repr__(self):
+        cls = self.__class__
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" value={self._value}/{self._initial_value}>")
+
     def release(self, n=1):
         """Release a semaphore, incrementing the internal counter by one or more.
 
@@ -538,6 +548,11 @@ class Event:
     def __init__(self):
         self._cond = Condition(Lock())
         self._flag = False
+
+    def __repr__(self):
+        cls = self.__class__
+        status = 'set' if self._flag else 'unset'
+        return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
         # Private method called by Thread._reset_internal_locks()
@@ -636,6 +651,13 @@ class Barrier:
         self._parties = parties
         self._state = 0 #0 filling, 1, draining, -1 resetting, -2 broken
         self._count = 0
+
+    def __repr__(self):
+        cls = self.__class__
+        if self.broken:
+            return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: broken>"
+        return (f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}:"
+                f" waiters={self.n_waiting}/{self.parties}>")
 
     def wait(self, timeout=None):
         """Wait for the barrier.
