@@ -74,7 +74,7 @@ pytime_as_nanoseconds(_PyTime_t t)
 
 
 // Compute t + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
-static inline _PyTime_t
+static inline int
 pytime_add(_PyTime_t *t, _PyTime_t t2)
 {
     if (t2 > 0 && *t > _PyTime_MAX - t2) {
@@ -101,7 +101,7 @@ _PyTime_check_mul_overflow(_PyTime_t a, _PyTime_t b)
 
 
 // Compute t * k. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
-static inline _PyTime_t
+static inline int
 pytime_mul(_PyTime_t *t, _PyTime_t k)
 {
     assert(k > 0);
@@ -1162,13 +1162,13 @@ py_win_perf_counter_frequency(LONGLONG *pfrequency, int raise)
 
 
 static int
-py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
 
     static LONGLONG frequency = 0;
     if (frequency == 0) {
-        if (py_win_perf_counter_frequency(&frequency, raise) < 0) {
+        if (py_win_perf_counter_frequency(&frequency, raise_exc) < 0) {
             return -1;
         }
     }
@@ -1194,7 +1194,7 @@ py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     *tp = pytime_from_nanoseconds(ns);
     return 0;
 }
-#endif
+#endif  // MS_WINDOWS
 
 
 int
