@@ -140,8 +140,19 @@ class EnvBuilder:
                 os.symlink('lib', link_path)
         context.bin_path = binpath = os.path.join(env_dir, binname)
         context.bin_name = binname
-        context.env_exe = os.path.join(binpath, exename)
+        context.env_exe = context.env_cmd = os.path.join(binpath, exename)
         create_if_needed(binpath)
+        if sys.platform == 'win32':
+            # Fixup the env_cmd to account for redirections when we launch
+            # the newly created environment.
+            real_env_exe = os.path.realpath(context.env_exe)
+            if os.path.normcase(real_env_exe) != os.path.normcase(context.env_exe):
+                logger.warning('Actual environment location may have moved due to '
+                               'redirects, links or junctions.\n'
+                               '  Requested location: "%s"\n'
+                               '  Actual location:    "%s"',
+                               context.env_exe, real_env_exe)
+                context.env_cmd = real_env_exe
         return context
 
     def create_configuration(self, context):
@@ -294,7 +305,7 @@ class EnvBuilder:
         # We run ensurepip in isolated mode to avoid side effects from
         # environment vars, the current directory and anything else
         # intended for the global Python environment
-        cmd = [context.env_exe, '-Im', 'ensurepip', '--upgrade',
+        cmd = [context.env_cmd, '-Im', 'ensurepip', '--upgrade',
                                                     '--default-pip']
         subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
@@ -395,11 +406,7 @@ class EnvBuilder:
         logger.debug(
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
-        if sys.platform == 'win32':
-            python_exe = os.path.join(context.bin_path, 'python.exe')
-        else:
-            python_exe = os.path.join(context.bin_path, 'python')
-        cmd = [python_exe, '-m', 'pip', 'install', '--upgrade']
+        cmd = [context.env_cmd, '-m', 'pip', 'install', '--upgrade']
         cmd.extend(CORE_VENV_DEPS)
         subprocess.check_call(cmd)
 
