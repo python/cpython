@@ -481,11 +481,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             }
             else if (dt > 0) {
                 _PyTime_t realtime_deadline = _PyTime_GetSystemClock() + dt;
-                if (_PyTime_AsTimespec(realtime_deadline, &ts) < 0) {
-                    /* Cannot occur thanks to (microseconds > PY_TIMEOUT_MAX)
-                       check done above */
-                    Py_UNREACHABLE();
-                }
+                _PyTime_AsTimespec_clamp(realtime_deadline, &ts);
                 /* no need to update microseconds value, the code only care
                    if (microseconds > 0 or (microseconds == 0). */
             }
