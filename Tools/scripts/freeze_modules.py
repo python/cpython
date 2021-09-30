@@ -19,6 +19,7 @@ from update_file import updating_file_with_tmpfile, update_file_with_tmpfile
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ROOT_DIR = os.path.abspath(ROOT_DIR)
+FROZEN_ONLY = os.path.join(ROOT_DIR, 'Tools', 'freeze', 'flag.py')
 
 STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # If MODULES_DIR is changed then the .gitattributes and .gitignore files
@@ -53,7 +54,6 @@ FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
-TEST_CTYPES = os.path.join(STDLIB_DIR, 'ctypes', 'test', 'test_values.py')
 
 
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
@@ -95,8 +95,11 @@ FROZEN = [
         ]),
     ('Test module', [
         '__hello__',
-        '__hello__ : <__phello__>',
-        '__hello__ : __phello__.spam',
+        '__hello__ : __hello_alias__',
+        '__hello__ : <__phello_alias__>',
+        '__hello__ : __phello_alias__.spam',
+        '<__phello__.**.*>',
+        f'frozen_only : __hello_only__ = {FROZEN_ONLY}',
         ]),
 ]
 ESSENTIAL = {

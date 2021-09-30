@@ -752,7 +752,12 @@ FROZEN_FILES_IN = \
 		Lib/os.py \
 		Lib/site.py \
 		Lib/stat.py \
-		Lib/__hello__.py
+		Lib/__hello__.py \
+		Lib/__phello__/__init__.py \
+		Lib/__phello__/ham/__init__.py \
+		Lib/__phello__/ham/eggs.py \
+		Lib/__phello__/spam.py \
+		Tools/freeze/flag.py
 # End FROZEN_FILES_IN
 FROZEN_FILES_OUT = \
 		Python/frozen_modules/importlib._bootstrap.h \
@@ -769,7 +774,12 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/os.h \
 		Python/frozen_modules/site.h \
 		Python/frozen_modules/stat.h \
-		Python/frozen_modules/__hello__.h
+		Python/frozen_modules/__hello__.h \
+		Python/frozen_modules/__phello__.h \
+		Python/frozen_modules/__phello__.ham.h \
+		Python/frozen_modules/__phello__.ham.eggs.h \
+		Python/frozen_modules/__phello__.spam.h \
+		Python/frozen_modules/frozen_only.h
 # End FROZEN_FILES_OUT
 
 Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
@@ -823,6 +833,21 @@ Python/frozen_modules/stat.h: Programs/_freeze_module Lib/stat.py
 
 Python/frozen_modules/__hello__.h: Programs/_freeze_module Lib/__hello__.py
 	Programs/_freeze_module __hello__ $(srcdir)/Lib/__hello__.py $(srcdir)/Python/frozen_modules/__hello__.h
+
+Python/frozen_modules/__phello__.h: Programs/_freeze_module Lib/__phello__/__init__.py
+	Programs/_freeze_module __phello__ $(srcdir)/Lib/__phello__/__init__.py $(srcdir)/Python/frozen_modules/__phello__.h
+
+Python/frozen_modules/__phello__.ham.h: Programs/_freeze_module Lib/__phello__/ham/__init__.py
+	Programs/_freeze_module __phello__.ham $(srcdir)/Lib/__phello__/ham/__init__.py $(srcdir)/Python/frozen_modules/__phello__.ham.h
+
+Python/frozen_modules/__phello__.ham.eggs.h: Programs/_freeze_module Lib/__phello__/ham/eggs.py
+	Programs/_freeze_module __phello__.ham.eggs $(srcdir)/Lib/__phello__/ham/eggs.py $(srcdir)/Python/frozen_modules/__phello__.ham.eggs.h
+
+Python/frozen_modules/__phello__.spam.h: Programs/_freeze_module Lib/__phello__/spam.py
+	Programs/_freeze_module __phello__.spam $(srcdir)/Lib/__phello__/spam.py $(srcdir)/Python/frozen_modules/__phello__.spam.h
+
+Python/frozen_modules/frozen_only.h: Programs/_freeze_module Tools/freeze/flag.py
+	Programs/_freeze_module frozen_only $(srcdir)/Tools/freeze/flag.py $(srcdir)/Python/frozen_modules/frozen_only.h
 
 # END: freezing modules
 
