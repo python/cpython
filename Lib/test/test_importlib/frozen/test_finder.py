@@ -1,13 +1,20 @@
 from .. import abc
-import os.path
 from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
+import _imp
+import marshal
+import os.path
 import unittest
 import warnings
 
-from test.support import import_helper
+from test.support import import_helper, REPO_ROOT
+
+
+def get_frozen_data(name, source=None):
+    with import_helper.frozen_modules():
+        return _imp.get_frozen_object(name)
 
 
 class FindSpecTests(abc.FinderTests):
@@ -19,39 +26,49 @@ class FindSpecTests(abc.FinderTests):
         with import_helper.frozen_modules():
             return finder.find_spec(name, **kwargs)
 
-    def check(self, spec, name):
+    def check(self, spec, name, orig=None):
         self.assertEqual(spec.name, name)
         self.assertIs(spec.loader, self.machinery.FrozenImporter)
         self.assertEqual(spec.origin, 'frozen')
         self.assertFalse(spec.has_location)
+        self.assertIsNotNone(spec.loader_state)
+
+    def check_data(self, spec, source=None):
+        expected = get_frozen_data(spec.name, source)
+        data, = spec.loader_state
+        code = marshal.loads(data)
+        self.assertEqual(code, expected)
 
     def test_module(self):
-        names = [
-            '__hello__',
-            '__hello_alias__',
-            '__hello_only__',
-            '__phello__.__init__',
-            '__phello__.spam',
-            '__phello__.ham.__init__',
-            '__phello__.ham.eggs',
-        ]
-        for name in names:
+        FROZEN_ONLY = os.path.join(REPO_ROOT, 'Tools', 'freeze', 'flag.py')
+        modules = {
+            '__hello__': None,
+            '__phello__.__init__': None,
+            '__phello__.spam': None,
+            '__phello__.ham.__init__': None,
+            '__phello__.ham.eggs': None,
+            '__hello_alias__': '__hello__',
+            '__hello_only__': FROZEN_ONLY,
+            }
+        for name in modules:
             with self.subTest(name):
                 spec = self.find(name)
                 self.check(spec, name)
                 self.assertEqual(spec.submodule_search_locations, None)
+                self.check_data(spec, modules[name])
 
     def test_package(self):
-        names = [
-            '__phello__',
-            '__phello__.ham',
-            '__phello_alias__',
-        ]
-        for name in names:
+        modules = {
+            '__phello__': None,
+            '__phello__.ham': None,
+            '__phello_alias__': '__hello__',
+        }
+        for name in modules:
             with self.subTest(name):
                 spec = self.find(name)
                 self.check(spec, name)
                 self.assertEqual(spec.submodule_search_locations, [])
+                self.check_data(spec, modules[name])
 
     # These are covered by test_module() and test_package().
     test_module_in_package = None
