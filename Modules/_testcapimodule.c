@@ -4687,7 +4687,32 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (seconds == NULL) {
         return NULL;
     }
-    return Py_BuildValue("Nl", seconds, tv.tv_usec);
+    return Py_BuildValue("Nl", seconds, (long)tv.tv_usec);
+}
+
+static PyObject *
+test_PyTime_AsTimeval_clamp(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    int round;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
+        return NULL;
+    }
+    if (check_time_rounding(round) < 0) {
+        return NULL;
+    }
+    _PyTime_t t;
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+        return NULL;
+    }
+    struct timeval tv;
+    _PyTime_AsTimeval_clamp(t, &tv, round);
+
+    PyObject *seconds = PyLong_FromLongLong(tv.tv_sec);
+    if (seconds == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("Nl", seconds, (long)tv.tv_usec);
 }
 
 #ifdef HAVE_CLOCK_GETTIME
@@ -4706,6 +4731,22 @@ test_PyTime_AsTimespec(PyObject *self, PyObject *args)
     if (_PyTime_AsTimespec(t, &ts) == -1) {
         return NULL;
     }
+    return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
+}
+
+static PyObject *
+test_PyTime_AsTimespec_clamp(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+    _PyTime_t t;
+    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+        return NULL;
+    }
+    struct timespec ts;
+    _PyTime_AsTimespec_clamp(t, &ts);
     return Py_BuildValue("Nl", _PyLong_FromTime_t(ts.tv_sec), ts.tv_nsec);
 }
 #endif
@@ -5872,8 +5913,10 @@ static PyMethodDef TestMethods[] = {
     {"PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},
     {"PyTime_AsTimeval", test_PyTime_AsTimeval, METH_VARARGS},
+    {"PyTime_AsTimeval_clamp", test_PyTime_AsTimeval_clamp, METH_VARARGS},
 #ifdef HAVE_CLOCK_GETTIME
     {"PyTime_AsTimespec", test_PyTime_AsTimespec, METH_VARARGS},
+    {"PyTime_AsTimespec_clamp", test_PyTime_AsTimespec_clamp, METH_VARARGS},
 #endif
     {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
     {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
