@@ -223,7 +223,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
         }
         microseconds = _PyTime_AsMicroseconds(timeout_val,
                                               _PyTime_ROUND_CEILING);
-        if (microseconds >= PY_TIMEOUT_MAX) {
+        if (microseconds > PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
             return NULL;
