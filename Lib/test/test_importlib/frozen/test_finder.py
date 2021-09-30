@@ -9,7 +9,15 @@ import os.path
 import unittest
 import warnings
 
-from test.support import import_helper, REPO_ROOT
+from test.support import import_helper, REPO_ROOT, STDLIB_DIR
+
+
+def resolve_stdlib_file(name, ispkg=False):
+    assert name
+    if ispkg:
+        return os.path.join(STDLIB_DIR, *name.split('.'), '__init__.py')
+    else:
+        return os.path.join(STDLIB_DIR, *name.split('.')) + '.py'
 
 
 class FindSpecTests(abc.FinderTests):
@@ -32,7 +40,11 @@ class FindSpecTests(abc.FinderTests):
             self.assertIsNone(spec.submodule_search_locations)
         self.assertIsNotNone(spec.loader_state)
 
-    def check_loader_state(self, spec):
+    def check_loader_state(self, spec, origname=None, filename=None):
+        if not filename:
+            if not origname:
+                origname = spec.name
+
         actual = dict(vars(spec.loader_state))
 
         # Check the code object used to import the frozen module.
@@ -47,7 +59,9 @@ class FindSpecTests(abc.FinderTests):
         self.assertEqual(code, expected)
 
         # Check the rest of spec.loader_state.
-        expected = dict()
+        expected = dict(
+            origname=origname,
+        )
         self.assertDictEqual(actual, expected)
 
     def check_search_locations(self, spec):
@@ -75,26 +89,28 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_loader_state(spec)
+                self.check_loader_state(spec, origname)
         modules = [
             '__phello__.__init__',
             '__phello__.ham.__init__',
         ]
         for name in modules:
             origname = name.rpartition('.')[0]
+            filename = resolve_stdlib_file(name)
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_loader_state(spec)
+                self.check_loader_state(spec, origname, filename)
         modules = {
             '__hello_only__': ('Tools', 'freeze', 'flag.py'),
         }
         for name, path in modules.items():
+            origname = None
             filename = os.path.join(REPO_ROOT, *path)
             with self.subTest(f'{name} -> {filename}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_loader_state(spec)
+                self.check_loader_state(spec, origname, filename)
 
     def test_package(self):
         packages = [
@@ -102,19 +118,21 @@ class FindSpecTests(abc.FinderTests):
             '__phello__.ham',
         ]
         for name in packages:
+            filename = resolve_stdlib_file(name, ispkg=True)
             with self.subTest(f'{name} -> {name}'):
                 spec = self.find(name)
                 self.check_basic(spec, name, ispkg=True)
-                self.check_loader_state(spec)
+                self.check_loader_state(spec, name, filename)
                 self.check_search_locations(spec)
         packages = {
             '__phello_alias__': '__hello__',
         }
         for name, origname in packages.items():
+            filename = resolve_stdlib_file(origname, ispkg=False)
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)
                 self.check_basic(spec, name, ispkg=True)
-                self.check_loader_state(spec)
+                self.check_loader_state(spec, origname, filename)
                 self.check_search_locations(spec)
 
     # These are covered by test_module() and test_package().

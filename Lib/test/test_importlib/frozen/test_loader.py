@@ -30,19 +30,29 @@ def fresh(name, *, oldapi=False):
                 yield
 
 
+def get_origname(name):
+    if name.endswith('.__init__'):
+        return name.rpartition('.')[0]
+    else:
+        # This is good enough for now.
+        return name
+
+
 class ExecModuleTests(abc.LoaderTests):
 
     def exec_module(self, name):
         with import_helper.frozen_modules():
             is_package = self.machinery.FrozenImporter.is_package(name)
             code = _imp.get_frozen_object(name)
-        data = marshal.dumps(code)
         spec = self.machinery.ModuleSpec(
             name,
             self.machinery.FrozenImporter,
             origin='frozen',
             is_package=is_package,
-            loader_state=types.SimpleNamespace(data=data),
+            loader_state=types.SimpleNamespace(
+                data=marshal.dumps(code),
+                origname=get_origname(name),
+            ),
         )
         module = types.ModuleType(name)
         module.__spec__ = spec

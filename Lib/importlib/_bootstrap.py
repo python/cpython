@@ -829,12 +829,13 @@ class FrozenImporter:
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
             return None
-        data, ispkg = info
+        data, ispkg, origname = info
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
         spec.loader_state = type(sys.implementation)(
             data=data,
+            origname=origname,
         )
         return spec
 

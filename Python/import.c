@@ -2039,11 +2039,14 @@ The returned info (a 2-tuple):
 
  * data         the raw marshalled bytes
  * is_package   whether or not it is a package
+ * origname     the originally frozen module's name, or None if not
+                a stdlib module (this will usually be the same as
+                the module's current name)
 [clinic start generated code]*/
 
 static PyObject *
 _imp_find_frozen_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=3fd17da90d417e4e input=4e52b3ac95f6d7ab]*/
+/*[clinic end generated code: output=3fd17da90d417e4e input=6aa7b9078a89280a]*/
 {
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -2057,12 +2060,25 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         set_frozen_error(status, name);
         return NULL;
     }
+
     PyObject *data = PyBytes_FromStringAndSize(info.data, info.size);
     if (data == NULL) {
         return NULL;
     }
-    PyObject *result = PyTuple_Pack(2, data,
-                                    info.is_package ? Py_True : Py_False);
+
+    PyObject *origname = NULL;
+    if (info.origname != NULL && info.origname[0] != '\0') {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            Py_DECREF(data);
+            return NULL;
+        }
+    }
+
+    PyObject *result = PyTuple_Pack(3, data,
+                                    info.is_package ? Py_True : Py_False,
+                                    origname ? origname : Py_None);
+    Py_XDECREF(origname);
     Py_DECREF(data);
     return result;
 }
