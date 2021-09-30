@@ -138,14 +138,15 @@ def parse_frozen_specs(sectionalspecs=FROZEN, destdir=None):
     seen = {}
     for section, specs in sectionalspecs:
         parsed = _parse_specs(specs, section, seen)
-        for frozenid, pyfile, modname, ispkg, section in parsed:
+        for item in parsed:
+            frozenid, pyfile, modname, ispkg, section = item
             try:
                 source = seen[frozenid]
             except KeyError:
                 source = FrozenSource.from_id(frozenid, pyfile, destdir)
                 seen[frozenid] = source
             else:
-                assert not pyfile
+                assert not pyfile or pyfile == source.pyfile, item
             yield FrozenModule(modname, ispkg, section, source)
 
 
@@ -227,7 +228,6 @@ def _parse_spec(spec, knownids=None, section=None):
             pkgfiles = {pyfile: pkgid}
             def iter_subs():
                 for frozenid, pyfile, ispkg in resolved:
-                    assert not knownids or frozenid not in knownids, (frozenid, spec)
                     if pkgname:
                         modname = frozenid.replace(pkgid, pkgname, 1)
                     else:
