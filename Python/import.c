@@ -1271,7 +1271,8 @@ int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *co, *m, *d;
+    PyObject *co, *m, *d = NULL;
+    int err;
 
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -1292,7 +1293,6 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
-        int err;
         m = import_add_module(tstate, name);
         if (m == NULL)
             goto err_return;
@@ -1313,15 +1313,33 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         goto err_return;
     }
     m = exec_code_in_module(tstate, name, d, co);
-    Py_DECREF(d);
     if (m == NULL) {
         goto err_return;
     }
-    Py_DECREF(co);
     Py_DECREF(m);
+    /* Set __origname__ (consumed in FrozenImporter._setup_module()). */
+    PyObject *origname;
+    if (info.origname) {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            goto err_return;
+        }
+    }
+    else {
+        Py_INCREF(Py_None);
+        origname = Py_None;
+    }
+    err = PyDict_SetItemString(d, "__origname__", origname);
+    Py_DECREF(origname);
+    if (err != 0) {
+        goto err_return;
+    }
+    Py_DECREF(d);
+    Py_DECREF(co);
     return 1;
 
 err_return:
+    Py_XDECREF(d);
     Py_DECREF(co);
     return -1;
 }

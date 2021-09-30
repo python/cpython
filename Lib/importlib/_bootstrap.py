@@ -825,6 +825,22 @@ class FrozenImporter:
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
+    def _setup_module(cls, module):
+        assert not hasattr(module, '__file__'), module.__file__
+        ispkg = hasattr(module, '__path__')
+        assert not ispkg or not module.__path__, module.__path__
+        spec = module.__spec__
+        assert not ispkg or not spec.submodule_search_locations
+        assert spec.loader_state is None
+
+        origname = vars(module).pop('__origname__', None)
+        assert origname, 'see PyImport_ImportFrozenModuleObject()'
+        spec.loader_state = type(sys.implementation)(
+            data=None,
+            origname=origname,
+        )
+
+    @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
@@ -1223,6 +1239,8 @@ def _setup(sys_module, _imp_module):
                 continue
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
+            if loader is FrozenImporter:
+                loader._setup_module(module)
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
