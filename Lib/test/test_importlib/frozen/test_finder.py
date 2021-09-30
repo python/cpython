@@ -32,15 +32,23 @@ class FindSpecTests(abc.FinderTests):
             self.assertIsNone(spec.submodule_search_locations)
         self.assertIsNotNone(spec.loader_state)
 
-    def check_data(self, spec):
+    def check_loader_state(self, spec):
+        actual = dict(vars(spec.loader_state))
+
+        # Check the code object used to import the frozen module.
+        # We can't compare the marshaled data directly because
+        # marshal.dumps() would mark "expected" (below) as a ref,
+        # which slightly changes the output.
+        # (See https://bugs.python.org/issue34093.)
+        data = actual.pop('data')
         with import_helper.frozen_modules():
             expected = _imp.get_frozen_object(spec.name)
-        data = spec.loader_state
-        # We can't compare the marshaled data directly because
-        # marshal.dumps() would mark "expected" as a ref, which slightly
-        # changes the output.  (See https://bugs.python.org/issue34093.)
         code = marshal.loads(data)
         self.assertEqual(code, expected)
+
+        # Check the rest of spec.loader_state.
+        expected = dict()
+        self.assertDictEqual(actual, expected)
 
     def check_search_locations(self, spec):
         # Frozen packages do not have any path entries.
@@ -58,7 +66,7 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {name}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_data(spec)
+                self.check_loader_state(spec)
         modules = {
             '__hello_alias__': '__hello__',
             '_frozen_importlib': 'importlib._bootstrap',
@@ -67,7 +75,7 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_data(spec)
+                self.check_loader_state(spec)
         modules = [
             '__phello__.__init__',
             '__phello__.ham.__init__',
@@ -77,7 +85,7 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_data(spec)
+                self.check_loader_state(spec)
         modules = {
             '__hello_only__': ('Tools', 'freeze', 'flag.py'),
         }
@@ -86,7 +94,7 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {filename}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_data(spec)
+                self.check_loader_state(spec)
 
     def test_package(self):
         packages = [
@@ -97,7 +105,7 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {name}'):
                 spec = self.find(name)
                 self.check_basic(spec, name, ispkg=True)
-                self.check_data(spec)
+                self.check_loader_state(spec)
                 self.check_search_locations(spec)
         packages = {
             '__phello_alias__': '__hello__',
@@ -106,7 +114,7 @@ class FindSpecTests(abc.FinderTests):
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)
                 self.check_basic(spec, name, ispkg=True)
-                self.check_data(spec)
+                self.check_loader_state(spec)
                 self.check_search_locations(spec)
 
     # These are covered by test_module() and test_package().

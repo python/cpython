@@ -42,7 +42,7 @@ class ExecModuleTests(abc.LoaderTests):
             self.machinery.FrozenImporter,
             origin='frozen',
             is_package=is_package,
-            loader_state=data,
+            loader_state=types.SimpleNamespace(data=data),
         )
         module = types.ModuleType(name)
         module.__spec__ = spec
