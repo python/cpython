@@ -13,11 +13,6 @@
 #endif
 #endif
 
-#define _PyTime_check_mul_overflow(a, b) \
-    (assert(b > 0), \
-     (_PyTime_t)(a) < _PyTime_MIN / (_PyTime_t)(b) \
-     || _PyTime_MAX / (_PyTime_t)(b) < (_PyTime_t)(a))
-
 /* To millisecond (10^-3) */
 #define SEC_TO_MS 1000
 
@@ -75,6 +70,49 @@ pytime_as_nanoseconds(_PyTime_t t)
 {
     // _PyTime_t is a number of nanoseconds: see pytime_from_nanoseconds()
     return t;
+}
+
+
+// Compute t + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+static inline _PyTime_t
+pytime_add(_PyTime_t *t, _PyTime_t t2)
+{
+    if (t2 > 0 && *t > _PyTime_MAX - t2) {
+        *t = _PyTime_MAX;
+        return -1;
+    }
+    else if (t2 < 0 && *t < _PyTime_MIN - t2) {
+        *t = _PyTime_MIN;
+        return -1;
+    }
+    else {
+        *t += t2;
+        return 0;
+    }
+}
+
+
+static inline int
+_PyTime_check_mul_overflow(_PyTime_t a, _PyTime_t b)
+{
+    assert(b > 0);
+    return ((a < _PyTime_MIN / b) || (_PyTime_MAX / b < a));
+}
+
+
+// Compute t * k. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+static inline _PyTime_t
+pytime_mul(_PyTime_t *t, _PyTime_t k)
+{
+    assert(k > 0);
+    if (_PyTime_check_mul_overflow(*t, k)) {
+        *t = (*t >= 0) ? _PyTime_MAX : _PyTime_MIN;
+        return -1;
+    }
+    else {
+        *t *= k;
+        return 0;
+    }
 }
 
 
@@ -371,41 +409,25 @@ _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 
 #ifdef HAVE_CLOCK_GETTIME
 static int
-pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise)
+pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
 {
     _PyTime_t t, tv_nsec;
-    int res = 0;
 
     Py_BUILD_ASSERT(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
     t = (_PyTime_t)ts->tv_sec;
 
-    if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
-        if (raise) {
-            pytime_overflow();
-            res = -1;
-        }
-        t = (t > 0) ? _PyTime_MAX : _PyTime_MIN;
-    }
-    else {
-        t = t * SEC_TO_NS;
-    }
+    int res1 = pytime_mul(&t, SEC_TO_NS);
 
     tv_nsec = ts->tv_nsec;
-    /* The following test is written for positive only tv_nsec */
-    assert(tv_nsec >= 0);
-    if (t > _PyTime_MAX - tv_nsec) {
-        if (raise) {
-            pytime_overflow();
-            res = -1;
-        }
-        t = _PyTime_MAX;
-    }
-    else {
-        t += tv_nsec;
-    }
+    int res2 = pytime_add(&t, tv_nsec);
 
     *tp = pytime_from_nanoseconds(t);
-    return res;
+
+    if (raise_exc && (res1 < 0 || res2 < 0)) {
+        pytime_overflow();
+        return -1;
+    }
+    return 0;
 }
 
 int
@@ -416,43 +438,25 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
 #endif
 
 
-#if !defined(MS_WINDOWS)
+#ifndef MS_WINDOWS
 static int
-pytime_fromtimeval(_PyTime_t *tp, struct timeval *tv, int raise)
+pytime_fromtimeval(_PyTime_t *tp, struct timeval *tv, int raise_exc)
 {
-    _PyTime_t t, usec;
-    int res = 0;
-
     Py_BUILD_ASSERT(sizeof(tv->tv_sec) <= sizeof(_PyTime_t));
-    t = (_PyTime_t)tv->tv_sec;
+    _PyTime_t t = (_PyTime_t)tv->tv_sec;
 
-    if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
-        if (raise) {
-            pytime_overflow();
-            res = -1;
-        }
-        t = (t > 0) ? _PyTime_MAX : _PyTime_MIN;
-    }
-    else {
-        t = t * SEC_TO_NS;
-    }
+    int res1 = pytime_mul(&t, SEC_TO_NS);
 
-    usec = (_PyTime_t)tv->tv_usec * US_TO_NS;
-    /* The following test is written for positive only usec */
-    assert(usec >= 0);
-    if (t > _PyTime_MAX - usec) {
-        if (raise) {
-            pytime_overflow();
-            res = -1;
-        }
-        t = _PyTime_MAX;
-    }
-    else {
-        t += usec;
-    }
+    _PyTime_t usec = (_PyTime_t)tv->tv_usec * US_TO_NS;
+    int res2 = pytime_add(&t, usec);
 
     *tp = pytime_from_nanoseconds(t);
-    return res;
+
+    if (raise_exc && (res1 < 0 || res2 < 0)) {
+        pytime_overflow();
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -572,7 +576,7 @@ pytime_divide_round_up(const _PyTime_t t, const _PyTime_t k)
     assert(k > 1);
     if (t >= 0) {
         // Don't use (t + k - 1) / k to avoid integer overflow
-        // if t=_PyTime_MAX
+        // if t is equal to _PyTime_MAX
         _PyTime_t q = t / k;
         if (t % k) {
             q += 1;
@@ -581,7 +585,7 @@ pytime_divide_round_up(const _PyTime_t t, const _PyTime_t k)
     }
     else {
         // Don't use (t - (k - 1)) / k to avoid integer overflow
-        // if t=_PyTime_MIN
+        // if t is equals to _PyTime_MIN.
         _PyTime_t q = t / k;
         if (t % k) {
             q -= 1;
@@ -804,13 +808,13 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
 
 
 static int
-py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
+    assert(info == NULL || raise_exc);
+
 #ifdef MS_WINDOWS
     FILETIME system_time;
     ULARGE_INTEGER large;
-
-    assert(info == NULL || raise);
 
     GetSystemTimeAsFileTime(&system_time);
     large.u.LowPart = system_time.dwLowDateTime;
@@ -846,8 +850,6 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     struct timeval tv;
 #endif
 
-    assert(info == NULL || raise);
-
 #ifdef HAVE_CLOCK_GETTIME
 
 #ifdef HAVE_CLOCK_GETTIME_RUNTIME
@@ -856,12 +858,12 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
     err = clock_gettime(CLOCK_REALTIME, &ts);
     if (err) {
-        if (raise) {
+        if (raise_exc) {
             PyErr_SetFromErrno(PyExc_OSError);
         }
         return -1;
     }
-    if (pytime_fromtimespec(tp, &ts, raise) < 0) {
+    if (pytime_fromtimespec(tp, &ts, raise_exc) < 0) {
         return -1;
     }
 
@@ -890,12 +892,12 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
      /* test gettimeofday() */
     err = gettimeofday(&tv, (struct timezone *)NULL);
     if (err) {
-        if (raise) {
+        if (raise_exc) {
             PyErr_SetFromErrno(PyExc_OSError);
         }
         return -1;
     }
-    if (pytime_fromtimeval(tp, &tv, raise) < 0) {
+    if (pytime_fromtimeval(tp, &tv, raise_exc) < 0) {
         return -1;
     }
 
@@ -987,28 +989,21 @@ py_mach_timebase_info(_PyTime_t *pnumer, _PyTime_t *pdenom, int raise)
 
 
 static int
-py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
+    assert(info == NULL || raise_exc);
+
 #if defined(MS_WINDOWS)
-    ULONGLONG ticks;
-    _PyTime_t t;
-
-    assert(info == NULL || raise);
-
-    ticks = GetTickCount64();
+    ULONGLONG ticks = GetTickCount64();
     Py_BUILD_ASSERT(sizeof(ticks) <= sizeof(_PyTime_t));
-    t = (_PyTime_t)ticks;
+    _PyTime_t t = (_PyTime_t)ticks;
 
-    if (_PyTime_check_mul_overflow(t, MS_TO_NS)) {
-        if (raise) {
-            pytime_overflow();
-            return -1;
-        }
-        // Clamp to _PyTime_MAX silently.
-        *tp = _PyTime_MAX;
-    }
-    else {
-        *tp = t * MS_TO_NS;
+    int res = pytime_mul(&t, MS_TO_NS);
+    *tp = t;
+
+    if (raise_exc && res < 0) {
+        pytime_overflow();
+        return -1;
     }
 
     if (info) {
@@ -1030,7 +1025,7 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     static _PyTime_t timebase_numer = 0;
     static _PyTime_t timebase_denom = 0;
     if (timebase_denom == 0) {
-        if (py_mach_timebase_info(&timebase_numer, &timebase_denom, raise) < 0) {
+        if (py_mach_timebase_info(&timebase_numer, &timebase_denom, raise_exc) < 0) {
             return -1;
         }
     }
@@ -1055,7 +1050,7 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
     time = gethrtime();
     if (time == -1) {
-        if (raise) {
+        if (raise_exc) {
             PyErr_SetFromErrno(PyExc_OSError);
         }
         return -1;
@@ -1071,7 +1066,7 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     }
 
 #else
-    struct timespec ts;
+
 #ifdef CLOCK_HIGHRES
     const clockid_t clk_id = CLOCK_HIGHRES;
     const char *implementation = "clock_gettime(CLOCK_HIGHRES)";
@@ -1080,29 +1075,29 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     const char *implementation = "clock_gettime(CLOCK_MONOTONIC)";
 #endif
 
-    assert(info == NULL || raise);
-
+    struct timespec ts;
     if (clock_gettime(clk_id, &ts) != 0) {
-        if (raise) {
+        if (raise_exc) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
         return -1;
     }
 
+    if (pytime_fromtimespec(tp, &ts, raise_exc) < 0) {
+        return -1;
+    }
+
     if (info) {
-        struct timespec res;
         info->monotonic = 1;
         info->implementation = implementation;
         info->adjustable = 0;
+        struct timespec res;
         if (clock_getres(clk_id, &res) != 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
         info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
-    }
-    if (pytime_fromtimespec(tp, &ts, raise) < 0) {
-        return -1;
     }
 #endif
     return 0;
@@ -1169,6 +1164,8 @@ py_win_perf_counter_frequency(LONGLONG *pfrequency, int raise)
 static int
 py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
+    assert(info == NULL || raise_exc);
+
     static LONGLONG frequency = 0;
     if (frequency == 0) {
         if (py_win_perf_counter_frequency(&frequency, raise) < 0) {
