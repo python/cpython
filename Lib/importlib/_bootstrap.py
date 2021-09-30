@@ -871,7 +871,7 @@ class FrozenImporter:
             # Note that if this method is called again (e.g. by
             # importlib.reload()) then _imp.get_frozen_object() will notice
             # no data was provided and will look it up.
-            spec.loader_state = None
+            spec.loader_state.data = None
         code = _call_with_frames_removed(_imp.get_frozen_object, name, data)
         exec(code, module.__dict__)
 
