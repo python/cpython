@@ -841,6 +841,16 @@ class FrozenImporter:
             origname = vars(module).pop('__origname__', None)
             assert origname, 'see PyImport_ImportFrozenModuleObject()'
             spec.loader_state.origname = origname
+        if not getattr(spec.loader_state, 'filename', None):
+            # Note that this happens early in runtime initialization.
+            # So sys._stdlib_dir isn't set yet...
+            filename, pkgdir = cls._resolve_filename(origname, ispkg)
+            if filename:
+                module.__file__ = filename
+                if pkgdir:
+                    spec.submodule_search_locations.insert(0, pkgdir)
+                    module.__path__.insert(0, pkgdir)
+            spec.loader_state.filename = filename or None
 
     @classmethod
     def _resolve_filename(cls, fullname, alias=None, ispkg=False):
