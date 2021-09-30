@@ -309,9 +309,9 @@ int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *na
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 
-#define PRINT_SPECIALIZATION_STATS 0
-#define PRINT_SPECIALIZATION_STATS_DETAILED 0
-#define PRINT_SPECIALIZATION_STATS_TO_FILE 0
+#define PRINT_SPECIALIZATION_STATS 1
+#define PRINT_SPECIALIZATION_STATS_DETAILED 1
+#define PRINT_SPECIALIZATION_STATS_TO_FILE 1
 
 #ifdef Py_DEBUG
 #define COLLECT_SPECIALIZATION_STATS 1
