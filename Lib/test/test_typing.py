@@ -2975,7 +2975,7 @@ else:
 
 # Definitions needed for features introduced in Python 3.6
 
-from test import ann_module, ann_module2, ann_module3
+from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
 from typing import AsyncContextManager
 
 class A:
@@ -3338,6 +3338,22 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
                          (Concatenate[int, P], int))
         self.assertEqual(get_args(list | str), (list, str))
+
+    def test_forward_ref_and_final(self):
+        # https://bugs.python.org/issue45166
+        hints = get_type_hints(ann_module5)
+        self.assertEqual(hints, {'name': Final[str]})
+
+        hints = get_type_hints(ann_module5.MyClass)
+        self.assertEqual(hints, {'value': Final})
+
+    def test_top_level_class_var(self):
+        # https://bugs.python.org/issue45166
+        with self.assertRaisesRegex(
+            TypeError,
+            r'typing.ClassVar\[int\] is not valid as type argument',
+        ):
+            get_type_hints(ann_module6)
 
 
 class CollectionsAbcTests(BaseTestCase):
@@ -4098,6 +4114,19 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(a.self, 42)
         self.assertEqual(a.typename, 'foo')
         self.assertEqual(a.fields, [('bar', tuple)])
+
+    def test_empty_namedtuple(self):
+        NT = NamedTuple('NT')
+
+        class CNT(NamedTuple):
+            pass  # empty body
+
+        for struct in [NT, CNT]:
+            with self.subTest(struct=struct):
+                self.assertEqual(struct._fields, ())
+                self.assertEqual(struct._field_defaults, {})
+                self.assertEqual(struct.__annotations__, {})
+                self.assertIsInstance(struct(), struct)
 
     def test_namedtuple_errors(self):
         with self.assertRaises(TypeError):

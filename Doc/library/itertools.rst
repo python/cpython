@@ -821,14 +821,14 @@ which incur interpreter overhead.
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
-       # pairwise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
 
    def sliding_window(iterable, n):
        # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
        it = iter(iterable)
-       window = deque(islice(it, n), maxlen=n)
+       window = collections.deque(islice(it, n), maxlen=n)
        if len(window) == n:
            yield tuple(window)
        for x in it:
@@ -859,10 +859,11 @@ which incur interpreter overhead.
        """ Variant of takewhile() that allows complete
            access to the remainder of the iterator.
 
-           >>> all_upper, remainder = before_and_after(str.isupper, 'ABCdEfGhI')
-           >>> str.join('', all_upper)
+           >>> it = iter('ABCdEfGhI')
+           >>> all_upper, remainder = before_and_after(str.isupper, it)
+           >>> ''.join(all_upper)
            'ABC'
-           >>> str.join('', remainder)
+           >>> ''.join(remainder)     # takewhile() would lose the 'd'
            'dEfGhI'
 
            Note that the first iterator must be fully

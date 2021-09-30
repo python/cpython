@@ -322,7 +322,7 @@ Miscellaneous options
 
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully-chosen inputs that exploit the worst
-   case performance of a dict construction, O(n^2) complexity.  See
+   case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
    http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
@@ -656,7 +656,7 @@ conflict.
 .. envvar:: PYTHONCASEOK
 
    If this is set, Python ignores case in :keyword:`import` statements.  This
-   only works on Windows and OS X.
+   only works on Windows and macOS.
 
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
@@ -739,7 +739,7 @@ conflict.
 
    If this environment variable is set, ``sys.argv[0]`` will be set to its
    value instead of the value got through the C runtime.  Only works on
-   Mac OS X.
+   macOS.
 
 .. envvar:: PYTHONWARNINGS
 

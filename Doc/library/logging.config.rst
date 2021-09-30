@@ -168,7 +168,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used). To avoid the risk of this happening, use the
+      different port is used. To avoid the risk of this happening, use the
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 
