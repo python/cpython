@@ -13,6 +13,7 @@ from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
+from test.support import import_helper
 import textwrap
 import unittest
 import warnings
@@ -994,6 +995,15 @@ class SysModuleTest(unittest.TestCase):
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
+    def test_stdlib_dir(self):
+        os = import_helper.import_fresh_module('os')
+        marker = getattr(os, '__file__', None)
+        if marker and not os.path.exists(marker):
+            marker = None
+        expected = os.path.dirname(marker) if marker else None
+        actual = sys._stdlib_dir
+        self.assertEqual(actual, expected)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
@@ -1071,19 +1081,29 @@ class UnraisableHookTest(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     def test_original_unraisablehook_exception_qualname(self):
+        # See bpo-41031, bpo-45083.
+        # Check that the exception is printed with its qualified name
+        # rather than just classname, and the module names appears
+        # unless it is one of the hard-coded exclusions.
         class A:
             class B:
                 class X(Exception):
                     pass
 
-        with test.support.captured_stderr() as stderr, \
-             test.support.swap_attr(sys, 'unraisablehook',
-                                    sys.__unraisablehook__):
-                 expected = self.write_unraisable_exc(
-                     A.B.X(), "msg", "obj");
-        report = stderr.getvalue()
-        testName = 'test_original_unraisablehook_exception_qualname'
-        self.assertIn(f"{testName}.<locals>.A.B.X", report)
+        for moduleName in 'builtins', '__main__', 'some_module':
+            with self.subTest(moduleName=moduleName):
+                A.B.X.__module__ = moduleName
+                with test.support.captured_stderr() as stderr, \
+                     test.support.swap_attr(sys, 'unraisablehook',
+                                            sys.__unraisablehook__):
+                         expected = self.write_unraisable_exc(
+                             A.B.X(), "msg", "obj");
+                report = stderr.getvalue()
+                self.assertIn(A.B.X.__qualname__, report)
+                if moduleName in ['builtins', '__main__']:
+                    self.assertNotIn(moduleName + '.', report)
+                else:
+                    self.assertIn(moduleName + '.', report)
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)

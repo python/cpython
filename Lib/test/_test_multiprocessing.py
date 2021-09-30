@@ -3791,7 +3791,6 @@ class _TestSharedMemory(BaseTestCase):
         pickled_sms = pickle.dumps(sms)
         sms2 = pickle.loads(pickled_sms)
         self.assertEqual(sms.name, sms2.name)
-        self.assertEqual(sms.size, sms2.size)
         self.assertEqual(bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'pickle')
 
         # Modify contents of shared memory segment through memoryview.
@@ -4179,6 +4178,13 @@ class _TestSharedMemory(BaseTestCase):
                                      " a process was abruptly terminated.")
 
             if os.name == 'posix':
+                # Without this line it was raising warnings like:
+                #   UserWarning: resource_tracker:
+                #   There appear to be 1 leaked shared_memory
+                #   objects to clean up at shutdown
+                # See: https://bugs.python.org/issue45209
+                resource_tracker.unregister(f"/{name}", "shared_memory")
+
                 # A warning was emitted by the subprocess' own
                 # resource_tracker (on Windows, shared memory segments
                 # are released automatically by the OS).

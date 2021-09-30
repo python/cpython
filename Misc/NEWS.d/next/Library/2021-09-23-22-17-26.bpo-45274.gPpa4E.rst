@@ -1,0 +1,5 @@
+Fix a race condition in the :meth:`Thread.join() <threading.Thread.join>`
+method of the :mod:`threading` module. If the function is interrupted by a
+signal and the signal handler raises an exception, make sure that the thread
+remains in a consistent state to prevent a deadlock. Patch by Victor
+Stinner.

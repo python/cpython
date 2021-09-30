@@ -143,9 +143,9 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'windows-default'``  | :class:`WindowsDefault`                 | \(2)  |
 +------------------------+-----------------------------------------+-------+
-| ``'macosx'``           | :class:`MacOSX('default')`              | \(3)  |
+| ``'macosx'``           | :class:`MacOSXOSAScript('default')`     | \(3)  |
 +------------------------+-----------------------------------------+-------+
-| ``'safari'``           | :class:`MacOSX('safari')`               | \(3)  |
+| ``'safari'``           | :class:`MacOSXOSAScript('safari')`      | \(3)  |
 +------------------------+-----------------------------------------+-------+
 | ``'google-chrome'``    | :class:`Chrome('google-chrome')`        |       |
 +------------------------+-----------------------------------------+-------+
@@ -169,10 +169,13 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on Mac OS X platform.
+   Only on macOS platform.
 
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
+
+.. deprecated-removed:: 3.11 3.13
+   :class:`MacOSX` is deprecated, use :class:`MacOSXOSAScript` instead.
 
 Here are some simple examples::
 

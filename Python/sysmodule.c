@@ -2974,6 +2974,14 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
 
+    const wchar_t *stdlibdir = _Py_GetStdlibDir();
+    if (stdlibdir != NULL) {
+        SET_SYS_FROM_WSTR("_stdlib_dir", stdlibdir);
+    }
+    else {
+        PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None);
+    }
+
 #undef SET_SYS_FROM_WSTR
 #undef COPY_LIST
 #undef COPY_WSTR

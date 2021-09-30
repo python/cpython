@@ -1,0 +1,4 @@
+Whereas the code for reprlib.Repr had previously used a hardcoded string
+value of '...', this PR updates it to use of a “fillvalue” attribute, whose
+value defaults to '...' and can be reset in either individual reprlib.Repr
+instances or in subclasses thereof.

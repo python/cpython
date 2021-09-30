@@ -2736,7 +2736,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*|VxWorks*)
+	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -2805,6 +2805,7 @@ then
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
+	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -3097,6 +3098,9 @@ AC_SUBST(TZPATH)
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
+
+# Haiku system library
+AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
@@ -4108,6 +4112,18 @@ AC_CHECK_FUNCS(clock_getres, [], [
 AC_CHECK_FUNCS(clock_settime, [], [
     AC_CHECK_LIB(rt, clock_settime, [
         AC_DEFINE(HAVE_CLOCK_SETTIME, 1)
+    ])
+])
+
+AC_CHECK_FUNCS(clock_nanosleep, [], [
+    AC_CHECK_LIB(rt, clock_nanosleep, [
+        AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1)
+    ])
+])
+
+AC_CHECK_FUNCS(nanosleep, [], [
+    AC_CHECK_LIB(rt, nanosleep, [
+        AC_DEFINE(HAVE_NANOSLEEP, 1)
     ])
 ])
 

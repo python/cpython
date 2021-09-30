@@ -507,7 +507,8 @@ filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *it;
     filterobject *lz;
 
-    if (type == &PyFilter_Type && !_PyArg_NoKeywords("filter", kwds))
+    if ((type == &PyFilter_Type || type->tp_init == PyFilter_Type.tp_init) &&
+        !_PyArg_NoKeywords("filter", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
@@ -1218,7 +1219,8 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     mapobject *lz;
     Py_ssize_t numargs, i;
 
-    if (type == &PyMap_Type && !_PyArg_NoKeywords("map", kwds))
+    if ((type == &PyMap_Type || type->tp_init == PyMap_Type.tp_init) &&
+        !_PyArg_NoKeywords("map", kwds))
         return NULL;
 
     numargs = PyTuple_Size(args);
@@ -1610,7 +1612,7 @@ static PyObject *
 builtin_aiter(PyObject *module, PyObject *async_iterable)
 /*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
 {
-    return PyObject_GetAiter(async_iterable);
+    return PyObject_GetAIter(async_iterable);
 }
 
 PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
@@ -2477,7 +2479,16 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyLong_FromLong(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
-                long b = PyLong_AsLongAndOverflow(item, &overflow);
+                long b;
+                overflow = 0;
+                /* Single digits are common, fast, and cannot overflow on unpacking. */
+                switch (Py_SIZE(item)) {
+                    case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
+                    // Note: the continue goes to the top of the "while" loop that iterates over the elements
+                    case  0: Py_DECREF(item); continue; 
+                    case  1: b = ((PyLongObject*)item)->ob_digit[0]; break;
+                    default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
+                }
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
                                    : (b >= LONG_MIN - i_result)))

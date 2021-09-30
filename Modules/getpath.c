@@ -115,11 +115,6 @@ extern "C" {
 
 #define BUILD_LANDMARK L"Modules/Setup.local"
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    ((LEN) == (size_t)-2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY()
-
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
 
 typedef struct {
@@ -147,23 +142,6 @@ typedef struct {
 
 static const wchar_t delimiter[2] = {DELIM, '\0'};
 static const wchar_t separator[2] = {SEP, '\0'};
-
-
-/* Get file status. Encode the path to the locale encoding. */
-static int
-_Py_wstat(const wchar_t* path, struct stat *buf)
-{
-    int err;
-    char *fname;
-    fname = _Py_EncodeLocaleRaw(path, NULL);
-    if (fname == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    err = stat(fname, buf);
-    PyMem_RawFree(fname);
-    return err;
-}
 
 
 static void
@@ -235,28 +213,18 @@ isdir(const wchar_t *filename)
 static PyStatus
 joinpath(wchar_t *path, const wchar_t *path2, size_t path_len)
 {
-    size_t n;
-    if (!_Py_isabs(path2)) {
-        n = wcslen(path);
-        if (n >= path_len) {
+    if (_Py_isabs(path2)) {
+        if (wcslen(path2) >= path_len) {
             return PATHLEN_ERR();
         }
-
-        if (n > 0 && path[n-1] != SEP) {
-            path[n++] = SEP;
-        }
+        wcscpy(path, path2);
     }
     else {
-        n = 0;
+        if (_Py_add_relfile(path, path2, path_len) < 0) {
+            return PATHLEN_ERR();
+        }
+        return _PyStatus_OK();
     }
-
-    size_t k = wcslen(path2);
-    if (n + k >= path_len) {
-        return PATHLEN_ERR();
-    }
-    wcsncpy(path + n, path2, k);
-    path[n + k] = '\0';
-
     return _PyStatus_OK();
 }
 
@@ -283,23 +251,7 @@ joinpath2(const wchar_t *path, const wchar_t *path2)
     if (_Py_isabs(path2)) {
         return _PyMem_RawWcsdup(path2);
     }
-
-    size_t len = wcslen(path);
-    int add_sep = (len > 0 && path[len - 1] != SEP);
-    len += add_sep;
-    len += wcslen(path2);
-
-    wchar_t *new_path = PyMem_RawMalloc((len + 1) * sizeof(wchar_t));
-    if (new_path == NULL) {
-        return NULL;
-    }
-
-    wcscpy(new_path, path);
-    if (add_sep) {
-        wcscat(new_path, separator);
-    }
-    wcscat(new_path, path2);
-    return new_path;
+    return _Py_join_relfile(path, path2);
 }
 
 
@@ -1537,6 +1489,16 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         status = calculate_module_search_path(calculate, pathconfig);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
+        }
+    }
+
+    if (pathconfig->stdlib_dir == NULL) {
+        if (calculate->prefix_found) {
+            /* This must be done *before* calculate_set_prefix() is called. */
+            pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->prefix);
+            if (pathconfig->stdlib_dir == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
         }
     }
 

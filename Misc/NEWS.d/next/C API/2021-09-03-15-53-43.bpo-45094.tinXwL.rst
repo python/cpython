@@ -1,0 +1,2 @@
+Add the :c:macro:`Py_NO_INLINE` macro to disable inlining on a function.
+Patch by Victor Stinner.
