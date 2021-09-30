@@ -1,0 +1,2 @@
+The PyThread_acquire_lock_timed() function now clamps the timeout if it is
+too large, rather than aborting the process. Patch by Victor Stinner.
