@@ -461,26 +461,32 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         timeout = _PyTime_FromNanoseconds(-1);
     }
 
+#ifdef HAVE_SEM_CLOCKWAIT
+    struct timespec abs_timeout;
+    // Local scope for deadline
+    {
+        _PyTime_t deadline = _PyTime_GetMonotonicClock() + timeout;
+        _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
+    }
+#else
     _PyTime_t deadline = 0;
     if (timeout > 0
-#ifndef HAVE_SEM_CLOCKWAIT
         && !intr_flag
-#endif
         )
     {
         deadline = _PyTime_GetMonotonicClock() + timeout;
     }
+#endif
 
     while (1) {
         if (timeout > 0) {
 #ifdef HAVE_SEM_CLOCKWAIT
-            struct timespec abs_timeout;
-            _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
-            status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC, &abs_timeout));
+            status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
+                                              &abs_timeout));
 #else
-            _PyTime_t t = _PyTime_GetSystemClock() + timeout;
+            _PyTime_t abs_timeout = _PyTime_GetSystemClock() + timeout;
             struct timespec ts;
-            _PyTime_AsTimespec_clamp(t, &ts);
+            _PyTime_AsTimespec_clamp(abs_timeout, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));
 #endif
         }
