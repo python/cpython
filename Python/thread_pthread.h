@@ -449,6 +449,8 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             // overflow to the caller, so clamp the timeout to
             // [_PyTime_MIN, _PyTime_MAX].
             //
+            // _PyTime_MAX nanoseconds is around 292.3 years.
+            //
             // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
             // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
             ns = _PyTime_MAX;
