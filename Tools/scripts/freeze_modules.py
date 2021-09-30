@@ -329,10 +329,10 @@ def _iter_sources(modules):
 # generic helpers
 
 def _get_checksum(filename):
-    with open(filename) as infile:
-        text = infile.read()
+    with open(filename, "rb") as infile:
+        contents = infile.read()
     m = hashlib.sha256()
-    m.update(text.encode('utf8'))
+    m.update(contents)
     return m.hexdigest()
 
 
@@ -489,7 +489,7 @@ def regen_manifest(modules):
         modlines.append(' '.join(row).rstrip())
 
     print(f'# Updating {os.path.relpath(MANIFEST)}')
-    with open(MANIFEST, 'w') as outfile:
+    with open(MANIFEST, 'w', encoding="utf-8") as outfile:
         lines = (l + '\n' for l in modlines)
         outfile.writelines(lines)
 
