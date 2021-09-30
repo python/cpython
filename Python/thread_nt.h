@@ -313,7 +313,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
 
     if (microseconds >= 0) {
         milliseconds = microseconds / 1000;
-        // Round milliseconds away from zero (+inf)
+        // Round milliseconds away from zero
         if (microseconds % 1000 > 0) {
             milliseconds++;
         }
