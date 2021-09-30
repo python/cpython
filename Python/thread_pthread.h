@@ -441,7 +441,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     _PyTime_t timeout;
     if (microseconds >= 0) {
         _PyTime_t ns;
-        if (microseconds < _PyTime_MAX / 1000) {
+        if (microseconds <= _PyTime_MAX / 1000) {
             ns = microseconds * 1000;
         }
         else {
