@@ -125,9 +125,11 @@ PyAPI_FUNC(_PyTime_t) _PyTime_As100Nanoseconds(_PyTime_t t,
    object. */
 PyAPI_FUNC(PyObject *) _PyTime_AsNanosecondsObject(_PyTime_t t);
 
+#ifndef MS_WINDOWS
 /* Create a timestamp from a timeval structure.
    Raise an exception and return -1 on overflow, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv);
+#endif
 
 /* Convert a timestamp to a timeval structure (microsecond resolution).
    tv_usec is always positive.
@@ -188,7 +190,7 @@ typedef struct {
 
    If the internal clock fails, silently ignore the error and return 0.
    On integer overflow, silently ignore the overflow and clamp the clock to
-   _PyTime_MIN or _PyTime_MAX.
+   [_PyTime_MIN; _PyTime_MAX].
 
    Use _PyTime_GetSystemClockWithInfo() to check for failure. */
 PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock(void);
@@ -208,7 +210,7 @@ PyAPI_FUNC(int) _PyTime_GetSystemClockWithInfo(
 
    If the internal clock fails, silently ignore the error and return 0.
    On integer overflow, silently ignore the overflow and clamp the clock to
-   _PyTime_MIN or _PyTime_MAX.
+   [_PyTime_MIN; _PyTime_MAX].
 
    Use _PyTime_GetMonotonicClockWithInfo() to check for failure. */
 PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
@@ -239,7 +241,7 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 
    If the internal clock fails, silently ignore the error and return 0.
    On integer overflow, silently ignore the overflow and clamp the clock to
-   _PyTime_MIN or _PyTime_MAX.
+   [_PyTime_MIN; _PyTime_MAX].
 
    Use _PyTime_GetPerfCounterWithInfo() to check for failure. */
 PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
