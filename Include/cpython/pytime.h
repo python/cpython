@@ -14,7 +14,9 @@ extern "C" {
    store a duration, and so indirectly a date (related to another date, like
    UNIX epoch). */
 typedef int64_t _PyTime_t;
+// _PyTime_MIN nanoseconds is around -292.3 years
 #define _PyTime_MIN INT64_MIN
+// _PyTime_MAX nanoseconds is around +292.3 years
 #define _PyTime_MAX INT64_MAX
 #define _SIZEOF_PYTIME_T 8
 
