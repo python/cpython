@@ -242,6 +242,7 @@ _specialized_instructions = [
     "LOAD_METHOD_CACHED",
     "LOAD_METHOD_CLASS",
     "LOAD_METHOD_MODULE",
+    "LOAD_METHOD_NO_DICT",
     "STORE_ATTR_ADAPTIVE",
     "STORE_ATTR_SPLIT_KEYS",
     "STORE_ATTR_SLOT",

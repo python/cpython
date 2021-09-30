@@ -384,7 +384,6 @@ _Py_Quicken(PyCodeObject *code) {
     if (code->co_quickened) {
         return 0;
     }
-    return 0;
     Py_ssize_t size = PyBytes_GET_SIZE(code->co_code);
     int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
     if (instr_count > MAX_SIZE_TO_QUICKEN) {
@@ -464,6 +463,7 @@ specialize_module_load_attr(
     PyObject *value = NULL;
     PyObject *getattr;
     _Py_IDENTIFIER(__getattr__);
+    assert(owner->ob_type->tp_inline_values_offset == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NO_DICT);
@@ -604,10 +604,9 @@ specialize_dict_access(
         // We found an instance with a __dict__.
         PyDictObject *dict = (PyDictObject *)*dictptr;
         PyDictKeysObject *keys = dict->ma_keys;
-        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && keys == ((PyHeapTypeObject*)type)->ht_cached_keys
-        ) {
-            // Keys are shared
+        if (type->tp_inline_values_offset && dict == NULL) {
+            // Virtual dictionary
+            assert(type->tp_inline_values_offset > 0);
             assert(PyUnicode_CheckExact(name));
             Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
             assert (index != DKIX_ERROR);
@@ -615,12 +614,6 @@ specialize_dict_access(
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
                 return 0;
             }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
-            if (keys_version == 0) {
-                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_VERSIONS);
-                return 0;
-            }
-            cache1->dk_version_or_hint = keys_version;
             cache1->tp_version = type->tp_version_tag;
             cache0->index = (uint16_t)index;
             *instr = _Py_MAKECODEUNIT(split_op, _Py_OPARG(*instr));
@@ -877,6 +870,27 @@ load_method_fail_kind(DesciptorClassification kind)
 }
 #endif
 
+static int
+specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+                           _PyAttrCache *cache1, _PyObjectCache *cache2)
+{
+
+    PyObject *descr = NULL;
+    DesciptorClassification kind = 0;
+    kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
+    switch (kind) {
+        case METHOD:
+        case NON_DESCRIPTOR:
+            cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
+            cache2->obj = descr;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
+            return 0;
+        default:
+            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            return -1;
+    }
+}
+
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -888,7 +902,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyObjectCache *cache2 = &cache[-2].obj;
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
-    PyDictObject *owner_dict = NULL;
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
             LOAD_METHOD, LOAD_METHOD_MODULE);
@@ -902,9 +915,12 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             return -1;
         }
     }
-    if (Py_TYPE(owner_cls)->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
-        goto fail;
+    if (PyType_Check(owner)) {
+        int err = specialize_class_load_method(owner, instr, name, cache1, cache2);
+        if (err) {
+            goto fail;
+        }
+        goto success;
     }
     // Technically this is fine for bound method calls, but it's uncommon and
     // slightly slower at runtime to get dict.
@@ -912,66 +928,45 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
-    PyObject **owner_dictptr = _PyObject_DictPointer(owner);
-    int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
-    owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
-    // Make sure dict doesn't get GC-ed halfway.
-    Py_XINCREF(owner_dict);
-    // Check for classmethods.
-    int owner_is_class = PyType_Check(owner);
-    owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
-
-    if ((owner_cls->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG) == 0 ||
-        owner_cls->tp_version_tag == 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
-        goto fail;
-    }
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
-    // Store the version right away, in case it's modified halfway through.
-    cache1->tp_version = owner_cls->tp_version_tag;
-
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if (kind != METHOD) {
         SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
         goto fail;
     }
-    // If o.__dict__ changes, the method might be found in o.__dict__
-    // instead of old type lookup. So record o.__dict__'s keys.
-    uint32_t keys_version = UINT32_MAX;
-    if (owner_has_dict) {
-        // _PyDictKeys_GetVersionForCurrentState isn't accurate for
-        // custom dict subclasses at the moment.
-        if (!PyDict_CheckExact(owner_dict)) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_DICT_SUBCLASS);
+    if (owner_cls->tp_inline_values_offset) {
+        PyObject **owner_dictptr = _PyObject_DictPointer(owner);
+        assert(owner_dictptr);
+        if (*owner_dictptr) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
             goto fail;
         }
-        assert(PyUnicode_CheckExact(name));
-        Py_hash_t hash = PyObject_Hash(name);
-        if (hash == -1) {
-            return -1;
+        PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
+        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+        if (index != DKIX_EMPTY) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+            goto fail;
         }
-        PyObject *value = NULL;
-        if (!owner_is_class) {
-            // Instance methods shouldn't be in o.__dict__. That makes
-            // it an attribute.
-            Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
-            assert(ix != DKIX_ERROR);
-            if (ix != DKIX_EMPTY) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
-                goto fail;
-            }
-        }
-        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict->ma_keys);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
         if (keys_version == 0) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        // Fall through.
-    } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-
+        cache1->dk_version_or_hint = keys_version;
+        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+    }
+    else {
+        if (owner_cls->tp_dictoffset == 0) {
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_NO_DICT, _Py_OPARG(*instr));
+        }
+        else {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+            goto fail;
+        }
+    }
     /* `descr` is borrowed. This is safe for methods (even inherited ones from
     *  super classes!) as long as tp_version_tag is validated for two main reasons:
     *
@@ -986,19 +981,15 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     *  PyType_Modified usages in typeobject.c). The MCACHE has been
     *  working since Python 2.6 and it's battle-tested.
     */
+    cache1->tp_version = owner_cls->tp_version_tag;
     cache2->obj = descr;
-    cache1->dk_version_or_hint = keys_version;
-    *instr = _Py_MAKECODEUNIT(owner_is_class ? LOAD_METHOD_CLASS :
-        LOAD_METHOD_CACHED, _Py_OPARG(*instr));
     // Fall through.
 success:
-    Py_XDECREF(owner_dict);
     STAT_INC(LOAD_METHOD, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
 fail:
-    Py_XDECREF(owner_dict);
     STAT_INC(LOAD_METHOD, specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
