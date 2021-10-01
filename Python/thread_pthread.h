@@ -503,7 +503,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             break;
         }
 
-        // sem_clockwait() uses an absolution timeout, there is no need
+        // sem_clockwait() uses an absolute timeout, there is no need
         // to recompute the relative timeout.
 #ifndef HAVE_SEM_CLOCKWAIT
         if (timeout > 0) {
