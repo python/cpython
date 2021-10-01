@@ -12,7 +12,7 @@ import warnings
 from test.support import import_helper, REPO_ROOT, STDLIB_DIR
 
 
-def get_frozen_code(name, source=None, ispkg=False, *, useimp=True):
+def get_frozen_code(name, source=None, ispkg=None, *, useimp=True):
     """Return the code object for the given module.
 
     This should match the data stored in the frozen .h file used
@@ -24,17 +24,34 @@ def get_frozen_code(name, source=None, ispkg=False, *, useimp=True):
         with import_helper.frozen_modules():
             return _imp.get_frozen_object(name)
 
-    if not source:
-        source = name
-    else:
-        ispkg = source.startswith('<') and source.endswith('>')
-        if ispkg:
-            source = source[1:-1]
-    filename = resolve_filename(source, ispkg)
-    origname = name if filename == source else source
+    if source:
+        ispkg = None
+    origname, filename = resolve_source(source or name, ispkg)
     with open(filename) as infile:
         text = infile.read()
-    return compile(text, f'<frozen {origname}>', 'exec')
+    return compile(text, f'<frozen {origname or name}>', 'exec')
+
+
+def resolve_source(source, ispkg=None):
+    origname, filename, _ispkg = parse_source(source)
+    if ispkg is None:
+        ispkg = _ispkg
+    if filename is None:
+        filename = resolve_filename(origname, ispkg)
+    return origname, filename
+
+
+def parse_source(source):
+    assert source
+    if source.endswith('.py'):
+        origname = None
+        filename = source
+        ispkg = os.path.basename(source) == '__init__.py'
+    else:
+        ispkg = source.endswith('.__init__')
+        origname = source.rpartition('.')[0] if ispkg else source
+        filename = None
+    return origname, filename, ispkg
 
 
 def resolve_filename(source, ispkg=False):
@@ -74,8 +91,7 @@ class FindSpecTests(abc.FinderTests):
         expected = []
         self.assertListEqual(spec.submodule_search_locations, expected)
 
-    def check_data(self, spec, source=None):
-        ispkg = spec.submodule_search_locations is not None
+    def check_data(self, spec, source=None, ispkg=None):
         expected = get_frozen_code(spec.name, source, ispkg)
         data, = spec.loader_state
         # We can't compare the marshaled data directly because
@@ -87,9 +103,9 @@ class FindSpecTests(abc.FinderTests):
     def test_module(self):
         modules = {
             '__hello__': None,
-            '__phello__.__init__': '<__phello__>',
+            '__phello__.__init__': None,
             '__phello__.spam': None,
-            '__phello__.ham.__init__': '<__phello__.ham>',
+            '__phello__.ham.__init__': None,
             '__phello__.ham.eggs': None,
             '__hello_alias__': '__hello__',
             }
@@ -110,7 +126,7 @@ class FindSpecTests(abc.FinderTests):
                 spec = self.find(name)
                 self.check_basic(spec, name, ispkg=True)
                 self.check_search_location(spec, source)
-                self.check_data(spec, source)
+                self.check_data(spec, source, ispkg=True)
 
     def test_frozen_only(self):
         name = '__hello_only__'
