@@ -461,7 +461,7 @@ static PyDictValues empty_values_struct = { 0, { NULL }};
 #endif
 
 static inline int
-get_index_from_order(PyDictObject *mp, int i)
+get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 {
     assert(mp->ma_used <= 16);
     int shift = (int)(mp->ma_used-1-i)*4;
@@ -497,14 +497,13 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 
     if (check_content) {
         PyDictKeyEntry *entries = DK_ENTRIES(keys);
-        Py_ssize_t i;
 
-        for (i=0; i < DK_SIZE(keys); i++) {
+        for (Py_ssize_t i=0; i < DK_SIZE(keys); i++) {
             Py_ssize_t ix = dictkeys_get_index(keys, i);
             CHECK(DKIX_DUMMY <= ix && ix <= usable);
         }
 
-        for (i=0; i < usable; i++) {
+        for (Py_ssize_t i=0; i < usable; i++) {
             PyDictKeyEntry *entry = &entries[i];
             PyObject *key = entry->me_key;
 
@@ -532,7 +531,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
             CHECK(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
             /* splitted table */
             int duplicate_check = 0;
-            for (i=0; i < mp->ma_used; i++) {
+            for (Py_ssize_t i=0; i < mp->ma_used; i++) {
                 int index = get_index_from_order(mp, i);
                 CHECK((duplicate_check & (1<<index)) == 0);
                 duplicate_check |= (1<<index);
