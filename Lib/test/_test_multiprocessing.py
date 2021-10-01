@@ -3957,7 +3957,7 @@ class _TestSharedMemory(BaseTestCase):
             with self.subTest(proto=proto):
                 sms = shared_memory.SharedMemory(create=True, size=512)
                 sms.buf[0:6] = b'pickle'
-                pickled_sms = pickle.dumps(sms)
+                pickled_sms = pickle.dumps(sms, protocol=proto)
 
                 # Now, we are going to kill the original object.
                 # So, unpickled one won't be able to attach to it.
@@ -4214,7 +4214,7 @@ class _TestSharedMemory(BaseTestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
                 sl = shared_memory.ShareableList(range(10))
-                serialized_sl = pickle.dumps(sl)
+                serialized_sl = pickle.dumps(sl, protocol=proto)
 
                 # Now, we are going to kill the original object.
                 # So, unpickled one won't be able to attach to it.
