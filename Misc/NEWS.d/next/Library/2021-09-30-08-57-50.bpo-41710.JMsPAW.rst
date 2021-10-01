@@ -1,0 +1,3 @@
+Fix :data:`_thread.TIMEOUT_MAX` value on Windows: the maximum timeout is
+0x7FFFFFFF milliseconds (around 24.9 days), not 0xFFFFFFFF milliseconds (around
+49.7 days).
