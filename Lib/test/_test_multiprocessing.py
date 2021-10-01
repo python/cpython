@@ -3774,6 +3774,9 @@ class _TestSharedMemory(BaseTestCase):
         local_sms.close()
 
     def _new_shm_name(self, prefix):
+        # Add a PID to the name of a POSIX shared memory object to allow
+        # running multiprocessing tests (test_multiprocessing_fork,
+        # test_multiprocessing_spawn, etc) in parallel.
         return prefix + str(os.getpid())
 
     def test_shared_memory_basics(self):
@@ -4088,7 +4091,6 @@ class _TestSharedMemory(BaseTestCase):
             self.assertEqual(sl.count(b'adios'), 0)
 
         # Exercise creating a duplicate.
-        pid = os.getpid()
         name_duplicate = self._new_shm_name('test03_duplicate')
         sl_copy = shared_memory.ShareableList(sl, name=name_duplicate)
         try:
