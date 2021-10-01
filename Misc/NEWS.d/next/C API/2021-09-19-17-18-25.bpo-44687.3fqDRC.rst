@@ -1,0 +1,1 @@
+:meth:`BufferedReader.peek` no longer raises :exc:`ValueError` when the entire file has already been buffered.
