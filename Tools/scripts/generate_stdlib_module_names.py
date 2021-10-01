@@ -21,6 +21,9 @@ IGNORE = {
     # Test modules and packages
     '__hello__',
     '__phello__',
+    '__hello_alias__',
+    '__phello_alias__',
+    '__hello_only__',
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
