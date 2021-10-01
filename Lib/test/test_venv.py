@@ -157,10 +157,12 @@ class BasicTest(BaseTest):
                 expect_exe = os.path.realpath(expect_exe)
 
             def pip_cmd_checker(cmd):
+                cmd[0] = os.path.normcase(cmd[0])
+                exe = os.path.normcase(expect_exe)
                 self.assertEqual(
                     cmd,
                     [
-                        expect_exe,
+                        exe,
                         '-m',
                         'pip',
                         'install',
