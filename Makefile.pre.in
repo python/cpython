@@ -1544,7 +1544,8 @@ LIBSUBDIRS=	asyncio \
 		wsgiref \
 		$(XMLLIBSUBDIRS) \
 		xmlrpc \
-		zoneinfo
+		zoneinfo \
+		__phello__
 TESTSUBDIRS=	ctypes/test \
 		distutils/tests \
 		idlelib/idle_test \
