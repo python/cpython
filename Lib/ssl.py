@@ -1439,10 +1439,10 @@ def wrap_socket(sock, keyfile=None, certfile=None,
     context.verify_mode = cert_reqs
     if ca_certs:
         context.load_verify_locations(ca_certs)
-    if certfile:
-        context.load_cert_chain(certfile, keyfile)
     if ciphers:
         context.set_ciphers(ciphers)
+    if certfile:
+        context.load_cert_chain(certfile, keyfile)
     return context.wrap_socket(
         sock=sock, server_side=server_side,
         do_handshake_on_connect=do_handshake_on_connect,
