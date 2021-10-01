@@ -53,6 +53,11 @@
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
 #include "frozen_modules/__hello__.h"
+#include "frozen_modules/__phello__.h"
+#include "frozen_modules/__phello__.ham.h"
+#include "frozen_modules/__phello__.ham.eggs.h"
+#include "frozen_modules/__phello__.spam.h"
+#include "frozen_modules/frozen_only.h"
 /* End includes */
 
 /* Note that a negative size indicates a package. */
@@ -84,8 +89,19 @@ static const struct _frozen _PyImport_FrozenModules[] = {
 
     /* Test module */
     {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {"__phello__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
-    {"__phello__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__phello_alias__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
+    {"__phello_alias__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__phello__", _Py_M____phello__, -(int)sizeof(_Py_M____phello__)},
+    {"__phello__.__init__", _Py_M____phello__, (int)sizeof(_Py_M____phello__)},
+    {"__phello__.ham", _Py_M____phello___ham, -(int)sizeof(_Py_M____phello___ham)},
+    {"__phello__.ham.__init__", _Py_M____phello___ham,
+        (int)sizeof(_Py_M____phello___ham)},
+    {"__phello__.ham.eggs", _Py_M____phello___ham_eggs,
+        (int)sizeof(_Py_M____phello___ham_eggs)},
+    {"__phello__.spam", _Py_M____phello___spam,
+        (int)sizeof(_Py_M____phello___spam)},
+    {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only)},
     {0, 0, 0} /* sentinel */
 };
 
