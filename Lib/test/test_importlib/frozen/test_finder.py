@@ -95,7 +95,7 @@ class FindSpecTests(abc.FinderTests):
             '__phello__.ham.__init__',
         ]
         for name in modules:
-            origname = name.rpartition('.')[0]
+            origname = '<' + name.rpartition('.')[0]
             filename = resolve_stdlib_file(name)
             with self.subTest(f'{name} -> {origname}'):
                 spec = self.find(name)

@@ -113,9 +113,9 @@ static const struct _module_alias aliases[] = {
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},
     {"__phello_alias__.spam", "__hello__"},
-    {"__phello__.__init__", "__phello__"},
-    {"__phello__.ham.__init__", "__phello__.ham"},
-    {"__hello_only__", ""},
+    {"__phello__.__init__", "<__phello__"},
+    {"__phello__.ham.__init__", "<__phello__.ham"},
+    {"__hello_only__", NULL},
     {0, 0} /* aliases sentinel */
 };
 const struct _module_alias *_PyImport_FrozenAliases = aliases;

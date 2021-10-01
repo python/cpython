@@ -274,6 +274,15 @@ class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile')):
         name = self.frozenid.replace('.', '_')
         return '_Py_M__' + name
 
+    @property
+    def ispkg(self):
+        if not self.pyfile:
+            return False
+        elif self.frozenid.endswith('.__init__'):
+            return False
+        else:
+            return os.path.basename(self.pyfile) == '__init__.py'
+
 
 def resolve_frozen_file(frozenid, destdir=MODULES_DIR):
     """Return the filename corresponding to the given frozen ID.
@@ -541,7 +550,12 @@ def regen_frozen(modules):
             deflines.append(indent + line2)
 
         if mod.isalias:
-            entry = '{"%s", "%s"},' % (mod.name, mod.orig or "")
+            if not mod.orig:
+                entry = '{"%s", NULL},' % (mod.name,)
+            elif mod.source.ispkg:
+                entry = '{"%s", "<%s"},' % (mod.name, mod.orig)
+            else:
+                entry = '{"%s", "%s"},' % (mod.name, mod.orig)
             aliaslines.append(indent + entry)
 
     if not deflines[0]:
