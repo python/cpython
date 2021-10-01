@@ -292,9 +292,10 @@ PyThread_free_lock(PyThread_type_lock aLock)
     FreeNonRecursiveMutex(aLock) ;
 }
 
-// WaitForSingleObject() documentation: "The time-out value needs to be a
-// positive number between 0 and 0x7FFFFFFF." INFINITE is equal to 0xFFFFFFFF.
-const DWORD TIMEOUT_MS_MAX = 0x7FFFFFFF;
+// WaitForSingleObject() accepts timeout in milliseconds in the range
+// [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+// timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+const DWORD TIMEOUT_MS_MAX = 0xFFFFFFFE;
 
 /*
  * Return 1 on success if the lock was acquired
@@ -322,12 +323,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
             // overflow to the caller, so clamp the timeout to
             // [0, TIMEOUT_MS_MAX] milliseconds.
             //
-            // TIMEOUT_MS_MAX milliseconds is around 24.9 days.
-            //
             // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
             // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
             milliseconds = TIMEOUT_MS_MAX;
         }
+        assert(milliseconds != INFINITE);
     }
     else {
         milliseconds = INFINITE;
