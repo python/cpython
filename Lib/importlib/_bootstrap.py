@@ -843,7 +843,7 @@ class FrozenImporter:
             spec.loader_state.origname = origname
 
     @classmethod
-    def _resolve_filename(cls, fullname, ispkg):
+    def _resolve_filename(cls, fullname, alias=None, ispkg=False):
         if not fullname or not getattr(sys, '_stdlib_dir', None):
             return None, None
         try:
@@ -851,6 +851,13 @@ class FrozenImporter:
         except AttributeError:
             sep = cls._SEP = '\\' if sys.platform == 'win32' else '/'
 
+        if fullname != alias:
+            if fullname.startswith('<'):
+                fullname = fullname[1:]
+                if not ispkg:
+                    fullname = f'{fullname}.__init__'
+            else:
+                ispkg = False
         relfile = fullname.replace('.', sep)
         if ispkg:
             pkgdir = f'{sys._stdlib_dir}{sep}{relfile}'
@@ -869,7 +876,7 @@ class FrozenImporter:
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
-        filename, pkgdir = cls._resolve_filename(origname, ispkg)
+        filename, pkgdir = cls._resolve_filename(origname, fullname, ispkg)
         spec.loader_state = type(sys.implementation)(
             data=data,
             filename=filename,

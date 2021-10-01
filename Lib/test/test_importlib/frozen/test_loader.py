@@ -3,10 +3,11 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-from test.support import captured_stdout, import_helper
+from test.support import captured_stdout, import_helper, STDLIB_DIR
 import _imp
 import contextlib
 import marshal
+import os.path
 import types
 import unittest
 import warnings
@@ -30,6 +31,14 @@ def fresh(name, *, oldapi=False):
                 yield
 
 
+def resolve_stdlib_file(name, ispkg=False):
+    assert name
+    if ispkg:
+        return os.path.join(STDLIB_DIR, *name.split('.'), '__init__.py')
+    else:
+        return os.path.join(STDLIB_DIR, *name.split('.')) + '.py'
+
+
 class ExecModuleTests(abc.LoaderTests):
 
     def exec_module(self, name, origname=None):
@@ -44,6 +53,7 @@ class ExecModuleTests(abc.LoaderTests):
             loader_state=types.SimpleNamespace(
                 data=marshal.dumps(code),
                 origname=origname or name,
+                filename=resolve_stdlib_file(origname or name, is_package),
             ),
         )
         module = types.ModuleType(name)

@@ -62,17 +62,24 @@ class FindSpecTests(abc.FinderTests):
         # Check the rest of spec.loader_state.
         expected = dict(
             origname=origname,
-            filename=filename,
+            filename=filename if origname else None,
         )
         self.assertDictEqual(actual, expected)
 
-    def check_search_location(self, spec):
+    def check_search_locations(self, spec):
+        """This is only called when testing packages."""
         missing = object()
         filename = getattr(spec.loader_state, 'filename', missing)
-        if filename is missing:
+        origname = getattr(spec.loader_state, 'origname', None)
+        if not origname or filename is missing:
             # We deal with this in check_loader_state().
             return
-        expected = [os.path.dirname(filename)] if filename else []
+        if not filename:
+            expected = []
+        elif origname != spec.name and not origname.startswith('<'):
+            expected = []
+        else:
+            expected = [os.path.dirname(filename)]
         self.assertListEqual(spec.submodule_search_locations, expected)
 
     def test_module(self):
