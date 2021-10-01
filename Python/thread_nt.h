@@ -75,20 +75,20 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
             }
         }
     } else if (milliseconds != 0) {
-        /* wait at least until the target */
-        _PyTime_t now = _PyTime_GetPerfCounter();
+        /* wait at least until the deadline */
         _PyTime_t nanoseconds = _PyTime_FromNanoseconds((_PyTime_t)milliseconds * 1000000);
-        _PyTime_t target = now + nanoseconds;
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
         while (mutex->locked) {
-            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds, _PyTime_ROUND_TIMEOUT);
+            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
+                                                            _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            now = _PyTime_GetPerfCounter();
-            if (target <= now)
+            nanoseconds = deadline - _PyTime_GetPerfCounter();
+            if (nanoseconds <= 0) {
                 break;
-            nanoseconds = target - now;
+            }
         }
     }
     if (!mutex->locked) {

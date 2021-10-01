@@ -438,7 +438,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    _PyTime_t timeout;
+    _PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
         _PyTime_t ns;
         if (microseconds <= _PyTime_MAX / 1000) {
@@ -465,16 +465,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        _PyTime_t deadline = _PyTime_GetMonotonicClock() + timeout;
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
     _PyTime_t deadline = 0;
-    if (timeout > 0
-        && !intr_flag
-        )
-    {
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+    if (timeout > 0 && !intr_flag) {
+        deadline = _PyDeadline_Init(timeout);
     }
 #endif
 
@@ -484,9 +481,10 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            _PyTime_t abs_timeout = _PyTime_GetSystemClock() + timeout;
+            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+                                             timeout);
             struct timespec ts;
-            _PyTime_AsTimespec_clamp(abs_timeout, &ts);
+            _PyTime_AsTimespec_clamp(abs_time, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));
 #endif
         }
@@ -508,7 +506,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 #ifndef HAVE_SEM_CLOCKWAIT
         if (timeout > 0) {
             /* wait interrupted by a signal (EINTR): recompute the timeout */
-            _PyTime_t timeout = deadline - _PyTime_GetMonotonicClock();
+            _PyTime_t timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 status = ETIMEDOUT;
                 break;

@@ -73,30 +73,43 @@ pytime_as_nanoseconds(_PyTime_t t)
 }
 
 
-// Compute t + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+// Compute t1 + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
 static inline int
-pytime_add(_PyTime_t *t, _PyTime_t t2)
+pytime_add(_PyTime_t *t1, _PyTime_t t2)
 {
-    if (t2 > 0 && *t > _PyTime_MAX - t2) {
-        *t = _PyTime_MAX;
+    if (t2 > 0 && *t1 > _PyTime_MAX - t2) {
+        *t1 = _PyTime_MAX;
         return -1;
     }
-    else if (t2 < 0 && *t < _PyTime_MIN - t2) {
-        *t = _PyTime_MIN;
+    else if (t2 < 0 && *t1 < _PyTime_MIN - t2) {
+        *t1 = _PyTime_MIN;
         return -1;
     }
     else {
-        *t += t2;
+        *t1 += t2;
         return 0;
     }
 }
 
 
-static inline int
-_PyTime_check_mul_overflow(_PyTime_t a, _PyTime_t b)
+_PyTime_t
+_PyTime_Add(_PyTime_t t1, _PyTime_t t2)
 {
-    assert(b > 0);
-    return ((a < _PyTime_MIN / b) || (_PyTime_MAX / b < a));
+    (void)pytime_add(&t1, t2);
+    return t1;
+}
+
+
+static inline int
+pytime_mul_check_overflow(_PyTime_t a, _PyTime_t b)
+{
+    if (b != 0) {
+        assert(b > 0);
+        return ((a < _PyTime_MIN / b) || (_PyTime_MAX / b < a));
+    }
+    else {
+        return 0;
+    }
 }
 
 
@@ -104,8 +117,8 @@ _PyTime_check_mul_overflow(_PyTime_t a, _PyTime_t b)
 static inline int
 pytime_mul(_PyTime_t *t, _PyTime_t k)
 {
-    assert(k > 0);
-    if (_PyTime_check_mul_overflow(*t, k)) {
+    assert(k >= 0);
+    if (pytime_mul_check_overflow(*t, k)) {
         *t = (*t >= 0) ? _PyTime_MAX : _PyTime_MIN;
         return -1;
     }
@@ -116,21 +129,31 @@ pytime_mul(_PyTime_t *t, _PyTime_t k)
 }
 
 
+// Compute t * k. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+static inline _PyTime_t
+_PyTime_Mul(_PyTime_t t, _PyTime_t k)
+{
+    (void)pytime_mul(&t, k);
+    return t;
+}
+
+
+
+
 _PyTime_t
 _PyTime_MulDiv(_PyTime_t ticks, _PyTime_t mul, _PyTime_t div)
 {
-    _PyTime_t intpart, remaining;
-    /* Compute (ticks * mul / div) in two parts to prevent integer overflow:
-       compute integer part, and then the remaining part.
+    /* Compute (ticks * mul / div) in two parts to reduce the risk of integer
+       overflow: compute the integer part, and then the remaining part.
 
        (ticks * mul) / div == (ticks / div) * mul + (ticks % div) * mul / div
-
-       The caller must ensure that "(div - 1) * mul" cannot overflow. */
+    */
+    _PyTime_t intpart, remaining;
     intpart = ticks / div;
     ticks %= div;
-    remaining = ticks * mul;
-    remaining /= div;
-    return intpart * mul + remaining;
+    remaining = _PyTime_Mul(ticks, mul) / div;
+    // intpart * mul + remaining
+    return _PyTime_Add(_PyTime_Mul(intpart, mul), remaining);
 }
 
 
@@ -505,7 +528,6 @@ pytime_from_object(_PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         return pytime_from_double(tp, d, round, unit_to_ns);
     }
     else {
-        Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
         long long sec = PyLong_AsLongLong(obj);
         if (sec == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
@@ -514,11 +536,12 @@ pytime_from_object(_PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
             return -1;
         }
 
-        if (_PyTime_check_mul_overflow(sec, unit_to_ns)) {
+        Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
+        _PyTime_t ns = (_PyTime_t)sec;
+        if (pytime_mul(&ns, unit_to_ns) < 0) {
             pytime_overflow();
             return -1;
         }
-        _PyTime_t ns = sec * unit_to_ns;
 
         *tp = pytime_from_nanoseconds(ns);
         return 0;
@@ -1291,4 +1314,20 @@ _PyTime_gmtime(time_t t, struct tm *tm)
     }
     return 0;
 #endif /* MS_WINDOWS */
+}
+
+
+_PyTime_t
+_PyDeadline_Init(_PyTime_t timeout)
+{
+    _PyTime_t now = _PyTime_GetMonotonicClock();
+    return _PyTime_Add(now, timeout);
+}
+
+
+_PyTime_t
+_PyDeadline_Get(_PyTime_t deadline)
+{
+    _PyTime_t now = _PyTime_GetMonotonicClock();
+    return deadline - now;
 }

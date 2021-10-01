@@ -27,6 +27,8 @@
 //
 // Some functions clamp the result in the range [_PyTime_MIN; _PyTime_MAX], so
 // the caller doesn't have to handle errors and doesn't need to hold the GIL.
+// For example, _PyTime_Add(t1, t2) computes t1+t2 and clamp the result on
+// overflow.
 //
 // Clocks:
 //
@@ -215,7 +217,12 @@ PyAPI_FUNC(int) _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts);
 PyAPI_FUNC(void) _PyTime_AsTimespec_clamp(_PyTime_t t, struct timespec *ts);
 #endif
 
+
+// Compute t1 + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+PyAPI_FUNC(_PyTime_t) _PyTime_Add(_PyTime_t t1, _PyTime_t t2);
+
 /* Compute ticks * mul / div.
+   Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
    The caller must ensure that ((div - 1) * mul) cannot overflow. */
 PyAPI_FUNC(_PyTime_t) _PyTime_MulDiv(_PyTime_t ticks,
     _PyTime_t mul,
@@ -298,6 +305,15 @@ PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
 PyAPI_FUNC(int) _PyTime_GetPerfCounterWithInfo(
     _PyTime_t *t,
     _Py_clock_info_t *info);
+
+
+// Create a deadline.
+// Pseudo code: _PyTime_GetMonotonicClock() + timeout.
+PyAPI_FUNC(_PyTime_t) _PyDeadline_Init(_PyTime_t timeout);
+
+// Get remaining time from a deadline.
+// Pseudo code: deadline - _PyTime_GetMonotonicClock().
+PyAPI_FUNC(_PyTime_t) _PyDeadline_Get(_PyTime_t deadline);
 
 #ifdef __cplusplus
 }

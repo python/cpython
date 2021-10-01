@@ -84,13 +84,12 @@ lock_dealloc(lockobject *self)
 static PyLockStatus
 acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
-    PyLockStatus r;
     _PyTime_t endtime = 0;
-
     if (timeout > 0) {
-        endtime = _PyTime_GetMonotonicClock() + timeout;
+        endtime = _PyDeadline_Init(timeout);
     }
 
+    PyLockStatus r;
     do {
         _PyTime_t microseconds;
         microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
@@ -114,7 +113,7 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
             /* If we're using a timeout, recompute the timeout after processing
              * signals, since those can take time.  */
             if (timeout > 0) {
-                timeout = endtime - _PyTime_GetMonotonicClock();
+                timeout = _PyDeadline_Get(endtime);
 
                 /* Check for negative values, since those mean block forever.
                  */
