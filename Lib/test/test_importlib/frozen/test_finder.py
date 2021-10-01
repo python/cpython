@@ -9,60 +9,7 @@ import os.path
 import unittest
 import warnings
 
-from test.support import import_helper, REPO_ROOT, STDLIB_DIR
-
-
-def get_frozen_code(name, source=None, ispkg=None, *, useimp=True):
-    """Return the code object for the given module.
-
-    This should match the data stored in the frozen .h file used
-    for the module.
-
-    "source" is the original module name or a .py filename.
-    """
-    if useimp:
-        with import_helper.frozen_modules():
-            return _imp.get_frozen_object(name)
-
-    if source:
-        ispkg = None
-    origname, filename = resolve_source(source or name, ispkg)
-    with open(filename) as infile:
-        text = infile.read()
-    return compile(text, f'<frozen {origname or name}>', 'exec')
-
-
-def resolve_source(source, ispkg=None):
-    origname, filename, _ispkg = parse_source(source)
-    if ispkg is None:
-        ispkg = _ispkg
-    if filename is None:
-        filename = resolve_filename(origname, ispkg)
-    return origname, filename
-
-
-def parse_source(source):
-    assert source
-    if source.endswith('.py'):
-        origname = None
-        filename = source
-        ispkg = os.path.basename(source) == '__init__.py'
-    else:
-        ispkg = source.endswith('.__init__')
-        origname = source.rpartition('.')[0] if ispkg else source
-        filename = None
-    return origname, filename, ispkg
-
-
-def resolve_filename(source, ispkg=False):
-    assert source
-    if source.endswith('.py'):
-        return source
-    name = source
-    if ispkg:
-        return os.path.join(STDLIB_DIR, *name.split('.'), '__init__.py')
-    else:
-        return os.path.join(STDLIB_DIR, *name.split('.')) + '.py'
+from test.support import import_helper, REPO_ROOT
 
 
 class FindSpecTests(abc.FinderTests):
@@ -92,7 +39,8 @@ class FindSpecTests(abc.FinderTests):
         self.assertListEqual(spec.submodule_search_locations, expected)
 
     def check_data(self, spec, source=None, ispkg=None):
-        expected = get_frozen_code(spec.name, source, ispkg)
+        with import_helper.frozen_modules():
+            expected = _imp.get_frozen_object(spec.name)
         data, = spec.loader_state
         # We can't compare the marshaled data directly because
         # marshal.dumps() would mark "expected" as a ref, which slightly
