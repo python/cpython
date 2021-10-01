@@ -597,15 +597,10 @@ specialize_dict_access(
     }
     if (type->tp_dictoffset > 0) {
         PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
-            return 0;
-        }
-        // We found an instance with a __dict__.
         PyDictObject *dict = (PyDictObject *)*dictptr;
-        PyDictKeysObject *keys = dict->ma_keys;
         if (type->tp_inline_values_offset && dict == NULL) {
             // Virtual dictionary
+            PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
             assert(type->tp_inline_values_offset > 0);
             assert(PyUnicode_CheckExact(name));
             Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
@@ -620,6 +615,11 @@ specialize_dict_access(
             return 0;
         }
         else {
+            if (dict == NULL || !PyDict_CheckExact(dict)) {
+                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
+                return 0;
+            }
+            // We found an instance with a __dict__.
             PyObject *value = NULL;
             Py_ssize_t hint =
                 _PyDict_GetItemHint(dict, name, -1, &value);
