@@ -3666,7 +3666,7 @@ check_eval_breaker:
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, cache0->original_oparg);
             uint32_t hint = cache1->dk_version_or_hint;
-            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_ATTR);
+            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name, LOAD_ATTR);
             res = ep->me_value;
@@ -3774,7 +3774,7 @@ check_eval_breaker:
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, cache0->original_oparg);
             uint32_t hint = cache1->dk_version_or_hint;
-            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, STORE_ATTR);
+            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name, STORE_ATTR);
             PyObject *old_value = ep->me_value;
