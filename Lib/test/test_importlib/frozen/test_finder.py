@@ -3,6 +3,7 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
+import _imp
 import marshal
 import os.path
 import unittest
@@ -11,7 +12,7 @@ import warnings
 from test.support import import_helper, REPO_ROOT, STDLIB_DIR
 
 
-def get_frozen_code(name, source=None, ispkg=False):
+def get_frozen_code(name, source=None, ispkg=False, *, useimp=True):
     """Return the code object for the given module.
 
     This should match the data stored in the frozen .h file used
@@ -19,6 +20,10 @@ def get_frozen_code(name, source=None, ispkg=False):
 
     "source" is the original module name or a .py filename.
     """
+    if useimp:
+        with import_helper.frozen_modules():
+            return _imp.get_frozen_object(name)
+
     if not source:
         source = name
     else:
