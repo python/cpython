@@ -3,18 +3,44 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import _imp
 import marshal
 import os.path
 import unittest
 import warnings
 
-from test.support import import_helper, REPO_ROOT
+from test.support import import_helper, REPO_ROOT, STDLIB_DIR
 
 
-def get_frozen_data(name, source=None):
-    with import_helper.frozen_modules():
-        return _imp.get_frozen_object(name)
+def get_frozen_code(name, source=None, ispkg=False):
+    """Return the code object for the given module.
+
+    This should match the data stored in the frozen .h file used
+    for the module.
+
+    "source" is the original module name or a .py filename.
+    """
+    if not source:
+        source = name
+    else:
+        ispkg = source.startswith('<') and source.endswith('>')
+        if ispkg:
+            source = source[1:-1]
+    filename = resolve_filename(source, ispkg)
+    origname = name if filename == source else source
+    with open(filename) as infile:
+        text = infile.read()
+    return compile(text, f'<frozen {origname}>', 'exec')
+
+
+def resolve_filename(source, ispkg=False):
+    assert source
+    if source.endswith('.py'):
+        return source
+    name = source
+    if ispkg:
+        return os.path.join(STDLIB_DIR, *name.split('.'), '__init__.py')
+    else:
+        return os.path.join(STDLIB_DIR, *name.split('.')) + '.py'
 
 
 class FindSpecTests(abc.FinderTests):
@@ -26,36 +52,47 @@ class FindSpecTests(abc.FinderTests):
         with import_helper.frozen_modules():
             return finder.find_spec(name, **kwargs)
 
-    def check(self, spec, name, orig=None):
+    def check_basic(self, spec, name, ispkg=False):
         self.assertEqual(spec.name, name)
         self.assertIs(spec.loader, self.machinery.FrozenImporter)
         self.assertEqual(spec.origin, 'frozen')
         self.assertFalse(spec.has_location)
+        if ispkg:
+            self.assertIsNotNone(spec.submodule_search_locations)
+        else:
+            self.assertIsNone(spec.submodule_search_locations)
         self.assertIsNotNone(spec.loader_state)
 
+    def check_search_location(self, spec, source=None):
+        # For now frozen packages do not have any path entries.
+        # (See https://bugs.python.org/issue21736.)
+        expected = []
+        self.assertListEqual(spec.submodule_search_locations, expected)
+
     def check_data(self, spec, source=None):
-        expected = get_frozen_data(spec.name, source)
+        ispkg = spec.submodule_search_locations is not None
+        expected = get_frozen_code(spec.name, source, ispkg)
         data, = spec.loader_state
+        # We can't compare the marshaled data directly because
+        # marshal.dumps() would mark "expected" as a ref, which slightly
+        # changes the output.  (See https://bugs.python.org/issue34093.)
         code = marshal.loads(data)
         self.assertEqual(code, expected)
 
     def test_module(self):
-        FROZEN_ONLY = os.path.join(REPO_ROOT, 'Tools', 'freeze', 'flag.py')
         modules = {
             '__hello__': None,
-            '__phello__.__init__': None,
+            '__phello__.__init__': '<__phello__>',
             '__phello__.spam': None,
-            '__phello__.ham.__init__': None,
+            '__phello__.ham.__init__': '<__phello__.ham>',
             '__phello__.ham.eggs': None,
             '__hello_alias__': '__hello__',
-            '__hello_only__': FROZEN_ONLY,
             }
-        for name in modules:
+        for name, source in modules.items():
             with self.subTest(name):
                 spec = self.find(name)
-                self.check(spec, name)
-                self.assertEqual(spec.submodule_search_locations, None)
-                self.check_data(spec, modules[name])
+                self.check_basic(spec, name)
+                self.check_data(spec, source)
 
     def test_package(self):
         modules = {
@@ -63,12 +100,19 @@ class FindSpecTests(abc.FinderTests):
             '__phello__.ham': None,
             '__phello_alias__': '__hello__',
         }
-        for name in modules:
+        for name, source in modules.items():
             with self.subTest(name):
                 spec = self.find(name)
-                self.check(spec, name)
-                self.assertEqual(spec.submodule_search_locations, [])
-                self.check_data(spec, modules[name])
+                self.check_basic(spec, name, ispkg=True)
+                self.check_search_location(spec, source)
+                self.check_data(spec, source)
+
+    def test_frozen_only(self):
+        name = '__hello_only__'
+        source = os.path.join(REPO_ROOT, 'Tools', 'freeze', 'flag.py')
+        spec = self.find(name)
+        self.check_basic(spec, name)
+        self.check_data(spec, source)
 
     # These are covered by test_module() and test_package().
     test_module_in_package = None
