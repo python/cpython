@@ -831,14 +831,18 @@ class FrozenImporter:
         assert not ispkg or not module.__path__, module.__path__
         spec = module.__spec__
         assert not ispkg or not spec.submodule_search_locations
-        assert spec.loader_state is None
 
-        origname = vars(module).pop('__origname__', None)
-        assert origname, 'see PyImport_ImportFrozenModuleObject()'
-        spec.loader_state = type(sys.implementation)(
-            data=None,
-            origname=origname,
-        )
+        if spec.loader_state is None:
+            spec.loader_state = type(sys.implementation)(
+                data=None,
+                origname=None,
+            )
+        elif not hasattr(spec.loader_state, 'data'):
+            spec.loader_state.data = None
+        if not getattr(spec.loader_state, 'origname', None):
+            origname = vars(module).pop('__origname__', None)
+            assert origname, 'see PyImport_ImportFrozenModuleObject()'
+            spec.loader_state.origname = origname
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
