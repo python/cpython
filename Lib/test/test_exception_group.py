@@ -10,6 +10,11 @@ class TestExceptionGroupTypeHierarchy(unittest.TestCase):
         self.assertTrue(issubclass(ExceptionGroup, BaseExceptionGroup))
         self.assertTrue(issubclass(BaseExceptionGroup, BaseException))
 
+    def test_exception_group_is_generic_type(self):
+        E = OSError
+        self.assertIsInstance(ExceptionGroup[E], types.GenericAlias)
+        self.assertIsInstance(BaseExceptionGroup[E], types.GenericAlias)
+
 
 class BadConstructorArgs(unittest.TestCase):
     def test_bad_EG_construction__too_many_args(self):
