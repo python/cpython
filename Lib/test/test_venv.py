@@ -152,17 +152,18 @@ class BasicTest(BaseTest):
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
         python_exe = os.path.split(sys.executable)[1]
         with tempfile.TemporaryDirectory() as fake_env_dir:
-            expect_exe = os.path.join(fake_env_dir, bin_path, python_exe)
+            expect_exe = os.path.normcase(
+                os.path.join(fake_env_dir, bin_path, python_exe)
+            )
             if sys.platform == 'win32':
-                expect_exe = os.path.realpath(expect_exe)
+                expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
             def pip_cmd_checker(cmd):
                 cmd[0] = os.path.normcase(cmd[0])
-                exe = os.path.normcase(expect_exe)
                 self.assertEqual(
                     cmd,
                     [
-                        exe,
+                        expect_exe,
                         '-m',
                         'pip',
                         'install',
