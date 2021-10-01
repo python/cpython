@@ -89,10 +89,15 @@
  * mutexes and condition variables:
  */
 #if (defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES) && \
-     defined(HAVE_SEM_TIMEDWAIT))
+     (defined(HAVE_SEM_TIMEDWAIT) || defined(HAVE_SEM_CLOCKWAIT)))
 #  define USE_SEMAPHORES
 #else
 #  undef USE_SEMAPHORES
+#endif
+
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+// monotonic is supported statically.  It doesn't mean it works on runtime.
+#define CONDATTR_MONOTONIC
 #endif
 
 
@@ -120,15 +125,22 @@ do { \
     ts.tv_nsec = tv.tv_usec * 1000; \
 } while(0)
 
+#if defined(CONDATTR_MONOTONIC) || defined(HAVE_SEM_CLOCKWAIT)
+static void
+monotonic_abs_timeout(long long us, struct timespec *abs)
+{
+    clock_gettime(CLOCK_MONOTONIC, abs);
+    abs->tv_sec  += us / 1000000;
+    abs->tv_nsec += (us % 1000000) * 1000;
+    abs->tv_sec  += abs->tv_nsec / 1000000000;
+    abs->tv_nsec %= 1000000000;
+}
+#endif
+
 
 /*
  * pthread_cond support
  */
-
-#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-// monotonic is supported statically.  It doesn't mean it works on runtime.
-#define CONDATTR_MONOTONIC
-#endif
 
 // NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported.
 static pthread_condattr_t *condattr_monotonic = NULL;
@@ -151,16 +163,13 @@ _PyThread_cond_init(PyCOND_T *cond)
     return pthread_cond_init(cond, condattr_monotonic);
 }
 
+
 void
 _PyThread_cond_after(long long us, struct timespec *abs)
 {
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        clock_gettime(CLOCK_MONOTONIC, abs);
-        abs->tv_sec  += us / 1000000;
-        abs->tv_nsec += (us % 1000000) * 1000;
-        abs->tv_sec  += abs->tv_nsec / 1000000000;
-        abs->tv_nsec %= 1000000000;
+        monotonic_abs_timeout(us, abs);
         return;
     }
 #endif
@@ -431,7 +440,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
     struct timespec ts;
+#ifndef HAVE_SEM_CLOCKWAIT
     _PyTime_t deadline = 0;
+#endif
 
     (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
@@ -442,6 +453,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     }
 
     if (microseconds > 0) {
+#ifdef HAVE_SEM_CLOCKWAIT
+        monotonic_abs_timeout(microseconds, &ts);
+#else
         MICROSECONDS_TO_TIMESPEC(microseconds, ts);
 
         if (!intr_flag) {
@@ -450,11 +464,17 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             _PyTime_t timeout = _PyTime_FromNanoseconds(microseconds * 1000);
             deadline = _PyTime_GetMonotonicClock() + timeout;
         }
+#endif
     }
 
     while (1) {
         if (microseconds > 0) {
+#ifdef HAVE_SEM_CLOCKWAIT
+            status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
+                                              &ts));
+#else
             status = fix_status(sem_timedwait(thelock, &ts));
+#endif
         }
         else if (microseconds == 0) {
             status = fix_status(sem_trywait(thelock));
@@ -469,6 +489,9 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             break;
         }
 
+        // sem_clockwait() uses an absolute timeout, there is no need
+        // to recompute the relative timeout.
+#ifndef HAVE_SEM_CLOCKWAIT
         if (microseconds > 0) {
             /* wait interrupted by a signal (EINTR): recompute the timeout */
             _PyTime_t dt = deadline - _PyTime_GetMonotonicClock();
@@ -490,13 +513,19 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
                 microseconds = 0;
             }
         }
+#endif
     }
 
     /* Don't check the status if we're stopping because of an interrupt.  */
     if (!(intr_flag && status == EINTR)) {
         if (microseconds > 0) {
-            if (status != ETIMEDOUT)
+            if (status != ETIMEDOUT) {
+#ifdef HAVE_SEM_CLOCKWAIT
+                CHECK_STATUS("sem_clockwait");
+#else
                 CHECK_STATUS("sem_timedwait");
+#endif
+            }
         }
         else if (microseconds == 0) {
             if (status != EAGAIN)
