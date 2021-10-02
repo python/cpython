@@ -41,7 +41,7 @@ class FindSpecTests(abc.FinderTests):
     def check_data(self, spec, source=None, ispkg=None):
         with import_helper.frozen_modules():
             expected = _imp.get_frozen_object(spec.name)
-        data, = spec.loader_state
+        data = spec.loader_state
         # We can't compare the marshaled data directly because
         # marshal.dumps() would mark "expected" as a ref, which slightly
         # changes the output.  (See https://bugs.python.org/issue34093.)

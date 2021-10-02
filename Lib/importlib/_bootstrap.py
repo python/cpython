@@ -833,7 +833,7 @@ class FrozenImporter:
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
-        spec.loader_state = (data,)
+        spec.loader_state = data
         return spec
 
     @classmethod
@@ -857,7 +857,7 @@ class FrozenImporter:
         spec = module.__spec__
         name = spec.name
         try:
-            data, = spec.loader_state
+            data = spec.loader_state
         except Exception:
             if not _imp.is_frozen(name):
                 raise ImportError('{!r} is not a frozen module'.format(name),
