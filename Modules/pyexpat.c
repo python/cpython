@@ -1162,6 +1162,7 @@ xmlparse_dealloc(xmlparseobject *self)
 {
     int i;
     PyObject_GC_UnTrack(self);
+    (void)xmlparse_clear(self);
     if (self->itself != NULL)
         XML_ParserFree(self->itself);
     self->itself = NULL;
