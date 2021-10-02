@@ -585,8 +585,8 @@ Here's an overview of the logical flow of a match statement:
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
 
-   * If the guard evaluates as truthy or missing, the ``block`` inside ``case_block`` is
-     executed.
+   * If the guard evaluates as true or is missing, the ``block`` inside
+     ``case_block`` is executed.
 
    * Otherwise, the next ``case_block`` is attempted as described above.
 
@@ -637,10 +637,10 @@ The logical flow of a ``case`` block with a ``guard`` follows:
 
 #. If the pattern succeeded, evaluate the ``guard``.
 
-   * If the ``guard`` condition evaluates to "truthy", the case block is
+   * If the ``guard`` condition evaluates as true, the case block is
      selected.
 
-   * If the ``guard`` condition evaluates to "falsy", the case block is not
+   * If the ``guard`` condition evaluates as false, the case block is not
      selected.
 
    * If the ``guard`` raises an exception during evaluation, the exception
