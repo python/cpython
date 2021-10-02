@@ -858,7 +858,7 @@ class FrozenImporter:
         name = spec.name
         try:
             data = spec.loader_state
-        except Exception:
+        except AttributeError:
             if not _imp.is_frozen(name):
                 raise ImportError('{!r} is not a frozen module'.format(name),
                                   name=name)
