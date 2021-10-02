@@ -7,6 +7,8 @@
    There is also (independent) API version information in modsupport.h.
 */
 
+#include "pyport.h"
+
 /* Values for PY_RELEASE_LEVEL */
 #define PY_RELEASE_LEVEL_ALPHA  0xA
 #define PY_RELEASE_LEVEL_BETA   0xB
@@ -33,3 +35,7 @@
                         (PY_MICRO_VERSION <<  8) | \
                         (PY_RELEASE_LEVEL <<  4) | \
                         (PY_RELEASE_SERIAL << 0))
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+PyAPI_DATA(const long) Py_Version;
+#endif
