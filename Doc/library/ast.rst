@@ -1266,7 +1266,7 @@ Pattern matching
    the pattern matches the subject.
 
    ``body`` contains a list of nodes to execute if the pattern matches and
-   the result of evaluating the guard expression is truthy.
+   the result of evaluating the guard expression is true.
 
    .. doctest::
 
