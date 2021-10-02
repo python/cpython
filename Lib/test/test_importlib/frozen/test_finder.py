@@ -33,7 +33,7 @@ class FindSpecTests(abc.FinderTests):
         self.assertIsNotNone(spec.loader_state)
 
     def check_search_location(self, spec, source=None):
-        # For now frozen packages do not have any path entries.
+        # Frozen packages do not have any path entries.
         # (See https://bugs.python.org/issue21736.)
         expected = []
         self.assertListEqual(spec.submodule_search_locations, expected)
