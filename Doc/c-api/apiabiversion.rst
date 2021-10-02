@@ -58,14 +58,12 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
    Thus ``3.4.1a2`` is hexversion ``0x030401a2`` and ``3.10.0`` is
    hexversion ``0x030a00f0``.
 
-   Starting with Python 3.11, this information is also available via the
-   exported symbol `Py_Version`.
+   This version is also available via the symbol :data:`Py_Version`.
 
-.. c:var:: const long Py_Version
+.. c:var:: const unsigned long Py_Version
 
-   Exported symbol that provides the same version information as
-   ``PY_VERSION_HEX``. Useful for determining the version of Python without
-   having to run it, or when it is embedded into other binaries.
+   The Python runtime version number encoded in a single constant integer, with
+   the same format as the c:macro:`PY_VERSION_HEX` macro.
 
    .. versionadded:: 3.11
 

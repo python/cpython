@@ -15,4 +15,4 @@ Py_GetVersion(void)
 }
 
 // Export the Python hex version as a constant.
-const long Py_Version = PY_VERSION_HEX;
+const unsigned long Py_Version = PY_VERSION_HEX;

@@ -5,9 +5,6 @@
 
 #include <inttypes.h>
 
-#ifndef MS_WINDOWS
-#include <unistd.h>
-#endif
 
 /* Defines to build Python and its standard library:
  *
