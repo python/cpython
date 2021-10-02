@@ -1,0 +1,1 @@
+Makefile: fix missing slashes in some invocations cleaning previous build results when builing a macOS universal binary.
