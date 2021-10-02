@@ -1125,29 +1125,32 @@ typedef enum {
 static inline void
 set_frozen_error(frozen_status status, PyObject *modname)
 {
+    const char *err = NULL;
     switch (status) {
         case FROZEN_BAD_NAME:
         case FROZEN_NOT_FOUND:
         case FROZEN_DISABLED:
-            PyErr_Format(PyExc_ImportError,
-                         "No such frozen object named %R",
-                         modname);
+            err = "No such frozen object named %R";
             break;
         case FROZEN_EXCLUDED:
-            PyErr_Format(PyExc_ImportError,
-                         "Excluded frozen object named %R",
-                         modname);
+            err = "Excluded frozen object named %R";
             break;
         case FROZEN_INVALID:
-            PyErr_Format(PyExc_ImportError,
-                         "Frozen object named %R is invalid",
-                         modname);
+            err = "Frozen object named %R is invalid";
             break;
         case FROZEN_OKAY:
             // There was no error.
             break;
         default:
             Py_UNREACHABLE();
+    }
+    if (err != NULL) {
+        PyObject *msg = PyUnicode_FromFormat(err, modname);
+        if (msg == NULL) {
+            PyErr_Clear();
+        }
+        PyErr_SetImportError(msg, modname, NULL);
+        Py_XDECREF(msg);
     }
 }
 
