@@ -238,21 +238,29 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
         if (src != Py_None) {
             Py_ssize_t len;
             if (!PyUnicode_Check(src)) {
-                PyErr_Format(PyExc_TypeError,
-                    "\"%s\" must be string, not %.200s", name,
-                    Py_TYPE(src)->tp_name);
+                if (strcmp(name, "delimiter") == 0) {
+                    PyErr_Format(PyExc_TypeError,
+                        "\"%s\" must be string, not %.200s", name,
+                        Py_TYPE(src)->tp_name);
+                }
+                else {
+                    PyErr_Format(PyExc_TypeError,
+                        "\"%s\" must be string or None, not %.200s", name,
+                        Py_TYPE(src)->tp_name);
+                }
                 return -1;
             }
             len = PyUnicode_GetLength(src);
-            if (len > 1) {
+            if (len != 1) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be a 1-character string",
                     name);
                 return -1;
             }
             /* PyUnicode_READY() is called in PyUnicode_GetLength() */
-            if (len > 0)
+            else {
                 *target = PyUnicode_READ_CHAR(src, 0);
+            }
         }
     }
     return 0;
@@ -457,7 +465,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto err;
     if (self->delimiter == 0) {
         PyErr_SetString(PyExc_TypeError,
-                        "\"delimiter\" must be a 1-character string");
+                        "delimiter must be set");
         goto err;
     }
     if (quotechar == Py_None && quoting == NULL)

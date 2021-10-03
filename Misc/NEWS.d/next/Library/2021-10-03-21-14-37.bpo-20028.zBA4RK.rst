@@ -1,0 +1,2 @@
+Update :mod:`csv` to handle the giving invalid quotechar correctly for
+initializing  *dialect*.

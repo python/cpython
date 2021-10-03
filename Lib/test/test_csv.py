@@ -897,7 +897,13 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"quotechar" must be string, not int')
+                         '"quotechar" must be string or None, not int')
+
+        mydialect.quotechar = ""
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"quotechar" must be a 1-character string')
 
     def test_delimiter(self):
         class mydialect(csv.Dialect):
@@ -933,6 +939,41 @@ class TestDialectValidity(unittest.TestCase):
             mydialect()
         self.assertEqual(str(cm.exception),
                          '"delimiter" must be string, not int')
+
+    def test_escapechar(self):
+        class mydialect(csv.Dialect):
+            delimiter = ";"
+            escapechar = '\\'
+            doublequote = False
+            skipinitialspace = True
+            lineterminator = '\r\n'
+            quoting = csv.QUOTE_NONE
+        d = mydialect()
+        self.assertEqual(d.escapechar, "\\")
+
+        mydialect.escapechar = ""
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be a 1-character string')
+
+        mydialect.escapechar = "**"
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be a 1-character string')
+
+        mydialect.escapechar = b"*"
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be string or None, not bytes')
+
+        mydialect.escapechar = 4
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be string or None, not int')
 
     def test_lineterminator(self):
         class mydialect(csv.Dialect):
