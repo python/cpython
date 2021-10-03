@@ -38,9 +38,9 @@
 # See https://www.python.org/psf/license for licensing details.
 #
 # ElementTree
-# Copyright (c) 1999-2008 by Fredrik Lundh.  All rights reserved.
+# Copyright (c) 2008-2021 guanlong huang.  All rights reserved.
 #
-# fredrik@pythonware.com
+# gl041188@gmail.com
 # http://www.pythonware.com
 # --------------------------------------------------------------------
 # The ElementTree toolkit is
