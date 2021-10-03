@@ -4815,7 +4815,7 @@ check_eval_breaker:
 #endif
             fprintf(stderr,
                 "XXX lineno: %d, opcode: %d\n",
-                PyCode_Addr2Line(frame->f_code, frame->f_lasti*2),
+                PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
                 opcode);
             _PyErr_SetString(tstate, PyExc_SystemError, "unknown opcode");
             goto error;
@@ -5996,7 +5996,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     else {
         initialize_trace_info(&tstate->trace_info, frame);
-        f->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*2, &tstate->trace_info.bounds);
+        f->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
     }
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
@@ -6035,8 +6035,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(&tstate->trace_info, frame);
-    int lastline = _PyCode_CheckLineNumber(instr_prev*2, &tstate->trace_info.bounds);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &tstate->trace_info.bounds);
+    int lastline = _PyCode_CheckLineNumber(instr_prev*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &tstate->trace_info.bounds);
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
@@ -6978,7 +6978,7 @@ dtrace_function_entry(InterpreterFrame *frame)
     PyCodeObject *code = frame->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti*2);
+    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT));
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
@@ -6993,7 +6993,7 @@ dtrace_function_return(InterpreterFrame *frame)
     PyCodeObject *code = frame->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti*2);
+    lineno = PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT));
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
@@ -7010,12 +7010,12 @@ maybe_dtrace_line(InterpreterFrame *frame,
        instruction window, reset the window.
     */
     initialize_trace_info(trace_info, frame);
-    int lastline = _PyCode_CheckLineNumber(instr_prev*2, &trace_info->bounds);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
+    int lastline = _PyCode_CheckLineNumber(instr_prev*sizeof(_Py_CODEUNIT), &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &trace_info->bounds);
     if (line != -1) {
         /* Trace backward edges or first instruction of a new line */
         if (frame->f_lasti < instr_prev ||
-            (line != lastline && frame->f_lasti*2 == trace_info->bounds.ar_start))
+            (line != lastline && frame->f_lasti*sizeof(_Py_CODEUNIT) == trace_info->bounds.ar_start))
         {
             co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
             if (!co_filename) {
