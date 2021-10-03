@@ -3035,7 +3035,7 @@ _PyObject_DebugMallocStats(FILE *out)
 
     fputc('\n', out);
 
-    /* Account for what all of those arena bytes are being used for. */ 
+    /* Account for what all of those arena bytes are being used for. */
     total = printone(out, "# bytes in allocated blocks", allocated_bytes);
     total += printone(out, "# bytes in available blocks", available_bytes);
 

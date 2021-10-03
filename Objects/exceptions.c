@@ -1503,7 +1503,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
                               &self->end_lineno, &self->end_offset)) {
             Py_DECREF(info);
             return -1;
-        } 
+        }
 
         Py_INCREF(self->filename);
         Py_INCREF(self->lineno);
