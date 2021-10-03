@@ -25,7 +25,7 @@
 #  include <sanitizer/msan_interface.h>
 #endif
 
-#if defined(__APPLE__) && defined(__has_builtin) 
+#if defined(__APPLE__) && defined(__has_builtin)
 #  if __has_builtin(__builtin_available)
 #    define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
 #  endif
@@ -221,7 +221,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
 static int
-py_getentropy(char *buffer, Py_ssize_t size, int raise) 
+py_getentropy(char *buffer, Py_ssize_t size, int raise)
         __attribute__((availability(macos,introduced=10.12)))
         __attribute__((availability(ios,introduced=10.0)))
         __attribute__((availability(tvos,introduced=10.0)))
