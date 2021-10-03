@@ -3,7 +3,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 typedef struct {
     PyObject *ptr;  /* Cached pointer (borrowed reference) */
     uint64_t globals_ver;  /* ma_version of global dict */

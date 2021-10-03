@@ -51,7 +51,7 @@
 #define _Py_tzname tzname
 #endif
 
-#if defined(__APPLE__ ) && defined(__has_builtin) 
+#if defined(__APPLE__ ) && defined(__has_builtin)
 #  if __has_builtin(__builtin_available)
 #    define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
 #  endif
@@ -160,7 +160,7 @@ perf_counter(_Py_clock_info_t *info)
 #ifdef HAVE_CLOCK_GETTIME
 
 #ifdef __APPLE__
-/* 
+/*
  * The clock_* functions will be removed from the module
  * dict entirely when the C API is not available.
  */
@@ -1421,7 +1421,7 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
 static int
-_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info) 
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
      __attribute__((availability(macos, introduced=10.12)))
      __attribute__((availability(ios, introduced=10.0)))
      __attribute__((availability(tvos, introduced=10.0)))
@@ -1460,7 +1460,7 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 #ifdef HAVE_THREAD_TIME
 #ifdef __APPLE__
-/* 
+/*
  * The clock_* functions will be removed from the module
  * dict entirely when the C API is not available.
  */
