@@ -194,8 +194,7 @@ class CookieTests(unittest.TestCase):
         # Accepting these could be a security issue
         C = cookies.SimpleCookie()
         for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x',
-                  'Set-Cookie: foo=bar', 'Set-Cookie: foo',
-                  'foo=bar; baz', 'baz; foo=bar',
+                  'Set-Cookie: foo=bar', 'Set-Cookie: foo', 'baz; foo=bar',
                   'secure;foo=bar', 'Version=1;foo=bar'):
             C.load(s)
             self.assertEqual(dict(C), {})
