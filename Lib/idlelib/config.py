@@ -484,6 +484,12 @@ class IdleConf:
                 event = '<<' + eventName + '>>'
                 binding = activeKeys[event]
                 extKeys[event] = binding
+        if self.userCfg['extensions'].has_section(keysName):
+            eventNames = self.userCfg['extensions'].GetOptionList(keysName)
+            for eventName in eventNames:
+                event = '<<' + eventName + '>>'
+                binding = activeKeys[event]
+                extKeys[event] = binding
         return extKeys
 
     def __GetRawExtensionKeys(self,extensionName):
@@ -497,6 +503,13 @@ class IdleConf:
         extKeys = {}
         if self.defaultCfg['extensions'].has_section(keysName):
             eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
+            for eventName in eventNames:
+                binding = self.GetOption(
+                        'extensions', keysName, eventName, default='').split()
+                event = '<<' + eventName + '>>'
+                extKeys[event] = binding
+        if self.userCfg['extensions'].has_section(keysName):
+            eventNames = self.userCfg['extensions'].GetOptionList(keysName)
             for eventName in eventNames:
                 binding = self.GetOption(
                         'extensions', keysName, eventName, default='').split()
@@ -521,7 +534,13 @@ class IdleConf:
                         'extensions', bindsName, eventName, default='').split()
                 event = '<<' + eventName + '>>'
                 extBinds[event] = binding
-
+        if self.userCfg['extensions'].has_section(bindsName):
+            eventNames = self.userCfg['extensions'].GetOptionList(bindsName)
+            for eventName in eventNames:
+                binding = self.GetOption(
+                        'extensions', bindsName, eventName, default='').split()
+                event = '<<' + eventName + '>>'
+                extBinds[event] = binding
         return extBinds
 
     def GetKeyBinding(self, keySetName, eventStr):
@@ -755,7 +774,8 @@ class IdleConf:
         "Load all configuration files."
         for key in self.defaultCfg:
             self.defaultCfg[key].Load()
-            self.userCfg[key].Load() #same keys
+        for key in self.userCfg:
+            self.userCfg[key].Load() #not nessicerally same keys, could be more
 
     def SaveUserCfgFiles(self):
         "Write all loaded user configuration files to disk."
