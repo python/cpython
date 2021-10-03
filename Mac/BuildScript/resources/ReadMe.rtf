@@ -60,16 +60,20 @@ Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS ma
 \f0\b0  button to proceed.\
 \
 
-\f1\b \ul macOS 11 (Big Sur) and Apple Silicon Mac support [updated in 3.9.5]\
+\f1\b \ul macOS 11 (Big Sur) and Apple Silicon Mac support [updated in 3.9.8]\
 
 \f0\b0 \ulnone \
-As of 2020-11, macOS 11.0 (Big Sur) is the latest release of macOS and one of its major features is the support of new Apple Silicon Macs that are based on the ARM64 CPU architecture specification rather than the Intel 64 (x86_64) architecture used previously. There are other changes in Big Sur that affect Python operation regardless of CPU architecture. As of 3.9.1, Python binaries from python.org fully support Big Sur. \
+
+\f1\b NEW as of 3.9.8
+\f0\b0 :  The 
+\f4 universal2
+\f0  installer variant is now the default download from python.org and the legacy Intel-only variant is deprecated.\
 \
-python.org binaries for macOS have been provided via a downloadable installer that supports the Intel 64 architecture on macOS 10.9 and newer.  This installer variant has been the default download for 3.9.1;  it will install and run on all Macs that run macOS 10.9 or later, including 11.0 (Big Sur). This variant 
+Prior to the 3.9.1 release, python.org binaries for macOS have been provided via a downloadable installer that supports the Intel 64 architecture on macOS 10.9 and newer.  It will install and run on all Macs that run macOS 10.9 or later, including 11.0 (Big Sur). This variant 
 \f2\i should
 \f0\i0  run transparently on new Apple Silicon Macs using Apple's Rosetta 2 emulation. \
 \
-Beginning with 3.9.1, we provide a new 
+Beginning with 3.9.1, we also provide a new 
 \f4 universal2
 \f0  installer variant that provides universal binaries for both 
 \f4 ARM64
@@ -79,23 +83,23 @@ Beginning with 3.9.1, we provide a new
 \
 On Apple Silicon Macs with the 
 \f4 universal2
-\f0  variant, it is possible to run Python either with native ARM64 code or under Intel 64 emulation using Rosetta 2. This option might be useful for testing or if binary wheels are not yet available with native ARM64 binaries.  To  easily force Python to run in emulation mode, invoke it from a command line shell with the 
+\f0  variant installed, it is possible to run Python either with native ARM64 code or under Intel 64 emulation using Rosetta 2. This option might be useful for testing or if binary wheels are not yet available with native ARM64 binaries.  To easily force Python to run in emulation mode on an Apple Silicon Mac, invoke it from a command line shell with the 
 \f4 python3-intel64
 \f0  (or 
-\f4 python3.10-intel64
+\f4 python3.9-intel64
 \f0 ) command (new with 3.9.5) instead of just 
-\f4 python3
+\f4 python3 (or python3.9)
 \f0 . \
 \
 Binary wheels built for use with the legacy 10.9 variant 
 \f2\i should
 \f0\i0  also work with the new variant on Intel-based Macs or when running under Rosetta2 emulation on Apple Silicon Macs.  \
 \
-As of the 3.9.5 release, we encourage you to use the 
+We encourage you to use the 
 \f4 universal2
-\f0  variant whenever possible.  The legacy 10.9+ Intel-only variant will not be provided for Python 3.10 and the 
+\f0  variant whenever possible.  The legacy 10.9+ Intel-only variant will not be provided for Python 3.10 and, as of the 3.9.8 release, the 
 \f4 universal2
-\f0  variant will become the default download for future 3.9.x releases. You may need to upgrade third-party components, like 
+\f0  variant is now the default download. You may need to upgrade third-party components, like 
 \f4 pip
 \f0 , to later versions once they are released. You may experience differences in behavior in 
 \f4 IDLE
