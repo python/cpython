@@ -5490,7 +5490,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     else {
         initialize_trace_info(trace_info, frame);
-        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
+        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &trace_info->bounds);
     }
     result = func(obj, frame, what, arg);
     frame->f_lineno = 0;
@@ -5530,8 +5530,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        then call the trace function if we're tracing source lines.
     */
     initialize_trace_info(trace_info, frame);
-    int lastline = _PyCode_CheckLineNumber(instr_prev*2, &trace_info->bounds);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
+    int lastline = _PyCode_CheckLineNumber(instr_prev*sizeof(_Py_CODEUNIT), &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &trace_info->bounds);
     if (line != -1 && frame->f_trace_lines) {
         /* Trace backward edges or if line number has changed */
         if (frame->f_lasti < instr_prev || line != lastline) {
@@ -6494,7 +6494,7 @@ maybe_dtrace_line(PyFrameObject *frame,
        instruction window, reset the window.
     */
     initialize_trace_info(trace_info, frame);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*sizeof(_Py_CODEUNIT), &trace_info->bounds);
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */
