@@ -7015,7 +7015,7 @@ maybe_dtrace_line(InterpreterFrame *frame,
     if (line != -1) {
         /* Trace backward edges or first instruction of a new line */
         if (frame->f_lasti < instr_prev ||
-            (line != lastline && frame->f_lasti*sizeof(_Py_CODEUNIT) == trace_info->bounds.ar_start))
+            (line != lastline && frame->f_lasti*sizeof(_Py_CODEUNIT) == (unsigned int)trace_info->bounds.ar_start))
         {
             co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
             if (!co_filename) {
