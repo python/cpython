@@ -92,7 +92,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
         f.close()
         f.close()
 
-        # Windows 11 changed MS-DOS device name handling
+        # bpo-45354: Windows 11 changed MS-DOS device name handling
         if sys.getwindowsversion()[:3] < (10, 0, 22000):
             f = open('C:/con', 'rb', buffering=0)
             self.assertIsInstance(f, ConIO)
@@ -116,7 +116,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
         conout_path = os.path.join(temp_path, 'CONOUT$')
 
         with open(conout_path, 'wb', buffering=0) as f:
-            # Windows 11 changed MS-DOS device name handling
+            # bpo-45354: Windows 11 changed MS-DOS device name handling
             if (6, 1) < sys.getwindowsversion()[:3] < (10, 0, 22000):
                 self.assertIsInstance(f, ConIO)
             else:
