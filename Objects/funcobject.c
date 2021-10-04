@@ -519,6 +519,9 @@ func_get_doc(PyFunctionObject *op, void *Py_UNUSED(ignored))
 static int
 func_set_doc(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
+    if (value == NULL) {
+        value = Py_None;
+    }
     Py_INCREF(value);
     Py_XSETREF(op->func_doc, value);
     return 0;
