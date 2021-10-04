@@ -1,0 +1,95 @@
+.. bpo: 45121
+.. date: 2021-09-07-17-10-16
+.. nonce: iG-Hsf
+.. release date: 2021-10-04
+.. section: Core and Builtins
+
+Fix issue where ``Protocol.__init__`` raises ``RecursionError`` when it's
+called directly or via ``super()``. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 45234
+.. date: 2021-09-17-11-20-55
+.. nonce: qUcTVt
+.. section: Library
+
+Fixed a regression in :func:`~shutil.copyfile`, :func:`~shutil.copy`,
+:func:`~shutil.copy2` raising :exc:`FileNotFoundError` when source is a
+directory, which should raise :exc:`IsADirectoryError`
+
+..
+
+.. bpo: 45216
+.. date: 2021-09-18-13-45-19
+.. nonce: o56nyt
+.. section: Documentation
+
+Remove extra documentation listing methods in ``difflib``. It was rendering
+twice in pydoc and was outdated in some places.
+
+..
+
+.. bpo: 45024
+.. date: 2021-09-08-17-20-19
+.. nonce: dkNPNi
+.. section: Documentation
+
+:mod:`collections.abc` documentation has been expanded to explicitly cover
+how instance and subclass checks work, with additional doctest examples and
+an exhaustive list of ABCs which test membership purely by presence of the
+right :term:`special method`\s. Patch by Raymond Hettinger.
+
+..
+
+.. bpo: 45128
+.. date: 2021-09-16-17-22-35
+.. nonce: Jz6fl2
+.. section: Tests
+
+Fix ``test_multiprocessing_fork`` failure due to ``test_logging`` and
+``sys.modules`` manipulation.
+
+..
+
+.. bpo: 44860
+.. date: 2021-09-08-13-01-37
+.. nonce: qXd0kx
+.. section: Tests
+
+Update ``test_sysconfig.test_user_similar()`` for the posix_user scheme:
+``platlib`` doesn't use :data:`sys.platlibdir`. Patch by Victor Stinner.
+
+..
+
+.. bpo: 45067
+.. date: 2021-09-09-16-45-26
+.. nonce: mFmY92
+.. section: Build
+
+The ncurses function extended_color_content was introduced in 2017
+
+(https://invisible-island.net/ncurses/NEWS.html#index-t20170401).  The
+
+ncurses-devel package in CentOS 7 had a older version ncurses resulted in
+compilation error.  For compiling ncurses with extended color support, we
+verify the version of the ncurses library >= 20170401.
+
+..
+
+.. bpo: 45193
+.. date: 2021-09-15-03-20-06
+.. nonce: G61_GV
+.. section: IDLE
+
+Make completion boxes appear on Ubuntu again.
+
+..
+
+.. bpo: 45307
+.. date: 2021-09-28-12-00-55
+.. nonce: 3ETFfX
+.. section: C API
+
+Restore the private C API function :func:`_PyImport_FindExtensionObject`. It
+will be removed in Python 3.11.
