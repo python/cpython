@@ -6619,7 +6619,7 @@ static int
 assemble_line_range(struct assembler *a)
 {
     int ldelta, bdelta;
-    bdelta =  (a->a_offset - a->a_lineno_start) * 2;
+    bdelta =  (a->a_offset - a->a_lineno_start) * sizeof(_Py_CODEUNIT);
     if (bdelta == 0) {
         return 1;
     }
