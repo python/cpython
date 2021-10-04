@@ -737,7 +737,7 @@ retreat(PyCodeAddressRange *bounds)
     bounds->opaque.computed_line -= ldelta;
     bounds->opaque.lo_next -= 2;
     bounds->ar_end = bounds->ar_start;
-    bounds->ar_start -= ((unsigned char *)bounds->opaque.lo_next)[-2];
+    bounds->ar_start -= ((unsigned char *)bounds->opaque.lo_next)[-2]*sizeof(_Py_CODEUNIT);
     ldelta = ((signed char *)bounds->opaque.lo_next)[-1];
     if (ldelta == -128) {
         bounds->ar_line = -1;
@@ -751,7 +751,7 @@ static void
 advance(PyCodeAddressRange *bounds)
 {
     bounds->ar_start = bounds->ar_end;
-    int delta = ((unsigned char *)bounds->opaque.lo_next)[0];
+    int delta = ((unsigned char *)bounds->opaque.lo_next)[0]*sizeof(_Py_CODEUNIT);
     bounds->ar_end += delta;
     int ldelta = ((signed char *)bounds->opaque.lo_next)[1];
     bounds->opaque.lo_next += 2;
@@ -856,6 +856,8 @@ decode_linetable(PyCodeObject *code)
         if (bounds.opaque.computed_line != line) {
             int bdelta = bounds.ar_start - code_offset;
             int ldelta = bounds.opaque.computed_line - line;
+            assert(bdelta % sizeof(_Py_CODEUNIT) == 0);
+            bdelta /= sizeof(_Py_CODEUNIT);
             if (!emit_delta(&bytes, bdelta, ldelta, &table_offset)) {
                 Py_DECREF(bytes);
                 return NULL;

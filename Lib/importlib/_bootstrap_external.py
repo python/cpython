@@ -363,6 +363,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3458 (imported objects now don't use LOAD_METHOD/CALL_METHOD)
 #     Python 3.11a1 3459 (PEP 657: add end line numbers and column offsets for instructions)
 #     Python 3.11a1 3460 (Add co_qualname field to PyCodeObject bpo-44530)
+#     Python 3.11a1 3461 (Use instruction offsets (as opposed to byte offsets)
+#                        in code.co_lnotab bpo-45363)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -372,7 +374,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3460).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3461).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
