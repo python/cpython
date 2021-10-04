@@ -373,8 +373,8 @@ marklines(PyCodeObject *code, int len)
     }
 
     while (PyLineTable_NextAddressRange(&bounds)) {
-        assert(bounds.ar_start/2 < len);
-        linestarts[bounds.ar_start/2] = bounds.ar_line;
+        assert(bounds.ar_start/(int)sizeof(_Py_CODEUNIT) < len);
+        linestarts[bounds.ar_start/sizeof(_Py_CODEUNIT)] = bounds.ar_line;
     }
     return linestarts;
 }
