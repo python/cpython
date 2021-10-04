@@ -500,16 +500,13 @@ func_get_doc(PyFunctionObject *op, void *Py_UNUSED(ignored))
     if (op->func_doc == NULL) {
         PyObject *consts = ((PyCodeObject*)(op->func_code))->co_consts;
         assert(PyTuple_Check(consts));
-        PyObject *doc;
 
-        if (PyTuple_Size(consts) >= 1) {
-            doc = PyTuple_GetItem(consts, 0);
+        PyObject *doc = Py_None;
+        if (PyTuple_GET_SIZE(consts) >= 1) {
+            doc = PyTuple_GET_ITEM(consts, 0);
             if (!PyUnicode_Check(doc)) {
                 doc = Py_None;
             }
-        }
-        else {
-            doc = Py_None;
         }
         Py_INCREF(doc);
         op->func_doc = doc;
