@@ -28,6 +28,7 @@ configuration problem notification and resolution.
 from configparser import ConfigParser
 import os
 import sys
+from collections import ChainMap
 
 from tkinter.font import Font
 import idlelib
@@ -192,7 +193,7 @@ class IdleConf:
                     except OSError:
                         pass
                 userDir = '~'
-        if userDir == "~": # still no path to home!
+        else: # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
             userDir = os.getcwd()
         userDir = os.path.join(userDir, cfgDir)
@@ -208,7 +209,7 @@ class IdleConf:
                     except OSError:
                         pass
                 raise SystemExit
-        # TODO continue without userDIr instead of exit
+        # TODO continue without userDir instead of exit
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None,
@@ -266,7 +267,7 @@ class IdleConf:
         if configSet == 'user':
             cfgParser = self.userCfg[configType]
         elif configSet == 'default':
-            cfgParser=self.defaultCfg[configType]
+            cfgParser = self.defaultCfg[configType]
         else:
             raise InvalidConfigSet('Invalid configSet specified')
         return cfgParser.sections()
@@ -402,7 +403,7 @@ class IdleConf:
 
     @staticmethod
     def default_keys():
-        if sys.platform[:3] == 'win':
+        if sys.platform.startswith('win'):
             return 'IDLE Classic Windows'
         elif sys.platform == 'darwin':
             return 'IDLE Classic OSX'
@@ -440,7 +441,7 @@ class IdleConf:
                             option = "enable_editor"
                         else:
                             option = "enable_shell"
-                        if self.GetOption('extensions', extn,option,
+                        if self.GetOption('extensions', extn, option,
                                           default=True, type='bool',
                                           warn_on_default=False):
                             activeExtns.append(extn)
@@ -478,14 +479,16 @@ class IdleConf:
         keysName = extensionName + '_cfgBindings'
         activeKeys = self.GetCurrentKeySet()
         extKeys = {}
+
+        values = [[]]
         if self.defaultCfg['extensions'].has_section(keysName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
-            for eventName in eventNames:
-                event = '<<' + eventName + '>>'
-                binding = activeKeys[event]
-                extKeys[event] = binding
+            values.append(self.defaultCfg['extensions'].GetOptionList(keysName))
         if self.userCfg['extensions'].has_section(keysName):
-            eventNames = self.userCfg['extensions'].GetOptionList(keysName)
+            values.append(self.userCfg['extensions'].GetOptionList(keysName))
+        values.reverse()
+        eventNames = ChainMap(*values)
+
+        if eventNames:
             for eventName in eventNames:
                 event = '<<' + eventName + '>>'
                 binding = activeKeys[event]
@@ -501,15 +504,16 @@ class IdleConf:
         """
         keysName = extensionName+'_cfgBindings'
         extKeys = {}
+
+        values = [[]]
         if self.defaultCfg['extensions'].has_section(keysName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
-            for eventName in eventNames:
-                binding = self.GetOption(
-                        'extensions', keysName, eventName, default='').split()
-                event = '<<' + eventName + '>>'
-                extKeys[event] = binding
+            values.append(self.defaultCfg['extensions'].GetOptionList(keysName))
         if self.userCfg['extensions'].has_section(keysName):
-            eventNames = self.userCfg['extensions'].GetOptionList(keysName)
+            values.append(self.userCfg['extensions'].GetOptionList(keysName))
+        values.reverse()
+        eventNames = ChainMap(*values)
+
+        if eventNames:
             for eventName in eventNames:
                 binding = self.GetOption(
                         'extensions', keysName, eventName, default='').split()
@@ -527,15 +531,14 @@ class IdleConf:
         bindsName = extensionName + '_bindings'
         extBinds = self.GetExtensionKeys(extensionName)
         #add the non-configurable bindings
+        values = [[]]
         if self.defaultCfg['extensions'].has_section(bindsName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(bindsName)
-            for eventName in eventNames:
-                binding = self.GetOption(
-                        'extensions', bindsName, eventName, default='').split()
-                event = '<<' + eventName + '>>'
-                extBinds[event] = binding
+            values.append(self.defaultCfg['extensions'].GetOptionList(bindsName))
         if self.userCfg['extensions'].has_section(bindsName):
-            eventNames = self.userCfg['extensions'].GetOptionList(bindsName)
+            values.append(self.userCfg['extensions'].GetOptionList(bindsName))
+        values.reverse()
+        eventNames = ChainMap(*values)
+        if eventNames:
             for eventName in eventNames:
                 binding = self.GetOption(
                         'extensions', bindsName, eventName, default='').split()
@@ -597,7 +600,7 @@ class IdleConf:
         """
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
-# TODO make keyBindins a file or class attribute used for test above
+# TODO make keyBindings a file or class attribute used for test above
 # and copied in function below.
 
     former_extension_events = {  #  Those with user-configurable keys.
@@ -720,7 +723,7 @@ class IdleConf:
             cfgParser = self.defaultCfg['main']
         else:
             raise InvalidConfigSet('Invalid configSet specified')
-        options=cfgParser.GetOptionList('HelpFiles')
+        options = cfgParser.GetOptionList('HelpFiles')
         for option in options:
             value=cfgParser.Get('HelpFiles', option, default=';')
             if value.find(';') == -1: #malformed config entry with no ';'
@@ -731,7 +734,7 @@ class IdleConf:
                 menuItem=value[0].strip()
                 helpPath=value[1].strip()
             if menuItem and helpPath: #neither are empty strings
-                helpSources.append( (menuItem,helpPath,option) )
+                helpSources.append( (menuItem, helpPath, option) )
         helpSources.sort(key=lambda x: x[2])
         return helpSources
 
@@ -837,6 +840,7 @@ class ConfigChanges(dict):
         Helper for save_all.
         """
         if idleConf.defaultCfg[config_type].has_option(section, item):
+            print((idleConf.defaultCfg[config_type].Get(section, item), value))
             if idleConf.defaultCfg[config_type].Get(section, item) == value:
                 # The setting equals a default setting, remove it from user cfg.
                 return idleConf.userCfg[config_type].RemoveOption(section, item)

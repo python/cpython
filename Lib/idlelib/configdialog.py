@@ -1971,7 +1971,11 @@ class ExtPage(Frame):
             self.extensions[ext_name] = []
 
         for ext_name in self.extensions:
-            opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
+            opt_list = self.ext_defaultCfg.GetOptionList(ext_name)
+            user_list = self.ext_userCfg.GetOptionList(ext_name)
+            opt_list.extend(user_list)
+            user_list = set(user_list)
+            opt_list = list(set(sorted(opt_list)))
 
             # Bring 'enable' options to the beginning of the list.
             enables = [opt_name for opt_name in opt_list
@@ -1981,8 +1985,12 @@ class ExtPage(Frame):
             opt_list = enables + opt_list
 
             for opt_name in opt_list:
-                def_str = self.ext_defaultCfg.Get(
-                        ext_name, opt_name, raw=True)
+                if opt_name in user_list:
+                    def_str = self.ext_userCfg.Get(
+                            ext_name, opt_name, raw=True)
+                else:
+                    def_str = self.ext_defaultCfg.Get(
+                            ext_name, opt_name, raw=True)
                 try:
                     def_obj = {'True':True, 'False':False}[def_str]
                     opt_type = 'bool'
@@ -1994,9 +2002,14 @@ class ExtPage(Frame):
                         def_obj = def_str
                         opt_type = None
                 try:
-                    value = self.ext_userCfg.Get(
-                            ext_name, opt_name, type=opt_type, raw=True,
-                            default=def_obj)
+                    if opt_name in user_list:
+                        value = self.ext_userCfg.Get(
+                                ext_name, opt_name, type=opt_type, raw=True,
+                                default=def_obj)
+                    else:
+                        value = self.ext_defaultCfg.Get(
+                                ext_name, opt_name, type=opt_type, raw=True,
+                                default=def_obj)
                 except ValueError:  # Need this until .Get fixed.
                     value = def_obj  # Bad values overwritten by entry.
                 var = StringVar(self)
@@ -2044,7 +2057,7 @@ class ExtPage(Frame):
                       validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:  # type == 'str'
+            else:  # opt['type'] == 'str'
                 # Limit size to fit non-expanding space with larger font.
                 Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
@@ -2060,10 +2073,10 @@ class ExtPage(Frame):
         default = opt['default']
         value = opt['var'].get().strip() or default
         opt['var'].set(value)
-        # if self.defaultCfg.has_section(section):
-        # Currently, always true; if not, indent to return.
-        if (value == default):
-            return self.ext_userCfg.RemoveOption(section, name)
+        # Default config does not necessarily have section.
+        if self.ext_defaultCfg.has_section(section):
+            if (value == default):
+                return self.ext_userCfg.RemoveOption(section, name)
         # Set the option.
         return self.ext_userCfg.SetOption(section, name, value)
 
@@ -2076,14 +2089,15 @@ class ExtPage(Frame):
         Methods:
             set_extension_value
         """
-        has_changes = False
+##        has_changes = False
         for ext_name in self.extensions:
-            options = self.extensions[ext_name]
-            for opt in options:
-                if self.set_extension_value(ext_name, opt):
-                    has_changes = True
-        if has_changes:
-            self.ext_userCfg.Save()
+##            options = self.extensions[ext_name]
+            for opt in self.extensions[ext_name]:
+                self.set_extension_value(ext_name, opt)
+##                if self.set_extension_value(ext_name, opt):
+##                    has_changes = True
+##        if has_changes:
+        self.ext_userCfg.Save()
 
 
 class HelpFrame(LabelFrame):
