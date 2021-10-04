@@ -1218,7 +1218,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #endif
 
 #ifdef WITH_DTRACE
-#define OR_DTRACE_LINE || PyDTrace_LINE_ENABLED()
+#define OR_DTRACE_LINE | (PyDTrace_LINE_ENABLED() ? 255 : 0)
 #else
 #define OR_DTRACE_LINE
 #endif
@@ -1292,7 +1292,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         assert(cframe.use_tracing == 0 || cframe.use_tracing == 255); \
-        opcode |= cframe.use_tracing; \
+        opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
 
@@ -1363,7 +1363,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define PREDICT(op) \
     do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word) | cframe.use_tracing; \
+        opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
         if (opcode == op) { \
             oparg = _Py_OPARG(word); \
             INSTRUCTION_START(); \
