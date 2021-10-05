@@ -1,0 +1,3 @@
+Fix clang rpath issue in :mod:`distutils`. The UnixCCompiler now uses
+correct clang option to add a runtime library directory (rpath) to a shared
+library.
