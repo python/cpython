@@ -10573,8 +10573,9 @@ if test "x$ac_cv_lib_socket_socket" = xyes; then :
 fi
  # SVR4 sockets
 
-# Haiku system library
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket in -lnetwork" >&5
+case $ac_sys_system/$ac_sys_release in
+    Haiku*)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket in -lnetwork" >&5
 $as_echo_n "checking for socket in -lnetwork... " >&6; }
 if ${ac_cv_lib_network_socket+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10614,6 +10615,8 @@ if test "x$ac_cv_lib_network_socket" = xyes; then :
   LIBS="-lnetwork $LIBS"
 fi
 
+    ;;
+esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-libs" >&5
 $as_echo_n "checking for --with-libs... " >&6; }
