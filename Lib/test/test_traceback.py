@@ -995,9 +995,12 @@ context_message = (
     "\nDuring handling of the above exception, "
     "another exception occurred:\n\n")
 
-boundaries = re.compile(
-    '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
+nested_exception_header_re = r'[\+-]?\+[-{4} ]+[ \d\.?]+[ -{4}]+'
 
+boundaries = re.compile(
+    '(%s|%s|%s)' % (re.escape(cause_message),
+                    re.escape(context_message),
+                    nested_exception_header_re))
 
 class BaseExceptionReportingTests:
 
@@ -1262,6 +1265,171 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         with captured_output("stderr") as s:
             exception_print(e)
         return s.getvalue()
+
+    # TODO: once traceback.py supports this format, move the
+    #       following tests to the superclass
+
+    def check_exception_group(self, exc_func, expected):
+        report = self.get_report(exc_func)
+        blocks = boundaries.split(report)
+        self.assertEqual(len(blocks), len(expected))
+
+        for i, block in enumerate(blocks):
+            for line in expected[i]:
+                self.assertIn(f"{line}", block)
+                # check indentation
+                self.assertNotIn(f" {line}", block)
+
+        for line in report:
+            # at most one margin char per line
+            self.assertLessEqual(line.count('|'), 1)
+
+    @cpython_only
+    def test_exception_group_basic(self):
+        def exc():
+            raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+
+        expected = [
+            ['  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])',
+             '  | ExceptionGroup: eg',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- 1 ----------------'],
+            ['    | ValueError: 1'],
+            ['+---------------- 2 ----------------'],
+            ['    | TypeError: 2'],
+        ]
+
+        self.check_exception_group(exc, expected)
+
+    @cpython_only
+    def test_exception_group_context(self):
+        def exc():
+            try:
+                raise ExceptionGroup("eg1", [ValueError(1), TypeError(2)])
+            except:
+                raise ExceptionGroup("eg2", [ValueError(3), TypeError(4)])
+
+        expected = [
+            ['  |     raise ExceptionGroup("eg1", [ValueError(1), TypeError(2)])',
+             '  | ExceptionGroup: eg1',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- 1 ----------------'],
+            ['    | ValueError: 1'],
+            ['+---------------- 2 ----------------'],
+            ['    | TypeError: 2'],
+            [ context_message ],
+            ['  |     raise ExceptionGroup("eg2", [ValueError(3), TypeError(4)])',
+             '  | ExceptionGroup: eg2',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- 1 ----------------'],
+            ['    | ValueError: 3'],
+            ['+---------------- 2 ----------------'],
+            ['    | TypeError: 4'],
+        ]
+        self.check_exception_group(exc, expected)
+
+    @cpython_only
+    def test_exception_group_context(self):
+        def exc():
+            EG = ExceptionGroup
+            try:
+                raise EG("eg1", [ValueError(1), TypeError(2)])
+            except:
+                raise EG("eg2", [ValueError(3), TypeError(4)])
+
+        expected = [
+            ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
+             '  | ExceptionGroup: eg1',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- context.1 ----------------'],
+            ['    | ValueError: 1'],
+            ['+---------------- context.2 ----------------'],
+            ['    | TypeError: 2'],
+            [ context_message ],
+            ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
+             '  | ExceptionGroup: eg2',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- 1 ----------------'],
+            ['    | ValueError: 3'],
+            ['+---------------- 2 ----------------'],
+            ['    | TypeError: 4'],
+        ]
+        self.check_exception_group(exc, expected)
+
+    def test_exception_group_cause(self):
+        def exc():
+            EG = ExceptionGroup
+            try:
+                raise EG("eg1", [ValueError(1), TypeError(2)])
+            except Exception as e:
+                raise EG("eg2", [ValueError(3), TypeError(4)]) from e
+
+        expected = [
+            ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
+             '  | ExceptionGroup: eg1',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- cause.1 ----------------'],
+            ['    | ValueError: 1'],
+            ['+---------------- cause.2 ----------------'],
+            ['    | TypeError: 2'],
+            [ cause_message ],
+            ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
+             '  | ExceptionGroup: eg2',
+             '  |  with 2 sub-exceptions:'
+            ],
+            ['-+---------------- 1 ----------------'],
+            ['    | ValueError: 3'],
+            ['+---------------- 2 ----------------'],
+            ['    | TypeError: 4'],
+        ]
+        self.check_exception_group(exc, expected)
+
+    @cpython_only
+    def test_exception_group_nested(self):
+        def exc():
+            EG = ExceptionGroup
+            VE = ValueError
+            TE = TypeError
+            try:
+                try:
+                    raise EG("nested", [TE(2), TE(3)])
+                except Exception as e:
+                    exc = e
+                raise EG("eg", [VE(1), exc, VE(4)])
+            except:
+                raise EG("top", [VE(5)])
+
+        expected = [
+            ['  |     raise EG("eg", [VE(1), exc, VE(4)])',
+             '  | ExceptionGroup: eg',
+             '  |  with 3 sub-exceptions:'
+            ],
+            ['-+---------------- context.1 ----------------'],
+            ['    | ValueError: 1'],
+            ['+---------------- context.2 ----------------'],
+            ['    | ExceptionGroup: nested',
+             '    |  with 2 sub-exceptions'
+            ],
+            ['-+---------------- context.2.1 ----------------'],
+            ['      | TypeError: 2'],
+            ['+---------------- context.2.2 ----------------'],
+            ['      | TypeError: 3'],
+            ['+---------------- context.3 ----------------'],
+            ['    | ValueError: 4'],
+            [ context_message ],
+            ['  |     raise EG("top", [VE(5)])',
+             '  | ExceptionGroup: top'
+            ],
+            ['-+---------------- 1 ----------------'],
+            ['    | ValueError: 5']
+        ]
+        self.check_exception_group(exc, expected)
 
 
 class LimitTests(unittest.TestCase):
