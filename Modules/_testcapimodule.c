@@ -1173,6 +1173,143 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+/*
+ * Small helper to import abc.ABC and ctypes.Array for testing.  Both
+ * are (incompatible) MetaClass instances.  If Array is NULL it is not filled.
+ */
+static int
+import_abc_and_array(PyObject **ABC, PyObject **Array)
+{
+    PyObject *abc_mod = PyImport_ImportModule("abc");
+    if (abc_mod == NULL) {
+        return -1;
+    }
+    *ABC = PyObject_GetAttrString(abc_mod, "ABC");
+    Py_DECREF(abc_mod);
+    if (*ABC == NULL) {
+        return -1;
+    }
+    if (Array == NULL) {
+        return 0;
+    }
+
+    PyObject *ctypes_mod = PyImport_ImportModule("ctypes");
+    if (ctypes_mod == NULL) {
+        Py_CLEAR(*ABC);
+        return -1;
+    }
+    *Array = PyObject_GetAttrString(ctypes_mod, "Array");
+    Py_DECREF(ctypes_mod);
+    if (*Array == NULL) {
+        Py_CLEAR(*ABC);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyType_Slot MinimalType_slots[] = {
+    {0, 0},
+};
+
+static PyType_Spec MinimalType_spec = {
+    "_testcapi.MinimalSpecType",
+    0,
+    0,
+    Py_TPFLAGS_DEFAULT,
+    MinimalType_slots
+};
+
+
+static PyObject *
+test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    /* Get two (incompatible) MetaTypes */
+    PyObject *ABC;
+    if (import_abc_and_array(&ABC, NULL) < 0) {
+        return NULL;
+    }
+
+    PyObject *bases = PyTuple_Pack(1, ABC);
+    if (bases == NULL) {
+        Py_DECREF(ABC);
+        return NULL;
+    }
+    PyObject *new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
+    Py_DECREF(bases);
+    if (new == NULL) {
+        Py_DECREF(ABC);
+        return NULL;
+    }
+    if (Py_TYPE(new) != Py_TYPE(ABC)) {
+        PyErr_SetString(PyExc_AssertionError,
+                "MetaType appears not correctly inherited from ABC!");
+        Py_DECREF(ABC);
+        Py_DECREF(new);
+        return NULL;
+    }
+    Py_DECREF(ABC);
+    Py_DECREF(new);
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    /* Get two (incompatible) MetaTypes */
+    PyObject *ABC, *Array;
+
+    if (import_abc_and_array(&ABC, &Array) < 0) {
+        return NULL;
+    }
+
+    PyObject *bases = PyTuple_Pack(2, ABC, Array);
+    Py_DECREF(ABC);
+    Py_DECREF(Array);
+    if (bases == NULL) {
+        return NULL;
+    }
+    /*
+     * The following should raise a TypeError due to a MetaClass conflict.
+     */
+    PyObject *new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
+    Py_DECREF(bases);
+    if (new != NULL) {
+        Py_DECREF(new);
+        PyErr_SetString(PyExc_AssertionError,
+                "MetaType conflict not recognized by PyType_FromSpecWithBases");
+        return NULL;
+    }
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+        PyObject *type, *value, *traceback, *meta_error_string;
+
+        PyErr_Fetch(&type, &value, &traceback);
+        Py_DECREF(type);
+        Py_XDECREF(traceback);
+
+        meta_error_string = PyUnicode_FromString("metaclass conflict:");
+        if (meta_error_string == NULL) {
+            Py_DECREF(value);
+            return NULL;
+        }
+        int res = PyUnicode_Contains(value, meta_error_string);
+        Py_DECREF(value);
+        Py_DECREF(meta_error_string);
+        if (res < 0) {
+            return NULL;
+        }
+        if (res == 0) {
+            PyErr_SetString(PyExc_AssertionError,
+                    "TypeError did not inlclude expected message.");
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    return NULL;
+}
+
+
 static PyObject *
 test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -5722,6 +5859,11 @@ static PyMethodDef TestMethods[] = {
     {"get_args",                get_args,                        METH_VARARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
+    {"test_from_spec_metatype_inheritance", test_from_spec_metatype_inheritance,
+     METH_NOARGS},
+    {"test_from_spec_invalid_metatype_inheritance",
+     test_from_spec_invalid_metatype_inheritance,
+     METH_NOARGS},
     {"test_get_type_qualname",   test_get_type_qualname,       METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},

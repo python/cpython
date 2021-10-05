@@ -3398,36 +3398,11 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
-    if (res == NULL)
-        return NULL;
-    res_start = (char*)res;
-
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
-        goto fail;
+        return NULL;
     }
-
-    /* Set the type name and qualname */
-    const char *s = strrchr(spec->name, '.');
-    if (s == NULL)
-        s = spec->name;
-    else
-        s++;
-
-    type = &res->ht_type;
-    /* The flags must be initialized early, before the GC traverses us */
-    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
-    res->ht_name = PyUnicode_FromString(s);
-    if (!res->ht_name)
-        goto fail;
-    res->ht_qualname = res->ht_name;
-    Py_INCREF(res->ht_qualname);
-    type->tp_name = spec->name;
-
-    Py_XINCREF(module);
-    res->ht_module = module;
 
     /* Adjust for empty tuple bases */
     if (!bases) {
@@ -3443,11 +3418,11 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         if (!bases) {
             bases = PyTuple_Pack(1, base);
             if (!bases)
-                goto fail;
+                return NULL;
         }
         else if (!PyTuple_Check(bases)) {
             PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
-            goto fail;
+            return NULL;
         }
         else {
             Py_INCREF(bases);
@@ -3456,11 +3431,46 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     else if (!PyTuple_Check(bases)) {
         bases = PyTuple_Pack(1, bases);
         if (!bases)
-            goto fail;
+            return NULL;
     }
     else {
         Py_INCREF(bases);
     }
+
+    /* NOTE: Missing API to replace `&PyType_Type` below, see bpo-15870 */
+    PyTypeObject *metatype = _PyType_CalculateMetaclass(&PyType_Type, bases);
+    if (metatype == NULL) {
+        Py_DECREF(bases);
+        return NULL;
+    }
+    res = (PyHeapTypeObject*)metatype->tp_alloc(metatype, nmembers);
+    if (res == NULL) {
+        Py_DECREF(bases);
+        return NULL;
+    }
+    res_start = (char*)res;
+
+    /* Set the type name and qualname */
+    const char *s = strrchr(spec->name, '.');
+    if (s == NULL)
+        s = spec->name;
+    else
+        s++;
+
+    type = &res->ht_type;
+    /* The flags must be initialized early, before the GC traverses us */
+    type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
+    res->ht_name = PyUnicode_FromString(s);
+    if (!res->ht_name) {
+        Py_DECREF(bases);
+        goto fail;
+    }
+    res->ht_qualname = res->ht_name;
+    Py_INCREF(res->ht_qualname);
+    type->tp_name = spec->name;
+
+    Py_XINCREF(module);
+    res->ht_module = module;
 
     /* Calculate best base, and check that all bases are type objects */
     base = best_base(bases);
