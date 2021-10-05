@@ -111,7 +111,7 @@ The :mod:`crypt` module defines the following functions:
    .. index:: single: crypt(3)
 
    Since a few :manpage:`crypt(3)` extensions allow different values, with
-   different sizes in the *salt*, it is recommended to use the full crypted
+   different sizes in the *salt*, it is recommended to use  the full crypted
    password as salt when checking for a password.
 
    .. versionchanged:: 3.3
