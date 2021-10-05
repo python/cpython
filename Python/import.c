@@ -1046,6 +1046,29 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 }
 
 
+/* Return true if the name is an alias.  In that case, "alias" is set
+   to the original module name.  If it is an alias but the original
+   module isn't known then "alias" is set to NULL while true is returned. */
+static bool
+resolve_module_alias(const char *name, const struct _module_alias *aliases,
+                     const char **alias)
+{
+    const struct _module_alias *entry;
+    for (entry = aliases; ; entry++) {
+        if (entry->name == NULL) {
+            /* It isn't an alias. */
+            return false;
+        }
+        if (strcmp(name, entry->name) == 0) {
+            if (alias != NULL) {
+                *alias = entry->orig;
+            }
+            return true;
+        }
+    }
+}
+
+
 /* Frozen modules */
 
 static bool
@@ -1161,16 +1184,15 @@ struct frozen_info {
     const char *data;
     Py_ssize_t size;
     bool is_package;
+    bool is_alias;
+    const char *origname;
 };
 
 static frozen_status
 find_frozen(PyObject *nameobj, struct frozen_info *info)
 {
     if (info != NULL) {
-        info->nameobj = NULL;
-        info->data = NULL;
-        info->size = 0;
-        info->is_package = false;
+        memset(info, 0, sizeof(*info));
     }
 
     if (nameobj == NULL || nameobj == Py_None) {
@@ -1205,6 +1227,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         info->data = (const char *)p->code;
         info->size = p->size < 0 ? -(p->size) : p->size;
         info->is_package = p->size < 0 ? true : false;
+        info->origname = name;
+        info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
+                                              &info->origname);
     }
 
     if (p->code == NULL) {
@@ -1246,7 +1271,8 @@ int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *co, *m, *d;
+    PyObject *co, *m, *d = NULL;
+    int err;
 
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -1267,7 +1293,6 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
-        int err;
         m = import_add_module(tstate, name);
         if (m == NULL)
             goto err_return;
@@ -1288,15 +1313,33 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         goto err_return;
     }
     m = exec_code_in_module(tstate, name, d, co);
-    Py_DECREF(d);
     if (m == NULL) {
         goto err_return;
     }
-    Py_DECREF(co);
     Py_DECREF(m);
+    /* Set __origname__ (consumed in FrozenImporter._setup_module()). */
+    PyObject *origname;
+    if (info.origname) {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            goto err_return;
+        }
+    }
+    else {
+        Py_INCREF(Py_None);
+        origname = Py_None;
+    }
+    err = PyDict_SetItemString(d, "__origname__", origname);
+    Py_DECREF(origname);
+    if (err != 0) {
+        goto err_return;
+    }
+    Py_DECREF(d);
+    Py_DECREF(co);
     return 1;
 
 err_return:
+    Py_XDECREF(d);
     Py_DECREF(co);
     return -1;
 }
@@ -2014,11 +2057,14 @@ The returned info (a 2-tuple):
 
  * data         the raw marshalled bytes
  * is_package   whether or not it is a package
+ * origname     the originally frozen module's name, or None if not
+                a stdlib module (this will usually be the same as
+                the module's current name)
 [clinic start generated code]*/
 
 static PyObject *
 _imp_find_frozen_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=3fd17da90d417e4e input=4e52b3ac95f6d7ab]*/
+/*[clinic end generated code: output=3fd17da90d417e4e input=6aa7b9078a89280a]*/
 {
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -2032,12 +2078,25 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         set_frozen_error(status, name);
         return NULL;
     }
+
     PyObject *data = PyBytes_FromStringAndSize(info.data, info.size);
     if (data == NULL) {
         return NULL;
     }
-    PyObject *result = PyTuple_Pack(2, data,
-                                    info.is_package ? Py_True : Py_False);
+
+    PyObject *origname = NULL;
+    if (info.origname != NULL && info.origname[0] != '\0') {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            Py_DECREF(data);
+            return NULL;
+        }
+    }
+
+    PyObject *result = PyTuple_Pack(3, data,
+                                    info.is_package ? Py_True : Py_False,
+                                    origname ? origname : Py_None);
+    Py_XDECREF(origname);
     Py_DECREF(data);
     return result;
 }

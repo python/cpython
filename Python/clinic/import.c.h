@@ -178,7 +178,10 @@ PyDoc_STRVAR(_imp_find_frozen__doc__,
 "The returned info (a 2-tuple):\n"
 "\n"
 " * data         the raw marshalled bytes\n"
-" * is_package   whether or not it is a package");
+" * is_package   whether or not it is a package\n"
+" * origname     the originally frozen module\'s name, or None if not\n"
+"                a stdlib module (this will usually be the same as\n"
+"                the module\'s current name)");
 
 #define _IMP_FIND_FROZEN_METHODDEF    \
     {"find_frozen", (PyCFunction)_imp_find_frozen, METH_O, _imp_find_frozen__doc__},
@@ -545,4 +548,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=a31e1c00653359ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c8dd08158f9ac7c input=a9049054013a1b77]*/
