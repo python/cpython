@@ -3099,8 +3099,11 @@ AC_SUBST(TZPATH)
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
-# Haiku system library
-AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+case $ac_sys_system/$ac_sys_release in
+    Haiku*)
+        AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+    ;;
+esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
