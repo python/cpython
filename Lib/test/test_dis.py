@@ -179,6 +179,25 @@ dis_bug42562 = """\
           2 RETURN_VALUE
 """
 
+
+def bug45191():
+    obj \
+        .m(*[a])
+
+
+dis_bug45191 = """\
+%3d           0 LOAD_GLOBAL              0 (obj)
+
+%3d           2 LOAD_ATTR                1 (m)
+              4 LOAD_GLOBAL              2 (a)
+              6 BUILD_LIST               1
+              8 CALL_FUNCTION_EX         0
+             10 POP_TOP
+             12 LOAD_CONST               0 (None)
+             14 RETURN_VALUE
+""" % (bug45191.__code__.co_firstlineno + 1,
+       bug45191.__code__.co_firstlineno + 2)
+
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
               2 POP_TOP

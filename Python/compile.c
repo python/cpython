@@ -320,7 +320,7 @@ static int validate_keywords(struct compiler *c, asdl_keyword_seq *keywords);
 static int compiler_call_simple_kw_helper(struct compiler *c,
                                           asdl_keyword_seq *keywords,
                                           Py_ssize_t nkwelts);
-static int compiler_call_helper(struct compiler *c, int n,
+static int compiler_call_helper(struct compiler *c, int n, int end_lineno,
                                 asdl_expr_seq *args,
                                 asdl_keyword_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
@@ -2619,7 +2619,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST(c, s->v.ClassDef.name);
 
     /* 5. generate the rest of the code for the call */
-    if (!compiler_call_helper(c, 2, s->v.ClassDef.bases, s->v.ClassDef.keywords))
+    if (!compiler_call_helper(c, 2, s->end_lineno, s->v.ClassDef.bases, s->v.ClassDef.keywords))
         return 0;
 
     /* 6. apply decorators */
@@ -4435,7 +4435,7 @@ compiler_call(struct compiler *c, expr_ty e)
         return 0;
     }
     VISIT(c, expr, e->v.Call.func);
-    return compiler_call_helper(c, 0,
+    return compiler_call_helper(c, 0, e->v.Call.func->end_lineno,
                                 e->v.Call.args,
                                 e->v.Call.keywords);
 }
@@ -4592,10 +4592,12 @@ compiler_call_simple_kw_helper(struct compiler *c,
 static int
 compiler_call_helper(struct compiler *c,
                      int n, /* Args already pushed */
+                     int end_lineno,
                      asdl_expr_seq *args,
                      asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
+    int old_lineno = c->u->u_lineno;
 
     if (validate_keywords(c, keywords) == -1) {
         return 0;
@@ -4631,10 +4633,12 @@ compiler_call_helper(struct compiler *c,
             return 0;
         };
         ADDOP_I(c, CALL_FUNCTION_KW, n + nelts + nkwelts);
+        c->u->u_lineno = old_lineno;
         return 1;
     }
     else {
         ADDOP_I(c, CALL_FUNCTION, n + nelts);
+        c->u->u_lineno = old_lineno;
         return 1;
     }
 
@@ -4643,6 +4647,8 @@ ex_call:
     /* Do positional arguments. */
     if (n ==0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
         VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
+        old_lineno = c->u->u_lineno;
+        c->u->u_lineno = end_lineno;
     }
     else if (starunpack_helper(c, args, n, BUILD_LIST,
                                  LIST_APPEND, LIST_EXTEND, 1) == 0) {
@@ -4692,6 +4698,7 @@ ex_call:
         assert(have_dict);
     }
     ADDOP_I(c, CALL_FUNCTION_EX, nkwelts > 0);
+    c->u->u_lineno = old_lineno;
     return 1;
 }
 
