@@ -32,17 +32,19 @@ def fresh(name, *, oldapi=False):
 
 class ExecModuleTests(abc.LoaderTests):
 
-    def exec_module(self, name):
+    def exec_module(self, name, origname=None):
         with import_helper.frozen_modules():
             is_package = self.machinery.FrozenImporter.is_package(name)
             code = _imp.get_frozen_object(name)
-        data = marshal.dumps(code)
         spec = self.machinery.ModuleSpec(
             name,
             self.machinery.FrozenImporter,
             origin='frozen',
             is_package=is_package,
-            loader_state=data,
+            loader_state=types.SimpleNamespace(
+                data=marshal.dumps(code),
+                origname=origname or name,
+            ),
         )
         module = types.ModuleType(name)
         module.__spec__ = spec
@@ -66,7 +68,8 @@ class ExecModuleTests(abc.LoaderTests):
             self.assertEqual(getattr(module, attr), value)
         self.assertEqual(output, 'Hello world!\n')
         self.assertTrue(hasattr(module, '__spec__'))
-        self.assertIsNone(module.__spec__.loader_state)
+        self.assertIsNone(module.__spec__.loader_state.data)
+        self.assertEqual(module.__spec__.loader_state.origname, name)
 
     def test_package(self):
         name = '__phello__'
@@ -79,7 +82,8 @@ class ExecModuleTests(abc.LoaderTests):
                                  name=name, attr=attr, given=attr_value,
                                  expected=value))
         self.assertEqual(output, 'Hello world!\n')
-        self.assertIsNone(module.__spec__.loader_state)
+        self.assertIsNone(module.__spec__.loader_state.data)
+        self.assertEqual(module.__spec__.loader_state.origname, name)
 
     def test_lacking_parent(self):
         name = '__phello__.spam'
