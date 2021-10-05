@@ -265,7 +265,21 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
         return _PyStatus_NO_MEMORY();
     }
 
-    if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+    if (PathIsRelativeW(path)) {
+        wchar_t buff[MAXPATHLEN];
+        if (!GetCurrentDirectoryW(MAXPATHLEN, buff)) {
+            return _PyStatus_ERR("unable to find current working directory");
+        }
+        if (FAILED(PathCchCombineEx(buff, MAXPATHLEN + 1, buff, path, PATHCCH_ALLOW_LONG_PATHS))) {
+            return INIT_ERR_BUFFER_OVERFLOW();
+        }
+        if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, buff, PATHCCH_ALLOW_LONG_PATHS))) {
+            return INIT_ERR_BUFFER_OVERFLOW();
+        }
+        return _PyStatus_OK();
+    }
+
+    if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, PATHCCH_ALLOW_LONG_PATHS))) {
         return INIT_ERR_BUFFER_OVERFLOW();
     }
     return _PyStatus_OK();
@@ -291,6 +305,9 @@ search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
     /* Search from argv0_path, until LANDMARK is found.
        We guarantee 'prefix' is null terminated in bounds. */
     wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
+    if (!prefix[0]) {
+        return 0;
+    }
     wchar_t stdlibdir[MAXPATHLEN+1];
     wcscpy_s(stdlibdir, Py_ARRAY_LENGTH(stdlibdir), prefix);
     /* We initialize with the longest possible path, in case it doesn't fit.
@@ -925,6 +942,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
        the parent of that.
     */
     if (prefix[0] == L'\0') {
+        PyStatus status;
         wchar_t lookBuf[MAXPATHLEN+1];
         const wchar_t *look = buf - 1; /* 'buf' is at the end of the buffer */
         while (1) {
@@ -939,6 +957,10 @@ calculate_module_search_path(PyCalculatePath *calculate,
             nchars = lookEnd-look;
             wcsncpy(lookBuf, look+1, nchars);
             lookBuf[nchars] = L'\0';
+            status = canonicalize(lookBuf, lookBuf);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
             /* Up one level to the parent */
             reduce(lookBuf);
             if (search_for_prefix(prefix, lookBuf)) {
