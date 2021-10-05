@@ -442,7 +442,9 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         return -1;
     }
 
-    if (_Py_IsMainInterpreter(tstate->interp)) {
+    // bpo-44050: Extensions and def->m_base.m_copy can be updated
+    // when the extension module doesn't support sub-interpreters.
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (def->m_size == -1) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
