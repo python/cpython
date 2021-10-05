@@ -1,1 +1,0 @@
-Documentation of csv.Dialect is more descriptive.
