@@ -268,7 +268,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 break;
             }
             if (canTrace) {
-                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc) ? 255 : 0;
                 ts->tracing--;
             }
             PyObject* args[2] = {eventName, eventArgs};
@@ -283,7 +283,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
             Py_DECREF(o);
             Py_CLEAR(hook);
         }
-        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc) ? 255 : 0;
         ts->tracing--;
         if (_PyErr_Occurred(ts)) {
             goto exit;
