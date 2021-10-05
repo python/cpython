@@ -48,12 +48,12 @@ dis_c_instance_method = """\
 """ % (_C.__init__.__code__.co_firstlineno + 1,)
 
 dis_c_instance_method_bytes = """\
-          0 LOAD_FAST                1 (1)
-          2 LOAD_CONST               1 (1)
+          0 LOAD_FAST                1
+          2 LOAD_CONST               1
           4 COMPARE_OP               2 (==)
-          6 LOAD_FAST                0 (0)
-          8 STORE_ATTR               0 (0)
-         10 LOAD_CONST               0 (0)
+          6 LOAD_FAST                0
+          8 STORE_ATTR               0
+         10 LOAD_CONST               0
          12 RETURN_VALUE
 """
 
@@ -105,11 +105,11 @@ dis_f = """\
 
 
 dis_f_co_code = """\
-          0 LOAD_GLOBAL              0 (0)
-          2 LOAD_FAST                0 (0)
+          0 LOAD_GLOBAL              0
+          2 LOAD_FAST                0
           4 CALL_FUNCTION            1
           6 POP_TOP
-          8 LOAD_CONST               1 (1)
+          8 LOAD_CONST               1
          10 RETURN_VALUE
 """
 

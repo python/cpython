@@ -41,7 +41,7 @@ IP addresses, networks and interfaces:
 
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
    the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
-   supplied; integers less than 2**32 will be considered to be IPv4 by default.
+   supplied; integers less than ``2**32`` will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
 
@@ -56,7 +56,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Network` or :class:`IPv6Network` object depending on
    the IP address passed as argument.  *address* is a string or integer
    representing the IP network.  Either IPv4 or IPv6 networks may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  *strict*
+   integers less than ``2**32`` will be considered to be IPv4 by default.  *strict*
    is passed to :class:`IPv4Network` or :class:`IPv6Network` constructor.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address, or if the network has host bits set.
@@ -70,7 +70,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Interface` or :class:`IPv6Interface` object depending
    on the IP address passed as argument.  *address* is a string or integer
    representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  A
+   integers less than ``2**32`` will be considered to be IPv4 by default.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
 

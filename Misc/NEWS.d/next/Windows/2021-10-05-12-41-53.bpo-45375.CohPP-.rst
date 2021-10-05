@@ -1,0 +1,2 @@
+Fixes an assertion failure due to searching for the standard library in
+unnormalised paths.

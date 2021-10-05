@@ -174,8 +174,5 @@ class ResourceTest(unittest.TestCase):
                          limits)
 
 
-def test_main(verbose=None):
-    support.run_unittest(ResourceTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

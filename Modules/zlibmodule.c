@@ -1507,7 +1507,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
-"decompressobj([wbits[, zdict]]]) -- Return a decompressor object.\n"
+"decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
 "'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"

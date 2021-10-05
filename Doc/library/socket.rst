@@ -516,7 +516,7 @@ Constants
 
 .. data:: AF_LINK
 
-  .. availability:: BSD, OSX.
+  .. availability:: BSD, macOS.
 
   .. versionadded:: 3.4
 

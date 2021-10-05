@@ -1,0 +1,3 @@
+In FrozenImporter.find_spec(), we now preserve the information needed in
+exec_module() to load the module.  This change mostly impacts internal
+details, rather than changing the importer's behavior.

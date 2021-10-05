@@ -1676,15 +1676,26 @@ static int test_run_main(void)
 }
 
 
+static int test_run_main_loop(void)
+{
+    // bpo-40413: Calling Py_InitializeFromConfig()+Py_RunMain() multiple
+    // times must not crash.
+    for (int i=0; i<5; i++) {
+        int exitcode = test_run_main();
+        if (exitcode != 0) {
+            return exitcode;
+        }
+    }
+    return 0;
+}
+
+
 static int test_get_argc_argv(void)
 {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    wchar_t *argv[] = {L"python3", L"-c",
-                       (L"import sys; "
-                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
-                       L"arg2"};
+    wchar_t *argv[] = {L"python3", L"-c", L"pass", L"arg2"};
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config_set_string(&config, &config.program_name, L"./python3");
 
@@ -1900,6 +1911,7 @@ static struct TestCase TestCases[] = {
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
+    {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
 
     // Audit

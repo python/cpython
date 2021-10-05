@@ -20,6 +20,10 @@ try:
 except ImportError:
     gzip = None
 try:
+    import zlib
+except ImportError:
+    zlib = None
+try:
     import bz2
 except ImportError:
     bz2 = None
@@ -686,6 +690,16 @@ class MiscReadTestBase(CommonReadTest):
             for m1, m2 in zip(tar, tar):
                 self.assertEqual(m1.offset, m2.offset)
                 self.assertEqual(m1.get_info(), m2.get_info())
+
+    @unittest.skipIf(zlib is None, "requires zlib")
+    def test_zlib_error_does_not_leak(self):
+        # bpo-39039: tarfile.open allowed zlib exceptions to bubble up when
+        # parsing certain types of invalid data
+        with unittest.mock.patch("tarfile.TarInfo.fromtarfile") as mock:
+            mock.side_effect = zlib.error
+            with self.assertRaises(tarfile.ReadError):
+                tarfile.open(self.tarname)
+
 
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
