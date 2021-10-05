@@ -1,1 +1,0 @@
-Make completion boxes appear on Ubuntu again.
