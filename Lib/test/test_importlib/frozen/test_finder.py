@@ -32,13 +32,7 @@ class FindSpecTests(abc.FinderTests):
             self.assertIsNone(spec.submodule_search_locations)
         self.assertIsNotNone(spec.loader_state)
 
-    def check_search_location(self, spec, source=None):
-        # Frozen packages do not have any path entries.
-        # (See https://bugs.python.org/issue21736.)
-        expected = []
-        self.assertListEqual(spec.submodule_search_locations, expected)
-
-    def check_data(self, spec, source=None, ispkg=None):
+    def check_data(self, spec):
         with import_helper.frozen_modules():
             expected = _imp.get_frozen_object(spec.name)
         data = spec.loader_state
@@ -48,40 +42,72 @@ class FindSpecTests(abc.FinderTests):
         code = marshal.loads(data)
         self.assertEqual(code, expected)
 
+    def check_search_locations(self, spec):
+        # Frozen packages do not have any path entries.
+        # (See https://bugs.python.org/issue21736.)
+        expected = []
+        self.assertListEqual(spec.submodule_search_locations, expected)
+
     def test_module(self):
-        modules = {
-            '__hello__': None,
-            '__phello__.__init__': None,
-            '__phello__.spam': None,
-            '__phello__.ham.__init__': None,
-            '__phello__.ham.eggs': None,
-            '__hello_alias__': '__hello__',
-            }
-        for name, source in modules.items():
-            with self.subTest(name):
+        modules = [
+            '__hello__',
+            '__phello__.spam',
+            '__phello__.ham.eggs',
+        ]
+        for name in modules:
+            with self.subTest(f'{name} -> {name}'):
                 spec = self.find(name)
                 self.check_basic(spec, name)
-                self.check_data(spec, source)
+                self.check_data(spec)
+        modules = {
+            '__hello_alias__': '__hello__',
+            '_frozen_importlib': 'importlib._bootstrap',
+        }
+        for name, origname in modules.items():
+            with self.subTest(f'{name} -> {origname}'):
+                spec = self.find(name)
+                self.check_basic(spec, name)
+                self.check_data(spec)
+        modules = [
+            '__phello__.__init__',
+            '__phello__.ham.__init__',
+        ]
+        for name in modules:
+            origname = name.rpartition('.')[0]
+            with self.subTest(f'{name} -> {origname}'):
+                spec = self.find(name)
+                self.check_basic(spec, name)
+                self.check_data(spec)
+        modules = {
+            '__hello_only__': ('Tools', 'freeze', 'flag.py'),
+        }
+        for name, path in modules.items():
+            filename = os.path.join(REPO_ROOT, *path)
+            with self.subTest(f'{name} -> {filename}'):
+                spec = self.find(name)
+                self.check_basic(spec, name)
+                self.check_data(spec)
 
     def test_package(self):
-        modules = {
-            '__phello__': None,
-            '__phello__.ham': None,
-            '__phello_alias__': '__hello__',
-        }
-        for name, source in modules.items():
-            with self.subTest(name):
+        packages = [
+            '__phello__',
+            '__phello__.ham',
+        ]
+        for name in packages:
+            with self.subTest(f'{name} -> {name}'):
                 spec = self.find(name)
                 self.check_basic(spec, name, ispkg=True)
-                self.check_search_location(spec, source)
-                self.check_data(spec, source, ispkg=True)
-
-    def test_frozen_only(self):
-        name = '__hello_only__'
-        source = os.path.join(REPO_ROOT, 'Tools', 'freeze', 'flag.py')
-        spec = self.find(name)
-        self.check_basic(spec, name)
-        self.check_data(spec, source)
+                self.check_data(spec)
+                self.check_search_locations(spec)
+        packages = {
+            '__phello_alias__': '__hello__',
+        }
+        for name, origname in packages.items():
+            with self.subTest(f'{name} -> {origname}'):
+                spec = self.find(name)
+                self.check_basic(spec, name, ispkg=True)
+                self.check_data(spec)
+                self.check_search_locations(spec)
 
     # These are covered by test_module() and test_package().
     test_module_in_package = None
