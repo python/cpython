@@ -36,6 +36,7 @@
    and __phello__.spam.  Loading any will print some famous words... */
 
 #include "Python.h"
+#include "pycore_import.h"
 
 /* Includes for frozen modules: */
 #include "frozen_modules/importlib._bootstrap.h"
@@ -102,8 +103,23 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"__phello__.spam", _Py_M____phello___spam,
         (int)sizeof(_Py_M____phello___spam)},
     {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only)},
-    {0, 0, 0} /* sentinel */
+    {0, 0, 0} /* modules sentinel */
 };
+
+static const struct _module_alias aliases[] = {
+    {"_frozen_importlib", "importlib._bootstrap"},
+    {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"os.path", "posixpath"},
+    {"__hello_alias__", "__hello__"},
+    {"__phello_alias__", "__hello__"},
+    {"__phello_alias__.spam", "__hello__"},
+    {"__phello__.__init__", "<__phello__"},
+    {"__phello__.ham.__init__", "<__phello__.ham"},
+    {"__hello_only__", NULL},
+    {0, 0} /* aliases sentinel */
+};
+const struct _module_alias *_PyImport_FrozenAliases = aliases;
+
 
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
