@@ -149,36 +149,41 @@ class LoaderTests(abc.LoaderTests):
 
     def test_module(self):
         module, stdout = self.load_module('__hello__')
+        filename = resolve_stdlib_file('__hello__')
         check = {'__name__': '__hello__',
                 '__package__': '',
                 '__loader__': self.machinery.FrozenImporter,
+                '__file__': filename,
                 }
         for attr, value in check.items():
-            self.assertEqual(getattr(module, attr), value)
+            self.assertEqual(getattr(module, attr, None), value)
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-        self.assertFalse(hasattr(module, '__file__'))
 
     def test_package(self):
         module, stdout = self.load_module('__phello__')
+        filename = resolve_stdlib_file('__phello__', ispkg=True)
+        pkgdir = os.path.dirname(filename)
         check = {'__name__': '__phello__',
                  '__package__': '__phello__',
-                 '__path__': [],
+                 '__path__': [pkgdir],
                  '__loader__': self.machinery.FrozenImporter,
+                 '__file__': filename,
                  }
         for attr, value in check.items():
-            attr_value = getattr(module, attr)
+            attr_value = getattr(module, attr, None)
             self.assertEqual(attr_value, value,
                              "for __phello__.%s, %r != %r" %
                              (attr, attr_value, value))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-        self.assertFalse(hasattr(module, '__file__'))
 
     def test_lacking_parent(self):
         with util.uncache('__phello__'):
             module, stdout = self.load_module('__phello__.spam')
+        filename = resolve_stdlib_file('__phello__.spam')
         check = {'__name__': '__phello__.spam',
                 '__package__': '__phello__',
                 '__loader__': self.machinery.FrozenImporter,
+                '__file__': filename,
                 }
         for attr, value in check.items():
             attr_value = getattr(module, attr)
@@ -186,7 +191,6 @@ class LoaderTests(abc.LoaderTests):
                              "for __phello__.spam.%s, %r != %r" %
                              (attr, attr_value, value))
         self.assertEqual(stdout.getvalue(), 'Hello world!\n')
-        self.assertFalse(hasattr(module, '__file__'))
 
     def test_module_reuse(self):
         with fresh('__hello__', oldapi=True):

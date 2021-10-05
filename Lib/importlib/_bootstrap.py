@@ -421,7 +421,10 @@ class ModuleSpec:
 
 def spec_from_loader(name, loader, *, origin=None, is_package=None):
     """Return a module spec based on various loader methods."""
-    if hasattr(loader, 'get_filename'):
+    if origin is None:
+        origin = getattr(loader, '_ORIGIN', None)
+
+    if not origin and hasattr(loader, 'get_filename'):
         if _bootstrap_external is None:
             raise NotImplementedError
         spec_from_file_location = _bootstrap_external.spec_from_file_location
@@ -467,12 +470,9 @@ def _spec_from_module(module, loader=None, origin=None):
     except AttributeError:
         location = None
     if origin is None:
-        if location is None:
-            try:
-                origin = loader._ORIGIN
-            except AttributeError:
-                origin = None
-        else:
+        if loader is not None:
+            origin = getattr(loader, '_ORIGIN', None)
+        if not origin and location is not None:
             origin = location
     try:
         cached = module.__cached__
@@ -484,7 +484,7 @@ def _spec_from_module(module, loader=None, origin=None):
         submodule_search_locations = None
 
     spec = ModuleSpec(name, loader, origin=origin)
-    spec._set_fileattr = False if location is None else True
+    spec._set_fileattr = origin == location
     spec.cached = cached
     spec.submodule_search_locations = submodule_search_locations
     return spec
@@ -825,32 +825,67 @@ class FrozenImporter:
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
-    def _setup_module(cls, module):
-        ispkg = hasattr(module, '__path__')
+    def _fix_up_module(cls, module):
         spec = module.__spec__
-        assert not ispkg or spec.submodule_search_locations is not None
+        state = spec.loader_state
+        if state is None:
+            # The module is missing FrozenImporter-specific values.
 
-        if spec.loader_state is None:
-            spec.loader_state = type(sys.implementation)(
-                data=None,
-                origname=None,
-            )
-        elif not hasattr(spec.loader_state, 'data'):
-            spec.loader_state.data = None
-        if not getattr(spec.loader_state, 'origname', None):
+            # Fix up the spec attrs.
             origname = vars(module).pop('__origname__', None)
             assert origname, 'see PyImport_ImportFrozenModuleObject()'
-            spec.loader_state.origname = origname
-        if not getattr(spec.loader_state, 'filename', None):
-            # Note that this happens early in runtime initialization.
-            # So sys._stdlib_dir isn't set yet...
-            filename, pkgdir = cls._resolve_filename(origname, ispkg)
-            if filename:
-                module.__file__ = filename
+            ispkg = hasattr(module, '__path__')
+            assert _imp.is_frozen_package(module.__name__) == ispkg, ispkg
+            filename, pkgdir = cls._resolve_filename(origname, spec.name, ispkg)
+            spec.loader_state = state = type(sys.implementation)(
+                data=None,
+                filename=filename,
+                origname=origname,
+            )
+            __path__ = spec.submodule_search_locations
+            if ispkg:
+                assert __path__ == [], __path__
                 if pkgdir:
                     spec.submodule_search_locations.insert(0, pkgdir)
-                    module.__path__.insert(0, pkgdir)
-            spec.loader_state.filename = filename or None
+            else:
+                assert __path__ is None, __path__
+
+            # Fix up the module attrs (the bare minimum).
+            assert not hasattr(module, '__file__'), module.__file__
+            if filename:
+                try:
+                    module.__file__ = filename
+                except AttributeError:
+                    pass
+            if ispkg:
+                if module.__path__ != __path__:
+                    assert not module.__path__, module.__path__
+                    # XXX _init_module_attrs() should copy like this too.
+                    module.__path__.extend(__path__)
+        else:
+            # These checks ensure that _fix_up_module() is only called
+            # in the right places.
+            assert state is not None
+            assert sorted(vars(state)) == ['data', 'filename', 'origname'], state
+            assert state.data is None, state.data
+            assert state.origname
+            __path__ = spec.submodule_search_locations
+            ispkg = __path__ is not None
+            (filename, pkgdir,
+             ) = cls._resolve_filename(state.origname, spec.name, ispkg)
+            assert state.filename == filename, (state.filename, filename)
+            if pkgdir:
+                assert __path__ == [pkgdir], (__path__, pkgdir)
+            elif ispkg:
+                assert __path__ == [], __path__
+            assert hasattr(module, '__file__')
+            assert module.__file__ == filename, (module.__file__, filename)
+            if ispkg:
+                assert hasattr(module, '__path__')
+                assert module.__path__ == __path__, (module.__path__, __path__)
+            else:
+                assert not hasattr(module, '__path__'), module.__path__
+        assert not spec.has_location
 
     @classmethod
     def _resolve_filename(cls, fullname, alias=None, ispkg=False):
@@ -949,7 +984,16 @@ class FrozenImporter:
 
         """
         # Warning about deprecation implemented in _load_module_shim().
-        return _load_module_shim(cls, fullname)
+        module = _load_module_shim(cls, fullname)
+        info = _imp.find_frozen(fullname)
+        assert info is not None
+        _, ispkg, origname = info
+        module.__origname__ = origname
+        vars(module).pop('__file__', None)
+        if ispkg:
+            module.__path__ = []
+        cls._fix_up_module(module)
+        return module
 
     @classmethod
     @_requires_frozen
@@ -1290,7 +1334,7 @@ def _setup(sys_module, _imp_module):
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
             if loader is FrozenImporter:
-                loader._setup_module(module)
+                loader._fix_up_module(module)
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
