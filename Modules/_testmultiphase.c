@@ -849,7 +849,9 @@ PyInit__test_module_state_shared(PyObject *spec)
         return NULL;
     }
 
-    if (PyModule_AddObjectRef(module, "Error", PyExc_Exception) < 0) {
+    Py_INCREF(PyExc_Exception);
+    if (PyModule_AddObject(module, "Error", PyExc_Exception) < 0) {
+        Py_DECREF(PyExc_Exception);
         Py_DECREF(module);
         return NULL;
     }
