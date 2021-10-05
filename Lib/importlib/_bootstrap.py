@@ -825,15 +825,38 @@ class FrozenImporter:
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
+    def _setup_module(cls, module):
+        assert not hasattr(module, '__file__'), module.__file__
+        ispkg = hasattr(module, '__path__')
+        assert not ispkg or not module.__path__, module.__path__
+        spec = module.__spec__
+        assert not ispkg or not spec.submodule_search_locations
+
+        if spec.loader_state is None:
+            spec.loader_state = type(sys.implementation)(
+                data=None,
+                origname=None,
+            )
+        elif not hasattr(spec.loader_state, 'data'):
+            spec.loader_state.data = None
+        if not getattr(spec.loader_state, 'origname', None):
+            origname = vars(module).pop('__origname__', None)
+            assert origname, 'see PyImport_ImportFrozenModuleObject()'
+            spec.loader_state.origname = origname
+
+    @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
             return None
-        data, ispkg = info
+        data, ispkg, origname = info
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
-        spec.loader_state = data
+        spec.loader_state = type(sys.implementation)(
+            data=data,
+            origname=origname,
+        )
         return spec
 
     @classmethod
@@ -857,7 +880,7 @@ class FrozenImporter:
         spec = module.__spec__
         name = spec.name
         try:
-            data = spec.loader_state
+            data = spec.loader_state.data
         except AttributeError:
             if not _imp.is_frozen(name):
                 raise ImportError('{!r} is not a frozen module'.format(name),
@@ -868,7 +891,7 @@ class FrozenImporter:
             # Note that if this method is called again (e.g. by
             # importlib.reload()) then _imp.get_frozen_object() will notice
             # no data was provided and will look it up.
-            spec.loader_state = None
+            spec.loader_state.data = None
         code = _call_with_frames_removed(_imp.get_frozen_object, name, data)
         exec(code, module.__dict__)
 
@@ -1220,6 +1243,8 @@ def _setup(sys_module, _imp_module):
                 continue
             spec = _spec_from_module(module, loader)
             _init_module_attrs(spec, module)
+            if loader is FrozenImporter:
+                loader._setup_module(module)
 
     # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
