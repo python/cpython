@@ -1,3 +1,0 @@
-Fix an edge case of :class:`ExitStack` and :class:`AsyncExitStack` exception
-chaining.  They will now match ``with`` block behavior when ``__context__`` is
-explicitly set to ``None`` when the exception is in flight.

@@ -1,2 +1,0 @@
-:func:`typing.get_type_hints` now works with :data:`~typing.Final` wrapped in
-:class:`~typing.ForwardRef`.
