@@ -1,3 +1,0 @@
-The number of hardware branches per instruction dispatch is reduced from two
-to one by adding a special instruction for tracing. Patch by Mark Shannon.
-

@@ -1,1 +1,0 @@
-Convert ``None`` to ``type(None)`` in the union type constructor.
