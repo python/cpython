@@ -826,10 +826,15 @@ class FrozenImporter:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        if _imp.is_frozen(fullname):
-            return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
-        else:
+        info = _call_with_frames_removed(_imp.find_frozen, fullname)
+        if info is None:
             return None
+        data, ispkg = info
+        spec = spec_from_loader(fullname, cls,
+                                origin=cls._ORIGIN,
+                                is_package=ispkg)
+        spec.loader_state = data
+        return spec
 
     @classmethod
     def find_module(cls, fullname, path=None):
@@ -849,11 +854,22 @@ class FrozenImporter:
 
     @staticmethod
     def exec_module(module):
-        name = module.__spec__.name
-        if not _imp.is_frozen(name):
-            raise ImportError('{!r} is not a frozen module'.format(name),
-                              name=name)
-        code = _call_with_frames_removed(_imp.get_frozen_object, name)
+        spec = module.__spec__
+        name = spec.name
+        try:
+            data = spec.loader_state
+        except AttributeError:
+            if not _imp.is_frozen(name):
+                raise ImportError('{!r} is not a frozen module'.format(name),
+                                  name=name)
+            data = None
+        else:
+            # We clear the extra data we got from the finder, to save memory.
+            # Note that if this method is called again (e.g. by
+            # importlib.reload()) then _imp.get_frozen_object() will notice
+            # no data was provided and will look it up.
+            spec.loader_state = None
+        code = _call_with_frames_removed(_imp.get_frozen_object, name, data)
         exec(code, module.__dict__)
 
     @classmethod
