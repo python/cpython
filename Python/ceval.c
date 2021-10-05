@@ -1952,7 +1952,7 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_MULTIPLY);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
             STAT_INC(BINARY_MULTIPLY, hit);
             record_hit_inline(next_instr, oparg);
             PyObject *sum = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
@@ -1970,7 +1970,7 @@ check_eval_breaker:
             PyObject *left = SECOND();
             PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
-            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
             STAT_INC(BINARY_MULTIPLY, hit);
             record_hit_inline(next_instr, oparg);
             double dprod = ((PyFloatObject *)left)->ob_fval *

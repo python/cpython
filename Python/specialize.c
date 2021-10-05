@@ -1203,16 +1203,15 @@ success:
 int
 _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
 {
-    PyTypeObject *left_type = Py_TYPE(left);
-    if (left_type != Py_TYPE(right)) {
+    if (!Py_IS_TYPE(left, Py_TYPE(right))) {
         SPECIALIZATION_FAIL(BINARY_MULTIPLY, SPEC_FAIL_DIFFERENT_TYPES);
         goto fail;
     }
-    if (left_type == &PyLong_Type) {
+    if (PyLong_CheckExact(left)) {
         *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, saturating_start());
         goto success;
     }
-    else if (left_type == &PyFloat_Type) {
+    else if (PyFloat_CheckExact(left)) {
         *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, saturating_start());
         goto success;
     }
