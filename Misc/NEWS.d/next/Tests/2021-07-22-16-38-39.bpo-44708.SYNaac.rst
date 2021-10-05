@@ -1,2 +1,0 @@
-Regression tests, when run with -w, are now re-running only the affected
-test methods instead of re-running the entire test file.

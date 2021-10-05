@@ -1,2 +1,0 @@
-Create instance dictionaries (__dict__) eagerly, to improve regularity of
-object layout and assist specialization.
