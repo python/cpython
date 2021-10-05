@@ -1973,10 +1973,12 @@ check_eval_breaker:
             if (PyFloat_CheckExact(left)) {
                 dleft = ((PyFloatObject *)left)->ob_fval;
                 if (PyFloat_CheckExact(right)) {
+                    // float * float
                     dright = ((PyFloatObject *)right)->ob_fval;
                 }
                 else if (PyLong_CheckExact(right)
                          && (((size_t)Py_SIZE(right)) + 1U < 3U)) {
+                    // float * one_digit_int
                     dright = (double)(((stwodigits)Py_SIZE(right))
                                       * ((PyLongObject *)right)->ob_digit[0]);
                 }
@@ -1985,8 +1987,9 @@ check_eval_breaker:
                 }
             }
             else if (PyLong_CheckExact(left)
-                     && (((size_t)Py_SIZE(left)) + 1U < 3U)) {
-                DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
+                     && (((size_t)Py_SIZE(left)) + 1U < 3U)
+                     && PyFloat_CheckExact(right)) {
+                // one_digit_int * float
                 dleft = (double)(((stwodigits)Py_SIZE(left))
                                       * ((PyLongObject *)left)->ob_digit[0]);
                 dright = ((PyFloatObject *)right)->ob_fval;
@@ -1996,8 +1999,7 @@ check_eval_breaker:
             }
             STAT_INC(BINARY_MULTIPLY, hit);
             record_hit_inline(next_instr, oparg);
-            double dprod = dleft * dright;
-            PyObject *prod = PyFloat_FromDouble(dprod);
+            PyObject *prod = PyFloat_FromDouble(dleft * dright);
             SET_SECOND(prod);
             Py_DECREF(right);
             Py_DECREF(left);

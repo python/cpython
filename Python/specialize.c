@@ -455,11 +455,6 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
-/* Binary Multiply */
-#define SPEC_FAIL_STR_INT 13
-#define SPEC_FAIL_INT_STR 14
-#define SPEC_FAIL_FLOAT_INT 15
-#define SPEC_FAIL_INT_FLOAT 16
 
 static int
 specialize_module_load_attr(
