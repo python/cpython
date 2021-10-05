@@ -455,6 +455,11 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
+/* Binary Multiply */
+#define SPEC_FAIL_STR_INT 13
+#define SPEC_FAIL_INT_STR 14
+#define SPEC_FAIL_FLOAT_INT 15
+#define SPEC_FAIL_INT_FLOAT 16
 
 static int
 specialize_module_load_attr(
@@ -1203,22 +1208,24 @@ success:
 int
 _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
 {
-    if (!Py_IS_TYPE(left, Py_TYPE(right))) {
-        SPECIALIZATION_FAIL(BINARY_MULTIPLY, SPEC_FAIL_DIFFERENT_TYPES);
-        goto fail;
-    }
-    if (PyLong_CheckExact(left)) {
+    if (PyLong_CheckExact(left) && PyLong_CheckExact(right)) {
         *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, saturating_start());
         goto success;
     }
-    else if (PyFloat_CheckExact(left)) {
+    else if (PyFloat_CheckExact(left) && PyFloat_CheckExact(right)) {
         *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, saturating_start());
         goto success;
     }
-    else {
-        SPECIALIZATION_FAIL(BINARY_MULTIPLY, SPEC_FAIL_OTHER);
+    else if (PyFloat_CheckExact(left) || PyFloat_CheckExact(right)) {
+        if ((PyLong_CheckExact(left) && Py_ABS(Py_SIZE(left)) <= 1)
+            || (PyLong_CheckExact(right) && Py_ABS(Py_SIZE(right)) <= 1)
+        ) {
+            // Mixing float and int => multiply as floats.
+            *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, saturating_start());
+            goto success;
+        }
     }
-fail:
+    SPECIALIZATION_FAIL(BINARY_MULTIPLY, SPEC_FAIL_OTHER);
     STAT_INC(BINARY_MULTIPLY, specialization_failure);
     assert(!PyErr_Occurred());
     *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
