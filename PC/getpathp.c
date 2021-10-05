@@ -266,14 +266,14 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
     }
 
     if (PathIsRelativeW(path)) {
-        wchar_t cwd[MAXPATHLEN];
-        if (!GetCurrentDirectoryW(MAXPATHLEN, cwd)) {
+        wchar_t buff[MAXPATHLEN];
+        if (!GetCurrentDirectoryW(MAXPATHLEN, buff)) {
             return _PyStatus_ERR("unable to find current working directory");
         }
-        if (FAILED(PathCchCombineEx(buffer, MAXPATHLEN + 1, cwd, path, PATHCCH_ALLOW_LONG_PATHS))) {
+        if (FAILED(PathCchCombineEx(buff, MAXPATHLEN + 1, buff, path, PATHCCH_ALLOW_LONG_PATHS))) {
             return INIT_ERR_BUFFER_OVERFLOW();
         }
-        if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, buffer, PATHCCH_ALLOW_LONG_PATHS))) {
+        if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, buff, PATHCCH_ALLOW_LONG_PATHS))) {
             return INIT_ERR_BUFFER_OVERFLOW();
         }
         return _PyStatus_OK();
@@ -942,6 +942,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
        the parent of that.
     */
     if (prefix[0] == L'\0') {
+        PyStatus status;
         wchar_t lookBuf[MAXPATHLEN+1];
         const wchar_t *look = buf - 1; /* 'buf' is at the end of the buffer */
         while (1) {
@@ -955,8 +956,11 @@ calculate_module_search_path(PyCalculatePath *calculate,
                 look--;
             nchars = lookEnd-look;
             wcsncpy(lookBuf, look+1, nchars);
-            canonicalize(lookBuf, lookBuf);
             lookBuf[nchars] = L'\0';
+            status = canonicalize(lookBuf, lookBuf);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
             /* Up one level to the parent */
             reduce(lookBuf);
             if (search_for_prefix(prefix, lookBuf)) {
