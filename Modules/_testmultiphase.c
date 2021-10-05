@@ -834,6 +834,30 @@ PyInit__testmultiphase_meth_state_access(PyObject *spec)
     return PyModuleDef_Init(&def_meth_state_access);
 }
 
+static PyModuleDef def_module_state_shared = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_test_module_state_shared",
+    .m_doc = PyDoc_STR("Regression Test module for single-phase init."),
+    .m_size = -1,
+};
+
+PyMODINIT_FUNC
+PyInit__test_module_state_shared(PyObject *spec)
+{
+    PyObject *module = PyModule_Create(&def_module_state_shared);
+    if (module == NULL) {
+        return NULL;
+    }
+
+    Py_INCREF(PyExc_Exception);
+    if (PyModule_AddObject(module, "Error", PyExc_Exception) < 0) {
+        Py_DECREF(PyExc_Exception);
+        Py_DECREF(module);
+        return NULL;
+    }
+    return module;
+}
+
 
 /*** Helper for imp test ***/
 
