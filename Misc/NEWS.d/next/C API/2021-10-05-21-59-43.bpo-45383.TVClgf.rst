@@ -1,0 +1,1 @@
+The `PyType_FromSpec` API will now find the correct MetaClass from the provided bases and call the ``alloc`` function of the MetaType.  An error will be raised if there is a MetaClass conflict.
