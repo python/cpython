@@ -951,9 +951,6 @@ class FrozenImporter:
         # Warning about deprecation implemented in _load_module_shim().
         return _load_module_shim(cls, fullname)
 
-    # XXX We should also add get_filename(), but when we do we need
-    # to fix spec_from_loader().
-
     @classmethod
     @_requires_frozen
     def get_code(cls, fullname):
