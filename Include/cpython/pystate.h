@@ -263,7 +263,7 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 
-// Get the configuration of the currrent interpreter.
+// Get the configuration of the current interpreter.
 // The caller must hold the GIL.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 

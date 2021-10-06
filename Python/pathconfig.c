@@ -54,6 +54,7 @@ pathconfig_clear(_PyPathConfig *config)
     CLEAR(config->program_full_path);
     CLEAR(config->prefix);
     CLEAR(config->exec_prefix);
+    CLEAR(config->stdlib_dir);
     CLEAR(config->module_search_path);
     CLEAR(config->program_name);
     CLEAR(config->home);
@@ -83,6 +84,7 @@ pathconfig_copy(_PyPathConfig *config, const _PyPathConfig *config2)
     COPY_ATTR(prefix);
     COPY_ATTR(exec_prefix);
     COPY_ATTR(module_search_path);
+    COPY_ATTR(stdlib_dir);
     COPY_ATTR(program_name);
     COPY_ATTR(home);
 #ifdef MS_WINDOWS
@@ -167,6 +169,7 @@ pathconfig_set_from_config(_PyPathConfig *pathconfig, const PyConfig *config)
     COPY_CONFIG(program_full_path, executable);
     COPY_CONFIG(prefix, prefix);
     COPY_CONFIG(exec_prefix, exec_prefix);
+    COPY_CONFIG(stdlib_dir, stdlib_dir);
     COPY_CONFIG(program_name, program_name);
     COPY_CONFIG(home, home);
 #ifdef MS_WINDOWS
@@ -218,6 +221,7 @@ _PyPathConfig_AsDict(void)
     SET_ITEM_STR(prefix);
     SET_ITEM_STR(exec_prefix);
     SET_ITEM_STR(module_search_path);
+    SET_ITEM_STR(stdlib_dir);
     SET_ITEM_STR(program_name);
     SET_ITEM_STR(home);
 #ifdef MS_WINDOWS
@@ -311,6 +315,7 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
 
    - exec_prefix
    - module_search_path
+   - stdlib_dir
    - prefix
    - program_full_path
 
@@ -401,6 +406,7 @@ config_init_pathconfig(PyConfig *config, int compute_path_config)
     COPY_ATTR(program_full_path, executable);
     COPY_ATTR(prefix, prefix);
     COPY_ATTR(exec_prefix, exec_prefix);
+    COPY_ATTR(stdlib_dir, stdlib_dir);
 
 #undef COPY_ATTR
 
@@ -486,16 +492,25 @@ Py_SetPath(const wchar_t *path)
 
     PyMem_RawFree(_Py_path_config.prefix);
     PyMem_RawFree(_Py_path_config.exec_prefix);
+    PyMem_RawFree(_Py_path_config.stdlib_dir);
     PyMem_RawFree(_Py_path_config.module_search_path);
 
     _Py_path_config.prefix = _PyMem_RawWcsdup(L"");
     _Py_path_config.exec_prefix = _PyMem_RawWcsdup(L"");
+    // XXX Copy this from the new module_search_path?
+    if (_Py_path_config.home != NULL) {
+        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(_Py_path_config.home);
+    }
+    else {
+        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(L"");
+    }
     _Py_path_config.module_search_path = _PyMem_RawWcsdup(path);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_Py_path_config.prefix == NULL
         || _Py_path_config.exec_prefix == NULL
+        || _Py_path_config.stdlib_dir == NULL
         || _Py_path_config.module_search_path == NULL)
     {
         path_out_of_memory(__func__);
@@ -515,10 +530,13 @@ Py_SetPythonHome(const wchar_t *home)
 
     PyMem_RawFree(_Py_path_config.home);
     _Py_path_config.home = _PyMem_RawWcsdup(home);
+    if (_Py_path_config.home != NULL) {
+        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(home);
+    }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (_Py_path_config.home == NULL) {
+    if (_Py_path_config.home == NULL || _Py_path_config.stdlib_dir == NULL) {
         path_out_of_memory(__func__);
     }
 }
@@ -569,6 +587,17 @@ wchar_t *
 Py_GetPath(void)
 {
     return _Py_path_config.module_search_path;
+}
+
+
+wchar_t *
+_Py_GetStdlibDir(void)
+{
+    wchar_t *stdlib_dir = _Py_path_config.stdlib_dir;
+    if (stdlib_dir != NULL && stdlib_dir[0] != L'\0') {
+        return stdlib_dir;
+    }
+    return NULL;
 }
 
 

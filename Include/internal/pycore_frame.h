@@ -128,7 +128,7 @@ _PyFrame_GetFrameObject(InterpreterFrame *frame)
 
 /* Clears all references in the frame.
  * If take is non-zero, then the InterpreterFrame frame
- * may be transfered to the frame object it references
+ * may be transferred to the frame object it references
  * instead of being cleared. Either way
  * the caller no longer owns the references
  * in the frame.

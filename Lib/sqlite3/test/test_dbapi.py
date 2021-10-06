@@ -38,13 +38,14 @@ from test.support.os_helper import TESTFN, unlink, temp_dir
 
 # Helper for tests using TESTFN
 @contextlib.contextmanager
-def managed_connect(*args, **kwargs):
+def managed_connect(*args, in_mem=False, **kwargs):
     cx = sqlite.connect(*args, **kwargs)
     try:
         yield cx
     finally:
         cx.close()
-        unlink(TESTFN)
+        if not in_mem:
+            unlink(TESTFN)
 
 
 class ModuleTests(unittest.TestCase):

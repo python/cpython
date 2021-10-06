@@ -7,6 +7,7 @@
 #ifdef MS_WINDOWS
 #  include <malloc.h>
 #  include <windows.h>
+#  include <pathcch.h>            // PathCchCombineEx
 extern int winerror_to_errno(int);
 #endif
 
@@ -1205,6 +1206,31 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
     return 0;
 }
 
+/* Like _Py_stat() but with a raw filename. */
+int
+_Py_wstat(const wchar_t* path, struct stat *buf)
+{
+    int err;
+#ifdef MS_WINDOWS
+    struct _stat wstatbuf;
+    err = _wstat(path, &wstatbuf);
+    if (!err) {
+        buf->st_mode = wstatbuf.st_mode;
+    }
+#else
+    char *fname;
+    fname = _Py_EncodeLocaleRaw(path, NULL);
+    if (fname == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    err = stat(fname, buf);
+    PyMem_RawFree(fname);
+#endif
+    return err;
+}
+
+
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
@@ -1216,7 +1242,6 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 {
 #ifdef MS_WINDOWS
     int err;
-    struct _stat wstatbuf;
 
 #if USE_UNICODE_WCHAR_CACHE
     const wchar_t *wpath = _PyUnicode_AsUnicode(path);
@@ -1226,9 +1251,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     if (wpath == NULL)
         return -2;
 
-    err = _wstat(wpath, &wstatbuf);
-    if (!err)
-        statbuf->st_mode = wstatbuf.st_mode;
+    err = _Py_wstat(wpath, statbuf);
 #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(wpath);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -2069,6 +2092,79 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
     *abspath = 0;
     return 0;
 #endif
+}
+
+
+// The caller must ensure "buffer" is big enough.
+static int
+join_relfile(wchar_t *buffer, size_t bufsize,
+             const wchar_t *dirname, const wchar_t *relfile)
+{
+#ifdef MS_WINDOWS
+    if (FAILED(PathCchCombineEx(buffer, bufsize, dirname, relfile, 0))) {
+        return -1;
+    }
+#else
+    assert(!_Py_isabs(relfile));
+    size_t dirlen = wcslen(dirname);
+    size_t rellen = wcslen(relfile);
+    size_t maxlen = bufsize - 1;
+    if (maxlen > MAXPATHLEN || dirlen >= maxlen || rellen >= maxlen - dirlen) {
+        return -1;
+    }
+    if (dirlen == 0) {
+        // We do not add a leading separator.
+        wcscpy(buffer, relfile);
+    }
+    else {
+        if (dirname != buffer) {
+            wcscpy(buffer, dirname);
+        }
+        size_t relstart = dirlen;
+        if (dirlen > 1 && dirname[dirlen - 1] != SEP) {
+            buffer[dirlen] = SEP;
+            relstart += 1;
+        }
+        wcscpy(&buffer[relstart], relfile);
+    }
+#endif
+    return 0;
+}
+
+/* Join the two paths together, like os.path.join().  Return NULL
+   if memory could not be allocated.  The caller is responsible
+   for calling PyMem_RawFree() on the result. */
+wchar_t *
+_Py_join_relfile(const wchar_t *dirname, const wchar_t *relfile)
+{
+    assert(dirname != NULL && relfile != NULL);
+#ifndef MS_WINDOWS
+    assert(!_Py_isabs(relfile));
+#endif
+    size_t maxlen = wcslen(dirname) + 1 + wcslen(relfile);
+    size_t bufsize = maxlen + 1;
+    wchar_t *filename = PyMem_RawMalloc(bufsize * sizeof(wchar_t));
+    if (filename == NULL) {
+        return NULL;
+    }
+    assert(wcslen(dirname) < MAXPATHLEN);
+    assert(wcslen(relfile) < MAXPATHLEN - wcslen(dirname));
+    join_relfile(filename, bufsize, dirname, relfile);
+    return filename;
+}
+
+/* Join the two paths together, like os.path.join().
+     dirname: the target buffer with the dirname already in place,
+              including trailing NUL
+     relfile: this must be a relative path
+     bufsize: total allocated size of the buffer
+   Return -1 if anything is wrong with the path lengths. */
+int
+_Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
+{
+    assert(dirname != NULL && relfile != NULL);
+    assert(bufsize > 0);
+    return join_relfile(dirname, bufsize, dirname, relfile);
 }
 
 

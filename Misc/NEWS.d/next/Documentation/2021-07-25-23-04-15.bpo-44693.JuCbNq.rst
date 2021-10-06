@@ -1,2 +1,0 @@
-Update the definition of __future__ in the glossary by replacing the confusing
-word "pseudo-module" with a more accurate description.

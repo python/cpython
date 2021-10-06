@@ -766,6 +766,37 @@ class SubinterpreterTest(unittest.TestCase):
 
         self.assertFalse(hasattr(binascii.Error, "foobar"))
 
+    def test_module_state_shared_in_global(self):
+        """
+        bpo-44050: Extension module state should be shared between interpreters
+        when it doesn't support sub-interpreters.
+        """
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+
+        script = textwrap.dedent(f"""
+            import importlib.machinery
+            import importlib.util
+            import os
+
+            fullname = '_test_module_state_shared'
+            origin = importlib.util.find_spec('_testmultiphase').origin
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            spec = importlib.util.spec_from_loader(fullname, loader)
+            module = importlib.util.module_from_spec(spec)
+            attr_id = str(id(module.Error)).encode()
+
+            os.write({w}, attr_id)
+            """)
+        exec(script)
+        main_attr_id = os.read(r, 100)
+
+        ret = support.run_in_subinterp(script)
+        self.assertEqual(ret, 0)
+        subinterp_attr_id = os.read(r, 100)
+        self.assertEqual(main_attr_id, subinterp_attr_id)
+
 
 class TestThreadState(unittest.TestCase):
 

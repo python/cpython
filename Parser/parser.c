@@ -17880,15 +17880,15 @@ invalid_arguments_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
         expr_ty a;
-        asdl_comprehension_seq* for_if_clauses_var;
+        asdl_comprehension_seq* b;
         if (
             (a = args_rule(p))  // args
             &&
-            (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
+            (b = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
             D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
-            _res = _PyPegen_nonparen_genexp_in_call ( p , a );
+            _res = _PyPegen_nonparen_genexp_in_call ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

@@ -359,7 +359,7 @@ PyDoc_STRVAR(array_array_frombytes__doc__,
 "frombytes($self, buffer, /)\n"
 "--\n"
 "\n"
-"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).");
+"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.");
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
     {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
@@ -572,4 +572,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=376001addedc67ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f130a994f98f1227 input=a9049054013a1b77]*/
