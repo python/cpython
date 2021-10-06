@@ -840,7 +840,6 @@ class ConfigChanges(dict):
         Helper for save_all.
         """
         if idleConf.defaultCfg[config_type].has_option(section, item):
-            print((idleConf.defaultCfg[config_type].Get(section, item), value))
             if idleConf.defaultCfg[config_type].Get(section, item) == value:
                 # The setting equals a default setting, remove it from user cfg.
                 return idleConf.userCfg[config_type].RemoveOption(section, item)
