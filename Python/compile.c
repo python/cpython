@@ -7081,7 +7081,7 @@ assemble_line_range(struct assembler* a, int current, PyObject** table,
                     int* prev, int* start, int* offset)
 {
     int ldelta, bdelta;
-    bdelta = (a->a_offset - *start) * 2;
+    bdelta = (a->a_offset - *start) * sizeof(_Py_CODEUNIT);
     if (bdelta == 0) {
         return 1;
     }
@@ -7218,6 +7218,26 @@ assemble_emit(struct assembler *a, struct instr *i)
     a->a_offset += size;
     write_op_arg(code, i->i_opcode, arg, size);
     return 1;
+}
+
+static void
+normalize_jumps(struct assembler *a)
+{
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+    }
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 1;
+        if (b->b_iused == 0) {
+            continue;
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (last->i_opcode == JUMP_ABSOLUTE &&
+            last->i_target->b_visited == 0
+        ) {
+            last->i_opcode = JUMP_FORWARD;
+        }
+    }
 }
 
 static void
@@ -7896,6 +7916,9 @@ assemble(struct compiler *c, int addNone)
     for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
+
+    /* Order of basic blocks must have been determined by now */
+    normalize_jumps(&a);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);

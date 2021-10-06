@@ -254,5 +254,5 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
-    &&_unknown_opcode
+    &&TARGET_DO_TRACING
 };

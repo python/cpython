@@ -191,6 +191,14 @@ class _AsyncGeneratorContextManager(
 ):
     """Helper for @asynccontextmanager decorator."""
 
+    def __call__(self, func):
+        @wraps(func)
+        async def inner(*args, **kwds):
+            async with self.__class__(self.func, self.args, self.kwds):
+                return await func(*args, **kwds)
+
+        return inner
+
     async def __aenter__(self):
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
@@ -545,10 +553,10 @@ class ExitStack(_BaseExitStack, AbstractContextManager):
             # Context may not be correct, so find the end of the chain
             while 1:
                 exc_context = new_exc.__context__
-                if exc_context is old_exc:
+                if exc_context is None or exc_context is old_exc:
                     # Context is already set correctly (see issue 20317)
                     return
-                if exc_context is None or exc_context is frame_exc:
+                if exc_context is frame_exc:
                     break
                 new_exc = exc_context
             # Change the end of the chain to point to the exception
@@ -685,10 +693,10 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
             # Context may not be correct, so find the end of the chain
             while 1:
                 exc_context = new_exc.__context__
-                if exc_context is old_exc:
+                if exc_context is None or exc_context is old_exc:
                     # Context is already set correctly (see issue 20317)
                     return
-                if exc_context is None or exc_context is frame_exc:
+                if exc_context is frame_exc:
                     break
                 new_exc = exc_context
             # Change the end of the chain to point to the exception

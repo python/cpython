@@ -38,6 +38,10 @@ class _PyTime(enum.IntEnum):
     # Round away from zero
     ROUND_UP = 3
 
+# _PyTime_t is int64_t
+_PyTime_MIN = -2 ** 63
+_PyTime_MAX = 2 ** 63 - 1
+
 # Rounding modes supported by PyTime
 ROUNDING_MODES = (
     # (PyTime rounding method, decimal rounding method)
@@ -960,6 +964,49 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
                                 NS_TO_SEC,
                                 value_filter=self.time_t_filter)
 
+    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimeval_clamp'),
+                         'need _testcapi.PyTime_AsTimeval_clamp')
+    def test_AsTimeval_clamp(self):
+        from _testcapi import PyTime_AsTimeval_clamp
+
+        if sys.platform == 'win32':
+            from _testcapi import LONG_MIN, LONG_MAX
+            tv_sec_max = LONG_MAX
+            tv_sec_min = LONG_MIN
+        else:
+            tv_sec_max = self.time_t_max
+            tv_sec_min = self.time_t_min
+
+        for t in (_PyTime_MIN, _PyTime_MAX):
+            ts = PyTime_AsTimeval_clamp(t, _PyTime.ROUND_CEILING)
+            with decimal.localcontext() as context:
+                context.rounding = decimal.ROUND_CEILING
+                us = self.decimal_round(decimal.Decimal(t) / US_TO_NS)
+            tv_sec, tv_usec = divmod(us, SEC_TO_US)
+            if tv_sec_max < tv_sec:
+                tv_sec = tv_sec_max
+                tv_usec = 0
+            elif tv_sec < tv_sec_min:
+                tv_sec = tv_sec_min
+                tv_usec = 0
+            self.assertEqual(ts, (tv_sec, tv_usec))
+
+    @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec_clamp'),
+                         'need _testcapi.PyTime_AsTimespec_clamp')
+    def test_AsTimespec_clamp(self):
+        from _testcapi import PyTime_AsTimespec_clamp
+
+        for t in (_PyTime_MIN, _PyTime_MAX):
+            ts = PyTime_AsTimespec_clamp(t)
+            tv_sec, tv_nsec = divmod(t, NS_TO_SEC)
+            if self.time_t_max < tv_sec:
+                tv_sec = self.time_t_max
+                tv_nsec = 0
+            elif tv_sec < self.time_t_min:
+                tv_sec = self.time_t_min
+                tv_nsec = 0
+            self.assertEqual(ts, (tv_sec, tv_nsec))
+
     def test_AsMilliseconds(self):
         from _testcapi import PyTime_AsMilliseconds
 
@@ -1062,7 +1109,7 @@ class TestTimeWeaklinking(unittest.TestCase):
         clock_names = [
             "CLOCK_MONOTONIC", "clock_gettime", "clock_gettime_ns", "clock_settime",
             "clock_settime_ns", "clock_getres"]
-        
+
         if mac_ver >= (10, 12):
             for name in clock_names:
                 self.assertTrue(hasattr(time, name), f"time.{name} is not available")
