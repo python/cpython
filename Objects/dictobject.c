@@ -1017,16 +1017,17 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
     }
     Py_ssize_t ix = dictkeys_stringlookup(keys, name, hash);
     if (ix == DKIX_EMPTY) {
-        Py_INCREF(name);
         if (keys->dk_usable <= 0) {
             return DKIX_EMPTY;
         }
+        Py_INCREF(name);
         /* Insert into new slot. */
         keys->dk_version = 0;
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
         ix = keys->dk_nentries;
         PyDictKeyEntry *ep = &DK_ENTRIES(keys)[ix];
         dictkeys_set_index(keys, hashpos, ix);
+        assert(ep->me_key == NULL);
         ep->me_key = name;
         ep->me_hash = hash;
         keys->dk_usable--;
