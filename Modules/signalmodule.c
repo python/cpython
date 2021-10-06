@@ -1221,11 +1221,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
 /*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
 {
-    struct timespec ts;
-    siginfo_t si;
-    int res;
-    _PyTime_t timeout, deadline, monotonic;
-
+    _PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
                                   timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return NULL;
@@ -1235,12 +1231,16 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         return NULL;
     }
 
-    deadline = _PyTime_GetMonotonicClock() + timeout;
+    _PyTime_t deadline = _PyDeadline_Init(timeout);
+    siginfo_t si;
 
     do {
-        if (_PyTime_AsTimespec(timeout, &ts) < 0)
+        struct timespec ts;
+        if (_PyTime_AsTimespec(timeout, &ts) < 0) {
             return NULL;
+        }
 
+        int res;
         Py_BEGIN_ALLOW_THREADS
         res = sigtimedwait(&sigset, &si, &ts);
         Py_END_ALLOW_THREADS
@@ -1259,10 +1259,10 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         if (PyErr_CheckSignals())
             return NULL;
 
-        monotonic = _PyTime_GetMonotonicClock();
-        timeout = deadline - monotonic;
-        if (timeout < 0)
+        timeout = _PyDeadline_Get(deadline);
+        if (timeout < 0) {
             break;
+        }
     } while (1);
 
     return fill_siginfo(&si);

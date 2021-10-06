@@ -195,7 +195,7 @@ decoded as Unicode characters outside the [U+0000; U+10ffff] range.
 .. nonce: lCzIg0
 .. section: Core and Builtins
 
-Fix a bug that was causing the parser to crash when emiting syntax errors
+Fix a bug that was causing the parser to crash when emitting syntax errors
 when reading input from stdin. Patch by Pablo Galindo
 
 ..

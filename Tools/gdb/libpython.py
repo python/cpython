@@ -686,10 +686,13 @@ class PyDictObjectPtr(PyObjectPtr):
         '''
         keys = self.field('ma_keys')
         values = self.field('ma_values')
+        has_values = long(values)
+        if has_values:
+            values = values['values']
         entries, nentries = self._get_entries(keys)
         for i in safe_range(nentries):
             ep = entries[i]
-            if long(values):
+            if has_values:
                 pyop_value = PyObjectPtr.from_pyobject_ptr(values[i])
             else:
                 pyop_value = PyObjectPtr.from_pyobject_ptr(ep['me_value'])

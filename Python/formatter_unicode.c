@@ -162,7 +162,8 @@ DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
   if failure, sets the exception
 */
 static int
-parse_internal_render_format_spec(PyObject *format_spec,
+parse_internal_render_format_spec(PyObject *obj,
+                                  PyObject *format_spec,
                                   Py_ssize_t start, Py_ssize_t end,
                                   InternalFormatSpec *format,
                                   char default_type,
@@ -279,8 +280,19 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* Finally, parse the type field. */
 
     if (end-pos > 1) {
-        /* More than one char remain, invalid format specifier. */
-        PyErr_Format(PyExc_ValueError, "Invalid format specifier");
+        /* More than one char remains, so this is an invalid format
+           specifier. */
+        /* Create a temporary object that contains the format spec we're
+           operating on.  It's format_spec[start:end] (in Python syntax). */
+        PyObject* actual_format_spec = PyUnicode_FromKindAndData(kind,
+                                         (char*)data + kind*start,
+                                         end-start);
+        if (actual_format_spec != NULL) {
+            PyErr_Format(PyExc_ValueError,
+                "Invalid format specifier '%U' for object of type '%.200s'",
+                actual_format_spec, Py_TYPE(obj)->tp_name);
+            Py_DECREF(actual_format_spec);
+        }
         return 0;
     }
 
@@ -1444,7 +1456,7 @@ _PyUnicode_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 's', '<'))
         return -1;
 
@@ -1480,7 +1492,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     }
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, 'd', '>'))
         goto done;
 
@@ -1536,7 +1548,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 
@@ -1575,7 +1587,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_obj(obj, writer);
 
     /* parse the format_spec */
-    if (!parse_internal_render_format_spec(format_spec, start, end,
+    if (!parse_internal_render_format_spec(obj, format_spec, start, end,
                                            &format, '\0', '>'))
         return -1;
 

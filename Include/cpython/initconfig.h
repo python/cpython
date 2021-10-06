@@ -172,6 +172,7 @@ typedef struct PyConfig {
     int legacy_windows_stdio;
 #endif
     wchar_t *check_hash_pycs_mode;
+    int use_frozen_modules;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -183,6 +184,7 @@ typedef struct PyConfig {
     /* --- Path configuration outputs ----------- */
     int module_search_paths_set;
     PyWideStringList module_search_paths;
+    wchar_t *stdlib_dir;
     wchar_t *executable;
     wchar_t *base_executable;
     wchar_t *prefix;

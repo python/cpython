@@ -1,1 +1,0 @@
-Take into account that ``lineno`` might be ``None`` in :class:`traceback.FrameSummary`.

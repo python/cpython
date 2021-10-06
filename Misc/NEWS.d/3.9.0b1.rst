@@ -641,7 +641,7 @@ than alphabetical.
 
 On AIX, :func:`~time.thread_time` is now implemented with
 ``thread_cputime()`` which has nanosecond resolution, rather than
-``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 milliseconds.
 Patch by Batuhan Taskaya.
 
 ..
