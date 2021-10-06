@@ -1071,7 +1071,7 @@ resolve_module_alias(const char *name, const struct _module_alias *aliases,
 /* Frozen modules */
 
 static bool
-use_frozen(void)
+use_frozen_stdlib(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int override = interp->override_frozen_modules;
@@ -1093,7 +1093,7 @@ list_frozen_module_names()
     if (names == NULL) {
         return NULL;
     }
-    bool enabled = use_frozen();
+    bool enabled = use_frozen_stdlib();
     const struct _frozen *p;
 #define ADD_MODULE(name) \
     do { \
@@ -1238,7 +1238,7 @@ look_up_frozen(const char *name)
         }
     }
     // Frozen stdlib modules may be disabled.
-    if (use_frozen()) {
+    if (use_frozen_stdlib()) {
         for (p = _PyImport_FrozenStdlib; ; p++) {
             if (p->name == NULL) {
                 break;
