@@ -1,7 +1,7 @@
 #-*- coding: iso-8859-1 -*-
 # pysqlite2/test/dbapi.py: tests for DB-API compliance
 #
-# Copyright (C) 2004-2010 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2004-2010 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -451,7 +451,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row, None)
 
     def CheckArraySize(self):
-        # must default ot 1
+        # must default to 1
         self.assertEqual(self.cu.arraysize, 1)
 
         # now set to 2
