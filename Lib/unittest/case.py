@@ -655,12 +655,12 @@ class TestCase(object):
                         or getattr(testMethod, '__unittest_skip_why__', ''))
             raise SkipTest(skip_why)
 
-        self.setUp()
-        testMethod()
-        self.tearDown()
+        self._callSetUp()
+        self._callTestMethod(testMethod)
+        self._callTearDown()
         while self._cleanups:
-            function, args, kwargs = self._cleanups.pop(-1)
-            function(*args, **kwargs)
+            function, args, kwargs = self._cleanups.pop()
+            self._callCleanup(function, *args, **kwargs)
 
     def skipTest(self, reason):
         """Skip this test."""

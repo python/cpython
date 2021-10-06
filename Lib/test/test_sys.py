@@ -13,6 +13,7 @@ from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
+from test.support import import_helper
 import textwrap
 import unittest
 import warnings
@@ -993,6 +994,15 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.stdlib_module_names, frozenset)
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
+
+    def test_stdlib_dir(self):
+        os = import_helper.import_fresh_module('os')
+        marker = getattr(os, '__file__', None)
+        if marker and not os.path.exists(marker):
+            marker = None
+        expected = os.path.dirname(marker) if marker else None
+        actual = sys._stdlib_dir
+        self.assertEqual(actual, expected)
 
 
 @test.support.cpython_only

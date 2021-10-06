@@ -1,1 +1,0 @@
-Improve accuracy of variance calculations by using x*x instead of x**2.
