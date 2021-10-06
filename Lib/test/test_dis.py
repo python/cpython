@@ -566,6 +566,9 @@ class DisTests(unittest.TestCase):
     def test_bug_42562(self):
         self.do_disassembly_test(bug42562, dis_bug42562)
 
+    def test_bug_45191(self):
+        self.do_disassembly_test(bug45191, dis_bug45191)
+
     def test_big_linenos(self):
         def func(count):
             namespace = {}
