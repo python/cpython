@@ -1727,7 +1727,7 @@ static int test_get_argc_argv(void)
 }
 
 
-static int check_use_frozen_modules(const char *rawval)
+static int check_use_frozen_stdlib(const char *rawval)
 {
     wchar_t optval[100];
     if (rawval == NULL) {
@@ -1764,10 +1764,10 @@ static int check_use_frozen_modules(const char *rawval)
     return 0;
 }
 
-static int test_init_use_frozen_modules(void)
+static int test_init_use_frozen_stdlib(void)
 {
     const char *envvar = getenv("TESTFROZEN");
-    return check_use_frozen_modules(envvar);
+    return check_use_frozen_stdlib(envvar);
 }
 
 
@@ -1942,7 +1942,7 @@ static struct TestCase TestCases[] = {
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
-    {"test_init_use_frozen_modules", test_init_use_frozen_modules},
+    {"test_init_use_frozen_stdlib", test_init_use_frozen_stdlib},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

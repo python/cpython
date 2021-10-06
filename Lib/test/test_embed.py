@@ -437,7 +437,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': 1,
+        'use_frozen_stdlib': 1,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -1149,7 +1149,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
-            'use_frozen_modules': -1,
+            'use_frozen_stdlib': -1,
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
@@ -1173,7 +1173,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
-            'use_frozen_modules': -1,
+            'use_frozen_stdlib': -1,
             # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1271,7 +1271,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.default_program_name(config)
         if not config['executable']:
-            config['use_frozen_modules'] = -1
+            config['use_frozen_stdlib'] = -1
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
@@ -1310,7 +1310,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 'stdlib_dir': None,
-                'use_frozen_modules': -1,
+                'use_frozen_stdlib': -1,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1369,7 +1369,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'lib')
-                config['use_frozen_modules'] = 1
+                config['use_frozen_stdlib'] = 1
 
                 ver = sys.version_info
                 dll = f'python{ver.major}'
@@ -1382,7 +1382,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 config['stdlib_dir'] = None
-                config['use_frozen_modules'] = -1
+                config['use_frozen_stdlib'] = -1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1468,7 +1468,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output
 
-    def test_init_use_frozen_modules(self):
+    def test_init_use_frozen_stdlib(self):
         tests = {
             ('=on', 1),
             ('=off', 0),
@@ -1485,11 +1485,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'run_command': 'pass\n',
                 'use_environment': 1,
                 'xoptions': [optval],
-                'use_frozen_modules': expected,
+                'use_frozen_stdlib': expected,
             }
             env = {'TESTFROZEN': raw[1:]} if raw else None
             with self.subTest(repr(raw)):
-                self.check_all_configs("test_init_use_frozen_modules", config,
+                self.check_all_configs("test_init_use_frozen_stdlib", config,
                                        api=API_PYTHON, env=env)
 
 
