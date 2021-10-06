@@ -23,7 +23,7 @@ enum interactive_underflow_t {
     /* Normal mode of operation: return a new token when asked in interactie mode */
     IUNDERFLOW_NORMAL,
     /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
-     * can be used to prevent the tokenizer to promt the user for new tokens */
+     * can be used to prevent the tokenizer to prompt the user for new tokens */
     IUNDERFLOW_STOP,
 };
 
