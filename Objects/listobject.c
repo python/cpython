@@ -1973,7 +1973,7 @@ powerloop(Py_ssize_t s1, Py_ssize_t n1, Py_ssize_t n2, Py_ssize_t n)
  * and merge adjacent runs on the stack with greater power. See listsort.txt
  * for more info.
  *
- * It's the caller's responsibilty to push the new run on the stack when this
+ * It's the caller's responsibility to push the new run on the stack when this
  * returns.
  *
  * Returns 0 on success, -1 on error.
@@ -2067,7 +2067,7 @@ safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
     return PyObject_RichCompareBool(v, w, Py_LT);
 }
 
-/* Homogeneous compare: safe for any two compareable objects of the same type.
+/* Homogeneous compare: safe for any two comparable objects of the same type.
  * (ms->key_richcompare is set to ob_type->tp_richcompare in the
  *  pre-sort check.)
  */
