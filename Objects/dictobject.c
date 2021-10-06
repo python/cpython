@@ -4968,7 +4968,7 @@ _PyObject_InitializeDict(PyObject *obj)
 }
 
 static PyObject *
-make_dict_from_inline_attributes(PyDictKeysObject *keys, PyDictValues *values)
+make_dict_from_instance_attributes(PyDictKeysObject *keys, PyDictValues *values)
 {
     dictkeys_incref(keys);
     Py_ssize_t used = 0;
@@ -4979,15 +4979,15 @@ make_dict_from_inline_attributes(PyDictKeysObject *keys, PyDictValues *values)
 }
 
 PyObject *
-_PyObject_MakeDictFromInlineAttributes(PyObject *obj, PyDictValues *values)
+_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
 {
     assert(Py_TYPE(obj)->tp_inline_values_offset != 0);
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
-    return make_dict_from_inline_attributes(keys, values);
+    return make_dict_from_instance_attributes(keys, values);
 }
 
 int
-_PyObject_StoreInlineAttribute(PyObject *obj, PyDictValues *values,
+_PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)
 {
     assert(PyUnicode_CheckExact(name));
@@ -5001,7 +5001,7 @@ _PyObject_StoreInlineAttribute(PyObject *obj, PyDictValues *values,
             PyErr_SetObject(PyExc_AttributeError, name);
             return -1;
         }
-        PyObject *dict = make_dict_from_inline_attributes(keys, values);
+        PyObject *dict = make_dict_from_instance_attributes(keys, values);
         if (dict == NULL) {
             return -1;
         }
@@ -5027,7 +5027,7 @@ _PyObject_StoreInlineAttribute(PyObject *obj, PyDictValues *values,
 
 
 PyObject *
-_PyObject_GetInlineAttribute(PyObject *obj, PyDictValues *values,
+_PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name)
 {
     assert(PyUnicode_CheckExact(name));
@@ -5069,7 +5069,7 @@ _PyObject_DictEmpty(PyObject *obj)
 
 
 int
-_PyObject_VisitInlineAttributes(PyObject *self, visitproc visit, void *arg)
+_PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
@@ -5084,7 +5084,7 @@ _PyObject_VisitInlineAttributes(PyObject *self, visitproc visit, void *arg)
 }
 
 void
-_PyObject_ClearInlineAttributes(PyObject *self)
+_PyObject_ClearInstanceAttributes(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
@@ -5098,7 +5098,7 @@ _PyObject_ClearInlineAttributes(PyObject *self)
 }
 
 void
-_PyObject_FreeInlineAttributes(PyObject *self)
+_PyObject_FreeInstanceAttributes(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
@@ -5126,7 +5126,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
         PyTypeObject *tp = Py_TYPE(obj);
         PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
         if (values_ptr && *values_ptr) {
-            *dictptr = dict = make_dict_from_inline_attributes(CACHED_KEYS(tp), *values_ptr);
+            *dictptr = dict = make_dict_from_instance_attributes(CACHED_KEYS(tp), *values_ptr);
             if (dict != NULL) {
                 *values_ptr = NULL;
             }

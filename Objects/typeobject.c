@@ -1233,7 +1233,7 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     }
 
     if (type->tp_inline_values_offset != base->tp_inline_values_offset) {
-        int err = _PyObject_VisitInlineAttributes(self, visit, arg);
+        int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
         if (err) {
             return err;
         }
@@ -1301,7 +1301,7 @@ subtype_clear(PyObject *self)
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
     if (type->tp_inline_values_offset != base->tp_inline_values_offset) {
-        _PyObject_ClearInlineAttributes(self);
+        _PyObject_ClearInstanceAttributes(self);
     }
     if (type->tp_dictoffset != base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_DictPointer(self);
@@ -1445,7 +1445,7 @@ subtype_dealloc(PyObject *self)
 
     /* If we added a dict, DECREF it, or free inline values. */
     if (type->tp_inline_values_offset != base->tp_inline_values_offset) {
-        _PyObject_FreeInlineAttributes(self);
+        _PyObject_FreeInstanceAttributes(self);
     }
     if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_DictPointer(self);

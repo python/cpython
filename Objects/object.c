@@ -1104,7 +1104,7 @@ _PyObject_GetDictPtr(PyObject *obj)
     if (values_ptr == NULL || *values_ptr == NULL) {
         return dict_ptr;
     }
-    PyObject *dict = _PyObject_MakeDictFromInlineAttributes(obj, *values_ptr);
+    PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
     if (dict == NULL) {
         PyErr_Clear();
         return NULL;
@@ -1183,7 +1183,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
     if (values_ptr && *values_ptr) {
         assert(*_PyObject_DictPointer(obj) == NULL);
-        PyObject *attr = _PyObject_GetInlineAttribute(obj, *values_ptr, name);
+        PyObject *attr = _PyObject_GetInstanceAttribute(obj, *values_ptr, name);
         if (attr != NULL) {
             *method = attr;
             Py_XDECREF(descr);
@@ -1298,7 +1298,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         if (values_ptr && *values_ptr) {
             if (PyUnicode_CheckExact(name)) {
                 assert(*_PyObject_DictPointer(obj) == NULL);
-                res = _PyObject_GetInlineAttribute(obj, *values_ptr, name);
+                res = _PyObject_GetInstanceAttribute(obj, *values_ptr, name);
                 if (res != NULL) {
                     goto done;
                 }
@@ -1306,7 +1306,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
             else {
                 dictptr = _PyObject_DictPointer(obj);
                 assert(dictptr != NULL && *dictptr == NULL);
-                *dictptr = dict = _PyObject_MakeDictFromInlineAttributes(obj, *values_ptr);
+                *dictptr = dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
                 if (dict == NULL) {
                     res = NULL;
                     goto done;
@@ -1423,7 +1423,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     if (dict == NULL) {
         PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
         if (values_ptr && *values_ptr) {
-            res = _PyObject_StoreInlineAttribute(obj, *values_ptr, name, value);
+            res = _PyObject_StoreInstanceAttribute(obj, *values_ptr, name, value);
         }
         else {
             PyObject **dictptr = _PyObject_DictPointer(obj);
