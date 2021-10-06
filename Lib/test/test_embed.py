@@ -1476,7 +1476,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ('', 1),
         }
         for raw, expected in tests:
-            optval = f'frozen_modules{raw}'
+            optval = f'frozen_stdlib{raw}'
             config = {
                 'parse_argv': 2,
                 'argv': ['-c'],

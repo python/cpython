@@ -1731,13 +1731,13 @@ static int check_use_frozen_stdlib(const char *rawval)
 {
     wchar_t optval[100];
     if (rawval == NULL) {
-        wcscpy(optval, L"frozen_modules");
+        wcscpy(optval, L"frozen_stdlib");
     }
     else if (swprintf(optval, 100,
 #if defined(_MSC_VER)
-        L"frozen_modules=%S",
+        L"frozen_stdlib=%S",
 #else
-        L"frozen_modules=%s",
+        L"frozen_stdlib=%s",
 #endif
         rawval) < 0) {
         error("rawval is too long");

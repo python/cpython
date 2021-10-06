@@ -260,7 +260,7 @@ Compiler now removes trailing unused constants from co_consts.
 .. nonce: ZPI_3L
 .. section: Core and Builtins
 
-Add a new command line option, "-X frozen_modules=[on|off]" to opt out of
+Add a new command line option, "-X frozen_stdlib=[on|off]" to opt out of
 (or into) using optional frozen modules.  This defaults to "on" (or "off" if
 it's running out of the source tree).
 
@@ -4414,7 +4414,7 @@ before building.
 
 Freeze stdlib modules that are imported during startup.  This provides
 significant performance improvements to startup.  If necessary, use the
-previously added "-X frozen_modules=off" commandline option to force
+previously added "-X frozen_stdlib=off" commandline option to force
 importing the source modules.
 
 ..

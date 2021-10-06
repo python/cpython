@@ -123,7 +123,7 @@ class CmdLineTest(unittest.TestCase):
         else:
             self.assertEqual(err, b'')
 
-    def test_xoption_frozen_modules(self):
+    def test_xoption_frozen_stdlib(self):
         tests = {
             ('=on', 'FrozenImporter'),
             ('=off', 'SourceFileLoader'),
@@ -131,7 +131,7 @@ class CmdLineTest(unittest.TestCase):
             ('', 'FrozenImporter'),
         }
         for raw, expected in tests:
-            cmd = ['-X', f'frozen_modules{raw}',
+            cmd = ['-X', f'frozen_stdlib{raw}',
                    #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
                    '-c', 'import os; print(os.__spec__.loader, end="")']
             with self.subTest(raw):
