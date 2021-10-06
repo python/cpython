@@ -63,7 +63,6 @@ static const char* _Py_stdlib_module_names[] = {
 "_random",
 "_sha1",
 "_sha256",
-"_sha3",
 "_sha512",
 "_signal",
 "_sitebuiltins",
