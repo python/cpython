@@ -1061,12 +1061,10 @@ trace_callback(void *ctx, const char *sql)
 
         pysqlite_state *state = ((callback_context *)ctx)->state;
         assert(state != NULL);
-        if (state->enable_callback_tracebacks) {
-            PyErr_SetString(state->DataError,
-                            "Expanded SQL string exceeds the maximum string "
-                            "length");
-            PyErr_Print();
-        }
+        PyErr_SetString(state->DataError,
+                        "Expanded SQL string exceeds the maximum string "
+                        "length");
+
         // Fall back to unexpanded sql
         py_statement = PyUnicode_FromString((const char *)sql);
     }
@@ -1077,17 +1075,19 @@ trace_callback(void *ctx, const char *sql)
 #else
     py_statement = PyUnicode_FromString(sql);
 #endif
-    PyObject *ret = NULL;
     if (py_statement) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+
         PyObject *callable = ((callback_context *)ctx)->callable;
-        ret = PyObject_CallOneArg(callable, py_statement);
+        PyObject *ret = PyObject_CallOneArg(callable, py_statement);
         Py_DECREF(py_statement);
+        Py_XDECREF(ret);
+
+        _PyErr_ChainExceptions(exc, val, tb);
     }
 
-    if (ret) {
-        Py_DECREF(ret);
-    }
-    else {
+    if (PyErr_Occurred()) {
         print_or_clear_traceback((callback_context *)ctx);
     }
 
