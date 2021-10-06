@@ -30,6 +30,7 @@ static const struct _module_alias aliases[] = {
 };
 
 const struct _frozen *PyImport_FrozenModules;
+const struct _frozen *_PyImport_FrozenStdlib;
 const struct _module_alias *_PyImport_FrozenAliases;
 
 static const char header[] =
@@ -188,6 +189,7 @@ main(int argc, char *argv[])
     const char *name, *inpath, *outpath;
 
     PyImport_FrozenModules = _PyImport_FrozenModules;
+    _PyImport_FrozenStdlib = _PyImport_FrozenModules;
     _PyImport_FrozenAliases = aliases;
 
     if (argc != 4) {

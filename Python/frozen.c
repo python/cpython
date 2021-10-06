@@ -105,6 +105,7 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only)},
     {0, 0, 0} /* modules sentinel */
 };
+const struct _frozen *_PyImport_FrozenStdlib = _PyImport_FrozenModules;
 
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
