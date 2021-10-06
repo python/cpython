@@ -2458,7 +2458,7 @@ _PyImport_BootstrapImp(PyThreadState *tstate)
     // Mock a ModuleSpec object just good enough for PyModule_FromDefAndSpec():
     // an object with just a name attribute.
     //
-    // _imp.__spec__ is overriden by importlib._bootstrap._instal() anyway.
+    // _imp.__spec__ is overridden by importlib._bootstrap._instal() anyway.
     PyObject *attrs = Py_BuildValue("{sO}", "name", name);
     if (attrs == NULL) {
         goto error;

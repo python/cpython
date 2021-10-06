@@ -588,7 +588,7 @@ specialize_dict_access(
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
         kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
-    // No desciptor, or non overriding.
+    // No descriptor, or non overriding.
     if (type->tp_dictoffset < 0) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
         return 0;

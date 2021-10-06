@@ -221,7 +221,7 @@ check_force_ascii(void)
         ch = (unsigned char)0xA7;
         res = _Py_mbstowcs(&wch, (char*)&ch, 1);
         if (res != DECODE_ERROR && wch == L'\xA7') {
-            /* On HP-UX withe C locale or the POSIX locale,
+            /* On HP-UX with C locale or the POSIX locale,
                nl_langinfo(CODESET) announces "roman8", whereas mbstowcs() uses
                Latin1 encoding in practice. Force ASCII in this case.
 
