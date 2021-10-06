@@ -1096,7 +1096,7 @@ static bool
 use_frozen_stdlib(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int override = interp->override_frozen_modules;
+    int override = interp->override_frozen_stdlib;
     if (override > 0) {
         return true;
     }
@@ -2218,7 +2218,7 @@ _imp__frozen_module_names_impl(PyObject *module)
 }
 
 /*[clinic input]
-_imp._override_frozen_modules_for_tests
+_imp._override_frozen_stdlib_for_tests
 
     override: int
     /
@@ -2230,11 +2230,11 @@ See frozen_modules() in Lib/test/support/import_helper.py.
 [clinic start generated code]*/
 
 static PyObject *
-_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
-/*[clinic end generated code: output=36d5cb1594160811 input=501242da72b8ef23]*/
+_imp__override_frozen_stdlib_for_tests_impl(PyObject *module, int override)
+/*[clinic end generated code: output=3f769bf38d4fd4cf input=8c1be52885465f03]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->override_frozen_modules = override;
+    interp->override_frozen_stdlib = override;
     Py_RETURN_NONE;
 }
 
@@ -2400,7 +2400,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
     _IMP__FROZEN_MODULE_NAMES_METHODDEF
-    _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
+    _IMP__OVERRIDE_FROZEN_STDLIB_FOR_TESTS_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF

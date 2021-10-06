@@ -365,8 +365,8 @@ _imp__frozen_module_names(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _imp__frozen_module_names_impl(module);
 }
 
-PyDoc_STRVAR(_imp__override_frozen_modules_for_tests__doc__,
-"_override_frozen_modules_for_tests($module, override, /)\n"
+PyDoc_STRVAR(_imp__override_frozen_stdlib_for_tests__doc__,
+"_override_frozen_stdlib_for_tests($module, override, /)\n"
 "--\n"
 "\n"
 "(internal-only) Override PyConfig.use_frozen_stdlib.\n"
@@ -374,14 +374,14 @@ PyDoc_STRVAR(_imp__override_frozen_modules_for_tests__doc__,
 "(-1: \"off\", 1: \"on\", 0: no override)\n"
 "See frozen_modules() in Lib/test/support/import_helper.py.");
 
-#define _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF    \
-    {"_override_frozen_modules_for_tests", (PyCFunction)_imp__override_frozen_modules_for_tests, METH_O, _imp__override_frozen_modules_for_tests__doc__},
+#define _IMP__OVERRIDE_FROZEN_STDLIB_FOR_TESTS_METHODDEF    \
+    {"_override_frozen_stdlib_for_tests", (PyCFunction)_imp__override_frozen_stdlib_for_tests, METH_O, _imp__override_frozen_stdlib_for_tests__doc__},
 
 static PyObject *
-_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override);
+_imp__override_frozen_stdlib_for_tests_impl(PyObject *module, int override);
 
 static PyObject *
-_imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
+_imp__override_frozen_stdlib_for_tests(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int override;
@@ -390,7 +390,7 @@ _imp__override_frozen_modules_for_tests(PyObject *module, PyObject *arg)
     if (override == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _imp__override_frozen_modules_for_tests_impl(module, override);
+    return_value = _imp__override_frozen_stdlib_for_tests_impl(module, override);
 
 exit:
     return return_value;
@@ -548,4 +548,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=06946245fc053b95 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=494288a40db2310a input=a9049054013a1b77]*/

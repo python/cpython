@@ -97,11 +97,11 @@ def frozen_modules(enabled=True):
     This only applies to modules that haven't been imported yet.
     Also, some essential modules will always be imported frozen.
     """
-    _imp._override_frozen_modules_for_tests(1 if enabled else -1)
+    _imp._override_frozen_stdlib_for_tests(1 if enabled else -1)
     try:
         yield
     finally:
-        _imp._override_frozen_modules_for_tests(0)
+        _imp._override_frozen_stdlib_for_tests(0)
 
 
 def import_fresh_module(name, fresh=(), blocked=(), *,
