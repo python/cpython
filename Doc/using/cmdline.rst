@@ -480,7 +480,7 @@ Miscellaneous options
      objects and pyc files are desired as well as supressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
-   * ``-X frozen_modules`` determines whether or not frozen modules are
+   * ``-X frozen_stdlib`` determines whether or not frozen stdlib modules are
      ignored by the import machinery.  A value of "on" means they get
      imported and "off" means they are ignored.  The default is "on"
      for non-debug builds (the normal case) and "off" for debug builds.
@@ -525,7 +525,7 @@ Miscellaneous options
       The ``-X no_debug_ranges`` option.
 
    .. versionadded:: 3.11
-      The ``-X frozen_modules`` option.
+      The ``-X frozen_stdlib`` option.
 
 
 Options you shouldn't use

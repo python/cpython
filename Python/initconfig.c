@@ -100,7 +100,7 @@ static const char usage_3[] = "\
             instruction in code objects. This is useful when smaller code objects and pyc \n\
             files are desired as well as supressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
-         -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+         -X frozen_stdlib=[on|off]: whether or not frozen stdlib modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
@@ -2090,8 +2090,8 @@ config_init_import(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    /* -X frozen_modules=[on|off] */
-    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+    /* -X frozen_stdlib=[on|off] */
+    const wchar_t *value = config_get_xoption_value(config, L"frozen_stdlib");
     if (value == NULL) {
         // For now we always default to "off".
         // In the near future we will be factoring in PGO and in-development.
@@ -2104,11 +2104,11 @@ config_init_import(PyConfig *config, int compute_path_config)
         config->use_frozen_stdlib = 0;
     }
     else if (wcslen(value) == 0) {
-        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+        // "-X frozen_stdlib" and "-X frozen_stdlib=" both imply "on".
         config->use_frozen_stdlib = 1;
     }
     else {
-        return PyStatus_Error("bad value for option -X frozen_modules "
+        return PyStatus_Error("bad value for option -X frozen_stdlib "
                               "(expected \"on\" or \"off\")");
     }
 
