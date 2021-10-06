@@ -457,7 +457,7 @@ The :mod:`test.support` module defines the following functions:
 .. function:: unlink(filename)
 
    Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
+   wrapped with a wait loop that checks for the existence of the file.
 
 
 .. function:: rmdir(filename)
@@ -1145,7 +1145,7 @@ The :mod:`test.support` module defines the following functions:
    Context manager catching :class:`threading.Thread` exception using
    :func:`threading.excepthook`.
 
-   Attributes set when an exception is catched:
+   Attributes set when an exception is caught:
 
    * ``exc_type``
    * ``exc_value``
