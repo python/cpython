@@ -952,28 +952,20 @@ class TestDialectValidity(unittest.TestCase):
         self.assertEqual(d.escapechar, "\\")
 
         mydialect.escapechar = ""
-        with self.assertRaises(csv.Error) as cm:
+        with self.assertRaisesRegex(csv.Error, '"escapechar" must be a 1-character string'):
             mydialect()
-        self.assertEqual(str(cm.exception),
-                         '"escapechar" must be a 1-character string')
 
         mydialect.escapechar = "**"
-        with self.assertRaises(csv.Error) as cm:
+        with self.assertRaisesRegex(csv.Error, '"escapechar" must be a 1-character string'):
             mydialect()
-        self.assertEqual(str(cm.exception),
-                         '"escapechar" must be a 1-character string')
 
         mydialect.escapechar = b"*"
-        with self.assertRaises(csv.Error) as cm:
+        with self.assertRaisesRegex(csv.Error, '"escapechar" must be string or None, not bytes'):
             mydialect()
-        self.assertEqual(str(cm.exception),
-                         '"escapechar" must be string or None, not bytes')
 
         mydialect.escapechar = 4
-        with self.assertRaises(csv.Error) as cm:
+        with self.assertRaisesRegex(csv.Error, '"escapechar" must be string or None, not int'):
             mydialect()
-        self.assertEqual(str(cm.exception),
-                         '"escapechar" must be string or None, not int')
 
     def test_lineterminator(self):
         class mydialect(csv.Dialect):
