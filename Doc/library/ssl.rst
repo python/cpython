@@ -18,7 +18,7 @@
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network
 sockets, both client-side and server-side.  This module uses the OpenSSL
-library. It is available on all modern Unix systems, Windows, Mac OS X, and
+library. It is available on all modern Unix systems, Windows, macOS, and
 probably additional platforms, as long as OpenSSL is installed on that platform.
 
 .. note::
@@ -1056,7 +1056,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web servers (therefore, it will
+   context may be used to authenticate web servers (therefore, it will
    be used to create client-side sockets).
 
    .. versionadded:: 3.4
@@ -1065,7 +1065,7 @@ Constants
 
    Option for :func:`create_default_context` and
    :meth:`SSLContext.load_default_certs`.  This value indicates that the
-   context may be used to authenticate Web clients (therefore, it will
+   context may be used to authenticate web clients (therefore, it will
    be used to create server-side sockets).
 
    .. versionadded:: 3.4
@@ -1870,7 +1870,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
     .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslsocket_class`
+      The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
 .. attribute:: SSLContext.sslsocket_class
@@ -1896,7 +1896,7 @@ to speed up repeated connections from the same clients.
       *session* argument was added.
 
    .. versionchanged:: 3.7
-      The method returns on instance of :attr:`SSLContext.sslobject_class`
+      The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
 
 .. attribute:: SSLContext.sslobject_class

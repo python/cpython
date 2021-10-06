@@ -78,7 +78,7 @@ struct _ts {
     PyInterpreterState *interp;
 
     /* Borrowed reference to the current frame (it can be NULL) */
-    PyFrameObject *frame;
+    struct _interpreter_frame *frame;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
     int stackcheck_counter;
@@ -223,7 +223,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _interpreter_frame *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
@@ -263,7 +263,7 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 
-// Get the configuration of the currrent interpreter.
+// Get the configuration of the current interpreter.
 // The caller must hold the GIL.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 

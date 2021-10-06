@@ -47,7 +47,7 @@ soon as we execute Python code, threads other than the gc thread can run
 too, and they can do ordinary things with weakrefs that end up resurrecting
 CT while gc is running.
 
-    http://www.python.org/sf/1055820
+    https://www.python.org/sf/1055820
 
 shows how innocent it can be, and also how nasty.  Variants of the three
 focussed test cases attached to that bug report are now part of Python's

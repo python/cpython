@@ -172,7 +172,7 @@ Module contents
 
    - ``kw_only``: If true (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
-     keyword-only, then the only affect is that the :meth:`__init__`
+     keyword-only, then the only effect is that the :meth:`__init__`
      parameter generated from a keyword-only field must be specified
      with a keyword when :meth:`__init__` is called.  There is no
      effect on any other aspect of dataclasses.  See the
@@ -205,7 +205,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING):
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -221,10 +221,9 @@ Module contents
      c.mylist += [1, 2, 3]
 
    As shown above, the :const:`MISSING` value is a sentinel object used to
-   detect if the ``default`` and ``default_factory`` parameters are
-   provided.  This sentinel is used because ``None`` is a valid value
-   for ``default``.  No code should directly use the :const:`MISSING`
-   value.
+   detect if some parameters are provided by the user. This sentinel is
+   used because ``None`` is a valid value for some parameters with
+   a distinct meaning.  No code should directly use the :const:`MISSING` value.
 
    The parameters to :func:`field` are:
 

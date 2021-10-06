@@ -83,7 +83,7 @@ struct tok_state {
     int async_def_nl;     /* =1 if the outermost 'async def' had at least one
                              NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
-    enum interactive_underflow_t interactive_underflow; 
+    enum interactive_underflow_t interactive_underflow;
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);

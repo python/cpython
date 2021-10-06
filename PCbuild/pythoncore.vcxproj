@@ -456,6 +456,7 @@
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
+    <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\frozen.c" />
     <ClCompile Include="..\Python\future.c" />
     <ClCompile Include="..\Python\getargs.c" />
@@ -487,6 +488,7 @@
     <ClCompile Include="..\Python\pystrtod.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
+    <ClCompile Include="..\Python\Python-tokenize.c" />
     <ClCompile Include="..\Python\pythonrun.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\suggestions.c" />

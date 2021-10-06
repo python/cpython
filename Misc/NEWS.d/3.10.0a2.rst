@@ -258,7 +258,7 @@ The :func:`repr` of :mod:`typing` types containing :ref:`Generic Alias Types
 .. nonce: 6aDbty
 .. section: Library
 
-``binhex.binhex()`` consisently writes macOS 9 line endings.
+``binhex.binhex()`` consistently writes macOS 9 line endings.
 
 ..
 
@@ -534,7 +534,7 @@ belong to. Patch by Batuhan Taskaya.
 .. nonce: LR4fnY
 .. section: Library
 
-Handle exceptions caused by unparseable date headers when using email
+Handle exceptions caused by unparsable date headers when using email
 "default" policy.  Patch by Tim Bell, Georges Toth
 
 ..

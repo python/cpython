@@ -310,13 +310,15 @@ zlib.compress
     /
     level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
         Compression level, in 0-9 or -1.
+    wbits: int(c_default="MAX_WBITS") = MAX_WBITS
+        The window buffer size and container format.
 
 Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
-/*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
+/*[clinic end generated code: output=46bd152fadd66df2 input=c4d06ee5782a7e3f]*/
 {
     PyObject *RetVal;
     int flush;
@@ -336,7 +338,8 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
     zst.zalloc = PyZlib_Malloc;
     zst.zfree = PyZlib_Free;
     zst.next_in = ibuf;
-    int err = deflateInit(&zst, level);
+    int err = deflateInit2(&zst, level, DEFLATED, wbits, DEF_MEM_LEVEL,
+                           Z_DEFAULT_STRATEGY);
 
     switch (err) {
     case Z_OK:
@@ -1504,7 +1507,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
-"decompressobj([wbits[, zdict]]]) -- Return a decompressor object.\n"
+"decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
 "'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"

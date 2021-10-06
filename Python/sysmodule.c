@@ -29,6 +29,7 @@ Data members:
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
+#include "pycore_frame.h"
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -267,7 +268,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 break;
             }
             if (canTrace) {
-                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc) ? 255 : 0;
                 ts->tracing--;
             }
             PyObject* args[2] = {eventName, eventArgs};
@@ -282,7 +283,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
             Py_DECREF(o);
             Py_CLEAR(hook);
         }
-        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc) ? 255 : 0;
         ts->tracing--;
         if (_PyErr_Occurred(ts)) {
             goto exit;
@@ -1814,25 +1815,22 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *f = PyThreadState_GetFrame(tstate);
+    InterpreterFrame *frame = tstate->frame;
 
-    if (_PySys_Audit(tstate, "sys._getframe", "O", f) < 0) {
-        Py_DECREF(f);
+    if (_PySys_Audit(tstate, "sys._getframe", NULL) < 0) {
         return NULL;
     }
 
-    while (depth > 0 && f != NULL) {
-        PyFrameObject *back = PyFrame_GetBack(f);
-        Py_DECREF(f);
-        f = back;
+    while (depth > 0 && frame != NULL) {
+        frame = frame->previous;
         --depth;
     }
-    if (f == NULL) {
+    if (frame == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "call stack is not deep enough");
         return NULL;
     }
-    return (PyObject*)f;
+    return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
 }
 
 /*[clinic input]
@@ -2975,6 +2973,14 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     COPY_LIST("warnoptions", config->warnoptions);
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
+
+    const wchar_t *stdlibdir = _Py_GetStdlibDir();
+    if (stdlibdir != NULL) {
+        SET_SYS_FROM_WSTR("_stdlib_dir", stdlibdir);
+    }
+    else {
+        PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None);
+    }
 
 #undef SET_SYS_FROM_WSTR
 #undef COPY_LIST

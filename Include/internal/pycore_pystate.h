@@ -30,6 +30,17 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
 }
 
 
+static inline const PyConfig *
+_Py_GetMainConfig(void)
+{
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
+    if (interp == NULL) {
+        return NULL;
+    }
+    return _PyInterpreterState_GetConfig(interp);
+}
+
+
 /* Only handle signals on the main thread of the main interpreter. */
 static inline int
 _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
@@ -146,9 +157,6 @@ PyAPI_FUNC(int) _PyState_AddModule(
 
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
-
-PyObject **_PyThreadState_PushLocals(PyThreadState *, int size);
-void _PyThreadState_PopLocals(PyThreadState *, PyObject **);
 
 #ifdef __cplusplus
 }

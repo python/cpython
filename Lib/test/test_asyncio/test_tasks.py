@@ -2307,6 +2307,7 @@ class BaseTaskTests:
                 self.new_task(self.loop, gen)
             finally:
                 gen.close()
+        gc.collect()  # For PyPy or other GCs.
 
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
@@ -2875,15 +2876,18 @@ class GenericTaskTests(test_utils.TestCase):
     def test_future_subclass(self):
         self.assertTrue(issubclass(asyncio.Task, asyncio.Future))
 
+    @support.cpython_only
     def test_asyncio_module_compiled(self):
         # Because of circular imports it's easy to make _asyncio
         # module non-importable.  This is a simple test that will
         # fail on systems where C modules were successfully compiled
-        # (hence the test for _functools), but _asyncio somehow didn't.
+        # (hence the test for _functools etc), but _asyncio somehow didn't.
         try:
             import _functools
+            import _json
+            import _pickle
         except ImportError:
-            pass
+            self.skipTest('C modules are not available')
         else:
             try:
                 import _asyncio
@@ -3265,7 +3269,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             self.assertTrue(task.done())
 
     def test_run_coroutine_threadsafe_task_cancelled(self):
-        """Test coroutine submission from a tread to an event loop
+        """Test coroutine submission from a thread to an event loop
         when the task is cancelled."""
         callback = lambda: self.target(cancel=True)
         future = self.loop.run_in_executor(None, callback)
@@ -3273,7 +3277,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             self.loop.run_until_complete(future)
 
     def test_run_coroutine_threadsafe_task_factory_exception(self):
-        """Test coroutine submission from a tread to an event loop
+        """Test coroutine submission from a thread to an event loop
         when the task factory raise an exception."""
 
         def task_factory(loop, coro):

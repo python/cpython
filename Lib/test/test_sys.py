@@ -13,6 +13,7 @@ from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
+from test.support import import_helper
 import textwrap
 import unittest
 import warnings
@@ -380,7 +381,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(frame is sys._getframe())
 
         # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
+        # from f123.  This is a little tricky, since various bits of
         # threading.py are also in the thread's call stack.
         frame = d.pop(thread_id)
         stack = traceback.extract_stack(frame)
@@ -447,7 +448,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual((None, None, None), d.pop(main_id))
 
         # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
+        # from f123.  This is a little tricky, since various bits of
         # threading.py are also in the thread's call stack.
         exc_type, exc_value, exc_tb = d.pop(thread_id)
         stack = traceback.extract_stack(exc_tb.tb_frame)
@@ -994,6 +995,15 @@ class SysModuleTest(unittest.TestCase):
         for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
+    def test_stdlib_dir(self):
+        os = import_helper.import_fresh_module('os')
+        marker = getattr(os, '__file__', None)
+        if marker and not os.path.exists(marker):
+            marker = None
+        expected = os.path.dirname(marker) if marker else None
+        actual = sys._stdlib_dir
+        self.assertEqual(actual, expected)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
@@ -1070,6 +1080,30 @@ class UnraisableHookTest(unittest.TestCase):
                     self.assertIn("del is broken", report)
                 self.assertTrue(report.endswith("\n"))
 
+    def test_original_unraisablehook_exception_qualname(self):
+        # See bpo-41031, bpo-45083.
+        # Check that the exception is printed with its qualified name
+        # rather than just classname, and the module names appears
+        # unless it is one of the hard-coded exclusions.
+        class A:
+            class B:
+                class X(Exception):
+                    pass
+
+        for moduleName in 'builtins', '__main__', 'some_module':
+            with self.subTest(moduleName=moduleName):
+                A.B.X.__module__ = moduleName
+                with test.support.captured_stderr() as stderr, \
+                     test.support.swap_attr(sys, 'unraisablehook',
+                                            sys.__unraisablehook__):
+                         expected = self.write_unraisable_exc(
+                             A.B.X(), "msg", "obj");
+                report = stderr.getvalue()
+                self.assertIn(A.B.X.__qualname__, report)
+                if moduleName in ['builtins', '__main__']:
+                    self.assertNotIn(moduleName + '.', report)
+                else:
+                    self.assertIn(moduleName + '.', report)
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)
@@ -1275,7 +1309,7 @@ class SizeofTest(unittest.TestCase):
         # frame
         import inspect
         x = inspect.currentframe()
-        check(x, size('4P3i4cP'))
+        check(x, size('3Pi3c'))
         # function
         def func(): pass
         check(func, size('14Pi'))

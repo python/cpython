@@ -152,6 +152,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    send it to the socket as a sequence of bytes preceded by a four-byte length
    string packed in binary using ``struct.pack('>L', n)``.
 
+   .. _logging-eval-security:
+
    .. note::
 
       Because portions of the configuration are passed through
@@ -166,7 +168,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used). To avoid the risk of this happening, use the
+      different port is used. To avoid the risk of this happening, use the
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 

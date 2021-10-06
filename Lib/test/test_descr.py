@@ -4996,8 +4996,11 @@ class DictProxyTests(unittest.TestCase):
             self.assertIn('{!r}: {!r}'.format(k, v), r)
 
 
-class PTypesLongInitTest(unittest.TestCase):
+class AAAPTypesLongInitTest(unittest.TestCase):
     # This is in its own TestCase so that it can be run before any other tests.
+    # (Hence the 'AAA' in the test class name: to make it the first
+    # item in a list sorted by name, like
+    # unittest.TestLoader.getTestCaseNames() does.)
     def test_pytype_long_ready(self):
         # Testing SF bug 551412 ...
 
@@ -5720,7 +5723,7 @@ class MroTest(unittest.TestCase):
 
     def test_incomplete_super(self):
         """
-        Attrubute lookup on a super object must be aware that
+        Attribute lookup on a super object must be aware that
         its target type can be uninitialized (type->tp_mro == NULL).
         """
         class M(DebugHelperMeta):
@@ -5735,12 +5738,5 @@ class MroTest(unittest.TestCase):
             pass
 
 
-def test_main():
-    # Run all local test cases, with PTypesLongInitTest first.
-    support.run_unittest(PTypesLongInitTest, OperatorsTest,
-                         ClassPropertiesAndMethods, DictProxyTests,
-                         MiscTests, PicklingTests, SharedKeyTests,
-                         MroTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
