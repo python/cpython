@@ -1345,7 +1345,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
 		test_multiprocessing_forkserver \
-		test_mailbox test_socket test_poll \
+		test_mailbox test_nntplib test_socket test_poll \
 		test_select test_zipfile test_concurrent_futures
 quicktest:	@DEF_MAKE_RULE@ platform
 		$(TESTRUNNER) $(QUICKTESTOPTS)
