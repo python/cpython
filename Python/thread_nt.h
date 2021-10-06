@@ -75,20 +75,20 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
             }
         }
     } else if (milliseconds != 0) {
-        /* wait at least until the target */
-        _PyTime_t now = _PyTime_GetPerfCounter();
+        /* wait at least until the deadline */
         _PyTime_t nanoseconds = _PyTime_FromNanoseconds((_PyTime_t)milliseconds * 1000000);
-        _PyTime_t target = now + nanoseconds;
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
         while (mutex->locked) {
-            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds, _PyTime_ROUND_TIMEOUT);
+            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
+                                                            _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            now = _PyTime_GetPerfCounter();
-            if (target <= now)
+            nanoseconds = deadline - _PyTime_GetPerfCounter();
+            if (nanoseconds <= 0) {
                 break;
-            nanoseconds = target - now;
+            }
         }
     }
     if (!mutex->locked) {
@@ -292,9 +292,10 @@ PyThread_free_lock(PyThread_type_lock aLock)
     FreeNonRecursiveMutex(aLock) ;
 }
 
-// WaitForSingleObject() documentation: "The time-out value needs to be a
-// positive number between 0 and 0x7FFFFFFF." INFINITE is equal to 0xFFFFFFFF.
-const DWORD TIMEOUT_MS_MAX = 0x7FFFFFFF;
+// WaitForSingleObject() accepts timeout in milliseconds in the range
+// [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+// timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+const DWORD TIMEOUT_MS_MAX = 0xFFFFFFFE;
 
 /*
  * Return 1 on success if the lock was acquired
@@ -322,12 +323,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
             // overflow to the caller, so clamp the timeout to
             // [0, TIMEOUT_MS_MAX] milliseconds.
             //
-            // TIMEOUT_MS_MAX milliseconds is around 24.9 days.
-            //
             // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
             // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
             milliseconds = TIMEOUT_MS_MAX;
         }
+        assert(milliseconds != INFINITE);
     }
     else {
         milliseconds = INFINITE;

@@ -537,8 +537,8 @@ Connection Objects
 
       Using this attribute you can control what objects are returned for the ``TEXT``
       data type. By default, this attribute is set to :class:`str` and the
-      :mod:`sqlite3` module will return Unicode objects for ``TEXT``. If you want to
-      return bytestrings instead, you can set it to :class:`bytes`.
+      :mod:`sqlite3` module will return :class:`str` objects for ``TEXT``.
+      If you want to return :class:`bytes` instead, you can set it to :class:`bytes`.
 
       You can also set it to any other callable that accepts a single bytestring
       parameter and returns the resulting object.

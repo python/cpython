@@ -3099,8 +3099,11 @@ AC_SUBST(TZPATH)
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
-# Haiku system library
-AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+case $ac_sys_system/$ac_sys_release in
+    Haiku*)
+        AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+    ;;
+esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
@@ -3744,7 +3747,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \

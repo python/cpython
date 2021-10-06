@@ -92,7 +92,7 @@
  * mutexes and condition variables:
  */
 #if (defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES) && \
-     defined(HAVE_SEM_TIMEDWAIT))
+     (defined(HAVE_SEM_TIMEDWAIT) || defined(HAVE_SEM_CLOCKWAIT)))
 #  define USE_SEMAPHORES
 #else
 #  undef USE_SEMAPHORES
@@ -438,7 +438,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
-    _PyTime_t timeout;
+    _PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
         _PyTime_t ns;
         if (microseconds <= _PyTime_MAX / 1000) {
@@ -461,17 +461,32 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         timeout = _PyTime_FromNanoseconds(-1);
     }
 
+#ifdef HAVE_SEM_CLOCKWAIT
+    struct timespec abs_timeout;
+    // Local scope for deadline
+    {
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
+    }
+#else
     _PyTime_t deadline = 0;
     if (timeout > 0 && !intr_flag) {
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+        deadline = _PyDeadline_Init(timeout);
     }
+#endif
 
     while (1) {
         if (timeout > 0) {
-            _PyTime_t t = _PyTime_GetSystemClock() + timeout;
+#ifdef HAVE_SEM_CLOCKWAIT
+            status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
+                                              &abs_timeout));
+#else
+            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+                                             timeout);
             struct timespec ts;
-            _PyTime_AsTimespec_clamp(t, &ts);
+            _PyTime_AsTimespec_clamp(abs_time, &ts);
             status = fix_status(sem_timedwait(thelock, &ts));
+#endif
         }
         else if (timeout == 0) {
             status = fix_status(sem_trywait(thelock));
@@ -486,25 +501,35 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             break;
         }
 
+        // sem_clockwait() uses an absolute timeout, there is no need
+        // to recompute the relative timeout.
+#ifndef HAVE_SEM_CLOCKWAIT
         if (timeout > 0) {
             /* wait interrupted by a signal (EINTR): recompute the timeout */
-            _PyTime_t timeout = deadline - _PyTime_GetMonotonicClock();
+            _PyTime_t timeout = _PyDeadline_Get(deadline);
             if (timeout < 0) {
                 status = ETIMEDOUT;
                 break;
             }
         }
+#endif
     }
 
     /* Don't check the status if we're stopping because of an interrupt.  */
     if (!(intr_flag && status == EINTR)) {
         if (timeout > 0) {
-            if (status != ETIMEDOUT)
+            if (status != ETIMEDOUT) {
+#ifdef HAVE_SEM_CLOCKWAIT
+                CHECK_STATUS("sem_clockwait");
+#else
                 CHECK_STATUS("sem_timedwait");
+#endif
+            }
         }
         else if (timeout == 0) {
-            if (status != EAGAIN)
+            if (status != EAGAIN) {
                 CHECK_STATUS("sem_trywait");
+            }
         }
         else {
             CHECK_STATUS("sem_wait");
