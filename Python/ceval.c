@@ -4051,19 +4051,18 @@ check_eval_breaker:
 
         TARGET(JUMP_ABSOLUTE) {
             PREDICTED(JUMP_ABSOLUTE);
-            if (oparg < INSTR_OFFSET()) {
-                /* Increment the warmup counter and quicken if warm enough
-                * _Py_Quicken is idempotent so we don't worry about overflow */
-                if (!PyCodeObject_IsWarmedUp(co)) {
-                    PyCodeObject_IncrementWarmup(co);
-                    if (PyCodeObject_IsWarmedUp(co)) {
-                        if (_Py_Quicken(co)) {
-                            goto error;
-                        }
-                        int nexti = INSTR_OFFSET();
-                        first_instr = co->co_firstinstr;
-                        next_instr = first_instr + nexti;
+            assert(oparg < INSTR_OFFSET());
+            /* Increment the warmup counter and quicken if warm enough
+            * _Py_Quicken is idempotent so we don't worry about overflow */
+            if (!PyCodeObject_IsWarmedUp(co)) {
+                PyCodeObject_IncrementWarmup(co);
+                if (PyCodeObject_IsWarmedUp(co)) {
+                    if (_Py_Quicken(co)) {
+                        goto error;
                     }
+                    int nexti = INSTR_OFFSET();
+                    first_instr = co->co_firstinstr;
+                    next_instr = first_instr + nexti;
                 }
             }
             JUMPTO(oparg);
@@ -4072,6 +4071,7 @@ check_eval_breaker:
         }
 
         TARGET(JUMP_ABSOLUTE_QUICK) {
+            assert(oparg < INSTR_OFFSET());
             JUMPTO(oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
