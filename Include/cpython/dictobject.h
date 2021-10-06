@@ -3,6 +3,7 @@
 #endif
 
 typedef struct _dictkeysobject PyDictKeysObject;
+typedef struct _dictvalues PyDictValues;
 
 /* The ma_values pointer is NULL for a combined table
  * or points to an array of PyObject* for a split table
@@ -24,7 +25,7 @@ typedef struct {
 
        If ma_values is not NULL, the table is splitted:
        keys are stored in ma_keys and values are stored in ma_values */
-    PyObject **ma_values;
+    PyDictValues *ma_values;
 } PyDictObject;
 
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,

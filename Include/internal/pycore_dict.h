@@ -71,6 +71,14 @@ struct _dictkeysobject {
        see the DK_ENTRIES() macro */
 };
 
+/* This must be no more than 16, for the order vector to fit in 64 bits */
+#define SHARED_KEYS_MAX_SIZE 16
+
+struct _dictvalues {
+    uint64_t mv_order;
+    PyObject *values[1];
+};
+
 #define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
