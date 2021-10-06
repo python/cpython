@@ -114,11 +114,11 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 
 /* hash algorithm selection
  *
- * The values for Py_HASH_SIPHASH24 and Py_HASH_FNV are hard-coded in the
+ * The values for Py_HASH_SIPHASH13 and Py_HASH_FNV are hard-coded in the
  * configure script.
  *
  * - FNV is available on all platforms and architectures.
- * - SIPHASH24 only works on platforms that don't require aligned memory for integers.
+ * - SIPHASH only works on platforms that don't require aligned memory for integers.
  * - With EXTERNAL embedders can provide an alternative implementation with::
  *
  *     PyHash_FuncDef PyHash_Func = {...};
@@ -126,12 +126,12 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
  * XXX: Figure out __declspec() for extern PyHash_FuncDef.
  */
 #define Py_HASH_EXTERNAL 0
-#define Py_HASH_SIPHASH24 1
+#define Py_HASH_SIPHASH 1
 #define Py_HASH_FNV 2
 
 #ifndef Py_HASH_ALGORITHM
 #  ifndef HAVE_ALIGNED_REQUIRED
-#    define Py_HASH_ALGORITHM Py_HASH_SIPHASH24
+#    define Py_HASH_ALGORITHM Py_HASH_SIPHASH
 #  else
 #    define Py_HASH_ALGORITHM Py_HASH_FNV
 #  endif /* uint64_t && uint32_t && aligned */

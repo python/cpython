@@ -3036,17 +3036,17 @@ fi
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
   [Define hash algorithm for str, bytes and memoryview.
-   SipHash24: 1, FNV: 2, externally defined: 0])
+   SipHash: 1, FNV: 2, externally defined: 0])
 
 AC_MSG_CHECKING(for --with-hash-algorithm)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(hash_algorithm,
-            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash24@:>@],
-                           [select hash algorithm for use in Python/pyhash.c (default is SipHash24)]),
+            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash@:>@],
+                           [select hash algorithm for use in Python/pyhash.c (default is SipHash)]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in
-    siphash24)
+    siphash)
         AC_DEFINE(Py_HASH_ALGORITHM, 1)
         ;;
     fnv)

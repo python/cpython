@@ -364,15 +364,13 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
     d = ROTATE(d, t) ^ c;           \
     a = ROTATE(a, 32);
 
-#define DOUBLE_ROUND(v0,v1,v2,v3)       \
-    HALF_ROUND(v0,v1,v2,v3,13,16);      \
-    HALF_ROUND(v2,v1,v0,v3,17,21);      \
+#define SINGLE_ROUND(v0,v1,v2,v3)       \
     HALF_ROUND(v0,v1,v2,v3,13,16);      \
     HALF_ROUND(v2,v1,v0,v3,17,21);
 
 
 static uint64_t
-siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
+siphash13(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     uint64_t b = (uint64_t)src_sz << 56;
     const uint8_t *in = (const uint8_t*)src;
 
@@ -391,7 +389,7 @@ siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
         in += sizeof(mi);
         src_sz -= sizeof(mi);
         v3 ^= mi;
-        DOUBLE_ROUND(v0,v1,v2,v3);
+        SINGLE_ROUND(v0,v1,v2,v3);
         v0 ^= mi;
     }
 
@@ -409,11 +407,12 @@ siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     b |= _le64toh(t);
 
     v3 ^= b;
-    DOUBLE_ROUND(v0,v1,v2,v3);
+    SINGLE_ROUND(v0,v1,v2,v3);
     v0 ^= b;
     v2 ^= 0xff;
-    DOUBLE_ROUND(v0,v1,v2,v3);
-    DOUBLE_ROUND(v0,v1,v2,v3);
+    SINGLE_ROUND(v0,v1,v2,v3);
+    SINGLE_ROUND(v0,v1,v2,v3);
+    SINGLE_ROUND(v0,v1,v2,v3);
 
     /* modified */
     t = (v0 ^ v1) ^ (v2 ^ v3);
@@ -423,19 +422,19 @@ siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
 uint64_t
 _Py_KeyedHash(uint64_t key, const void *src, Py_ssize_t src_sz)
 {
-    return siphash24(key, 0, src, src_sz);
+    return siphash13(key, 0, src, src_sz);
 }
 
 
-#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH24
+#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH
 static Py_hash_t
 pysiphash(const void *src, Py_ssize_t src_sz) {
-    return (Py_hash_t)siphash24(
+    return (Py_hash_t)siphash13(
         _le64toh(_Py_HashSecret.siphash.k0), _le64toh(_Py_HashSecret.siphash.k1),
         src, src_sz);
 }
 
-static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash24", 64, 128};
+static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash13", 64, 128};
 #endif
 
 #ifdef __cplusplus
