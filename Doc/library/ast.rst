@@ -1920,7 +1920,7 @@ and classes for traversing abstract syntax trees:
    If source contains a null character ('\0'), :exc:`ValueError` is raised.
 
     .. warning::
-      Note that succesfully parsing souce code into an AST object doesn't
+      Note that successfully parsing source code into an AST object doesn't
       guarantee that the source code provided is valid Python code that can
       be executed as the compilation step can raise further :exc:`SyntaxError`
       exceptions. For instance, the source ``return 42`` generates a valid
