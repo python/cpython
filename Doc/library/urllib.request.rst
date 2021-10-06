@@ -884,6 +884,8 @@ HTTPRedirectHandler Objects
    The same as :meth:`http_error_301`, but called for the 'permanent redirect'
    response.
 
+   .. versionadded:: 3.11
+
 
 .. _http-cookie-processor:
 
