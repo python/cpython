@@ -31,7 +31,7 @@ SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 # while making the sysconfig module the single point of truth.
 # This makes it easier for OS distributions where they need to
 # alter locations for packages installations in a single place.
-# Note that this module is depracated (PEP 632); all consumers
+# Note that this module is deprecated (PEP 632); all consumers
 # of this information should switch to using sysconfig directly.
 INSTALL_SCHEMES = {"unix_prefix": {}, "unix_home": {}, "nt": {}}
 
@@ -43,7 +43,7 @@ for key in SCHEME_KEYS:
         sys_key = key
         sys_scheme = sysconfig._INSTALL_SCHEMES[sys_scheme_name]
         if key == "headers" and key not in sys_scheme:
-            # On POSIX-y platofrms, Python will:
+            # On POSIX-y platforms, Python will:
             # - Build from .h files in 'headers' (only there when
             #   building CPython)
             # - Install .h files to 'include'

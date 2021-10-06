@@ -324,7 +324,7 @@ class _BasePurePathTest(object):
         self.assertFalse(P('b/py').match('b.py'))
         self.assertFalse(P('/a.py').match('b.py'))
         self.assertFalse(P('b.py/c').match('b.py'))
-        # Wilcard relative pattern.
+        # Wildcard relative pattern.
         self.assertTrue(P('b.py').match('*.py'))
         self.assertTrue(P('a/b.py').match('*.py'))
         self.assertTrue(P('/a/b.py').match('*.py'))
@@ -1284,7 +1284,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(False, P('/foo/bar').is_reserved())
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
-        # Case-insenstive DOS-device names are reserved.
+        # Case-insensitive DOS-device names are reserved.
         self.assertIs(True, P('nul').is_reserved())
         self.assertIs(True, P('aux').is_reserved())
         self.assertIs(True, P('prn').is_reserved())

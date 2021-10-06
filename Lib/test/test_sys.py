@@ -381,7 +381,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(frame is sys._getframe())
 
         # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
+        # from f123.  This is a little tricky, since various bits of
         # threading.py are also in the thread's call stack.
         frame = d.pop(thread_id)
         stack = traceback.extract_stack(frame)
@@ -448,7 +448,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual((None, None, None), d.pop(main_id))
 
         # Verify that the captured thread frame is blocked in g456, called
-        # from f123.  This is a litte tricky, since various bits of
+        # from f123.  This is a little tricky, since various bits of
         # threading.py are also in the thread's call stack.
         exc_type, exc_value, exc_tb = d.pop(thread_id)
         stack = traceback.extract_stack(exc_tb.tb_frame)

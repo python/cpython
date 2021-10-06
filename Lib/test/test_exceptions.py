@@ -2281,7 +2281,7 @@ class SyntaxErrorTests(unittest.TestCase):
                  abcdefg
              SyntaxError: bad bad
              """)),
-            # End offset pass the source lenght
+            # End offset pass the source length
             (("bad.py", 1, 2, "abcdefg", 1, 100),
              dedent(
              """
