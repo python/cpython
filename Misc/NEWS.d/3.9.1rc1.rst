@@ -317,7 +317,7 @@ webbrowser: Ignore *NotADirectoryError* when calling ``xdg-settings``.
 .. nonce: 6aDbty
 .. section: Library
 
-``binhex.binhex()`` consisently writes macOS 9 line endings.
+``binhex.binhex()`` consistently writes macOS 9 line endings.
 
 ..
 
