@@ -98,7 +98,7 @@ static const char usage_3[] = "\
          -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
             information (end line, start column offset and end column offset) to every \n\
             instruction in code objects. This is useful when smaller code objects and pyc \n\
-            files are desired as well as supressing the extra visual location indicators \n\
+            files are desired as well as suppressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
@@ -142,7 +142,7 @@ static const char usage_6[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as supressing the \n"
+"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
@@ -2549,7 +2549,7 @@ warnoptions_append(PyConfig *config, PyWideStringList *options,
 {
     /* config_init_warnoptions() add existing config warnoptions at the end:
        ensure that the new option is not already present in this list to
-       prevent change the options order whne config_init_warnoptions() is
+       prevent change the options order when config_init_warnoptions() is
        called twice. */
     if (_PyWideStringList_Find(&config->warnoptions, option)) {
         /* Already present: do nothing */

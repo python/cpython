@@ -411,7 +411,7 @@ config_init_pathconfig(PyConfig *config, int compute_path_config)
 #undef COPY_ATTR
 
 #ifdef MS_WINDOWS
-    /* If a ._pth file is found: isolated and site_import are overriden */
+    /* If a ._pth file is found: isolated and site_import are overridden */
     if (pathconfig.isolated != -1) {
         config->isolated = pathconfig.isolated;
     }
