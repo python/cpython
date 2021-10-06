@@ -2513,7 +2513,7 @@ class PyBuildExt(build_ext):
         # (issue #14693). It's harmless and the object code is tiny
         # (40-50 KiB per module, only loaded when actually used).  Modules can
         # be disabled via the --with-builtin-hashlib-hashes configure flag.
-        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
+        supported = {"md5", "sha1", "sha256", "sha512", "blake2"}
 
         configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
         configured = configured.strip('"').lower()
@@ -2564,17 +2564,6 @@ class PyBuildExt(build_ext):
                     '_blake2/blake2s_impl.c'
                 ],
                 depends=blake2_deps
-            ))
-
-        if "sha3" in configured:
-            sha3_deps = glob(
-                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
-            )
-            sha3_deps.append('hashlib.h')
-            self.add(Extension(
-                '_sha3',
-                ['_sha3/sha3module.c'],
-                depends=sha3_deps
             ))
 
     def detect_nis(self):

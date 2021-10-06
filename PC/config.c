@@ -22,7 +22,6 @@ extern PyObject* PyInit__signal(void);
 extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha256(void);
 extern PyObject* PyInit__sha512(void);
-extern PyObject* PyInit__sha3(void);
 extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit__blake2(void);
@@ -99,7 +98,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sha1", PyInit__sha1},
     {"_sha256", PyInit__sha256},
     {"_sha512", PyInit__sha512},
-    {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},

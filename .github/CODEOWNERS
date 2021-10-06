@@ -28,7 +28,6 @@ Python/ast_opt.c              @isidentical
 **/*md5*                      @python/crypto-team @tiran
 **/*blake*                    @python/crypto-team @tiran
 /Modules/_blake2/**           @python/crypto-team @tiran
-/Modules/_sha3/**             @python/crypto-team @tiran
 
 # logging
 **/*logging*                  @vsajip

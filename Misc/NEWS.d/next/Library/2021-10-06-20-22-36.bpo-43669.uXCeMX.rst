@@ -1,0 +1,1 @@
+Drop the internal _sha3 module per PEP 644. Patch by Illia Volochii.

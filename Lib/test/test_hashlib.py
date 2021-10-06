@@ -28,7 +28,7 @@ from http.client import HTTPException
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 # default builtin hash module
-default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'blake2'}
 # --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
 if builtin_hashes is None:
@@ -173,15 +173,6 @@ class HashLibTestCase(unittest.TestCase):
         if _blake2:
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
-
-        _sha3 = self._conditional_import_module('_sha3')
-        if _sha3:
-            add_builtin_constructor('sha3_224')
-            add_builtin_constructor('sha3_256')
-            add_builtin_constructor('sha3_384')
-            add_builtin_constructor('sha3_512')
-            add_builtin_constructor('shake_128')
-            add_builtin_constructor('shake_256')
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
@@ -407,8 +398,7 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertEqual(len(m.digest()), digest_size)
                 self.assertEqual(len(m.hexdigest()), 2*digest_size)
             self.assertEqual(m.name, name)
-            # split for sha3_512 / _sha3.sha3 object
-            self.assertIn(name.split("_")[0], repr(m))
+            self.assertIn(name, repr(m))
 
     def test_blocksize_name(self):
         self.check_blocksize_name('md5', 64, 16)

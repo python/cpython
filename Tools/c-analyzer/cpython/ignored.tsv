@@ -410,7 +410,6 @@ Modules/posixmodule.c	-	posixmodile_slots	-
 Modules/_scproxy.c	-	_scproxy_slots	-
 Modules/sha1module.c	-	_sha1_slots	-
 Modules/sha256module.c	-	_sha256_slots	-
-Modules/_sha3/sha3module.c	-	_sha3_slots	-
 Modules/sha512module.c	-	_sha512_slots	-
 Modules/_stat.c	-	stat_slots	-
 Modules/syslogmodule.c	-	syslog_slots	-
@@ -615,8 +614,6 @@ Modules/sha1module.c	-	SHA1_methods	-
 Modules/sha1module.c	-	SHA1_functions	-
 Modules/sha256module.c	-	SHA_methods	-
 Modules/sha256module.c	-	SHA_functions	-
-Modules/_sha3/sha3module.c	-	SHA3_methods	-
-Modules/_sha3/sha3module.c	-	SHAKE_methods	-
 Modules/sha512module.c	-	SHA_methods	-
 Modules/sha512module.c	-	SHA_functions	-
 Modules/signalmodule.c	-	signal_methods	-
@@ -998,7 +995,6 @@ Modules/selectmodule.c	-	pyepoll_getsetlist	-
 Modules/selectmodule.c	-	kqueue_queue_getsetlist	-
 Modules/sha1module.c	-	SHA1_getseters	-
 Modules/sha256module.c	-	SHA_getseters	-
-Modules/_sha3/sha3module.c	-	SHA3_getseters	-
 Modules/sha512module.c	-	SHA_getseters	-
 Modules/socketmodule.c	-	sock_getsetlist	-
 Modules/_sqlite/connection.c	-	connection_getset	-
@@ -1083,13 +1079,6 @@ Modules/selectmodule.c	-	pyEpoll_Type_slots	-
 Modules/selectmodule.c	-	kqueue_queue_Type_slots	-
 Modules/sha1module.c	-	sha1_type_slots	-
 Modules/sha256module.c	-	sha256_types_slots	-
-Modules/_sha3/sha3module.c	-	sha3_224_slots	-
-Modules/_sha3/sha3module.c	-	sha3_256_slots	-
-Modules/_sha3/sha3module.c	-	sha3_384_slots	-
-Modules/_sha3/sha3module.c	-	sha3_512_slots	-
-Modules/_sha3/sha3module.c	-	SHAKE128slots	-
-Modules/_sha3/sha3module.c	-	SHAKE256slots	-
-Modules/_sha3/sha3module.c	-	type_slots_obj	-
 Modules/sha512module.c	-	sha512_sha384_type_slots	-
 Modules/sha512module.c	-	sha512_sha512_type_slots	-
 Modules/_sqlite/connection.c	-	connection_slots	-
@@ -1133,13 +1122,6 @@ Modules/_operator.c	-	itemgetter_type_spec	-
 Modules/_operator.c	-	attrgetter_type_spec	-
 Modules/_operator.c	-	methodcaller_type_spec	-
 Modules/_randommodule.c	-	Random_Type_spec	-
-Modules/_sha3/sha3module.c	-	sha3_224_spec	-
-Modules/_sha3/sha3module.c	-	sha3_256_spec	-
-Modules/_sha3/sha3module.c	-	sha3_384_spec	-
-Modules/_sha3/sha3module.c	-	sha3_512_spec	-
-Modules/_sha3/sha3module.c	-	SHAKE128_spec	-
-Modules/_sha3/sha3module.c	-	SHAKE256_spec	-
-Modules/_sha3/sha3module.c	-	type_spec_obj	-
 Modules/_sqlite/connection.c	-	connection_spec	-
 Modules/_sqlite/cursor.c	-	cursor_spec	-
 Modules/_sqlite/prepare_protocol.c	-	type_spec	-
@@ -2193,7 +2175,6 @@ Modules/_blake2/blake2module.c	-	blake2_module	-
 Modules/_multiprocessing/multiprocessing.c	-	multiprocessing_module	-
 Modules/_multiprocessing/posixshmem.c	-	this_module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
-Modules/_sha3/sha3module.c	-	_sha3module	-
 Modules/cjkcodecs/multibytecodec.c	-	_multibytecodecmodule	-
 Modules/_decimal/_decimal.c	-	_decimal_module	-
 Modules/_ctypes/_ctypes.c	-	_ctypesmodule	-

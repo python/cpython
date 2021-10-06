@@ -557,7 +557,6 @@ coverage-lcov:
 	    '*/Modules/_blake2/impl/*' \
 	    '*/Modules/_ctypes/libffi*/*' \
 	    '*/Modules/_decimal/libmpdec/*' \
-	    '*/Modules/_sha3/kcp/*' \
 	    '*/Modules/expat/*' \
 	    '*/Modules/zlib/*' \
 	    '*/Include/*' \
