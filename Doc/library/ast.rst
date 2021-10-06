@@ -1266,7 +1266,7 @@ Pattern matching
    the pattern matches the subject.
 
    ``body`` contains a list of nodes to execute if the pattern matches and
-   the result of evaluating the guard expression is truthy.
+   the result of evaluating the guard expression is true.
 
    .. doctest::
 
@@ -1916,6 +1916,19 @@ and classes for traversing abstract syntax trees:
    ``feature_version=(3, 4)`` will allow the use of ``async`` and
    ``await`` as variable names.  The lowest supported version is
    ``(3, 4)``; the highest is ``sys.version_info[0:2]``.
+
+   If source contains a null character ('\0'), :exc:`ValueError` is raised.
+
+    .. warning::
+      Note that successfully parsing source code into an AST object doesn't
+      guarantee that the source code provided is valid Python code that can
+      be executed as the compilation step can raise further :exc:`SyntaxError`
+      exceptions. For instance, the source ``return 42`` generates a valid
+      AST node for a return statement, but it cannot be compiled alone (it needs
+      to be inside a function node).
+
+      In particular, :func:`ast.parse` won't do any scoping checks, which the
+      compilation step does.
 
    .. warning::
       It is possible to crash the Python interpreter with a

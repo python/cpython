@@ -221,6 +221,12 @@ def length_hint(obj, default=0):
         raise ValueError(msg)
     return val
 
+# Other Operations ************************************************************#
+
+def call(obj, /, *args, **kwargs):
+    """Same as obj(*args, **kwargs)."""
+    return obj(*args, **kwargs)
+
 # Generalized Lookup Objects **************************************************#
 
 class attrgetter:
@@ -423,6 +429,7 @@ __not__ = not_
 __abs__ = abs
 __add__ = add
 __and__ = and_
+__call__ = call
 __floordiv__ = floordiv
 __index__ = index
 __inv__ = inv

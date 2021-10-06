@@ -600,7 +600,7 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 }
 
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
-// Names overriden with macros by static inline functions for best
+// Names overridden with macros by static inline functions for best
 // performances.
 #define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
 #define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))

@@ -725,7 +725,7 @@ iterations of the loop.
     of the stack and sets the ``f_lasti`` attribute of the frame with that value.
     Then pops the next exception from the stack uses it to restore the current exception.
     Finally it re-raises the originally popped exception.
-    Used in excpetion handler cleanup.
+    Used in exception handler cleanup.
 
     .. versionadded:: 3.11
 

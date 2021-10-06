@@ -1127,9 +1127,7 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
 
         /* We know we have an expression. Convert any existing string
            to a Constant node. */
-        if (!state->last_str) {
-            /* Do nothing. No previous literal. */
-        } else {
+        if (state->last_str) {
             /* Convert the existing last_str literal to a Constant node. */
             expr_ty last_str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
             if (!last_str || ExprList_Append(&state->expr_list, last_str) < 0) {

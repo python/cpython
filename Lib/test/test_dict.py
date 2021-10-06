@@ -1020,7 +1020,6 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             del a['y']
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1031,16 +1030,12 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop(self):
-        """split table must be combined when d.pop(k)"""
         a, b = self.make_shared_key_dict(2)
 
-        orig_size = sys.getsizeof(a)
-
-        a.pop('y')  # split table is combined
+        a.pop('y')
         with self.assertRaises(KeyError):
             a.pop('y')
 
-        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1073,36 +1068,6 @@ class DictTest(unittest.TestCase):
         self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
-
-    @support.cpython_only
-    def test_splittable_setattr_after_pop(self):
-        """setattr() must not convert combined table into split table."""
-        # Issue 28147
-        import _testcapi
-
-        class C:
-            pass
-        a = C()
-
-        a.a = 1
-        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
-
-        # dict.pop() convert it to combined table
-        a.__dict__.pop('a')
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-
-        # But C should not convert a.__dict__ to split table again.
-        a.a = 1
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-
-        # Same for popitem()
-        a = C()
-        a.a = 2
-        self.assertTrue(_testcapi.dict_hassplittable(a.__dict__))
-        a.__dict__.popitem()
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
-        a.a = 3
-        self.assertFalse(_testcapi.dict_hassplittable(a.__dict__))
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):

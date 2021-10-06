@@ -8458,7 +8458,8 @@ update_all_slots(PyTypeObject* type)
 }
 
 
-/* Call __set_name__ on all descriptors in a newly generated type */
+/* Call __set_name__ on all attributes (including descriptors)
+  in a newly generated type */
 static int
 type_new_set_names(PyTypeObject *type)
 {

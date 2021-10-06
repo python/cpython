@@ -518,6 +518,18 @@ class OperatorTestCase:
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
 
+    def test_call(self):
+        operator = self.module
+
+        def func(*args, **kwargs): return args, kwargs
+
+        self.assertEqual(operator.call(func), ((), {}))
+        self.assertEqual(operator.call(func, 0, 1), ((0, 1), {}))
+        self.assertEqual(operator.call(func, a=2, obj=3),
+                         ((), {"a": 2, "obj": 3}))
+        self.assertEqual(operator.call(func, 0, 1, a=2, obj=3),
+                         ((0, 1), {"a": 2, "obj": 3}))
+
     def test_dunder_is_original(self):
         operator = self.module
 

@@ -9,7 +9,7 @@ format of the file is.  If it can't figure out the file format, or it has
 trouble reading the file, None is returned.  You can pass get_colordb() an
 optional filetype argument.
 
-Supporte file types are:
+Supported file types are:
 
     X_RGB_TXT -- X Consortium rgb.txt format files.  Three columns of numbers
                  from 0 .. 255 separated by whitespace.  Arbitrary trailing
