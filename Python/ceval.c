@@ -3616,7 +3616,7 @@ check_eval_breaker:
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
-            res = dict->ma_values[cache0->index];
+            res = dict->ma_values->values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             record_cache_hit(cache0);
@@ -3722,15 +3722,16 @@ check_eval_breaker:
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, STORE_ATTR);
-            /* Need to maintain ordering of dicts */
-            DEOPT_IF(cache0->index > 0 && dict->ma_values[cache0->index-1] == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
             record_cache_hit(cache0);
+            int index = cache0->index;
             STACK_SHRINK(1);
             PyObject *value = POP();
-            PyObject *old_value = dict->ma_values[cache0->index];
-            dict->ma_values[cache0->index] = value;
+            PyObject *old_value = dict->ma_values->values[index];
+            dict->ma_values->values[index] = value;
             if (old_value == NULL) {
+                assert(index < 16);
+                dict->ma_values->mv_order = (dict->ma_values->mv_order << 4) | index;
                 dict->ma_used++;
             }
             else {
