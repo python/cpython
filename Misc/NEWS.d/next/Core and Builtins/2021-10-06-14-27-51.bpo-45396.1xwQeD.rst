@@ -1,0 +1,2 @@
+Always import custom frozen modules.  This means "-X frozen_stdlib" is
+ignored for now (see bpo-45395).
