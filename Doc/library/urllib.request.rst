@@ -879,6 +879,12 @@ HTTPRedirectHandler Objects
    response.
 
 
+.. method:: HTTPRedirectHandler.http_error_308(req, fp, code, msg, hdrs)
+
+   The same as :meth:`http_error_301`, but called for the 'permanent redirect'
+   response.
+
+
 .. _http-cookie-processor:
 
 HTTPCookieProcessor Objects
