@@ -162,7 +162,7 @@ called directly or via ``super()``. Patch provided by Yurii Karabas.
 .. section: Core and Builtins
 
 The deallocator function of the :exc:`BaseException` type now uses the
-trashcan mecanism to prevent stack overflow. For example, when a
+trashcan mechanism to prevent stack overflow. For example, when a
 :exc:`RecursionError` instance is raised, it can be linked to another
 RecursionError through the ``__context__`` attribute or the
 ``__traceback__`` attribute, and then a chain of exceptions is created. When
@@ -1138,7 +1138,7 @@ blocks. Patch by Pablo Galindo.
 .. nonce: vYFPPC
 .. section: Core and Builtins
 
-Constructors of subclasses of some buitin classes (e.g. :class:`tuple`,
+Constructors of subclasses of some builtin classes (e.g. :class:`tuple`,
 :class:`list`, :class:`frozenset`) no longer accept arbitrary keyword
 arguments. Subclass of :class:`set` can now define a ``__new__()`` method
 with additional keyword parameters without overriding also ``__init__()``.
@@ -1317,7 +1317,7 @@ expressions.
 .. nonce: Kp5FxD
 .. section: Core and Builtins
 
-Corrent the syntax error message regarding multiple exception types to not
+Correct the syntax error message regarding multiple exception types to not
 refer to "exception groups". Patch by Pablo Galindo
 
 ..
@@ -3068,8 +3068,8 @@ prevented parallel computation as other :mod:`hashlib` algorithms support.
 .. section: Library
 
 It's now possible to receive the type of service (ToS), a.k.a.
-differentiated services (DS), a.k.a. differenciated services code point
-(DSCP) and excplicit congestion notification (ECN) IP header fields with
+differentiated services (DS), a.k.a. differentiated services code point
+(DSCP) and explicit congestion notification (ECN) IP header fields with
 ``socket.IP_RECVTOS``.
 
 ..
@@ -3242,7 +3242,7 @@ Patch by Erlend E. Aasland.
 
 AIX: `Lib/_aix_support.get_platform()` may fail in an AIX WPAR. The fileset
 bos.rte appears to have a builddate in both LPAR and WPAR so this fileset is
-queried rather than bos.mp64. To prevent a similiar situation (no builddate
+queried rather than bos.mp64. To prevent a similar situation (no builddate
 in ODM) a value (9988) sufficient for completing a build is provided. Patch
 by M Felt.
 
@@ -3717,7 +3717,7 @@ RFC.
 .. nonce: zMFGMV
 .. section: Documentation
 
-Replaced occurences of uppercase "Web" and "Internet" with lowercase
+Replaced occurrences of uppercase "Web" and "Internet" with lowercase
 versions per the 2016 revised Associated Press Style Book.
 
 ..
