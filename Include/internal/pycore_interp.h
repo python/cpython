@@ -279,7 +279,7 @@ struct _is {
     PyObject *importlib;
     // override for config->use_frozen_stdlib (for tests)
     // (-1: "off", 1: "on", 0: no override)
-    int override_frozen_modules;
+    int override_frozen_stdlib;
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
