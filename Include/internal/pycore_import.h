@@ -15,6 +15,9 @@ struct _module_alias {
     const char *orig;                 /* ASCII encoded string */
 };
 
+extern const struct _frozen *_PyImport_FrozenBootstrap;
+extern const struct _frozen *_PyImport_FrozenStdlib;
+extern const struct _frozen *_PyImport_FrozenTest;
 extern const struct _module_alias * _PyImport_FrozenAliases;
 
 #ifdef __cplusplus
