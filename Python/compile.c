@@ -7221,6 +7221,26 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
+normalize_jumps(struct assembler *a)
+{
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+    }
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 1;
+        if (b->b_iused == 0) {
+            continue;
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (last->i_opcode == JUMP_ABSOLUTE &&
+            last->i_target->b_visited == 0
+        ) {
+            last->i_opcode = JUMP_FORWARD;
+        }
+    }
+}
+
+static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
     basicblock *b;
@@ -7896,6 +7916,9 @@ assemble(struct compiler *c, int addNone)
     for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
+
+    /* Order of basic blocks must have been determined by now */
+    normalize_jumps(&a);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
