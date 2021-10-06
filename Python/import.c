@@ -1093,7 +1093,7 @@ is_essential_frozen_module(const char *name)
 }
 
 static bool
-use_frozen(void)
+use_frozen_stdlib(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int override = interp->override_frozen_modules;
@@ -1115,7 +1115,7 @@ list_frozen_module_names()
     if (names == NULL) {
         return NULL;
     }
-    bool enabled = use_frozen();
+    bool enabled = use_frozen_stdlib();
     for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
             break;
@@ -1208,7 +1208,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         return FROZEN_BAD_NAME;
     }
 
-    if (!use_frozen() && !is_essential_frozen_module(name)) {
+    if (!use_frozen_stdlib() && !is_essential_frozen_module(name)) {
         return FROZEN_DISABLED;
     }
 
