@@ -266,7 +266,7 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
     }
 
     if (PathIsRelativeW(path)) {
-        wchar_t buff[MAXPATHLEN];
+        wchar_t buff[MAXPATHLEN + 1];
         if (!GetCurrentDirectoryW(MAXPATHLEN, buff)) {
             return _PyStatus_ERR("unable to find current working directory");
         }
