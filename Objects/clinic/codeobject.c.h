@@ -46,7 +46,8 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
 
-    if ((type == &PyCode_Type) &&
+    if ((type == &PyCode_Type ||
+         type->tp_init == PyCode_Type.tp_init) &&
         !_PyArg_NoKeywords("code", kwargs)) {
         goto exit;
     }
@@ -455,4 +456,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=18b9ddc86714e56e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9e8c4a19474ec520 input=a9049054013a1b77]*/

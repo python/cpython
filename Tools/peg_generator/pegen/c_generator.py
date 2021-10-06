@@ -1,8 +1,8 @@
 import ast
-from dataclasses import field, dataclass
 import re
-from typing import Any, Dict, IO, Optional, List, Text, Tuple, Set
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import IO, Any, Dict, List, Optional, Set, Text, Tuple
 
 from pegen import grammar
 from pegen.grammar import (
@@ -12,6 +12,7 @@ from pegen.grammar import (
     Gather,
     GrammarVisitor,
     Group,
+    Leaf,
     Lookahead,
     NamedItem,
     NameLeaf,
@@ -25,7 +26,6 @@ from pegen.grammar import (
     StringLeaf,
 )
 from pegen.parser_generator import ParserGenerator
-
 
 EXTENSION_PREFIX = """\
 #include "pegen.h"
@@ -91,7 +91,16 @@ class FunctionCall:
             parts.append(", 1")
         if self.assigned_variable:
             if self.assigned_variable_type:
-                parts = ["(", self.assigned_variable, " = ", '(', self.assigned_variable_type, ')', *parts, ")"]
+                parts = [
+                    "(",
+                    self.assigned_variable,
+                    " = ",
+                    "(",
+                    self.assigned_variable_type,
+                    ")",
+                    *parts,
+                    ")",
+                ]
             else:
                 parts = ["(", self.assigned_variable, " = ", *parts, ")"]
         if self.comment:
@@ -110,23 +119,18 @@ class CCallMakerVisitor(GrammarVisitor):
         self.exact_tokens = exact_tokens
         self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, FunctionCall] = {}
-        self.keyword_cache: Dict[str, int] = {}
-        self.soft_keywords: Set[str] = set()
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
-        if keyword not in self.keyword_cache:
-            self.keyword_cache[keyword] = self.gen.keyword_type()
         return FunctionCall(
             assigned_variable="_keyword",
             function="_PyPegen_expect_token",
-            arguments=["p", self.keyword_cache[keyword]],
+            arguments=["p", self.gen.keywords[keyword]],
             return_type="Token *",
             nodetype=NodeTypes.KEYWORD,
             comment=f"token='{keyword}'",
         )
 
     def soft_keyword_helper(self, value: str) -> FunctionCall:
-        self.soft_keywords.add(value.replace('"', ""))
         return FunctionCall(
             assigned_variable="_keyword",
             function="_PyPegen_expect_soft_keyword",
@@ -190,20 +194,12 @@ class CCallMakerVisitor(GrammarVisitor):
             )
 
     def visit_Rhs(self, node: Rhs) -> FunctionCall:
-        def can_we_inline(node: Rhs) -> int:
-            if len(node.alts) != 1 or len(node.alts[0].items) != 1:
-                return False
-            # If the alternative has an action we cannot inline
-            if getattr(node.alts[0], "action", None) is not None:
-                return False
-            return True
-
         if node in self.cache:
             return self.cache[node]
-        if can_we_inline(node):
+        if node.can_be_inlined:
             self.cache[node] = self.generate_call(node.alts[0].items[0])
         else:
-            name = self.gen.name_node(node)
+            name = self.gen.artifical_rule_from_rhs(node)
             self.cache[node] = FunctionCall(
                 assigned_variable=f"{name}_var",
                 function=f"{name}_rule",
@@ -256,9 +252,10 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def visit_Forced(self, node: Forced) -> FunctionCall:
         call = self.generate_call(node.node)
-        if call.nodetype == NodeTypes.GENERIC_TOKEN:
+        if isinstance(node.node, Leaf):
+            assert isinstance(node.node, Leaf)
             val = ast.literal_eval(node.node.value)
-            assert val in self.exact_tokens, f"{node.value} is not a known literal"
+            assert val in self.exact_tokens, f"{node.node.value} is not a known literal"
             type = self.exact_tokens[val]
             return FunctionCall(
                 assigned_variable="_literal",
@@ -268,9 +265,19 @@ class CCallMakerVisitor(GrammarVisitor):
                 return_type="Token *",
                 comment=f"forced_token='{val}'",
             )
+        if isinstance(node.node, Group):
+            call = self.visit(node.node.rhs)
+            call.assigned_variable = None
+            call.comment = None
+            return FunctionCall(
+                assigned_variable="_literal",
+                function=f"_PyPegen_expect_forced_result",
+                arguments=["p", str(call), f'"{node.node.rhs!s}"'],
+                return_type="void *",
+                comment=f"forced_token=({node.node.rhs!s})",
+            )
         else:
-            raise NotImplementedError(
-                    f"Forced tokens don't work with {call.nodetype} tokens")
+            raise NotImplementedError(f"Forced tokens don't work with {node.node} nodes")
 
     def visit_Opt(self, node: Opt) -> FunctionCall:
         call = self.generate_call(node.node)
@@ -285,7 +292,7 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.name_loop(node.node, False)
+        name = self.gen.artificial_rule_from_repeat(node.node, False)
         self.cache[node] = FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
@@ -298,7 +305,7 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_Repeat1(self, node: Repeat1) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.name_loop(node.node, True)
+        name = self.gen.artificial_rule_from_repeat(node.node, True)
         self.cache[node] = FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
@@ -311,7 +318,7 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_Gather(self, node: Gather) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
-        name = self.gen.name_gather(node)
+        name = self.gen.artifical_rule_from_gather(node)
         self.cache[node] = FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
@@ -347,7 +354,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         debug: bool = False,
         skip_actions: bool = False,
     ):
-        super().__init__(grammar, tokens, file)
+        super().__init__(grammar, set(tokens.values()), file)
         self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
             self, exact_tokens, non_exact_tokens
         )
@@ -386,7 +393,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print(f"goto {goto_target};")
         self.print(f"}}")
 
-    def out_of_memory_return(self, expr: str, cleanup_code: Optional[str] = None,) -> None:
+    def out_of_memory_return(
+        self,
+        expr: str,
+        cleanup_code: Optional[str] = None,
+    ) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
             if cleanup_code is not None:
@@ -404,7 +415,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"}}")
 
     def generate(self, filename: str) -> None:
-        self.collect_todo()
+        self.collect_rules()
         self.print(f"// @generated by pegen from {filename}")
         header = self.grammar.metas.get("header", EXTENSION_PREFIX)
         if header:
@@ -414,11 +425,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print(subheader)
         self._setup_keywords()
         self._setup_soft_keywords()
-        for i, (rulename, rule) in enumerate(self.todo.items(), 1000):
+        for i, (rulename, rule) in enumerate(self.all_rules.items(), 1000):
             comment = "  // Left-recursive" if rule.left_recursive else ""
             self.print(f"#define {rulename}_type {i}{comment}")
         self.print()
-        for rulename, rule in self.todo.items():
+        for rulename, rule in self.all_rules.items():
             if rule.is_loop() or rule.is_gather():
                 type = "asdl_seq *"
             elif rule.type:
@@ -427,13 +438,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 type = "void *"
             self.print(f"static {type}{rulename}_rule(Parser *p);")
         self.print()
-        while self.todo:
-            for rulename, rule in list(self.todo.items()):
-                del self.todo[rulename]
-                self.print()
-                if rule.left_recursive:
-                    self.print("// Left-recursive")
-                self.visit(rule)
+        for rulename, rule in list(self.all_rules.items()):
+            self.print()
+            if rule.left_recursive:
+                self.print("// Left-recursive")
+            self.visit(rule)
         if self.skip_actions:
             mode = 0
         else:
@@ -447,7 +456,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
     def _group_keywords_by_length(self) -> Dict[int, List[Tuple[str, int]]]:
         groups: Dict[int, List[Tuple[str, int]]] = {}
-        for keyword_str, keyword_type in self.callmakervisitor.keyword_cache.items():
+        for keyword_str, keyword_type in self.keywords.items():
             length = len(keyword_str)
             if length in groups:
                 groups[length].append((keyword_str, keyword_type))
@@ -456,9 +465,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         return groups
 
     def _setup_keywords(self) -> None:
-        keyword_cache = self.callmakervisitor.keyword_cache
         n_keyword_lists = (
-            len(max(keyword_cache.keys(), key=len)) + 1 if len(keyword_cache) > 0 else 0
+            len(max(self.keywords.keys(), key=len)) + 1 if len(self.keywords) > 0 else 0
         )
         self.print(f"static const int n_keyword_lists = {n_keyword_lists};")
         groups = self._group_keywords_by_length()
@@ -478,7 +486,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("};")
 
     def _setup_soft_keywords(self) -> None:
-        soft_keywords = sorted(self.callmakervisitor.soft_keywords)
+        soft_keywords = sorted(self.soft_keywords)
         self.print("static char *soft_keywords[] = {")
         with self.indent():
             for keyword in soft_keywords:
@@ -568,7 +576,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(
-                rhs, is_loop=False, is_gather=node.is_gather(), rulename=node.name,
+                rhs,
+                is_loop=False,
+                is_gather=node.is_gather(),
+                rulename=node.name,
             )
             if self.debug:
                 self.print(f'D(fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark));')
@@ -601,7 +612,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(
-                rhs, is_loop=True, is_gather=node.is_gather(), rulename=node.name,
+                rhs,
+                is_loop=True,
+                is_gather=node.is_gather(),
+                rulename=node.name,
             )
             if is_repeat1:
                 self.print("if (_n == 0 || p->error_indicator) {")
@@ -771,7 +785,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(
         self, node: Alt, is_loop: bool, is_gather: bool, rulename: Optional[str]
     ) -> None:
-        if len(node.items) == 1 and str(node.items[0]).startswith('invalid_'):
+        if len(node.items) == 1 and str(node.items[0]).startswith("invalid_"):
             self.print(f"if (p->call_invalid_rules) {{ // {node}")
         else:
             self.print(f"{{ // {node}")
@@ -791,7 +805,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if v == "_cut_var":
                     v += " = 0"  # cut_var must be initialized
                 self.print(f"{var_type}{v};")
-                if v.startswith("_opt_var"):
+                if v and v.startswith("_opt_var"):
                     self.print(f"UNUSED({v}); // Silence compiler warnings")
 
             with self.local_variable_context():

@@ -516,7 +516,7 @@ Constants
 
 .. data:: AF_LINK
 
-  .. availability:: BSD, OSX.
+  .. availability:: BSD, macOS.
 
   .. versionadded:: 3.4
 
@@ -808,8 +808,9 @@ The :mod:`socket` module also offers various network-related services:
    it is interpreted as the local host.  To find the fully qualified name, the
    hostname returned by :func:`gethostbyaddr` is checked, followed by aliases for the
    host, if available.  The first name which includes a period is selected.  In
-   case no fully qualified domain name is available, the hostname as returned by
-   :func:`gethostname` is returned.
+   case no fully qualified domain name is available and *name* was provided,
+   it is returned unchanged.  If *name* was empty or equal to ``'0.0.0.0'``,
+   the hostname from :func:`gethostname` is returned.
 
 
 .. function:: gethostbyname(hostname)
@@ -826,8 +827,8 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the primary
-   host name responding to the given *ip_address*, *aliaslist* is a (possibly
+   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
    always a single address). :func:`gethostbyname_ex` does not support IPv6 name

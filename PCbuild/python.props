@@ -57,14 +57,14 @@
     <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
     <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.35.5.0\</sqlite3Dir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.36.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <libffiDir>$(ExternalsDir)libffi\</libffiDir>
-    <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
+    <libffiDir>$(ExternalsDir)libffi-3.4.2\</libffiDir>
+    <libffiOutDir>$(ExternalsDir)libffi-3.4.2\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.1k\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1k-1\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1l\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1l\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
@@ -106,6 +106,9 @@
     <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
     <!-- Sometimes the version in the registry has to .0 suffix, and sometimes it doesn't. Check and add it -->
     <_RegistryVersion Condition="$(_RegistryVersion) != '' and !$(_RegistryVersion.EndsWith('.0'))">$(_RegistryVersion).0</_RegistryVersion>
+
+    <!-- Avoid upgrading to Windows 11 SDK for now, but assume the latest Win10 SDK is installed -->
+    <_RegistryVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) >= $([System.Version]::Parse(`10.0.22000.0`))">10.0.19041.0</_RegistryVersion>
 
     <!-- The minimum allowed SDK version to use for building -->
     <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>

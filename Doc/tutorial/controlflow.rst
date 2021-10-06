@@ -651,7 +651,7 @@ Here's an example that fails due to this restriction::
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: function() got multiple values for keyword argument 'a'
+   TypeError: function() got multiple values for argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a
 dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
@@ -787,7 +787,7 @@ parameters as there is a ``/`` in the function definition::
    >>> pos_only_arg(arg=1)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pos_only_arg() got an unexpected keyword argument 'arg'
+   TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
 The third function ``kwd_only_args`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
@@ -817,7 +817,7 @@ definition::
    >>> combined_example(pos_only=1, standard=2, kwd_only=3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: combined_example() got an unexpected keyword argument 'pos_only'
+   TypeError: combined_example() got some positional-only arguments passed as keyword arguments: 'pos_only'
 
 
 Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::

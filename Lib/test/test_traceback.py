@@ -43,6 +43,9 @@ class TracebackCases(unittest.TestCase):
     def syntax_error_with_caret_2(self):
         compile("1 +\n", "?", "exec")
 
+    def syntax_error_with_caret_range(self):
+        compile("f(x, y for y in range(30), z)", "?", "exec")
+
     def syntax_error_bad_indentation(self):
         compile("def spam():\n  print(1)\n print(2)", "?", "exec")
 
@@ -59,18 +62,28 @@ class TracebackCases(unittest.TestCase):
         self.assertTrue(err[1].strip() == "return x!")
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
+        self.assertEqual(err[2].count("^"), 1)
 
         err = self.get_exception_format(self.syntax_error_with_caret_2,
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
         self.assertEqual(err[1].find("+") + 1, err[2].find("^"))  # in the right place
+        self.assertEqual(err[2].count("^"), 1)
 
         err = self.get_exception_format(self.syntax_error_with_caret_non_ascii,
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
         self.assertEqual(err[1].find("+") + 1, err[2].find("^"))  # in the right place
+        self.assertEqual(err[2].count("^"), 1)
+
+        err = self.get_exception_format(self.syntax_error_with_caret_range,
+                                        SyntaxError)
+        self.assertIn("^", err[2]) # third line has caret
+        self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
+        self.assertEqual(err[1].find("y"), err[2].find("^"))  # in the right place
+        self.assertEqual(err[2].count("^"), len("y for y in range(30)"))
 
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -172,7 +185,7 @@ class TracebackCases(unittest.TestCase):
                 1/0
         err = traceback.format_exception_only(X, X())
         self.assertEqual(len(err), 1)
-        str_value = '<unprintable %s object>' % X.__name__
+        str_value = '<exception str() failed>'
         if X.__module__ in ('__main__', 'builtins'):
             str_name = X.__qualname__
         else:
@@ -1171,6 +1184,45 @@ class BaseExceptionReportingTests:
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
+    def test_exception_qualname(self):
+        class A:
+            class B:
+                class X(Exception):
+                    def __str__(self):
+                        return "I am X"
+
+        err = self.get_report(A.B.X())
+        str_value = 'I am X'
+        str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
+        exp = "%s: %s\n" % (str_name, str_value)
+        self.assertEqual(exp, err)
+
+    def test_exception_modulename(self):
+        class X(Exception):
+            def __str__(self):
+                return "I am X"
+
+        for modulename in '__main__', 'builtins', 'some_module':
+            X.__module__ = modulename
+            with self.subTest(modulename=modulename):
+                err = self.get_report(X())
+                str_value = 'I am X'
+                if modulename in ['builtins', '__main__']:
+                    str_name = X.__qualname__
+                else:
+                    str_name = '.'.join([X.__module__, X.__qualname__])
+                exp = "%s: %s\n" % (str_name, str_value)
+                self.assertEqual(exp, err)
+
+    def test_exception_bad__str__(self):
+        class X(Exception):
+            def __str__(self):
+                1/0
+        err = self.get_report(X())
+        str_value = '<exception str() failed>'
+        str_name = '.'.join([X.__module__, X.__qualname__])
+        self.assertEqual(err, f"{str_name}: {str_value}\n")
+
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
@@ -1502,8 +1554,8 @@ class TestStack(unittest.TestCase):
 
     def test_custom_format_frame(self):
         class CustomStackSummary(traceback.StackSummary):
-            def format_frame(self, frame):
-                return f'{frame.filename}:{frame.lineno}'
+            def format_frame_summary(self, frame_summary):
+                return f'{frame_summary.filename}:{frame_summary.lineno}'
 
         def some_inner():
             return CustomStackSummary.extract(
@@ -1513,6 +1565,34 @@ class TestStack(unittest.TestCase):
         self.assertEqual(
             s.format(),
             [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
+
+    def test_dropping_frames(self):
+         def f():
+             1/0
+
+         def g():
+             try:
+                 f()
+             except:
+                 return sys.exc_info()
+
+         exc_info = g()
+
+         class Skip_G(traceback.StackSummary):
+             def format_frame_summary(self, frame_summary):
+                 if frame_summary.name == 'g':
+                     return None
+                 return super().format_frame_summary(frame_summary)
+
+         stack = Skip_G.extract(
+             traceback.walk_tb(exc_info[2])).format()
+
+         self.assertEqual(len(stack), 1)
+         lno = f.__code__.co_firstlineno + 1
+         self.assertEqual(
+             stack[0],
+             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
+         )
 
 
 class TestTracebackException(unittest.TestCase):

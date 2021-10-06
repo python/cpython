@@ -37,14 +37,9 @@ raise_src = 'def do_raise(): raise TypeError\n'
 
 def make_pyc(co, mtime, size):
     data = marshal.dumps(co)
-    if type(mtime) is type(0.0):
-        # Mac mtimes need a bit of special casing
-        if mtime < 0x7fffffff:
-            mtime = int(mtime)
-        else:
-            mtime = int(-0x100000000 + int(mtime))
     pyc = (importlib.util.MAGIC_NUMBER +
-        struct.pack("<iii", 0, int(mtime), size & 0xFFFFFFFF) + data)
+        struct.pack("<iLL", 0,
+                    int(mtime) & 0xFFFF_FFFF, size & 0xFFFF_FFFF) + data)
     return pyc
 
 def module_path_to_dotted_name(path):
@@ -160,7 +155,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # zlib.decompress function object, after which the problem being
         # tested here wouldn't be a problem anymore...
         # (Hence the 'A' in the test method name: to make it the first
-        # item in a list sorted by name, like unittest.makeSuite() does.)
+        # item in a list sorted by name, like
+        # unittest.TestLoader.getTestCaseNames() does.)
         #
         # This test fails on platforms on which the zlib module is
         # statically linked, but the problem it tests for can't
@@ -254,6 +250,14 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         badtime_pyc[11] ^= 0x02
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, badtime_pyc)}
+        self.doTest(".py", files, TESTMOD)
+
+    def test2038MTime(self):
+        # Make sure we can handle mtimes larger than what a 32-bit signed number
+        # can hold.
+        twenty_thirty_eight_pyc = make_pyc(test_co, 2**32 - 1, len(test_src))
+        files = {TESTMOD + ".py": (NOW, test_src),
+                 TESTMOD + pyc_ext: (NOW, twenty_thirty_eight_pyc)}
         self.doTest(".py", files, TESTMOD)
 
     def testPackage(self):
@@ -544,8 +548,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Check that the cached data is removed if the file is deleted
         os.remove(TEMP_ZIP)
         zi.invalidate_caches()
-        self.assertIsNone(zi._files)
+        self.assertFalse(zi._files)
         self.assertIsNone(zipimport._zip_directory_cache.get(zi.archive))
+        self.assertIsNone(zi.find_spec("name_does_not_matter"))
 
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
@@ -856,15 +861,9 @@ class BadFileZipImportTestCase(unittest.TestCase):
             zipimport._zip_directory_cache.clear()
 
 
-def test_main():
-    try:
-        support.run_unittest(
-              UncompressedZipImportTestCase,
-              CompressedZipImportTestCase,
-              BadFileZipImportTestCase,
-            )
-    finally:
-        os_helper.unlink(TESTMOD)
+def tearDownModule():
+    os_helper.unlink(TESTMOD)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

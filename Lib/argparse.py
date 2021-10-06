@@ -876,7 +876,7 @@ class BooleanOptionalAction(Action):
                 _option_strings.append(option_string)
 
         if help is not None and default is not None:
-            help += f" (default: {default})"
+            help += " (default: %(default)s)"
 
         super().__init__(
             option_strings=_option_strings,
@@ -1209,7 +1209,8 @@ class _SubParsersAction(Action):
         # namespace for the relevant parts.
         subnamespace, arg_strings = parser.parse_known_args(arg_strings, None)
         for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+            if not hasattr(namespace, key):
+                setattr(namespace, key, value)
 
         if arg_strings:
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
@@ -1843,11 +1844,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     if action.default is not SUPPRESS:
                         setattr(namespace, action.dest, action.default)
 
-        # add any parser defaults that aren't present
-        for dest in self._defaults:
-            if not hasattr(namespace, dest):
-                setattr(namespace, dest, self._defaults[dest])
-
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
@@ -1857,6 +1853,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 self.error(str(err))
         else:
             namespace, args = self._parse_known_args(args, namespace)
+
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
 
         if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
             args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))

@@ -686,10 +686,13 @@ class PyDictObjectPtr(PyObjectPtr):
         '''
         keys = self.field('ma_keys')
         values = self.field('ma_values')
+        has_values = long(values)
+        if has_values:
+            values = values['values']
         entries, nentries = self._get_entries(keys)
         for i in safe_range(nentries):
             ep = entries[i]
-            if long(values):
+            if has_values:
                 pyop_value = PyObjectPtr.from_pyobject_ptr(values[i])
             else:
                 pyop_value = PyObjectPtr.from_pyobject_ptr(ep['me_value'])
@@ -958,9 +961,11 @@ class PyFramePtr:
         if self.is_optimized_out():
             return
 
+
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
-        base = self._gdbval.cast(obj_ptr_ptr)
-        localsplus = base - self._f_nlocalsplus()
+
+        localsplus = self._gdbval["localsplus"].cast(obj_ptr_ptr)
+
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
             if pyop_value.is_null():
