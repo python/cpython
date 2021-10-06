@@ -1104,7 +1104,7 @@ use_frozen(void)
         return false;
     }
     else {
-        return interp->config.use_frozen_modules;
+        return interp->config.use_frozen_stdlib;
     }
 }
 
@@ -2218,7 +2218,7 @@ _imp._override_frozen_modules_for_tests
     override: int
     /
 
-(internal-only) Override PyConfig.use_frozen_modules.
+(internal-only) Override PyConfig.use_frozen_stdlib.
 
 (-1: "off", 1: "on", 0: no override)
 See frozen_modules() in Lib/test/support/import_helper.py.
@@ -2226,7 +2226,7 @@ See frozen_modules() in Lib/test/support/import_helper.py.
 
 static PyObject *
 _imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
-/*[clinic end generated code: output=36d5cb1594160811 input=8f1f95a3ef21aec3]*/
+/*[clinic end generated code: output=36d5cb1594160811 input=501242da72b8ef23]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     interp->override_frozen_modules = override;

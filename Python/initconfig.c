@@ -948,7 +948,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
-    COPY_ATTR(use_frozen_modules);
+    COPY_ATTR(use_frozen_stdlib);
     COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
@@ -1053,7 +1053,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
-    SET_ITEM_INT(use_frozen_modules);
+    SET_ITEM_INT(use_frozen_stdlib);
 
     return dict;
 
@@ -1337,7 +1337,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_install_importlib);
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
-    GET_UINT(use_frozen_modules);
+    GET_UINT(use_frozen_stdlib);
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -2095,17 +2095,17 @@ config_init_import(PyConfig *config, int compute_path_config)
     if (value == NULL) {
         // For now we always default to "off".
         // In the near future we will be factoring in PGO and in-development.
-        config->use_frozen_modules = 0;
+        config->use_frozen_stdlib = 0;
     }
     else if (wcscmp(value, L"on") == 0) {
-        config->use_frozen_modules = 1;
+        config->use_frozen_stdlib = 1;
     }
     else if (wcscmp(value, L"off") == 0) {
-        config->use_frozen_modules = 0;
+        config->use_frozen_stdlib = 0;
     }
     else if (wcslen(value) == 0) {
         // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
-        config->use_frozen_modules = 1;
+        config->use_frozen_stdlib = 1;
     }
     else {
         return PyStatus_Error("bad value for option -X frozen_modules "

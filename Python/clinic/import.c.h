@@ -369,7 +369,7 @@ PyDoc_STRVAR(_imp__override_frozen_modules_for_tests__doc__,
 "_override_frozen_modules_for_tests($module, override, /)\n"
 "--\n"
 "\n"
-"(internal-only) Override PyConfig.use_frozen_modules.\n"
+"(internal-only) Override PyConfig.use_frozen_stdlib.\n"
 "\n"
 "(-1: \"off\", 1: \"on\", 0: no override)\n"
 "See frozen_modules() in Lib/test/support/import_helper.py.");
@@ -548,4 +548,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=8c8dd08158f9ac7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06946245fc053b95 input=a9049054013a1b77]*/
