@@ -264,7 +264,7 @@ class CAPITest(unittest.TestCase):
 
     def test_getitem_with_error(self):
         # Test _Py_CheckSlotResult(). Raise an exception and then calls
-        # PyObject_GetItem(): check that the assertion catchs the bug.
+        # PyObject_GetItem(): check that the assertion catches the bug.
         # PyObject_GetItem() must not be called with an exception set.
         code = textwrap.dedent("""
             import _testcapi

@@ -3695,7 +3695,7 @@ class TestKeywordArgs(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             B(3, 4, 5)
 
-        # Explicitely make a field that follows KW_ONLY be non-keyword-only.
+        # Explicitly make a field that follows KW_ONLY be non-keyword-only.
         @dataclass
         class C:
             a: int
