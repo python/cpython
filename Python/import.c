@@ -1115,7 +1115,9 @@ list_frozen_module_names()
     if (names == NULL) {
         return NULL;
     }
-    bool enabled = use_frozen_stdlib();
+    bool enabled = PyImport_FrozenModules == _PyImport_FrozenStdlib
+                    ? use_frozen_stdlib()
+                    : true;
     for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
         if (p->name == NULL) {
             break;
@@ -1208,7 +1210,10 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         return FROZEN_BAD_NAME;
     }
 
-    if (!use_frozen_stdlib() && !is_essential_frozen_module(name)) {
+    bool enabled = PyImport_FrozenModules == _PyImport_FrozenStdlib
+                    ? use_frozen_stdlib()
+                    : true;
+    if (!enabled && !is_essential_frozen_module(name)) {
         return FROZEN_DISABLED;
     }
 
