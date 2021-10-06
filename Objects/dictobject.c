@@ -461,10 +461,11 @@ static PyDictValues empty_values_struct = { 0, { NULL }};
 #endif
 
 static inline int
-get_index_from_order(PyDictObject *mp, int i)
+get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 {
-    int shift = (mp->ma_used-1-i)*4;
-    return (mp->ma_values->mv_order >> shift) & 15;
+    assert(mp->ma_used <= 16);
+    int shift = (int)(mp->ma_used-1-i)*4;
+    return (int)(mp->ma_values->mv_order >> shift) & 15;
 }
 
 int
@@ -496,14 +497,13 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 
     if (check_content) {
         PyDictKeyEntry *entries = DK_ENTRIES(keys);
-        Py_ssize_t i;
 
-        for (i=0; i < DK_SIZE(keys); i++) {
+        for (Py_ssize_t i=0; i < DK_SIZE(keys); i++) {
             Py_ssize_t ix = dictkeys_get_index(keys, i);
             CHECK(DKIX_DUMMY <= ix && ix <= usable);
         }
 
-        for (i=0; i < usable; i++) {
+        for (Py_ssize_t i=0; i < usable; i++) {
             PyDictKeyEntry *entry = &entries[i];
             PyObject *key = entry->me_key;
 
@@ -531,7 +531,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
             CHECK(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
             /* splitted table */
             int duplicate_check = 0;
-            for (i=0; i < mp->ma_used; i++) {
+            for (Py_ssize_t i=0; i < mp->ma_used; i++) {
                 int index = get_index_from_order(mp, i);
                 CHECK((duplicate_check & (1<<index)) == 0);
                 duplicate_check |= (1<<index);
@@ -1079,7 +1079,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         ep->me_key = key;
         ep->me_hash = hash;
         if (mp->ma_values) {
-            int index = mp->ma_keys->dk_nentries;
+            Py_ssize_t index = mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert((mp->ma_values->mv_order >> 60) == 0);
             mp->ma_values->mv_order = (mp->ma_values->mv_order)<<4 | index;
@@ -1227,7 +1227,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
          * Note that values of split table is always dense.
          */
         for (Py_ssize_t i = 0; i < numentries; i++) {
-            int index = oldvalues->mv_order >> ((numentries-1-i)*4)&15;
+            int index = oldvalues->mv_order >> ((numentries-1-i)*4) & 15;
             assert(oldvalues->values[index] != NULL);
             PyDictKeyEntry *ep = &oldentries[index];
             PyObject *key = ep->me_key;
@@ -1592,7 +1592,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
             if (((mp->ma_values->mv_order >> i) & 15) == (uint64_t)ix) {
                 /* Remove 4 bits at ith position */
                 uint64_t order = mp->ma_values->mv_order;
-                uint64_t high = order >> i >> 4 << i;
+                uint64_t high = ((order>>i)>>4)<<i;
                 uint64_t low = order & ((((uint64_t)1)<<i)-1);
                 mp->ma_values->mv_order = high | low;
                 break;
@@ -2989,7 +2989,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         ep->me_key = key;
         ep->me_hash = hash;
         if (_PyDict_HasSplitTable(mp)) {
-            int index = mp->ma_keys->dk_nentries;
+            int index = (int)mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert(mp->ma_values->values[index] == NULL);
             mp->ma_values->values[index] = value;
