@@ -616,7 +616,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row, None)
 
     def test_array_size(self):
-        # must default ot 1
+        # must default to 1
         self.assertEqual(self.cu.arraysize, 1)
 
         # now set to 2

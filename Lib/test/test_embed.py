@@ -250,7 +250,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_pre_initialization_api(self):
         """
-        Checks some key parts of the C-API that need to work before the runtine
+        Checks some key parts of the C-API that need to work before the runtime
         is initialized (via Py_Initialize()).
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
@@ -1170,7 +1170,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
-            # overriden by PyConfig
+            # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
             'executable': 'conf_executable',

@@ -1046,7 +1046,7 @@ class DictTest(unittest.TestCase):
 
     @support.cpython_only
     def test_splittable_pop_pending(self):
-        """pop a pending key in a splitted table should not crash"""
+        """pop a pending key in a split table should not crash"""
         a, b = self.make_shared_key_dict(2)
 
         a['a'] = 4
@@ -1363,7 +1363,7 @@ class DictTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, r)
 
     def test_reverse_iterator_for_empty_dict(self):
-        # bpo-38525: revered iterator should work properly
+        # bpo-38525: reversed iterator should work properly
 
         # empty dict is directly used for reference count test
         self.assertEqual(list(reversed({})), [])

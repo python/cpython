@@ -1260,7 +1260,7 @@ class LongTest(unittest.TestCase):
                             expected)
                     except Exception as err:
                         raise AssertionError(
-                            "failed to convert {} with default arugments"
+                            "failed to convert {} with default arguments"
                             .format(test)) from err
 
                 try:
