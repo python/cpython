@@ -35,7 +35,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
  * Expects the size, index and offset for the current field in *psize and
  * *poffset, stores the total size so far in *psize, the offset for the next
  * field in *poffset, the alignment requirements for the current field in
- * *palign, and returns a field desriptor for this field.
+ * *palign, and returns a field descriptor for this field.
  */
 /*
  * bitfields extension:
