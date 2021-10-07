@@ -2,7 +2,7 @@
 /* Top level execution of Python code (including in __main__) */
 
 /* To help control the interfaces between the startup, execution and
- * shutdown code, the phases are split across separate modules (boostrap,
+ * shutdown code, the phases are split across separate modules (bootstrap,
  * pythonrun, shutdown)
  */
 
@@ -943,7 +943,7 @@ print_exception(PyObject *f, PyObject *value)
                 if (end_lineno > lineno) {
                     end_offset = (error_line != NULL) ? line_size : -1;
                 }
-                // Limit the ammount of '^' that we can display to
+                // Limit the amount of '^' that we can display to
                 // the size of the text in the source line.
                 if (error_line != NULL && end_offset > line_size + 1) {
                     end_offset = line_size + 1;
