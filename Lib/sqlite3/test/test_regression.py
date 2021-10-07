@@ -475,6 +475,17 @@ class RegressionTests(unittest.TestCase):
             con.execute("drop table t")
             con.commit()
 
+    def test_executescript_step_through_select(self):
+        with managed_connect(":memory:", in_mem=True) as con:
+            values = [(v,) for v in range(5)]
+            with con:
+                con.execute("create table t(t)")
+                con.executemany("insert into t values(?)", values)
+            steps = []
+            con.create_function("step", 1, lambda x: steps.append((x,)))
+            con.executescript("select step(t) from t")
+            self.assertEqual(steps, values)
+
 
 if __name__ == "__main__":
     unittest.main()
