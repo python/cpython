@@ -806,22 +806,22 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
     PyObject *tb = PyException_GetTraceback((PyObject*)orig);
     if (tb) {
         int res = PyException_SetTraceback(eg, tb);
-        Py_XDECREF(tb);
+        Py_DECREF(tb);
         if (res == -1) {
             goto error;
         }
     }
     PyObject *context = PyException_GetContext((PyObject*)orig);
     if (context) {
-        PyException_SetContext(eg, context);
+        PyException_SetContext(eg, context); /* steals a ref */
     }
     PyObject *cause = PyException_GetCause((PyObject*)orig);
     if (cause) {
-        PyException_SetCause(eg, cause);
+        PyException_SetCause(eg, cause); /* steals a ref */
     }
     return eg;
 error:
-    Py_XDECREF(eg);
+    Py_DECREF(eg);
     return NULL;
 }
 
@@ -839,8 +839,8 @@ struct _exceptiongroup_matcher {
     PyObject *value;
 };
 
-static int _set_matcher_type(
-    struct _exceptiongroup_matcher *matcher)
+static int
+_set_matcher_type(struct _exceptiongroup_matcher *matcher)
 {
     /* the python API supports only BY_TYPE and BY_PREDICATE */
     if (PyExceptionClass_Check(matcher->value) ||
@@ -858,8 +858,9 @@ static int _set_matcher_type(
     return -1;
 }
 
-static int exceptiongroup_split_check_match(
-    PyObject *exc, const struct _exceptiongroup_matcher *matcher)
+static int
+exceptiongroup_split_check_match(PyObject *exc,
+                                 const struct _exceptiongroup_matcher *matcher)
 {
     switch (matcher->type) {
     case EXCEPTION_GROUP_MATCH_BY_TYPE: {
@@ -878,16 +879,16 @@ static int exceptiongroup_split_check_match(
         if (PySequence_Check(matcher->value)) {
             return PySequence_Contains(matcher->value, exc);
         }
-        else {
-            return matcher->value == exc;
-        }
+        return matcher->value == exc;
     }
     }
     return 0;
 }
 
 static PyObject *
-exceptiongroup_split_recursive(PyObject *exc, const struct _exceptiongroup_matcher* matcher, int construct_rest)
+exceptiongroup_split_recursive(PyObject *exc,
+                               const struct _exceptiongroup_matcher* matcher,
+                               int construct_rest)
 {
     int is_match = exceptiongroup_split_check_match(exc, matcher);
     if (is_match < 0) {
@@ -903,85 +904,85 @@ exceptiongroup_split_recursive(PyObject *exc, const struct _exceptiongroup_match
         return PyTuple_Pack(
             2, Py_None, construct_rest ? (PyObject*)exc : Py_None);
     }
-    else {
-        /* Partial match */
-        PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
-        PyObject *match_list = NULL;
-        PyObject *rest_list = NULL;
-        PyObject *match_exc = NULL;
-        PyObject *rest_exc = NULL;
-        PyObject *result = NULL;
 
-        Py_ssize_t num_excs = PySequence_Length(eg->excs);
-        if (num_excs < 0) {
-            goto done;
-        }
-        match_list = PyList_New(0);
-        if (!match_list) {
-            goto done;
-        }
-        if (construct_rest) {
-            rest_list = PyList_New(0);
-            if (!rest_list) {
-                goto done;
-            }
-        }
-        /* recursive calls */
-        for (Py_ssize_t i = 0; i < num_excs; i++) {
-            PyObject *e = PySequence_GetItem(eg->excs, i);
-            if (!e) {
-                goto done;
-            }
-            PyObject *rec = exceptiongroup_split_recursive(
-                e, matcher, construct_rest);
-            Py_DECREF(e);
-            if (!rec) {
-                goto done;
-            }
-            if (!PyTuple_CheckExact(rec) || PyTuple_GET_SIZE(rec) != 2) {
-                PyErr_SetString(PyExc_RuntimeError,
-                    "Internal error: invalid value");
-                Py_DECREF(rec);
-                goto done;
-            }
-            int res = 0;
-            PyObject *e_match = PyTuple_GET_ITEM(rec, 0);
-            if (e_match != Py_None) {
-                res += PyList_Append(match_list, e_match);
-            }
-            PyObject *e_rest = PyTuple_GET_ITEM(rec, 1);
-            if (e_rest != Py_None) {
-                res += PyList_Append(rest_list, e_rest);
-            }
-            Py_DECREF(rec);
-            if (res < 0) {
-                goto done;
-            }
-        }
+    /* Partial match */
+    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
+    PyObject *match_list = NULL;
+    PyObject *rest_list = NULL;
+    PyObject *match_exc = NULL;
+    PyObject *rest_exc = NULL;
+    PyObject *result = NULL;
 
-        /* construct result */
-        match_exc = exceptiongroup_subset(eg, match_list);
-        if (!match_exc) {
-            goto done;
-        }
-
-        if (construct_rest) {
-            rest_exc = exceptiongroup_subset(eg, rest_list);
-            if (!rest_exc) {
-                goto done;
-            }
-        }
-        else {
-            rest_exc = Py_NewRef(Py_None);
-        }
-        result = PyTuple_Pack(2, match_exc, rest_exc);
-    done:
-        Py_XDECREF(match_exc);
-        Py_XDECREF(rest_exc);
-        Py_XDECREF(match_list);
-        Py_XDECREF(rest_list);
-        return result;
+    Py_ssize_t num_excs = PySequence_Length(eg->excs);
+    if (num_excs < 0) {
+        goto done;
     }
+    assert(num_excs > 0);
+    match_list = PyList_New(0);
+    if (!match_list) {
+        goto done;
+    }
+    if (construct_rest) {
+        rest_list = PyList_New(0);
+        if (!rest_list) {
+            goto done;
+        }
+    }
+    /* recursive calls */
+    for (Py_ssize_t i = 0; i < num_excs; i++) {
+        PyObject *e = PySequence_GetItem(eg->excs, i);
+        if (!e) {
+            goto done;
+        }
+        PyObject *rec = exceptiongroup_split_recursive(
+            e, matcher, construct_rest);
+        Py_DECREF(e);
+        if (!rec) {
+            goto done;
+        }
+        if (!PyTuple_CheckExact(rec) || PyTuple_GET_SIZE(rec) != 2) {
+            PyErr_SetString(PyExc_RuntimeError,
+                "Internal error: invalid value");
+            Py_DECREF(rec);
+            goto done;
+        }
+        int res = 0;
+        PyObject *e_match = PyTuple_GET_ITEM(rec, 0);
+        if (e_match != Py_None) {
+            res += PyList_Append(match_list, e_match);
+        }
+        PyObject *e_rest = PyTuple_GET_ITEM(rec, 1);
+        if (e_rest != Py_None) {
+            res += PyList_Append(rest_list, e_rest);
+        }
+        Py_DECREF(rec);
+        if (res < 0) {
+            goto done;
+        }
+    }
+
+    /* construct result */
+    match_exc = exceptiongroup_subset(eg, match_list);
+    if (!match_exc) {
+        goto done;
+    }
+
+    if (construct_rest) {
+        rest_exc = exceptiongroup_subset(eg, rest_list);
+        if (!rest_exc) {
+            goto done;
+        }
+    }
+    else {
+        rest_exc = Py_NewRef(Py_None);
+    }
+    result = PyTuple_Pack(2, match_exc, rest_exc);
+done:
+    Py_XDECREF(match_exc);
+    Py_XDECREF(rest_exc);
+    Py_XDECREF(match_list);
+    Py_XDECREF(rest_list);
+    return result;
 }
 
 static PyObject *
@@ -1026,7 +1027,7 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
         Py_DECREF(ret);
         return NULL;
     }
-    PyObject *match = Py_NewRef(PyTuple_GetItem(ret, 0));
+    PyObject *match = Py_NewRef(PyTuple_GET_ITEM(ret, 0));
     Py_DECREF(ret);
     return match;
 }
