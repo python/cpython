@@ -3601,8 +3601,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(LOAD_ATTR_SPLIT_KEYS) {
-            /* TO DO: rename instruction */
+        TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3708,8 +3707,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(STORE_ATTR_SPLIT_KEYS) {
-            /* TO DO: rename instruction */
+        TARGET(STORE_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);

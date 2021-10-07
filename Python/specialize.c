@@ -586,7 +586,7 @@ specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
     DesciptorClassification kind, PyObject *name,
     _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
-    int base_op, int split_op, int hint_op)
+    int base_op, int values_op, int hint_op)
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
         kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
@@ -611,7 +611,7 @@ specialize_dict_access(
             }
             cache1->tp_version = type->tp_version_tag;
             cache0->index = (uint16_t)index;
-            *instr = _Py_MAKECODEUNIT(split_op, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
             return 0;
         }
         else {
@@ -731,7 +731,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
     int err = specialize_dict_access(
         owner, instr, type, kind, name, cache0, cache1,
-        LOAD_ATTR, LOAD_ATTR_SPLIT_KEYS, LOAD_ATTR_WITH_HINT
+        LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT
     );
     if (err < 0) {
         return -1;
@@ -813,7 +813,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
 
     int err = specialize_dict_access(
         owner, instr, type, kind, name, cache0, cache1,
-        STORE_ATTR, STORE_ATTR_SPLIT_KEYS, STORE_ATTR_WITH_HINT
+        STORE_ATTR, STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT
     );
     if (err < 0) {
         return -1;

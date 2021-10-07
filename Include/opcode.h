@@ -147,7 +147,7 @@ extern "C" {
 #define BINARY_SUBSCR_DICT       39
 #define JUMP_ABSOLUTE_QUICK      40
 #define LOAD_ATTR_ADAPTIVE       41
-#define LOAD_ATTR_SPLIT_KEYS     42
+#define LOAD_ATTR_INSTANCE_VALUE  42
 #define LOAD_ATTR_WITH_HINT      43
 #define LOAD_ATTR_SLOT           44
 #define LOAD_ATTR_MODULE         45
@@ -160,7 +160,7 @@ extern "C" {
 #define LOAD_METHOD_MODULE       87
 #define LOAD_METHOD_NO_DICT      88
 #define STORE_ATTR_ADAPTIVE     120
-#define STORE_ATTR_SPLIT_KEYS   122
+#define STORE_ATTR_INSTANCE_VALUE 122
 #define STORE_ATTR_SLOT         123
 #define STORE_ATTR_WITH_HINT    127
 #define LOAD_FAST__LOAD_FAST    128
