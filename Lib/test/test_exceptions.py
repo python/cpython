@@ -1840,7 +1840,13 @@ class NameErrorTests(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertNotIn("a1", err.getvalue())
+        traceback = err.getvalue()
+
+        # remvoe the source path from the traceback, it could contain "a1" in it
+        # https://bugs.python.org/issue45400
+        traceback = traceback.replace(__file__, os.path.basename(__file__))
+
+        self.assertNotIn("a1", traceback)
 
     def test_name_error_with_custom_exceptions(self):
         def f():

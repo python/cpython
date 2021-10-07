@@ -1,0 +1,4 @@
+The ``test_name_error_suggestions_do_not_trigger_for_too_many_locals`` will
+no longer fail when run from a directory that contains ``a1`` in the path,
+which is likely to happen when building from unpacked sources of a first
+alpha release.
