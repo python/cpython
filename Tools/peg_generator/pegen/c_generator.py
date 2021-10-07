@@ -737,7 +737,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print(
                 f'D(fprintf(stderr, "%*c+ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node_str}"));'
             )
-            # Prepare to emmit the rule action and do so
+            # Prepare to emit the rule action and do so
             if node.action and "EXTRA" in node.action:
                 self._set_up_token_end_metadata_extraction()
             if self.skip_actions:

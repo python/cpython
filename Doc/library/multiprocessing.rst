@@ -412,7 +412,7 @@ For example::
            multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
            print([res.get(timeout=1) for res in multiple_results])
 
-           # make a single worker sleep for 10 secs
+           # make a single worker sleep for 10 seconds
            res = pool.apply_async(time.sleep, (10,))
            try:
                print(res.get(timeout=1))
@@ -1030,7 +1030,13 @@ Miscellaneous
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  ``'fork'`` is the default on Unix, while ``'spawn'`` is
-   the default on Windows.
+   the default on Windows and macOS.
+
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
 
    .. versionadded:: 3.4
 

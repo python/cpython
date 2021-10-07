@@ -205,6 +205,14 @@ math
   Dickinson in :issue:`44339`.)
 
 
+operator
+--------
+
+* A new function ``operator.call`` has been added, such that
+  ``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.
+  (Contributed by Antony Lee in :issue:`44019`.)
+
+
 os
 --
 
@@ -231,17 +239,28 @@ sqlite3
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379`.)
 
+threading
+---------
+
+* On Unix, if the ``sem_clockwait()`` function is available in the C library
+  (glibc 2.30 and newer), the :meth:`threading.Lock.acquire` method now uses
+  the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
+  than using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected
+  by system clock changes.
+  (Contributed by Livius and Victor Stinner in :issue:`41710`.)
+
 time
 ----
 
-* On Unix, :func:`time.sleep` now uses the ``clock_nanosleep()`` function, if
-  available, which has a resolution of 1 ns (10^-6 sec), rather than using
-  ``select()`` which has a resolution of 1 us (10^-9 sec).
+* On Unix, :func:`time.sleep` now uses the ``clock_nanosleep()`` or
+  ``nanosleep()`` function, if available, which has a resolution of 1 nanosecond
+  (10\ :sup:`-9` seconds), rather than using ``select()`` which has a resolution
+  of 1 microsecond (10\ :sup:`-6` seconds).
   (Contributed by Livius and Victor Stinner in :issue:`21302`.)
 
 * On Windows, :func:`time.sleep` now uses a waitable timer which has a
-  resolution of 100 ns (10^-7 sec). Previously, it had a solution of 1 ms
-  (10^-3 sec).
+  resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
+  a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Livius and Victor Stinner in :issue:`21302`.)
 
 unicodedata

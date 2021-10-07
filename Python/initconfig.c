@@ -98,7 +98,7 @@ static const char usage_3[] = "\
          -X no_debug_ranges: disable the inclusion of the tables mapping extra location \n\
             information (end line, start column offset and end column offset) to every \n\
             instruction in code objects. This is useful when smaller code objects and pyc \n\
-            files are desired as well as supressing the extra visual location indicators \n\
+            files are desired as well as suppressing the extra visual location indicators \n\
             when the interpreter displays tracebacks.\n\
          -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
             The default is \"on\" (or \"off\" if you are running a local build).\n\
@@ -142,7 +142,7 @@ static const char usage_6[] =
 "PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
-"   when smaller cothe de objects and pyc files are desired as well as supressing the \n"
+"   when smaller cothe de objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n";
 
 #if defined(MS_WINDOWS)
@@ -587,11 +587,6 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
 /* --- PyConfig ---------------------------------------------- */
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    (((LEN) == -2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY())
-
 #define MAX_HASH_SEED 4294967295UL
 
 
@@ -674,6 +669,7 @@ PyConfig_Clear(PyConfig *config)
     _PyWideStringList_Clear(&config->xoptions);
     _PyWideStringList_Clear(&config->module_search_paths);
     config->module_search_paths_set = 0;
+    CLEAR(config->stdlib_dir);
 
     CLEAR(config->executable);
     CLEAR(config->base_executable);
@@ -914,6 +910,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(xoptions);
     COPY_WSTRLIST(module_search_paths);
     COPY_ATTR(module_search_paths_set);
+    COPY_WSTR_ATTR(stdlib_dir);
 
     COPY_WSTR_ATTR(executable);
     COPY_WSTR_ATTR(base_executable);
@@ -1020,6 +1017,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_INT(module_search_paths_set);
     SET_ITEM_WSTRLIST(module_search_paths);
+    SET_ITEM_WSTR(stdlib_dir);
     SET_ITEM_WSTR(executable);
     SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
@@ -1323,6 +1321,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     // Path configuration output
     GET_UINT(module_search_paths_set);
     GET_WSTRLIST(module_search_paths);
+    GET_WSTR_OPT(stdlib_dir);
     GET_WSTR_OPT(executable);
     GET_WSTR_OPT(base_executable);
     GET_WSTR_OPT(prefix);
@@ -2550,7 +2549,7 @@ warnoptions_append(PyConfig *config, PyWideStringList *options,
 {
     /* config_init_warnoptions() add existing config warnoptions at the end:
        ensure that the new option is not already present in this list to
-       prevent change the options order whne config_init_warnoptions() is
+       prevent change the options order when config_init_warnoptions() is
        called twice. */
     if (_PyWideStringList_Find(&config->warnoptions, option)) {
         /* Already present: do nothing */
@@ -3099,6 +3098,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
+    DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \
