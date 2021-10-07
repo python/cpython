@@ -358,7 +358,6 @@ class ConnectionTests(unittest.TestCase):
             self.assertRaisesRegex(sqlite.DataError, msg,
                                    self.cx.execute, "select 1 as '16'")
         finally:  # restore old limit
-            print("restoring limit")
             self.cx.setlimit(param, ret1)
 
 
