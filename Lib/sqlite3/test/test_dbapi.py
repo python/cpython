@@ -344,6 +344,15 @@ class ConnectionTests(unittest.TestCase):
         finally:  # restore old limit
             self.cx.SQLITE_LIMIT_SQL_LENGTH = limit
 
+    def test_connection_delete_limit(self):
+        msg = "Cannot delete limit attributes"
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            del self.cx.SQLITE_LIMIT_LENGTH
+
+    def test_connection_bad_set_limit(self):
+        with self.assertRaises(TypeError):
+            self.cx.SQLITE_LIMIT_EXPR_DEPTH = "a"
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
@@ -771,6 +780,11 @@ class ThreadTests(unittest.TestCase):
             self.fail("\n".join(err))
 
     def test_check_connection_thread(self):
+        def set_cx_limit():
+            self.con.SQLITE_LIMIT_LENGTH = 0
+        def get_cx_limit():
+            return self.con.SQLITE_LIMIT_LENGTH
+
         fns = [
             lambda: self.con.cursor(),
             lambda: self.con.commit(),
@@ -779,6 +793,8 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.set_trace_callback(None),
             lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
+            lambda: set_cx_limit(),
+            lambda: get_cx_limit(),
         ]
         for fn in fns:
             with self.subTest(fn=fn):
