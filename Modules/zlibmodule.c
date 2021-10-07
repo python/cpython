@@ -82,7 +82,7 @@ typedef struct {
     Bytef *next_posi;
 } _Uint32Window;
 
-/* Initialize the buffer with an inital buffer size.
+/* Initialize the buffer with an initial buffer size.
 
    On success, return value >= 0
    On failure, return value < 0 */
