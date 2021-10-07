@@ -2135,7 +2135,7 @@ warnoptions_append(PyConfig *config, PyWideStringList *options,
 {
     /* config_init_warnoptions() add existing config warnoptions at the end:
        ensure that the new option is not already present in this list to
-       prevent change the options order whne config_init_warnoptions() is
+       prevent change the options order when config_init_warnoptions() is
        called twice. */
     if (_PyWideStringList_Find(&config->warnoptions, option)) {
         /* Already present: do nothing */
