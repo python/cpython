@@ -1,1 +1,1 @@
-Remove LibreSSL support as per PEP 644.
+Remove LibreSSL workarounds as per :pep`644`.
