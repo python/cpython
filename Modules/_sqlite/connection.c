@@ -1866,13 +1866,101 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
     Py_RETURN_FALSE;
 }
 
+static
+PyObject *get_limit(pysqlite_Connection *self, void *limit)
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    int value = sqlite3_limit(self->db, (int)limit, -1);
+    return PyLong_FromLong(value);
+}
+
+static int
+set_limit(pysqlite_Connection *self, PyObject *value, void *limit)
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return -1;
+    }
+    if (value == NULL) {
+        PyErr_SetString(self->ProgrammingError,
+                        "Cannot delete limit attributes");
+        return -1;
+    }
+    int setval = _PyLong_AsInt(value);
+    if (setval == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    (void)sqlite3_limit(self->db, (int)limit, setval);
+    return 0;
+}
+
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
+
+#define DEF_LIMIT_GETSET(limit, doc) \
+    {#limit, (getter)get_limit, (setter)set_limit, doc, (void *)limit},
 
 static PyGetSetDef connection_getset[] = {
     {"isolation_level",  (getter)pysqlite_connection_get_isolation_level, (setter)pysqlite_connection_set_isolation_level},
     {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
     {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_LENGTH,
+        "The maximum size of any string or BLOB or table row, in bytes."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_SQL_LENGTH,
+        "The maximum length of an SQL statement, in bytes."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_COLUMN,
+        "The maximum number of columns in a table definition or in the result "
+        "set of a SELECT or the maximum number of columns in an index or in an "
+        "ORDER BY or GROUP BY clause."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_EXPR_DEPTH,
+        "The maximum depth of the parse tree on any expression."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_COMPOUND_SELECT,
+        "The maximum number of terms in a compound SELECT statement."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_VDBE_OP,
+        "The maximum number of instructions in a virtual machine program used "
+        "to implement an SQL statement."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_FUNCTION_ARG,
+        "The maximum number of arguments on a function."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_ATTACHED,
+        "The maximum number of attached databases."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_LIKE_PATTERN_LENGTH,
+        "The maximum length of the pattern argument to the LIKE or GLOB "
+        "operators."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_VARIABLE_NUMBER,
+        "The maximum index number of any parameter in an SQL statement."
+    )
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_TRIGGER_DEPTH,
+        "The maximum depth of recursion for triggers."
+    )
+#if SQLITE_VERSION_NUMBER >= 3008003
+    DEF_LIMIT_GETSET(
+        SQLITE_LIMIT_WORKER_THREADS,
+        "The maximum number of auxiliary worker threads that a single "
+        "prepared statement may start."
+    )
+#endif
     {NULL}
 };
 

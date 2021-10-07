@@ -239,6 +239,11 @@ sqlite3
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379`.)
 
+* Connection limits are now exposed as :class:`sqlite3.Connection`
+  attributes.
+  (Contributed by Erlend E. Aasland in :issue:`45243`.)
+
+
 threading
 ---------
 

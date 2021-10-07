@@ -1,0 +1,2 @@
+SQLite connection limits are now exposed as :class:`sqlite3.Connection`
+attributes. Patch by Erlend E. Aasland.

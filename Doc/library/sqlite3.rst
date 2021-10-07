@@ -624,6 +624,78 @@ Connection Objects
       .. versionadded:: 3.7
 
 
+   .. attribute:: SQLITE_LIMIT_SQL_LENGTH
+
+      The maximum length of an SQL statement, in bytes.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_COLUMN
+
+      The maximum number of columns in a table definition or in the result set
+      of a SELECT or the maximum number of columns in an index or in an ORDER
+      BY or GROUP BY clause.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_EXPR_DEPTH
+
+      The maximum depth of the parse tree on any expression.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_COMPOUND_SELECT
+
+      The maximum number of terms in a compound SELECT statement.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_VDBE_OP
+
+      The maximum number of instructions in a virtual machine program used to
+      implement an SQL statement.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_FUNCTION_ARG
+
+      The maximum number of arguments on a function.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_ATTACHED
+
+      The maximum number of attached databases.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_LIKE_PATTERN_LENGTH
+
+      The maximum length of the pattern argument to the LIKE or GLOB operators.
+
+      .. versionadded:: 3.11
+
+    )
+   .. attribute:: SQLITE_LIMIT_VARIABLE_NUMBER
+
+      The maximum index number of any parameter in an SQL statement.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_TRIGGER_DEPTH
+
+      The maximum depth of recursion for triggers.
+
+      .. versionadded:: 3.11
+
+   .. attribute:: SQLITE_LIMIT_WORKER_THREADS
+
+      The maximum number of auxiliary worker threads that a single prepared
+      statement may start. Only available for SQLite 3.8.3 or newer.
+
+      .. versionadded:: 3.11
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects

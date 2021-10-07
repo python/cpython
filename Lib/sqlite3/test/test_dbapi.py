@@ -332,6 +332,18 @@ class ConnectionTests(unittest.TestCase):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
 
+    def test_connection_limits(self):
+        setval = 10
+        limit = self.cx.SQLITE_LIMIT_SQL_LENGTH
+        try:
+            self.cx.SQLITE_LIMIT_SQL_LENGTH = setval
+            self.assertEqual(self.cx.SQLITE_LIMIT_SQL_LENGTH, setval)
+            msg = "string or blob too big"
+            self.assertRaisesRegex(sqlite.DataError, msg,
+                                   self.cx.execute, "select 1 as '16'")
+        finally:  # restore old limit
+            self.cx.SQLITE_LIMIT_SQL_LENGTH = limit
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
