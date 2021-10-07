@@ -1866,14 +1866,26 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
     Py_RETURN_FALSE;
 }
 
-static
-PyObject *get_limit(pysqlite_Connection *self, void *limit)
+static inline int
+cast_limit(void *limit)
+{
+    union {
+        int i;
+        void *ptr;
+    } u;
+
+    u.ptr = limit;
+    return u.i;
+}
+
+static PyObject *
+get_limit(pysqlite_Connection *self, void *limit)
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    int value = sqlite3_limit(self->db, (int)limit, -1);
+    int value = sqlite3_limit(self->db, cast_limit(limit), -1);
     return PyLong_FromLong(value);
 }
 
@@ -1892,7 +1904,7 @@ set_limit(pysqlite_Connection *self, PyObject *value, void *limit)
     if (setval == -1 && PyErr_Occurred()) {
         return -1;
     }
-    (void)sqlite3_limit(self->db, (int)limit, setval);
+    (void)sqlite3_limit(self->db, cast_limit(limit), setval);
     return 0;
 }
 
