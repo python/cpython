@@ -12,7 +12,7 @@ class TestLLTrace(unittest.TestCase):
         # If this test fails, it will reproduce a crash reported as
         # bpo-34113. The crash happened at the command line console of
         # debug Python builds with __ltrace__ enabled (only possible in console),
-        # when the interal Python stack was negatively adjusted
+        # when the internal Python stack was negatively adjusted
         with open(support.TESTFN, 'w') as fd:
             self.addCleanup(os.unlink, support.TESTFN)
             fd.write(textwrap.dedent("""\
