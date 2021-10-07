@@ -1969,42 +1969,18 @@ check_eval_breaker:
         TARGET(BINARY_MULTIPLY_FLOAT) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            double dleft, dright;
-            if (PyFloat_CheckExact(left)) {
-                dleft = ((PyFloatObject *)left)->ob_fval;
-                if (PyFloat_CheckExact(right)) {
-                    // float * float
-                    dright = ((PyFloatObject *)right)->ob_fval;
-                }
-                else if (PyLong_CheckExact(right)
-                         && (((size_t)Py_SIZE(right)) + 1U < 3U)) {
-                    // float * one_digit_int
-                    dright = (double)(((stwodigits)Py_SIZE(right))
-                                      * ((PyLongObject *)right)->ob_digit[0]);
-                }
-                else {
-                    DEOPT_IF(1, BINARY_MULTIPLY);
-                }
-            }
-            else if (PyLong_CheckExact(left)
-                     && (((size_t)Py_SIZE(left)) + 1U < 3U)
-                     && PyFloat_CheckExact(right)) {
-                // one_digit_int * float
-                dleft = (double)(((stwodigits)Py_SIZE(left))
-                                      * ((PyLongObject *)left)->ob_digit[0]);
-                dright = ((PyFloatObject *)right)->ob_fval;
-            }
-            else {
-                DEOPT_IF(1, BINARY_MULTIPLY);
-            }
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
             STAT_INC(BINARY_MULTIPLY, hit);
             record_hit_inline(next_instr, oparg);
-            PyObject *prod = PyFloat_FromDouble(dleft * dright);
+            double dprod = ((PyFloatObject *)left)->ob_fval *
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *prod = PyFloat_FromDouble(dprod);
             SET_SECOND(prod);
             Py_DECREF(right);
             Py_DECREF(left);
             STACK_SHRINK(1);
-            if (prod == NULL) {
+            if (sum == NULL) {
                 goto error;
             }
             DISPATCH();
