@@ -102,6 +102,7 @@ typedef struct {
     int isolated;             /* -I option */
     int use_environment;      /* -E option */
     int dev_mode;             /* -X dev and PYTHONDEVMODE */
+    int warn_default_encoding;     /* -X warn_default_encoding and PYTHONWARNDEFAULTENCODING */
 } _PyPreCmdline;
 
 #define _PyPreCmdline_INIT \
@@ -154,6 +155,7 @@ extern PyStatus _PyConfig_Copy(
 extern PyStatus _PyConfig_InitPathConfig(
     PyConfig *config,
     int compute_path_config);
+extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
 extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
     struct pyruntimestate *runtime);

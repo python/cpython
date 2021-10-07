@@ -55,11 +55,7 @@ everything, though.
 
 The Windows version of Python doesn't include the :mod:`curses`
 module.  A ported version called `UniCurses
-<https://pypi.org/project/UniCurses>`_ is available.  You could
-also try `the Console module <http://effbot.org/zone/console-index.htm>`_
-written by Fredrik Lundh, which doesn't
-use the same API as curses but provides cursor-addressable text output
-and full support for mouse and keyboard input.
+<https://pypi.org/project/UniCurses>`_ is available.
 
 
 The Python curses module

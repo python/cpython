@@ -10,6 +10,12 @@ extern "C" {
 
 #include <locale.h>   /* struct lconv */
 
+// This is used after getting NULL back from Py_DecodeLocale().
+#define DECODE_LOCALE_ERR(NAME, LEN) \
+    ((LEN) == (size_t)-2) \
+     ? _PyStatus_ERR("cannot decode " NAME) \
+     : _PyStatus_NO_MEMORY()
+
 PyAPI_DATA(int) _Py_HasFileSystemDefaultEncodeErrors;
 
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
@@ -33,6 +39,9 @@ PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     Py_ssize_t arglen,
     size_t *wlen);
 
+extern int
+_Py_wstat(const wchar_t *, struct stat *);
+
 PyAPI_FUNC(int) _Py_GetForceASCII(void);
 
 /* Reset "force ASCII" mode (if it was initialized).
@@ -52,6 +61,24 @@ PyAPI_FUNC(void) _Py_closerange(int first, int last);
 
 PyAPI_FUNC(wchar_t*) _Py_GetLocaleEncoding(void);
 PyAPI_FUNC(PyObject*) _Py_GetLocaleEncodingObject(void);
+
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+extern int _Py_LocaleUsesNonUnicodeWchar(void);
+
+extern wchar_t* _Py_DecodeNonUnicodeWchar(
+    const wchar_t* native,
+    Py_ssize_t size);
+
+extern int _Py_EncodeNonUnicodeWchar_InPlace(
+    wchar_t* unicode,
+    Py_ssize_t size);
+#endif
+
+extern wchar_t * _Py_join_relfile(const wchar_t *dirname,
+                                  const wchar_t *relfile);
+extern int _Py_add_relfile(wchar_t *dirname,
+                           const wchar_t *relfile,
+                           size_t bufsize);
 
 #ifdef __cplusplus
 }

@@ -26,7 +26,6 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
 {
     Py_UCS4 ch;
     const char *s = *inptr;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
     STRINGLIB_CHAR *p = dest + *outpos;
 
     while (s < end) {
@@ -40,11 +39,11 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                First, check if we can do an aligned read, as most CPUs have
                a penalty for unaligned reads.
             */
-            if (_Py_IS_ALIGNED(s, SIZEOF_SIZE_T)) {
+            if (_Py_IS_ALIGNED(s, ALIGNOF_SIZE_T)) {
                 /* Help register allocation */
                 const char *_s = s;
                 STRINGLIB_CHAR *_p = p;
-                while (_s < aligned_end) {
+                while (_s + SIZEOF_SIZE_T <= end) {
                     /* Read a whole size_t at a time (either 4 or 8 bytes),
                        and do a fast unrolled copy if it only contains ASCII
                        characters. */
@@ -496,8 +495,6 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
                         int native_ordering)
 {
     Py_UCS4 ch;
-    const unsigned char *aligned_end =
-            (const unsigned char *) _Py_ALIGN_DOWN(e, SIZEOF_LONG);
     const unsigned char *q = *inptr;
     STRINGLIB_CHAR *p = dest + *outpos;
     /* Offsets from q for retrieving byte pairs in the right order. */
@@ -512,10 +509,10 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
         Py_UCS4 ch2;
         /* First check for possible aligned read of a C 'long'. Unaligned
            reads are more expensive, better to defer to another iteration. */
-        if (_Py_IS_ALIGNED(q, SIZEOF_LONG)) {
+        if (_Py_IS_ALIGNED(q, ALIGNOF_LONG)) {
             /* Fast path for runs of in-range non-surrogate chars. */
             const unsigned char *_q = q;
-            while (_q < aligned_end) {
+            while (_q + SIZEOF_LONG <= e) {
                 unsigned long block = * (const unsigned long *) _q;
                 if (native_ordering) {
                     /* Can use buffer directly */

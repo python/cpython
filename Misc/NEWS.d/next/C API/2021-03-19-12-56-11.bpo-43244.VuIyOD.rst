@@ -1,8 +1,0 @@
-Remove ``ast.h``, ``asdl.h``, and ``Python-ast.h`` header files.
-These functions were undocumented and excluded from the limited C API.
-Most names defined by these header files were not prefixed by ``Py`` and so
-could create names conflicts. For example, ``Python-ast.h`` defined a ``Yield``
-macro which was conflict with the ``Yield`` name used by the Windows
-``<winbase.h>`` header.
-Use the Python :mod:`ast` module instead.
-Patch by Victor Stinner.

@@ -28,6 +28,9 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 typedef struct {
     int optimize;
     int ff_features;
+
+    int recursion_depth;            /* current recursion depth */
+    int recursion_limit;            /* recursion limit */
 } _PyASTOptimizeState;
 
 extern int _PyAST_Optimize(

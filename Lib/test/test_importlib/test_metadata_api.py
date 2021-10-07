@@ -2,6 +2,8 @@ import re
 import textwrap
 import unittest
 import warnings
+import importlib
+import contextlib
 
 from . import fixtures
 from importlib.metadata import (
@@ -14,6 +16,13 @@ from importlib.metadata import (
     requires,
     version,
 )
+
+
+@contextlib.contextmanager
+def suppress_known_deprecation():
+    with warnings.catch_warnings(record=True) as ctx:
+        warnings.simplefilter('default')
+        yield ctx
 
 
 class APITests(
@@ -81,10 +90,8 @@ class APITests(
             self.assertEqual(ep.dist.version, "1.0.0")
 
     def test_entry_points_unique_packages(self):
-        """
-        Entry points should only be exposed for the first package
-        on sys.path with a given name.
-        """
+        # Entry points should only be exposed for the first package
+        # on sys.path with a given name.
         alt_site_dir = self.fixtures.enter_context(fixtures.tempdir())
         self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
         alt_pkg = {
@@ -116,13 +123,10 @@ class APITests(
         assert entry_points(group='missing') == ()
 
     def test_entry_points_dict_construction(self):
-        """
-        Prior versions of entry_points() returned simple lists and
-        allowed casting those lists into maps by name using ``dict()``.
-        Capture this now deprecated use-case.
-        """
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.filterwarnings("default", category=DeprecationWarning)
+        # Prior versions of entry_points() returned simple lists and
+        # allowed casting those lists into maps by name using ``dict()``.
+        # Capture this now deprecated use-case.
+        with suppress_known_deprecation() as caught:
             eps = dict(entry_points(group='entries'))
 
         assert 'main' in eps
@@ -133,25 +137,37 @@ class APITests(
         assert expected.category is DeprecationWarning
         assert "Construction of dict of EntryPoints is deprecated" in str(expected)
 
+    def test_entry_points_by_index(self):
+        """
+        Prior versions of Distribution.entry_points would return a
+        tuple that allowed access by index.
+        Capture this now deprecated use-case
+        See python/importlib_metadata#300 and bpo-44246.
+        """
+        eps = distribution('distinfo-pkg').entry_points
+        with suppress_known_deprecation() as caught:
+            eps[0]
+
+        # check warning
+        expected = next(iter(caught))
+        assert expected.category is DeprecationWarning
+        assert "Accessing entry points by index is deprecated" in str(expected)
+
     def test_entry_points_groups_getitem(self):
-        """
-        Prior versions of entry_points() returned a dict. Ensure
-        that callers using '.__getitem__()' are supported but warned to
-        migrate.
-        """
-        with warnings.catch_warnings(record=True):
+        # Prior versions of entry_points() returned a dict. Ensure
+        # that callers using '.__getitem__()' are supported but warned to
+        # migrate.
+        with suppress_known_deprecation():
             entry_points()['entries'] == entry_points(group='entries')
 
             with self.assertRaises(KeyError):
                 entry_points()['missing']
 
     def test_entry_points_groups_get(self):
-        """
-        Prior versions of entry_points() returned a dict. Ensure
-        that callers using '.get()' are supported but warned to
-        migrate.
-        """
-        with warnings.catch_warnings(record=True):
+        # Prior versions of entry_points() returned a dict. Ensure
+        # that callers using '.get()' are supported but warned to
+        # migrate.
+        with suppress_known_deprecation():
             entry_points().get('missing', 'default') == 'default'
             entry_points().get('entries', 'default') == entry_points()['entries']
             entry_points().get('missing', ()) == ()
@@ -238,6 +254,29 @@ class APITests(
 
         assert deps == expected
 
+    def test_as_json(self):
+        md = metadata('distinfo-pkg').json
+        assert 'name' in md
+        assert md['keywords'] == ['sample', 'package']
+        desc = md['description']
+        assert desc.startswith('Once upon a time\nThere was')
+        assert len(md['requires_dist']) == 2
+
+    def test_as_json_egg_info(self):
+        md = metadata('egginfo-pkg').json
+        assert 'name' in md
+        assert md['keywords'] == ['sample', 'package']
+        desc = md['description']
+        assert desc.startswith('Once upon a time\nThere was')
+        assert len(md['classifier']) == 2
+
+    def test_as_json_odd_case(self):
+        self.make_uppercase()
+        md = metadata('distinfo-pkg').json
+        assert 'name' in md
+        assert len(md['requires_dist']) == 2
+        assert md['keywords'] == ['SAMPLE', 'PACKAGE']
+
 
 class LegacyDots(fixtures.DistInfoPkgWithDotLegacy, unittest.TestCase):
     def test_name_normalization(self):
@@ -259,7 +298,7 @@ class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
         assert any(dist.metadata['Name'] == 'distinfo-pkg' for dist in dists)
 
     def test_distribution_at_pathlib(self):
-        """Demonstrate how to load metadata direct from a directory."""
+        # Demonstrate how to load metadata direct from a directory.
         dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
         dist = Distribution.at(dist_info_path)
         assert dist.version == '1.0.0'
@@ -268,3 +307,9 @@ class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
         dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
         dist = Distribution.at(str(dist_info_path))
         assert dist.version == '1.0.0'
+
+
+class InvalidateCache(unittest.TestCase):
+    def test_invalidate_cache(self):
+        # No externally observable behavior, but ensures test coverage...
+        importlib.invalidate_caches()

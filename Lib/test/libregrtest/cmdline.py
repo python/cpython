@@ -140,6 +140,39 @@ ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
 #   default (see bpo-30822).
 RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
+
+class Namespace(argparse.Namespace):
+    def __init__(self, **kwargs) -> None:
+        self.testdir = None
+        self.verbose = 0
+        self.quiet = False
+        self.exclude = False
+        self.single = False
+        self.randomize = False
+        self.fromfile = None
+        self.findleaks = 1
+        self.fail_env_changed = False
+        self.use_resources = None
+        self.trace = False
+        self.coverdir = 'coverage'
+        self.runleaks = False
+        self.huntrleaks = False
+        self.verbose2 = False
+        self.verbose3 = False
+        self.print_slow = False
+        self.random_seed = None
+        self.use_mp = None
+        self.forever = False
+        self.header = False
+        self.failfast = False
+        self.match_tests = None
+        self.ignore_tests = None
+        self.pgo = False
+        self.pgo_extended = False
+
+        super().__init__(**kwargs)
+
+
 class _ArgParser(argparse.ArgumentParser):
 
     def error(self, message):
@@ -320,13 +353,7 @@ def resources_list(string):
 
 def _parse_args(args, **kwargs):
     # Defaults
-    ns = argparse.Namespace(testdir=None, verbose=0, quiet=False,
-         exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=1, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
-         random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None, ignore_tests=None,
-         pgo=False)
+    ns = Namespace()
     for k, v in kwargs.items():
         if not hasattr(ns, k):
             raise TypeError('%r is an invalid keyword argument '

@@ -3,10 +3,10 @@ import unittest
 
 from importlib import resources
 from . import data01
-from . import util
+from .resources import util
 
 
-class CommonTests(util.CommonResourceTests, unittest.TestCase):
+class CommonTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
         with resources.path(package, path):
             pass
@@ -29,11 +29,9 @@ class PathDiskTests(PathTests, unittest.TestCase):
     data = data01
 
     def test_natural_path(self):
-        """
-        Guarantee the internal implementation detail that
-        file-system-backed resources do not get the tempdir
-        treatment.
-        """
+        # Guarantee the internal implementation detail that
+        # file-system-backed resources do not get the tempdir
+        # treatment.
         with resources.path(self.data, 'utf-8.file') as path:
             assert 'data' in str(path)
 

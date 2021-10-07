@@ -38,14 +38,12 @@ class LockTests(test_utils.TestCase):
     def test_lock(self):
         lock = asyncio.Lock()
 
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def acquire_lock():
-                return (yield from lock)
+        async def acquire_lock():
+            return await lock
 
         with self.assertRaisesRegex(
             TypeError,
-            "object is not iterable"
+            "object Lock can't be used in 'await' expression"
         ):
             self.loop.run_until_complete(acquire_lock())
 
@@ -78,18 +76,16 @@ class LockTests(test_utils.TestCase):
             asyncio.BoundedSemaphore(),
         ]
 
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def test(lock):
-                yield from asyncio.sleep(0.01)
-                self.assertFalse(lock.locked())
-                with self.assertRaisesRegex(
-                    TypeError,
-                    "object is not iterable"
-                ):
-                    with (yield from lock):
-                        pass
-                self.assertFalse(lock.locked())
+        async def test(lock):
+            await asyncio.sleep(0.01)
+            self.assertFalse(lock.locked())
+            with self.assertRaisesRegex(
+                TypeError,
+                r"object \w+ can't be used in 'await' expression"
+            ):
+                with await lock:
+                    pass
+            self.assertFalse(lock.locked())
 
         for primitive in primitives:
             loop.run_until_complete(test(primitive))
@@ -788,14 +784,12 @@ class SemaphoreTests(test_utils.TestCase):
         sem = asyncio.Semaphore()
         self.assertEqual(1, sem._value)
 
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def acquire_lock():
-                return (yield from sem)
+        async def acquire_lock():
+            return await sem
 
         with self.assertRaisesRegex(
             TypeError,
-            "'Semaphore' object is not iterable",
+            "object Semaphore can't be used in 'await' expression",
         ):
             self.loop.run_until_complete(acquire_lock())
 

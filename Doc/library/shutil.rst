@@ -595,6 +595,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
 
+   .. note::
+
+      This function is not thread-safe.
+
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
       the legacy GNU format for archives created with ``format="tar"``.

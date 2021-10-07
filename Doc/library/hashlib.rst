@@ -23,7 +23,7 @@
 This module implements a common interface to many different secure hash and
 message digest algorithms.  Included are the FIPS secure hash algorithms SHA1,
 SHA224, SHA256, SHA384, and SHA512 (defined in FIPS 180-2) as well as RSA's MD5
-algorithm (defined in Internet :rfc:`1321`).  The terms "secure hash" and
+algorithm (defined in internet :rfc:`1321`).  The terms "secure hash" and
 "message digest" are interchangeable.  Older algorithms were called message
 digests.  The modern term is secure hash.
 
@@ -80,6 +80,8 @@ library that Python uses on your platform. On most platforms the
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
 
+.. _hashlib-usedforsecurity:
+
 .. versionchanged:: 3.9
    All hashlib constructors take a keyword-only argument *usedforsecurity*
    with default value ``True``. A false value allows the use of insecure and
@@ -118,10 +120,10 @@ More condensed:
 
 Using :func:`new` with an algorithm provided by OpenSSL:
 
-   >>> h = hashlib.new('ripemd160')
+   >>> h = hashlib.new('sha512_256')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
+   '19197dc4d03829df858011c6c87600f994a858103bbc19005f20987aa19a97e2'
 
 Hashlib provides the following constant attributes:
 
@@ -266,6 +268,12 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
       Python implementation uses an inline version of :mod:`hmac`. It is about
       three times slower and doesn't release the GIL.
 
+   .. deprecated:: 3.10
+
+      Slow Python implementation of *pbkdf2_hmac* is deprecated. In the
+      future the function will only be available when Python is compiled
+      with OpenSSL.
+
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
    The function provides scrypt password-based key derivation function as
@@ -279,8 +287,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
-
-   .. availability:: OpenSSL 1.1+.
 
    .. versionadded:: 3.6
 
@@ -370,10 +376,10 @@ Constructor functions also accept the following tree hashing parameters:
 * *depth*: maximal depth of tree (1 to 255, 255 if unlimited, 1 in
   sequential mode).
 
-* *leaf_size*: maximal byte length of leaf (0 to 2**32-1, 0 if unlimited or in
+* *leaf_size*: maximal byte length of leaf (0 to ``2**32-1``, 0 if unlimited or in
   sequential mode).
 
-* *node_offset*: node offset (0 to 2**64-1 for BLAKE2b, 0 to 2**48-1 for
+* *node_offset*: node offset (0 to ``2**64-1`` for BLAKE2b, 0 to ``2**48-1`` for
   BLAKE2s, 0 for the first, leftmost, leaf, or in sequential mode).
 
 * *node_depth*: node depth (0 to 255, 0 for leaves, or in sequential mode).

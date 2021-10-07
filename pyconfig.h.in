@@ -16,6 +16,12 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* The normal alignment of `long', in bytes. */
+#undef ALIGNOF_LONG
+
+/* The normal alignment of `size_t', in bytes. */
+#undef ALIGNOF_SIZE_T
+
 /* Alternative SOABI used in debug build to load C extensions built in release
    mode */
 #undef ALT_SOABI
@@ -135,6 +141,9 @@
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the `clock_nanosleep' function. */
+#undef HAVE_CLOCK_NANOSLEEP
 
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
@@ -727,6 +736,9 @@
 /* Define to 1 if you have the `mremap' function. */
 #undef HAVE_MREMAP
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
@@ -741,6 +753,10 @@
 
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
+
+/* Define if the internal form of wchar_t in non-Unicode locales is not
+   Unicode. */
+#undef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
@@ -891,6 +907,9 @@
 
 /* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
+
+/* Define to 1 if you have the `sem_clockwait' function. */
+#undef HAVE_SEM_CLOCKWAIT
 
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
@@ -1350,9 +1369,6 @@
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
 
-/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
-#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
-
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
@@ -1504,6 +1520,9 @@
 /* Define if you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
+
+/* Custom thread stack size depending on chosen sanitizer runtimes. */
+#undef THREAD_STACK_SIZE
 
 /* Library needed by timemodule.c: librt may be needed for clock_gettime() */
 #undef TIMEMODULE_LIB

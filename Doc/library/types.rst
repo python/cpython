@@ -34,7 +34,7 @@ Dynamic Type Creation
    freshly created class namespace. It should accept the class namespace
    as its sole argument and update the namespace directly with the class
    contents. If no callback is provided, it has the same effect as passing
-   in ``lambda ns: ns``.
+   in ``lambda ns: None``.
 
    .. versionadded:: 3.3
 
@@ -243,7 +243,7 @@ Standard names are defined for the following types:
 
       .. note::
          A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferrably read from the
+         To guard against this potential change, preferably read from the
          :attr:`__spec__` attribute instead or use
          ``getattr(module, "__loader__", None)`` if you explicitly need to use
          this attribute.
@@ -268,7 +268,7 @@ Standard names are defined for the following types:
 
       .. note::
          A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferrably read from the
+         To guard against this potential change, preferably read from the
          :attr:`__spec__` attribute instead or use
          ``getattr(module, "__package__", None)`` if you explicitly need to use
          this attribute.
@@ -278,8 +278,8 @@ Standard names are defined for the following types:
 
    .. attribute:: __spec__
 
-      A record of the the module's import-system-related state. Expected to be
-      an instance of :class:`importlib.machinery.ModuleSpec`.
+      A record of the module's import-system-related state. Expected to be an
+      instance of :class:`importlib.machinery.ModuleSpec`.
 
       .. versionadded:: 3.4
 
@@ -312,7 +312,7 @@ Standard names are defined for the following types:
       This type can now be subclassed.
 
 
-.. data:: Union
+.. data:: UnionType
 
    The type of :ref:`union type expressions<types-union>`.
 

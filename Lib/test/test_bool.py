@@ -1,7 +1,6 @@
 # Test properties of bool promised by PEP 285
 
 import unittest
-from test import support
 from test.support import os_helper
 
 import os
@@ -235,7 +234,7 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            with open(os_helper.TESTFN, "w") as f:
+            with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
                 self.assertIs(f.closed, False)
             self.assertIs(f.closed, True)
         finally:
@@ -370,8 +369,6 @@ class BoolTest(unittest.TestCase):
         f(x)
         self.assertGreaterEqual(x.count, 1)
 
-def test_main():
-    support.run_unittest(BoolTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

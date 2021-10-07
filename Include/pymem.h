@@ -25,8 +25,8 @@ extern "C" {
    heap used by the Python DLL; it could be a disaster if you free()'ed that
    directly in your own extension.  Using PyMem_Free instead ensures Python
    can return the memory to the proper heap.  As another example, in
-   PYMALLOC_DEBUG mode, Python wraps all calls to all PyMem_ and PyObject_
-   memory functions in special debugging wrappers that add additional
+   a debug build (Py_DEBUG macro), Python wraps all calls to all PyMem_ and
+   PyObject_ memory functions in special debugging wrappers that add additional
    debugging info to dynamic memory blocks.  The system routines have no idea
    what to do with that stuff, and the Python wrappers have no idea what to do
    with raw blocks obtained directly by the system routines then.
@@ -50,6 +50,7 @@ extern "C" {
 */
 
 PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 

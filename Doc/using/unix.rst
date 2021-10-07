@@ -78,9 +78,9 @@ The build process consists of the usual commands::
    make
    make install
 
-Configuration options and caveats for specific Unix platforms are extensively
-documented in the :source:`README.rst` file in the root of the Python source
-tree.
+:ref:`Configuration options <configure-options>` and caveats for specific Unix
+platforms are extensively documented in the :source:`README.rst` file in the
+root of the Python source tree.
 
 .. warning::
 
@@ -135,6 +135,7 @@ some Unices may not have the :program:`env` command, so you may need to hardcode
 
 To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
 
+.. _unix_custom_openssl:
 
 Custom OpenSSL
 ==============
@@ -161,6 +162,7 @@ Custom OpenSSL
          $ pushd openssl-VERSION
          $ ./config \
               --prefix=/usr/local/custom-openssl \
+              --libdir=lib \
               --openssldir=/etc/ssl
          $ make -j1 depend
          $ make -j8
@@ -168,6 +170,7 @@ Custom OpenSSL
          $ popd
 
 3. Build Python with custom OpenSSL
+   (see the configure `--with-openssl` and `--with-openssl-rpath` options)
 
    .. code-block:: shell-session
 
