@@ -91,13 +91,13 @@ PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(_PyTime_t ns);
 PyAPI_FUNC(int) _PyTime_FromNanosecondsObject(_PyTime_t *t,
     PyObject *obj);
 
-/* Convert a number of seconds (Python float or int) to a timetamp.
+/* Convert a number of seconds (Python float or int) to a timestamp.
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_FromSecondsObject(_PyTime_t *t,
     PyObject *obj,
     _PyTime_round_t round);
 
-/* Convert a number of milliseconds (Python float or int, 10^-3) to a timetamp.
+/* Convert a number of milliseconds (Python float or int, 10^-3) to a timestamp.
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_FromMillisecondsObject(_PyTime_t *t,
     PyObject *obj,
