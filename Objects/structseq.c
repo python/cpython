@@ -576,8 +576,7 @@ PyStructSequence_FromModuleAndDesc(PyObject *module,
     if (type == NULL) {
         return NULL;
     }
-    Py_XINCREF(module);
-    ((PyHeapTypeObject *)type)->ht_module = module;
+    ((PyHeapTypeObject *)type)->ht_module = Py_XNewRef(module);
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
