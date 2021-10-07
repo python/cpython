@@ -168,9 +168,9 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_TRANSACTION",
             "SQLITE_UPDATE",
         ]
-        if sqlite.version_info >= (3, 7, 17):
+        if sqlite.sqlite_version_info >= (3, 7, 17):
             consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
-        if sqlite.version_info >= (3, 8, 3):
+        if sqlite.sqlite_version_info >= (3, 8, 3):
             consts.append("SQLITE_RECURSIVE")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         for const in consts:
