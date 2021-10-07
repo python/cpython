@@ -1,0 +1,1 @@
+Hash algorithm for strings is changed from SipHash24 to SipHash13.

@@ -416,14 +416,18 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash24]
+.. cmdoption:: --with-hash-algorithm=[fnv|siphash13]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
-   * ``siphash24`` (default).
+   * ``siphash13`` (default).
    * ``fnv``;
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.11
+      ``siphash24`` is replaced with ``siphash13``. ``siphash13`` is faster and
+      safe enough.
 
 .. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
