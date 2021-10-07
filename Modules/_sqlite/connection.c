@@ -1892,6 +1892,10 @@ setlimit_impl(pysqlite_Connection *self, int limit, int value)
     }
 
     int previous_value = sqlite3_limit(self->db, limit, value);
+    if (previous_value < 0) {
+        PyErr_SetString(self->ProgrammingError, "'limit' is out of bounds");
+        return NULL;
+    }
     return PyLong_FromLong(previous_value);
 }
 
