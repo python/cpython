@@ -373,8 +373,8 @@ marklines(PyCodeObject *code, int len)
     }
 
     while (PyLineTable_NextAddressRange(&bounds)) {
-        assert(bounds.ar_start/2 < len);
-        linestarts[bounds.ar_start/2] = bounds.ar_line;
+        assert(bounds.ar_start/(int)sizeof(_Py_CODEUNIT) < len);
+        linestarts[bounds.ar_start/sizeof(_Py_CODEUNIT)] = bounds.ar_line;
     }
     return linestarts;
 }
@@ -408,7 +408,7 @@ frame_stack_pop(PyFrameObject *f)
  * would still work without any stack errors), but there are some constructs
  * that limit jumping:
  *
- *  o Any excpetion handlers.
+ *  o Any exception handlers.
  *  o 'for' and 'async for' loops can't be jumped into because the
  *    iterator needs to be on the stack.
  *  o Jumps cannot be made from within a trace function invoked with a

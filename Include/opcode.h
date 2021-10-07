@@ -167,6 +167,7 @@ extern "C" {
 #define LOAD_FAST__LOAD_CONST   134
 #define LOAD_CONST__LOAD_FAST   140
 #define STORE_FAST__STORE_FAST  143
+#define DO_TRACING              255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
