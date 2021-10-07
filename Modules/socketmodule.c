@@ -929,7 +929,7 @@ sock_call_ex(PySocketSockObject *s,
                reading, but the data then discarded by the OS because of a
                wrong checksum.
 
-               Loop on select() to recheck for socket readyness. */
+               Loop on select() to recheck for socket readiness. */
             continue;
         }
 

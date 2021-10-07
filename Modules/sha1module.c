@@ -269,7 +269,7 @@ sha1_done(struct sha1_state *sha1, unsigned char *out)
         sha1->curlen = 0;
     }
 
-    /* pad upto 56 bytes of zeroes */
+    /* pad up to 56 bytes of zeroes */
     while (sha1->curlen < 56) {
         sha1->buf[sha1->curlen++] = (unsigned char)0;
     }
