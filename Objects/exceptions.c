@@ -917,7 +917,7 @@ exceptiongroup_split_recursive(PyObject *exc,
     if (num_excs < 0) {
         goto done;
     }
-    assert(num_excs > 0);
+    assert(num_excs > 0); /* checked in constructor, and excs is read-only */
     match_list = PyList_New(0);
     if (!match_list) {
         goto done;
