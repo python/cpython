@@ -285,7 +285,7 @@ macro Py_UNBLOCK_THREADS
 macro Py_END_ALLOW_THREADS
     added 3.2
 
-# The following were added in PC/python3.def in the intial stable ABI commit,
+# The following were added in PC/python3.def in the initial stable ABI commit,
 # 4d0d471a8031de90a2b1ce99c4ac4780e60b3bc9,
 # and later amendments in 3.2:
 # 0d012f284be829c6217f60523db0e1671b7db9d9
