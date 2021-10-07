@@ -4808,6 +4808,12 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
          * so we must materialize the dictionary first. */
         assert(oldto->tp_inline_values_offset == newto->tp_inline_values_offset);
         _PyObject_GetDictPtr(self);
+        PyDictValues** values_ptr = _PyObject_ValuesPointer(self);
+        if (values_ptr != NULL && *values_ptr != NULL) {
+            /* Was unable to convert to dict */
+            PyErr_NoMemory();
+            return -1;
+        }
         assert(_PyObject_ValuesPointer(self) == NULL || *_PyObject_ValuesPointer(self) == NULL);
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);

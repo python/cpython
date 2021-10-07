@@ -1089,7 +1089,8 @@ _PyObject_DictPointer(PyObject *obj)
 }
 
 /* Helper to get a pointer to an object's __dict__ slot, if any.
- * Creates the dict from inline attributes if necessary. */
+ * Creates the dict from inline attributes if necessary.
+ * Does not set an exception. */
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
@@ -1473,8 +1474,15 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 {
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
+        PyDictValues** values_ptr = _PyObject_ValuesPointer(obj);
+        if (values_ptr != NULL && *values_ptr != NULL) {
+            /* Was unable to convert to dict */
+            PyErr_NoMemory();
+        }
+        else {
+            PyErr_SetString(PyExc_AttributeError,
+                            "This object has no __dict__");
+        }
         return -1;
     }
     if (value == NULL) {
