@@ -1955,12 +1955,12 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
             STAT_INC(BINARY_MULTIPLY, hit);
             record_hit_inline(next_instr, oparg);
-            PyObject *sum = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sum);
+            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(prod);
             Py_DECREF(right);
             Py_DECREF(left);
             STACK_SHRINK(1);
-            if (sum == NULL) {
+            if (prod == NULL) {
                 goto error;
             }
             DISPATCH();
@@ -1980,7 +1980,7 @@ check_eval_breaker:
             Py_DECREF(right);
             Py_DECREF(left);
             STACK_SHRINK(1);
-            if (sum == NULL) {
+            if (prod == NULL) {
                 goto error;
             }
             DISPATCH();
