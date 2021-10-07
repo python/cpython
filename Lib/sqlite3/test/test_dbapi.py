@@ -332,7 +332,27 @@ class ConnectionTests(unittest.TestCase):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
 
-    def test_connection_limits(self):
+    def test_connection_limit_attributes(self):
+        attrs = [
+            "SQLITE_LIMIT_LENGTH",
+            "SQLITE_LIMIT_SQL_LENGTH",
+            "SQLITE_LIMIT_COLUMN",
+            "SQLITE_LIMIT_EXPR_DEPTH",
+            "SQLITE_LIMIT_COMPOUND_SELECT",
+            "SQLITE_LIMIT_VDBE_OP",
+            "SQLITE_LIMIT_FUNCTION_ARG",
+            "SQLITE_LIMIT_ATTACHED",
+            "SQLITE_LIMIT_LIKE_PATTERN_LENGTH",
+            "SQLITE_LIMIT_VARIABLE_NUMBER",
+            "SQLITE_LIMIT_TRIGGER_DEPTH",
+        ]
+        if sqlite.sqlite_version_info >= (3, 8, 3):
+            attrs.append("SQLITE_LIMIT_WORKER_THREADS")
+        for attr in attrs:
+            with self.subTest(attr=attr):
+                self.assertTrue(hasattr(self.cx, attr))
+
+    def test_connection_set_get_limit(self):
         setval = 10
         limit = self.cx.SQLITE_LIMIT_SQL_LENGTH
         try:
