@@ -206,7 +206,7 @@ class StringlikeHashRandomizationTests(HashRandomizationTests):
             # seed 42, 'abc'
             [-678966196, 573763426263223372, -820489388, -4282905804826039665],
             ],
-        'siphash': [
+        'siphash13': [
             # NOTE: PyUCS2 layout depends on endianness
             # seed 0, 'abc'
             [1198583518, 4596069200710135518, 1198583518, -4594863902769663758],
