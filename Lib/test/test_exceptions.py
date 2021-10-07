@@ -1840,7 +1840,7 @@ class NameErrorTests(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertNotIn("a1", err.getvalue())
+        self.assertNotRegex(err.getvalue(), r"NameError.*a1")
 
     def test_name_error_with_custom_exceptions(self):
         def f():
