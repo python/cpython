@@ -650,7 +650,7 @@ ffi_call(
 		  +---------------------------------------+ 160
 		  | result area 8                         |
 		  +---------------------------------------+ 168
-		  | alignment to the next multiple of 16  |
+		  | alignement to the next multiple of 16 |
 SP current -->    +---------------------------------------+ 176 <- parent frame
 		  | back chain to caller 4                |
 		  +---------------------------------------+ 180
