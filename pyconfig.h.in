@@ -136,14 +136,14 @@
 /* Define to 1 if you have the `clock' function. */
 #undef HAVE_CLOCK
 
-/* Define to 1 if you have the `clock_nanosleep' function. */
-#undef HAVE_CLOCK_NANOSLEEP
-
 /* Define to 1 if you have the `clock_getres' function. */
 #undef HAVE_CLOCK_GETRES
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the `clock_nanosleep' function. */
+#undef HAVE_CLOCK_NANOSLEEP
 
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
@@ -1435,7 +1435,7 @@
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
-/* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
+/* Define hash algorithm for str, bytes and memoryview. SipHash13: 1, FNV: 2,
    externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 

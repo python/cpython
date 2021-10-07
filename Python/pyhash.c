@@ -426,7 +426,7 @@ _Py_KeyedHash(uint64_t key, const void *src, Py_ssize_t src_sz)
 }
 
 
-#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH
+#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH13
 static Py_hash_t
 pysiphash(const void *src, Py_ssize_t src_sz) {
     return (Py_hash_t)siphash13(
