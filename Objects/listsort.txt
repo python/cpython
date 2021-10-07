@@ -758,6 +758,6 @@ OPTIMIZATION OF INDIVIDUAL COMPARISONS
 As noted above, even the simplest Python comparison triggers a large pile of
 C-level pointer dereferences, conditionals, and function calls.  This can be
 partially mitigated by pre-scanning the data to determine whether the data is
-homogenous with respect to type.  If so, it is sometimes possible to
+homogeneous with respect to type.  If so, it is sometimes possible to
 substitute faster type-specific comparisons for the slower, generic
 PyObject_RichCompareBool.
