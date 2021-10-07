@@ -444,7 +444,7 @@ class GCTests(unittest.TestCase):
         # 0, thus mutating the trash graph as a side effect of merely asking
         # whether __del__ exists.  This used to (before 2.3b1) crash Python.
         # Now __getattr__ isn't called.
-        self.assertLessEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom2(self):
@@ -471,7 +471,7 @@ class GCTests(unittest.TestCase):
         # there isn't a second time, so this simply cleans up the trash cycle.
         # We expect a, b, a.__dict__ and b.__dict__ (4 objects) to get
         # reclaimed this way.
-        self.assertLessEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom_new(self):
@@ -491,7 +491,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         garbagelen = len(gc.garbage)
         del a, b
-        self.assertLessEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_boom2_new(self):
@@ -513,7 +513,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         garbagelen = len(gc.garbage)
         del a, b
-        self.assertLessEqual(gc.collect(), 4)
+        self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
     def test_get_referents(self):
@@ -974,8 +974,8 @@ class GCTests(unittest.TestCase):
         zs.clear()
         t = gc.collect()
         c, nc = getstats()
-        self.assertLessEqual(t, 4)
-        self.assertLessEqual(c - oldc, 4)
+        self.assertEqual(t, 2)
+        self.assertEqual(c - oldc, 2)
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
@@ -1155,7 +1155,7 @@ class GCCallbackTests(unittest.TestCase):
                 continue
             info = v[2]
             self.assertEqual(info["collected"], 0)
-            self.assertLessEqual(info["uncollectable"], 4)
+            self.assertEqual(info["uncollectable"], 2)
 
         # Uncollectables should be gone
         self.assertEqual(len(gc.garbage), 0)
