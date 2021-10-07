@@ -404,7 +404,7 @@ static int add_integer_constants(PyObject *module) {
     ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
     ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_VARIABLE_NUMBER);
     ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_TRIGGER_DEPTH);
-#if SQLITE_VERSION_NUMBER >= 3008003
+#if SQLITE_VERSION_NUMBER >= 3008007
     ret += PyModule_AddIntMacro(module, SQLITE_LIMIT_WORKER_THREADS);
 #endif
     return ret;
