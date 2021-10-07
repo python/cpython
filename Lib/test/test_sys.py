@@ -1001,8 +1001,8 @@ class SysModuleTest(unittest.TestCase):
         if marker and not os.path.exists(marker):
             marker = None
         expected = os.path.dirname(marker) if marker else None
-        actual = sys._stdlib_dir
-        self.assertEqual(actual, expected)
+        self.assertEqual(os.path.normpath(sys._stdlib_dir),
+                         os.path.normpath(expected))
 
 
 @test.support.cpython_only
