@@ -1975,6 +1975,7 @@ static PyGetSetDef connection_getset[] = {
 #endif
     {NULL}
 };
+#undef DEF_LIMIT_GETSET
 
 static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_BACKUP_METHODDEF
