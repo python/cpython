@@ -1082,7 +1082,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             Py_ssize_t index = mp->ma_keys->dk_nentries;
             assert(index < SHARED_KEYS_MAX_SIZE);
             assert((mp->ma_values->mv_order >> 60) == 0);
-            mp->ma_values->mv_order = (mp->ma_values->mv_order)<<4 | index;
+            mp->ma_values->mv_order = ((mp->ma_values->mv_order)<<4) | index;
             assert (mp->ma_values->values[index] == NULL);
             mp->ma_values->values[index] = value;
         }
@@ -1224,19 +1224,16 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
     if (oldvalues != NULL) {
         /* Convert split table into new combined table.
          * We must incref keys; we can transfer values.
-         * Note that values of split table is always dense.
          */
         for (Py_ssize_t i = 0; i < numentries; i++) {
-            int index = oldvalues->mv_order >> ((numentries-1-i)*4) & 15;
-            assert(oldvalues->values[index] != NULL);
+            int index = get_index_from_order(mp, i);
             PyDictKeyEntry *ep = &oldentries[index];
-            PyObject *key = ep->me_key;
-            Py_INCREF(key);
-            newentries[i].me_key = key;
+            assert(oldvalues->values[index] != NULL);
+            Py_INCREF(ep->me_key);
+            newentries[i].me_key = ep->me_key;
             newentries[i].me_hash = ep->me_hash;
             newentries[i].me_value = oldvalues->values[index];
         }
-
         dictkeys_decref(oldkeys);
         mp->ma_values = NULL;
         if (oldvalues != empty_values) {
@@ -1279,6 +1276,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
     build_indices(mp->ma_keys, newentries, numentries);
     mp->ma_keys->dk_usable -= numentries;
     mp->ma_keys->dk_nentries = numentries;
+    ASSERT_CONSISTENT(mp);
     return 0;
 }
 
@@ -1569,6 +1567,21 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     return insertdict(mp, key, hash, value);
 }
 
+static uint64_t
+delete_index_from_order(uint64_t order, Py_ssize_t ix)
+{        /* Update order */
+    for (int i = 0;; i+= 4) {
+        assert (i < 64);
+        if (((order >> i) & 15) == (uint64_t)ix) {
+            /* Remove 4 bits at ith position */
+            uint64_t high = ((order>>i)>>4)<<i;
+            uint64_t low = order & ((((uint64_t)1)<<i)-1);
+            return high | low;
+        }
+    }
+    Py_UNREACHABLE();
+}
+
 static int
 delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
                PyObject *old_value)
@@ -1587,17 +1600,9 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         mp->ma_values->values[ix] = NULL;
         assert(ix < SHARED_KEYS_MAX_SIZE);
         /* Update order */
-        for (int i = 0;; i+= 4) {
-            assert (i < 64);
-            if (((mp->ma_values->mv_order >> i) & 15) == (uint64_t)ix) {
-                /* Remove 4 bits at ith position */
-                uint64_t order = mp->ma_values->mv_order;
-                uint64_t high = ((order>>i)>>4)<<i;
-                uint64_t low = order & ((((uint64_t)1)<<i)-1);
-                mp->ma_values->mv_order = high | low;
-                break;
-            }
-        }
+        mp->ma_values->mv_order =
+            delete_index_from_order(mp->ma_values->mv_order, ix);
+        ASSERT_CONSISTENT(mp);
     }
     else {
         mp->ma_keys->dk_version = 0;
@@ -2958,15 +2963,6 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
     if (ix == DKIX_ERROR)
         return NULL;
 
-    if (_PyDict_HasSplitTable(mp) &&
-        ((ix >= 0 && value == NULL && mp->ma_used != ix) ||
-         (ix == DKIX_EMPTY && mp->ma_used != mp->ma_keys->dk_nentries))) {
-        if (insertion_resize(mp) < 0) {
-            return NULL;
-        }
-        ix = DKIX_EMPTY;
-    }
-
     if (ix == DKIX_EMPTY) {
         mp->ma_keys->dk_version = 0;
         PyDictKeyEntry *ep, *ep0;
@@ -3007,7 +3003,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
     else if (value == NULL) {
         value = defaultobj;
         assert(_PyDict_HasSplitTable(mp));
-        assert(ix == mp->ma_used);
+        assert(mp->ma_values->values[ix] == NULL);
         Py_INCREF(value);
         MAINTAIN_TRACKING(mp, key, value);
         mp->ma_values->values[ix] = value;
@@ -5020,6 +5016,9 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         values->mv_order = (values->mv_order << 4) | ix;
     }
     else {
+        if (value == NULL) {
+            values->mv_order = delete_index_from_order(values->mv_order, ix);
+        }
         Py_DECREF(old_value);
     }
     return 0;
