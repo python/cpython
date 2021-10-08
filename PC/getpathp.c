@@ -297,14 +297,14 @@ is_stdlibdir(wchar_t *stdlibdir)
     return ismodule(filename);
 }
 
-/* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
+/* assumes argv0_dir is MAXPATHLEN+1 bytes long, already \0 term'd.
    assumption provided by only caller, calculate_path() */
 static int
-search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path)
+search_for_prefix(wchar_t *prefix, const wchar_t *argv0_dir)
 {
-    /* Search from argv0_path, until LANDMARK is found.
+    /* Search from argv0_dir, until LANDMARK is found.
        We guarantee 'prefix' is null terminated in bounds. */
-    wcscpy_s(prefix, MAXPATHLEN+1, argv0_path);
+    wcscpy_s(prefix, MAXPATHLEN+1, argv0_dir);
     if (!prefix[0]) {
         return 0;
     }
@@ -727,20 +727,20 @@ calculate_pth_file(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 */
 static PyStatus
 calculate_pyvenv_file(PyCalculatePath *calculate,
-                      wchar_t *argv0_path, size_t argv0_path_len)
+                      wchar_t *argv0_dir, size_t argv0_dir_len)
 {
     wchar_t filename[MAXPATHLEN+1];
     const wchar_t *env_cfg = L"pyvenv.cfg";
 
-    /* Filename: <argv0_path_len> / "pyvenv.cfg" */
-    wcscpy_s(filename, MAXPATHLEN+1, argv0_path);
+    /* Filename: <argv0_dir_len> / "pyvenv.cfg" */
+    wcscpy_s(filename, MAXPATHLEN+1, argv0_dir);
     join(filename, env_cfg);
 
     FILE *env_file = _Py_wfopen(filename, L"r");
     if (env_file == NULL) {
         errno = 0;
 
-        /* Filename: <basename(basename(argv0_path_len))> / "pyvenv.cfg" */
+        /* Filename: <basename(basename(argv0_dir_len))> / "pyvenv.cfg" */
         reduce(filename);
         reduce(filename);
         join(filename, env_cfg);
@@ -752,7 +752,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate,
         }
     }
 
-    /* Look for a 'home' variable and set argv0_path to it, if found */
+    /* Look for a 'home' variable and set argv0_dir to it, if found */
     wchar_t *home = NULL;
     PyStatus status = _Py_FindEnvConfigValue(env_file, L"home", &home);
     if (_PyStatus_EXCEPTION(status)) {
@@ -760,7 +760,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate,
         return status;
     }
     if (home) {
-        wcscpy_s(argv0_path, argv0_path_len, home);
+        wcscpy_s(argv0_dir, argv0_dir_len, home);
         PyMem_RawFree(home);
     }
     fclose(env_file);
@@ -770,7 +770,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate,
 
 static void
 calculate_home_prefix(PyCalculatePath *calculate,
-                      const wchar_t *argv0_path,
+                      const wchar_t *argv0_dir,
                       const wchar_t *zip_path,
                       wchar_t *prefix)
 {
@@ -780,7 +780,7 @@ calculate_home_prefix(PyCalculatePath *calculate,
             reduce(prefix);
             calculate->home = prefix;
         }
-        else if (search_for_prefix(prefix, argv0_path)) {
+        else if (search_for_prefix(prefix, argv0_dir)) {
             calculate->home = prefix;
         }
         else {
@@ -796,7 +796,7 @@ calculate_home_prefix(PyCalculatePath *calculate,
 static PyStatus
 calculate_module_search_path(PyCalculatePath *calculate,
                              _PyPathConfig *pathconfig,
-                             const wchar_t *argv0_path,
+                             const wchar_t *argv0_dir,
                              wchar_t *prefix,
                              const wchar_t *zip_path)
 {
@@ -821,7 +821,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
        (3) for Win32, the machine_path and user_path, if set;
        (4) the PYTHONPATH config macro, with the leading "."
            of each component replaced with home, if set;
-       (5) the directory containing the executable (argv0_path).
+       (5) the directory containing the executable (argv0_dir).
        The length calculation calculates #4 first.
        Extra rules:
        - If PYTHONHOME is set (in any way) item (3) is ignored.
@@ -841,7 +841,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
         bufsz *= wcslen(calculate->home);
     }
     bufsz += wcslen(PYTHONPATH) + 1;
-    bufsz += wcslen(argv0_path) + 1;
+    bufsz += wcslen(argv0_dir) + 1;
     if (calculate->user_path) {
         bufsz += wcslen(calculate->user_path) + 1;
     }
@@ -926,8 +926,8 @@ calculate_module_search_path(PyCalculatePath *calculate,
             p = q+1;
         }
     }
-    if (argv0_path) {
-        wcscpy(buf, argv0_path);
+    if (argv0_dir) {
+        wcscpy(buf, argv0_dir);
         buf = wcschr(buf, L'\0');
         *buf++ = DELIM;
     }
@@ -990,11 +990,11 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     /* program_full_path guaranteed \0 terminated in MAXPATH+1 bytes. */
-    wchar_t argv0_path[MAXPATHLEN+1];
-    memset(argv0_path, 0, sizeof(argv0_path));
+    wchar_t argv0_dir[MAXPATHLEN+1];
+    memset(argv0_dir, 0, sizeof(argv0_dir));
 
-    wcscpy_s(argv0_path, MAXPATHLEN+1, pathconfig->program_full_path);
-    reduce(argv0_path);
+    wcscpy_s(argv0_dir, MAXPATHLEN+1, pathconfig->program_full_path);
+    reduce(argv0_dir);
 
     wchar_t prefix[MAXPATHLEN+1];
     memset(prefix, 0, sizeof(prefix));
@@ -1010,7 +1010,7 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     status = calculate_pyvenv_file(calculate,
-                                   argv0_path, Py_ARRAY_LENGTH(argv0_path));
+                                   argv0_dir, Py_ARRAY_LENGTH(argv0_dir));
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1026,11 +1026,11 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         }
     }
 
-    calculate_home_prefix(calculate, argv0_path, zip_path, prefix);
+    calculate_home_prefix(calculate, argv0_dir, zip_path, prefix);
 
     if (pathconfig->module_search_path == NULL) {
         status = calculate_module_search_path(calculate, pathconfig,
-                                              argv0_path, prefix, zip_path);
+                                              argv0_dir, prefix, zip_path);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

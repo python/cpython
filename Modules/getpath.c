@@ -39,16 +39,16 @@
  * link.  If so, the link is chased (correctly interpreting a relative
  * pathname if one is found) and the directory of the link target is used.
  *
- * Finally, argv0_path is set to the directory containing the executable
+ * Finally, argv0_dir is set to the directory containing the executable
  * (i.e. the last component is stripped).
  *
- * With argv0_path in hand, we perform a number of steps.  The same steps
+ * With argv0_dir in hand, we perform a number of steps.  The same steps
  * are performed for prefix and for exec_prefix, but with a different
  * landmark.
  *
  * Step 1. Are we running python out of the build directory?  This is
  * checked by looking for a different kind of landmark relative to
- * argv0_path.  For prefix, the landmark's path is derived from the VPATH
+ * argv0_dir.  For prefix, the landmark's path is derived from the VPATH
  * preprocessor variable (taking into account that its value is almost, but
  * not quite, what we need).  For exec_prefix, the landmark is
  * pybuilddir.txt.  If the landmark is found, we're done.
@@ -67,7 +67,7 @@
  * directory, which is used for both, or the prefix and exec_prefix
  * directories separated by a colon.
  *
- * Step 3. Try to find prefix and exec_prefix relative to argv0_path,
+ * Step 3. Try to find prefix and exec_prefix relative to argv0_dir,
  * backtracking up the path until it is exhausted.  This is the most common
  * step to succeed.  Note that if prefix and exec_prefix are different,
  * exec_prefix is more likely to be found; however if exec_prefix is a
@@ -134,7 +134,7 @@ typedef struct {
     const wchar_t *pythonpath_env;
     const wchar_t *platlibdir;
 
-    wchar_t *argv0_path;
+    wchar_t *argv0_dir;
     wchar_t *zip_path;
     wchar_t *prefix;
     wchar_t *exec_prefix;
@@ -395,7 +395,7 @@ add_exe_suffix(wchar_t **progpath_p)
 #endif
 
 
-/* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
+/* search_for_prefix requires that argv0_dir be no more than MAXPATHLEN
    bytes long.
 */
 static PyStatus
@@ -422,10 +422,10 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         return _PyStatus_OK();
     }
 
-    /* Check to see if argv0_path is in the build directory
+    /* Check to see if argv0_dir is in the build directory
 
-       Path: <argv0_path> / <BUILD_LANDMARK define> */
-    wchar_t *path = joinpath2(calculate->argv0_path, BUILD_LANDMARK);
+       Path: <argv0_dir> / <BUILD_LANDMARK define> */
+    wchar_t *path = joinpath2(calculate->argv0_dir, BUILD_LANDMARK);
     if (path == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -434,12 +434,12 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
     PyMem_RawFree(path);
 
     if (is_build_dir) {
-        /* argv0_path is the build directory (BUILD_LANDMARK exists),
+        /* argv0_dir is the build directory (BUILD_LANDMARK exists),
            now also check LANDMARK using ismodule(). */
 
-        /* Path: <argv0_path> / <VPATH macro> / Lib */
-        /* or if VPATH is empty: <argv0_path> / Lib */
-        if (safe_wcscpy(prefix, calculate->argv0_path, prefix_len) < 0) {
+        /* Path: <argv0_dir> / <VPATH macro> / Lib */
+        /* or if VPATH is empty: <argv0_dir> / Lib */
+        if (safe_wcscpy(prefix, calculate->argv0_dir, prefix_len) < 0) {
             return PATHLEN_ERR();
         }
 
@@ -465,14 +465,14 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         }
     }
 
-    /* Search from argv0_path, until root is found */
-    status = copy_absolute(prefix, calculate->argv0_path, prefix_len);
+    /* Search from argv0_dir, until root is found */
+    status = copy_absolute(prefix, calculate->argv0_dir, prefix_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     do {
-        /* Path: <argv0_path or substring> / <lib_python> / LANDMARK */
+        /* Path: <argv0_dir or substring> / <lib_python> / LANDMARK */
         size_t n = wcslen(prefix);
         status = joinpath(prefix, calculate->lib_python, prefix_len);
         if (_PyStatus_EXCEPTION(status)) {
@@ -594,7 +594,7 @@ calculate_set_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
 
 static PyStatus
-calculate_pybuilddir(const wchar_t *argv0_path,
+calculate_pybuilddir(const wchar_t *argv0_dir,
                      wchar_t *exec_prefix, size_t exec_prefix_len,
                      int *found)
 {
@@ -604,8 +604,8 @@ calculate_pybuilddir(const wchar_t *argv0_path,
        is written by setup.py and contains the relative path to the location
        of shared library modules.
 
-       Filename: <argv0_path> / "pybuilddir.txt" */
-    wchar_t *filename = joinpath2(argv0_path, L"pybuilddir.txt");
+       Filename: <argv0_dir> / "pybuilddir.txt" */
+    wchar_t *filename = joinpath2(argv0_dir, L"pybuilddir.txt");
     if (filename == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -628,8 +628,8 @@ calculate_pybuilddir(const wchar_t *argv0_path,
         return DECODE_LOCALE_ERR("pybuilddir.txt", dec_len);
     }
 
-    /* Path: <argv0_path> / <pybuilddir content> */
-    if (safe_wcscpy(exec_prefix, argv0_path, exec_prefix_len) < 0) {
+    /* Path: <argv0_dir> / <pybuilddir content> */
+    if (safe_wcscpy(exec_prefix, argv0_dir, exec_prefix_len) < 0) {
         PyMem_RawFree(pybuilddir);
         return PATHLEN_ERR();
     }
@@ -644,7 +644,7 @@ calculate_pybuilddir(const wchar_t *argv0_path,
 }
 
 
-/* search_for_exec_prefix requires that argv0_path be no more than
+/* search_for_exec_prefix requires that argv0_dir be no more than
    MAXPATHLEN bytes long.
 */
 static PyStatus
@@ -682,7 +682,7 @@ search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
     /* Check for pybuilddir.txt */
     assert(*found == 0);
-    status = calculate_pybuilddir(calculate->argv0_path,
+    status = calculate_pybuilddir(calculate->argv0_dir,
                                   exec_prefix, exec_prefix_len, found);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -691,14 +691,14 @@ search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         return _PyStatus_OK();
     }
 
-    /* Search from argv0_path, until root is found */
-    status = copy_absolute(exec_prefix, calculate->argv0_path, exec_prefix_len);
+    /* Search from argv0_dir, until root is found */
+    status = copy_absolute(exec_prefix, calculate->argv0_dir, exec_prefix_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     do {
-        /* Path: <argv0_path or substring> / <lib_python> / "lib-dynload" */
+        /* Path: <argv0_dir or substring> / <lib_python> / "lib-dynload" */
         size_t n = wcslen(exec_prefix);
         status = joinpath(exec_prefix, calculate->lib_python, exec_prefix_len);
         if (_PyStatus_EXCEPTION(status)) {
@@ -1044,7 +1044,7 @@ resolve_symlinks(wchar_t **path_p)
 
 #ifdef WITH_NEXT_FRAMEWORK
 static PyStatus
-calculate_argv0_path_framework(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_argv0_dir_framework(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
     NSModule pythonModule;
 
@@ -1102,9 +1102,9 @@ calculate_argv0_path_framework(PyCalculatePath *calculate, _PyPathConfig *pathco
     if (!module) {
         /* We are in the build directory so use the name of the
            executable - we know that the absolute path is passed */
-        PyMem_RawFree(calculate->argv0_path);
-        calculate->argv0_path = _PyMem_RawWcsdup(pathconfig->program_full_path);
-        if (calculate->argv0_path == NULL) {
+        PyMem_RawFree(calculate->argv0_dir);
+        calculate->argv0_dir = _PyMem_RawWcsdup(pathconfig->program_full_path);
+        if (calculate->argv0_dir == NULL) {
             status = _PyStatus_NO_MEMORY();
             goto done;
         }
@@ -1113,9 +1113,9 @@ calculate_argv0_path_framework(PyCalculatePath *calculate, _PyPathConfig *pathco
         goto done;
     }
 
-    /* Use the location of the library as argv0_path */
-    PyMem_RawFree(calculate->argv0_path);
-    calculate->argv0_path = wbuf;
+    /* Use the location of the library as argv0_dir */
+    PyMem_RawFree(calculate->argv0_dir);
+    calculate->argv0_dir = wbuf;
     return _PyStatus_OK();
 
 done:
@@ -1126,29 +1126,29 @@ done:
 
 
 static PyStatus
-calculate_argv0_path(PyCalculatePath *calculate,
+calculate_argv0_dir(PyCalculatePath *calculate,
                      _PyPathConfig *pathconfig)
 {
     PyStatus status;
 
-    calculate->argv0_path = _PyMem_RawWcsdup(pathconfig->program_full_path);
-    if (calculate->argv0_path == NULL) {
+    calculate->argv0_dir = _PyMem_RawWcsdup(pathconfig->program_full_path);
+    if (calculate->argv0_dir == NULL) {
         return _PyStatus_NO_MEMORY();
     }
 
 #ifdef WITH_NEXT_FRAMEWORK
-    status = calculate_argv0_path_framework(calculate, pathconfig);
+    status = calculate_argv0_dir_framework(calculate, pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 #endif
 
-    status = resolve_symlinks(&calculate->argv0_path);
+    status = resolve_symlinks(&calculate->argv0_dir);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    reduce(calculate->argv0_path);
+    reduce(calculate->argv0_dir);
 
     return _PyStatus_OK();
 }
@@ -1161,8 +1161,8 @@ calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p)
 
     const wchar_t *env_cfg = L"pyvenv.cfg";
 
-    /* Filename: <argv0_path> / "pyvenv.cfg" */
-    wchar_t *filename = joinpath2(calculate->argv0_path, env_cfg);
+    /* Filename: <argv0_dir> / "pyvenv.cfg" */
+    wchar_t *filename = joinpath2(calculate->argv0_dir, env_cfg);
     if (filename == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -1178,8 +1178,8 @@ calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p)
     /* fopen() failed: reset errno */
     errno = 0;
 
-    /* Path: <basename(argv0_path)> / "pyvenv.cfg" */
-    wchar_t *parent = _PyMem_RawWcsdup(calculate->argv0_path);
+    /* Path: <basename(argv0_dir)> / "pyvenv.cfg" */
+    wchar_t *parent = _PyMem_RawWcsdup(calculate->argv0_dir);
     if (parent == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -1206,7 +1206,7 @@ calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p)
    executable's directory and then in the parent directory.
    If found, open it for use when searching for prefixes.
 
-   Write the 'home' variable of pyvenv.cfg into calculate->argv0_path. */
+   Write the 'home' variable of pyvenv.cfg into calculate->argv0_dir. */
 static PyStatus
 calculate_read_pyenv(PyCalculatePath *calculate)
 {
@@ -1223,7 +1223,7 @@ calculate_read_pyenv(PyCalculatePath *calculate)
         return _PyStatus_OK();
     }
 
-    /* Look for a 'home' variable and set argv0_path to it, if found */
+    /* Look for a 'home' variable and set argv0_dir to it, if found */
     wchar_t *home = NULL;
     status = _Py_FindEnvConfigValue(env_file, L"home", &home);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1232,8 +1232,8 @@ calculate_read_pyenv(PyCalculatePath *calculate)
     }
 
     if (home) {
-        PyMem_RawFree(calculate->argv0_path);
-        calculate->argv0_path = home;
+        PyMem_RawFree(calculate->argv0_dir);
+        calculate->argv0_dir = home;
     }
     fclose(env_file);
     return _PyStatus_OK();
@@ -1433,7 +1433,7 @@ calculate_free(PyCalculatePath *calculate)
     PyMem_RawFree(calculate->lib_python);
     PyMem_RawFree(calculate->path_env);
     PyMem_RawFree(calculate->zip_path);
-    PyMem_RawFree(calculate->argv0_path);
+    PyMem_RawFree(calculate->argv0_dir);
     PyMem_RawFree(calculate->prefix);
     PyMem_RawFree(calculate->exec_prefix);
 }
@@ -1451,13 +1451,13 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         }
     }
 
-    status = calculate_argv0_path(calculate, pathconfig);
+    status = calculate_argv0_dir(calculate, pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     /* If a pyvenv.cfg configure file is found,
-       argv0_path is overridden with its 'home' variable. */
+       argv0_dir is overridden with its 'home' variable. */
     status = calculate_read_pyenv(calculate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
