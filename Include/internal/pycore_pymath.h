@@ -29,7 +29,7 @@ static inline void _Py_ADJUST_ERANGE1(double x)
             errno = ERANGE;
         }
     }
-    else if (errno == ERANGE && (X) == 0.0) {
+    else if (errno == ERANGE && x == 0.0) {
         errno = 0;
     }
 }
