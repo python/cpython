@@ -1,1 +1,1 @@
-Add Subtitle file extensions for enhancing web development with Python!
+Add extensions for files containing subtitles - .srt & .vtt - to the mimetypes.py module.
