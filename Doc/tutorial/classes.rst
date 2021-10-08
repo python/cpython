@@ -564,6 +564,7 @@ reasons why a method would want to reference its own class.
 Each value is an object, and therefore has a *class* (also called its *type*).
 It is stored as ``object.__class__``.
 
+See also :ref: `faq-int-type`
 
 .. _tut-inheritance:
 

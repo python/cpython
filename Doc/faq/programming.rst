@@ -1955,6 +1955,23 @@ updates::
             # Depends on the station_id, date, and units.
 
 
+.. _faq-int-type:
+
+I get an error when I use SomeInteger.__class__
+-----------------------------------------------
+
+Each value is an object and has a class called as type associated with it.
+It is stored as ``object.__class__``.
+
+It is important to take care of how to use integer literals to view its class.
+Integer literals must be parenthesized or spaced before ``.name`` attribute
+access because ``<literal>.name`` is parsed as ``(<literal>.)name``.
+
+The tokenizer sees the '.' as making the token a float, and
+``5.__class__`` is not a valid float token. You can either use it as
+``(5).__class__`` or as ``5 .__class__``.
+
+
 Modules
 =======
 
