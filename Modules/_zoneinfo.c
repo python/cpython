@@ -1342,7 +1342,7 @@ tzrule_transitions(_tzrule *rule, int year, int64_t *start, int64_t *end)
  * could technically be calculated from the timestamp, but given that the
  * callers of this function already have the year information accessible from
  * the datetime struct, it is taken as an additional parameter to reduce
- * unncessary calculation.
+ * unnecessary calculation.
  * */
 static _ttinfo *
 find_tzrule_ttinfo(_tzrule *rule, int64_t ts, unsigned char fold, int year)

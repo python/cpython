@@ -58,5 +58,5 @@ Notes on availability
   operating system.
 
 * If not separately noted, all functions that claim "Availability: Unix" are
-  supported on Mac OS X, which builds on a Unix core.
+  supported on macOS, which builds on a Unix core.
 

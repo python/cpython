@@ -1,1 +1,0 @@
-pydoc now returns a non-zero status code when a module cannot be found.

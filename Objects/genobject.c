@@ -1284,7 +1284,7 @@ compute_cr_origin(int origin_depth)
         PyCodeObject *code = frame->f_code;
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*2),
+                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);

@@ -3355,7 +3355,7 @@ if the ``PATH`` environment variable is not set.
 
 On Windows, fix multiprocessing.Connection for very large read: fix
 _winapi.PeekNamedPipe() and _winapi.ReadFile() for read larger than INT_MAX
-(usually 2^31-1).
+(usually ``2**31-1``).
 
 ..
 

@@ -1435,7 +1435,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             temp_dir.cleanup()
             self.assertFalse(
                 temp_path.exists(),
@@ -1494,7 +1494,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
 
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
@@ -1559,7 +1559,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             err = err.decode('utf-8', 'backslashreplace')
             self.assertNotIn("Exception", err)
             self.assertNotIn("Error", err)
