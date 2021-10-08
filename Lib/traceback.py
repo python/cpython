@@ -4,6 +4,7 @@ import collections
 import itertools
 import linecache
 import sys
+import textwrap
 from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
@@ -601,6 +602,36 @@ def _extract_caret_anchors_from_line_segment(segment):
     return None
 
 
+class _ExceptionPrintContext:
+    def __init__(self):
+        self.seen = set()
+        self.exception_group_depth = 0
+        self.parent_label = None
+        self.need_close = False
+
+    def indent(self):
+        return 2 * self.exception_group_depth
+
+    def margin_char(self):
+        return '|' if self.exception_group_depth else None
+
+    def get_indent(self):
+        return ' ' * self.indent()
+
+    def get_fancy_indent(self):
+        margin_char = self.margin_char()
+        margin = (margin_char + ' ') if margin_char is not None else ''
+        return self.get_indent() + margin
+
+    def emit(self, text_gen):
+        indent_str = self.get_fancy_indent()
+        if isinstance(text_gen, str):
+            yield textwrap.indent(text_gen, indent_str, lambda line: True)
+        else:
+            for text in text_gen:
+                yield textwrap.indent(text, indent_str, lambda line: True)
+
+
 class TracebackException:
     """An exception ready for rendering.
 
@@ -707,12 +738,31 @@ class TracebackException:
                         _seen=_seen)
                 else:
                     context = None
+
+                if e and isinstance(e, BaseExceptionGroup):
+                    exceptions = []
+                    for exc in e.exceptions:
+                        texc = TracebackException(
+                            type(exc),
+                            exc,
+                            exc.__traceback__,
+                            limit=limit,
+                            lookup_lines=lookup_lines,
+                            capture_locals=capture_locals,
+                            _seen=_seen)
+                        exceptions.append(texc)
+                else:
+                    exceptions = None
+
                 te.__cause__ = cause
                 te.__context__ = context
+                te.exceptions = exceptions
                 if cause:
                     queue.append((te.__cause__, e.__cause__))
                 if context:
                     queue.append((te.__context__, e.__context__))
+                if exceptions:
+                    queue.extend(zip(te.exceptions, e.exceptions))
 
     @classmethod
     def from_exception(cls, exc, *args, **kwargs):
@@ -795,7 +845,7 @@ class TracebackException:
         msg = self.msg or "<no detail available>"
         yield "{}: {}{}\n".format(stype, msg, filename_suffix)
 
-    def format(self, *, chain=True):
+    def format(self, *, chain=True, _ctx=None):
         """Format the exception.
 
         If chain is not *True*, *__cause__* and *__context__* will not be formatted.
@@ -808,34 +858,84 @@ class TracebackException:
         string in the output.
         """
 
+        if _ctx is None:
+            _ctx = _ExceptionPrintContext()
+
         output = []
         exc = self
+        label = _ctx.parent_label
         while exc:
             if chain:
                 if exc.__cause__ is not None:
                     chained_msg = _cause_message
                     chained_exc = exc.__cause__
+                    chain_tag = 'cause'
                 elif (exc.__context__  is not None and
                       not exc.__suppress_context__):
                     chained_msg = _context_message
                     chained_exc = exc.__context__
+                    chain_tag = 'context'
                 else:
                     chained_msg = None
                     chained_exc = None
+                    chain_tag = None
 
-                output.append((chained_msg, exc))
+                output.append((chained_msg, exc, label))
                 exc = chained_exc
+                if chain_tag is not None:
+                    if label is None:
+                        label = chain_tag
+                    else:
+                        label = f'{label}.{chain_tag}'
             else:
-                output.append((None, exc))
+                output.append((None, exc, label))
                 exc = None
 
-        for msg, exc in reversed(output):
+        for msg, exc, parent_label in reversed(output):
             if msg is not None:
-                yield msg
-            if exc.stack:
-                yield 'Traceback (most recent call last):\n'
-                yield from exc.stack.format()
-            yield from exc.format_exception_only()
+                yield from _ctx.emit(msg)
+            if exc.exceptions is None:
+                if exc.stack:
+                    yield from _ctx.emit('Traceback (most recent call last):\n')
+                    yield from _ctx.emit(exc.stack.format())
+                yield from _ctx.emit(exc.format_exception_only())
+            else:
+                if _ctx.exception_group_depth == 0:
+                     _ctx.exception_group_depth += 1
+                if exc.stack:
+                    yield from _ctx.emit('Traceback (most recent call last):\n')
+                    yield from _ctx.emit(exc.stack.format())
+                yield from _ctx.emit(exc.format_exception_only())
+                n = len(exc.exceptions)
+                if n > 1:
+                    yield from _ctx.emit(f' with {n} sub-exceptions:\n')
+                else:
+                    yield from _ctx.emit(' with one sub-exception:\n')
+                _ctx.need_close = False
+                for i in range(n):
+                    last_exc = (i == n-1)
+                    if last_exc:
+                        # The closing frame may be added by a recursive call
+                        _ctx.need_close = True
+                    if parent_label is not None:
+                        label = f'{parent_label}.{i + 1}'
+                    else:
+                        label = f'{i + 1}'
+                    yield (_ctx.get_indent() +
+                           ('+-' if i==0 else '  ') +
+                           f'+---------------- {label} ----------------\n')
+                    _ctx.exception_group_depth += 1
+                    _ctx.parent_label = label
+                    yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                    _ctx.parent_label = parent_label
+                    if last_exc and _ctx.need_close:
+                        yield (_ctx.get_indent() +
+                               "+------------------------------------\n")
+                        _ctx.need_close = False
+                    _ctx.exception_group_depth -= 1;
+                if _ctx.exception_group_depth == 1:
+                    _ctx.exception_group_depth -= 1
+
 
     def print(self, *, file=None, chain=True):
         """Print the result of self.format(chain=chain) to 'file'."""

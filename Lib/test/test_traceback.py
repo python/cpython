@@ -1237,37 +1237,7 @@ class BaseExceptionReportingTests:
         self.assertEqual(err, f"{str_name}: {str_value}\n")
 
 
-class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
-    #
-    # This checks reporting through the 'traceback' module, with both
-    # format_exception() and print_exception().
-    #
-
-    def get_report(self, e):
-        e = self.get_exception(e)
-        s = ''.join(
-            traceback.format_exception(type(e), e, e.__traceback__))
-        with captured_output("stderr") as sio:
-            traceback.print_exception(type(e), e, e.__traceback__)
-        self.assertEqual(sio.getvalue(), s)
-        return s
-
-
-class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
-    #
-    # This checks built-in reporting by the interpreter.
-    #
-
-    @cpython_only
-    def get_report(self, e):
-        from _testcapi import exception_print
-        e = self.get_exception(e)
-        with captured_output("stderr") as s:
-            exception_print(e)
-        return s.getvalue()
-
-    # TODO: once traceback.py supports this format, move the
-    #       following tests to the superclass
+    # #### Exception Groups ####
 
     def check_exception_group(self, exc_func, expected):
         report = self.get_report(exc_func)
@@ -1430,6 +1400,36 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
             ['    | ValueError: 5']
         ]
         self.check_exception_group(exc, expected)
+
+
+class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
+    #
+    # This checks reporting through the 'traceback' module, with both
+    # format_exception() and print_exception().
+    #
+
+    def get_report(self, e):
+        e = self.get_exception(e)
+        s = ''.join(
+            traceback.format_exception(type(e), e, e.__traceback__))
+        with captured_output("stderr") as sio:
+            traceback.print_exception(type(e), e, e.__traceback__)
+        self.assertEqual(sio.getvalue(), s)
+        return s
+
+
+class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
+    #
+    # This checks built-in reporting by the interpreter.
+    #
+
+    @cpython_only
+    def get_report(self, e):
+        from _testcapi import exception_print
+        e = self.get_exception(e)
+        with captured_output("stderr") as s:
+            exception_print(e)
+        return s.getvalue()
 
 
 class LimitTests(unittest.TestCase):
@@ -2079,6 +2079,145 @@ class TestTracebackException(unittest.TestCase):
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
+
+
+class TestTracebackException_ExceptionGroups(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.eg_info = self._get_exception_group()
+
+    def _get_exception_group(self):
+        def f():
+            1/0
+
+        def g(v):
+            raise ValueError(v)
+
+        self.lno_f = f.__code__.co_firstlineno
+        self.lno_g = g.__code__.co_firstlineno
+
+        try:
+            try:
+                try:
+                    f()
+                except Exception as e:
+                    exc1 = e
+                try:
+                    g(42)
+                except Exception as e:
+                    exc2 = e
+                raise ExceptionGroup("eg1", [exc1, exc2])
+            except ExceptionGroup as e:
+                exc3 = e
+            try:
+                g(24)
+            except Exception as e:
+                exc4 = e
+            raise ExceptionGroup("eg2", [exc3, exc4])
+        except ExceptionGroup:
+            return sys.exc_info()
+        self.fail('Exception Not Raised')
+
+    def test_exception_group_construction(self):
+        eg_info = self.eg_info
+        teg1 = traceback.TracebackException(*eg_info)
+        teg2 = traceback.TracebackException.from_exception(eg_info[1])
+        self.assertIsNot(teg1, teg2)
+        self.assertEqual(teg1, teg2)
+
+    def test_exception_group_format_exception_only(self):
+        teg = traceback.TracebackException(*self.eg_info)
+        formatted = ''.join(teg.format_exception_only()).split('\n')
+        expected = "ExceptionGroup: eg2\n".split('\n')
+
+        self.assertEqual(formatted, expected)
+
+    def test_exception_group_format(self):
+        teg = traceback.TracebackException(*self.eg_info)
+
+        formatted = ''.join(teg.format()).split('\n')
+        lno_f = self.lno_f
+        lno_g = self.lno_g
+
+        expected = [
+                    f'  | Traceback (most recent call last):',
+                    f'  |   File "{__file__}", line '
+                    f'{lno_g+23}, in _get_exception_group',
+                    f'  |     raise ExceptionGroup("eg2", [exc3, exc4])',
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
+                    f'  | ExceptionGroup: eg2',
+                    f'  |  with 2 sub-exceptions:',
+                    f'  +-+---------------- 1 ----------------',
+                    f'    | Traceback (most recent call last):',
+                    f'    |   File "{__file__}", '
+                    f'line {lno_g+16}, in _get_exception_group',
+                    f'    |     raise ExceptionGroup("eg1", [exc1, exc2])',
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
+                    f'    | ExceptionGroup: eg1',
+                    f'    |  with 2 sub-exceptions:',
+                    f'    +-+---------------- 1.1 ----------------',
+                    f'      | Traceback (most recent call last):',
+                    f'      |   File '
+                    f'"{__file__}", line {lno_g+9}, in '
+                    f'_get_exception_group',
+                    f'      |     f()',
+                    f'      |     ^^^',
+                    f'      |   File '
+                    f'"{__file__}", line {lno_f+1}, in '
+                    f'f',
+                    f'      |     1/0',
+                    f'      |     ~^~',
+                    f'      | ZeroDivisionError: division by zero',
+                    f'      +---------------- 1.2 ----------------',
+                    f'      | Traceback (most recent call last):',
+                    f'      |   File '
+                    f'"{__file__}", line {lno_g+13}, in '
+                    f'_get_exception_group',
+                    f'      |     g(42)',
+                    f'      |     ^^^^^',
+                    f'      |   File '
+                    f'"{__file__}", line {lno_g+1}, in '
+                    f'g',
+                    f'      |     raise ValueError(v)',
+                    f'      |     ^^^^^^^^^^^^^^^^^^^',
+                    f'      | ValueError: 42',
+                    f'      +------------------------------------',
+                    f'    +---------------- 2 ----------------',
+                    f'    | Traceback (most recent call last):',
+                    f'    |   File "{__file__}", '
+                    f'line {lno_g+20}, in _get_exception_group',
+                    f'    |     g(24)',
+                    f'    |     ^^^^^',
+                    f'    |   File "{__file__}", '
+                    f'line {lno_g+1}, in g',
+                    f'    |     raise ValueError(v)',
+                    f'    |     ^^^^^^^^^^^^^^^^^^^',
+                    f'    | ValueError: 24',
+                    f'    +------------------------------------',
+                    f'']
+
+        self.assertEqual(formatted, expected)
+
+    def test_comparison(self):
+        try:
+            raise self.eg_info[1]
+        except ExceptionGroup:
+            exc_info = sys.exc_info()
+        for _ in range(5):
+            try:
+                raise exc_info[1]
+            except:
+                exc_info = sys.exc_info()
+        exc = traceback.TracebackException(*exc_info)
+        exc2 = traceback.TracebackException(*exc_info)
+        exc3 = traceback.TracebackException(*exc_info, limit=300)
+        ne = traceback.TracebackException(*exc_info, limit=3)
+        self.assertIsNot(exc, exc2)
+        self.assertEqual(exc, exc2)
+        self.assertEqual(exc, exc3)
+        self.assertNotEqual(exc, ne)
+        self.assertNotEqual(exc, object())
+        self.assertEqual(exc, ALWAYS_EQ)
 
 
 class MiscTest(unittest.TestCase):
