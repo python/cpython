@@ -8,6 +8,7 @@
 
 #include <sys/types.h>
 #include <string.h>
+#include <stdbool.h>
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
@@ -117,6 +118,13 @@ extern "C" {
 
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
 
+#define LOCATION_UNKNOWN 0
+#define LOCATION_EXISTS 1
+#define LOCATION_FORCED 2
+#define LOCATION_IN_SOURCE_TREE 4
+
+#define LOCATION_FOUND (LOCATION_EXISTS | LOCATION_FORCED)
+
 typedef struct {
     wchar_t *path_env;                 /* PATH environment variable */
 
@@ -134,10 +142,11 @@ typedef struct {
     wchar_t *argv0_dir;
 
     wchar_t *stdlib_dir;
-    int stdlib_dir_found;     /* found stdlib dir? */
+    int stdlib_dir_verified;  /* bit vector of verified LOCATION_* flags */
 
     wchar_t *prefix;
-    int prefix_found;         /* found platform independent libraries? */
+    int prefix_verified;      /* bit vector of verified LOCATION_* flags */
+    bool prefix_found;        /* found platform independent libraries? */
 
     wchar_t *exec_prefix;
     int exec_prefix_found;    /* found the platform dependent libraries? */
@@ -404,28 +413,10 @@ add_exe_suffix(wchar_t **progpath_p)
    bytes long.
 */
 static PyStatus
-search_for_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
-                      wchar_t *stdlib, size_t stdlib_len, int *found)
+search_for_stdlib_dir(PyCalculatePath *calculate,
+                      wchar_t *stdlib, size_t stdlib_len, int *verified)
 {
     PyStatus status;
-
-    /* If PYTHONHOME is set, we believe it unconditionally */
-    if (pathconfig->home) {
-        /* Path: <home> / <lib_python> */
-        if (safe_wcscpy(stdlib, pathconfig->home, stdlib_len) < 0) {
-            return PATHLEN_ERR();
-        }
-        wchar_t *delim = wcschr(stdlib, DELIM);
-        if (delim) {
-            *delim = L'\0';
-        }
-        status = joinpath(stdlib, calculate->lib_python, stdlib_len);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-        *found = 1;
-        return _PyStatus_OK();
-    }
 
     /* Check to see if argv0_dir is in the build directory
 
@@ -465,7 +456,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         }
         if (module) {
             /* BUILD_LANDMARK and LANDMARK found */
-            *found = -1;
+            *verified |= LOCATION_EXISTS | LOCATION_IN_SOURCE_TREE;
             return _PyStatus_OK();
         }
     }
@@ -490,7 +481,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
             return status;
         }
         if (module) {
-            *found = 1;
+            *verified |= LOCATION_EXISTS;
             return _PyStatus_OK();
         }
         stdlib[n] = L'\0';
@@ -513,44 +504,68 @@ search_for_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         return status;
     }
     if (module) {
-        *found = 1;
+        *verified |= LOCATION_EXISTS;
         return _PyStatus_OK();
     }
 
     /* Fail */
-    *found = 0;
     return _PyStatus_OK();
 }
-
 
 static PyStatus
 calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
+    assert(calculate->stdlib_dir == NULL);
+    assert(calculate->stdlib_dir_verified == LOCATION_UNKNOWN);
+
     PyStatus status;
     wchar_t stdlib[MAXPATHLEN+1];
     memset(stdlib, 0, sizeof(stdlib));
     size_t stdlib_len = Py_ARRAY_LENGTH(stdlib);
+    const wchar_t *prefix = NULL;
+    int verified = LOCATION_UNKNOWN;
 
-    status = search_for_stdlib_dir(calculate, pathconfig,
-                                   stdlib, stdlib_len,
-                                   &calculate->stdlib_dir_found);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    if (!calculate->stdlib_dir_found) {
-        calculate->stdlib_dir = joinpath2(calculate->prefix_macro,
-                                          calculate->lib_python);
-        if (calculate->stdlib_dir == NULL) {
-            return _PyStatus_NO_MEMORY();
+    /* If PYTHONHOME is set, we believe it unconditionally. */
+    if (pathconfig->home != NULL) {
+        /* Path: <home> / <lib_python> */
+        prefix = pathconfig->home;
+        if (safe_wcscpy(stdlib, prefix, stdlib_len) < 0) {
+            return PATHLEN_ERR();
         }
+        wchar_t *delim = wcschr(stdlib, DELIM);
+        if (delim) {
+            *delim = L'\0';
+        }
+        verified |= LOCATION_FORCED;
     }
     else {
-        calculate->stdlib_dir = _PyMem_RawWcsdup(stdlib);
-        if (calculate->stdlib_dir == NULL) {
-            return _PyStatus_NO_MEMORY();
+        status = search_for_stdlib_dir(calculate,
+                                       stdlib, stdlib_len, &verified);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+        if (*stdlib == L'\0') {
+            /* Fall back to PREFIX / <lib_python>. */
+            prefix = calculate->prefix_macro;
+            if (safe_wcscpy(stdlib, prefix, stdlib_len) < 0) {
+                return PATHLEN_ERR();
+            }
         }
     }
+
+    if (prefix != NULL) {
+        status = joinpath(stdlib, calculate->lib_python, stdlib_len);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    calculate->stdlib_dir = _PyMem_RawWcsdup(stdlib);
+    if (calculate->stdlib_dir == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+    calculate->stdlib_dir_verified = verified;
+
     return _PyStatus_OK();
 }
 
@@ -558,15 +573,20 @@ calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 static PyStatus
 calculate_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
+    assert(calculate->stdlib_dir != NULL);
+    assert(calculate->prefix == NULL);
+    assert(calculate->prefix_verified == LOCATION_UNKNOWN);
+
     wchar_t prefix[MAXPATHLEN+1];
     memset(prefix, 0, sizeof(prefix));
     size_t prefix_len = Py_ARRAY_LENGTH(prefix);
-    if (safe_wcscpy(prefix, calculate->stdlib_dir, prefix_len) < 0) {
-        return PATHLEN_ERR();
-    }
+
     /* Reduce stdlib_dir to the essense of the prefix,
      * e.g. /usr/local/lib/python1.5 is reduced to /usr/local.
     */
+    if (safe_wcscpy(prefix, calculate->stdlib_dir, prefix_len) < 0) {
+        return PATHLEN_ERR();
+    }
     reduce(prefix);
     reduce(prefix);
     if (*prefix == L'\0') {
@@ -574,12 +594,14 @@ calculate_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
            off the "/". */
         wcscpy(prefix, separator);
     }
+
     calculate->prefix = _PyMem_RawWcsdup(prefix);
     if (calculate->prefix == NULL) {
         return _PyStatus_NO_MEMORY();
     }
+    calculate->prefix_verified = calculate->stdlib_dir_verified;
+    calculate->prefix_found = calculate->prefix_verified & LOCATION_FOUND;
 
-    calculate->prefix_found = calculate->stdlib_dir_found;
     if (!calculate->prefix_found) {
         if (calculate->warnings) {
             fprintf(stderr,
@@ -593,21 +615,17 @@ calculate_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 static PyStatus
 calculate_set_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
-    // XXX Handle 0 here too.
-    if (calculate->prefix_found > 0) {
-        pathconfig->prefix = _PyMem_RawWcsdup(calculate->prefix);
-        if (pathconfig->prefix == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-    }
-    else {
+    assert(pathconfig->prefix == NULL);
+    const wchar_t *prefix = calculate->prefix;
+    if (calculate->prefix_verified & LOCATION_IN_SOURCE_TREE) {
         /* We're loading relative to the build directory,
          * so return the compiled-in defaults instead.
          */
-        pathconfig->prefix = _PyMem_RawWcsdup(calculate->prefix_macro);
-        if (pathconfig->prefix == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
+        prefix = calculate->prefix_macro;
+    }
+    pathconfig->prefix = _PyMem_RawWcsdup(prefix);
+    if (pathconfig->prefix == NULL) {
+        return _PyStatus_NO_MEMORY();
     }
     return _PyStatus_OK();
 }
@@ -1263,42 +1281,25 @@ calculate_read_pyenv(PyCalculatePath *calculate)
 static PyStatus
 calculate_zip_path(PyCalculatePath *calculate)
 {
-    PyStatus res;
+    /* Use the reduced prefix returned by Py_GetPrefix().
+       Note that we're using PREFIX if we couldn't find the prefix already.
 
-    /* Path: <platlibdir> / "pythonXY.zip" */
-    wchar_t *path = joinpath2(calculate->platlibdir,
-                              L"python" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION)
-                              L".zip");
-    if (path == NULL) {
+       Path: <prefix> / <platlibdir> / "pythonXY.zip" */
+
+    wchar_t *relpath = joinpath2(
+        calculate->platlibdir,
+        L"python" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) L".zip");
+    if (relpath == NULL) {
         return _PyStatus_NO_MEMORY();
     }
 
-    if (calculate->prefix_found > 0) {
-        /* Use the reduced prefix returned by Py_GetPrefix()
-
-           Path: <prefix> / <platlibdir> / "pythonXY.zip" */
-        wchar_t *parent = _PyMem_RawWcsdup(calculate->prefix);
-        if (parent == NULL) {
-            res = _PyStatus_NO_MEMORY();
-            goto done;
-        }
-        calculate->zip_path = joinpath2(parent, path);
-        PyMem_RawFree(parent);
-    }
-    else {
-        calculate->zip_path = joinpath2(calculate->prefix_macro, path);
-    }
-
+    calculate->zip_path = joinpath2(calculate->prefix, relpath);
+    PyMem_RawFree(relpath);
     if (calculate->zip_path == NULL) {
-        res = _PyStatus_NO_MEMORY();
-        goto done;
+        return _PyStatus_NO_MEMORY();
     }
 
-    res = _PyStatus_OK();
-
-done:
-    PyMem_RawFree(path);
-    return res;
+    return _PyStatus_OK();
 }
 
 
@@ -1306,6 +1307,8 @@ static PyStatus
 calculate_module_search_path(PyCalculatePath *calculate,
                              _PyPathConfig *pathconfig)
 {
+    assert(calculate->stdlib_dir != NULL);
+
     /* Calculate size of return buffer */
     size_t bufsz = 0;
     if (calculate->pythonpath_env != NULL) {
