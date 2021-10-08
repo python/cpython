@@ -147,7 +147,7 @@ class A(builtins.object)
 
     Methods defined here:
         __init__()
-        Wow, I have no function!
+            Wow, I have no function!
 
     Data descriptors defined here:
         __dict__
@@ -157,13 +157,13 @@ class A(builtins.object)
 
 class B(builtins.object)
     Data descriptors defined here:
-    __dict__
-        dictionary for instance variables (if defined)
-    __weakref__
-        list of weak references to the object (if defined)
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
-    __annotations__ = {
+        __annotations__ = {
 
 class C(builtins.object)
     Methods defined here:
