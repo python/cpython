@@ -126,7 +126,8 @@ extern "C" {
 #define LOCATION_IN_BUILD_DIR 16
 #define LOCATION_IN_SOURCE_TREE 32
 #define LOCATION_PREFIX 64
-#define LOCATION_NEAR_ARGV0 128
+#define LOCATION_WITH_ARGV0 128     /* in the tree under dirname(argv[0]) */
+#define LOCATION_NEAR_ARGV0 256     /* based on a parent of argv[0] */
 
 #define LOCATION_FOUND (LOCATION_EXISTS | LOCATION_FORCED)
 
@@ -145,6 +146,7 @@ typedef struct {
     const wchar_t *platlibdir;
 
     wchar_t *argv0_dir;
+    int argv0_dir_verified;   /* bit vector of verified LOCATION_* flags */
 
     wchar_t *stdlib_dir;
     int stdlib_dir_verified;  /* bit vector of verified LOCATION_* flags */
@@ -461,7 +463,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
         }
         if (module) {
             /* BUILD_LANDMARK and LANDMARK found */
-            *verified |= LOCATION_EXISTS | LOCATION_NEAR_ARGV0;
+            *verified |= LOCATION_EXISTS | LOCATION_WITH_ARGV0;
             *verified |= LOCATION_IN_SOURCE_TREE | LOCATION_IN_BUILD_DIR;
             return _PyStatus_OK();
         }
@@ -473,6 +475,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
         return status;
     }
 
+    int flag = LOCATION_WITH_ARGV0;
     do {
         /* Path: <argv0_dir or substring> / <lib_python> / LANDMARK */
         size_t n = wcslen(stdlib);
@@ -487,11 +490,12 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
             return status;
         }
         if (module) {
-            *verified |= LOCATION_EXISTS | LOCATION_NEAR_ARGV0;
+            *verified |= LOCATION_EXISTS | flag;
             return _PyStatus_OK();
         }
         stdlib[n] = L'\0';
         reduce(stdlib);
+        flag = LOCATION_NEAR_ARGV0;
     } while (stdlib[0]);
 
     /* Look at configure's PREFIX.
@@ -558,6 +562,14 @@ calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
             }
             verified |= LOCATION_DEFAULT | LOCATION_PREFIX;
         }
+        else if (verified & LOCATION_WITH_ARGV0) {
+            calculate->argv0_dir_verified |= verified & LOCATION_EXISTS;
+            calculate->argv0_dir_verified |= verified & LOCATION_IN_BUILD_DIR;
+            calculate->argv0_dir_verified |= verified & LOCATION_IN_SOURCE_TREE;
+        }
+         if (verified & LOCATION_WITH_ARGV0) {
+             verified |= LOCATION_NEAR_ARGV0;
+         }
     }
 
     if (prefix != NULL) {
@@ -1043,37 +1055,32 @@ calculate_program(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
 #if HAVE_READLINK
 static PyStatus
-resolve_symlinks(wchar_t **path_p)
+resolve_symlinks(wchar_t *buf, size_t bufsize)
 {
     wchar_t new_path[MAXPATHLEN + 1];
     const size_t new_path_len = Py_ARRAY_LENGTH(new_path);
     unsigned int nlink = 0;
 
     while (1) {
-        int linklen = _Py_wreadlink(*path_p, new_path, new_path_len);
+        int linklen = _Py_wreadlink(buf, new_path, new_path_len);
         if (linklen == -1) {
-            /* not a symbolic link: we are done */
+            /* We could not read a symbolic link: we are done.
+             * Note that we are silencing errors here. */
             break;
         }
 
         if (_Py_isabs(new_path)) {
-            PyMem_RawFree(*path_p);
-            *path_p = _PyMem_RawWcsdup(new_path);
-            if (*path_p == NULL) {
-                return _PyStatus_NO_MEMORY();
+            if (safe_wcscpy(buf, new_path, bufsize) < 0) {
+                return PATHLEN_ERR();
             }
         }
         else {
-            /* new_path is relative to path */
-            reduce(*path_p);
-
-            wchar_t *abs_path = joinpath2(*path_p, new_path);
-            if (abs_path == NULL) {
-                return _PyStatus_NO_MEMORY();
+            /* new_path is relative to the current one. */
+            reduce(buf);
+            PyStatus status = joinpath(buf, new_path, bufsize);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
             }
-
-            PyMem_RawFree(*path_p);
-            *path_p = abs_path;
         }
 
         nlink++;
@@ -1089,7 +1096,8 @@ resolve_symlinks(wchar_t **path_p)
 
 #ifdef WITH_NEXT_FRAMEWORK
 static PyStatus
-calculate_argv0_dir_framework(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_argv0_dir_framework(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+                              wchar_t *argv0, size_t argv0_len, int *verified)
 {
     NSModule pythonModule;
 
@@ -1114,58 +1122,44 @@ calculate_argv0_dir_framework(PyCalculatePath *calculate, _PyPathConfig *pathcon
        be running the interpreter in the build directory, so we use the
        build-directory-specific logic to find Lib and such. */
     size_t len;
-    wchar_t* wbuf = Py_DecodeLocale(modPath, &len);
-    if (wbuf == NULL) {
+    wchar_t* framework_exe = Py_DecodeLocale(modPath, &len);
+    if (framework_exe == NULL) {
         return DECODE_LOCALE_ERR("framework location", len);
     }
 
     /* Path: reduce(modPath) / lib_python / LANDMARK */
-    PyStatus status;
-
-    wchar_t *parent = _PyMem_RawWcsdup(wbuf);
-    if (parent == NULL) {
-        status = _PyStatus_NO_MEMORY();
-        goto done;
+    wchar_t stdlib[MAXPATHLEN+1];
+    size_t stdlib_len = Py_ARRAY_LENGTH(stdlib);
+    if (safe_wcscpy(stdlib, framework_exe, stdlib_len) < 0) {
+        return PATHLEN_ERR();
     }
+    reduce(stdlib);
 
-    reduce(parent);
-    wchar_t *lib_python = joinpath2(parent, calculate->lib_python);
-    PyMem_RawFree(parent);
-
-    if (lib_python == NULL) {
-        status = _PyStatus_NO_MEMORY();
-        goto done;
+    PyStatus status = joinpath(stdlib, calculate->lib_python, stdlib_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     int module;
-    status = ismodule(lib_python, &module);
-    PyMem_RawFree(lib_python);
-
+    status = ismodule(stdlib, &module);
     if (_PyStatus_EXCEPTION(status)) {
-        goto done;
+        return status;
     }
-    if (!module) {
-        /* We are in the build directory so use the name of the
-           executable - we know that the absolute path is passed */
-        PyMem_RawFree(calculate->argv0_dir);
-        calculate->argv0_dir = _PyMem_RawWcsdup(pathconfig->program_full_path);
-        if (calculate->argv0_dir == NULL) {
-            status = _PyStatus_NO_MEMORY();
-            goto done;
+    if (module) {
+        /* Use the location of the library as argv0_dir */
+        if (safe_wcscpy(argv0, framework_exe, argv0_len) < 0) {
+            return PATHLEN_ERR();
         }
-
-        status = _PyStatus_OK();
-        goto done;
+        *verified |= LOCATION_EXISTS;
+        // XXX Set calculate->stdlib_dir, etc.?
+        return _PyStatus_OK();
     }
 
-    /* Use the location of the library as argv0_dir */
-    PyMem_RawFree(calculate->argv0_dir);
-    calculate->argv0_dir = wbuf;
+    /* We are in the build directory so use the name of the
+       executable - we know that the absolute path is passed */
+    assert(wcscmp(argv0, pathconfig->program_full_path) == 0);
+    *verified |= LOCATION_IN_BUILD_DIR;
     return _PyStatus_OK();
-
-done:
-    PyMem_RawFree(wbuf);
-    return status;
 }
 #endif
 
@@ -1174,26 +1168,38 @@ static PyStatus
 calculate_argv0_dir(PyCalculatePath *calculate,
                      _PyPathConfig *pathconfig)
 {
-    PyStatus status;
+    assert(calculate->argv0_dir == NULL);
+    assert(calculate->argv0_dir_verified == LOCATION_UNKNOWN);
 
-    calculate->argv0_dir = _PyMem_RawWcsdup(pathconfig->program_full_path);
-    if (calculate->argv0_dir == NULL) {
-        return _PyStatus_NO_MEMORY();
+    PyStatus status;
+    wchar_t argv0[MAXPATHLEN+1];
+    size_t argv0_len = Py_ARRAY_LENGTH(argv0);
+    int verified = LOCATION_UNKNOWN;
+
+    if (safe_wcscpy(argv0, pathconfig->program_full_path, argv0_len) < 0) {
+        return PATHLEN_ERR();
     }
 
 #ifdef WITH_NEXT_FRAMEWORK
-    status = calculate_argv0_dir_framework(calculate, pathconfig);
+    status = calculate_argv0_dir_framework(calculate, pathconfig,
+                                           argv0, argv0_len, &verified);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 #endif
 
-    status = resolve_symlinks(&calculate->argv0_dir);
+    // XXX Don't we need to wrap this in "#if HAVE_READLINK"?
+    status = resolve_symlinks(argv0, argv0_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    reduce(calculate->argv0_dir);
+    reduce(argv0);
+    calculate->argv0_dir = _PyMem_RawWcsdup(argv0);
+    if (calculate->argv0_dir == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+    calculate->argv0_dir_verified = verified | LOCATION_WITH_ARGV0;
 
     return _PyStatus_OK();
 }
