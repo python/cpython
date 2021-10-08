@@ -2121,6 +2121,19 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
+const wchar_t* known_xoptions[] = {
+    L"faulthandler",
+    L"showrefcount",
+    L"tracemalloc",
+    L"importtime",
+    L"dev",
+    L"utf8",
+    L"pycache_prefix",
+    L"warn_default_encoding",
+    L"no_debug_ranges",
+    L"frozen_modules",
+    NULL,
+};
 
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
@@ -2136,6 +2149,11 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
+    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
+    if (option != NULL) {
+        return PyStatus_Error("Unknown value for option -X");
+    }
+
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }

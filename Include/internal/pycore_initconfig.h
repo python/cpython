@@ -82,6 +82,9 @@ PyAPI_FUNC(int) _Py_str_to_int(
 PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
     const PyWideStringList *xoptions,
     const wchar_t *name);
+PyAPI_FUNC(const wchar_t*) _Py_check_xoptions(
+    const PyWideStringList *xoptions,
+    const wchar_t **name);
 PyAPI_FUNC(const char*) _Py_GetEnv(
     int use_environment,
     const char *name);
