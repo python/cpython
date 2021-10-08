@@ -117,8 +117,7 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
  * The values for Py_HASH_* are hard-coded in the
  * configure script.
  *
- * - FNV is available on all platforms and architectures.
- * - SIPHASH only works on platforms that don't require aligned memory for integers.
+ * - FNV and SIPHASH* are available on all platforms and architectures.
  * - With EXTERNAL embedders can provide an alternative implementation with::
  *
  *     PyHash_FuncDef PyHash_Func = {...};
