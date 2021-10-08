@@ -188,7 +188,7 @@ class RotatingFileHandler(BaseRotatingHandler):
         the size limit we have.
         """
         # See bpo-45401: Never rollover anything other than regular files
-        if not os.path.isfile(self.baseFilename):
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
             return False
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
@@ -349,7 +349,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         the method signatures are the same
         """
         # See bpo-45401: Never rollover anything other than regular files
-        if not os.path.isfile(self.baseFilename):
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
             return False
         t = int(time.time())
         if t >= self.rolloverAt:
