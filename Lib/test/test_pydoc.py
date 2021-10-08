@@ -163,7 +163,8 @@ class B(builtins.object)
             list of weak references to the object (if defined)
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
-        __annotations__ = {
+        __annotations__ = {'NO_MEANING': <class 'str'>}
+
 
 class C(builtins.object)
     Methods defined here:
@@ -335,6 +336,16 @@ def get_html_title(text):
     return title
 
 
+def html2text(html):
+    """A quick and dirty implementation of html2text.
+
+    Tailored for pydoc tests only.
+    """
+    return pydoc.replace(
+        re.sub("<.*?>", "", html),
+        "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+
+
 class PydocBaseTest(unittest.TestCase):
 
     def _restricted_walk_packages(self, walk_packages, path=None):
@@ -375,8 +386,7 @@ class PydocDocTest(unittest.TestCase):
     @requires_docstrings
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
-        # poor man's html2text:
-        text_result = re.sub("<.*?>", "", result).replace("&nbsp;", " ")
+        text_result = html2text(result)
         expected_lines = [line.strip() for line in html2text_of_expected if line]
         for line in expected_lines:
             self.assertIn(line, text_result)
@@ -820,8 +830,7 @@ class B(A)
         __weakref__
             list of weak references to the object (if defined)
 """
-        # poor man's html2text:
-        as_text = re.sub("<.*?>", "", doc).replace("&nbsp;", " ")
+        as_text = html2text(doc)
         expected_lines = [line.strip() for line in expected_text.split("\n") if line]
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
