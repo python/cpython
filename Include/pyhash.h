@@ -114,7 +114,7 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 
 /* hash algorithm selection
  *
- * The values for Py_HASH_SIPHASH13 and Py_HASH_FNV are hard-coded in the
+ * The values for Py_HASH_* are hard-coded in the
  * configure script.
  *
  * - FNV is available on all platforms and architectures.
@@ -126,9 +126,9 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
  * XXX: Figure out __declspec() for extern PyHash_FuncDef.
  */
 #define Py_HASH_EXTERNAL 0
-#define Py_HASH_SIPHASH13 1
 #define Py_HASH_SIPHASH24 1  /* deprecated */
 #define Py_HASH_FNV 2
+#define Py_HASH_SIPHASH13 3
 
 #ifndef Py_HASH_ALGORITHM
 #  ifndef HAVE_ALIGNED_REQUIRED
