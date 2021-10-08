@@ -3050,7 +3050,6 @@ case "$withval" in
         AC_DEFINE(Py_HASH_ALGORITHM, 3)
         ;;
     siphash24)
-        AC_MSG_WARN([--with-hash-algorithm=siphash24 is deprecated. Use siphash13])
         AC_DEFINE(Py_HASH_ALGORITHM, 1)
         ;;
     fnv)
