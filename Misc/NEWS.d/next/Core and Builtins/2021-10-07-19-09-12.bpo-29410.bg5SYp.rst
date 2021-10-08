@@ -1,1 +1,1 @@
-Hash algorithm for strings is changed from SipHash24 to SipHash13.
+Add SipHash13 for string hash algorithm and use it by default.
