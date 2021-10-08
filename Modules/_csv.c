@@ -489,7 +489,7 @@ err:
 }
 
 /* Since dialect is now a heap type, it inherits pickling method for
- * protocol 0 and 1 from object, therefore it needs to be overriden */
+ * protocol 0 and 1 from object, therefore it needs to be overridden */
 
 PyDoc_STRVAR(dialect_reduce_doc, "raises an exception to avoid pickling");
 

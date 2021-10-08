@@ -360,31 +360,23 @@ pysqlite_statement_bind_parameters(pysqlite_state *state,
     }
 }
 
-void
-pysqlite_statement_reset(pysqlite_Statement *self)
+int pysqlite_statement_reset(pysqlite_Statement* self)
 {
-    sqlite3_stmt *stmt = self->st;
-    if (stmt == NULL || self->in_use == 0) {
-        return;
-    }
-
-#if SQLITE_VERSION_NUMBER >= 3020000
-    /* Check if the statement has been run (that is, sqlite3_step() has been
-     * called at least once). Third parameter is non-zero in order to reset the
-     * run count. */
-    if (sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, 1) == 0) {
-        return;
-    }
-#endif
-
     int rc;
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_reset(stmt);
-    Py_END_ALLOW_THREADS
 
-    if (rc == SQLITE_OK) {
-        self->in_use = 0;
+    rc = SQLITE_OK;
+
+    if (self->in_use && self->st) {
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_reset(self->st);
+        Py_END_ALLOW_THREADS
+
+        if (rc == SQLITE_OK) {
+            self->in_use = 0;
+        }
     }
+
+    return rc;
 }
 
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self)

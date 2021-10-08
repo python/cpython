@@ -1342,13 +1342,16 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            return NULL;
+        }
         Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
             // Prioritize tokenizer errors to custom syntax errors raised
             // on the second phase only if the errors come from the parser.
-            if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;
@@ -2551,8 +2554,17 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     return RAISE_SYNTAX_ERROR(msg);
 }
 
+
+static inline expr_ty
+_PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
+    if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
+        return comprehension->iter;
+    }
+    return PyPegen_last_item(comprehension->ifs, expr_ty);
+}
+
 void *
-_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
+_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions)
 {
     /* The rule that calls this function is 'args for_if_clauses'.
        For the input f(L, x for x in y), L and x are in args and
@@ -2566,8 +2578,11 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         return NULL;
     }
 
-    return RAISE_SYNTAX_ERROR_STARTING_FROM(
+    comprehension_ty last_comprehension = PyPegen_last_item(comprehensions, comprehension_ty);
+
+    return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
         (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
+        _PyPegen_get_last_comprehension_item(last_comprehension),
         "Generator expression must be parenthesized"
     );
 }

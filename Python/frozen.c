@@ -36,10 +36,11 @@
    and __phello__.spam.  Loading any will print some famous words... */
 
 #include "Python.h"
+#include "pycore_import.h"
 
 /* Includes for frozen modules: */
-#include "frozen_modules/importlib__bootstrap.h"
-#include "frozen_modules/importlib__bootstrap_external.h"
+#include "frozen_modules/importlib._bootstrap.h"
+#include "frozen_modules/importlib._bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
 #include "frozen_modules/abc.h"
 #include "frozen_modules/codecs.h"
@@ -53,6 +54,11 @@
 #include "frozen_modules/site.h"
 #include "frozen_modules/stat.h"
 #include "frozen_modules/__hello__.h"
+#include "frozen_modules/__phello__.h"
+#include "frozen_modules/__phello__.ham.h"
+#include "frozen_modules/__phello__.ham.eggs.h"
+#include "frozen_modules/__phello__.spam.h"
+#include "frozen_modules/frozen_only.h"
 /* End includes */
 
 /* Note that a negative size indicates a package. */
@@ -84,10 +90,36 @@ static const struct _frozen _PyImport_FrozenModules[] = {
 
     /* Test module */
     {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {"__phello__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
-    {"__phello__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {0, 0, 0} /* sentinel */
+    {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__phello_alias__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
+    {"__phello_alias__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
+    {"__phello__", _Py_M____phello__, -(int)sizeof(_Py_M____phello__)},
+    {"__phello__.__init__", _Py_M____phello__, (int)sizeof(_Py_M____phello__)},
+    {"__phello__.ham", _Py_M____phello___ham, -(int)sizeof(_Py_M____phello___ham)},
+    {"__phello__.ham.__init__", _Py_M____phello___ham,
+        (int)sizeof(_Py_M____phello___ham)},
+    {"__phello__.ham.eggs", _Py_M____phello___ham_eggs,
+        (int)sizeof(_Py_M____phello___ham_eggs)},
+    {"__phello__.spam", _Py_M____phello___spam,
+        (int)sizeof(_Py_M____phello___spam)},
+    {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only)},
+    {0, 0, 0} /* modules sentinel */
 };
+
+static const struct _module_alias aliases[] = {
+    {"_frozen_importlib", "importlib._bootstrap"},
+    {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"os.path", "posixpath"},
+    {"__hello_alias__", "__hello__"},
+    {"__phello_alias__", "__hello__"},
+    {"__phello_alias__.spam", "__hello__"},
+    {"__phello__.__init__", "<__phello__"},
+    {"__phello__.ham.__init__", "<__phello__.ham"},
+    {"__hello_only__", NULL},
+    {0, 0} /* aliases sentinel */
+};
+const struct _module_alias *_PyImport_FrozenAliases = aliases;
+
 
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */

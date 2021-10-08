@@ -651,8 +651,8 @@ Data Types
 
 ---------------
 
-Utilites and Decorators
------------------------
+Utilities and Decorators
+------------------------
 
 .. class:: auto
 

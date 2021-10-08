@@ -169,33 +169,83 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_imp_get_frozen_object__doc__,
-"get_frozen_object($module, name, /)\n"
+PyDoc_STRVAR(_imp_find_frozen__doc__,
+"find_frozen($module, name, /)\n"
 "--\n"
 "\n"
-"Create a code object for a frozen module.");
+"Return info about the corresponding frozen module (if there is one) or None.\n"
+"\n"
+"The returned info (a 2-tuple):\n"
+"\n"
+" * data         the raw marshalled bytes\n"
+" * is_package   whether or not it is a package\n"
+" * origname     the originally frozen module\'s name, or None if not\n"
+"                a stdlib module (this will usually be the same as\n"
+"                the module\'s current name)");
 
-#define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
-    {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_O, _imp_get_frozen_object__doc__},
+#define _IMP_FIND_FROZEN_METHODDEF    \
+    {"find_frozen", (PyCFunction)_imp_find_frozen, METH_O, _imp_find_frozen__doc__},
 
 static PyObject *
-_imp_get_frozen_object_impl(PyObject *module, PyObject *name);
+_imp_find_frozen_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_imp_get_frozen_object(PyObject *module, PyObject *arg)
+_imp_find_frozen(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("get_frozen_object", "argument", "str", arg);
+        _PyArg_BadArgument("find_frozen", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     name = arg;
-    return_value = _imp_get_frozen_object_impl(module, name);
+    return_value = _imp_find_frozen_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_imp_get_frozen_object__doc__,
+"get_frozen_object($module, name, data=None, /)\n"
+"--\n"
+"\n"
+"Create a code object for a frozen module.");
+
+#define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
+    {"get_frozen_object", (PyCFunction)(void(*)(void))_imp_get_frozen_object, METH_FASTCALL, _imp_get_frozen_object__doc__},
+
+static PyObject *
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name,
+                            PyObject *dataobj);
+
+static PyObject *
+_imp_get_frozen_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+    PyObject *dataobj = Py_None;
+
+    if (!_PyArg_CheckPositional("get_frozen_object", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("get_frozen_object", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    name = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    dataobj = args[1];
+skip_optional:
+    return_value = _imp_get_frozen_object_impl(module, name, dataobj);
 
 exit:
     return return_value;
@@ -498,4 +548,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=96038c277119d6e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c8dd08158f9ac7c input=a9049054013a1b77]*/

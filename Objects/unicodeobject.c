@@ -1994,8 +1994,10 @@ unicode_is_singleton(PyObject *unicode)
     if (unicode == state->empty_string) {
         return 1;
     }
-    for (Py_ssize_t i = 0; i < 256; i++) {
-        if (unicode == state->latin1[i]) {
+    PyASCIIObject *ascii = (PyASCIIObject *)unicode;
+    if (ascii->state.kind != PyUnicode_WCHAR_KIND && ascii->length == 1) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
+        if (ch < 256 && state->latin1[ch] == unicode) {
             return 1;
         }
     }
@@ -7347,7 +7349,7 @@ PyUnicode_AsASCIIString(PyObject *unicode)
 #endif
 
 /* INT_MAX is the theoretical largest chunk (or INT_MAX / 2 when
-   transcoding from UTF-16), but INT_MAX / 4 perfoms better in
+   transcoding from UTF-16), but INT_MAX / 4 performs better in
    both cases also and avoids partial characters overrunning the
    length limit in MultiByteToWideChar on Windows */
 #define DECODING_CHUNK_SIZE (INT_MAX/4)
@@ -15874,7 +15876,7 @@ init_fs_codec(PyInterpreterState *interp)
     _Py_error_handler error_handler;
     error_handler = get_error_handler_wide(config->filesystem_errors);
     if (error_handler == _Py_ERROR_UNKNOWN) {
-        PyErr_SetString(PyExc_RuntimeError, "unknow filesystem error handler");
+        PyErr_SetString(PyExc_RuntimeError, "unknown filesystem error handler");
         return -1;
     }
 

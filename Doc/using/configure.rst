@@ -553,7 +553,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensions are built as dynamic libraires, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 
