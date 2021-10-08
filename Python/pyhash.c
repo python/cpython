@@ -423,6 +423,7 @@ siphash13(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     return t;
 }
 
+#if Py_HASH_ALGORITHM == Py_HASH_SIPHASH24
 static uint64_t
 siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     uint64_t b = (uint64_t)src_sz << 56;
@@ -471,6 +472,7 @@ siphash24(uint64_t k0, uint64_t k1, const void *src, Py_ssize_t src_sz) {
     t = (v0 ^ v1) ^ (v2 ^ v3);
     return t;
 }
+#endif
 
 uint64_t
 _Py_KeyedHash(uint64_t key, const void *src, Py_ssize_t src_sz)
