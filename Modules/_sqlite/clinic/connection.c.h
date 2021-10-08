@@ -816,7 +816,7 @@ PyDoc_STRVAR(setlimit__doc__,
 "setlimit($self, category, limit, /)\n"
 "--\n"
 "\n"
-"Set connection run-time limits. Non-standard.\n"
+"Set connection run-time limits.\n"
 "\n"
 "  category\n"
 "    The limit category to be set.\n"
@@ -862,7 +862,7 @@ PyDoc_STRVAR(getlimit__doc__,
 "getlimit($self, category, /)\n"
 "--\n"
 "\n"
-"Get connection run-time limits. Non-standard.\n"
+"Get connection run-time limits.\n"
 "\n"
 "  category\n"
 "    The limit category to be queried.");
@@ -896,4 +896,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=ef576e9b40005272 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d0ff26c99e22885 input=a9049054013a1b77]*/

@@ -1876,7 +1876,7 @@ _sqlite3.Connection.setlimit as setlimit
         unchanged.
     /
 
-Set connection run-time limits. Non-standard.
+Set connection run-time limits.
 
 Attempts to increase a limit above its hard upper bound are silently truncated
 to the hard upper bound. Regardless of whether or not the limit was changed,
@@ -1885,7 +1885,7 @@ the prior value of the limit is returned.
 
 static PyObject *
 setlimit_impl(pysqlite_Connection *self, int category, int limit)
-/*[clinic end generated code: output=0d208213f8d68ccd input=9d3a8e83f4cc32d7]*/
+/*[clinic end generated code: output=0d208213f8d68ccd input=9bd469537e195635]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1906,12 +1906,12 @@ _sqlite3.Connection.getlimit as getlimit
         The limit category to be queried.
     /
 
-Get connection run-time limits. Non-standard.
+Get connection run-time limits.
 [clinic start generated code]*/
 
 static PyObject *
 getlimit_impl(pysqlite_Connection *self, int category)
-/*[clinic end generated code: output=7c3f5d11f24cecb1 input=788e5fb4e2d2b618]*/
+/*[clinic end generated code: output=7c3f5d11f24cecb1 input=61e0849fb4fb058f]*/
 {
     return setlimit_impl(self, category, -1);
 }
