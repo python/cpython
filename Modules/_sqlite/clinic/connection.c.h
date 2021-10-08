@@ -813,14 +813,14 @@ exit:
 }
 
 PyDoc_STRVAR(setlimit__doc__,
-"setlimit($self, limit, value, /)\n"
+"setlimit($self, category, limit, /)\n"
 "--\n"
 "\n"
 "Set connection run-time limits. Non-standard.\n"
 "\n"
-"  limit\n"
+"  category\n"
 "    The limit category to be set.\n"
-"  value\n"
+"  limit\n"
 "    The new limit. If the new limit is a negative number, the limit is\n"
 "    unchanged.\n"
 "\n"
@@ -832,58 +832,58 @@ PyDoc_STRVAR(setlimit__doc__,
     {"setlimit", (PyCFunction)(void(*)(void))setlimit, METH_FASTCALL, setlimit__doc__},
 
 static PyObject *
-setlimit_impl(pysqlite_Connection *self, int limit, int value);
+setlimit_impl(pysqlite_Connection *self, int category, int limit);
 
 static PyObject *
 setlimit(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
+    int category;
     int limit;
-    int value;
 
     if (!_PyArg_CheckPositional("setlimit", nargs, 2, 2)) {
         goto exit;
     }
-    limit = _PyLong_AsInt(args[0]);
+    category = _PyLong_AsInt(args[0]);
+    if (category == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    limit = _PyLong_AsInt(args[1]);
     if (limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    value = _PyLong_AsInt(args[1]);
-    if (value == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = setlimit_impl(self, limit, value);
+    return_value = setlimit_impl(self, category, limit);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(getlimit__doc__,
-"getlimit($self, limit, /)\n"
+"getlimit($self, category, /)\n"
 "--\n"
 "\n"
 "Get connection run-time limits. Non-standard.\n"
 "\n"
-"  limit\n"
+"  category\n"
 "    The limit category to be queried.");
 
 #define GETLIMIT_METHODDEF    \
     {"getlimit", (PyCFunction)getlimit, METH_O, getlimit__doc__},
 
 static PyObject *
-getlimit_impl(pysqlite_Connection *self, int limit);
+getlimit_impl(pysqlite_Connection *self, int category);
 
 static PyObject *
 getlimit(pysqlite_Connection *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int limit;
+    int category;
 
-    limit = _PyLong_AsInt(arg);
-    if (limit == -1 && PyErr_Occurred()) {
+    category = _PyLong_AsInt(arg);
+    if (category == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = getlimit_impl(self, limit);
+    return_value = getlimit_impl(self, category);
 
 exit:
     return return_value;
@@ -896,4 +896,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=85f8b7247801658e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef576e9b40005272 input=a9049054013a1b77]*/

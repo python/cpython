@@ -347,22 +347,22 @@ class ConnectionTests(unittest.TestCase):
             self.assertEqual(cu.fetchone()[0], n)
 
     def test_connection_limits(self):
-        param = sqlite.SQLITE_LIMIT_SQL_LENGTH
-        setval = 10
-        ret1 = self.cx.getlimit(param)
+        category = sqlite.SQLITE_LIMIT_SQL_LENGTH
+        saved_limit = self.cx.getlimit(category)
         try:
-            ret2 = self.cx.setlimit(param, setval)
-            self.assertEqual(ret1, ret2)
-            self.assertEqual(self.cx.getlimit(param), setval)
+            new_limit = 10
+            prev_limit = self.cx.setlimit(category, new_limit)
+            self.assertEqual(saved_limit, prev_limit)
+            self.assertEqual(self.cx.getlimit(category), new_limit)
             msg = "string or blob too big"
             self.assertRaisesRegex(sqlite.DataError, msg,
                                    self.cx.execute, "select 1 as '16'")
-        finally:  # restore old limit
-            self.cx.setlimit(param, ret1)
+        finally:  # restore saved limit
+            self.cx.setlimit(category, saved_limit)
 
     def test_connection_set_bad_limit(self):
         self.assertRaisesRegex(
-            sqlite.ProgrammingError, "'limit' is out of bounds",
+            sqlite.ProgrammingError, "'category' is out of bounds",
             self.cx.setlimit, 1111, 0
         )
 

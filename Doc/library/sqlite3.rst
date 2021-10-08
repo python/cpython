@@ -624,9 +624,9 @@ Connection Objects
       .. versionadded:: 3.7
 
 
-   .. method:: getlimit(limit, /)
+   .. method:: getlimit(category, /)
 
-      Get a connection run-time limit. *limit* is the limit category to be
+      Get a connection run-time limit. *category* is the limit category to be
       queried.
 
       Example, query the maximum length of an SQL statement::
@@ -639,10 +639,10 @@ Connection Objects
       .. versionadded:: 3.11
 
 
-   .. method:: setlimit(limit, value, /)
+   .. method:: setlimit(category, limit, /)
 
-      Set a connection run-time limit. *limit* is the limit category to be set.
-      *value* is the new limit. If the new limit is a negative number, the
+      Set a connection run-time limit. *category* is the limit category to be
+      set. *limit* is the new limit. If the new limit is a negative number, the
       limit is unchanged.
 
       Attempts to increase a limit above its hard upper bound are silently

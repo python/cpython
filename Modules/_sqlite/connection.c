@@ -1869,9 +1869,9 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
 /*[clinic input]
 _sqlite3.Connection.setlimit as setlimit
 
-    limit: int
+    category: int
         The limit category to be set.
-    value: int
+    limit: int
         The new limit. If the new limit is a negative number, the limit is
         unchanged.
     /
@@ -1884,25 +1884,25 @@ the prior value of the limit is returned.
 [clinic start generated code]*/
 
 static PyObject *
-setlimit_impl(pysqlite_Connection *self, int limit, int value)
-/*[clinic end generated code: output=18d15e4be8a7a4ec input=e0990e0c90e747ee]*/
+setlimit_impl(pysqlite_Connection *self, int category, int limit)
+/*[clinic end generated code: output=0d208213f8d68ccd input=9d3a8e83f4cc32d7]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    int previous_value = sqlite3_limit(self->db, limit, value);
-    if (previous_value < 0) {
-        PyErr_SetString(self->ProgrammingError, "'limit' is out of bounds");
+    int old_limit = sqlite3_limit(self->db, category, limit);
+    if (old_limit < 0) {
+        PyErr_SetString(self->ProgrammingError, "'category' is out of bounds");
         return NULL;
     }
-    return PyLong_FromLong(previous_value);
+    return PyLong_FromLong(old_limit);
 }
 
 /*[clinic input]
 _sqlite3.Connection.getlimit as getlimit
 
-    limit: int
+    category: int
         The limit category to be queried.
     /
 
@@ -1910,10 +1910,10 @@ Get connection run-time limits. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
-getlimit_impl(pysqlite_Connection *self, int limit)
-/*[clinic end generated code: output=f90c9c8399170536 input=c339eaae3afe367a]*/
+getlimit_impl(pysqlite_Connection *self, int category)
+/*[clinic end generated code: output=7c3f5d11f24cecb1 input=788e5fb4e2d2b618]*/
 {
-    return setlimit_impl(self, limit, -1);
+    return setlimit_impl(self, category, -1);
 }
 
 
