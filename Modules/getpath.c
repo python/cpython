@@ -120,8 +120,13 @@ extern "C" {
 
 #define LOCATION_UNKNOWN 0
 #define LOCATION_EXISTS 1
-#define LOCATION_FORCED 2
-#define LOCATION_IN_SOURCE_TREE 4
+#define LOCATION_FORCED 2           /* trusted to exist */
+#define LOCATION_DEFAULT 4          /* the default value */
+#define LOCATION_CUSTOM 8           /* from a file or env var */
+#define LOCATION_IN_BUILD_DIR 16
+#define LOCATION_IN_SOURCE_TREE 32
+#define LOCATION_PREFIX 64
+#define LOCATION_NEAR_ARGV0 128
 
 #define LOCATION_FOUND (LOCATION_EXISTS | LOCATION_FORCED)
 
@@ -456,7 +461,8 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
         }
         if (module) {
             /* BUILD_LANDMARK and LANDMARK found */
-            *verified |= LOCATION_EXISTS | LOCATION_IN_SOURCE_TREE;
+            *verified |= LOCATION_EXISTS | LOCATION_NEAR_ARGV0;
+            *verified |= LOCATION_IN_SOURCE_TREE | LOCATION_IN_BUILD_DIR;
             return _PyStatus_OK();
         }
     }
@@ -481,7 +487,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
             return status;
         }
         if (module) {
-            *verified |= LOCATION_EXISTS;
+            *verified |= LOCATION_EXISTS | LOCATION_NEAR_ARGV0;
             return _PyStatus_OK();
         }
         stdlib[n] = L'\0';
@@ -504,7 +510,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
         return status;
     }
     if (module) {
-        *verified |= LOCATION_EXISTS;
+        *verified |= LOCATION_EXISTS | LOCATION_PREFIX;
         return _PyStatus_OK();
     }
 
@@ -536,7 +542,7 @@ calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         if (delim) {
             *delim = L'\0';
         }
-        verified |= LOCATION_FORCED;
+        verified |= LOCATION_FORCED | LOCATION_CUSTOM;
     }
     else {
         status = search_for_stdlib_dir(calculate,
@@ -550,6 +556,7 @@ calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
             if (safe_wcscpy(stdlib, prefix, stdlib_len) < 0) {
                 return PATHLEN_ERR();
             }
+            verified |= LOCATION_DEFAULT | LOCATION_PREFIX;
         }
     }
 
