@@ -200,6 +200,20 @@ class CookieTests(unittest.TestCase):
             self.assertEqual(dict(C), {})
             self.assertEqual(C.output(), '')
 
+    def test_ignore_unknown_attribute(self):
+        # Ignore unknown attributes, but keep the cookie valid
+        C = cookies.SimpleCookie()
+        C.load('foo=bar; baz')
+        self.assertIsNone(C.get('baz'))
+        self.assertEqual(C.output(), 'Set-Cookie: foo=bar')
+        C.clear()
+        C.load('foo=bar; bar=Low; baz; Priority=High')
+        self.assertEqual(C['foo'].output(), 'Set-Cookie: foo=bar')
+        self.assertIsNone(C['foo'].get('baz'))
+        self.assertEqual(C['bar'].output(), 'Set-Cookie: bar=Low; Priority=High')
+        self.assertIsNone(C['bar'].get('baz'))
+        self.assertNotIn(C.output(), 'baz')
+
     def test_pickle(self):
         rawdata = 'Customer="WILE_E_COYOTE"; Path=/acme; Version=1'
         expected_output = 'Set-Cookie: %s' % rawdata
