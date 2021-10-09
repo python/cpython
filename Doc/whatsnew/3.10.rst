@@ -996,7 +996,7 @@ Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 Keyword-only fields
 ~~~~~~~~~~~~~~~~~~~
 
-dataclassses now supports fields that are keyword-only in the
+dataclasses now supports fields that are keyword-only in the
 generated __init__ method.  There are a number of ways of specifying
 keyword-only fields.
 
