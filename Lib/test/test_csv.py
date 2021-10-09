@@ -342,7 +342,8 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['a,^b,c'], [['a', 'b', 'c']], escapechar='^')
         self._read_test(['a,\0b,c'], [['a', 'b', 'c']], escapechar='\0')
         self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar=None)
-        self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar='')
+        self.assertRaises(TypeError, self._read_test,
+                          ['a,\\b,c'], [['a', '\\b', 'c']], escapechar='')
         self._read_test(['a,\\b,c'], [['a', '\\b', 'c']])
 
     def test_read_quoting(self):
