@@ -1,0 +1,2 @@
+The ``co_lnotab`` attribute of the code objects encodes now instruction
+offsets instead of byte offsets.

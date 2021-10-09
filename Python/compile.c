@@ -7081,7 +7081,7 @@ assemble_line_range(struct assembler* a, int current, PyObject** table,
                     int* prev, int* start, int* offset)
 {
     int ldelta, bdelta;
-    bdelta = (a->a_offset - *start) * sizeof(_Py_CODEUNIT);
+    bdelta = a->a_offset - *start;
     if (bdelta == 0) {
         return 1;
     }
