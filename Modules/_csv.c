@@ -229,21 +229,21 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
 }
 
 static int
-_set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
+_set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
 {
-    if (src == NULL)
+    if (src == NULL) {
         *target = dflt;
+    }
     else {
         *target = '\0';
         if (src != Py_None) {
-            Py_ssize_t len;
             if (!PyUnicode_Check(src)) {
                 PyErr_Format(PyExc_TypeError,
-                    "\"%s\" must be string, not %.200s", name,
+                    "\"%s\" must be string or None, not %.200s", name,
                     Py_TYPE(src)->tp_name);
                 return -1;
             }
-            len = PyUnicode_GetLength(src);
+            Py_ssize_t len = PyUnicode_GetLength(src);
             if (len > 1) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be a 1-character string",
@@ -251,8 +251,38 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
                 return -1;
             }
             /* PyUnicode_READY() is called in PyUnicode_GetLength() */
-            if (len > 0)
+            else {
                 *target = PyUnicode_READ_CHAR(src, 0);
+            }
+        }
+    }
+    return 0;
+}
+
+static int
+_set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
+{
+    if (src == NULL) {
+        *target = dflt;
+    }
+    else {
+        *target = '\0';
+        if (!PyUnicode_Check(src)) {
+            PyErr_Format(PyExc_TypeError,
+                         "\"%s\" must be string, not %.200s", name,
+                         Py_TYPE(src)->tp_name);
+                return -1;
+        }
+        Py_ssize_t len = PyUnicode_GetLength(src);
+        if (len > 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "\"%s\" must be a 1-character string",
+                         name);
+            return -1;
+        }
+        /* PyUnicode_READY() is called in PyUnicode_GetLength() */
+        else {
+            *target = PyUnicode_READ_CHAR(src, 0);
         }
     }
     return 0;
@@ -445,9 +475,9 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto err
     DIASET(_set_char, "delimiter", &self->delimiter, delimiter, ',');
     DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, true);
-    DIASET(_set_char, "escapechar", &self->escapechar, escapechar, 0);
+    DIASET(_set_char_or_none, "escapechar", &self->escapechar, escapechar, 0);
     DIASET(_set_str, "lineterminator", &self->lineterminator, lineterminator, "\r\n");
-    DIASET(_set_char, "quotechar", &self->quotechar, quotechar, '"');
+    DIASET(_set_char_or_none, "quotechar", &self->quotechar, quotechar, '"');
     DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
     DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, false);
     DIASET(_set_bool, "strict", &self->strict, strict, false);
