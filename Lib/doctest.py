@@ -1037,7 +1037,9 @@ class DocTestFinder:
                 if isinstance(val, staticmethod):
                     val = getattr(obj, valname)
                 if isinstance(val, classmethod):
-                    val = getattr(obj, valname).__func__
+                    # Lookup via __dict__ instead of getattr
+                    # in case it is a classmethod property.
+                    val = obj.__dict__[valname].__func__
 
                 # Recurse to methods, properties, and nested classes.
                 if ((inspect.isroutine(val) or inspect.isclass(val) or
