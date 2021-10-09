@@ -217,6 +217,17 @@ class Test_Csv(unittest.TestCase):
         self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
                          escapechar='\\', quoting=csv.QUOTE_MINIMAL)
 
+    def test_write_lineterminator(self):
+        for lineterminator in '\r\n', '\n', '\r', '!@#', '\0':
+            with self.subTest(lineterminator=lineterminator):
+                with StringIO() as sio:
+                    writer = csv.writer(sio, lineterminator=lineterminator)
+                    writer.writerow(['a', 'b'])
+                    writer.writerow([1, 2])
+                    self.assertEqual(sio.getvalue(),
+                                     f'a,b{lineterminator}'
+                                     f'1,2{lineterminator}')
+
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
         self._write_test(iter(['a', 1, None]), 'a,1,')
@@ -286,14 +297,10 @@ class Test_Csv(unittest.TestCase):
         self._read_test([''], [[]])
         self.assertRaises(csv.Error, self._read_test,
                           ['"ab"c'], None, strict = 1)
-        # cannot handle null bytes for the moment
-        self.assertRaises(csv.Error, self._read_test,
-                          ['ab\0c'], None, strict = 1)
         self._read_test(['"ab"c'], [['abc']], doublequote = 0)
 
         self.assertRaises(csv.Error, self._read_test,
-                          [b'ab\0c'], None)
-
+                          [b'abc'], None)
 
     def test_read_eol(self):
         self._read_test(['a,b'], [['a','b']])
@@ -313,6 +320,18 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(csv.Error, self._read_test,
                           ['^'], [], escapechar='^', strict=True)
 
+    def test_read_nul(self):
+        self._read_test(['\0'], [['\0']])
+        self._read_test(['a,\0b,c'], [['a', '\0b', 'c']])
+        self._read_test(['a,b\0,c'], [['a', 'b\0', 'c']])
+        self._read_test(['a,b\\\0,c'], [['a', 'b\0', 'c']], escapechar='\\')
+        self._read_test(['a,"\0b",c'], [['a', '\0b', 'c']])
+
+    def test_read_delimiter(self):
+        self._read_test(['a,b,c'], [['a', 'b', 'c']])
+        self._read_test(['a;b;c'], [['a', 'b', 'c']], delimiter=';')
+        self._read_test(['a\0b\0c'], [['a', 'b', 'c']], delimiter='\0')
+
     def test_read_escape(self):
         self._read_test(['a,\\b,c'], [['a', 'b', 'c']], escapechar='\\')
         self._read_test(['a,b\\,c'], [['a', 'b,c']], escapechar='\\')
@@ -320,6 +339,11 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['a,"b,\\c"'], [['a', 'b,c']], escapechar='\\')
         self._read_test(['a,"b,c\\""'], [['a', 'b,c"']], escapechar='\\')
         self._read_test(['a,"b,c"\\'], [['a', 'b,c\\']], escapechar='\\')
+        self._read_test(['a,^b,c'], [['a', 'b', 'c']], escapechar='^')
+        self._read_test(['a,\0b,c'], [['a', 'b', 'c']], escapechar='\0')
+        self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar=None)
+        self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar='')
+        self._read_test(['a,\\b,c'], [['a', '\\b', 'c']])
 
     def test_read_quoting(self):
         self._read_test(['1,",3,",5'], [['1', ',3,', '5']])
@@ -334,6 +358,8 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(ValueError, self._read_test,
                           ['abc,3'], [[]],
                           quoting=csv.QUOTE_NONNUMERIC)
+        self._read_test(['1,@,3,@,5'], [['1', ',3,', '5']], quotechar='@')
+        self._read_test(['1,\0,3,\0,5'], [['1', ',3,', '5']], quotechar='\0')
 
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size
@@ -1074,6 +1100,12 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
                         a,b
                         """)
 
+    sample14 = """\
+abc\0def
+ghijkl\0mno
+ghi\0jkl
+"""
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
@@ -1142,6 +1174,8 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         dialect = sniffer.sniff(self.sample9)
         self.assertEqual(dialect.delimiter, '+')
         self.assertEqual(dialect.quotechar, "'")
+        dialect = sniffer.sniff(self.sample14)
+        self.assertEqual(dialect.delimiter, '\0')
 
     def test_doublequote(self):
         sniffer = csv.Sniffer()
