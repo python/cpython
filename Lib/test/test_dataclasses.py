@@ -1907,7 +1907,7 @@ class TestCase(unittest.TestCase):
         # Check MRO resolution.
         self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
-    def test_dataclassses_pickleable(self):
+    def test_dataclasses_pickleable(self):
         global P, Q, R
         @dataclass
         class P:
