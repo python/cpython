@@ -734,8 +734,14 @@ class StackNavigationTests(DebuggerTests):
                                   cmds_after_breakpoint=['py-up', 'py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
+    id\(42\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+    bar\(a=a, b=b, c=c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+    foo\(1, 2, 3\)
 $''')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -763,10 +769,18 @@ $''')
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
-    baz\(a, b, c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
     id\(42\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+    baz\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+    bar\(a=a, b=b, c=c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+    foo\(1, 2, 3\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 10, in baz \(args=\(1, 2, 3\)\)
+    id\(42\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+    baz\(a, b, c\)
 $''')
 
 class PyBtTests(DebuggerTests):
@@ -785,7 +799,7 @@ Traceback \(most recent call first\):
   File ".*gdb_sample.py", line 7, in bar
     baz\(a, b, c\)
   File ".*gdb_sample.py", line 4, in foo
-    bar\(a, b, c\)
+    bar\(a=a, b=b, c=c\)
   File ".*gdb_sample.py", line 12, in <module>
     foo\(1, 2, 3\)
 ''')
@@ -801,7 +815,7 @@ Traceback \(most recent call first\):
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
     baz\(a, b, c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
-    bar\(a, b, c\)
+    bar\(a=a, b=b, c=c\)
 #[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
     foo\(1, 2, 3\)
 ''')
@@ -1008,7 +1022,13 @@ class PyLocalsTests(DebuggerTests):
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
-                                    r".*\na = 1\nb = 2\nc = 3\n.*")
+                                    r'''^.*
+Locals for foo
+a = 1
+b = 2
+c = 3
+Locals for <module>
+.*$''')
 
 
 def setUpModule():
