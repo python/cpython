@@ -3004,7 +3004,7 @@ check_eval_breaker:
             Py_DECREF(seq);
             PREDICT(LOAD_FAST__LOAD_FAST);
             PREDICT(LOAD_FAST);
-            NOTRACE_DISPATCH();
+            DISPATCH();
         }
 
         TARGET(UNPACK_EX) {
