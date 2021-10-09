@@ -250,7 +250,7 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
             if (len < 0) {
                 return -1;
             }
-            if (len > 1) {
+            if (len != 1) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be a 1-character string",
                     name);
@@ -283,7 +283,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
         if (len < 0) {
             return -1;
         }
-        if (len > 1) {
+        if (len != 1) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be a 1-character string",
                          name);

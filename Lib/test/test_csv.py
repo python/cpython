@@ -913,6 +913,12 @@ class TestDialectValidity(unittest.TestCase):
         self.assertEqual(d.quotechar, '"')
         self.assertTrue(d.doublequote)
 
+        mydialect.quotechar = ""
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"quotechar" must be a 1-character string')
+
         mydialect.quotechar = "''"
         with self.assertRaises(csv.Error) as cm:
             mydialect()
@@ -976,6 +982,10 @@ class TestDialectValidity(unittest.TestCase):
             quoting = csv.QUOTE_NONE
         d = mydialect()
         self.assertEqual(d.escapechar, "\\")
+
+        mydialect.escapechar = ""
+        with self.assertRaisesRegex(csv.Error, '"escapechar" must be a 1-character string'):
+            mydialect()
 
         mydialect.escapechar = "**"
         with self.assertRaisesRegex(csv.Error, '"escapechar" must be a 1-character string'):
