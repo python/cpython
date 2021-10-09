@@ -4613,19 +4613,26 @@ check_eval_breaker:
             // Check if the call can be inlined or not
             PyObject *function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyFunction_Type) {
-                PyCodeObject *code = (PyCodeObject*)PyFunction_GET_CODE(function);
-                PyObject *locals = code->co_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
-                if ((code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) == 0) {
+                int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
+                int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+                if (!is_generator) {
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                        tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer-oparg, oparg, NULL, 1);
+                        tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
+                                                                stack_pointer-oparg,
+                                                                oparg, NULL, 1);
                     if (new_frame == NULL) {
-                        // When we exit here, we own all variables in the stack (the frame creation has not stolen
-                        // any variable) so we need to clean the whole stack (done in the "error" label).
+                        // When we exit here, we own all variables in the stack
+                        // (the frame creation has not stolen any variable) so
+                        // we need to clean the whole stack (done in the
+                        // "error" label).
                         goto error;
                     }
+
                     STACK_SHRINK(oparg + 1);
                     assert(tstate->interp->eval_frame != NULL);
-                    // The frame has stolen all the arguments from the stack, so there is no need to clean them up.```
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
                     Py_DECREF(function);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     new_frame->depth = frame->depth + 1;
@@ -4633,8 +4640,10 @@ check_eval_breaker:
                     goto start_frame;
                 }
                 else {
-                    /* Callable is a generator or coroutine function: create coroutine or generator. */
-                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals, stack_pointer-oparg, oparg, NULL);
+                    /* Callable is a generator or coroutine function: create
+                     * coroutine or generator. */
+                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function),
+                                    locals, stack_pointer-oparg, oparg, NULL);
                     STACK_SHRINK(oparg + 1);
                     for (int i = 0; i < oparg + 1; i++) {
                         Py_DECREF(stack_pointer[i]);
@@ -4642,10 +4651,12 @@ check_eval_breaker:
                 }
             }
             else {
+                /* Callable is not a Python function */
                 PyObject **sp = stack_pointer;
                 res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
                 stack_pointer = sp;
             }
+
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -5678,8 +5689,8 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
             // arguments. Notice that we only need to increase the reference count of the
             // *valid* arguments (i.e. the ones that fit into the frame). 
             PyCodeObject *co = (PyCodeObject*)con->fc_code;
-            const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-            for (Py_ssize_t i = 0; i < Py_MIN(argcount, total_args); i++) {
+            const size_t total_args = co->co_argcount + co->co_kwonlyargcount;
+            for (size_t i = 0; i < Py_MIN(argcount, total_args); i++) {
                 Py_XINCREF(frame->localsplus[i]);
             }
         }
