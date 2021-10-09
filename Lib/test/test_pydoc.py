@@ -132,128 +132,70 @@ FILE
 expected_text_data_docstrings = tuple('\n     |      ' + s if s else ''
                                       for s in expected_data_docstrings)
 
-expected_html_pattern = """
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="heading">
-<tr bgcolor="#7799ee">
-<td valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong><a href="test.html"><font color="#ffffff">test</font></a>.pydoc_mod</strong></big></big> (version 1.2.3.4)</font></td
-><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:%s">%s</a>%s</font></td></tr></table>
-    <p><tt>This&nbsp;is&nbsp;a&nbsp;test&nbsp;module&nbsp;for&nbsp;test_pydoc</tt></p>
-<p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ee77aa">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><dl>
-<dt><font face="helvetica, arial"><a href="builtins.html#object">builtins.object</a>
-</font></dt><dd>
-<dl>
-<dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#A">A</a>
-</font></dt><dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#B">B</a>
-</font></dt><dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#C">C</a>
-</font></dt></dl>
-</dd>
-</dl>
- <p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="A">class <strong>A</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
-\x20\x20\x20\x20
-<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
-<td colspan=2><tt>Hello&nbsp;and&nbsp;goodbye<br>&nbsp;</tt></td></tr>
-<tr><td>&nbsp;</td>
-<td width="100%%">Methods defined here:<br>
-<dl><dt><a name="A-__init__"><strong>__init__</strong></a>()</dt><dd><tt>Wow,&nbsp;I&nbsp;have&nbsp;no&nbsp;function!</tt></dd></dl>
+html2text_of_expected = """
+test.pydoc_mod (version 1.2.3.4)
+This is a test module for test_pydoc
 
-<hr>
-Data descriptors defined here:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-</td></tr></table> <p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="B">class <strong>B</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Data descriptors defined here:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>%s</tt></dd>
-</dl>
-<hr>
-Data and other attributes defined here:<br>
-<dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
+Classes
+    builtins.object
+    A
+    B
+    C
 
-<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': &lt;class 'str'&gt;}</dl>
+class A(builtins.object)
+    Hello and goodbye
 
-</td></tr></table> <p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="C">class <strong>C</strong></a>(<a href="builtins.html#object">builtins.object</a>)</font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Methods defined here:<br>
-<dl><dt><a name="C-get_answer"><strong>get_answer</strong></a>(self)</dt><dd><tt>Return&nbsp;<a href="#C-say_no">say_no</a>()</tt></dd></dl>
+    Methods defined here:
+        __init__()
+            Wow, I have no function!
 
-<dl><dt><a name="C-is_it_true"><strong>is_it_true</strong></a>(self)</dt><dd><tt>Return&nbsp;self.<a href="#C-get_answer">get_answer</a>()</tt></dd></dl>
+    Data descriptors defined here:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
 
-<dl><dt><a name="C-say_no"><strong>say_no</strong></a>(self)</dt></dl>
+class B(builtins.object)
+    Data descriptors defined here:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
+    Data and other attributes defined here:
+        NO_MEANING = 'eggs'
+        __annotations__ = {'NO_MEANING': <class 'str'>}
 
-<hr>
-Data descriptors defined here:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-</td></tr></table></td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#eeaa77">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><dl><dt><a name="-doc_func"><strong>doc_func</strong></a>()</dt><dd><tt>This&nbsp;function&nbsp;solves&nbsp;all&nbsp;of&nbsp;the&nbsp;world's&nbsp;problems:<br>
-hunger<br>
-lack&nbsp;of&nbsp;Python<br>
-war</tt></dd></dl>
- <dl><dt><a name="-nodoc_func"><strong>nodoc_func</strong></a>()</dt></dl>
-</td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#55aa55">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><strong>__xyz__</strong> = 'X, Y and Z'</td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#7799ee">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Author</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Benjamin&nbsp;Peterson</td></tr></table><p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#7799ee">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#ffffff" face="helvetica, arial"><big><strong>Credits</strong></big></font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#7799ee"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%">Nobody</td></tr></table>
-""".strip() # ' <- emacs turd
+
+class C(builtins.object)
+    Methods defined here:
+        get_answer(self)
+            Return say_no()
+        is_it_true(self)
+            Return self.get_answer()
+        say_no(self)
+    Data descriptors defined here:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+             list of weak references to the object (if defined)
+
+Functions
+    doc_func()
+        This function solves all of the world's problems:
+        hunger
+        lack of Python
+        war
+    nodoc_func()
+
+Data
+    __xyz__ = 'X, Y and Z'
+
+Author
+    Benjamin Peterson
+
+Credits
+    Nobody
+"""
 
 expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
                                       for s in expected_data_docstrings)
@@ -394,6 +336,16 @@ def get_html_title(text):
     return title
 
 
+def html2text(html):
+    """A quick and dirty implementation of html2text.
+
+    Tailored for pydoc tests only.
+    """
+    return pydoc.replace(
+        re.sub("<.*?>", "", html),
+        "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+
+
 class PydocBaseTest(unittest.TestCase):
 
     def _restricted_walk_packages(self, walk_packages, path=None):
@@ -434,12 +386,16 @@ class PydocDocTest(unittest.TestCase):
     @requires_docstrings
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
+        text_result = html2text(result)
+        expected_lines = [line.strip() for line in html2text_of_expected if line]
+        for line in expected_lines:
+            self.assertIn(line, text_result)
         mod_file = inspect.getabsfile(pydoc_mod)
         mod_url = urllib.parse.quote(mod_file)
-        expected_html = expected_html_pattern % (
-                        (mod_url, mod_file, doc_loc) +
-                        expected_html_data_docstrings)
-        self.assertEqual(result, expected_html)
+        self.assertIn(mod_url, result)
+        self.assertIn(mod_file, result)
+        self.assertIn(doc_loc, result)
+
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -845,47 +801,39 @@ class B(A)
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
-        self.assertEqual(doc, '''\
-Python Library Documentation: class B in module %s
+        expected_text = """
+Python Library Documentation
 
-<p>
-<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan=3 valign=bottom>&nbsp;<br>
-<font color="#000000" face="helvetica, arial"><a name="B">class <strong>B</strong></a>(A)</font></td></tr>
-\x20\x20\x20\x20
-<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%%"><dl><dt>Method resolution order:</dt>
-<dd>B</dd>
-<dd>A</dd>
-<dd><a href="builtins.html#object">builtins.object</a></dd>
-</dl>
-<hr>
-Methods defined here:<br>
-<dl><dt><a name="B-b_size"><strong>b_size</strong></a> = <a href="#B-a_size">a_size</a>(self)</dt></dl>
+class B in module test.test_pydoc
+class B(A)
+    Method resolution order:
+        B
+        A
+        builtins.object
 
-<dl><dt><a name="B-itemconfig"><strong>itemconfig</strong></a> = <a href="#B-itemconfigure">itemconfigure</a>(self, tagOrId, cnf=None, **kw)</dt></dl>
+    Methods defined here:
+        b_size = a_size(self)
+        itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
+        itemconfigure(self, tagOrId, cnf=None, **kw)
+            Configure resources of an item TAGORID.
 
-<dl><dt><a name="B-itemconfigure"><strong>itemconfigure</strong></a>(self, tagOrId, cnf=None, **kw)</dt><dd><tt>Configure&nbsp;resources&nbsp;of&nbsp;an&nbsp;item&nbsp;TAGORID.</tt></dd></dl>
+    Methods inherited from A:
+        a_size(self)
+            Return size
+        lift = tkraise(self, aboveThis=None)
+        tkraise(self, aboveThis=None)
+            Raise this widget in the stacking order.
 
-<hr>
-Methods inherited from A:<br>
-<dl><dt><a name="B-a_size"><strong>a_size</strong></a>(self)</dt><dd><tt>Return&nbsp;size</tt></dd></dl>
-
-<dl><dt><a name="B-lift"><strong>lift</strong></a> = <a href="#B-tkraise">tkraise</a>(self, aboveThis=None)</dt></dl>
-
-<dl><dt><a name="B-tkraise"><strong>tkraise</strong></a>(self, aboveThis=None)</dt><dd><tt>Raise&nbsp;this&nbsp;widget&nbsp;in&nbsp;the&nbsp;stacking&nbsp;order.</tt></dd></dl>
-
-<hr>
-Data descriptors inherited from A:<br>
-<dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-<dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
-</dl>
-</td></tr></table>\
-''' % __name__)
+    Data descriptors inherited from A:
+        __dict__
+            dictionary for instance variables (if defined)
+        __weakref__
+            list of weak references to the object (if defined)
+"""
+        as_text = html2text(doc)
+        expected_lines = [line.strip() for line in expected_text.split("\n") if line]
+        for expected_line in expected_lines:
+            self.assertIn(expected_line, as_text)
 
 
 class PydocImportTest(PydocBaseTest):
