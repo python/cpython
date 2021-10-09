@@ -175,8 +175,9 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
-* ``siphash13`` is added as a new internal hash algorithm for strings, and the default
-  algorithm is changed from ``siphash24`` to ``siphash13``.
+* ``siphash13`` is added as a new internal hashing algorithms. It's has similar security
+  properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
+  and some other types now use it as default algorithm for ``hash()``.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
 New Modules
