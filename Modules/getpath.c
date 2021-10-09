@@ -125,9 +125,10 @@ extern "C" {
 #define LOCATION_CUSTOM 8           /* from a file or env var */
 #define LOCATION_IN_BUILD_DIR 16
 #define LOCATION_IN_SOURCE_TREE 32
-#define LOCATION_PREFIX 64
-#define LOCATION_WITH_ARGV0 128     /* in the tree under dirname(argv[0]) */
-#define LOCATION_NEAR_ARGV0 256     /* based on a parent of argv[0] */
+#define LOCATION_WITH_ARGV0 64      /* in the tree under dirname(argv[0]) */
+#define LOCATION_NEAR_ARGV0 128     /* based on a parent of argv[0] */
+#define LOCATION_PREFIX 256
+#define LOCATION_EXEC_PREFIX 512
 
 #define LOCATION_FOUND (LOCATION_EXISTS | LOCATION_FORCED)
 
@@ -146,17 +147,21 @@ typedef struct {
     const wchar_t *platlibdir;
 
     wchar_t *argv0_dir;
-    int argv0_dir_verified;   /* bit vector of verified LOCATION_* flags */
+    int argv0_dir_verified;     /* bit vector of verified LOCATION_* flags */
 
     wchar_t *stdlib_dir;
-    int stdlib_dir_verified;  /* bit vector of verified LOCATION_* flags */
+    int stdlib_dir_verified;    /* bit vector of verified LOCATION_* flags */
 
     wchar_t *prefix;
-    int prefix_verified;      /* bit vector of verified LOCATION_* flags */
-    bool prefix_found;        /* found platform independent libraries? */
+    int prefix_verified;        /* bit vector of verified LOCATION_* flags */
+    bool prefix_found;          /* found platform independent libraries? */
+
+    wchar_t *extensions;        /* path under exec_prefix where stdlib ext modules are found */
+    int extensions_verified;    /* bit vector of verified LOCATION_* flags */
 
     wchar_t *exec_prefix;
-    int exec_prefix_found;    /* found the platform dependent libraries? */
+    int exec_prefix_verified;   /* bit vector of verified LOCATION_* flags */
+    bool exec_prefix_found;     /* found the platform dependent libraries? */
 
     wchar_t *zip_path;
 } PyCalculatePath;
@@ -567,9 +572,9 @@ calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
             calculate->argv0_dir_verified |= verified & LOCATION_IN_BUILD_DIR;
             calculate->argv0_dir_verified |= verified & LOCATION_IN_SOURCE_TREE;
         }
-         if (verified & LOCATION_WITH_ARGV0) {
-             verified |= LOCATION_NEAR_ARGV0;
-         }
+        if (verified & LOCATION_WITH_ARGV0) {
+            verified |= LOCATION_NEAR_ARGV0;
+        }
     }
 
     if (prefix != NULL) {
@@ -600,7 +605,7 @@ calculate_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     memset(prefix, 0, sizeof(prefix));
     size_t prefix_len = Py_ARRAY_LENGTH(prefix);
 
-    /* Reduce stdlib_dir to the essense of the prefix,
+    /* Reduce stdlib_dir to the essence of the prefix,
      * e.g. /usr/local/lib/python1.5 is reduced to /usr/local.
     */
     if (safe_wcscpy(prefix, calculate->stdlib_dir, prefix_len) < 0) {
@@ -652,8 +657,7 @@ calculate_set_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
 static PyStatus
 calculate_pybuilddir(const wchar_t *argv0_dir,
-                     wchar_t *exec_prefix, size_t exec_prefix_len,
-                     int *found)
+                     wchar_t *ext_dir, size_t ext_dir_len, int *verified)
 {
     PyStatus status;
 
@@ -686,17 +690,17 @@ calculate_pybuilddir(const wchar_t *argv0_dir,
     }
 
     /* Path: <argv0_dir> / <pybuilddir content> */
-    if (safe_wcscpy(exec_prefix, argv0_dir, exec_prefix_len) < 0) {
+    if (safe_wcscpy(ext_dir, argv0_dir, ext_dir_len) < 0) {
         PyMem_RawFree(pybuilddir);
         return PATHLEN_ERR();
     }
-    status = joinpath(exec_prefix, pybuilddir, exec_prefix_len);
+    status = joinpath(ext_dir, pybuilddir, ext_dir_len);
     PyMem_RawFree(pybuilddir);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    *found = -1;
+    *verified |= LOCATION_IN_BUILD_DIR | LOCATION_CUSTOM;
     return _PyStatus_OK();
 }
 
@@ -705,142 +709,195 @@ calculate_pybuilddir(const wchar_t *argv0_dir,
    MAXPATHLEN bytes long.
 */
 static PyStatus
-search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
-                       wchar_t *exec_prefix, size_t exec_prefix_len,
-                       int *found)
+search_for_extensions(PyCalculatePath *calculate,
+                      wchar_t *ext_dir, size_t ext_dir_len, int *verified)
 {
+    assert(*verified == LOCATION_UNKNOWN);
     PyStatus status;
 
-    /* If PYTHONHOME is set, we believe it unconditionally */
-    if (pathconfig->home) {
-        /* Path: <home> / <lib_python> / "lib-dynload" */
-        wchar_t *delim = wcschr(pathconfig->home, DELIM);
-        if (delim) {
-            if (safe_wcscpy(exec_prefix, delim+1, exec_prefix_len) < 0) {
-                return PATHLEN_ERR();
-            }
-        }
-        else {
-            if (safe_wcscpy(exec_prefix, pathconfig->home, exec_prefix_len) < 0) {
-                return PATHLEN_ERR();
-            }
-        }
-        status = joinpath(exec_prefix, calculate->lib_python, exec_prefix_len);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-        status = joinpath(exec_prefix, L"lib-dynload", exec_prefix_len);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-        *found = 1;
-        return _PyStatus_OK();
-    }
-
     /* Check for pybuilddir.txt */
-    assert(*found == 0);
     status = calculate_pybuilddir(calculate->argv0_dir,
-                                  exec_prefix, exec_prefix_len, found);
+                                  ext_dir, ext_dir_len, verified);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    if (*found) {
+    if (*verified) {
         return _PyStatus_OK();
     }
+
+    // XXX Try <stdlib_dir> / "lib-dynload" here first?
 
     /* Search from argv0_dir, until root is found */
-    status = copy_absolute(exec_prefix, calculate->argv0_dir, exec_prefix_len);
+    status = copy_absolute(ext_dir, calculate->argv0_dir, ext_dir_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
+    int flag = LOCATION_WITH_ARGV0;
     do {
         /* Path: <argv0_dir or substring> / <lib_python> / "lib-dynload" */
-        size_t n = wcslen(exec_prefix);
-        status = joinpath(exec_prefix, calculate->lib_python, exec_prefix_len);
+        size_t n = wcslen(ext_dir);
+        status = joinpath(ext_dir, calculate->lib_python, ext_dir_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
-        status = joinpath(exec_prefix, L"lib-dynload", exec_prefix_len);
+        status = joinpath(ext_dir, L"lib-dynload", ext_dir_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
-        if (isdir(exec_prefix)) {
-            *found = 1;
+        if (isdir(ext_dir)) {
+            *verified |= LOCATION_EXISTS | flag;
             return _PyStatus_OK();
         }
-        exec_prefix[n] = L'\0';
-        reduce(exec_prefix);
-    } while (exec_prefix[0]);
+        ext_dir[n] = L'\0';
+        reduce(ext_dir);
+        flag = LOCATION_NEAR_ARGV0;
+    } while (ext_dir[0]);
 
     /* Look at configure's EXEC_PREFIX.
 
        Path: <EXEC_PREFIX macro> / <lib_python> / "lib-dynload" */
-    if (safe_wcscpy(exec_prefix, calculate->exec_prefix_macro, exec_prefix_len) < 0) {
+    if (safe_wcscpy(ext_dir, calculate->exec_prefix_macro, ext_dir_len) < 0) {
         return PATHLEN_ERR();
     }
-    status = joinpath(exec_prefix, calculate->lib_python, exec_prefix_len);
+    status = joinpath(ext_dir, calculate->lib_python, ext_dir_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    status = joinpath(exec_prefix, L"lib-dynload", exec_prefix_len);
+    status = joinpath(ext_dir, L"lib-dynload", ext_dir_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    if (isdir(exec_prefix)) {
-        *found = 1;
+    if (isdir(ext_dir)) {
+        *verified |= LOCATION_EXISTS | LOCATION_EXEC_PREFIX;
         return _PyStatus_OK();
     }
 
     /* Fail */
-    *found = 0;
     return _PyStatus_OK();
 }
 
 
 static PyStatus
-calculate_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_extensions_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
     PyStatus status;
+    wchar_t extensions[MAXPATHLEN+1];
+    memset(extensions, 0, sizeof(extensions));
+    size_t extensions_len = Py_ARRAY_LENGTH(extensions);
+    const wchar_t *exec_prefix = NULL;
+    int verified = LOCATION_UNKNOWN;
+
+    /* If PYTHONHOME is set, we believe it unconditionally */
+    if (pathconfig->home != NULL) {
+        /* Path: <home> / <lib_python> */
+        wchar_t *delim = wcschr(pathconfig->home, DELIM);
+        if (delim) {
+            exec_prefix = delim + 1;
+        }
+        else {
+            exec_prefix = pathconfig->home;
+        }
+        if (safe_wcscpy(extensions, exec_prefix, extensions_len) < 0) {
+            return PATHLEN_ERR();
+        }
+        verified |= LOCATION_FORCED | LOCATION_CUSTOM;
+    }
+    else {
+        status = search_for_extensions(calculate,
+                                       extensions, extensions_len, &verified);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+        if (*extensions == L'\0') {
+            /* Fall back to EXEC_PREFIX / <lib_python> / "lib-dynload". */
+            exec_prefix = calculate->exec_prefix_macro;
+            if (safe_wcscpy(extensions, exec_prefix, extensions_len) < 0) {
+                return PATHLEN_ERR();
+            }
+            verified |= LOCATION_DEFAULT | LOCATION_EXEC_PREFIX;
+        }
+        else if (verified & LOCATION_WITH_ARGV0) {
+            calculate->argv0_dir_verified |= verified & LOCATION_EXISTS;
+        }
+        if (verified & LOCATION_WITH_ARGV0) {
+            verified |= LOCATION_NEAR_ARGV0;
+        }
+    }
+
+    if (exec_prefix != NULL) {
+        status = joinpath(extensions, calculate->lib_python, extensions_len);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+        status = joinpath(extensions, L"lib-dynload", extensions_len);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    calculate->extensions= _PyMem_RawWcsdup(extensions);
+    if (calculate->extensions== NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+    calculate->extensions_verified = verified;
+
+    return _PyStatus_OK();
+}
+
+static PyStatus
+calculate_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+{
+    assert(calculate->extensions != NULL);
+    assert(calculate->exec_prefix == NULL);
+    assert(calculate->exec_prefix_verified == LOCATION_UNKNOWN);
+
     wchar_t exec_prefix[MAXPATHLEN+1];
     memset(exec_prefix, 0, sizeof(exec_prefix));
     size_t exec_prefix_len = Py_ARRAY_LENGTH(exec_prefix);
 
-    status = search_for_exec_prefix(calculate, pathconfig,
-                                    exec_prefix, exec_prefix_len,
-                                    &calculate->exec_prefix_found);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    int verified = calculate->extensions_verified;
+    bool found = verified & LOCATION_FOUND;
+    if (verified & LOCATION_IN_BUILD_DIR) {
+        /* Fall back to EXEC_PREFIX. */
+        if (safe_wcscpy(exec_prefix, calculate->exec_prefix_macro,
+                        exec_prefix_len) < 0) {
+            return PATHLEN_ERR();
+        }
+        verified = LOCATION_DEFAULT | LOCATION_EXEC_PREFIX;
+        found = true;
     }
+    else {
+        /* Reduce extensions to the essence of the exc prefix,
+         * e.g. /usr/local/lib/python1.5/lib-dynload is reduced to /usr/local.
+        */
+        if (safe_wcscpy(exec_prefix, calculate->extensions, exec_prefix_len) < 0) {
+            return PATHLEN_ERR();
+        }
+        reduce(exec_prefix);
+        reduce(exec_prefix);
+        reduce(exec_prefix);
+        if (*exec_prefix == L'\0') {
+            /* exec_prefix is the root directory, but reduce() chopped
+               off the "/". */
+            wcscpy(exec_prefix, separator);
+        }
+    }
+
+    calculate->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
+    if (calculate->exec_prefix == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+    calculate->exec_prefix_verified = verified;
+    calculate->exec_prefix_found = found;
 
     if (!calculate->exec_prefix_found) {
         if (calculate->warnings) {
             fprintf(stderr,
-                "Could not find platform dependent libraries <exec_prefix>\n");
-        }
-
-        /* <platlibdir> / "lib-dynload" */
-        wchar_t *lib_dynload = joinpath2(calculate->platlibdir,
-                                         L"lib-dynload");
-        if (lib_dynload == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-
-        calculate->exec_prefix = joinpath2(calculate->exec_prefix_macro,
-                                           lib_dynload);
-        PyMem_RawFree(lib_dynload);
-
-        if (calculate->exec_prefix == NULL) {
-            return _PyStatus_NO_MEMORY();
+                    "Could not find platform dependent libraries <exec_prefix>\n");
         }
     }
-    else {
-        /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
-        calculate->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
-        if (calculate->exec_prefix == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-    }
+
     return _PyStatus_OK();
 }
 
@@ -849,36 +906,11 @@ static PyStatus
 calculate_set_exec_prefix(PyCalculatePath *calculate,
                           _PyPathConfig *pathconfig)
 {
-    if (calculate->exec_prefix_found > 0) {
-        wchar_t *exec_prefix = _PyMem_RawWcsdup(calculate->exec_prefix);
-        if (exec_prefix == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-
-        reduce(exec_prefix);
-        reduce(exec_prefix);
-        reduce(exec_prefix);
-
-        if (exec_prefix[0]) {
-            pathconfig->exec_prefix = exec_prefix;
-        }
-        else {
-            /* empty string: use SEP instead */
-            PyMem_RawFree(exec_prefix);
-
-            /* The exec_prefix is the root directory, but reduce() chopped
-               off the "/". */
-            pathconfig->exec_prefix = _PyMem_RawWcsdup(separator);
-            if (pathconfig->exec_prefix == NULL) {
-                return _PyStatus_NO_MEMORY();
-            }
-        }
-    }
-    else {
-        pathconfig->exec_prefix = _PyMem_RawWcsdup(calculate->exec_prefix_macro);
-        if (pathconfig->exec_prefix == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
+    assert(calculate->exec_prefix != NULL);
+    assert(pathconfig->exec_prefix == NULL);
+    pathconfig->exec_prefix = _PyMem_RawWcsdup(calculate->exec_prefix);
+    if (pathconfig->exec_prefix == NULL) {
+        return _PyStatus_NO_MEMORY();
     }
     return _PyStatus_OK();
 }
@@ -1349,7 +1381,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
     }
 
     bufsz += wcslen(calculate->zip_path) + 1;
-    bufsz += wcslen(calculate->exec_prefix) + 1;
+    bufsz += wcslen(calculate->extensions) + 1;
 
     /* Allocate the buffer */
     wchar_t *buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
@@ -1400,7 +1432,7 @@ calculate_module_search_path(PyCalculatePath *calculate,
     wcscat(buf, delimiter);
 
     /* Finally, on goes the directory for dynamic-load modules */
-    wcscat(buf, calculate->exec_prefix);
+    wcscat(buf, calculate->extensions);
 
     pathconfig->module_search_path = buf;
     return _PyStatus_OK();
@@ -1469,6 +1501,7 @@ calculate_free(PyCalculatePath *calculate)
     PyMem_RawFree(calculate->zip_path);
     PyMem_RawFree(calculate->argv0_dir);
     PyMem_RawFree(calculate->stdlib_dir);
+    PyMem_RawFree(calculate->extensions);
     PyMem_RawFree(calculate->prefix);
     PyMem_RawFree(calculate->exec_prefix);
 }
@@ -1509,6 +1542,11 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     status = calculate_zip_path(calculate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = calculate_extensions_dir(calculate, pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
