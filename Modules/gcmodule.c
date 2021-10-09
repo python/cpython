@@ -31,7 +31,6 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pydtrace.h"
-#include "pytime.h"             // _PyTime_GetMonotonicClock()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -162,15 +161,20 @@ _PyGC_InitState(GCState *gcstate)
 
 
 PyStatus
-_PyGC_Init(PyThreadState *tstate)
+_PyGC_Init(PyInterpreterState *interp)
 {
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = &interp->gc;
+
+    gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
-        gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
+        return _PyStatus_NO_MEMORY();
     }
+
+    gcstate->callbacks = PyList_New(0);
+    if (gcstate->callbacks == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
     return _PyStatus_OK();
 }
 
@@ -475,9 +479,9 @@ subtract_refs(PyGC_Head *containers)
     for (; gc != containers; gc = GC_NEXT(gc)) {
         PyObject *op = FROM_GC(gc);
         traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(FROM_GC(gc),
-                       (visitproc)visit_decref,
-                       op);
+        (void) traverse(op,
+                        (visitproc)visit_decref,
+                        op);
     }
 }
 
@@ -1032,15 +1036,15 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
  * Clearing the free lists may give back memory to the OS earlier.
  */
 static void
-clear_freelists(PyThreadState *tstate)
+clear_freelists(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(tstate);
-    _PyTuple_ClearFreeList(tstate);
-    _PyFloat_ClearFreeList(tstate);
-    _PyList_ClearFreeList(tstate);
-    _PyDict_ClearFreeList(tstate);
-    _PyAsyncGen_ClearFreeLists(tstate);
-    _PyContext_ClearFreeList(tstate);
+    _PyFrame_ClearFreeList(interp);
+    _PyTuple_ClearFreeList(interp);
+    _PyFloat_ClearFreeList(interp);
+    _PyList_ClearFreeList(interp);
+    _PyDict_ClearFreeList(interp);
+    _PyAsyncGen_ClearFreeLists(interp);
+    _PyContext_ClearFreeList(interp);
 }
 
 // Show stats for objects in each generations
@@ -1207,7 +1211,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        t1 = _PyTime_GetMonotonicClock();
+        t1 = _PyTime_GetPerfCounter();
     }
 
     if (PyDTrace_GC_START_ENABLED())
@@ -1303,7 +1307,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (gcstate->debug & DEBUG_STATS) {
-        double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
+        double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);
@@ -1319,7 +1323,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists(tstate);
+        clear_freelists(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {
@@ -1480,8 +1484,7 @@ static PyObject *
 gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
-    GCState *gcstate = get_gc_state();
-    gcstate->enabled = 1;
+    PyGC_Enable();
     Py_RETURN_NONE;
 }
 
@@ -1495,8 +1498,7 @@ static PyObject *
 gc_disable_impl(PyObject *module)
 /*[clinic end generated code: output=97d1030f7aa9d279 input=8c2e5a14e800d83b]*/
 {
-    GCState *gcstate = get_gc_state();
-    gcstate->enabled = 0;
+    PyGC_Disable();
     Py_RETURN_NONE;
 }
 
@@ -1510,8 +1512,7 @@ static int
 gc_isenabled_impl(PyObject *module)
 /*[clinic end generated code: output=1874298331c49130 input=30005e0422373b31]*/
 {
-    GCState *gcstate = get_gc_state();
-    return gcstate->enabled;
+    return PyGC_IsEnabled();
 }
 
 /*[clinic input]
@@ -1686,6 +1687,10 @@ Return the list of objects that directly refer to any of objs.");
 static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
 {
+    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
+        return NULL;
+    }
+
     PyObject *result = PyList_New(0);
     if (!result) {
         return NULL;
@@ -1716,6 +1721,9 @@ static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
     Py_ssize_t i;
+    if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
+        return NULL;
+    }
     PyObject *result = PyList_New(0);
 
     if (result == NULL)
@@ -1757,6 +1765,10 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     int i;
     PyObject* result;
     GCState *gcstate = &tstate->interp->gc;
+
+    if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
+        return NULL;
+    }
 
     result = PyList_New(0);
     if (result == NULL) {
@@ -1992,59 +2004,76 @@ static PyMethodDef GcMethods[] = {
     {NULL,      NULL}           /* Sentinel */
 };
 
-static struct PyModuleDef gcmodule = {
-    PyModuleDef_HEAD_INIT,
-    "gc",              /* m_name */
-    gc__doc__,         /* m_doc */
-    -1,                /* m_size */
-    GcMethods,         /* m_methods */
-    NULL,              /* m_reload */
-    NULL,              /* m_traverse */
-    NULL,              /* m_clear */
-    NULL               /* m_free */
-};
-
-PyMODINIT_FUNC
-PyInit_gc(void)
+static int
+gcmodule_exec(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
 
-    PyObject *m = PyModule_Create(&gcmodule);
-
-    if (m == NULL) {
-        return NULL;
+    /* garbage and callbacks are initialized by _PyGC_Init() early in
+     * interpreter lifecycle. */
+    assert(gcstate->garbage != NULL);
+    if (PyModule_AddObjectRef(module, "garbage", gcstate->garbage) < 0) {
+        return -1;
+    }
+    assert(gcstate->callbacks != NULL);
+    if (PyModule_AddObjectRef(module, "callbacks", gcstate->callbacks) < 0) {
+        return -1;
     }
 
-    if (gcstate->garbage == NULL) {
-        gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return NULL;
-        }
-    }
-    Py_INCREF(gcstate->garbage);
-    if (PyModule_AddObject(m, "garbage", gcstate->garbage) < 0) {
-        return NULL;
-    }
-
-    if (gcstate->callbacks == NULL) {
-        gcstate->callbacks = PyList_New(0);
-        if (gcstate->callbacks == NULL) {
-            return NULL;
-        }
-    }
-    Py_INCREF(gcstate->callbacks);
-    if (PyModule_AddObject(m, "callbacks", gcstate->callbacks) < 0) {
-        return NULL;
-    }
-
-#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) { return NULL; }
+#define ADD_INT(NAME) if (PyModule_AddIntConstant(module, #NAME, NAME) < 0) { return -1; }
     ADD_INT(DEBUG_STATS);
     ADD_INT(DEBUG_COLLECTABLE);
     ADD_INT(DEBUG_UNCOLLECTABLE);
     ADD_INT(DEBUG_SAVEALL);
     ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot gcmodule_slots[] = {
+    {Py_mod_exec, gcmodule_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef gcmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "gc",
+    .m_doc = gc__doc__,
+    .m_size = 0,  // per interpreter state, see: get_gc_state()
+    .m_methods = GcMethods,
+    .m_slots = gcmodule_slots
+};
+
+PyMODINIT_FUNC
+PyInit_gc(void)
+{
+    return PyModuleDef_Init(&gcmodule);
+}
+
+/* C API for controlling the state of the garbage collector */
+int
+PyGC_Enable(void)
+{
+    GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
+    gcstate->enabled = 1;
+    return old_state;
+}
+
+int
+PyGC_Disable(void)
+{
+    GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
+    gcstate->enabled = 0;
+    return old_state;
+}
+
+int
+PyGC_IsEnabled(void)
+{
+    GCState *gcstate = get_gc_state();
+    return gcstate->enabled;
 }
 
 /* Public API to invoke gc.collect() from C */
@@ -2097,9 +2126,9 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
 }
 
 void
-_PyGC_DumpShutdownStats(PyThreadState *tstate)
+_PyGC_DumpShutdownStats(PyInterpreterState *interp)
 {
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = &interp->gc;
     if (!(gcstate->debug & DEBUG_SAVEALL)
         && gcstate->garbage != NULL && PyList_GET_SIZE(gcstate->garbage) > 0) {
         const char *message;
@@ -2134,9 +2163,9 @@ _PyGC_DumpShutdownStats(PyThreadState *tstate)
 }
 
 void
-_PyGC_Fini(PyThreadState *tstate)
+_PyGC_Fini(PyInterpreterState *interp)
 {
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 }
@@ -2294,7 +2323,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
     }
 
     PyGC_Head *g = AS_GC(op);
-    g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
+    g = (PyGC_Head *)PyObject_Realloc(g,  sizeof(PyGC_Head) + basicsize);
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
@@ -2313,7 +2342,7 @@ PyObject_GC_Del(void *op)
     if (gcstate->generations[0].count > 0) {
         gcstate->generations[0].count--;
     }
-    PyObject_FREE(g);
+    PyObject_Free(g);
 }
 
 int

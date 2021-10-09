@@ -1,3 +1,0 @@
-Documented :ref:`generic alias type <types-genericalias>` and
-:data:`types.GenericAlias`. Also added an entry in glossary for
-:term:`generic types <generic type>`.

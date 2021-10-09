@@ -1,0 +1,4 @@
+When libregrtest spawns a worker process, stderr is now written into stdout
+to keep messages order. Use a single pipe for stdout and stderr, rather than
+two pipes. Previously, messages were out of order which made analysis of
+buildbot logs harder Patch by Victor Stinner.

@@ -1,1 +1,0 @@
-Document __format__ functionality for IP addresses.

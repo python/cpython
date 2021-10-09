@@ -51,7 +51,7 @@ PyAPI_FUNC(void) _Py_DumpTraceback(
    _PyGILState_GetInterpreterStateUnsafe() in last resort.
 
    It is better to pass NULL to interp and current_tstate, the function tries
-   different options to retrieve these informations.
+   different options to retrieve this information.
 
    This function is signal safe. */
 
@@ -74,17 +74,13 @@ PyAPI_FUNC(void) _Py_DumpASCII(int fd, PyObject *text);
    This function is signal safe. */
 PyAPI_FUNC(void) _Py_DumpDecimal(
     int fd,
-    unsigned long value);
+    size_t value);
 
-/* Format an integer as hexadecimal into the file descriptor fd with at least
-   width digits.
-
-   The maximum width is sizeof(unsigned long)*2 digits.
-
-   This function is signal safe. */
+/* Format an integer as hexadecimal with width digits into fd file descriptor.
+   The function is signal safe. */
 PyAPI_FUNC(void) _Py_DumpHexadecimal(
     int fd,
-    unsigned long value,
+    uintptr_t value,
     Py_ssize_t width);
 
 PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(

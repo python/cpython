@@ -35,7 +35,7 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
  * Expects the size, index and offset for the current field in *psize and
  * *poffset, stores the total size so far in *psize, the offset for the next
  * field in *poffset, the alignment requirements for the current field in
- * *palign, and returns a field desriptor for this field.
+ * *palign, and returns a field descriptor for this field.
  */
 /*
  * bitfields extension:
@@ -125,13 +125,11 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-#ifdef CTYPES_UNICODE
             if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-#endif
         }
     }
 
@@ -1137,7 +1135,6 @@ c_get(void *ptr, Py_ssize_t size)
     return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
-#ifdef CTYPES_UNICODE
 /* u - a single wchar_t character */
 static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -1232,7 +1229,6 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     return value;
 }
 
-#endif
 
 static PyObject *
 s_get(void *ptr, Py_ssize_t size)
@@ -1321,12 +1317,12 @@ z_get(void *ptr, Py_ssize_t size)
     }
 }
 
-#ifdef CTYPES_UNICODE
 static PyObject *
 Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     PyObject *keep;
     wchar_t *buffer;
+    Py_ssize_t bsize;
 
     if (value == Py_None) {
         *(wchar_t **)ptr = NULL;
@@ -1350,7 +1346,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     /* We must create a wchar_t* buffer from the unicode object,
        and keep it alive */
-    buffer = PyUnicode_AsWideCharString(value, NULL);
+    buffer = PyUnicode_AsWideCharString(value, &bsize);
     if (!buffer)
         return NULL;
     keep = PyCapsule_New(buffer, CTYPES_CFIELD_CAPSULE_NAME_PYMEM, pymem_destructor);
@@ -1373,7 +1369,7 @@ Z_get(void *ptr, Py_ssize_t size)
         Py_RETURN_NONE;
     }
 }
-#endif
+
 
 #ifdef MS_WIN32
 static PyObject *
@@ -1507,11 +1503,9 @@ static struct fielddesc formattable[] = {
 #endif
     { 'P', P_set, P_get, &ffi_type_pointer},
     { 'z', z_set, z_get, &ffi_type_pointer},
-#ifdef CTYPES_UNICODE
     { 'u', u_set, u_get, NULL}, /* ffi_type set later */
     { 'U', U_set, U_get, &ffi_type_pointer},
     { 'Z', Z_set, Z_get, &ffi_type_pointer},
-#endif
 #ifdef MS_WIN32
     { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
 #endif
@@ -1544,14 +1538,12 @@ _ctypes_get_fielddesc(const char *fmt)
 
     if (!initialized) {
         initialized = 1;
-#ifdef CTYPES_UNICODE
         if (sizeof(wchar_t) == sizeof(short))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sshort;
         else if (sizeof(wchar_t) == sizeof(int))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sint;
         else if (sizeof(wchar_t) == sizeof(long))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_slong;
-#endif
     }
 
     for (; table->code; ++table) {

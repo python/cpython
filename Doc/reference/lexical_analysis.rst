@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/13.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -324,8 +324,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-4.1 can be found at
-https://www.unicode.org/Public/13.0.0/ucd/DerivedCoreProperties.txt
+14.0.0 can be found at
+https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -350,6 +350,27 @@ exactly as written here:
    as         def        from       nonlocal   while
    assert     del        global     not        with
    async      elif       if         or         yield
+
+
+.. _soft-keywords:
+
+Soft Keywords
+-------------
+
+.. index:: soft keyword, keyword
+
+.. versionadded:: 3.10
+
+Some identifiers are only reserved under specific contexts. These are known as
+*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
+syntactically act as keywords in contexts related to the pattern matching
+statement, but this distinction is done at the parser level, not when
+tokenizing.
+
+As soft keywords, their use with pattern matching is possible while still
+preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
+identifier names.
+
 
 .. index::
    single: _, identifiers

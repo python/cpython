@@ -10,7 +10,6 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest
@@ -592,6 +591,15 @@ class TestGzip(BaseTest):
         with gzip.open(self.filename, "rb") as f:
             f._buffer.raw._fp.prepend()
 
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+
+        with gzip.GzipFile(fileobj=io.BytesIO(), mode='w') as f:
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
+
+
 class TestOpen(BaseTest):
     def test_binary_modes(self):
         uncompressed = data1 * 50
@@ -660,14 +668,14 @@ class TestOpen(BaseTest):
     def test_text_modes(self):
         uncompressed = data1.decode("ascii") * 50
         uncompressed_raw = uncompressed.replace("\n", os.linesep)
-        with gzip.open(self.filename, "wt") as f:
+        with gzip.open(self.filename, "wt", encoding="ascii") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw)
-        with gzip.open(self.filename, "rt") as f:
+        with gzip.open(self.filename, "rt", encoding="ascii") as f:
             self.assertEqual(f.read(), uncompressed)
-        with gzip.open(self.filename, "at") as f:
+        with gzip.open(self.filename, "at", encoding="ascii") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read()).decode("ascii")
@@ -681,7 +689,7 @@ class TestOpen(BaseTest):
             self.assertEqual(f.read(), uncompressed_bytes)
         with gzip.open(io.BytesIO(compressed), "rb") as f:
             self.assertEqual(f.read(), uncompressed_bytes)
-        with gzip.open(io.BytesIO(compressed), "rt") as f:
+        with gzip.open(io.BytesIO(compressed), "rt", encoding="ascii") as f:
             self.assertEqual(f.read(), uncompressed_str)
 
     def test_bad_params(self):
@@ -722,9 +730,9 @@ class TestOpen(BaseTest):
     def test_newline(self):
         # Test with explicit newline (universal newline mode disabled).
         uncompressed = data1.decode("ascii") * 50
-        with gzip.open(self.filename, "wt", newline="\n") as f:
+        with gzip.open(self.filename, "wt", encoding="ascii", newline="\n") as f:
             f.write(uncompressed)
-        with gzip.open(self.filename, "rt", newline="\r") as f:
+        with gzip.open(self.filename, "rt", encoding="ascii", newline="\r") as f:
             self.assertEqual(f.readlines(), [uncompressed])
 
 
@@ -774,10 +782,10 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_decompress_infile_outfile_error(self):
-        rc, out, err = assert_python_ok('-m', 'gzip', '-d', 'thisisatest.out')
-        self.assertIn(b"filename doesn't end in .gz:", out)
-        self.assertEqual(rc, 0)
-        self.assertEqual(err, b'')
+        rc, out, err = assert_python_failure('-m', 'gzip', '-d', 'thisisatest.out')
+        self.assertEqual(b"filename doesn't end in .gz: 'thisisatest.out'", err.strip())
+        self.assertEqual(rc, 1)
+        self.assertEqual(out, b'')
 
     @create_and_remove_directory(TEMPDIR)
     def test_compress_stdin_outfile(self):
@@ -833,9 +841,5 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
 
 
-def test_main(verbose=None):
-    support.run_unittest(TestGzip, TestOpen, TestCommandLine)
-
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

@@ -1,2 +1,0 @@
-Fix handling of errors during creation of ``PyFunctionObject``, which resulted
-in operations on uninitialized memory. Patch by Yonatan Goldschmidt.

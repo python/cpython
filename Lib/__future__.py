@@ -42,7 +42,7 @@ CompilerFlag is the (bitfield) flag that should be passed in the fourth
 argument to the builtin function compile() to enable the feature in
 dynamically compiled code.  This flag is stored in the .compiler_flag
 attribute on _Future instances.  These values must match the appropriate
-#defines of CO_xxx flags in Include/compile.h.
+#defines of CO_xxx flags in Include/cpython/compile.h.
 
 No feature line is ever to be deleted from this file.
 """
@@ -143,5 +143,5 @@ generator_stop = _Feature((3, 5, 0, "beta", 1),
                           CO_FUTURE_GENERATOR_STOP)
 
 annotations = _Feature((3, 7, 0, "beta", 1),
-                       (3, 10, 0, "alpha", 0),
+                       (3, 11, 0, "alpha", 0),
                        CO_FUTURE_ANNOTATIONS)

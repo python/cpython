@@ -824,10 +824,20 @@ form.
 .. function:: findall(pattern, string, flags=0)
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
-   strings.  The *string* is scanned left-to-right, and matches are returned in
-   the order found.  If one or more groups are present in the pattern, return a
-   list of groups; this will be a list of tuples if the pattern has more than
-   one group.  Empty matches are included in the result.
+   strings or tuples.  The *string* is scanned left-to-right, and matches
+   are returned in the order found.  Empty matches are included in the result.
+
+   The result depends on the number of capturing groups in the pattern.
+   If there are no groups, return a list of strings matching the whole
+   pattern.  If there is exactly one group, return a list of strings
+   matching that group.  If multiple groups are present, return a list
+   of tuples of strings matching the groups.  Non-capturing groups do not
+   affect the form of the result.
+
+      >>> re.findall(r'\bf[a-z]*', 'which foot or hand fell fastest')
+      ['foot', 'fell', 'fastest']
+      >>> re.findall(r'(\w+)=(\d+)', 'set width=20 and height=10')
+      [('width', '20'), ('height', '10')]
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
@@ -931,8 +941,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('http://www.python.org'))
-      http://www\.python\.org
+      >>> print(re.escape('https://www.python.org'))
+      https://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
@@ -1562,7 +1572,7 @@ find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> re.findall(r"\w+ly", text)
+   >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
 
@@ -1576,7 +1586,7 @@ a writer wanted to find all of the adverbs *and their positions* in
 some text, they would use :func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> for m in re.finditer(r"\w+ly", text):
+   >>> for m in re.finditer(r"\w+ly\b", text):
    ...     print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
    07-16: carefully
    40-47: quickly

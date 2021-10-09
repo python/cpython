@@ -57,6 +57,8 @@ Glossary
 
       See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -158,6 +160,18 @@ Glossary
       See also :term:`text file` for a file object able to read and write
       :class:`str` objects.
 
+   borrowed reference
+      In Python's C API, a borrowed reference is a reference to an object.
+      It does not modify the object reference count. It becomes a dangling
+      pointer if the object is destroyed. For example, a garbage collection can
+      remove the last :term:`strong reference` to the object and so destroy it.
+
+      Calling :c:func:`Py_INCREF` on the :term:`borrowed reference` is
+      recommended to convert it to a :term:`strong reference` in-place, except
+      when the object cannot be destroyed before the last usage of the borrowed
+      reference. The :c:func:`Py_NewRef` function can be used to create a new
+      :term:`strong reference`.
+
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
       export a C-:term:`contiguous` buffer. This includes all :class:`bytes`,
@@ -201,16 +215,6 @@ Glossary
    class variable
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
-
-   coercion
-      The implicit conversion of an instance of one type to another during an
-      operation which involves two arguments of the same type.  For example,
-      ``int(3.15)`` converts the floating point number to the integer ``3``, but
-      in ``3+4.5``, each argument is of a different type (one int, one float),
-      and both must be converted to the same type before they can be added or it
-      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
-      compatible types would have to be normalized to the same value by the
-      programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
    complex number
       An extension of the familiar real number system in which all numbers are
@@ -443,14 +447,17 @@ Glossary
 
       See :term:`variable annotation` and :pep:`484`,
       which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    __future__
-      A pseudo-module which programmers can use to enable new language features
-      which are not compatible with the current interpreter.
-
-      By importing the :mod:`__future__` module and evaluating its variables,
-      you can see when a new feature was first added to the language and when it
-      becomes the default::
+      A :ref:`future statement <future>`, ``from __future__ import <feature>``,
+      directs the compiler to compile the current module using syntax or
+      semantics that will become standard in a future release of Python.
+      The :mod:`__future__` module documents the possible values of
+      *feature*.  By importing this module and evaluating its variables,
+      you can see when a new feature was first added to the language and
+      when it will (or did) become the default::
 
          >>> import __future__
          >>> __future__.division
@@ -696,7 +703,7 @@ Glossary
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
       ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
 
-      On Windows, it is is the ANSI code page (ex: ``cp1252``).
+      On Windows, it is the ANSI code page (ex: ``cp1252``).
 
       ``locale.getpreferredencoding(False)`` can be used to get the locale
       encoding.
@@ -1100,6 +1107,18 @@ Glossary
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
+   strong reference
+      In Python's C API, a strong reference is a reference to an object
+      which increments the object's reference count when it is created and
+      decrements the object's reference count when it is deleted.
+
+      The :c:func:`Py_NewRef` function can be used to create a strong reference
+      to an object. Usually, the :c:func:`Py_DECREF` function must be called on
+      the strong reference before exiting the scope of the strong reference, to
+      avoid leaking one reference.
+
+      See also :term:`borrowed reference`.
+
    text encoding
       A codec which encodes Unicode strings to bytes.
 
@@ -1187,6 +1206,8 @@ Glossary
 
       See :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

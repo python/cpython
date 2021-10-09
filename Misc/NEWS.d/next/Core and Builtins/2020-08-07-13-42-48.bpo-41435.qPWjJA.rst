@@ -1,1 +1,0 @@
-Add `sys._current_exceptions()` function to retrieve a dictionary mapping each thread's identifier to the topmost exception currently active in that thread at the time the function is called.

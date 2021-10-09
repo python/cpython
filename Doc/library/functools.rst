@@ -62,16 +62,26 @@ The :mod:`functools` module defines the following functions:
    Example::
 
        class DataSet:
+
            def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
+               self._data = tuple(sequence_of_numbers)
 
            @cached_property
            def stdev(self):
                return statistics.stdev(self._data)
 
-           @cached_property
-           def variance(self):
-               return statistics.variance(self._data)
+   The mechanics of :func:`cached_property` are somewhat different from
+   :func:`property`.  A regular property blocks attribute writes unless a
+   setter is defined. In contrast, a *cached_property* allows writes.
+
+   The *cached_property* decorator only runs on lookups and only when an
+   attribute of the same name doesn't exist.  When it does run, the
+   *cached_property* writes to the attribute with the same name. Subsequent
+   attribute reads and writes take precedence over the *cached_property*
+   method and it works like a normal attribute.
+
+   The cached value can be cleared by deleting the attribute.  This
+   allows the *cached_property* method to run again.
 
    Note, this decorator interferes with the operation of :pep:`412`
    key-sharing dictionaries.  This means that instance dictionaries
@@ -144,15 +154,16 @@ The :mod:`functools` module defines the following functions:
 
        @lru_cache
        def count_vowels(sentence):
-           sentence = sentence.casefold()
-           return sum(sentence.count(vowel) for vowel in 'aeiou')
+           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
-   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
-   as distinct calls with distinct results.
+   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will always be
+   treated as distinct calls with distinct results.  If *typed* is false,
+   the implementation will usually but not always regard them as equivalent
+   calls and only cache a single result.
 
    The wrapped function is instrumented with a :func:`cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
@@ -162,8 +173,7 @@ The :mod:`functools` module defines the following functions:
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
-   *maxsize* and *currsize*.  In a multi-threaded environment, the hits
-   and misses are approximate.
+   *maxsize* and *currsize*.
 
    The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
@@ -171,6 +181,9 @@ The :mod:`functools` module defines the following functions:
    The original underlying function is accessible through the
    :attr:`__wrapped__` attribute.  This is useful for introspection, for
    bypassing the cache, or for rewrapping the function with a different cache.
+
+   The cache keeps references to the arguments and return values until they age
+   out of the cache or until the cache is cleared.
 
    An `LRU (least recently used) cache
    <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
@@ -189,7 +202,7 @@ The :mod:`functools` module defines the following functions:
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'http://www.python.org/dev/peps/pep-%04d/' % num
+            resource = 'https://www.python.org/dev/peps/pep-%04d/' % num
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()

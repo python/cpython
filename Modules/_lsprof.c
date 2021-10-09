@@ -489,15 +489,15 @@ static PyStructSequence_Field profiler_subentry_fields[] = {
 
 static PyStructSequence_Desc profiler_entry_desc = {
     .name = "_lsprof.profiler_entry",
-    .doc = "",
     .fields = profiler_entry_fields,
+    .doc = NULL,
     .n_in_sequence = 6
 };
 
 static PyStructSequence_Desc profiler_subentry_desc = {
     .name = "_lsprof.profiler_subentry",
-    .doc = "",
     .fields = profiler_subentry_fields,
+    .doc = NULL,
     .n_in_sequence = 5
 };
 
@@ -731,6 +731,13 @@ profiler_clear(ProfilerObject *pObj, PyObject* noarg)
     Py_RETURN_NONE;
 }
 
+static int
+profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
 static void
 profiler_dealloc(ProfilerObject *op)
 {
@@ -798,16 +805,15 @@ static PyType_Slot _lsprof_profiler_type_spec_slots[] = {
     {Py_tp_methods, profiler_methods},
     {Py_tp_dealloc, profiler_dealloc},
     {Py_tp_init, profiler_init},
-    {Py_tp_alloc, PyType_GenericAlloc},
-    {Py_tp_new, PyType_GenericNew},
-    {Py_tp_free, PyObject_Del},
+    {Py_tp_traverse, profiler_traverse},
     {0, 0}
 };
 
 static PyType_Spec _lsprof_profiler_type_spec = {
     .name = "_lsprof.Profiler",
     .basicsize = sizeof(ProfilerObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = _lsprof_profiler_type_spec_slots,
 };
 

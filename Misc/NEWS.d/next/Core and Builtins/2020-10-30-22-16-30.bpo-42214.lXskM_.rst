@@ -1,2 +1,0 @@
-Fixed a possible crash in the PEG parser when checking for the '!=' token in
-the ``barry_as_flufl`` rule. Patch by Pablo Galindo.

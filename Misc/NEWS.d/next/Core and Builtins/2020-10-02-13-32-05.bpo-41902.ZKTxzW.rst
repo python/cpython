@@ -1,3 +1,0 @@
-Micro optimization when compute :c:member:`~PySequenceMethods.sq_item` and
-:c:member:`~PyMappingMethods.mp_subscript` of :class:`range`. Patch by
-Dong-hee Na.

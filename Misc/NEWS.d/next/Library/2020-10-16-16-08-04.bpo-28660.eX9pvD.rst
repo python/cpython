@@ -1,1 +1,0 @@
-:func:`textwrap.wrap` now attempts to break long words after hyphens when ``break_long_words=True`` and ``break_on_hyphens=True``.

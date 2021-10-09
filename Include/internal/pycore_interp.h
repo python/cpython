@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"        // _Py_atomic_address
-#include "pycore_ast.h"           // struct ast_state
+#include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -33,12 +33,6 @@ struct _pending_calls {
 
 struct _ceval_state {
     int recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       _PyEval_EvalFrameDefault() after fast_next_opcode. */
-    int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;
@@ -64,6 +58,11 @@ struct _Py_bytes_state {
     PyBytesObject *characters[256];
 };
 
+struct _Py_unicode_ids {
+    Py_ssize_t size;
+    PyObject **array;
+};
+
 struct _Py_unicode_state {
     // The empty Unicode object is a singleton to improve performance.
     PyObject *empty_string;
@@ -71,6 +70,19 @@ struct _Py_unicode_state {
        shared as well. */
     PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
+
+    /* This dictionary holds all interned unicode strings.  Note that references
+       to strings in this dictionary are *not* counted in the string's ob_refcnt.
+       When the interned string reaches a refcnt of 0 the string deallocation
+       function will delete the reference from this dictionary.
+
+       Another way to look at this is that to say that the actual reference
+       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
+    */
+    PyObject *interned;
+
+    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
+    struct _Py_unicode_ids ids;
 };
 
 struct _Py_float_state {
@@ -159,6 +171,41 @@ struct _Py_exc_state {
 };
 
 
+// atexit state
+typedef struct {
+    PyObject *func;
+    PyObject *args;
+    PyObject *kwargs;
+} atexit_callback;
+
+struct atexit_state {
+    atexit_callback **callbacks;
+    int ncallbacks;
+    int callback_len;
+};
+
+
+// Type attribute lookup cache: speed up attribute and method lookups,
+// see _PyType_Lookup().
+struct type_cache_entry {
+    unsigned int version;  // initialized from type->tp_version_tag
+    PyObject *name;        // reference to exactly a str or None
+    PyObject *value;       // borrowed reference or NULL
+};
+
+#define MCACHE_SIZE_EXP 12
+#define MCACHE_STATS 0
+
+struct type_cache {
+    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
+#if MCACHE_STATS
+    size_t hits;
+    size_t misses;
+    size_t collisions;
+#endif
+};
+
+
 /* interpreter state */
 
 #define _PY_NSMALLPOSINTS           257
@@ -190,11 +237,18 @@ struct _is {
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
+    // sys.modules dictionary
     PyObject *modules;
     PyObject *modules_by_index;
+    // Dictionary of the sys module
     PyObject *sysdict;
+    // Dictionary of the builtins module
     PyObject *builtins;
+    // importlib module
     PyObject *importlib;
+    // override for config->use_frozen_modules (for tests)
+    // (-1: "off", 1: "on", 0: no override)
+    int override_frozen_modules;
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
@@ -218,7 +272,7 @@ struct _is {
 
     PyObject *builtins_copy;
     PyObject *import_func;
-    /* Initialized to PyEval_EvalFrameDefault(). */
+    // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
     Py_ssize_t co_extra_user_count;
@@ -229,13 +283,11 @@ struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
-    /* AtExit module */
-    void (*pyexitfunc)(PyObject *);
-    PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
 
     struct _warnings_runtime_state warnings;
+    struct atexit_state atexit;
 
     PyObject *audit_hooks;
 
@@ -261,15 +313,10 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
+    struct type_cache type_cache;
 };
 
-/* Used by _PyImport_Cleanup() */
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
-
-extern PyStatus _PyInterpreterState_SetConfig(
-    PyInterpreterState *interp,
-    const PyConfig *config);
-
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 
@@ -290,11 +337,10 @@ struct _xidregitem {
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(int64_t);
 
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 #ifdef __cplusplus
 }
 #endif
 #endif /* !Py_INTERNAL_INTERP_H */
-

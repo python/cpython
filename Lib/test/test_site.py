@@ -36,6 +36,7 @@ if sys.flags.no_site:
 import site
 
 
+HAS_USER_SITE = (site.USER_SITE is not None)
 OLD_SYS_PATH = None
 
 
@@ -78,8 +79,10 @@ class HelperFunctionsTests(unittest.TestCase):
         site.USER_SITE = self.old_site
         site.PREFIXES = self.old_prefixes
         sysconfig._CONFIG_VARS = self.original_vars
-        sysconfig._CONFIG_VARS.clear()
-        sysconfig._CONFIG_VARS.update(self.old_vars)
+        # _CONFIG_VARS is None before get_config_vars() is called
+        if sysconfig._CONFIG_VARS is not None:
+            sysconfig._CONFIG_VARS.clear()
+            sysconfig._CONFIG_VARS.update(self.old_vars)
 
     def test_makepath(self):
         # Test makepath() have an absolute path for its first return value
@@ -172,6 +175,7 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
             self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
+        self.maxDiff = None
         self.assertEqual(err_out.getvalue(), "")
         for path in sys.path:
             if isinstance(path, str):
@@ -195,6 +199,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def test__getuserbase(self):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_get_path(self):
         if sys.platform == 'darwin' and sys._framework:
             scheme = 'osx_framework_user'
@@ -244,6 +249,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(rc, 1,
                         "User base not set by PYTHONUSERBASE")
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getuserbase(self):
         site.USER_BASE = None
         user_base = site.getuserbase()
@@ -261,6 +267,7 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertTrue(site.getuserbase().startswith('xoxo'),
                             site.getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getusersitepackages(self):
         site.USER_SITE = None
         site.USER_BASE = None
@@ -295,6 +302,7 @@ class HelperFunctionsTests(unittest.TestCase):
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEqual(dirs[1], wanted)
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_no_home_directory(self):
         # bpo-10496: getuserbase() and getusersitepackages() must not fail if
         # the current user has no home directory (if expanduser() returns the
@@ -402,55 +410,6 @@ class ImportSideEffectTests(unittest.TestCase):
     def tearDown(self):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
-
-    def test_abs_paths(self):
-        # Make sure all imported modules have their __file__ and __cached__
-        # attributes as absolute paths.  Arranging to put the Lib directory on
-        # PYTHONPATH would cause the os module to have a relative path for
-        # __file__ if abs_paths() does not get run.  sys and builtins (the
-        # only other modules imported before site.py runs) do not have
-        # __file__ or __cached__ because they are built-in.
-        try:
-            parent = os.path.relpath(os.path.dirname(os.__file__))
-            cwd = os.getcwd()
-        except ValueError:
-            # Failure to get relpath probably means we need to chdir
-            # to the same drive.
-            cwd, parent = os.path.split(os.path.dirname(os.__file__))
-        with change_cwd(cwd):
-            env = os.environ.copy()
-            env['PYTHONPATH'] = parent
-            code = ('import os, sys',
-                # use ASCII to avoid locale issues with non-ASCII directories
-                'os_file = os.__file__.encode("ascii", "backslashreplace")',
-                r'sys.stdout.buffer.write(os_file + b"\n")',
-                'os_cached = os.__cached__.encode("ascii", "backslashreplace")',
-                r'sys.stdout.buffer.write(os_cached + b"\n")')
-            command = '\n'.join(code)
-            # First, prove that with -S (no 'import site'), the paths are
-            # relative.
-            proc = subprocess.Popen([sys.executable, '-S', '-c', command],
-                                    env=env,
-                                    stdout=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-
-            self.assertEqual(proc.returncode, 0)
-            os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertFalse(os.path.isabs(os__file__))
-            self.assertFalse(os.path.isabs(os__cached__))
-            # Now, with 'import site', it works.
-            proc = subprocess.Popen([sys.executable, '-c', command],
-                                    env=env,
-                                    stdout=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-            self.assertEqual(proc.returncode, 0)
-            os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertTrue(os.path.isabs(os__file__),
-                            "expected absolute path, got {}"
-                            .format(os__file__.decode('ascii')))
-            self.assertTrue(os.path.isabs(os__cached__),
-                            "expected absolute path, got {}"
-                            .format(os__cached__.decode('ascii')))
 
     def test_abs_paths_cached_None(self):
         """Test for __cached__ is None.
@@ -632,7 +591,7 @@ class _pthFileTests(unittest.TestCase):
         return sys_path
 
     def test_underpth_nosite_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         pth_lines = [
             'fake-path-name',
@@ -660,7 +619,7 @@ class _pthFileTests(unittest.TestCase):
         )
 
     def test_underpth_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         exe_file = self._create_underpth_exe([
             'fake-path-name',
@@ -685,7 +644,7 @@ class _pthFileTests(unittest.TestCase):
 
 
     def test_underpth_dll_file(self):
-        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
         exe_file = self._create_underpth_exe([
             'fake-path-name',

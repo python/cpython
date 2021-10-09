@@ -319,7 +319,7 @@ set_running_loop(PyObject *loop)
 
 
 static PyObject *
-get_event_loop(void)
+get_event_loop(int stacklevel)
 {
     PyObject *loop;
     PyObject *policy;
@@ -329,6 +329,13 @@ get_event_loop(void)
     }
     if (loop != NULL) {
         return loop;
+    }
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "There is no current event loop",
+                     stacklevel))
+    {
+        return NULL;
     }
 
     policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
@@ -489,7 +496,7 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_blocking = 0;
 
     if (loop == Py_None) {
-        loop = get_event_loop();
+        loop = get_event_loop(1);
         if (loop == NULL) {
             return -1;
         }
@@ -1479,7 +1486,8 @@ future_cls_getitem(PyObject *cls, PyObject *type)
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
     0,                                  /* am_aiter */
-    0                                   /* am_anext */
+    0,                                  /* am_anext */
+    0,                                  /* am_send  */
 };
 
 static PyMethodDef FutureType_methods[] = {
@@ -1597,37 +1605,61 @@ FutureIter_dealloc(futureiterobject *it)
     }
 }
 
-static PyObject *
-FutureIter_iternext(futureiterobject *it)
+static PySendResult
+FutureIter_am_send(futureiterobject *it,
+                   PyObject *Py_UNUSED(arg),
+                   PyObject **result)
 {
+    /* arg is unused, see the comment on FutureIter_send for clarification */
+
     PyObject *res;
     FutureObj *fut = it->future;
 
+    *result = NULL;
     if (fut == NULL) {
-        return NULL;
+        return PYGEN_ERROR;
     }
 
     if (fut->fut_state == STATE_PENDING) {
         if (!fut->fut_blocking) {
             fut->fut_blocking = 1;
             Py_INCREF(fut);
-            return (PyObject *)fut;
+            *result = (PyObject *)fut;
+            return PYGEN_NEXT;
         }
         PyErr_SetString(PyExc_RuntimeError,
                         "await wasn't used with future");
-        return NULL;
+        return PYGEN_ERROR;
     }
 
     it->future = NULL;
     res = _asyncio_Future_result_impl(fut);
     if (res != NULL) {
-        /* The result of the Future is not an exception. */
-        (void)_PyGen_SetStopIterationValue(res);
-        Py_DECREF(res);
+        Py_DECREF(fut);
+        *result = res;
+        return PYGEN_RETURN;
     }
 
     Py_DECREF(fut);
-    return NULL;
+    return PYGEN_ERROR;
+}
+
+static PyObject *
+FutureIter_iternext(futureiterobject *it)
+{
+    PyObject *result;
+    switch (FutureIter_am_send(it, Py_None, &result)) {
+        case PYGEN_RETURN:
+            (void)_PyGen_SetStopIterationValue(result);
+            Py_DECREF(result);
+            return NULL;
+        case PYGEN_NEXT:
+            return result;
+        case PYGEN_ERROR:
+            return NULL;
+        default:
+            Py_UNREACHABLE();
+    }
 }
 
 static PyObject *
@@ -1716,12 +1748,21 @@ static PyMethodDef FutureIter_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyAsyncMethods FutureIterType_as_async = {
+    0,                                  /* am_await */
+    0,                                  /* am_aiter */
+    0,                                  /* am_anext */
+    (sendfunc)FutureIter_am_send,       /* am_send  */
+};
+
+
 static PyTypeObject FutureIterType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_asyncio.FutureIter",
     .tp_basicsize = sizeof(futureiterobject),
     .tp_itemsize = 0,
     .tp_dealloc = (destructor)FutureIter_dealloc,
+    .tp_as_async = &FutureIterType_as_async,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)FutureIter_traverse,
@@ -3043,7 +3084,19 @@ static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
 /*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
 {
-    return get_event_loop();
+    return get_event_loop(1);
+}
+
+/*[clinic input]
+_asyncio._get_event_loop
+    stacklevel: int = 3
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
+/*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
+{
+    return get_event_loop(stacklevel-1);
 }
 
 /*[clinic input]
@@ -3186,6 +3239,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }
@@ -3340,6 +3396,7 @@ PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_GET_EVENT_LOOP_METHODDEF
+    _ASYNCIO__GET_EVENT_LOOP_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF

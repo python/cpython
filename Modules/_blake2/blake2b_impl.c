@@ -393,7 +393,7 @@ py_blake2b_dealloc(PyObject *self)
     }
 
     PyTypeObject *type = Py_TYPE(self);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 
@@ -409,6 +409,6 @@ static PyType_Slot blake2b_type_slots[] = {
 PyType_Spec blake2b_type_spec = {
     .name = "_blake2.blake2b",
     .basicsize =  sizeof(BLAKE2bObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = blake2b_type_slots
 };

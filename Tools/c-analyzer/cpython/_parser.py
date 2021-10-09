@@ -1,7 +1,6 @@
 import os.path
 import re
 
-from c_common.fsutil import expand_filenames, iter_files_by_suffix
 from c_parser.preprocessor import (
     get_preprocessor as _get_preprocessor,
 )
@@ -9,7 +8,7 @@ from c_parser import (
     parse_file as _parse_file,
     parse_files as _parse_files,
 )
-from . import REPO_ROOT, INCLUDE_DIRS, SOURCE_DIRS
+from . import REPO_ROOT
 
 
 GLOB_ALL = '**/*'
@@ -42,19 +41,6 @@ def clean_lines(text):
     Python/**/*.c
 @end=sh@
 '''
-
-GLOBS = [
-    'Include/*.h',
-    'Include/internal/*.h',
-    'Modules/**/*.h',
-    'Modules/**/*.c',
-    'Objects/**/*.h',
-    'Objects/**/*.c',
-    'Python/**/*.h',
-    'Parser/**/*.c',
-    'Python/**/*.h',
-    'Parser/**/*.c',
-]
 
 EXCLUDED = clean_lines('''
 # @begin=conf@
@@ -162,6 +148,12 @@ Modules/_datetimemodule.c	Py_BUILD_CORE	1
 Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
 Modules/_heapqmodule.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
+Modules/_sre.c	Py_BUILD_CORE	1
+Modules/_collectionsmodule.c	Py_BUILD_CORE	1
+Modules/_zoneinfo.c	Py_BUILD_CORE	1
+Modules/unicodedata.c	Py_BUILD_CORE	1
+Modules/_cursesmodule.c	Py_BUILD_CORE	1
+Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
 Objects/stringlib/codecs.h	Py_BUILD_CORE	1
 Python/ceval_gil.h	Py_BUILD_CORE	1
 Python/condvar.h	Py_BUILD_CORE	1
@@ -272,26 +264,6 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 SAME = [
     './Include/cpython/',
 ]
-
-
-def resolve_filename(filename):
-    orig = filename
-    filename = os.path.normcase(os.path.normpath(filename))
-    if os.path.isabs(filename):
-        if os.path.relpath(filename, REPO_ROOT).startswith('.'):
-            raise Exception(f'{orig!r} is outside the repo ({REPO_ROOT})')
-        return filename
-    else:
-        return os.path.join(REPO_ROOT, filename)
-
-
-def iter_filenames(*, search=False):
-    if search:
-        yield from iter_files_by_suffix(INCLUDE_DIRS, ('.h',))
-        yield from iter_files_by_suffix(SOURCE_DIRS, ('.c',))
-    else:
-        globs = (os.path.join(REPO_ROOT, file) for file in GLOBS)
-        yield from expand_filenames(globs)
 
 
 def get_preprocessor(*,

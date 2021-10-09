@@ -1,3 +1,0 @@
-When loading a native module and a load failure occurs, prevent a possible
-UnicodeDecodeError when not running in a UTF-8 locale by decoding the load
-error message using the current locale's encoding.

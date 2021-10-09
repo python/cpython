@@ -363,7 +363,7 @@ static PyMemberDef weakref_members[] = {
 };
 
 static PyMethodDef weakref_methods[] = {
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL} /* Sentinel */
 };
@@ -657,6 +657,12 @@ proxy_iternext(PyWeakReference *proxy)
         return NULL;
 
     PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    if (!PyIter_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+            "Weakref proxy referenced a non-iterator '%.200s' object",
+            Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
     Py_INCREF(obj);
     PyObject* res = PyIter_Next(obj);
     Py_DECREF(obj);
@@ -732,21 +738,6 @@ static PyMappingMethods proxy_as_mapping = {
 };
 
 
-static Py_hash_t
-proxy_hash(PyObject *self)
-{
-    PyWeakReference *proxy = (PyWeakReference *)self;
-    if (!proxy_checkref(proxy)) {
-        return -1;
-    }
-    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
-    Py_INCREF(obj);
-    Py_hash_t res = PyObject_Hash(obj);
-    Py_DECREF(obj);
-    return res;
-}
-
-
 PyTypeObject
 _PyWeakref_ProxyType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -763,7 +754,8 @@ _PyWeakref_ProxyType = {
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
     &proxy_as_mapping,                  /* tp_as_mapping */
-    proxy_hash,                         /* tp_hash */
+// Notice that tp_hash is intentionally omitted as proxies are "mutable" (when the reference dies).
+    0,                                  /* tp_hash */
     0,                                  /* tp_call */
     proxy_str,                          /* tp_str */
     proxy_getattr,                      /* tp_getattro */

@@ -224,14 +224,14 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
 
-    def test_set_default_executor_deprecation_warnings(self):
+    def test_set_default_executor_error(self):
         executor = mock.Mock()
 
-        with self.assertWarns(DeprecationWarning):
+        msg = 'executor must be ThreadPoolExecutor instance'
+        with self.assertRaisesRegex(TypeError, msg):
             self.loop.set_default_executor(executor)
 
-        # Avoid cleaning up the executor mock
-        self.loop._default_executor = None
+        self.assertIsNone(self.loop._default_executor)
 
     def test_call_soon(self):
         def cb():
@@ -1160,9 +1160,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
-            with self.assertWarns(DeprecationWarning):
-                srv = await asyncio.start_server(
-                    lambda: None, '::1', 0, loop=self.loop)
+            srv = await asyncio.start_server(lambda: None, '::1', 0)
             try:
                 self.assertGreater(len(srv.sockets), 0)
             finally:
@@ -1747,6 +1745,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyDatagramProto, allow_broadcast=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                    "SO_BROADCAST is enabled by default on VxWorks")
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
         # SO_REUSEPORT is not available on all platforms.
@@ -1793,32 +1793,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport.close()
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
-
-    def test_create_datagram_endpoint_reuse_address_error(self):
-        # bpo-37228: Ensure that explicit passing of `reuse_address=True`
-        # raises an error, as it is not safe to use SO_REUSEADDR when using UDP
-
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            local_addr=('127.0.0.1', 0),
-            reuse_address=True)
-
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(coro)
-
-    def test_create_datagram_endpoint_reuse_address_warning(self):
-        # bpo-37228: Deprecate *reuse_address* parameter
-
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            local_addr=('127.0.0.1', 0),
-            reuse_address=False)
-
-        with self.assertWarns(DeprecationWarning):
-            transport, protocol = self.loop.run_until_complete(coro)
-            transport.close()
-            self.loop.run_until_complete(protocol.done)
-            self.assertEqual('CLOSED', protocol.state)
 
     @patch_socket
     def test_create_datagram_endpoint_nosoreuseport(self, m_socket):
@@ -1884,10 +1858,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def simple_coroutine():
-                pass
+        async def simple_coroutine():
+            pass
 
         self.loop.set_debug(True)
         coro_func = simple_coroutine
@@ -2096,7 +2068,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     def test_nonbinary_file(self):
         sock = self.make_socket()
-        with open(os_helper.TESTFN, 'r') as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             with self.assertRaisesRegex(ValueError, "binary mode"):
                 self.run_loop(self.loop.sock_sendfile(sock, f))
 

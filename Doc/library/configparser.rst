@@ -46,6 +46,11 @@ can be customized by end users easily.
 
    import configparser
 
+.. testcleanup::
+
+   import os
+   os.remove("example.ini")
+
 
 Quick Start
 -----------
@@ -256,7 +261,8 @@ A configuration file consists of sections, each led by a ``[section]`` header,
 followed by key/value entries separated by a specific string (``=`` or ``:`` by
 default [1]_).  By default, section names are case sensitive but keys are not
 [1]_.  Leading and trailing whitespace is removed from keys and values.
-Values can be omitted, in which case the key/value delimiter may also be left
+Values can be omitted if the parser is configured to allow it [1]_,
+in which case the key/value delimiter may also be left
 out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
@@ -1153,6 +1159,13 @@ ConfigParser Objects
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
 
+   .. note::
+
+      Comments in the original configuration file are not preserved when
+      writing the configuration back.
+      What is considered a comment, depends on the given values for
+      *comment_prefix* and *inline_comment_prefix*.
+
 
    .. method:: remove_option(section, option)
 
@@ -1186,28 +1199,6 @@ ConfigParser Objects
 
       Note that when reading configuration files, whitespace around the option
       names is stripped before :meth:`optionxform` is called.
-
-
-   .. method:: readfp(fp, filename=None)
-
-      .. deprecated:: 3.2
-         Use :meth:`read_file` instead.
-
-      .. versionchanged:: 3.2
-         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
-
-      For existing code calling :meth:`readfp` with arguments which don't
-      support iteration, the following generator may be used as a wrapper
-      around the file-like object::
-
-         def readline_generator(fp):
-             line = fp.readline()
-             while line:
-                 yield line
-                 line = fp.readline()
-
-      Instead of ``parser.readfp(fp)`` use
-      ``parser.read_file(readline_generator(fp))``.
 
 
 .. data:: MAX_INTERPOLATION_DEPTH
@@ -1346,6 +1337,9 @@ Exceptions
    .. versionchanged:: 3.2
       The ``filename`` attribute and :meth:`__init__` argument were renamed to
       ``source`` for consistency.
+
+   .. versionchanged:: 3.11
+      The deprecated ``filename`` attribute was removed.
 
 
 .. rubric:: Footnotes

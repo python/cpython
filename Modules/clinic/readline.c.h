@@ -384,7 +384,7 @@ PyDoc_STRVAR(readline_remove_history_item__doc__,
 "remove_history_item($module, pos, /)\n"
 "--\n"
 "\n"
-"Remove history item given by its position.");
+"Remove history item given by its zero-based position.");
 
 #define READLINE_REMOVE_HISTORY_ITEM_METHODDEF    \
     {"remove_history_item", (PyCFunction)readline_remove_history_item, METH_O, readline_remove_history_item__doc__},
@@ -412,7 +412,9 @@ PyDoc_STRVAR(readline_replace_history_item__doc__,
 "replace_history_item($module, pos, line, /)\n"
 "--\n"
 "\n"
-"Replaces history item given by its position with contents of line.");
+"Replaces history item given by its position with contents of line.\n"
+"\n"
+"pos is zero-based.");
 
 #define READLINE_REPLACE_HISTORY_ITEM_METHODDEF    \
     {"replace_history_item", (PyCFunction)(void(*)(void))readline_replace_history_item, METH_FASTCALL, readline_replace_history_item__doc__},
@@ -563,7 +565,7 @@ PyDoc_STRVAR(readline_get_history_item__doc__,
 "get_history_item($module, index, /)\n"
 "--\n"
 "\n"
-"Return the current contents of history item at index.");
+"Return the current contents of history item at one-based index.");
 
 #define READLINE_GET_HISTORY_ITEM_METHODDEF    \
     {"get_history_item", (PyCFunction)readline_get_history_item, METH_O, readline_get_history_item__doc__},
@@ -683,4 +685,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=cb44f391ccbfb565 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7d390113b27989f input=a9049054013a1b77]*/

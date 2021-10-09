@@ -5,6 +5,7 @@ import os.path
 import re
 import sys
 
+from c_common import fsutil
 from c_common.logging import VERBOSITY, Printer
 from c_common.scriptutil import (
     add_verbosity_cli,
@@ -262,7 +263,7 @@ FORMATS = {
 def add_output_cli(parser, *, default='summary'):
     parser.add_argument('--format', dest='fmt', default=default, choices=tuple(FORMATS))
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         pass
     return process_args
 
@@ -279,7 +280,7 @@ def _cli_check(parser, checks=None, **kwargs):
         process_checks = add_checks_cli(parser)
     elif len(checks) == 1 and type(checks) is not dict and re.match(r'^<.*>$', checks[0]):
         check = checks[0][1:-1]
-        def process_checks(args):
+        def process_checks(args, *, argv=None):
             args.checks = [check]
     else:
         process_checks = add_checks_cli(parser, checks=checks)
@@ -298,9 +299,9 @@ def cmd_check(filenames, *,
               checks=None,
               ignored=None,
               fmt=None,
-              relroot=None,
               failfast=False,
               iter_filenames=None,
+              relroot=fsutil.USE_CWD,
               track_progress=None,
               verbosity=VERBOSITY,
               _analyze=_analyze,
@@ -317,14 +318,14 @@ def cmd_check(filenames, *,
     (handle_failure, handle_after, div
      ) = _get_check_handlers(fmt, printer, verbosity)
 
-    filenames = filter_filenames(filenames, iter_filenames)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames = filter_filenames(filenames, iter_filenames, relroot)
     if track_progress:
         filenames = track_progress(filenames)
 
     logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
-    if relroot:
-        analyzed.fix_filenames(relroot)
+    analyzed.fix_filenames(relroot, normalize=False)
     decls = filter_forward(analyzed, markpublic=True)
 
     logger.info('checking analysis results...')
@@ -374,6 +375,7 @@ def _cli_analyze(parser, **kwargs):
 def cmd_analyze(filenames, *,
                 fmt=None,
                 iter_filenames=None,
+                relroot=fsutil.USE_CWD,
                 track_progress=None,
                 verbosity=None,
                 _analyze=_analyze,
@@ -387,12 +389,14 @@ def cmd_analyze(filenames, *,
     except KeyError:
         raise ValueError(f'unsupported fmt {fmt!r}')
 
-    filenames = filter_filenames(filenames, iter_filenames)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames = filter_filenames(filenames, iter_filenames, relroot)
     if track_progress:
         filenames = track_progress(filenames)
 
     logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
+    analyzed.fix_filenames(relroot, normalize=False)
     decls = filter_forward(analyzed, markpublic=True)
 
     for line in do_fmt(decls):
@@ -424,9 +428,9 @@ def _cli_data(parser, filenames=None, known=None):
     if known is None:
         sub.add_argument('--known', required=True)
 
-    def process_args(args):
+    def process_args(args, *, argv):
         if args.datacmd == 'dump':
-            process_progress(args)
+            process_progress(args, argv)
     return process_args
 
 
@@ -434,7 +438,7 @@ def cmd_data(datacmd, filenames, known=None, *,
              _analyze=_analyze,
              formats=FORMATS,
              extracolumns=None,
-             relroot=None,
+             relroot=fsutil.USE_CWD,
              track_progress=None,
              **kwargs
              ):
@@ -447,9 +451,11 @@ def cmd_data(datacmd, filenames, known=None, *,
         for line in do_fmt(known):
             print(line)
     elif datacmd == 'dump':
+        filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
         if track_progress:
             filenames = track_progress(filenames)
         analyzed = _analyze(filenames, **kwargs)
+        analyzed.fix_filenames(relroot, normalize=False)
         if known is None or usestdout:
             outfile = io.StringIO()
             _datafiles.write_known(analyzed, outfile, extracolumns,
@@ -476,7 +482,7 @@ COMMANDS = {
         cmd_analyze,
     ),
     'data': (
-        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        'check/manage local data (e.g. known types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
     ),
@@ -509,6 +515,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset=None):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )
