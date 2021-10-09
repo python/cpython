@@ -1,0 +1,1 @@
+Add superinstruction UNPACK_SEQUENCE__STORE_FAST using the PEP 659 machinery.
