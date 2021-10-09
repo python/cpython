@@ -3239,6 +3239,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }
