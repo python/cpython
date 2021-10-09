@@ -372,8 +372,8 @@ library/re,,`,"`"
 using/configure,84,:db2,=db1:db2:...
 library/typing,,`,# Type of ``val`` is narrowed to ``str``
 library/typing,,`,"# Else, type of ``val`` is narrowed to ``float``."
-library/typing,,`,# Type of ``val`` is narrowed to ``List[str]``.
-library/typing,,`,# Type of ``val`` remains as ``List[object]``.
+library/typing,,`,# Type of ``val`` is narrowed to ``list[str]``.
+library/typing,,`,# Type of ``val`` remains as ``list[object]``.
 library/tkinter,,::,ttk::frame .frm -padding 10
 library/tkinter,,::,"grid [ttk::label .frm.lbl -text ""Hello World!""] -column 0 -row 0"
 library/tkinter,,::,"grid [ttk::button .frm.btn -text ""Quit"" -command ""destroy .""] -column 1 -row 0"
