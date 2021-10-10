@@ -735,7 +735,9 @@ class ConditionTests(test_utils.TestCase):
             self.assertFalse(cond.locked())
             async with lock:
                 self.assertTrue(lock.locked())
+                self.assertTrue(cond.locked())
             self.assertFalse(lock.locked())
+            self.assertFalse(cond.locked())
 
         # All should work in the same way.
         self.loop.run_until_complete(f())
@@ -749,7 +751,7 @@ class ConditionTests(test_utils.TestCase):
 
         async def wrong_loop_in_lock():
             with self.assertRaises(TypeError):
-                lock = asyncio.Lock(loop=loop)  # actively disallowed since 3.10
+                asyncio.Lock(loop=loop)  # actively disallowed since 3.10
             lock = asyncio.Lock()
             lock._loop = loop  # use private API for testing
             async with lock:
