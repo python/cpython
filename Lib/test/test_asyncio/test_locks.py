@@ -772,7 +772,7 @@ class ConditionTests(test_utils.TestCase):
             async with lock:
                 cond = asyncio.Condition(lock)
                 with self.assertRaises(TypeError):
-                    cond = asyncio.Condition(lock, loop=loop)
+                    asyncio.Condition(lock, loop=loop)
                 cond._loop = loop
                 with self.assertRaisesRegex(
                     RuntimeError,
