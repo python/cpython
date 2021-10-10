@@ -720,23 +720,33 @@ class ConditionTests(test_utils.TestCase):
         self.loop.run_until_complete(f())
 
     def test_explicit_lock(self):
-        async def f():
-            lock = asyncio.Lock()
-            cond = asyncio.Condition(lock)
+        async def f(lock=None, cond=None):
+            if lock is None:
+                lock = asyncio.Lock()
+            if cond is None:
+                cond = asyncio.Condition(lock)
             self.assertIs(cond._lock, lock)
             # should work same!
             self.assertFalse(cond.locked())
             async with cond:
                 self.assertTrue(cond.locked())
             self.assertFalse(cond.locked())
+            async with lock:
+                self.assertTrue(lock.locked())
+            self.assertFalse(lock.locked())
 
         self.loop.run_until_complete(f())
+        self.loop.run_until_complete(f(asyncio.Lock()))
+        lock = asyncio.Lock()
+        self.loop.run_until_complete(f(lock, asyncio.Condition(lock)))
 
     def test_ambiguous_loops(self):
-        lock = asyncio.Lock()
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
-        lock._loop = loop
+        with self.assertRaises(TypeError):
+            lock = asyncio.Lock(loop=loop)  # actively disallowed since 3.10
+        lock = asyncio.Lock()
+        lock._loop = loop  # use private API for testing
 
         async def f():
             async with lock:
@@ -749,8 +759,7 @@ class ConditionTests(test_utils.TestCase):
                     RuntimeError,
                     "is bound to a different event loop",
                 ):
-                    async with cond:
-                        pass
+                    await cond.acquire()
 
         self.loop.run_until_complete(f())
 
