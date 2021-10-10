@@ -187,14 +187,17 @@ class RotatingFileHandler(BaseRotatingHandler):
         Basically, see if the supplied record would cause the file to exceed
         the size limit we have.
         """
+        # See bpo-45401: Never rollover anything other than regular files
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+            return False
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
             if self.stream.tell() + len(msg) >= self.maxBytes:
-                return 1
-        return 0
+                return True
+        return False
 
 class TimedRotatingFileHandler(BaseRotatingHandler):
     """
@@ -345,10 +348,13 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         record is not used, as we are just comparing times, but it is needed so
         the method signatures are the same
         """
+        # See bpo-45401: Never rollover anything other than regular files
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+            return False
         t = int(time.time())
         if t >= self.rolloverAt:
-            return 1
-        return 0
+            return True
+        return False
 
     def getFilesToDelete(self):
         """
