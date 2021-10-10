@@ -405,7 +405,7 @@ class HTMLParser(_markupbase.ParserBase):
             tagname = namematch.group(1).lower()
             # consume and ignore other stuff between the name and the >
             # Note: this is not 100% correct, since we might have things like
-            # </tag attr=">">, but looking for > after tha name should cover
+            # </tag attr=">">, but looking for > after the name should cover
             # most of the cases and is much simpler
             gtpos = rawdata.find('>', namematch.end())
             self.handle_endtag(tagname)

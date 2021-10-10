@@ -477,7 +477,7 @@ Miscellaneous options
    * ``-X no_debug_ranges`` disables the inclusion of the tables mapping extra
      location information (end line, start column offset and end column offset)
      to every instruction in code objects. This is useful when smaller code
-     objects and pyc files are desired as well as supressing the extra visual
+     objects and pyc files are desired as well as suppressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
    * ``-X frozen_modules`` determines whether or not frozen modules are
@@ -959,7 +959,7 @@ conflict.
    If this variable is set, it disables the inclusion of the tables mapping
    extra location information (end line, start column offset and end column
    offset) to every instruction in code objects. This is useful when smaller
-   code objects and pyc files are desired as well as supressing the extra visual
+   code objects and pyc files are desired as well as suppressing the extra visual
    location indicators when the interpreter displays tracebacks.
 
    .. versionadded:: 3.11

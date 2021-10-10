@@ -1249,7 +1249,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    Context manager catching :class:`threading.Thread` exception using
    :func:`threading.excepthook`.
 
-   Attributes set when an exception is catched:
+   Attributes set when an exception is caught:
 
    * ``exc_type``
    * ``exc_value``
@@ -1458,7 +1458,7 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 .. function:: unlink(filename)
 
    Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
+   wrapped with a wait loop that checks for the existence of the file.
 
 
 :mod:`test.support.import_helper` --- Utilities for import tests

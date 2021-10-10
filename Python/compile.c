@@ -6335,7 +6335,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // cases, though.
                     assert(istores < icontrol);
                     Py_ssize_t rotations = istores + 1;
-                    // Perfom the same rotation on pc->stores:
+                    // Perform the same rotation on pc->stores:
                     PyObject *rotated = PyList_GetSlice(pc->stores, 0,
                                                         rotations);
                     if (rotated == NULL ||
@@ -7221,6 +7221,26 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
+normalize_jumps(struct assembler *a)
+{
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+    }
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 1;
+        if (b->b_iused == 0) {
+            continue;
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (last->i_opcode == JUMP_ABSOLUTE &&
+            last->i_target->b_visited == 0
+        ) {
+            last->i_opcode = JUMP_FORWARD;
+        }
+    }
+}
+
+static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
     basicblock *b;
@@ -7306,7 +7326,7 @@ consts_dict_keys_inorder(PyObject *dict)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
-        /* The keys of the dictionary can be tuples wrapping a contant.
+        /* The keys of the dictionary can be tuples wrapping a constant.
          * (see compiler_add_o and _PyCode_ConstantKey). In that case
          * the object we want is always second. */
         if (PyTuple_CheckExact(k)) {
@@ -7896,6 +7916,9 @@ assemble(struct compiler *c, int addNone)
     for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
         clean_basic_block(b);
     }
+
+    /* Order of basic blocks must have been determined by now */
+    normalize_jumps(&a);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);

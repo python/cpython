@@ -70,7 +70,9 @@ def run_test_in_subprocess(testname: str, ns: Namespace) -> subprocess.Popen:
         kw['start_new_session'] = True
     return subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
+                            # bpo-45410: Write stderr into stdout to keep
+                            # messages order
+                            stderr=subprocess.STDOUT,
                             universal_newlines=True,
                             close_fds=(os.name != 'nt'),
                             cwd=os_helper.SAVEDCWD,
@@ -114,8 +116,8 @@ class MultiprocessIterator:
 
 class MultiprocessResult(NamedTuple):
     result: TestResult
+    # bpo-45410: stderr is written into stdout to keep messages order
     stdout: str
-    stderr: str
     error_msg: str
 
 
@@ -195,11 +197,10 @@ class TestWorkerProcess(threading.Thread):
         self,
         test_result: TestResult,
         stdout: str = '',
-        stderr: str = '',
         err_msg=None
     ) -> MultiprocessResult:
         test_result.duration_sec = time.monotonic() - self.start_time
-        return MultiprocessResult(test_result, stdout, stderr, err_msg)
+        return MultiprocessResult(test_result, stdout, err_msg)
 
     def _run_process(self, test_name: str) -> tuple[int, str, str]:
         self.start_time = time.monotonic()
@@ -223,13 +224,14 @@ class TestWorkerProcess(threading.Thread):
                 raise ExitThread
 
             try:
-                stdout, stderr = popen.communicate(timeout=self.timeout)
+                # bpo-45410: stderr is written into stdout
+                stdout, _ = popen.communicate(timeout=self.timeout)
                 retcode = popen.returncode
                 assert retcode is not None
             except subprocess.TimeoutExpired:
                 if self._stopped:
-                    # kill() has been called: communicate() fails
-                    # on reading closed stdout/stderr
+                    # kill() has been called: communicate() fails on reading
+                    # closed stdout
                     raise ExitThread
 
                 # On timeout, kill the process
@@ -238,20 +240,19 @@ class TestWorkerProcess(threading.Thread):
                 # None means TIMEOUT for the caller
                 retcode = None
                 # bpo-38207: Don't attempt to call communicate() again: on it
-                # can hang until all child processes using stdout and stderr
+                # can hang until all child processes using stdout
                 # pipes completes.
-                stdout = stderr = ''
+                stdout = ''
             except OSError:
                 if self._stopped:
                     # kill() has been called: communicate() fails
-                    # on reading closed stdout/stderr
+                    # on reading closed stdout
                     raise ExitThread
                 raise
             else:
                 stdout = stdout.strip()
-                stderr = stderr.rstrip()
 
-            return (retcode, stdout, stderr)
+            return (retcode, stdout)
         except:
             self._kill()
             raise
@@ -261,10 +262,10 @@ class TestWorkerProcess(threading.Thread):
             self.current_test_name = None
 
     def _runtest(self, test_name: str) -> MultiprocessResult:
-        retcode, stdout, stderr = self._run_process(test_name)
+        retcode, stdout = self._run_process(test_name)
 
         if retcode is None:
-            return self.mp_result_error(Timeout(test_name), stdout, stderr)
+            return self.mp_result_error(Timeout(test_name), stdout)
 
         err_msg = None
         if retcode != 0:
@@ -282,10 +283,9 @@ class TestWorkerProcess(threading.Thread):
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
         if err_msg is not None:
-            return self.mp_result_error(ChildError(test_name),
-                                        stdout, stderr, err_msg)
+            return self.mp_result_error(ChildError(test_name), stdout, err_msg)
 
-        return MultiprocessResult(result, stdout, stderr, err_msg)
+        return MultiprocessResult(result, stdout, err_msg)
 
     def run(self) -> None:
         while not self._stopped:
@@ -309,10 +309,8 @@ class TestWorkerProcess(threading.Thread):
     def _wait_completed(self) -> None:
         popen = self._popen
 
-        # stdout and stderr must be closed to ensure that communicate()
-        # does not hang
+        # stdout must be closed to ensure that communicate() does not hang
         popen.stdout.close()
-        popen.stderr.close()
 
         try:
             popen.wait(JOIN_TIMEOUT)
@@ -449,8 +447,6 @@ class MultiprocessTestRunner:
 
         if mp_result.stdout:
             print(mp_result.stdout, flush=True)
-        if mp_result.stderr and not self.ns.pgo:
-            print(mp_result.stderr, file=sys.stderr, flush=True)
 
         if must_stop(mp_result.result, self.ns):
             return True

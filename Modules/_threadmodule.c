@@ -1219,7 +1219,7 @@ where the corresponding signal handler will be executed.\n\
 If *signum* is omitted, SIGINT is assumed.\n\
 A subthread can use this function to interrupt the main thread.\n\
 \n\
-Note: the default signal hander for SIGINT raises ``KeyboardInterrupt``."
+Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
 
 static lockobject *newlockobject(PyObject *module);

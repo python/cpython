@@ -1594,7 +1594,7 @@ class TestCollectionABCs(ABCTestCase):
         self.assertSetEqual(set(s1), set(s2))
 
     def test_Set_from_iterable(self):
-        """Verify _from_iterable overriden to an instance method works."""
+        """Verify _from_iterable overridden to an instance method works."""
         class SetUsingInstanceFromIterable(MutableSet):
             def __init__(self, values, created_by):
                 if not created_by:

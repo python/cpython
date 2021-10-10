@@ -29,9 +29,10 @@ MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 if sys.platform != "win32":
     TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
     if not os.path.isfile(TOOL):
-        # When building out of the source tree, get the tool from the current
-        # directory
-        TOOL = os.path.join('Programs', '_freeze_module')
+        # When building out of the source tree, get the tool from directory
+        # of the Python executable
+        TOOL = os.path.dirname(sys.executable)
+        TOOL = os.path.join(TOOL, 'Programs', '_freeze_module')
         TOOL = os.path.abspath(TOOL)
         if not os.path.isfile(TOOL):
             sys.exit("ERROR: missing _freeze_module")
@@ -274,6 +275,15 @@ class FrozenSource(namedtuple('FrozenSource', 'id pyfile frozenfile')):
         name = self.frozenid.replace('.', '_')
         return '_Py_M__' + name
 
+    @property
+    def ispkg(self):
+        if not self.pyfile:
+            return False
+        elif self.frozenid.endswith('.__init__'):
+            return False
+        else:
+            return os.path.basename(self.pyfile) == '__init__.py'
+
 
 def resolve_frozen_file(frozenid, destdir=MODULES_DIR):
     """Return the filename corresponding to the given frozen ID.
@@ -304,6 +314,17 @@ class FrozenModule(namedtuple('FrozenModule', 'name ispkg section source')):
     @property
     def modname(self):
         return self.name
+
+    @property
+    def orig(self):
+        return self.source.modname
+
+    @property
+    def isalias(self):
+        orig = self.source.modname
+        if not orig:
+            return True
+        return self.name != orig
 
     def summarize(self):
         source = self.source.modname
@@ -507,6 +528,7 @@ def regen_frozen(modules):
         headerlines.append(f'#include "{header}"')
 
     deflines = []
+    aliaslines = []
     indent = '    '
     lastsection = None
     for mod in modules:
@@ -527,6 +549,15 @@ def regen_frozen(modules):
             line1, _, line2 = line.rpartition(' ')
             deflines.append(line1)
             deflines.append(indent + line2)
+
+        if mod.isalias:
+            if not mod.orig:
+                entry = '{"%s", NULL},' % (mod.name,)
+            elif mod.source.ispkg:
+                entry = '{"%s", "<%s"},' % (mod.name, mod.orig)
+            else:
+                entry = '{"%s", "%s"},' % (mod.name, mod.orig)
+            aliaslines.append(indent + entry)
 
     if not deflines[0]:
         del deflines[0]
@@ -549,8 +580,15 @@ def regen_frozen(modules):
         lines = replace_block(
             lines,
             "static const struct _frozen _PyImport_FrozenModules[] =",
-            "/* sentinel */",
+            "/* modules sentinel */",
             deflines,
+            FROZEN_FILE,
+        )
+        lines = replace_block(
+            lines,
+            "const struct _module_alias aliases[] =",
+            "/* aliases sentinel */",
+            aliaslines,
             FROZEN_FILE,
         )
         outfile.writelines(lines)

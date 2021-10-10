@@ -440,7 +440,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
 
     # Class attribute listing the accessible path components;
     # paths not on this list will result in a 404 error.
-    rpc_paths = ('/', '/RPC2')
+    rpc_paths = ('/', '/RPC2', '/pydoc.css')
 
     #if not None, encode responses larger than this, if possible
     encode_threshold = 1400 #a common MTU
@@ -801,7 +801,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
 
         server_name = self.escape(server_name)
         head = '<big><big><strong>%s</strong></big></big>' % server_name
-        result = self.heading(head, '#ffffff', '#7799ee')
+        result = self.heading(head)
 
         doc = self.markup(package_documentation, self.preformat, fdict)
         doc = doc and '<tt>%s</tt>' % doc
@@ -812,9 +812,24 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         for key, value in method_items:
             contents.append(self.docroutine(value, key, funcs=fdict))
         result = result + self.bigsection(
-            'Methods', '#ffffff', '#eeaa77', ''.join(contents))
+            'Methods', 'functions', ''.join(contents))
 
         return result
+
+
+    def page(self, title, contents):
+        """Format an HTML page."""
+        css_path = "/pydoc.css"
+        css_link = (
+            '<link rel="stylesheet" type="text/css" href="%s">' %
+            css_path)
+        return '''\
+<!DOCTYPE>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: %s</title>
+%s</head><body>%s</body></html>''' % (title, css_link, contents)
 
 class XMLRPCDocGenerator:
     """Generates documentation for an XML-RPC server.
@@ -907,6 +922,12 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
     for documentation.
     """
 
+    def _get_css(self, url):
+        path_here = os.path.dirname(os.path.realpath(__file__))
+        css_path = os.path.join(path_here, "..", "pydoc_data", "_pydoc.css")
+        with open(css_path, mode="rb") as fp:
+            return fp.read()
+
     def do_GET(self):
         """Handles the HTTP GET request.
 
@@ -918,9 +939,15 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
             self.report_404()
             return
 
-        response = self.server.generate_html_documentation().encode('utf-8')
+        if self.path.endswith('.css'):
+            content_type = 'text/css'
+            response = self._get_css(self.path)
+        else:
+            content_type = 'text/html'
+            response = self.server.generate_html_documentation().encode('utf-8')
+
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header('Content-Type', '%s; charset=UTF-8' % content_type)
         self.send_header("Content-length", str(len(response)))
         self.end_headers()
         self.wfile.write(response)

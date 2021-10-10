@@ -1,3 +1,0 @@
-Improve the speed of :func:`gzip.compress` and :func:`gzip.decompress` by
-compressing and decompressing at once in memory instead of in a streamed
-fashion.
