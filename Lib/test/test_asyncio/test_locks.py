@@ -726,10 +726,12 @@ class ConditionTests(test_utils.TestCase):
             if cond is None:
                 cond = asyncio.Condition(lock)
             self.assertIs(cond._lock, lock)
-            # should work same!
+            self.assertFalse(lock.locked())
             self.assertFalse(cond.locked())
             async with cond:
+                self.assertTrue(lock.locked())
                 self.assertTrue(cond.locked())
+            self.assertFalse(lock.locked())
             self.assertFalse(cond.locked())
             async with lock:
                 self.assertTrue(lock.locked())
