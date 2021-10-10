@@ -44,6 +44,8 @@ class Test_Csv(unittest.TestCase):
                           quoting=csv.QUOTE_ALL, quotechar='')
         self.assertRaises(TypeError, ctor, arg,
                           quoting=csv.QUOTE_ALL, quotechar=None)
+        self.assertRaises(TypeError, ctor, arg,
+                          quoting=csv.QUOTE_NONE, quotechar='')
 
     def test_reader_arg_valid(self):
         self._test_arg_valid(csv.reader, [])
@@ -342,8 +344,6 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['a,^b,c'], [['a', 'b', 'c']], escapechar='^')
         self._read_test(['a,\0b,c'], [['a', 'b', 'c']], escapechar='\0')
         self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar=None)
-        self.assertRaises(TypeError, self._read_test,
-                          ['a,\\b,c'], [['a', '\\b', 'c']], escapechar='')
         self._read_test(['a,\\b,c'], [['a', '\\b', 'c']])
 
     def test_read_quoting(self):
