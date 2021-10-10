@@ -770,9 +770,9 @@ class ConditionTests(test_utils.TestCase):
             # Same analogy here with the condition's loop.
             lock = asyncio.Lock()
             async with lock:
-                cond = asyncio.Condition(lock)
                 with self.assertRaises(TypeError):
                     asyncio.Condition(lock, loop=loop)
+                cond = asyncio.Condition(lock)
                 cond._loop = loop
                 with self.assertRaisesRegex(
                     RuntimeError,
