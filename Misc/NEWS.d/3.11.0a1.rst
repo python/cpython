@@ -1196,7 +1196,7 @@ detected. Patch by Pablo Galindo
 .. section: Core and Builtins
 
 ``PyCodeObject`` gained ``co_fastlocalnames`` and ``co_fastlocalkinds`` as
-the the authoritative source of fast locals info.  Marshaled code objects
+the authoritative source of fast locals info.  Marshaled code objects
 have changed accordingly.
 
 ..
@@ -4960,7 +4960,7 @@ trashcan macros accessed directly :c:type:`PyThreadState` members like
 ``_tstate->trash_delete_nesting``, whereas the :c:type:`PyThreadState`
 structure is opaque in the limited C API.
 
-Exclude also the the ``PyTrash_UNWIND_LEVEL`` constant from the C API.
+Exclude also the ``PyTrash_UNWIND_LEVEL`` constant from the C API.
 
 Patch by Victor Stinner.
 
