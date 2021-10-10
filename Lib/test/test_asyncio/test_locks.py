@@ -720,24 +720,39 @@ class ConditionTests(test_utils.TestCase):
         self.loop.run_until_complete(f())
 
     def test_explicit_lock(self):
-        lock = asyncio.Lock()
-        cond = asyncio.Condition(lock)
+        async def f():
+            lock = asyncio.Lock()
+            cond = asyncio.Condition(lock)
+            self.assertIs(cond._lock, lock)
+            # should work same!
+            self.assertFalse(cond.locked())
+            async with cond:
+                self.assertTrue(cond.locked())
+            self.assertFalse(cond.locked())
 
-        self.assertIs(cond._lock, lock)
-        self.assertIs(cond._loop, lock._loop)
+        self.loop.run_until_complete(f())
 
     def test_ambiguous_loops(self):
-        loop = self.new_test_loop()
-        self.addCleanup(loop.close)
-
         lock = asyncio.Lock()
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
         lock._loop = loop
 
-        async def _create_condition():
-            with self.assertRaises(ValueError):
-                asyncio.Condition(lock)
+        async def f():
+            async with lock:
+                # acquired immediately via the fast-path
+                # without interaction with any event loop.
+                cond = asyncio.Condition(lock)
+                # cond will trigger waiting on the lock
+                # and it will discover the event loop mismatch.
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "is bound to a different event loop",
+                ):
+                    async with cond:
+                        pass
 
-        self.loop.run_until_complete(_create_condition())
+        self.loop.run_until_complete(f())
 
     def test_timeout_in_block(self):
         loop = asyncio.new_event_loop()
