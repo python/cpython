@@ -737,6 +737,7 @@ class ConditionTests(test_utils.TestCase):
                 self.assertTrue(lock.locked())
             self.assertFalse(lock.locked())
 
+        # All should work in the same way.
         self.loop.run_until_complete(f())
         self.loop.run_until_complete(f(asyncio.Lock()))
         lock = asyncio.Lock()
@@ -745,17 +746,17 @@ class ConditionTests(test_utils.TestCase):
     def test_ambiguous_loops(self):
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
-        with self.assertRaises(TypeError):
-            lock = asyncio.Lock(loop=loop)  # actively disallowed since 3.10
-        lock = asyncio.Lock()
-        lock._loop = loop  # use private API for testing
 
-        async def f():
+        async def wrong_loop_in_lock():
+            with self.assertRaises(TypeError):
+                lock = asyncio.Lock(loop=loop)  # actively disallowed since 3.10
+            lock = asyncio.Lock()
+            lock._loop = loop  # use private API for testing
             async with lock:
                 # acquired immediately via the fast-path
                 # without interaction with any event loop.
                 cond = asyncio.Condition(lock)
-                # cond will trigger waiting on the lock
+                # cond.acquire() will trigger waiting on the lock
                 # and it will discover the event loop mismatch.
                 with self.assertRaisesRegex(
                     RuntimeError,
@@ -763,7 +764,22 @@ class ConditionTests(test_utils.TestCase):
                 ):
                     await cond.acquire()
 
-        self.loop.run_until_complete(f())
+        async def wrong_loop_in_cond():
+            # Same analogy here with the condition's loop.
+            lock = asyncio.Lock()
+            async with lock:
+                cond = asyncio.Condition(lock)
+                with self.assertRaises(TypeError):
+                    cond = asyncio.Condition(lock, loop=loop)
+                cond._loop = loop
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "is bound to a different event loop",
+                ):
+                    await cond.wait()
+
+        self.loop.run_until_complete(wrong_loop_in_lock())
+        self.loop.run_until_complete(wrong_loop_in_cond())
 
     def test_timeout_in_block(self):
         loop = asyncio.new_event_loop()
