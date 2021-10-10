@@ -194,6 +194,7 @@ def main():
     else:
         filenames = args.filenames
     for filename in filenames:
+        filename = filename.rstrip('\n')
         try:
             compile(filename, doraise=True)
         except PyCompileError as error:
