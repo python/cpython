@@ -362,49 +362,6 @@ Consult the module's documentation for more details; the :class:`~queue.Queue`
 class provides a featureful interface.
 
 
-What kinds of global value mutation are thread-safe?
-----------------------------------------------------
-
-A :term:`global interpreter lock` (GIL) is used internally to ensure that only one
-thread runs in the Python VM at a time.  In general, Python offers to switch
-among threads only between bytecode instructions; how frequently it switches can
-be set via :func:`sys.setswitchinterval`.  Each bytecode instruction and
-therefore all the C implementation code reached from each instruction is
-therefore atomic from the point of view of a Python program.
-
-In theory, this means an exact accounting requires an exact understanding of the
-PVM bytecode implementation.  In practice, it means that operations on shared
-variables of built-in data types (ints, lists, dicts, etc) that "look atomic"
-really are.
-
-For example, the following operations are all atomic (L, L1, L2 are lists, D,
-D1, D2 are dicts, x, y are objects, i, j are ints)::
-
-   L.append(x)
-   L1.extend(L2)
-   x = L[i]
-   x = L.pop()
-   L1[i:j] = L2
-   L.sort()
-   x = y
-   x.field = y
-   D[x] = y
-   D1.update(D2)
-   D.keys()
-
-These aren't::
-
-   i = i+1
-   L.append(L[-1])
-   L[i] = L[j]
-   D[x] = D[x] + 1
-
-Operations that replace other objects may invoke those other objects'
-:meth:`__del__` method when their reference count reaches zero, and that can
-affect things.  This is especially true for the mass updates to dictionaries and
-lists.  When in doubt, use a mutex!
-
-
 Can't we get rid of the Global Interpreter Lock?
 ------------------------------------------------
 
