@@ -50,19 +50,6 @@
     Py_UNICODE_ISDIGIT(ch) || \
     Py_UNICODE_ISNUMERIC(ch))
 
-Py_DEPRECATED(3.3) static inline void
-Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length) {
-    memcpy(target, source, (size_t)(length) * sizeof(Py_UNICODE));
-}
-
-Py_DEPRECATED(3.3) static inline void
-Py_UNICODE_FILL(Py_UNICODE *target, Py_UNICODE value, Py_ssize_t length) {
-    Py_ssize_t i;
-    for (i = 0; i < length; i++) {
-        target[i] = value;
-    }
-}
-
 /* macros to work with surrogates */
 #define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
 #define Py_UNICODE_IS_HIGH_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDBFF)
