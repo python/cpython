@@ -2305,7 +2305,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
     }
 
     if (ndigits == Py_None)
-        result = _PyObject_CallNoArg(round);
+        result = _PyObject_CallNoArgs(round);
     else
         result = PyObject_CallOneArg(round, ndigits);
     Py_DECREF(round);

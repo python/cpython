@@ -164,7 +164,7 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
    Private static inline function variant of public function
    PyObject_CallNoArgs(). */
 static inline PyObject *
-_PyObject_CallNoArg(PyObject *func) {
+_PyObject_CallNoArgs(PyObject *func) {
     PyThreadState *tstate = PyThreadState_Get();
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
