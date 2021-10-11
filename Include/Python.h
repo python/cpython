@@ -25,7 +25,6 @@
 #ifdef HAVE_ERRNO_H
 #  include <errno.h>              // errno
 #endif
-#include <stdlib.h>
 #ifndef MS_WINDOWS
 #  include <unistd.h>
 #endif
