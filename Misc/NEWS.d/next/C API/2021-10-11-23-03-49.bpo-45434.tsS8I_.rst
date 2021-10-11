@@ -1,0 +1,3 @@
+The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
+extensions using ``<stdlib.h>`` must now include it explicitly. Patch by
+Victor Stinner.
