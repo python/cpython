@@ -552,6 +552,10 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
+* The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
+  extensions using ``<stdlib.h>`` must now include it explicitly.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
 Deprecated
 ----------
 
