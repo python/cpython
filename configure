@@ -5227,9 +5227,6 @@ $as_echo "$as_me:
 fi
 
 
-MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 $as_echo_n "checking for the platform triplet based on compiler characteristics... " >&6; }
 cat >> conftest.c <<EOF
@@ -5387,6 +5384,11 @@ else
 $as_echo "none" >&6; }
 fi
 rm -f conftest.c conftest.out
+
+if test x$PLATFORM_TRIPLET != xdarwin; then
+  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+fi
+
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
