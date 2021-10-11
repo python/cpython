@@ -477,7 +477,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     Py_XSETREF(tok->decoding_readline, readline);
 
     if (pos > 0) {
-        PyObject *bufobj = _PyObject_CallNoArg(readline);
+        PyObject *bufobj = _PyObject_CallNoArgs(readline);
         if (bufobj == NULL)
             return 0;
         Py_DECREF(bufobj);

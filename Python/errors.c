@@ -91,7 +91,7 @@ _PyErr_CreateException(PyObject *exception_type, PyObject *value)
     PyObject *exc;
 
     if (value == NULL || value == Py_None) {
-        exc = _PyObject_CallNoArg(exception_type);
+        exc = _PyObject_CallNoArgs(exception_type);
     }
     else if (PyTuple_Check(value)) {
         exc = PyObject_Call(exception_type, value, NULL);
