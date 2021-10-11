@@ -121,7 +121,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 
     if (PySys_Audit("import", "OOOOO", name_unicode, path,
                     Py_None, Py_None, Py_None) < 0) {
-        return NULL;
+        goto error;
     }
 
 #ifdef MS_WINDOWS
