@@ -5174,6 +5174,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         time.sleep(1.1)    # a little over a second ...
         r = logging.makeLogRecord({'msg': 'testing - device file'})
         self.assertFalse(fh.shouldRollover(r))
+        fh.close()
 
     # other test methods added below
     def test_rollover(self):
