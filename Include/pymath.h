@@ -1,41 +1,10 @@
+// Symbols and macros to supply platform-independent interfaces to mathematical
+// functions and constants.
+
 #ifndef Py_PYMATH_H
 #define Py_PYMATH_H
 
-#include "pyconfig.h" /* include for defines */
-
-/**************************************************************************
-Symbols and macros to supply platform-independent interfaces to mathematical
-functions and constants
-**************************************************************************/
-
-/* Python provides implementations for copysign, round and hypot in
- * Python/pymath.c just in case your math library doesn't provide the
- * functions.
- *
- *Note: PC/pyconfig.h defines copysign as _copysign
- */
-#ifndef HAVE_COPYSIGN
-extern double copysign(double, double);
-#endif
-
-#ifndef HAVE_ROUND
-extern double round(double);
-#endif
-
-#ifndef HAVE_HYPOT
-extern double hypot(double, double);
-#endif
-
-/* extra declarations */
-#ifndef _MSC_VER
-#ifndef __STDC__
-extern double fmod (double, double);
-extern double frexp (double, int *);
-extern double ldexp (double, int);
-extern double modf (double, double *);
-extern double pow(double, double);
-#endif /* __STDC__ */
-#endif /* _MSC_VER */
+#include "pyconfig.h"             // HAVE_DECL_ISNAN
 
 /* High precision definition of pi and e (Euler)
  * The values are taken from libc6's math.h.
@@ -123,13 +92,13 @@ PyAPI_FUNC(double) _Py_force_double(double);
  * Note: PC/pyconfig.h defines Py_IS_FINITE as _finite
  */
 #ifndef Py_IS_FINITE
-#if defined HAVE_DECL_ISFINITE && HAVE_DECL_ISFINITE == 1
-#define Py_IS_FINITE(X) isfinite(X)
-#elif defined HAVE_FINITE
-#define Py_IS_FINITE(X) finite(X)
-#else
-#define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
-#endif
+#  if defined HAVE_DECL_ISFINITE && HAVE_DECL_ISFINITE == 1
+#    define Py_IS_FINITE(X) isfinite(X)
+#  elif defined HAVE_FINITE
+#    define Py_IS_FINITE(X) finite(X)
+#  else
+#    define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
+#  endif
 #endif
 
 /* HUGE_VAL is supposed to expand to a positive double infinity.  Python
@@ -140,7 +109,7 @@ PyAPI_FUNC(double) _Py_force_double(double);
  * config to #define Py_HUGE_VAL to something that works on your platform.
  */
 #ifndef Py_HUGE_VAL
-#define Py_HUGE_VAL HUGE_VAL
+#  define Py_HUGE_VAL HUGE_VAL
 #endif
 
 /* Py_NAN
@@ -149,10 +118,10 @@ PyAPI_FUNC(double) _Py_force_double(double);
  * doesn't support NaNs.
  */
 #if !defined(Py_NAN) && !defined(Py_NO_NAN)
-#if !defined(__INTEL_COMPILER)
-    #define Py_NAN (Py_HUGE_VAL * 0.)
-#else /* __INTEL_COMPILER */
-    #if defined(ICC_NAN_STRICT)
+#  if !defined(__INTEL_COMPILER)
+#    define Py_NAN (Py_HUGE_VAL * 0.)
+#  else /* __INTEL_COMPILER */
+#    if defined(ICC_NAN_STRICT)
         #pragma float_control(push)
         #pragma float_control(precise, on)
         #pragma float_control(except,  on)
@@ -161,12 +130,12 @@ PyAPI_FUNC(double) _Py_force_double(double);
             return sqrt(-1.0);
         }
         #pragma float_control (pop)
-        #define Py_NAN __icc_nan()
-    #else /* ICC_NAN_RELAXED as default for Intel Compiler */
+#       define Py_NAN __icc_nan()
+#    else /* ICC_NAN_RELAXED as default for Intel Compiler */
         static const union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
-        #define Py_NAN (__nan_store.__icc_nan)
-    #endif /* ICC_NAN_STRICT */
-#endif /* __INTEL_COMPILER */
+#       define Py_NAN (__nan_store.__icc_nan)
+#    endif /* ICC_NAN_STRICT */
+#  endif /* __INTEL_COMPILER */
 #endif
 
 #endif /* Py_PYMATH_H */

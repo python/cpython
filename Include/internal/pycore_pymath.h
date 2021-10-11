@@ -8,6 +8,34 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+// Python provides implementations for copysign(), round() and hypot() in
+// Python/pymath.c just in case your math library doesn't provide the
+// functions.
+//
+// Note: PC/pyconfig.h defines copysign as _copysign
+#ifndef HAVE_COPYSIGN
+extern double copysign(double, double);
+#endif
+
+#ifndef HAVE_ROUND
+extern double round(double);
+#endif
+
+#ifndef HAVE_HYPOT
+extern double hypot(double, double);
+#endif
+
+// Extra declarations
+#if !defined(_MSC_VER) && !defined(__STDC__)
+extern double fmod (double, double);
+extern double frexp (double, int *);
+extern double ldexp (double, int);
+extern double modf (double, double *);
+extern double pow(double, double);
+#endif  // !defined(_MSC_VER) && !defined(__STDC__)
+
+
 /* _Py_ADJUST_ERANGE1(x)
  * _Py_ADJUST_ERANGE2(x, y)
  * Set errno to 0 before calling a libm function, and invoke one of these
