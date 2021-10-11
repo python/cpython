@@ -316,69 +316,6 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
-/* Py_SET_ERRNO_ON_MATH_ERROR(x)
- * If a libm function did not set errno, but it looks like the result
- * overflowed or not-a-number, set errno to ERANGE or EDOM.  Set errno
- * to 0 before calling a libm function, and invoke this macro after,
- * passing the function result.
- * Caution:
- *    This isn't reliable.  See Py_OVERFLOWED comments.
- *    X is evaluated more than once.
- */
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__hpux) && defined(__ia64))
-#define _Py_SET_EDOM_FOR_NAN(X) if (isnan(X)) errno = EDOM;
-#else
-#define _Py_SET_EDOM_FOR_NAN(X) ;
-#endif
-#define Py_SET_ERRNO_ON_MATH_ERROR(X) \
-    do { \
-        if (errno == 0) { \
-            if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL) \
-                errno = ERANGE; \
-            else _Py_SET_EDOM_FOR_NAN(X) \
-        } \
-    } while(0)
-
-/* Py_SET_ERANGE_IF_OVERFLOW(x)
- * An alias of Py_SET_ERRNO_ON_MATH_ERROR for backward-compatibility.
- */
-#define Py_SET_ERANGE_IF_OVERFLOW(X) Py_SET_ERRNO_ON_MATH_ERROR(X)
-
-/* Py_ADJUST_ERANGE1(x)
- * Py_ADJUST_ERANGE2(x, y)
- * Set errno to 0 before calling a libm function, and invoke one of these
- * macros after, passing the function result(s) (Py_ADJUST_ERANGE2 is useful
- * for functions returning complex results).  This makes two kinds of
- * adjustments to errno:  (A) If it looks like the platform libm set
- * errno=ERANGE due to underflow, clear errno. (B) If it looks like the
- * platform libm overflowed but didn't set errno, force errno to ERANGE.  In
- * effect, we're trying to force a useful implementation of C89 errno
- * behavior.
- * Caution:
- *    This isn't reliable.  See Py_OVERFLOWED comments.
- *    X and Y may be evaluated more than once.
- */
-#define Py_ADJUST_ERANGE1(X)                                            \
-    do {                                                                \
-        if (errno == 0) {                                               \
-            if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL)              \
-                errno = ERANGE;                                         \
-        }                                                               \
-        else if (errno == ERANGE && (X) == 0.0)                         \
-            errno = 0;                                                  \
-    } while(0)
-
-#define Py_ADJUST_ERANGE2(X, Y)                                         \
-    do {                                                                \
-        if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL ||                \
-            (Y) == Py_HUGE_VAL || (Y) == -Py_HUGE_VAL) {                \
-                        if (errno == 0)                                 \
-                                errno = ERANGE;                         \
-        }                                                               \
-        else if (errno == ERANGE)                                       \
-            errno = 0;                                                  \
-    } while(0)
-
 /*  The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c (which are
  *  required to support the short float repr introduced in Python 3.1) require
  *  that the floating-point unit that's being used for arithmetic operations
