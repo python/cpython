@@ -50,9 +50,9 @@
 _Py_IDENTIFIER(__name__);
 
 /* Forward declarations */
-Py_LOCAL_INLINE(PyObject *) call_function(
-    PyThreadState *tstate, PyObject ***pp_stack,
-    Py_ssize_t oparg, PyObject *kwnames, int use_tracing);
+static PyObject *trace_call_function(
+    PyThreadState *tstate, PyObject *callable, PyObject **stack,
+    Py_ssize_t oparg, PyObject *kwnames);
 static PyObject * do_call_core(
     PyThreadState *tstate, PyObject *func,
     PyObject *callargs, PyObject *kwdict, int use_tracing);
@@ -4538,12 +4538,13 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        /* Declare variables used for making calls */
+        PyObject *kwnames;
+        int nargs;
+        int stackadj;
+
         TARGET(CALL_METHOD) {
             /* Designed to work in tamdem with LOAD_METHOD. */
-            PyObject **sp, *res;
-            int meth_found;
-
-            sp = stack_pointer;
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
                 a method call.
 
@@ -4569,58 +4570,53 @@ check_eval_breaker:
                We'll be passing `oparg + 1` to call_function, to
                make it accept the `self` as a first argument.
             */
-            meth_found = (PEEK(oparg + 2) != NULL);
-            res = call_function(tstate, &sp, oparg + meth_found, NULL, cframe.use_tracing);
-            stack_pointer = sp;
-
-            STACK_SHRINK(1 - meth_found);
-            PUSH(res);
-            if (res == NULL) {
-                goto error;
-            }
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
+            int is_method = (PEEK(oparg + 2) != NULL);
+            oparg += is_method;
+            nargs = oparg;
+            kwnames = NULL;
+            stackadj = 2-is_method;
+            goto call_function;
         }
 
         TARGET(CALL_METHOD_KW) {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
-            PyObject **sp, *res;
-            PyObject *names = NULL;
-            int meth_found;
-
-            names = POP();
-
-            sp = stack_pointer;
-            meth_found = (PEEK(oparg + 2) != NULL);
-            res = call_function(tstate, &sp, oparg + meth_found, names, cframe.use_tracing);
-            stack_pointer = sp;
-
-            STACK_SHRINK(1 - meth_found);
-            PUSH(res);
-            Py_DECREF(names);
-            if (res == NULL) {
-                goto error;
-            }
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
+            kwnames = POP();
+            int is_method = (PEEK(oparg + 2) != NULL);
+            oparg += is_method;
+            nargs = oparg - PyTuple_GET_SIZE(kwnames);
+            stackadj = 2-is_method;
+            goto call_function;
         }
 
         TARGET(CALL_FUNCTION) {
             PREDICTED(CALL_FUNCTION);
-            PyObject *res;
+            nargs = oparg;
+            kwnames = NULL;
+            stackadj = 1;
+            goto call_function;
+        }
 
+        TARGET(CALL_FUNCTION_KW) {
+            kwnames = POP();
+            nargs = oparg - PyTuple_GET_SIZE(kwnames);
+            stackadj = 1;
+            goto call_function;
+        }
+
+    call_function:
+        {
             // Check if the call can be inlined or not
             PyObject *function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
-                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
                 if (!is_generator) {
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                         tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
                                                                 stack_pointer-oparg,
-                                                                oparg, NULL, 1);
+                                                                nargs, kwnames, 1);
                     if (new_frame == NULL) {
                         // When we exit here, we own all variables in the stack
                         // (the frame creation has not stolen any variable) so
@@ -4629,54 +4625,36 @@ check_eval_breaker:
                         goto error;
                     }
 
-                    STACK_SHRINK(oparg + 1);
+                    STACK_SHRINK(oparg + stackadj);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
+                    Py_XDECREF(kwnames);
                     Py_DECREF(function);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     new_frame->depth = frame->depth + 1;
                     tstate->frame = frame = new_frame;
                     goto start_frame;
                 }
-                else {
-                    /* Callable is a generator or coroutine function: create
-                     * coroutine or generator. */
-                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function),
-                                    locals, stack_pointer-oparg, oparg, NULL);
-                    STACK_SHRINK(oparg + 1);
-                    for (int i = 0; i < oparg + 1; i++) {
-                        Py_DECREF(stack_pointer[i]);
-                    }
-                }
+            }
+            PyObject *res;
+            /* Callable is not a normal Python function */
+            if (cframe.use_tracing) {
+                res = trace_call_function(tstate, function, stack_pointer-oparg, nargs, kwnames);
             }
             else {
-                /* Callable is not a Python function */
-                PyObject **sp = stack_pointer;
-                res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
-                stack_pointer = sp;
+                res = PyObject_Vectorcall(function, stack_pointer-oparg,
+                                          nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
             }
-
-            PUSH(res);
-            if (res == NULL) {
-                goto error;
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(function);
+            Py_XDECREF(kwnames);
+            /* Clear the stack */
+            STACK_SHRINK(oparg);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(stack_pointer[i]);
             }
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
-        }
-
-        TARGET(CALL_FUNCTION_KW) {
-            PyObject **sp, *res, *names;
-
-            names = POP();
-            assert(PyTuple_Check(names));
-            assert(PyTuple_GET_SIZE(names) <= oparg);
-            /* We assume without checking that names contains only strings */
-            sp = stack_pointer;
-            res = call_function(tstate, &sp, oparg, names, cframe.use_tracing);
-            stack_pointer = sp;
+            STACK_SHRINK(stackadj);
             PUSH(res);
-            Py_DECREF(names);
-
             if (res == NULL) {
                 goto error;
             }
@@ -6534,40 +6512,6 @@ trace_call_function(PyThreadState *tstate,
         return x;
     }
     return PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
-}
-
-/* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
-   to reduce the stack consumption. */
-Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_function(PyThreadState *tstate,
-              PyObject ***pp_stack,
-              Py_ssize_t oparg,
-              PyObject *kwnames,
-              int use_tracing)
-{
-    PyObject **pfunc = (*pp_stack) - oparg - 1;
-    PyObject *func = *pfunc;
-    PyObject *x, *w;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nargs = oparg - nkwargs;
-    PyObject **stack = (*pp_stack) - nargs - nkwargs;
-
-    if (use_tracing) {
-        x = trace_call_function(tstate, func, stack, nargs, kwnames);
-    }
-    else {
-        x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
-    }
-
-    assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
-    /* Clear the stack of the function object. */
-    while ((*pp_stack) > pfunc) {
-        w = EXT_POP(*pp_stack);
-        Py_DECREF(w);
-    }
-
-    return x;
 }
 
 static PyObject *
