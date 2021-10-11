@@ -5,6 +5,14 @@
 
 #include <inttypes.h>
 
+#include <limits.h>
+#ifndef UCHAR_MAX
+#  error "limits.h must define UCHAR_MAX"
+#endif
+#if UCHAR_MAX != 255
+#  error "Python's source code assumes C's unsigned char is an 8-bit type"
+#endif
+
 
 /* Defines to build Python and its standard library:
  *
@@ -850,5 +858,23 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py__has_builtin(x) 0
 #endif
 
+
+/* A convenient way for code to know if sanitizers are enabled. */
+#if defined(__has_feature)
+#  if __has_feature(memory_sanitizer)
+#    if !defined(_Py_MEMORY_SANITIZER)
+#      define _Py_MEMORY_SANITIZER
+#    endif
+#  endif
+#  if __has_feature(address_sanitizer)
+#    if !defined(_Py_ADDRESS_SANITIZER)
+#      define _Py_ADDRESS_SANITIZER
+#    endif
+#  endif
+#elif defined(__GNUC__)
+#  if defined(__SANITIZE_ADDRESS__)
+#    define _Py_ADDRESS_SANITIZER
+#  endif
+#endif
 
 #endif /* Py_PYPORT_H */
