@@ -8,6 +8,23 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#define LOCATION_UNKNOWN 0
+#define LOCATION_EXISTS 2<<0
+#define LOCATION_FORCED 2<<1        /* trusted to exist */
+#define LOCATION_DEFAULT 2<<2       /* the default value */
+#define LOCATION_CUSTOM 2<<3        /* from a file or env var */
+/* build-defined */
+#define LOCATION_PREFIX 2<<10
+#define LOCATION_EXEC_PREFIX 2<<11
+/* build-related */
+#define LOCATION_IN_BUILD_DIR 2<<15
+#define LOCATION_IN_SOURCE_TREE 2<<16
+/* relative */
+#define LOCATION_WITH_FILE 2<<20    /* in the tree under dirname(<file>)
+                                       (combined with LOCATION_NEAR_*) */
+#define LOCATION_NEAR_ARGV0 2<<21   /* based on a parent of argv[0] */
+#define LOCATION_NEAR_LIB 2<<22     /* based on a parent of DLL/SO file */
+
 typedef struct _PyPathConfig {
     /* Full path to the Python program */
     wchar_t *program_full_path;

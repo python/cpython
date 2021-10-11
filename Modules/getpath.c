@@ -118,18 +118,6 @@ extern "C" {
 
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
 
-#define LOCATION_UNKNOWN 0
-#define LOCATION_EXISTS 1
-#define LOCATION_FORCED 2           /* trusted to exist */
-#define LOCATION_DEFAULT 4          /* the default value */
-#define LOCATION_CUSTOM 8           /* from a file or env var */
-#define LOCATION_IN_BUILD_DIR 16
-#define LOCATION_IN_SOURCE_TREE 32
-#define LOCATION_WITH_ARGV0 64      /* in the tree under dirname(argv[0]) */
-#define LOCATION_NEAR_ARGV0 128     /* based on a parent of argv[0] */
-#define LOCATION_PREFIX 256
-#define LOCATION_EXEC_PREFIX 512
-
 #define LOCATION_FOUND (LOCATION_EXISTS | LOCATION_FORCED)
 
 typedef struct {
@@ -468,8 +456,9 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
         }
         if (module) {
             /* BUILD_LANDMARK and LANDMARK found */
-            *verified |= LOCATION_EXISTS | LOCATION_WITH_ARGV0;
-            *verified |= LOCATION_IN_SOURCE_TREE | LOCATION_IN_BUILD_DIR;
+            *verified |= LOCATION_EXISTS |
+                         LOCATION_NEAR_ARGV0 | LOCATION_WITH_FILE |
+                         LOCATION_IN_SOURCE_TREE | LOCATION_IN_BUILD_DIR;
             return _PyStatus_OK();
         }
     }
@@ -480,7 +469,7 @@ search_for_stdlib_dir(PyCalculatePath *calculate,
         return status;
     }
 
-    int flag = LOCATION_WITH_ARGV0;
+    int flag = LOCATION_NEAR_ARGV0 | LOCATION_WITH_FILE;
     do {
         /* Path: <argv0_dir or substring> / <lib_python> / LANDMARK */
         size_t n = wcslen(stdlib);
@@ -567,13 +556,10 @@ calculate_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
             }
             verified |= LOCATION_DEFAULT | LOCATION_PREFIX;
         }
-        else if (verified & LOCATION_WITH_ARGV0) {
+        else if (verified & LOCATION_WITH_FILE) {
             calculate->argv0_dir_verified |= verified & LOCATION_EXISTS;
             calculate->argv0_dir_verified |= verified & LOCATION_IN_BUILD_DIR;
             calculate->argv0_dir_verified |= verified & LOCATION_IN_SOURCE_TREE;
-        }
-        if (verified & LOCATION_WITH_ARGV0) {
-            verified |= LOCATION_NEAR_ARGV0;
         }
     }
 
@@ -733,7 +719,7 @@ search_for_extensions(PyCalculatePath *calculate,
         return status;
     }
 
-    int flag = LOCATION_WITH_ARGV0;
+    int flag = LOCATION_NEAR_ARGV0 | LOCATION_WITH_FILE;
     do {
         /* Path: <argv0_dir or substring> / <lib_python> / "lib-dynload" */
         size_t n = wcslen(ext_dir);
@@ -817,11 +803,8 @@ calculate_extensions_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
             }
             verified |= LOCATION_DEFAULT | LOCATION_EXEC_PREFIX;
         }
-        else if (verified & LOCATION_WITH_ARGV0) {
+        else if (verified & LOCATION_WITH_FILE) {
             calculate->argv0_dir_verified |= verified & LOCATION_EXISTS;
-        }
-        if (verified & LOCATION_WITH_ARGV0) {
-            verified |= LOCATION_NEAR_ARGV0;
         }
     }
 
@@ -1231,7 +1214,8 @@ calculate_argv0_dir(PyCalculatePath *calculate,
     if (calculate->argv0_dir == NULL) {
         return _PyStatus_NO_MEMORY();
     }
-    calculate->argv0_dir_verified = verified | LOCATION_WITH_ARGV0;
+    calculate->argv0_dir_verified = verified |
+                                    LOCATION_NEAR_ARGV0 | LOCATION_WITH_FILE;
 
     return _PyStatus_OK();
 }
