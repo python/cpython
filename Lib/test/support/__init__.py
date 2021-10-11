@@ -1167,7 +1167,16 @@ def run_doctest(module, verbosity=None, optionflags=0):
 #=======================================================================
 # Support for saving and restoring the imported modules.
 
+def flush_std_streams():
+    if sys.stdout is not None:
+        sys.stdout.flush()
+    if sys.stderr is not None:
+        sys.stderr.flush()
+
+
 def print_warning(msg):
+    # bpo-45410: Explicitly flush stdout to keep logs in order
+    flush_std_streams()
     # bpo-39983: Print into sys.__stderr__ to display the warning even
     # when sys.stderr is captured temporarily by a test
     for line in msg.splitlines():
