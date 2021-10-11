@@ -1058,7 +1058,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 
     PyTuple_SET_ITEM(result, 0, copyable);
     for (i = 1; i < n; i++) {
-        copyable = _PyObject_CallNoArg(copyfunc);
+        copyable = _PyObject_CallNoArgs(copyfunc);
         if (copyable == NULL) {
             Py_DECREF(copyfunc);
             Py_DECREF(result);

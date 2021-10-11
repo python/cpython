@@ -1292,7 +1292,7 @@ r_object(RFILE *p)
 
         if (n == 0 && type == TYPE_FROZENSET) {
             /* call frozenset() to get the empty frozenset singleton */
-            v = _PyObject_CallNoArg((PyObject*)&PyFrozenSet_Type);
+            v = _PyObject_CallNoArgs((PyObject*)&PyFrozenSet_Type);
             if (v == NULL)
                 break;
             R_REF(v);
