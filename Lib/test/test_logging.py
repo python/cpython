@@ -5321,6 +5321,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # See bpo-45401. Should only ever rollover regular files
         fh = logging.handlers.TimedRotatingFileHandler(
                 os.devnull, 'S', encoding="utf-8", backupCount=1)
+        self.addCleanup(fh.close)
         time.sleep(1.1)    # a little over a second ...
         r = logging.makeLogRecord({'msg': 'testing - device file'})
         self.assertFalse(fh.shouldRollover(r))
