@@ -42,6 +42,9 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
+    if (name_len < 0) {
+        return NULL;
+    }
     lastdot = PyUnicode_FindChar(name, '.', 0, name_len, -1);
     if (lastdot < -1) {
         return NULL;
