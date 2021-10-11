@@ -4612,7 +4612,7 @@ check_eval_breaker:
 
             // Check if the call can be inlined or not
             PyObject *function = PEEK(oparg + 1);
-            if (Py_TYPE(function) == &PyFunction_Type) {
+            if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
@@ -4630,7 +4630,6 @@ check_eval_breaker:
                     }
 
                     STACK_SHRINK(oparg + 1);
-                    assert(tstate->interp->eval_frame != NULL);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_DECREF(function);
@@ -5687,7 +5686,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
         if (steal_args) {
             // If we failed to initialize locals, make sure the caller still own all the
             // arguments. Notice that we only need to increase the reference count of the
-            // *valid* arguments (i.e. the ones that fit into the frame). 
+            // *valid* arguments (i.e. the ones that fit into the frame).
             PyCodeObject *co = (PyCodeObject*)con->fc_code;
             const size_t total_args = co->co_argcount + co->co_kwonlyargcount;
             for (size_t i = 0; i < Py_MIN(argcount, total_args); i++) {
@@ -5734,7 +5733,6 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (frame == NULL) {
         return NULL;
     }
-    assert (tstate->interp->eval_frame != NULL);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
