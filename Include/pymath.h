@@ -78,13 +78,6 @@ PyAPI_FUNC(double) _Py_force_double(double);
 #endif
 #endif
 
-#ifndef Py_LIMITED_API
-#ifdef HAVE_GCC_ASM_FOR_X87
-PyAPI_FUNC(unsigned short) _Py_get_387controlword(void);
-PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
-#endif
-#endif
-
 /* Py_IS_NAN(X)
  * Return 1 if float or double arg is a NaN, else 0.
  * Caution:
@@ -95,11 +88,11 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * Note: PC/pyconfig.h defines Py_IS_NAN as _isnan
  */
 #ifndef Py_IS_NAN
-#if defined HAVE_DECL_ISNAN && HAVE_DECL_ISNAN == 1
-#define Py_IS_NAN(X) isnan(X)
-#else
-#define Py_IS_NAN(X) ((X) != (X))
-#endif
+#  if defined HAVE_DECL_ISNAN && HAVE_DECL_ISNAN == 1
+#    define Py_IS_NAN(X) isnan(X)
+#  else
+#    define Py_IS_NAN(X) ((X) != (X))
+#  endif
 #endif
 
 /* Py_IS_INFINITY(X)
