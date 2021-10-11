@@ -849,10 +849,12 @@ Mapping.register(mappingproxy)
 
 class MappingView(Sized):
 
-    __slots__ = '_mapping',
+    __slots__ = ('_mapping', 'mapping')
 
     def __init__(self, mapping):
         self._mapping = mapping
+        from types import MappingProxyType
+        self.mapping = MappingProxyType(self._mapping)
 
     def __len__(self):
         return len(self._mapping)
