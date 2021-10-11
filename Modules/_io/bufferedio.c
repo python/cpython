@@ -1550,7 +1550,7 @@ _bufferedreader_read_all(buffered *self)
         goto cleanup;
     }
     if (readall) {
-        tmp = _PyObject_CallNoArg(readall);
+        tmp = _PyObject_CallNoArgs(readall);
         Py_DECREF(readall);
         if (tmp == NULL)
             goto cleanup;
