@@ -1,5 +1,5 @@
 #include "Python.h"
-
+#include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_context.h"
 #include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
