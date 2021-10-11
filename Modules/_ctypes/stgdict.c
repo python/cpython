@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>

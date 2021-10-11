@@ -33,6 +33,13 @@ _PyObject_CallNoArgsTstate(PyThreadState *tstate, PyObject *func) {
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
+// Private static inline function variant of public PyObject_CallNoArgs()
+static inline PyObject *
+_PyObject_CallNoArgs(PyObject *func) {
+    PyThreadState *tstate = PyThreadState_Get();
+    return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
+}
+
 #ifdef __cplusplus
 }
 #endif

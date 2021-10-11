@@ -54,7 +54,8 @@ raised for division by zero and mod by zero.
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
-#include "pycore_dtoa.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "_math.h"
 
