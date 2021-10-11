@@ -19,8 +19,15 @@ extern "C" {
  * effect, we're trying to force a useful implementation of C89 errno
  * behavior.
  * Caution:
- *    This isn't reliable.  See Py_OVERFLOWED comments.
- *    X and Y may be evaluated more than once.
+ *    This isn't reliable.  C99 no longer requires libm to set errno under
+ *        any exceptional condition, but does require +- HUGE_VAL return
+ *        values on overflow.  A 754 box *probably* maps HUGE_VAL to a
+ *        double infinity, and we're cool if that's so, unless the input
+ *        was an infinity and an infinity is the expected result.  A C89
+ *        system sets errno to ERANGE, so we check for that too.  We're
+ *        out of luck if a C99 754 box doesn't map HUGE_VAL to +Inf, or
+ *        if the returned result is a NaN, or if a C89 box returns HUGE_VAL
+ *        in non-overflow cases.
  */
 static inline void _Py_ADJUST_ERANGE1(double x)
 {
