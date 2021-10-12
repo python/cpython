@@ -1179,8 +1179,10 @@ def print_warning(msg):
     flush_std_streams()
     # bpo-39983: Print into sys.__stderr__ to display the warning even
     # when sys.stderr is captured temporarily by a test
+    stream = sys.__stderr__
     for line in msg.splitlines():
-        print(f"Warning -- {line}", file=sys.__stderr__, flush=True)
+        print(f"Warning -- {line}", file=stream)
+    stream.flush()
 
 
 # Flag used by saved_test_environment of test.libregrtest.save_env,
