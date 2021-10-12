@@ -1439,7 +1439,7 @@
 #undef Py_ENABLE_SHARED
 
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
-   externally defined: 0 */
+   SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
 /* Define if you want to enable tracing references for debugging purpose */
