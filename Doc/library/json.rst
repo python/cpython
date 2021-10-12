@@ -11,7 +11,7 @@
 
 --------------
 
-`JSON (JavaScript Object Notation) <https://www.json.org/json-en.html>`_, specified by
+`JSON (JavaScript Object Notation) <https://json.org>`_, specified by
 :rfc:`7159` (which obsoletes :rfc:`4627`) and by
 `ECMA-404 <https://www.ecma-international.org/publications-and-standards/standards/ecma-404/>`_,
 is a lightweight data interchange format inspired by
