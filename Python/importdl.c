@@ -207,7 +207,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         /* don't allow legacy init for non-ASCII module names */
         PyErr_Format(
             PyExc_SystemError,
-            "initialization of * did not return PyModuleDef",
+            "initialization of %s did not return PyModuleDef",
             name_buf);
         goto error;
     }
