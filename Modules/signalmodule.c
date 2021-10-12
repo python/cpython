@@ -7,7 +7,7 @@
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_frame.h"
+#include "pycore_frame.h"         // InterpreterFrame
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pylifecycle.h"   // NSIG

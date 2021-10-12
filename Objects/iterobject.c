@@ -1,7 +1,8 @@
 /* Iterator objects */
 
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 typedef struct {
     PyObject_HEAD

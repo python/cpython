@@ -10,7 +10,8 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:

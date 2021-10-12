@@ -465,10 +465,10 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_dict.h"          // _Py_dict_lookup()
 #include <stddef.h>               // offsetof()
-#include "pycore_dict.h"
-#include <stddef.h>
 
 #include "clinic/odictobject.c.h"
 

@@ -2,11 +2,12 @@
 /* Error handling */
 
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pystate.h"    // _PyThreadState_GET()
-#include "pycore_sysmodule.h"
-#include "pycore_traceback.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_initconfig.h"    // _PyStatus_ERR()
+#include "pycore_pyerrors.h"      // _PyErr_Format()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS

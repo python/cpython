@@ -3,6 +3,7 @@
 #include "Python.h"
 #include <ctype.h>
 #include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
