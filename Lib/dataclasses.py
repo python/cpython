@@ -260,6 +260,7 @@ class Field:
                  'compare',
                  'metadata',
                  'kw_only',
+                 'hide',
                  '_field_type',  # Private: not to be used by user code.
                  )
 
@@ -277,6 +278,7 @@ class Field:
                          if metadata is None else
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
+        self.hide = hide
         self._field_type = None
 
     def __repr__(self):
@@ -291,6 +293,7 @@ class Field:
                 f'compare={self.compare!r},'
                 f'metadata={self.metadata!r},'
                 f'kw_only={self.kw_only!r},'
+                f'hide={self.hide!r}'
                 f'_field_type={self._field_type}'
                 ')')
 
@@ -344,7 +347,8 @@ class _DataclassParams:
 # so that a type checker can be told (via overloads) that this is a
 # function whose type depends on its parameters.
 def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
-          hash=None, compare=True, metadata=None, kw_only=MISSING):
+          hash=None, compare=True, metadata=None, kw_only=MISSING,
+          hide=False):
     """Return an object to identify dataclass fields.
 
     default is the default value of the field.  default_factory is a
@@ -364,7 +368,7 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return Field(default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only)
+                 metadata, kw_only, hide)
 
 
 def _fields_in_init_order(fields):
