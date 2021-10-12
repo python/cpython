@@ -2,6 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()

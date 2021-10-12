@@ -13,11 +13,11 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
-#include "pycore_code.h"
+#include "pycore_code.h"          // saturating_increment()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_moduleobject.h"
+#include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
