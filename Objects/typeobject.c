@@ -1232,7 +1232,8 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         assert(base);
     }
 
-    if (type->tp_inline_values_offset != base->tp_inline_values_offset) {
+    if (type->tp_inline_values_offset) {
+        assert(type->tp_dictoffset);
         int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
         if (err) {
             return err;
@@ -1300,7 +1301,7 @@ subtype_clear(PyObject *self)
 
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
-    if (type->tp_inline_values_offset != base->tp_inline_values_offset) {
+    if (type->tp_inline_values_offset) {
         _PyObject_ClearInstanceAttributes(self);
     }
     if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -1444,7 +1445,7 @@ subtype_dealloc(PyObject *self)
     }
 
     /* If we added a dict, DECREF it, or free inline values. */
-    if (type->tp_inline_values_offset != base->tp_inline_values_offset) {
+    if (type->tp_inline_values_offset) {
         _PyObject_FreeInstanceAttributes(self);
     }
     if (type->tp_dictoffset && !base->tp_dictoffset) {
@@ -4940,17 +4941,14 @@ _PyObject_GetState(PyObject *obj, int required)
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
-
-        {
-            if (_PyObject_DictEmpty(obj)) {
-                state = Py_None;
-                Py_INCREF(state);
-            }
-            else {
-                state = PyObject_GenericGetDict(obj, NULL);
-                if (state == NULL) {
-                   return NULL;
-                }
+        if (_PyObject_DictEmpty(obj)) {
+            state = Py_None;
+            Py_INCREF(state);
+        }
+        else {
+            state = PyObject_GenericGetDict(obj, NULL);
+            if (state == NULL) {
+                return NULL;
             }
         }
 

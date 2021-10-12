@@ -1100,7 +1100,7 @@ _PyObject_GetDictPtr(PyObject *obj)
         return NULL;
     }
     if (*dict_ptr != NULL) {
-        return (PyObject **)dict_ptr;
+        return dict_ptr;
     }
     PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
     if (values_ptr == NULL || *values_ptr == NULL) {
@@ -1111,6 +1111,8 @@ _PyObject_GetDictPtr(PyObject *obj)
         PyErr_Clear();
         return NULL;
     }
+    assert(*dict_ptr == NULL);
+    assert(*values_ptr != NULL);
     *values_ptr = NULL;
     *dict_ptr = dict;
     return dict_ptr;

@@ -4969,10 +4969,19 @@ make_dict_from_instance_attributes(PyDictKeysObject *keys, PyDictValues *values)
 {
     dictkeys_incref(keys);
     Py_ssize_t used = 0;
+    Py_ssize_t track = 0;
     for (Py_ssize_t i = 0; i < shared_keys_usable_size(keys); i++) {
-        used += values->values[i] != NULL;
+        PyObject *val = values->values[i];
+        if (val != NULL) {
+            used += 1;
+            track += _PyObject_GC_MAY_BE_TRACKED(val);
+        }
     }
-    return new_dict(keys, values, used, 0);
+    PyObject *res = new_dict(keys, values, used, 0);
+    if (track && res) {
+        _PyObject_GC_TRACK(res);
+    }
+    return res;
 }
 
 PyObject *
@@ -5025,7 +5034,6 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     return 0;
 }
 
-
 PyObject *
 _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name)
@@ -5072,8 +5080,9 @@ int
 _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    assert(tp->tp_inline_values_offset);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (values_ptr == NULL || *values_ptr == NULL) {
+    if (*values_ptr == NULL) {
         return 0;
     }
     PyDictKeysObject *keys = CACHED_KEYS(tp);
@@ -5087,8 +5096,9 @@ void
 _PyObject_ClearInstanceAttributes(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    assert(tp->tp_inline_values_offset);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (values_ptr == NULL || *values_ptr == NULL) {
+    if (*values_ptr == NULL) {
         return;
     }
     PyDictKeysObject *keys = CACHED_KEYS(tp);
@@ -5101,8 +5111,9 @@ void
 _PyObject_FreeInstanceAttributes(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    assert(tp->tp_inline_values_offset);
     PyDictValues **values_ptr = _PyObject_ValuesPointer(self);
-    if (values_ptr == NULL || *values_ptr == NULL) {
+    if (*values_ptr == NULL) {
         return;
     }
     PyDictKeysObject *keys = CACHED_KEYS(tp);
