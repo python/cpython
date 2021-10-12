@@ -2135,6 +2135,32 @@ const wchar_t* known_xoptions[] = {
     NULL,
 };
 
+static const wchar_t*
+_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
+{
+    for (Py_ssize_t i=0; i < xoptions->length; i++) {
+        const wchar_t *option = xoptions->items[i];
+        size_t len;
+        wchar_t *sep = wcschr(option, L'=');
+        if (sep != NULL) {
+            len = (sep - option);
+        }
+        else {
+            len = wcslen(option);
+        }
+        int found = 0;
+        for (const wchar_t** name = names; *name != NULL; name++) {
+            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
+                found = 1;
+            }
+        }
+        if (found == 0) {
+            return option;
+        }
+    }
+    return NULL;
+}
+
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
 {
