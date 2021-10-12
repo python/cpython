@@ -1240,6 +1240,8 @@ def _asdict_inner(obj, dict_factory):
     if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
+            if f.hide:
+                continue
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
             result.append((f.name, value))
         return dict_factory(result)
@@ -1305,6 +1307,8 @@ def _astuple_inner(obj, tuple_factory):
     if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
+            if f.hide:
+                continue
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)
             result.append(value)
         return tuple_factory(result)
