@@ -681,8 +681,8 @@ dictionaries.
       prefix length is provided, it's considered to be ``/128``.
 
       Note that currently expanded netmasks are not supported.  That means
-      ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::`` is
-      not.
+      ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::``
+      is not.
 
    2. An integer that fits into 128 bits.  This is equivalent to a
       single-address network, with the network address being *address* and
