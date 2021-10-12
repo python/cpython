@@ -2121,6 +2121,10 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
+// List of known xoptions to validate against the provided ones. Note that all
+// options are listed, even if they are only available if a specific macro is
+// set, like -X showrefcount which requires a debug build. In this case unknown
+// options are silently ignored.
 const wchar_t* known_xoptions[] = {
     L"faulthandler",
     L"showrefcount",
