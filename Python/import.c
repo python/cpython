@@ -2079,7 +2079,8 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         return NULL;
     }
 
-    PyObject *data = PyBytes_FromStringAndSize(info.data, info.size);
+    PyObject *data = PyMemoryView_FromMemory((char *)info.data, info.size,
+                                             PyBUF_READ);
     if (data == NULL) {
         return NULL;
     }
@@ -2116,15 +2117,15 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
                             PyObject *dataobj)
 /*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
-    struct frozen_info info;
+    struct frozen_info info = {};
     if (PyBytes_Check(dataobj)) {
-        info.nameobj = name;
         info.data = PyBytes_AS_STRING(dataobj);
         info.size = PyBytes_Size(dataobj);
-        if (info.size == 0) {
-            set_frozen_error(FROZEN_INVALID, name);
-            return NULL;
-        }
+    }
+    else if (PyMemoryView_Check(dataobj)) {
+        Py_buffer *buf = PyMemoryView_GET_BUFFER(dataobj);
+        info.data = (const char *)buf->buf;
+        info.size = buf->len;
     }
     else if (dataobj != Py_None) {
         _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
@@ -2137,6 +2138,15 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
             return NULL;
         }
     }
+
+    if (info.nameobj == NULL) {
+        info.nameobj = name;
+    }
+    if (info.size == 0) {
+        set_frozen_error(FROZEN_INVALID, name);
+        return NULL;
+    }
+
     return unmarshal_frozen_code(&info);
 }
 
