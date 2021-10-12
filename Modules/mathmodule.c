@@ -54,7 +54,8 @@ raised for division by zero and mod by zero.
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
-#include "pycore_dtoa.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "_math.h"
 
@@ -1206,7 +1207,7 @@ math_ceil(PyObject *module, PyObject *number)
     if (!PyFloat_CheckExact(number)) {
         PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
         if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
             return result;
         }
@@ -1275,7 +1276,7 @@ math_floor(PyObject *module, PyObject *number)
     {
         PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
         if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArgs(method);
             Py_DECREF(method);
             return result;
         }
@@ -2130,7 +2131,7 @@ math_trunc(PyObject *module, PyObject *x)
                          Py_TYPE(x)->tp_name);
         return NULL;
     }
-    result = _PyObject_CallNoArg(trunc);
+    result = _PyObject_CallNoArgs(trunc);
     Py_DECREF(trunc);
     return result;
 }

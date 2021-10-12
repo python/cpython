@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>
@@ -248,7 +249,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             }
             continue;
         }
-        new_descr = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
+        new_descr = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
         if (new_descr == NULL) {
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);

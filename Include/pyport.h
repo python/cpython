@@ -5,6 +5,14 @@
 
 #include <inttypes.h>
 
+#include <limits.h>
+#ifndef UCHAR_MAX
+#  error "limits.h must define UCHAR_MAX"
+#endif
+#if UCHAR_MAX != 255
+#  error "Python's source code assumes C's unsigned char is an 8-bit type"
+#endif
+
 
 /* Defines to build Python and its standard library:
  *
@@ -316,69 +324,6 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
-/* Py_SET_ERRNO_ON_MATH_ERROR(x)
- * If a libm function did not set errno, but it looks like the result
- * overflowed or not-a-number, set errno to ERANGE or EDOM.  Set errno
- * to 0 before calling a libm function, and invoke this macro after,
- * passing the function result.
- * Caution:
- *    This isn't reliable.  See Py_OVERFLOWED comments.
- *    X is evaluated more than once.
- */
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__hpux) && defined(__ia64))
-#define _Py_SET_EDOM_FOR_NAN(X) if (isnan(X)) errno = EDOM;
-#else
-#define _Py_SET_EDOM_FOR_NAN(X) ;
-#endif
-#define Py_SET_ERRNO_ON_MATH_ERROR(X) \
-    do { \
-        if (errno == 0) { \
-            if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL) \
-                errno = ERANGE; \
-            else _Py_SET_EDOM_FOR_NAN(X) \
-        } \
-    } while(0)
-
-/* Py_SET_ERANGE_IF_OVERFLOW(x)
- * An alias of Py_SET_ERRNO_ON_MATH_ERROR for backward-compatibility.
- */
-#define Py_SET_ERANGE_IF_OVERFLOW(X) Py_SET_ERRNO_ON_MATH_ERROR(X)
-
-/* Py_ADJUST_ERANGE1(x)
- * Py_ADJUST_ERANGE2(x, y)
- * Set errno to 0 before calling a libm function, and invoke one of these
- * macros after, passing the function result(s) (Py_ADJUST_ERANGE2 is useful
- * for functions returning complex results).  This makes two kinds of
- * adjustments to errno:  (A) If it looks like the platform libm set
- * errno=ERANGE due to underflow, clear errno. (B) If it looks like the
- * platform libm overflowed but didn't set errno, force errno to ERANGE.  In
- * effect, we're trying to force a useful implementation of C89 errno
- * behavior.
- * Caution:
- *    This isn't reliable.  See Py_OVERFLOWED comments.
- *    X and Y may be evaluated more than once.
- */
-#define Py_ADJUST_ERANGE1(X)                                            \
-    do {                                                                \
-        if (errno == 0) {                                               \
-            if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL)              \
-                errno = ERANGE;                                         \
-        }                                                               \
-        else if (errno == ERANGE && (X) == 0.0)                         \
-            errno = 0;                                                  \
-    } while(0)
-
-#define Py_ADJUST_ERANGE2(X, Y)                                         \
-    do {                                                                \
-        if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL ||                \
-            (Y) == Py_HUGE_VAL || (Y) == -Py_HUGE_VAL) {                \
-                        if (errno == 0)                                 \
-                                errno = ERANGE;                         \
-        }                                                               \
-        else if (errno == ERANGE)                                       \
-            errno = 0;                                                  \
-    } while(0)
-
 /*  The functions _Py_dg_strtod and _Py_dg_dtoa in Python/dtoa.c (which are
  *  required to support the short float repr introduced in Python 3.1) require
  *  that the floating-point unit that's being used for arithmetic operations
@@ -390,85 +335,24 @@ extern "C" {
  *
  *     #define HAVE_PY_SET_53BIT_PRECISION 1
  *
- *  and also give appropriate definitions for the following three macros:
- *
- *    _PY_SET_53BIT_PRECISION_START : store original FPU settings, and
- *        set FPU to 53-bit precision/round-half-to-even
- *    _PY_SET_53BIT_PRECISION_END : restore original FPU settings
- *    _PY_SET_53BIT_PRECISION_HEADER : any variable declarations needed to
- *        use the two macros above.
- *
  * The macros are designed to be used within a single C function: see
  * Python/pystrtod.c for an example of their use.
  */
 
-/* get and set x87 control word for gcc/x86 */
+// HAVE_PY_SET_53BIT_PRECISION macro must be kept in sync with pycore_pymath.h
 #ifdef HAVE_GCC_ASM_FOR_X87
-#define HAVE_PY_SET_53BIT_PRECISION 1
-/* _Py_get/set_387controlword functions are defined in Python/pymath.c */
-#define _Py_SET_53BIT_PRECISION_HEADER                          \
-    unsigned short old_387controlword, new_387controlword
-#define _Py_SET_53BIT_PRECISION_START                                   \
-    do {                                                                \
-        old_387controlword = _Py_get_387controlword();                  \
-        new_387controlword = (old_387controlword & ~0x0f00) | 0x0200; \
-        if (new_387controlword != old_387controlword)                   \
-            _Py_set_387controlword(new_387controlword);                 \
-    } while (0)
-#define _Py_SET_53BIT_PRECISION_END                             \
-    if (new_387controlword != old_387controlword)               \
-        _Py_set_387controlword(old_387controlword)
+   // Get and set x87 control word for gcc/x86
+#  define HAVE_PY_SET_53BIT_PRECISION 1
 #endif
-
-/* get and set x87 control word for VisualStudio/x86 */
-#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM) /* x87 not supported in 64-bit or ARM */
-#define HAVE_PY_SET_53BIT_PRECISION 1
-#define _Py_SET_53BIT_PRECISION_HEADER \
-    unsigned int old_387controlword, new_387controlword, out_387controlword
-/* We use the __control87_2 function to set only the x87 control word.
-   The SSE control word is unaffected. */
-#define _Py_SET_53BIT_PRECISION_START                                   \
-    do {                                                                \
-        __control87_2(0, 0, &old_387controlword, NULL);                 \
-        new_387controlword =                                            \
-          (old_387controlword & ~(_MCW_PC | _MCW_RC)) | (_PC_53 | _RC_NEAR); \
-        if (new_387controlword != old_387controlword)                   \
-            __control87_2(new_387controlword, _MCW_PC | _MCW_RC,        \
-                          &out_387controlword, NULL);                   \
-    } while (0)
-#define _Py_SET_53BIT_PRECISION_END                                     \
-    do {                                                                \
-        if (new_387controlword != old_387controlword)                   \
-            __control87_2(old_387controlword, _MCW_PC | _MCW_RC,        \
-                          &out_387controlword, NULL);                   \
-    } while (0)
+#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM)
+   // Get and set x87 control word for VisualStudio/x86.
+   // x87 not supported in 64-bit or ARM.
+#  define HAVE_PY_SET_53BIT_PRECISION 1
 #endif
-
 #ifdef HAVE_GCC_ASM_FOR_MC68881
-#define HAVE_PY_SET_53BIT_PRECISION 1
-#define _Py_SET_53BIT_PRECISION_HEADER \
-  unsigned int old_fpcr, new_fpcr
-#define _Py_SET_53BIT_PRECISION_START                                   \
-  do {                                                                  \
-    __asm__ ("fmove.l %%fpcr,%0" : "=g" (old_fpcr));                    \
-    /* Set double precision / round to nearest.  */                     \
-    new_fpcr = (old_fpcr & ~0xf0) | 0x80;                               \
-    if (new_fpcr != old_fpcr)                                           \
-      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (new_fpcr));        \
-  } while (0)
-#define _Py_SET_53BIT_PRECISION_END                                     \
-  do {                                                                  \
-    if (new_fpcr != old_fpcr)                                           \
-      __asm__ volatile ("fmove.l %0,%%fpcr" : : "g" (old_fpcr));        \
-  } while (0)
+#  define HAVE_PY_SET_53BIT_PRECISION 1
 #endif
 
-/* default definitions are empty */
-#ifndef HAVE_PY_SET_53BIT_PRECISION
-#define _Py_SET_53BIT_PRECISION_HEADER
-#define _Py_SET_53BIT_PRECISION_START
-#define _Py_SET_53BIT_PRECISION_END
-#endif
 
 /* If we can't guarantee 53-bit precision, don't use the code
    in Python/dtoa.c, but fall back to standard code.  This
@@ -485,14 +369,14 @@ extern "C" {
 #if !defined(DOUBLE_IS_LITTLE_ENDIAN_IEEE754) && \
     !defined(DOUBLE_IS_BIG_ENDIAN_IEEE754) && \
     !defined(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754)
-#define PY_NO_SHORT_FLOAT_REPR
+#  define PY_NO_SHORT_FLOAT_REPR
 #endif
 
 /* double rounding is symptomatic of use of extended precision on x86.  If
    we're seeing double rounding, and we don't have any mechanism available for
    changing the FPU rounding precision, then don't use Python/dtoa.c. */
 #if defined(X87_DOUBLE_ROUNDING) && !defined(HAVE_PY_SET_53BIT_PRECISION)
-#define PY_NO_SHORT_FLOAT_REPR
+#  define PY_NO_SHORT_FLOAT_REPR
 #endif
 
 
@@ -913,5 +797,23 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py__has_builtin(x) 0
 #endif
 
+
+/* A convenient way for code to know if sanitizers are enabled. */
+#if defined(__has_feature)
+#  if __has_feature(memory_sanitizer)
+#    if !defined(_Py_MEMORY_SANITIZER)
+#      define _Py_MEMORY_SANITIZER
+#    endif
+#  endif
+#  if __has_feature(address_sanitizer)
+#    if !defined(_Py_ADDRESS_SANITIZER)
+#      define _Py_ADDRESS_SANITIZER
+#    endif
+#  endif
+#elif defined(__GNUC__)
+#  if defined(__SANITIZE_ADDRESS__)
+#    define _Py_ADDRESS_SANITIZER
+#  endif
+#endif
 
 #endif /* Py_PYPORT_H */

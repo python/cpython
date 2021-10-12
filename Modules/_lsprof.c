@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -76,7 +77,7 @@ _lsprof_get_state(PyObject *module)
 
 static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
-    PyObject *o = _PyObject_CallNoArg(pObj->externalTimer);
+    PyObject *o = _PyObject_CallNoArgs(pObj->externalTimer);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;

@@ -4,14 +4,14 @@
 #include "pycore_call.h"
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
-#include "pycore_initconfig.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
+#include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_union_type_or
-#include "frameobject.h"
-#include "pycore_frame.h"
+#include "frameobject.h"          // PyFrameObject
+#include "pycore_frame.h"         // InterpreterFrame
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
@@ -1653,7 +1653,7 @@ call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
         return PyObject_CallOneArg(func, self);
     }
     else {
-        return _PyObject_CallNoArg(func);
+        return _PyObject_CallNoArgs(func);
     }
 }
 
@@ -5055,7 +5055,7 @@ _PyObject_GetState(PyObject *obj, int required)
         Py_DECREF(slotnames);
     }
     else { /* getstate != NULL */
-        state = _PyObject_CallNoArg(getstate);
+        state = _PyObject_CallNoArgs(getstate);
         Py_DECREF(getstate);
         if (state == NULL)
             return NULL;
@@ -5080,7 +5080,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
        __getnewargs_ex__ on the object. */
     getnewargs_ex = _PyObject_LookupSpecial(obj, &PyId___getnewargs_ex__);
     if (getnewargs_ex != NULL) {
-        PyObject *newargs = _PyObject_CallNoArg(getnewargs_ex);
+        PyObject *newargs = _PyObject_CallNoArgs(getnewargs_ex);
         Py_DECREF(getnewargs_ex);
         if (newargs == NULL) {
             return -1;
@@ -5133,7 +5133,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
        __getnewargs__ instead. */
     getnewargs = _PyObject_LookupSpecial(obj, &PyId___getnewargs__);
     if (getnewargs != NULL) {
-        *args = _PyObject_CallNoArg(getnewargs);
+        *args = _PyObject_CallNoArgs(getnewargs);
         Py_DECREF(getnewargs);
         if (*args == NULL) {
             return -1;
@@ -5394,7 +5394,7 @@ object___reduce_ex___impl(PyObject *self, int protocol)
         override = (clsreduce != objreduce);
         Py_DECREF(clsreduce);
         if (override) {
-            res = _PyObject_CallNoArg(reduce);
+            res = _PyObject_CallNoArgs(reduce);
             Py_DECREF(reduce);
             return res;
         }

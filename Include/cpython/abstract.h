@@ -71,6 +71,7 @@ PyVectorcall_Function(PyObject *callable)
         return NULL;
     }
     assert(PyCallable_Check(callable));
+
     offset = tp->tp_vectorcall_offset;
     assert(offset > 0);
     memcpy(&ptr, (char *) callable + offset, sizeof(ptr));
@@ -157,15 +158,6 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 {
     PyThreadState *tstate = PyThreadState_Get();
     return _PyObject_FastCallTstate(tstate, func, args, nargs);
-}
-
-/* Call a callable without any arguments
-   Private static inline function variant of public function
-   PyObject_CallNoArgs(). */
-static inline PyObject *
-_PyObject_CallNoArg(PyObject *func) {
-    PyThreadState *tstate = PyThreadState_Get();
-    return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
 static inline PyObject *

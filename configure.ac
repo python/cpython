@@ -4085,6 +4085,8 @@ AC_CHECK_FUNCS(setpgrp,
 
 # We search for both crypt and crypt_r as one or the other may be defined
 # This gets us our -lcrypt in LIBS when required on the target platform.
+# Save/restore LIBS to avoid linking libpython with libcrypt.
+LIBS_SAVE=$LIBS
 AC_SEARCH_LIBS(crypt, crypt)
 AC_SEARCH_LIBS(crypt_r, crypt)
 
@@ -4099,6 +4101,7 @@ char *r = crypt_r("", "", &d);
     [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
     [])
 )
+LIBS=$LIBS_SAVE
 
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [

@@ -710,7 +710,7 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     if (*aggregate_instance == NULL) {
         callback_context *ctx = (callback_context *)sqlite3_user_data(context);
         assert(ctx != NULL);
-        *aggregate_instance = _PyObject_CallNoArg(ctx->callable);
+        *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
         if (!*aggregate_instance) {
             set_sqlite_error(context,
                     "user-defined aggregate's '__init__' method raised error");
@@ -1008,7 +1008,7 @@ progress_callback(void *ctx)
 
     assert(ctx != NULL);
     PyObject *callable = ((callback_context *)ctx)->callable;
-    ret = _PyObject_CallNoArg(callable);
+    ret = PyObject_CallNoArgs(callable);
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;

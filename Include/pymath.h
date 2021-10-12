@@ -1,41 +1,10 @@
+// Symbols and macros to supply platform-independent interfaces to mathematical
+// functions and constants.
+
 #ifndef Py_PYMATH_H
 #define Py_PYMATH_H
 
-#include "pyconfig.h" /* include for defines */
-
-/**************************************************************************
-Symbols and macros to supply platform-independent interfaces to mathematical
-functions and constants
-**************************************************************************/
-
-/* Python provides implementations for copysign, round and hypot in
- * Python/pymath.c just in case your math library doesn't provide the
- * functions.
- *
- *Note: PC/pyconfig.h defines copysign as _copysign
- */
-#ifndef HAVE_COPYSIGN
-extern double copysign(double, double);
-#endif
-
-#ifndef HAVE_ROUND
-extern double round(double);
-#endif
-
-#ifndef HAVE_HYPOT
-extern double hypot(double, double);
-#endif
-
-/* extra declarations */
-#ifndef _MSC_VER
-#ifndef __STDC__
-extern double fmod (double, double);
-extern double frexp (double, int *);
-extern double ldexp (double, int);
-extern double modf (double, double *);
-extern double pow(double, double);
-#endif /* __STDC__ */
-#endif /* _MSC_VER */
+#include "pyconfig.h"             // HAVE_DECL_ISNAN
 
 /* High precision definition of pi and e (Euler)
  * The values are taken from libc6's math.h.
@@ -78,13 +47,6 @@ PyAPI_FUNC(double) _Py_force_double(double);
 #endif
 #endif
 
-#ifndef Py_LIMITED_API
-#ifdef HAVE_GCC_ASM_FOR_X87
-PyAPI_FUNC(unsigned short) _Py_get_387controlword(void);
-PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
-#endif
-#endif
-
 /* Py_IS_NAN(X)
  * Return 1 if float or double arg is a NaN, else 0.
  * Caution:
@@ -95,11 +57,11 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * Note: PC/pyconfig.h defines Py_IS_NAN as _isnan
  */
 #ifndef Py_IS_NAN
-#if defined HAVE_DECL_ISNAN && HAVE_DECL_ISNAN == 1
-#define Py_IS_NAN(X) isnan(X)
-#else
-#define Py_IS_NAN(X) ((X) != (X))
-#endif
+#  if defined HAVE_DECL_ISNAN && HAVE_DECL_ISNAN == 1
+#    define Py_IS_NAN(X) isnan(X)
+#  else
+#    define Py_IS_NAN(X) ((X) != (X))
+#  endif
 #endif
 
 /* Py_IS_INFINITY(X)
@@ -130,13 +92,13 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * Note: PC/pyconfig.h defines Py_IS_FINITE as _finite
  */
 #ifndef Py_IS_FINITE
-#if defined HAVE_DECL_ISFINITE && HAVE_DECL_ISFINITE == 1
-#define Py_IS_FINITE(X) isfinite(X)
-#elif defined HAVE_FINITE
-#define Py_IS_FINITE(X) finite(X)
-#else
-#define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
-#endif
+#  if defined HAVE_DECL_ISFINITE && HAVE_DECL_ISFINITE == 1
+#    define Py_IS_FINITE(X) isfinite(X)
+#  elif defined HAVE_FINITE
+#    define Py_IS_FINITE(X) finite(X)
+#  else
+#    define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
+#  endif
 #endif
 
 /* HUGE_VAL is supposed to expand to a positive double infinity.  Python
@@ -147,7 +109,7 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * config to #define Py_HUGE_VAL to something that works on your platform.
  */
 #ifndef Py_HUGE_VAL
-#define Py_HUGE_VAL HUGE_VAL
+#  define Py_HUGE_VAL HUGE_VAL
 #endif
 
 /* Py_NAN
@@ -156,10 +118,10 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * doesn't support NaNs.
  */
 #if !defined(Py_NAN) && !defined(Py_NO_NAN)
-#if !defined(__INTEL_COMPILER)
-    #define Py_NAN (Py_HUGE_VAL * 0.)
-#else /* __INTEL_COMPILER */
-    #if defined(ICC_NAN_STRICT)
+#  if !defined(__INTEL_COMPILER)
+#    define Py_NAN (Py_HUGE_VAL * 0.)
+#  else /* __INTEL_COMPILER */
+#    if defined(ICC_NAN_STRICT)
         #pragma float_control(push)
         #pragma float_control(precise, on)
         #pragma float_control(except,  on)
@@ -168,58 +130,12 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
             return sqrt(-1.0);
         }
         #pragma float_control (pop)
-        #define Py_NAN __icc_nan()
-    #else /* ICC_NAN_RELAXED as default for Intel Compiler */
+#       define Py_NAN __icc_nan()
+#    else /* ICC_NAN_RELAXED as default for Intel Compiler */
         static const union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
-        #define Py_NAN (__nan_store.__icc_nan)
-    #endif /* ICC_NAN_STRICT */
-#endif /* __INTEL_COMPILER */
+#       define Py_NAN (__nan_store.__icc_nan)
+#    endif /* ICC_NAN_STRICT */
+#  endif /* __INTEL_COMPILER */
 #endif
-
-/* Py_OVERFLOWED(X)
- * Return 1 iff a libm function overflowed.  Set errno to 0 before calling
- * a libm function, and invoke this macro after, passing the function
- * result.
- * Caution:
- *    This isn't reliable.  C99 no longer requires libm to set errno under
- *        any exceptional condition, but does require +- HUGE_VAL return
- *        values on overflow.  A 754 box *probably* maps HUGE_VAL to a
- *        double infinity, and we're cool if that's so, unless the input
- *        was an infinity and an infinity is the expected result.  A C89
- *        system sets errno to ERANGE, so we check for that too.  We're
- *        out of luck if a C99 754 box doesn't map HUGE_VAL to +Inf, or
- *        if the returned result is a NaN, or if a C89 box returns HUGE_VAL
- *        in non-overflow cases.
- *    X is evaluated more than once.
- * Some platforms have better way to spell this, so expect some #ifdef'ery.
- *
- * OpenBSD uses 'isinf()' because a compiler bug on that platform causes
- * the longer macro version to be mis-compiled. This isn't optimal, and
- * should be removed once a newer compiler is available on that platform.
- * The system that had the failure was running OpenBSD 3.2 on Intel, with
- * gcc 2.95.3.
- *
- * According to Tim's checkin, the FreeBSD systems use isinf() to work
- * around a FPE bug on that platform.
- */
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
-#define Py_OVERFLOWED(X) isinf(X)
-#else
-#define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE ||    \
-                                         (X) == Py_HUGE_VAL || \
-                                         (X) == -Py_HUGE_VAL))
-#endif
-
-/* Return whether integral type *type* is signed or not. */
-#define _Py_IntegralTypeSigned(type) ((type)(-1) < 0)
-/* Return the maximum value of integral type *type*. */
-#define _Py_IntegralTypeMax(type) ((_Py_IntegralTypeSigned(type)) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
-/* Return the minimum value of integral type *type*. */
-#define _Py_IntegralTypeMin(type) ((_Py_IntegralTypeSigned(type)) ? -_Py_IntegralTypeMax(type) - 1 : 0)
-/* Check whether *v* is in the range of integral type *type*. This is most
- * useful if *v* is floating-point, since demoting a floating-point *v* to an
- * integral type that cannot represent *v*'s integral part is undefined
- * behavior. */
-#define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 
 #endif /* Py_PYMATH_H */

@@ -10,7 +10,8 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:
@@ -561,7 +562,7 @@ run_at_forkers(PyObject *lst, int reverse)
             for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
-                res = _PyObject_CallNoArg(func);
+                res = _PyObject_CallNoArgs(func);
                 if (res == NULL)
                     PyErr_WriteUnraisable(func);
                 else
@@ -1183,7 +1184,7 @@ path_converter(PyObject *o, void *p)
         if (NULL == func) {
             goto error_format;
         }
-        res = _PyObject_CallNoArg(func);
+        res = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (NULL == res) {
             goto error_exit;
@@ -14380,7 +14381,7 @@ PyOS_FSPath(PyObject *path)
                             _PyType_Name(Py_TYPE(path)));
     }
 
-    path_repr = _PyObject_CallNoArg(func);
+    path_repr = _PyObject_CallNoArgs(func);
     Py_DECREF(func);
     if (NULL == path_repr) {
         return NULL;

@@ -6,8 +6,10 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 #include "structmember.h"         // PyMemberDef
 
 
@@ -283,7 +285,7 @@ try_complex_special_method(PyObject *op)
 
     f = _PyObject_LookupSpecial(op, &PyId___complex__);
     if (f) {
-        PyObject *res = _PyObject_CallNoArg(f);
+        PyObject *res = _PyObject_CallNoArgs(f);
         Py_DECREF(f);
         if (!res || PyComplex_CheckExact(res)) {
             return res;
@@ -525,7 +527,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         p = _Py_c_pow(a, b);
     }
 
-    Py_ADJUST_ERANGE2(p.real, p.imag);
+    _Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "0.0 to a negative or complex power");

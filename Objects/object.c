@@ -2,19 +2,20 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_dict.h"
-#include "pycore_initconfig.h"
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_object.h"        // _PyType_CheckConsistency()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pylifecycle.h"   // _PyTypes_InitSlotDefs()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "frameobject.h"
-#include "interpreteridobject.h"
+#include "frameobject.h"          // PyFrame_Type
+#include "interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
@@ -561,7 +562,7 @@ PyObject_Bytes(PyObject *v)
 
     func = _PyObject_LookupSpecial(v, &PyId___bytes__);
     if (func != NULL) {
-        result = _PyObject_CallNoArg(func);
+        result = _PyObject_CallNoArgs(func);
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
@@ -1596,7 +1597,7 @@ _dir_object(PyObject *obj)
         return NULL;
     }
     /* use __dir__ */
-    result = _PyObject_CallNoArg(dirfunc);
+    result = _PyObject_CallNoArgs(dirfunc);
     Py_DECREF(dirfunc);
     if (result == NULL)
         return NULL;

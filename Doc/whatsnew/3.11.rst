@@ -457,6 +457,8 @@ Build Changes
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
+* libpython is no longer linked against libcrypt.
+  (Contributed by Mike Gilbert in :issue:`45433`.)
 
 C API Changes
 =============
@@ -552,6 +554,10 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
+* The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
+  extensions using ``<stdlib.h>`` must now include it explicitly.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
 Deprecated
 ----------
 
@@ -577,3 +583,18 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+* Remove the following math macros using the ``errno`` variable:
+
+  * ``Py_ADJUST_ERANGE1()``
+  * ``Py_ADJUST_ERANGE2()``
+  * ``Py_OVERFLOWED()``
+  * ``Py_SET_ERANGE_IF_OVERFLOW()``
+  * ``Py_SET_ERRNO_ON_MATH_ERROR()``
+
+  (Contributed by Victor Stinner in :issue:`45412`.)
+
+* Remove ``Py_UNICODE_COPY()`` and ``Py_UNICODE_FILL()`` macros, deprecated
+  since Python 3.3. Use ``PyUnicode_CopyCharacters()`` or ``memcpy()``
+  (``wchar_t*`` string), and ``PyUnicode_Fill()`` functions instead.
+  (Contributed by Victor Stinner in :issue:`41123`.)
