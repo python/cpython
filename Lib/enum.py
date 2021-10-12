@@ -237,7 +237,7 @@ class _proto_member:
         # new member becomes an alias to the existing one.
         try:
             try:
-                # try to do a fast lookup to avoid the quadratip loop
+                # try to do a fast lookup to avoid the quadratic loop
                 enum_member = enum_class._value2member_map_[value]
             except TypeError:
                 for name, canonical_member in enum_class._member_map_.items():
