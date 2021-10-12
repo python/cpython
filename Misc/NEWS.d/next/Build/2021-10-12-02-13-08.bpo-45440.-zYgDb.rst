@@ -1,0 +1,2 @@
+Building Python now requires a C99 ``<math.h>`` header file providing
+``isinf()``, ``isnan()`` and ``isfinite()`` functions. Patch by Victor Stinner.
