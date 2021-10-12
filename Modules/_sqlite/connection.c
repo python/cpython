@@ -667,7 +667,7 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
 }
 
 static void
-_pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
+func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
     PyGILState_STATE threadstate = PyGILState_Ensure();
 
@@ -908,7 +908,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         return NULL;
     }
     rc = sqlite3_create_function_v2(self->db, name, narg, flags, ctx,
-                                    _pysqlite_func_callback,
+                                    func_callback,
                                     NULL,
                                     NULL,
                                     &destructor_callback);  // will decref func
@@ -1501,10 +1501,8 @@ error:
 /* ------------------------- COLLATION CODE ------------------------ */
 
 static int
-pysqlite_collation_callback(
-        void* context,
-        int text1_length, const void* text1_data,
-        int text2_length, const void* text2_data)
+collation_callback(void *context, int text1_length, const void *text1_data,
+                   int text2_length, const void *text2_data)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
@@ -1778,7 +1776,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
             return NULL;
         }
         rc = sqlite3_create_collation_v2(self->db, name, flags, ctx,
-                                         &pysqlite_collation_callback,
+                                         &collation_callback,
                                          &destructor_callback);
     }
 
