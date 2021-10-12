@@ -160,15 +160,6 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
     return _PyObject_FastCallTstate(tstate, func, args, nargs);
 }
 
-/* Call a callable without any arguments
-   Private static inline function variant of public function
-   PyObject_CallNoArgs(). */
-static inline PyObject *
-_PyObject_CallNoArgs(PyObject *func) {
-    PyThreadState *tstate = PyThreadState_Get();
-    return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
-}
-
 static inline PyObject *
 PyObject_CallOneArg(PyObject *func, PyObject *arg)
 {

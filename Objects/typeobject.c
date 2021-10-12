@@ -4,14 +4,14 @@
 #include "pycore_call.h"
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
-#include "pycore_initconfig.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
+#include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_union_type_or
-#include "frameobject.h"
-#include "pycore_frame.h"
+#include "frameobject.h"          // PyFrameObject
+#include "pycore_frame.h"         // InterpreterFrame
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
