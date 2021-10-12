@@ -742,7 +742,8 @@ class PyDictObjectPtr(PyObjectPtr):
         if has_values:
             values = values['values']
         if has_values:
-            yield from items_from_keys_and_values(keys, values)
+            for item in items_from_keys_and_values(keys, values):
+                yield item
             return
         entries, nentries = self._get_entries(keys)
         for i in safe_range(nentries):
@@ -2010,7 +2011,7 @@ def move_in_stack(move_up):
         print('Unable to find an older python frame')
     else:
         print('Unable to find a newer python frame')
-    
+
 
 class PyUp(gdb.Command):
     'Select and print all python stack frame in the same eval loop starting from the one that called this one (if any)'
