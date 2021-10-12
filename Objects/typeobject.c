@@ -4941,7 +4941,7 @@ _PyObject_GetState(PyObject *obj, int required)
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
-        if (_PyObject_DictEmpty(obj)) {
+        if (_PyObject_IsInstanceDictEmpty(obj)) {
             state = Py_None;
             Py_INCREF(state);
         }

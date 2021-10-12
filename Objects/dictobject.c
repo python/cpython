@@ -5051,7 +5051,7 @@ _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
 }
 
 int
-_PyObject_DictEmpty(PyObject *obj)
+_PyObject_IsInstanceDictEmpty(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     if (tp->tp_dictoffset == 0) {

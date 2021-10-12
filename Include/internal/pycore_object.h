@@ -190,6 +190,7 @@ PyObject ** _PyObject_DictPointer(PyObject *);
 int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
 void _PyObject_ClearInstanceAttributes(PyObject *self);
 void _PyObject_FreeInstanceAttributes(PyObject *self);
+int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 #ifdef __cplusplus
 }

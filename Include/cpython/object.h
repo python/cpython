@@ -334,7 +334,6 @@ PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
-int _PyObject_DictEmpty(PyObject *);
 
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
