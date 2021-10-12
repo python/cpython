@@ -1555,7 +1555,9 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     if (pathconfig->stdlib_dir == NULL) {
-        if (calculate->stdlib_dir != NULL) {
+        // XXX Drop the prefix_found check.  stdlib_dir_verified can be
+        // used where the distinction is needed.
+        if (calculate->stdlib_dir != NULL && calculate->prefix_found) {
             pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->stdlib_dir);
             if (pathconfig->stdlib_dir == NULL) {
                 return _PyStatus_NO_MEMORY();
