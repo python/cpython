@@ -386,7 +386,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     str[0] = '(';
     str[len+1] = ')';
 
-    struct tok_state* tok = PyTokenizer_FromString(str, 1);
+    struct tok_state* tok = _PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
         PyMem_Free(str);
         return NULL;
@@ -409,7 +409,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 exit:
     PyMem_Free(str);
     _PyPegen_Parser_Free(p2);
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
