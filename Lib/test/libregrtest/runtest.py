@@ -1,4 +1,3 @@
-import contextlib
 import faulthandler
 import functools
 import gc
@@ -6,7 +5,6 @@ import importlib
 import io
 import os
 import sys
-import tempfile
 import time
 import traceback
 import unittest
@@ -175,63 +173,6 @@ def get_abs_module(ns: Namespace, test_name: str) -> str:
         return 'test.' + test_name
 
 
-@contextlib.contextmanager
-def override_fd(fd, fd2):
-    fd2_copy = os.dup(fd2)
-    try:
-        os.dup2(fd, fd2)
-        yield
-    finally:
-        os.dup2(fd2_copy, fd2)
-        os.close(fd2_copy)
-
-
-def get_stream_fd(stream):
-    if stream is None:
-        return None
-    try:
-        return stream.fileno()
-    except io.UnsupportedOperation:
-        return None
-
-
-@contextlib.contextmanager
-def capture_std_streams():
-    """
-    Redirect all standard streams to a temporary file:
-
-    * stdout and stderr file descriptors (fd 1 and fd 2)
-    * sys.stdout, sys.__stdout__
-    * sys.stderr, sys.__stderr__
-    """
-    try:
-        stderr_fd = sys.stderr.fileno()
-    except io.UnsupportedOperation:
-        stderr_fd = None
-
-    # Use a temporary file to support fileno() operation
-    tmp_file = tempfile.TemporaryFile(mode='w+',
-                                      # line buffering
-                                      buffering=1,
-                                      encoding=sys.stderr.encoding,
-                                      errors=sys.stderr.errors)
-    with contextlib.ExitStack() as stack:
-        stack.enter_context(tmp_file)
-
-        # Override stdout and stderr file descriptors
-        tmp_fd = tmp_file.fileno()
-        for stream in (sys.stdout, sys.stderr):
-            fd = get_stream_fd(stream)
-            if fd is not None:
-                stack.enter_context(override_fd(tmp_fd, fd))
-
-        # Override sys attributes
-        for name in ('stdout', 'stderr', '__stdout__', '__stderr__'):
-            stack.enter_context(support.swap_attr(sys, name, tmp_file))
-
-        yield tmp_file
-
-
 def _runtest(ns: Namespace, test_name: str) -> TestResult:
     # Handle faulthandler timeout, capture stdout+stderr, XML serialization
     # and measure time.
@@ -252,13 +193,20 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
         if output_on_failure:
             support.verbose = True
 
+            stream = io.StringIO()
+            orig_stdout = sys.stdout
+            orig_stderr = sys.stderr
             output = None
-            with capture_std_streams() as stream:
+            try:
+                sys.stdout = stream
+                sys.stderr = stream
                 result = _runtest_inner(ns, test_name,
                                         display_failure=False)
                 if not isinstance(result, Passed):
-                    stream.seek(0)
-                    output = stream.read()
+                    output = stream.getvalue()
+            finally:
+                sys.stdout = orig_stdout
+                sys.stderr = orig_stderr
 
             if output is not None:
                 sys.stderr.write(output)
