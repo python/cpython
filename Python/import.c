@@ -2121,8 +2121,8 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
                             PyObject *dataobj)
 /*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
-    struct frozen_info info = {};
-    Py_buffer buf = {};
+    struct frozen_info info = {0};
+    Py_buffer buf = {0};
     if (PyObject_CheckBuffer(dataobj)) {
         if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
             return NULL;
