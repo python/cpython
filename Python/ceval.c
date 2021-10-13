@@ -13,11 +13,11 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
-#include "pycore_code.h"
+#include "pycore_code.h"          // saturating_increment()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_moduleobject.h"
+#include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -867,7 +867,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         goto fail;
     }
     // dummy = object()
-    dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    dummy = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (dummy == NULL) {
         goto fail;
     }
@@ -1064,7 +1064,7 @@ static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (locals == NULL) {
         locals = globals;
     }
@@ -3677,7 +3677,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(LOAD_ATTR_SPLIT_KEYS) {
+        TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3688,11 +3688,10 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
             assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
-            DEOPT_IF(dict == NULL, LOAD_ATTR);
-            assert(PyDict_CheckExact((PyObject *)dict));
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
-            res = dict->ma_values->values[cache0->index];
+            assert(tp->tp_inline_values_offset > 0);
+            PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
+            DEOPT_IF(values == NULL, LOAD_ATTR);
+            res = values->values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             record_cache_hit(cache0);
@@ -3784,7 +3783,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(STORE_ATTR_SPLIT_KEYS) {
+        TARGET(STORE_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3794,31 +3793,23 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
             assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
-            DEOPT_IF(dict == NULL, STORE_ATTR);
-            assert(PyDict_CheckExact((PyObject *)dict));
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, STORE_ATTR);
+            assert(tp->tp_inline_values_offset > 0);
+            PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
+            DEOPT_IF(values == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
             record_cache_hit(cache0);
             int index = cache0->index;
             STACK_SHRINK(1);
             PyObject *value = POP();
-            PyObject *old_value = dict->ma_values->values[index];
-            dict->ma_values->values[index] = value;
+            PyObject *old_value = values->values[index];
+            values->values[index] = value;
             if (old_value == NULL) {
                 assert(index < 16);
-                dict->ma_values->mv_order = (dict->ma_values->mv_order << 4) | index;
-                dict->ma_used++;
+                values->mv_order = (values->mv_order << 4) | index;
             }
             else {
                 Py_DECREF(old_value);
             }
-            /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
-                _PyObject_GC_TRACK(dict);
-            }
-            /* PEP 509 */
-            dict->ma_version_tag = DICT_NEXT_VERSION();
             Py_DECREF(owner);
             DISPATCH();
         }
@@ -4354,7 +4345,7 @@ check_eval_breaker:
             }
             SET_TOP(exit);
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArg(enter);
+            res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL)
                 goto error;
@@ -4392,7 +4383,7 @@ check_eval_breaker:
             }
             SET_TOP(exit);
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArg(enter);
+            res = _PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 goto error;
@@ -4533,21 +4524,31 @@ check_eval_breaker:
             _PyObjectCache *cache2 = &caches[-2].obj;
 
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-            assert(cache1->dk_version_or_hint != 0);
-            assert(cache1->tp_version != 0);
-            assert(self_cls->tp_dictoffset >= 0);
-            assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
+            assert(self_cls->tp_dictoffset > 0);
+            assert(self_cls->tp_inline_values_offset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)self) + self_cls->tp_dictoffset);
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            record_cache_hit(cache0);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            DISPATCH();
+        }
 
-            // inline version of _PyObject_GetDictPtr for offset >= 0
-            PyObject *dict = self_cls->tp_dictoffset != 0 ?
-                *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
-
-            // Ensure self.__dict__ didn't modify keys.
-            // Don't care if self has no dict, it could be builtin or __slots__.
-            DEOPT_IF(dict != NULL &&
-                ((PyDictObject *)dict)->ma_keys->dk_version !=
-                cache1->dk_version_or_hint, LOAD_METHOD);
-
+        TARGET(LOAD_METHOD_NO_DICT) {
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(self_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_METHOD, hit);
             record_cache_hit(cache0);
             PyObject *res = cache2->obj;
@@ -4589,7 +4590,6 @@ check_eval_breaker:
             record_cache_hit(cache0);
             PyObject *res = cache2->obj;
             assert(res != NULL);
-            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(NULL);
             Py_DECREF(cls);
@@ -4671,7 +4671,7 @@ check_eval_breaker:
 
             // Check if the call can be inlined or not
             PyObject *function = PEEK(oparg + 1);
-            if (Py_TYPE(function) == &PyFunction_Type) {
+            if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
@@ -4689,7 +4689,6 @@ check_eval_breaker:
                     }
 
                     STACK_SHRINK(oparg + 1);
-                    assert(tstate->interp->eval_frame != NULL);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_DECREF(function);
@@ -5680,6 +5679,30 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     return 0;
 
 fail: /* Jump here from prelude on failure */
+    if (steal_args) {
+        // If we failed to initialize locals, make sure the caller still own all the
+        // arguments that were on the stack. We need to increment the reference count
+        // of everything we copied (everything in localsplus) that came from the stack
+        // (everything that is present in the "args" array).
+        Py_ssize_t kwcount = kwnames != NULL ? PyTuple_GET_SIZE(kwnames) : 0;
+        for (Py_ssize_t k=0; k < total_args; k++) {
+            PyObject* arg = localsplus[k];
+            for (Py_ssize_t j=0; j < argcount + kwcount; j++) {
+                if (args[j] == arg) {
+                    Py_XINCREF(arg);
+                    break;
+                }
+            }
+        }
+        // Restore all the **kwargs we placed into the kwargs dictionary
+        if (kwdict) {
+            PyObject *key, *value;
+            Py_ssize_t pos = 0;
+            while (PyDict_Next(kwdict, &pos, &key, &value)) {
+                Py_INCREF(value);
+            }
+        }
+    }
     return -1;
 
 }
@@ -5744,16 +5767,6 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
     }
     PyObject **localsarray = _PyFrame_GetLocalsArray(frame);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames, steal_args)) {
-        if (steal_args) {
-            // If we failed to initialize locals, make sure the caller still own all the
-            // arguments. Notice that we only need to increase the reference count of the
-            // *valid* arguments (i.e. the ones that fit into the frame). 
-            PyCodeObject *co = (PyCodeObject*)con->fc_code;
-            const size_t total_args = co->co_argcount + co->co_kwonlyargcount;
-            for (size_t i = 0; i < Py_MIN(argcount, total_args); i++) {
-                Py_XINCREF(frame->localsplus[i]);
-            }
-        }
         _PyFrame_Clear(frame, 0);
         return NULL;
     }
@@ -5794,7 +5807,6 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (frame == NULL) {
         return NULL;
     }
-    assert (tstate->interp->eval_frame != NULL);
     PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
     assert(_PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame));
     if (_PyEvalFrameClearAndPop(tstate, frame)) {
@@ -5921,7 +5933,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
 
     if (PyExceptionClass_Check(exc)) {
         type = exc;
-        value = _PyObject_CallNoArg(exc);
+        value = _PyObject_CallNoArgs(exc);
         if (value == NULL)
             goto raise_error;
         if (!PyExceptionInstance_Check(value)) {
@@ -5952,7 +5964,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
     if (cause) {
         PyObject *fixed_cause;
         if (PyExceptionClass_Check(cause)) {
-            fixed_cause = _PyObject_CallNoArg(cause);
+            fixed_cause = _PyObject_CallNoArgs(cause);
             if (fixed_cause == NULL)
                 goto raise_error;
             Py_DECREF(cause);

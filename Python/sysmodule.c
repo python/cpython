@@ -15,21 +15,22 @@ Data members:
 */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
+#include "pycore_code.h"          // _Py_QuickenedCount
+#include "pycore_frame.h"         // InterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_object.h"        // _PyObject_IS_GC()
-#include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_frame.h"
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
@@ -1676,7 +1677,7 @@ _PySys_GetSizeOf(PyObject *o)
         }
     }
     else {
-        res = _PyObject_CallNoArg(method);
+        res = _PyObject_CallNoArgs(method);
         Py_DECREF(method);
     }
 

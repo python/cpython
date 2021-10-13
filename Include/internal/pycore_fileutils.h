@@ -80,6 +80,25 @@ extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
 
+// Macros to protect CRT calls against instant termination when passed an
+// invalid parameter (bpo-23524). IPH stands for Invalid Parameter Handler.
+// Usage:
+//
+//      _Py_BEGIN_SUPPRESS_IPH
+//      ...
+//      _Py_END_SUPPRESS_IPH
+#if defined _MSC_VER && _MSC_VER >= 1900
+   extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
+#  define _Py_BEGIN_SUPPRESS_IPH \
+    { _invalid_parameter_handler _Py_old_handler = \
+      _set_thread_local_invalid_parameter_handler(_Py_silent_invalid_parameter_handler);
+#  define _Py_END_SUPPRESS_IPH \
+    _set_thread_local_invalid_parameter_handler(_Py_old_handler); }
+#else
+#  define _Py_BEGIN_SUPPRESS_IPH
+#  define _Py_END_SUPPRESS_IPH
+#endif /* _MSC_VER >= 1900 */
+
 #ifdef __cplusplus
 }
 #endif

@@ -196,6 +196,7 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
             stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
+            output = None
             try:
                 sys.stdout = stream
                 sys.stderr = stream
@@ -203,11 +204,13 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
                                         display_failure=False)
                 if not isinstance(result, Passed):
                     output = stream.getvalue()
-                    orig_stderr.write(output)
-                    orig_stderr.flush()
             finally:
                 sys.stdout = orig_stdout
                 sys.stderr = orig_stderr
+
+            if output is not None:
+                sys.stderr.write(output)
+                sys.stderr.flush()
         else:
             # Tell tests to be moderately quiet
             support.verbose = ns.verbose

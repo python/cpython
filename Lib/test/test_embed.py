@@ -13,7 +13,6 @@ import re
 import shutil
 import subprocess
 import sys
-import sysconfig
 import tempfile
 import textwrap
 
@@ -592,7 +591,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def get_expected_config(self, expected_preconfig, expected,
                             expected_pathconfig, env, api,
                             modify_path_cb=None):
-        cls = self.__class__
         configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
@@ -1248,7 +1246,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"Unable to find home in {paths!r}")
 
         prefix = exec_prefix = home
-        ver = sys.version_info
         expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1549,8 +1546,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     #   "Set up a preliminary stderr printer until we have enough
     #    infrastructure for the io module in place."
 
-    def get_stdout_fd(self):
-        return sys.__stdout__.fileno()
+    STDOUT_FD = 1
 
     def create_printer(self, fd):
         ctypes = import_helper.import_module('ctypes')
@@ -1562,7 +1558,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_write(self):
         message = "unicode:\xe9-\u20ac-\udc80!\n"
 
-        stdout_fd = self.get_stdout_fd()
+        stdout_fd = self.STDOUT_FD
         stdout_fd_copy = os.dup(stdout_fd)
         self.addCleanup(os.close, stdout_fd_copy)
 
@@ -1583,7 +1579,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
 
     def test_methods(self):
-        fd = self.get_stdout_fd()
+        fd = self.STDOUT_FD
         printer = self.create_printer(fd)
         self.assertEqual(printer.fileno(), fd)
         self.assertEqual(printer.isatty(), os.isatty(fd))
@@ -1591,7 +1587,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
         printer.close()  # noop
 
     def test_disallow_instantiation(self):
-        fd = self.get_stdout_fd()
+        fd = self.STDOUT_FD
         printer = self.create_printer(fd)
         support.check_disallow_instantiation(self, type(printer))
 
