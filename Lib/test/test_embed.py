@@ -273,7 +273,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         "test_pre_initialization_sys_options", env=env)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
-            "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
+            "sys._xoptions: {'dev': '2', 'utf8': '1'}\n"
             "warnings.filters[:3]: ['default', 'module', 'once']\n"
         )
         self.assertIn(expected_output, out)
@@ -820,15 +820,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'arg2'],
             'orig_argv': ['python3',
                           '-W', 'cmdline_warnoption',
-                          '-X', 'cmdline_xoption',
+                          '-X', 'dev',
                           '-c', 'pass',
                           'arg2'],
             'parse_argv': 2,
             'xoptions': [
-                'config_xoption1=3',
-                'config_xoption2=',
-                'config_xoption3',
-                'cmdline_xoption',
+                'dev=3',
+                'utf8',
+                'dev',
             ],
             'warnoptions': [
                 'cmdline_warnoption',
@@ -1046,9 +1045,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'faulthandler': 1,
             'xoptions': [
-                'config_xoption',
-                'cmdline_xoption',
-                'sysadd_xoption',
+                'dev',
+                'utf8',
                 'faulthandler',
             ],
             'warnoptions': [
@@ -1058,9 +1056,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ],
             'orig_argv': ['python3',
                           '-W', 'ignore:::cmdline_warnoption',
-                          '-X', 'cmdline_xoption'],
+                          '-X', 'utf8'],
         }
-        self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
+        preconfig = {'utf8_mode': 1}
+        self.check_all_configs("test_init_sys_add", config,
+                               expected_preconfig=preconfig,
+                               api=API_PYTHON)
 
     def test_init_run_main(self):
         code = ('import _testinternalcapi, json; '
