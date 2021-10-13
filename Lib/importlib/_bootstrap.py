@@ -838,7 +838,6 @@ class FrozenImporter:
             assert _imp.is_frozen_package(module.__name__) == ispkg, ispkg
             filename, pkgdir = cls._resolve_filename(origname, spec.name, ispkg)
             spec.loader_state = state = type(sys.implementation)(
-                data=None,
                 filename=filename,
                 origname=origname,
             )
@@ -866,8 +865,7 @@ class FrozenImporter:
             # These checks ensure that _fix_up_module() is only called
             # in the right places.
             assert state is not None
-            assert sorted(vars(state)) == ['data', 'filename', 'origname'], state
-            assert state.data is None, state.data
+            assert sorted(vars(state)) == ['filename', 'origname'], state
             assert state.origname
             __path__ = spec.submodule_search_locations
             ispkg = __path__ is not None
@@ -917,13 +915,12 @@ class FrozenImporter:
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
             return None
-        data, ispkg, origname = info
+        _, ispkg, origname = info
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
         filename, pkgdir = cls._resolve_filename(origname, fullname, ispkg)
         spec.loader_state = type(sys.implementation)(
-            data=data,
             filename=filename,
             origname=origname,
         )
@@ -960,20 +957,7 @@ class FrozenImporter:
     def exec_module(module):
         spec = module.__spec__
         name = spec.name
-        try:
-            data = spec.loader_state.data
-        except AttributeError:
-            if not _imp.is_frozen(name):
-                raise ImportError('{!r} is not a frozen module'.format(name),
-                                  name=name)
-            data = None
-        else:
-            # We clear the extra data we got from the finder, to save memory.
-            # Note that if this method is called again (e.g. by
-            # importlib.reload()) then _imp.get_frozen_object() will notice
-            # no data was provided and will look it up.
-            spec.loader_state.data = None
-        code = _call_with_frames_removed(_imp.get_frozen_object, name, data)
+        code = _call_with_frames_removed(_imp.get_frozen_object, name)
         exec(code, module.__dict__)
 
     @classmethod

@@ -2050,6 +2050,8 @@ _imp.find_frozen
 
     name: unicode
     /
+    *
+    withdata: bool = False
 
 Return info about the corresponding frozen module (if there is one) or None.
 
@@ -2063,8 +2065,8 @@ The returned info (a 2-tuple):
 [clinic start generated code]*/
 
 static PyObject *
-_imp_find_frozen_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=3fd17da90d417e4e input=6aa7b9078a89280a]*/
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
+/*[clinic end generated code: output=8c1c3c7f925397a5 input=22a8847c201542fd]*/
 {
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -2079,10 +2081,12 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         return NULL;
     }
 
-    PyObject *data = PyMemoryView_FromMemory((char *)info.data, info.size,
-                                             PyBUF_READ);
-    if (data == NULL) {
-        return NULL;
+    PyObject *data = NULL;
+    if (withdata) {
+        data = PyMemoryView_FromMemory((char *)info.data, info.size, PyBUF_READ);
+        if (data == NULL) {
+            return NULL;
+        }
     }
 
     PyObject *origname = NULL;
@@ -2094,11 +2098,11 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         }
     }
 
-    PyObject *result = PyTuple_Pack(3, data,
+    PyObject *result = PyTuple_Pack(3, data ? data : Py_None,
                                     info.is_package ? Py_True : Py_False,
                                     origname ? origname : Py_None);
     Py_XDECREF(origname);
-    Py_DECREF(data);
+    Py_XDECREF(data);
     return result;
 }
 

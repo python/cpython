@@ -48,17 +48,6 @@ class FindSpecTests(abc.FinderTests):
 
         actual = dict(vars(spec.loader_state))
 
-        # Check the code object used to import the frozen module.
-        # We can't compare the marshaled data directly because
-        # marshal.dumps() would mark "expected" (below) as a ref,
-        # which slightly changes the output.
-        # (See https://bugs.python.org/issue34093.)
-        data = actual.pop('data')
-        with import_helper.frozen_modules():
-            expected = _imp.get_frozen_object(spec.name)
-        code = marshal.loads(data)
-        self.assertEqual(code, expected)
-
         # Check the rest of spec.loader_state.
         expected = dict(
             origname=origname,
