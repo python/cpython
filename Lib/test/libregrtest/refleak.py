@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import warnings
 from inspect import isabstract
