@@ -6,8 +6,6 @@
 extern "C" {
 #endif
 
-#include <stdarg.h>
-
 /* Type PyByteArrayObject represents a mutable array of bytes.
  * The Python API is that of a sequence;
  * the bytes are mapped to ints in [0, 256).
