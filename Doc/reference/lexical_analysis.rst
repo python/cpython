@@ -388,7 +388,7 @@ characters:
    Not imported by ``from module import *``.
 
 ``_``
-   In a :keyword:`case` pattern, ``_`` is a
+   In a ``case`` pattern within a :keyword:`match` statement, ``_`` is a
    :ref:`soft keyword <soft-keywords>` that denotes a
    :ref:`wildcard <wildcard-patterns>`.
 
