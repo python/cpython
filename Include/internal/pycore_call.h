@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyThreadState *tstate,
     PyObject *callable,
@@ -36,7 +38,7 @@ _PyObject_CallNoArgsTstate(PyThreadState *tstate, PyObject *func) {
 // Private static inline function variant of public PyObject_CallNoArgs()
 static inline PyObject *
 _PyObject_CallNoArgs(PyObject *func) {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 

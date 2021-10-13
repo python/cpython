@@ -12,7 +12,8 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
-#include "pycore_interp.h"   /* PyInterpreterState.eval_frame */
+#include "pycore_interp.h"        // PyInterpreterState.eval_frame
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
@@ -93,7 +94,7 @@ static inline int _Py_EnterRecursiveCall(PyThreadState *tstate,
 }
 
 static inline int _Py_EnterRecursiveCall_inline(const char *where) {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     return _Py_EnterRecursiveCall(tstate, where);
 }
 
@@ -104,7 +105,7 @@ static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
 }
 
 static inline void _Py_LeaveRecursiveCall_inline(void)  {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     _Py_LeaveRecursiveCall(tstate);
 }
 

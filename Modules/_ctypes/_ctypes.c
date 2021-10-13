@@ -102,12 +102,16 @@ bytes(cdata)
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
 #ifdef MS_WIN32
-#include <windows.h>
 #include <malloc.h>
 #ifndef IS_INTRESOURCE
 #define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
