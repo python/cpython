@@ -1,6 +1,6 @@
 import unittest
 import tkinter
-from test.support import requires, run_unittest, swap_attr
+from test.support import requires, swap_attr
 from tkinter.test.support import AbstractTkTest
 from tkinter import colorchooser
 
@@ -37,7 +37,5 @@ class ChooserTest(AbstractTkTest, unittest.TestCase):
                          ((74, 60, 140), '#4a3c8c'))
 
 
-tests_gui = (ChooserTest,)
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()
