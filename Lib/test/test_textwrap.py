@@ -1079,7 +1079,7 @@ class ShortenTestCase(BaseTestCase):
 
 class WideCharacterTestCase(BaseTestCase):
     def text_len(self, text):
-        sum(
+        return sum(
             2 if unicodedata.east_asian_width(c) in {'F', 'W'} else 1
             for c in text
         )
