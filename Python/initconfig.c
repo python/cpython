@@ -2117,7 +2117,6 @@ is_dev_env(PyConfig *config)
         return 0;
     }
     /* If dirname() is the same for both then it is a dev build. */
-    // XXX This doesn't work on Windows.
     if (len != _Py_find_basename(stdlib)) {
         return 0;
     }

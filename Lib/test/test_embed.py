@@ -1361,16 +1361,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': paths,
-                # The current getpath.c doesn't determine the stdlib dir
-                # in this case.
-                'stdlib_dir': None,
-                'use_frozen_modules': -1,
             }
             path_config = {}
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'lib')
+                config['use_frozen_modules'] = 1
 
                 ver = sys.version_info
                 dll = f'python{ver.major}'
@@ -1383,6 +1380,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 config['stdlib_dir'] = None
+                config['use_frozen_modules'] = -1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
