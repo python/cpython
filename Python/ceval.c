@@ -1710,8 +1710,8 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
         TARGET(LOAD_CLOSURE) {
+            /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
@@ -3867,10 +3867,10 @@ check_eval_breaker:
             DISPATCH();
         }
 
-#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
-                         "BaseException is not allowed"
-
         TARGET(JUMP_IF_NOT_EXC_MATCH) {
+            const char *cannot_catch_msg = "catching classes that do not "
+                                           "inherit from BaseException is not "
+                                           "allowed";
             PyObject *right = POP();
             PyObject *left = POP();
             if (PyTuple_Check(right)) {
@@ -3880,7 +3880,7 @@ check_eval_breaker:
                     PyObject *exc = PyTuple_GET_ITEM(right, i);
                     if (!PyExceptionClass_Check(exc)) {
                         _PyErr_SetString(tstate, PyExc_TypeError,
-                                        CANNOT_CATCH_MSG);
+                                         cannot_catch_msg);
                         Py_DECREF(left);
                         Py_DECREF(right);
                         goto error;
@@ -3890,7 +3890,7 @@ check_eval_breaker:
             else {
                 if (!PyExceptionClass_Check(right)) {
                     _PyErr_SetString(tstate, PyExc_TypeError,
-                                    CANNOT_CATCH_MSG);
+                                     cannot_catch_msg);
                     Py_DECREF(left);
                     Py_DECREF(right);
                     goto error;
