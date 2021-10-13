@@ -556,6 +556,9 @@ Porting to Python 3.11
 
 * The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
   extensions using ``<stdlib.h>`` must now include it explicitly.
+  The system ``<stdlib.h>`` header provides functions like:
+  ``malloc()``/``free()``, ``getenv()``, ``strtol()``, ``abs()``, ``strtol()``,
+  ``exit()`` and ``abort()``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
 Deprecated

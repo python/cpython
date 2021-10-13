@@ -15,12 +15,13 @@ extern char *strerror(int);
 #endif
 #endif
 
+#include <ctype.h>
 #ifdef MS_WINDOWS
-#include <windows.h>
-#include <winbase.h>
+#  include <windows.h>
+#  include <winbase.h>
+#  include <stdlib.h>             // _sys_nerr
 #endif
 
-#include <ctype.h>
 
 #ifdef __cplusplus
 extern "C" {

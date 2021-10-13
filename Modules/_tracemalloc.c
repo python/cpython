@@ -5,7 +5,10 @@
 #include "pycore_hashtable.h"
 #include <pycore_frame.h>
 
+#include <stdlib.h>               // malloc()
+
 #include "clinic/_tracemalloc.c.h"
+
 /*[clinic input]
 module _tracemalloc
 [clinic start generated code]*/

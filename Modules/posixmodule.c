@@ -46,7 +46,8 @@
 #  undef HAVE_FACCESSAT
 #endif
 
-#include <stdio.h>  /* needed for ctermid() */
+#include <stdio.h>                // ctermid()
+#include <stdlib.h>               // system()
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.

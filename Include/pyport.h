@@ -205,8 +205,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
  * see https://bugs.python.org/issue28126 */
 #define Py_MEMCPY memcpy
 
-#include <stdlib.h>
-
 #ifdef HAVE_IEEEFP_H
 #include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
 #endif
