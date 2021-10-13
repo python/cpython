@@ -385,16 +385,28 @@ classes are identified by the patterns of leading and trailing underscore
 characters:
 
 ``_*``
-   Not imported by ``from module import *``.  The special identifier ``_`` is used
-   in the interactive interpreter to store the result of the last evaluation; it is
-   stored in the :mod:`builtins` module.  When not in interactive mode, ``_``
-   has no special meaning and is not defined. See section :ref:`import`.
+   Not imported by ``from module import *``.
+
+``_``
+   In a ``case`` pattern within a :keyword:`match` statement, ``_`` is a
+   :ref:`soft keyword <soft-keywords>` that denotes a
+   :ref:`wildcard <wildcard-patterns>`.
+
+   Separately, the interactive interpreter makes the result of the last evaluation
+   available in the variable ``_``.
+   (It is stored in the :mod:`builtins` module, alongside built-in
+   functions like ``print``.)
+
+   Elsewhere, ``_`` is a regular identifier. It is often used to name
+   "special" items, but it is not special to Python itself.
 
    .. note::
 
       The name ``_`` is often used in conjunction with internationalization;
       refer to the documentation for the :mod:`gettext` module for more
       information on this convention.
+
+      It is also commonly used for unused variables.
 
 ``__*__``
    System-defined names, informally known as "dunder" names. These names are
