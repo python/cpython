@@ -142,6 +142,9 @@ extern void _Py_set_387controlword(unsigned short);
 // Get and set x87 control word for VisualStudio/x86.
 // x87 is not supported in 64-bit or ARM.
 #if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM)
+
+#include <float.h>                // __control87_2()
+
 #define _Py_SET_53BIT_PRECISION_HEADER \
     unsigned int old_387controlword, new_387controlword, out_387controlword
     // We use the __control87_2 function to set only the x87 control word.

@@ -4677,7 +4677,6 @@ LIBS="$LIBS $LIBM"
 
 AC_CHECK_FUNCS([acosh asinh atanh copysign erf erfc expm1 finite gamma])
 AC_CHECK_FUNCS([hypot lgamma log1p log2 round tgamma])
-AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
