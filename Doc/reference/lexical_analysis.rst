@@ -388,11 +388,11 @@ characters:
    Not imported by ``from module import *``.
 
 ``_``
-   In a :keyword:`match` pattern, ``_`` is a
+   In a :keyword:`case` pattern, ``_`` is a
    :ref:`soft keyword <soft-keywords>` that denotes a
    :ref:`wildcard <wildcard-patterns>`.
 
-   The interactive interpreter makes the result of the last evaluation
+   Separately, the interactive interpreter makes the result of the last evaluation
    available in the variable ``_``.
    (It is stored in the :mod:`builtins` module, alongside built-in
    functions like ``print``.)
