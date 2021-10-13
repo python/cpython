@@ -189,11 +189,6 @@ typedef _W64 int Py_ssize_t;
 
 typedef int pid_t;
 
-#include <float.h>
-#define Py_IS_NAN _isnan
-#define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
-#define Py_IS_FINITE(X) _finite(X)
-
 /* define some ANSI types that are not defined in earlier Win headers */
 #if _MSC_VER >= 1200
 /* This file only exists in VC 6.0 or higher */
@@ -358,14 +353,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define to 1 if you have the `round' function. */
 #if _MSC_VER >= 1800
-#define HAVE_ROUND 1
+#  define HAVE_ROUND 1
 #endif
-
-/* Define to 1 if you have the `isinf' macro. */
-#define HAVE_DECL_ISINF 1
-
-/* Define to 1 if you have the `isnan' function. */
-#define HAVE_DECL_ISNAN 1
 
 /* Define if on AIX 3.
    System headers sometimes define this.

@@ -460,6 +460,10 @@ Build Changes
 * libpython is no longer linked against libcrypt.
   (Contributed by Mike Gilbert in :issue:`45433`.)
 
+* Building Python now requires a C99 ``<math.h>`` header file providing
+  ``isinf()``, ``isnan()`` and ``isfinite()`` functions.
+  (Contributed by Victor Stinner in :issue:`45440`.)
+
 C API Changes
 =============
 
@@ -605,3 +609,7 @@ Removed
 * Remove the ``pystrhex.h`` header file. It only contains private functions.
   C extensions should only include the main ``<Python.h>`` header file.
   (Contributed by Victor Stinner in :issue:`45434`.)
+
+* Remove the ``Py_FORCE_DOUBLE()`` macro. It was used by the
+  ``Py_IS_INFINITY()`` macro.
+  (Contributed by Victor Stinner in :issue:`45440`.)

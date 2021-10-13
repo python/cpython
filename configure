@@ -15090,40 +15090,6 @@ _ACEOF
 fi
 done
 
-ac_fn_c_check_decl "$LINENO" "isinf" "ac_cv_have_decl_isinf" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isinf" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISINF $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "isnan" "ac_cv_have_decl_isnan" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isnan" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISNAN $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "isfinite" "ac_cv_have_decl_isfinite" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isfinite" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISFINITE $ac_have_decl
-_ACEOF
-
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
