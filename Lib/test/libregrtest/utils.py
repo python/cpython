@@ -75,7 +75,7 @@ def regrtest_unraisable_hook(unraisable):
     old_stderr = sys.stderr
     try:
         support.flush_std_streams()
-        sys.stderr = sys.__stderr__
+        sys.stderr = support.print_warning.orig_stderr
         orig_unraisablehook(unraisable)
         sys.stderr.flush()
     finally:
@@ -98,7 +98,7 @@ def regrtest_threading_excepthook(args):
     old_stderr = sys.stderr
     try:
         support.flush_std_streams()
-        sys.stderr = sys.__stderr__
+        sys.stderr = support.print_warning.orig_stderr
         orig_threading_excepthook(args)
         sys.stderr.flush()
     finally:
