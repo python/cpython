@@ -265,17 +265,17 @@ _cache = {}  # ordered!
 _MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
+    if isinstance(pattern, Pattern):
+        if flags:
+            raise ValueError(
+                "cannot process flags argument with a compiled pattern")
+        return pattern
     if isinstance(flags, RegexFlag):
         flags = flags.value
     try:
         return _cache[type(pattern), pattern, flags]
     except KeyError:
         pass
-    if isinstance(pattern, Pattern):
-        if flags:
-            raise ValueError(
-                "cannot process flags argument with a compiled pattern")
-        return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
     p = sre_compile.compile(pattern, flags)

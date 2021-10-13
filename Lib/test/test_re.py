@@ -149,9 +149,13 @@ class ReTests(unittest.TestCase):
         # Verify that flags do not get silently ignored with compiled patterns
         pattern = re.compile('.')
         self.assertRaises(ValueError, re.match, pattern, 'A', re.I)
+        self.assertRaises(ValueError, re.match, pattern, 'A', re.I.value)
         self.assertRaises(ValueError, re.search, pattern, 'A', re.I)
+        self.assertRaises(ValueError, re.search, pattern, 'A', re.I.value)
         self.assertRaises(ValueError, re.findall, pattern, 'A', re.I)
+        self.assertRaises(ValueError, re.findall, pattern, 'A', re.I.value)
         self.assertRaises(ValueError, re.compile, pattern, re.I)
+        self.assertRaises(ValueError, re.compile, pattern, re.I.value)
 
     def test_bug_3629(self):
         # A regex that triggered a bug in the sre-code validator
