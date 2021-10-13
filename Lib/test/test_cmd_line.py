@@ -83,8 +83,8 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xno_debug_ranges')
-        self.assertEqual(opts, {'no_debug_ranges': True})
+        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
+        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
 
     @unittest.skipIf(interpreter_requires_environment(),
                      'Cannot run -E tests when PYTHON env vars are required.')
