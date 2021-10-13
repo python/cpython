@@ -1232,8 +1232,16 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         assert(base);
     }
 
+    if (type->tp_inline_values_offset) {
+        assert(type->tp_dictoffset);
+        int err = _PyObject_VisitInstanceAttributes(self, visit, arg);
+        if (err) {
+            return err;
+        }
+    }
+
     if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_GetDictPtr(self);
+        PyObject **dictptr = _PyObject_DictPointer(self);
         if (dictptr && *dictptr)
             Py_VISIT(*dictptr);
     }
@@ -1293,8 +1301,11 @@ subtype_clear(PyObject *self)
 
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
+    if (type->tp_inline_values_offset) {
+        _PyObject_ClearInstanceAttributes(self);
+    }
     if (type->tp_dictoffset != base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_GetDictPtr(self);
+        PyObject **dictptr = _PyObject_DictPointer(self);
         if (dictptr && *dictptr)
             Py_CLEAR(*dictptr);
     }
@@ -1433,9 +1444,12 @@ subtype_dealloc(PyObject *self)
         assert(base);
     }
 
-    /* If we added a dict, DECREF it */
+    /* If we added a dict, DECREF it, or free inline values. */
+    if (type->tp_inline_values_offset) {
+        _PyObject_FreeInstanceAttributes(self);
+    }
     if (type->tp_dictoffset && !base->tp_dictoffset) {
-        PyObject **dictptr = _PyObject_GetDictPtr(self);
+        PyObject **dictptr = _PyObject_DictPointer(self);
         if (dictptr != NULL) {
             PyObject *dict = *dictptr;
             if (dict != NULL) {
@@ -2159,7 +2173,6 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     return 1;
 }
 
-
 /* Calculate the best base amongst multiple base classes.
    This is the first one that's on the path to the "solid base". */
 
@@ -2230,6 +2243,10 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
         return t_size != b_size ||
             type->tp_itemsize != base->tp_itemsize;
     }
+    if (type->tp_inline_values_offset && base->tp_inline_values_offset == 0 &&
+        type->tp_inline_values_offset + sizeof(PyDictValues *) == t_size &&
+        type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+        t_size -= sizeof(PyDictValues *);
     if (type->tp_weaklistoffset && base->tp_weaklistoffset == 0 &&
         type->tp_weaklistoffset + sizeof(PyObject *) == t_size &&
         type->tp_flags & Py_TPFLAGS_HEAPTYPE)
@@ -2238,7 +2255,6 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
         type->tp_dictoffset + sizeof(PyObject *) == t_size &&
         type->tp_flags & Py_TPFLAGS_HEAPTYPE)
         t_size -= sizeof(PyObject *);
-
     return t_size != b_size;
 }
 
@@ -2258,6 +2274,7 @@ solid_base(PyTypeObject *type)
 }
 
 static void object_dealloc(PyObject *);
+static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
@@ -2979,6 +2996,13 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         type->tp_weaklistoffset = slotoffset;
         slotoffset += sizeof(PyObject *);
     }
+    if (type->tp_dictoffset > 0) {
+        type->tp_inline_values_offset = slotoffset;
+        slotoffset += sizeof(PyDictValues *);
+    }
+    else {
+        type->tp_inline_values_offset = 0;
+    }
 
     type->tp_basicsize = slotoffset;
     type->tp_itemsize = ctx->base->tp_itemsize;
@@ -3181,7 +3205,8 @@ type_new_impl(type_new_ctx *ctx)
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
 
-    if (type->tp_dictoffset) {
+    if (type->tp_inline_values_offset) {
+        assert(type->tp_dictoffset > 0);
         PyHeapTypeObject *et = (PyHeapTypeObject*)type;
         et->ht_cached_keys = _PyDict_NewKeysForClass();
     }
@@ -3195,6 +3220,7 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     assert(_PyType_CheckConsistency(type));
+
     return (PyObject *)type;
 
 error:
@@ -3550,7 +3576,8 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     if (PyType_Ready(type) < 0)
         goto fail;
 
-    if (type->tp_dictoffset) {
+    if (type->tp_inline_values_offset) {
+        assert(type->tp_dictoffset > 0);
         res->ht_cached_keys = _PyDict_NewKeysForClass();
     }
 
@@ -4257,7 +4284,6 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 static int
 type_clear(PyTypeObject *type)
 {
-    PyDictKeysObject *cached_keys;
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -4292,11 +4318,6 @@ type_clear(PyTypeObject *type)
     */
 
     PyType_Modified(type);
-    cached_keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
-    if (cached_keys != NULL) {
-        ((PyHeapTypeObject *)type)->ht_cached_keys = NULL;
-        _PyDictKeys_DecRef(cached_keys);
-    }
     if (type->tp_dict) {
         PyDict_Clear(type->tp_dict);
     }
@@ -4618,6 +4639,7 @@ compatible_with_tp_base(PyTypeObject *child)
             child->tp_itemsize == parent->tp_itemsize &&
             child->tp_dictoffset == parent->tp_dictoffset &&
             child->tp_weaklistoffset == parent->tp_weaklistoffset &&
+            child->tp_inline_values_offset == parent->tp_inline_values_offset &&
             ((child->tp_flags & Py_TPFLAGS_HAVE_GC) ==
              (parent->tp_flags & Py_TPFLAGS_HAVE_GC)) &&
             (child->tp_dealloc == subtype_dealloc ||
@@ -4636,6 +4658,8 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
     if (a->tp_dictoffset == size && b->tp_dictoffset == size)
         size += sizeof(PyObject *);
     if (a->tp_weaklistoffset == size && b->tp_weaklistoffset == size)
+        size += sizeof(PyObject *);
+    if (a->tp_inline_values_offset == size && b->tp_inline_values_offset == size)
         size += sizeof(PyObject *);
 
     /* Check slots compliance */
@@ -4781,6 +4805,17 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     }
 
     if (compatible_for_assignment(oldto, newto, "__class__")) {
+        /* Changing the class will change the implicit dict keys,
+         * so we must materialize the dictionary first. */
+        assert(oldto->tp_inline_values_offset == newto->tp_inline_values_offset);
+        _PyObject_GetDictPtr(self);
+        PyDictValues** values_ptr = _PyObject_ValuesPointer(self);
+        if (values_ptr != NULL && *values_ptr != NULL) {
+            /* Was unable to convert to dict */
+            PyErr_NoMemory();
+            return -1;
+        }
+        assert(_PyObject_ValuesPointer(self) == NULL || *_PyObject_ValuesPointer(self) == NULL);
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
         }
@@ -4906,22 +4941,15 @@ _PyObject_GetState(PyObject *obj, int required)
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
-
-        {
-            PyObject **dict;
-            dict = _PyObject_GetDictPtr(obj);
-            /* It is possible that the object's dict is not initialized
-               yet. In this case, we will return None for the state.
-               We also return None if the dict is empty to make the behavior
-               consistent regardless whether the dict was initialized or not.
-               This make unit testing easier. */
-            if (dict != NULL && *dict != NULL && PyDict_GET_SIZE(*dict)) {
-                state = *dict;
-            }
-            else {
-                state = Py_None;
-            }
+        if (_PyObject_IsInstanceDictEmpty(obj)) {
+            state = Py_None;
             Py_INCREF(state);
+        }
+        else {
+            state = PyObject_GenericGetDict(obj, NULL);
+            if (state == NULL) {
+                return NULL;
+            }
         }
 
         slotnames = _PyType_GetSlotNames(Py_TYPE(obj));
@@ -4933,12 +4961,18 @@ _PyObject_GetState(PyObject *obj, int required)
         assert(slotnames == Py_None || PyList_Check(slotnames));
         if (required) {
             Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (Py_TYPE(obj)->tp_dictoffset)
+            if (Py_TYPE(obj)->tp_dictoffset) {
                 basicsize += sizeof(PyObject *);
-            if (Py_TYPE(obj)->tp_weaklistoffset)
+            }
+            if (Py_TYPE(obj)->tp_weaklistoffset) {
                 basicsize += sizeof(PyObject *);
-            if (slotnames != Py_None)
+            }
+            if (Py_TYPE(obj)->tp_inline_values_offset) {
+                basicsize += sizeof(PyDictValues *);
+            }
+            if (slotnames != Py_None) {
                 basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
+            }
             if (Py_TYPE(obj)->tp_basicsize > basicsize) {
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
@@ -5708,6 +5742,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     COPYVAL(tp_itemsize);
     COPYVAL(tp_weaklistoffset);
     COPYVAL(tp_dictoffset);
+    COPYVAL(tp_inline_values_offset);
 #undef COPYVAL
 
     /* Setup fast subclass flags */
