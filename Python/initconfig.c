@@ -2129,6 +2129,49 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
+// List of known xoptions to validate against the provided ones. Note that all
+// options are listed, even if they are only available if a specific macro is
+// set, like -X showrefcount which requires a debug build. In this case unknown
+// options are silently ignored.
+const wchar_t* known_xoptions[] = {
+    L"faulthandler",
+    L"showrefcount",
+    L"tracemalloc",
+    L"importtime",
+    L"dev",
+    L"utf8",
+    L"pycache_prefix",
+    L"warn_default_encoding",
+    L"no_debug_ranges",
+    L"frozen_modules",
+    NULL,
+};
+
+static const wchar_t*
+_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
+{
+    for (Py_ssize_t i=0; i < xoptions->length; i++) {
+        const wchar_t *option = xoptions->items[i];
+        size_t len;
+        wchar_t *sep = wcschr(option, L'=');
+        if (sep != NULL) {
+            len = (sep - option);
+        }
+        else {
+            len = wcslen(option);
+        }
+        int found = 0;
+        for (const wchar_t** name = names; *name != NULL; name++) {
+            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
+                found = 1;
+            }
+        }
+        if (found == 0) {
+            return option;
+        }
+    }
+    return NULL;
+}
 
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
@@ -2144,6 +2187,11 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
+    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
+    if (option != NULL) {
+        return PyStatus_Error("Unknown value for option -X");
+    }
+
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }
