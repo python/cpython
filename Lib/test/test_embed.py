@@ -53,12 +53,13 @@ def remove_python_envvars():
 class EmbeddingTestsMixin:
     def setUp(self):
         exename = "_testembed"
+        builddir = os.path.dirname(sys.executable)
         if MS_WINDOWS:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
-            exepath = os.path.dirname(sys.executable)
+            exepath = builddir
         else:
-            exepath = os.path.join(support.REPO_ROOT, "Programs")
+            exepath = os.path.join(builddir, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
