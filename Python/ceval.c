@@ -3618,7 +3618,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(LOAD_ATTR_SPLIT_KEYS) {
+        TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
@@ -3629,11 +3629,10 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
             assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
-            DEOPT_IF(dict == NULL, LOAD_ATTR);
-            assert(PyDict_CheckExact((PyObject *)dict));
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
-            res = dict->ma_values->values[cache0->index];
+            assert(tp->tp_inline_values_offset > 0);
+            PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
+            DEOPT_IF(values == NULL, LOAD_ATTR);
+            res = values->values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             record_cache_hit(cache0);
@@ -3725,7 +3724,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(STORE_ATTR_SPLIT_KEYS) {
+        TARGET(STORE_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -3735,31 +3734,23 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
             assert(tp->tp_dictoffset > 0);
-            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
-            DEOPT_IF(dict == NULL, STORE_ATTR);
-            assert(PyDict_CheckExact((PyObject *)dict));
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, STORE_ATTR);
+            assert(tp->tp_inline_values_offset > 0);
+            PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
+            DEOPT_IF(values == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
             record_cache_hit(cache0);
             int index = cache0->index;
             STACK_SHRINK(1);
             PyObject *value = POP();
-            PyObject *old_value = dict->ma_values->values[index];
-            dict->ma_values->values[index] = value;
+            PyObject *old_value = values->values[index];
+            values->values[index] = value;
             if (old_value == NULL) {
                 assert(index < 16);
-                dict->ma_values->mv_order = (dict->ma_values->mv_order << 4) | index;
-                dict->ma_used++;
+                values->mv_order = (values->mv_order << 4) | index;
             }
             else {
                 Py_DECREF(old_value);
             }
-            /* Ensure dict is GC tracked if it needs to be */
-            if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
-                _PyObject_GC_TRACK(dict);
-            }
-            /* PEP 509 */
-            dict->ma_version_tag = DICT_NEXT_VERSION();
             Py_DECREF(owner);
             DISPATCH();
         }
@@ -4474,21 +4465,31 @@ check_eval_breaker:
             _PyObjectCache *cache2 = &caches[-2].obj;
 
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
-            assert(cache1->dk_version_or_hint != 0);
-            assert(cache1->tp_version != 0);
-            assert(self_cls->tp_dictoffset >= 0);
-            assert(Py_TYPE(self_cls)->tp_dictoffset > 0);
+            assert(self_cls->tp_dictoffset > 0);
+            assert(self_cls->tp_inline_values_offset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)self) + self_cls->tp_dictoffset);
+            DEOPT_IF(dict != NULL, LOAD_METHOD);
+            DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
+            STAT_INC(LOAD_METHOD, hit);
+            record_cache_hit(cache0);
+            PyObject *res = cache2->obj;
+            assert(res != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            Py_INCREF(res);
+            SET_TOP(res);
+            PUSH(self);
+            DISPATCH();
+        }
 
-            // inline version of _PyObject_GetDictPtr for offset >= 0
-            PyObject *dict = self_cls->tp_dictoffset != 0 ?
-                *(PyObject **) ((char *)self + self_cls->tp_dictoffset) : NULL;
-
-            // Ensure self.__dict__ didn't modify keys.
-            // Don't care if self has no dict, it could be builtin or __slots__.
-            DEOPT_IF(dict != NULL &&
-                ((PyDictObject *)dict)->ma_keys->dk_version !=
-                cache1->dk_version_or_hint, LOAD_METHOD);
-
+        TARGET(LOAD_METHOD_NO_DICT) {
+            PyObject *self = TOP();
+            PyTypeObject *self_cls = Py_TYPE(self);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyAttrCache *cache1 = &caches[-1].attr;
+            _PyObjectCache *cache2 = &caches[-2].obj;
+            DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
+            assert(self_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_METHOD, hit);
             record_cache_hit(cache0);
             PyObject *res = cache2->obj;
@@ -4530,7 +4531,6 @@ check_eval_breaker:
             record_cache_hit(cache0);
             PyObject *res = cache2->obj;
             assert(res != NULL);
-            assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
             Py_INCREF(res);
             SET_TOP(NULL);
             Py_DECREF(cls);
