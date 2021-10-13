@@ -3332,7 +3332,7 @@ type_vectorcall(PyObject *metatype, PyObject *const *args,
     }
     /* In other (much less common) cases, fall back to
        more flexible calling conventions. */
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     return _PyObject_MakeTpCall(tstate, metatype, args, nargs, kwnames);
 }
 
