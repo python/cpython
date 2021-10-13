@@ -88,6 +88,9 @@ extern int _Py_add_relfile(wchar_t *dirname,
 //      ...
 //      _Py_END_SUPPRESS_IPH
 #if defined _MSC_VER && _MSC_VER >= 1900
+
+#  include <stdlib.h>   // _set_thread_local_invalid_parameter_handler()
+
    extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py_BEGIN_SUPPRESS_IPH \
     { _invalid_parameter_handler _Py_old_handler = \
