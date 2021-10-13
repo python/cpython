@@ -196,10 +196,18 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
             stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
+            print_warning = support.print_warning
+            orig_print_warnings_stderr = print_warning.orig_stderr
+
             output = None
             try:
                 sys.stdout = stream
                 sys.stderr = stream
+                # print_warning() writes into the temporary stream to preserve
+                # messages order. If support.environment_altered becomes true,
+                # warnings will be written to sys.stderr below.
+                print_warning.orig_stderr = stream
+
                 result = _runtest_inner(ns, test_name,
                                         display_failure=False)
                 if not isinstance(result, Passed):
@@ -207,6 +215,7 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
             finally:
                 sys.stdout = orig_stdout
                 sys.stderr = orig_stderr
+                print_warning.orig_stderr = orig_print_warnings_stderr
 
             if output is not None:
                 sys.stderr.write(output)
