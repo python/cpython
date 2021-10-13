@@ -82,7 +82,7 @@ _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 
    The caller must hold the GIL.
 
-   See also PyThreadState_Get() and PyThreadState_GET(). */
+   See also PyThreadState_Get() and _PyThreadState_UncheckedGet(). */
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
@@ -92,10 +92,6 @@ _PyThreadState_GET(void)
     return _PyRuntimeState_GetThreadState(&_PyRuntime);
 #endif
 }
-
-/* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
-#undef PyThreadState_GET
-#define PyThreadState_GET() _PyThreadState_GET()
 
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
 
