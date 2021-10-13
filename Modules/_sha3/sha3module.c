@@ -16,7 +16,7 @@
  */
 
 #include "Python.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 #include "../hashlib.h"
 
 /* **************************************************************************

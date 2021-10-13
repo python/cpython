@@ -598,3 +598,7 @@ Removed
   since Python 3.3. Use ``PyUnicode_CopyCharacters()`` or ``memcpy()``
   (``wchar_t*`` string), and ``PyUnicode_Fill()`` functions instead.
   (Contributed by Victor Stinner in :issue:`41123`.)
+
+* Remove the ``pystrhex.h`` header file. It only contains private functions.
+  C extensions should only include the main ``<Python.h>`` header file.
+  (Contributed by Victor Stinner in :issue:`45434`.)
