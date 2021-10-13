@@ -201,9 +201,6 @@
     <ClInclude Include="..\Include\pystrtod.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pystrhex.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\Python.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -586,6 +583,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_runtime.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_strhex.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h">
