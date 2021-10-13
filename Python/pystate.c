@@ -1671,8 +1671,11 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    // PyThreadState_Get() aborts if tstate is NULL.
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    // The caller must hold the GIL
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
     PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.

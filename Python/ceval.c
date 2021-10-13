@@ -1064,7 +1064,7 @@ static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (locals == NULL) {
         locals = globals;
     }
