@@ -2120,7 +2120,8 @@ is_dev_env(PyConfig *config)
     if (len != _Py_find_basename(stdlib)) {
         return 0;
     }
-    // XXX Could either have .. in them?
+    // We do not bother normalizing the two filenames first since
+    // for config_init_import() is does the right thing as-is.
     if (wcsncmp(stdlib, executable, len) != 0) {
         return 0;
     }
