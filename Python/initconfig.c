@@ -249,6 +249,14 @@ fail:
 #undef SET_ITEM_STR
 }
 
+char*
+Py_GETENV(const char *name)
+{
+    if (Py_IgnoreEnvironmentFlag) {
+        return NULL;
+    }
+    return getenv(name);
+}
 
 /* --- PyStatus ----------------------------------------------- */
 
