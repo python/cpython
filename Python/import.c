@@ -2118,14 +2118,13 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
 /*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
     struct frozen_info info = {};
-    if (PyBytes_Check(dataobj)) {
-        info.data = PyBytes_AS_STRING(dataobj);
-        info.size = PyBytes_Size(dataobj);
-    }
-    else if (PyMemoryView_Check(dataobj)) {
-        Py_buffer *buf = PyMemoryView_GET_BUFFER(dataobj);
-        info.data = (const char *)buf->buf;
-        info.size = buf->len;
+    Py_buffer buf = {};
+    if (PyObject_CheckBuffer(dataobj)) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+            return NULL;
+        }
+        info.data = (const char *)buf.buf;
+        info.size = buf.len;
     }
     else if (dataobj != Py_None) {
         _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
@@ -2147,7 +2146,11 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
         return NULL;
     }
 
-    return unmarshal_frozen_code(&info);
+    PyObject *codeobj = unmarshal_frozen_code(&info);
+    if (dataobj != Py_None) {
+        PyBuffer_Release(&buf);
+    }
+    return codeobj;
 }
 
 /*[clinic input]
