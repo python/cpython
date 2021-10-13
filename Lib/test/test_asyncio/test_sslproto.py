@@ -281,6 +281,113 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         support.gc_collect()
         self.assertIsNone(client_context())
 
+    def test_start_tls_client_nested(self):
+        HELLO_MSG = b'1' * self.PAYLOAD_SIZE
+
+        server_context = test_utils.simple_server_sslcontext()
+        server_inner_context = test_utils.simple_server_sslcontext()
+        server_in = ssl.MemoryBIO()
+        server_out = ssl.MemoryBIO()
+        server_obj = server_inner_context.wrap_bio(server_in, server_out,
+            server_side=True)
+        client_context = test_utils.simple_client_sslcontext()
+
+        def serve(sock):
+            sock.settimeout(self.TIMEOUT)
+
+            sock.start_tls(server_context, server_side=True)
+
+            want_read = True
+
+            while True:
+                server_in.write(sock.recv(8192))
+
+                try:
+                    server_obj.do_handshake()
+                except ssl.SSLWantReadError:
+                    pass
+                else:
+                    want_read = False
+
+                sock.sendall(server_out.read())
+                if not want_read:
+                    break
+
+            server_obj.write(b'O')
+            sock.sendall(server_out.read())
+
+            data = b""
+            while len(data) < len(HELLO_MSG):
+                chunk = sock.recv(8192)
+                server_in.write(chunk)
+
+                try:
+                    while True:
+                        data += server_obj.read()
+                except ssl.SSLWantReadError:
+                    pass
+
+            self.assertEqual(data, HELLO_MSG)
+
+            with self.assertRaises(ssl.SSLWantReadError):
+                server_obj.unwrap()
+            sock.sendall(server_out.read())
+
+            server_in.write(sock.recv(8192))
+            server_obj.unwrap()
+
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+
+        class ClientProto(asyncio.Protocol):
+            def __init__(self, on_data, on_eof):
+                self.on_data = on_data
+                self.on_eof = on_eof
+                self.con_made_cnt = 0
+
+            def connection_made(proto, tr):
+                proto.con_made_cnt += 1
+                # Ensure connection_made gets called only once.
+                self.assertEqual(proto.con_made_cnt, 1)
+
+            def data_received(self, data):
+                self.on_data.set_result(data)
+
+            def eof_received(self):
+                self.on_eof.set_result(True)
+
+        async def client(addr):
+            await asyncio.sleep(0.5)
+
+            tr, proto = await self.loop.create_connection(asyncio.Protocol,
+                *addr)
+            new_tr = await self.loop.start_tls(tr, proto, client_context)
+
+            on_data = self.loop.create_future()
+            on_eof = self.loop.create_future()
+            inner_proto = ClientProto(on_data, on_eof)
+            inner_tr = await self.loop.start_tls(new_tr, inner_proto,
+                client_context)
+
+            self.assertEqual(await on_data, b'O')
+            inner_tr.write(HELLO_MSG)
+
+            inner_tr.close()
+
+            await on_eof
+
+            new_tr.close()
+
+        with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
+            self.loop.run_until_complete(
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
+
+        # No garbage is left if SSL is closed uncleanly
+        client_context = weakref.ref(client_context)
+        support.gc_collect()
+        self.assertIsNone(client_context())
+
     def test_create_connection_memory_leak(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
