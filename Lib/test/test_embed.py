@@ -435,7 +435,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': GET_DEFAULT_CONFIG,
+        'use_frozen_modules': 1,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -1147,6 +1147,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
+            'use_frozen_modules': -1,
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
@@ -1170,6 +1171,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
+            'use_frozen_modules': -1,
             # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1306,6 +1308,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 'stdlib_dir': None,
+                'use_frozen_modules': -1,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1361,6 +1364,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 'stdlib_dir': None,
+                'use_frozen_modules': -1,
             }
             path_config = {}
             if MS_WINDOWS:

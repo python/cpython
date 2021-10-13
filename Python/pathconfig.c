@@ -36,17 +36,6 @@ copy_wstr(wchar_t **dst, const wchar_t *src)
     return 0;
 }
 
-static size_t
-find_basename(const wchar_t *filename)
-{
-    for (size_t i = wcslen(filename); i > 0; --i) {
-        if (filename[i] == SEP) {
-            return i + 1;
-        }
-    }
-    return 0;
-}
-
 
 static void
 pathconfig_clear(_PyPathConfig *config)
@@ -642,37 +631,6 @@ wchar_t *
 Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;
-}
-
-
-bool
-_Py_IsDevelopmentEnv(void)
-{
-    // XXX Could this be called early enough during init that
-    // _Py_path_config.program_full_path isn't set yet?
-    const wchar_t *executable = Py_GetProgramFullPath();
-    if (executable == NULL) {
-        return false;
-    }
-    size_t len = find_basename(executable);
-    if (wcscmp(executable + len, L"python") != 0 &&
-            wcscmp(executable + len, L"python.exe") != 0) {
-        return false;
-    }
-    /* If dirname() is the same for both then it is a local (dev) build. */
-    const wchar_t *stdlib = _Py_GetStdlibDir();
-    if (stdlib == NULL) {
-        return false;
-    }
-    // XXX This doesn't work on Windows.
-    if (len != find_basename(stdlib)) {
-        return false;
-    }
-    // XXX Could either have .. in them?
-    if (wcsncmp(stdlib, executable, len) != 0) {
-        return false;
-    }
-    return true;
 }
 
 

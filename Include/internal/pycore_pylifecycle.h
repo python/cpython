@@ -12,7 +12,6 @@ extern "C" {
 #include <signal.h>
 #endif
 
-#include <stdbool.h>
 #include "pycore_runtime.h"       // _PyRuntimeState
 
 #ifndef NSIG
@@ -124,7 +123,6 @@ PyAPI_FUNC(PyStatus) _Py_PreInitializeFromConfig(
     const struct _PyArgv *args);
 
 PyAPI_FUNC(wchar_t *) _Py_GetStdlibDir(void);
-PyAPI_FUNC(bool) _Py_IsDevelopmentEnv(void);
 
 PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
 
