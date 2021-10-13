@@ -6,8 +6,9 @@
 #include "pycore_pathconfig.h"
 #include "osdefs.h"               // DELIM
 
-#include <sys/types.h>
+#include <stdlib.h>               // getenv()
 #include <string.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>

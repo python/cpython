@@ -11,6 +11,7 @@
 #include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>               // putenv()
 #include <wchar.h>
 
 /*********************************************************
