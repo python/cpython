@@ -2,6 +2,7 @@
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
 
 #include <stdbool.h>
+#include <stdlib.h>               // malloc()
 
 
 /* Defined in tracemalloc.c */

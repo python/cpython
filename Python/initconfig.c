@@ -10,7 +10,9 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "osdefs.h"               // DELIM
+
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #  ifdef HAVE_IO_H
 #    include <io.h>

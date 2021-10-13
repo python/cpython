@@ -16,6 +16,7 @@
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 
 #if defined(__APPLE__)
 #include <mach-o/loader.h>

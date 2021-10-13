@@ -10,9 +10,10 @@
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "longintrepr.h"
 
-#include <float.h>
 #include <ctype.h>
+#include <float.h>
 #include <stddef.h>
+#include <stdlib.h>               // abs()
 
 #include "clinic/longobject.c.h"
 /*[clinic input]

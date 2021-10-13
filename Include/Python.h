@@ -33,7 +33,8 @@
 #  include <stddef.h>
 #endif
 
-#include <assert.h>
+#include <assert.h>               // assert()
+#include <wchar.h>                // wchar_t
 
 #include "pyport.h"
 #include "pymacro.h"

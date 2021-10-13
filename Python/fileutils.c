@@ -3,6 +3,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
+#include <stdlib.h>               // mbstowcs()
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
