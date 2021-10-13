@@ -1702,6 +1702,11 @@ check_eval_breaker:
         switch (opcode) {
 #endif
 
+        /* Variables used for making calls */
+        PyObject *kwnames;
+        int nargs;
+        int stackadj;
+
         /* BEWARE!
            It is essential that any operation that fails must goto error
            and that all operation that succeed call DISPATCH() ! */
@@ -4538,11 +4543,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        /* Declare variables used for making calls */
-        PyObject *kwnames;
-        int nargs;
-        int stackadj;
-
         TARGET(CALL_METHOD) {
             /* Designed to work in tamdem with LOAD_METHOD. */
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
@@ -4589,14 +4589,6 @@ check_eval_breaker:
             goto call_function;
         }
 
-        TARGET(CALL_FUNCTION) {
-            PREDICTED(CALL_FUNCTION);
-            nargs = oparg;
-            kwnames = NULL;
-            stackadj = 1;
-            goto call_function;
-        }
-
         TARGET(CALL_FUNCTION_KW) {
             kwnames = POP();
             nargs = oparg - PyTuple_GET_SIZE(kwnames);
@@ -4604,10 +4596,15 @@ check_eval_breaker:
             goto call_function;
         }
 
-    call_function:
-        {
+        TARGET(CALL_FUNCTION) {
+            PREDICTED(CALL_FUNCTION);
+            PyObject *function;
+            nargs = oparg;
+            kwnames = NULL;
+            stackadj = 1;
+        call_function:
             // Check if the call can be inlined or not
-            PyObject *function = PEEK(oparg + 1);
+            function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
