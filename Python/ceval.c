@@ -1705,7 +1705,7 @@ check_eval_breaker:
         /* Variables used for making calls */
         PyObject *kwnames;
         int nargs;
-        int stackadj;
+        int postcall_shrink;
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -4574,7 +4574,7 @@ check_eval_breaker:
             oparg += is_method;
             nargs = oparg;
             kwnames = NULL;
-            stackadj = 2-is_method;
+            postcall_shrink = 2-is_method;
             goto call_function;
         }
 
@@ -4585,14 +4585,14 @@ check_eval_breaker:
             int is_method = (PEEK(oparg + 2) != NULL);
             oparg += is_method;
             nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
-            stackadj = 2-is_method;
+            postcall_shrink = 2-is_method;
             goto call_function;
         }
 
         TARGET(CALL_FUNCTION_KW) {
             kwnames = POP();
             nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
-            stackadj = 1;
+            postcall_shrink = 1;
             goto call_function;
         }
 
@@ -4601,7 +4601,7 @@ check_eval_breaker:
             PyObject *function;
             nargs = oparg;
             kwnames = NULL;
-            stackadj = 1;
+            postcall_shrink = 1;
         call_function:
             // Check if the call can be inlined or not
             function = PEEK(oparg + 1);
@@ -4615,7 +4615,7 @@ check_eval_breaker:
                         tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
                                                                 stack_pointer,
                                                                 nargs, kwnames, 1);
-                    STACK_SHRINK(stackadj);
+                    STACK_SHRINK(postcall_shrink);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_XDECREF(kwnames);
@@ -4629,8 +4629,8 @@ check_eval_breaker:
                     goto start_frame;
                 }
             }
-            PyObject *res;
             /* Callable is not a normal Python function */
+            PyObject *res;
             if (cframe.use_tracing) {
                 res = trace_call_function(tstate, function, stack_pointer-oparg, nargs, kwnames);
             }
@@ -4646,7 +4646,7 @@ check_eval_breaker:
             for (int i = 0; i < oparg; i++) {
                 Py_DECREF(stack_pointer[i]);
             }
-            STACK_SHRINK(stackadj);
+            STACK_SHRINK(postcall_shrink);
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -5393,7 +5393,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL) {
-            goto fail_early;
+            goto fail_pre_positional;
         }
         i = total_args;
         if (co->co_flags & CO_VARARGS) {
@@ -5516,7 +5516,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     Py_DECREF(value);
                 }
             }
-            goto fail_late;
+            goto fail_noclean;
 
         kw_found:
             if (localsplus[j] != NULL) {
@@ -5536,7 +5536,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(tstate, co, argcount, con->fc_defaults, localsplus,
                             con->fc_qualname);
-        goto fail_late;
+        goto fail_noclean;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
@@ -5552,7 +5552,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, localsplus,
                               con->fc_qualname);
-            goto fail_late;
+            goto fail_noclean;
         }
         if (n > m)
             i = n - m;
@@ -5585,7 +5585,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    goto fail_late;
+                    goto fail_noclean;
                 }
             }
             missing++;
@@ -5593,7 +5593,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, -1, localsplus,
                               con->fc_qualname);
-            goto fail_late;
+            goto fail_noclean;
         }
     }
 
@@ -5606,7 +5606,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     return 0;
 
-fail_early:
+fail_pre_positional:
     if (steal_args) {
         for (j = 0; j < argcount; j++) {
             Py_DECREF(args[j]);
@@ -5621,7 +5621,7 @@ fail_post_positional:
         }
     }
     /* fall through */
-fail_late:
+fail_noclean:
     return -1;
 }
 
