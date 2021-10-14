@@ -6342,7 +6342,7 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
 
 PyObject *
-_PyUnicode_DecodeUnicodeEscape2(const char *s,
+_PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                                Py_ssize_t size,
                                const char *errors,
                                Py_ssize_t *consumed,
@@ -6582,15 +6582,15 @@ _PyUnicode_DecodeUnicodeEscape2(const char *s,
 }
 
 PyObject *
-_PyUnicode_DecodeUnicodeEscape(const char *s,
+_PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
                               Py_ssize_t size,
                               const char *errors,
                               Py_ssize_t *consumed)
 {
     const char *first_invalid_escape;
-    PyObject *result = _PyUnicode_DecodeUnicodeEscape2(s, size, errors,
-                                                       consumed,
-                                                       &first_invalid_escape);
+    PyObject *result = _PyUnicode_DecodeUnicodeEscapeInternal(s, size, errors,
+                                                      consumed,
+                                                      &first_invalid_escape);
     if (result == NULL)
         return NULL;
     if (first_invalid_escape != NULL) {
@@ -6609,7 +6609,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                               Py_ssize_t size,
                               const char *errors)
 {
-    return _PyUnicode_DecodeUnicodeEscape(s, size, errors, NULL);
+    return _PyUnicode_DecodeUnicodeEscapeStateful(s, size, errors, NULL);
 }
 
 /* Return a Unicode-Escape string version of the Unicode object. */

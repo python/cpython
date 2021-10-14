@@ -499,9 +499,9 @@ _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=b284f97b12c635ee input=6154f039a9f7c639]*/
 {
     Py_ssize_t consumed = data->len;
-    PyObject *decoded = _PyUnicode_DecodeUnicodeEscape(data->buf, data->len,
-                                                       errors,
-                                                       final ? NULL : &consumed);
+    PyObject *decoded = _PyUnicode_DecodeUnicodeEscapeStateful(data->buf, data->len,
+                                                               errors,
+                                                               final ? NULL : &consumed);
     return codec_tuple(decoded, consumed);
 }
 

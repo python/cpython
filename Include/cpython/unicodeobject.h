@@ -778,7 +778,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(
 /* --- Unicode-Escape Codecs ---------------------------------------------- */
 
 /* Variant of PyUnicode_DecodeUnicodeEscape that supports partial decoding. */
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeStateful(
         const char *string,     /* Unicode-Escape encoded string */
         Py_ssize_t length,      /* size of string */
         const char *errors,     /* error handling */
@@ -786,7 +786,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
 );
 /* Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
    chars. */
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape2(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
         const char *string,     /* Unicode-Escape encoded string */
         Py_ssize_t length,      /* size of string */
         const char *errors,     /* error handling */
