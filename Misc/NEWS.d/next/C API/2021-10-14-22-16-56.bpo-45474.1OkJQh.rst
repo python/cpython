@@ -1,0 +1,10 @@
+Remove two functions from the limited C API:
+
+* :c:func:`PyMarshal_WriteLongToFile`
+* :c:func:`PyMarshal_WriteObjectToFile`
+
+The :pep:`384` excludes functions expecting ``FILE*`` from the stable ABI.
+
+Remove also the ``Py_MARSHAL_VERSION`` macro from the limited C API.
+
+Patch by Victor Stinner.
