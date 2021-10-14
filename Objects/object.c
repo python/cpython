@@ -6,6 +6,7 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_dict.h"
+#include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_object.h"        // _PyType_CheckConsistency()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
