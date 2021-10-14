@@ -541,7 +541,7 @@ def _init_module_attrs(spec, module, *, override=False):
     # __path__
     if override or getattr(module, '__path__', None) is None:
         if spec.submodule_search_locations is not None:
-            # XXX We () should extend __path__ if it's already a list.
+            # XXX We should extend __path__ if it's already a list.
             try:
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
