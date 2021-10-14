@@ -1,0 +1,9 @@
+Frozen stdlib modules now have ``__file__`` to the .py file they would
+otherwise be loaded from, if possible.  For packages, ``__path__`` now has
+the correct entry instead of being an empty list, which allows unfrozen
+submodules to be imported.  These are set only if the stdlib directory is
+known when the runtime is initialized.  Note that the file at ``__file__``
+is not guaranteed to exist.  None of this affects non-stdlib frozen modules
+nor, for now, frozen modules imported using
+``PyImport_ImportFrozenModule()``.  Also, at the moment ``co_filename`` is
+not updated for the module.
