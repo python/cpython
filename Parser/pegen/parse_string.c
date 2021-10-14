@@ -120,7 +120,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     s = buf;
 
     const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
+    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
         if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
