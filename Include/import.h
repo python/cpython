@@ -88,7 +88,7 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_IMPORT_H
-#  include  "cpython/import.h"
+#  include "cpython/import.h"
 #  undef Py_CPYTHON_IMPORT_H
 #endif
 
