@@ -134,6 +134,7 @@
     <ClInclude Include="..\Include\cpython\fileutils.h" />
     <ClInclude Include="..\Include\cpython\floatobject.h" />
     <ClInclude Include="..\Include\cpython\frameobject.h" />
+    <ClInclude Include="..\Include\cpython\funcobject.h" />
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
     <ClInclude Include="..\Include\cpython\interpreteridobject.h" />
@@ -169,7 +170,6 @@
     <ClInclude Include="..\Include\fileutils.h" />
     <ClInclude Include="..\Include\floatobject.h" />
     <ClInclude Include="..\Include\frameobject.h" />
-    <ClInclude Include="..\Include\funcobject.h" />
     <ClInclude Include="..\Include\genobject.h" />
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
