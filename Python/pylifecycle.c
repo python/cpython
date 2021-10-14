@@ -57,6 +57,7 @@ extern "C" {
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
+static PyStatus init_run_preload(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
@@ -1148,6 +1149,8 @@ init_interp_main(PyThreadState *tstate)
         interp->runtime->initialized = 1;
     }
 
+    init_run_preload();
+
     if (config->site_import) {
         status = init_import_site();
         if (_PyStatus_EXCEPTION(status)) {
@@ -2117,6 +2120,62 @@ init_import_site(void)
     }
     Py_DECREF(m);
     return _PyStatus_OK();
+}
+
+/* Run the PY_PRELOAD script */
+
+static PyStatus
+init_run_preload(void)
+{
+    PyStatus status;
+    PyObject *preload = NULL;
+#ifdef MS_WINDOWS
+    const wchar_t *env = _wgetenv(L"PY_PRELOAD");
+    if (env == NULL || env[0] == L'\0') {
+        return _PyStatus_OK();
+    }
+    preload = PyUnicode_FromWideChar(env, wcslen(env));
+    if (preload == NULL) {
+        goto error;
+    }
+#else
+    const char *env = _Py_GetEnv(1, "PY_PRELOAD");
+    if (env == NULL) {
+        return _PyStatus_OK();
+    }
+    preload = PyUnicode_DecodeFSDefault(env);
+    if (preload == NULL) {
+        goto error;
+    }
+#endif
+    if (PySys_Audit("cpython.run_preload", "O", preload) < 0) {
+        goto error;
+    }
+
+    FILE *fp = _Py_fopen_obj(preload, "r");
+    if (fp == NULL) {
+        int save_errno = errno;
+        PyErr_Clear();
+        PySys_WriteStderr("Could not open PY_PRELOAD\n");
+
+        errno = save_errno;
+        PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, preload, NULL);
+        goto error;
+    }
+
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    (void) _PyRun_SimpleFileObject(fp, preload, 0, &cf);
+    PyErr_Clear();
+    fclose(fp);
+    status = _PyStatus_OK();
+
+done:
+    Py_XDECREF(preload);
+    return status;
+
+error:
+    status = _PyStatus_ERR("Failed to run PY_PRELOAD");
+    goto done;
 }
 
 /* Check if a file descriptor is valid or not.
