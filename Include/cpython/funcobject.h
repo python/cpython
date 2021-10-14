@@ -1,5 +1,5 @@
-
 /* Function object interface */
+
 #ifndef Py_LIMITED_API
 #ifndef Py_FUNCOBJECT_H
 #define Py_FUNCOBJECT_H
@@ -76,7 +76,6 @@ PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
@@ -84,7 +83,6 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *kwnames);
 
 uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
-#endif
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */

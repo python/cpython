@@ -1,0 +1,3 @@
+Move Include/funcobject.h header file to Include/cpython/funcobject.h.
+C extensions should only include the main ``<Python.h>`` header.
+Patch by Victor Stinner.
