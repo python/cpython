@@ -252,7 +252,7 @@ threading
   the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
   than using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected
   by system clock changes.
-  (Contributed by Livius and Victor Stinner in :issue:`41710`.)
+  (Contributed by Victor Stinner in :issue:`41710`.)
 
 time
 ----
