@@ -60,7 +60,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "funcobject.h"
+#include "cpython/funcobject.h"
 #include "classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
