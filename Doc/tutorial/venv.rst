@@ -88,6 +88,9 @@ For example:
   '~/envs/tutorial-env/lib/python3.5/site-packages']
   >>>
 
+To deactivate a virtual environment, type::
+  deactivate
+into the terminal. This is a shell function defined by the script when the virtual environment is activated.
 
 Managing Packages with pip
 ==========================
