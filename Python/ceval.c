@@ -4584,14 +4584,14 @@ check_eval_breaker:
             kwnames = POP();
             int is_method = (PEEK(oparg + 2) != NULL);
             oparg += is_method;
-            nargs = oparg - PyTuple_GET_SIZE(kwnames);
+            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
             stackadj = 2-is_method;
             goto call_function;
         }
 
         TARGET(CALL_FUNCTION_KW) {
             kwnames = POP();
-            nargs = oparg - PyTuple_GET_SIZE(kwnames);
+            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
             stackadj = 1;
             goto call_function;
         }
