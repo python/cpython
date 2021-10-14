@@ -190,6 +190,13 @@ New Modules
 Improved Modules
 ================
 
+dbm
+---
+
+* :mod:`_gdbm` now able to create a database with the extended numsync format
+  if installed gdbm supports. (Contributed by Dong-hee Na in :issue:`45452`.)
+
+
 fractions
 ---------
 

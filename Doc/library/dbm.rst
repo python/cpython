@@ -196,6 +196,9 @@ supported.
    +---------+--------------------------------------------+
    | ``'u'`` | Do not lock database.                      |
    +---------+--------------------------------------------+
+   | ``'x'`` | Create the database with the extended      |
+   |         | numsync format.                            |
+   +---------+--------------------------------------------+
 
    Not all flags are valid for all versions of ``gdbm``.  The module constant
    :const:`open_flags` is a string of supported flag characters.  The exception
@@ -209,6 +212,10 @@ supported.
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
+
+   .. versionadded:: 3.11
+      Creating the database with the extended numsync format is available
+      if installed gdbm supports.
 
    .. method:: gdbm.firstkey()
 

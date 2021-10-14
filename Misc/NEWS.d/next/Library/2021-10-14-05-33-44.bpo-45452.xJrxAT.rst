@@ -1,0 +1,2 @@
+:mod:`_gdbm` is able to use GDBM_NUMSYNC flag if the installed gdbm supports
+it. Patch by Dong-hee Na.

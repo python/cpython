@@ -67,18 +67,18 @@ class TestGdbm(unittest.TestCase):
         self.g.close()
         self.assertRaises(gdbm.error, lambda: self.g['a'])
         # try pass an invalid open flag
-        self.assertRaises(gdbm.error, lambda: gdbm.open(filename, 'rx').close())
+        self.assertRaises(gdbm.error, lambda: gdbm.open(filename, 'rz').close())
 
     def test_flags(self):
         # Test the flag parameter open() by trying all supported flag modes.
         all = set(gdbm.open_flags)
         # Test standard flags (presumably "crwn").
-        modes = all - set('fsu')
+        modes = all - set('fsux')
         for mode in sorted(modes):  # put "c" mode first
             self.g = gdbm.open(filename, mode)
             self.g.close()
 
-        # Test additional flags (presumably "fsu").
+        # Test additional flags (presumably "fsux").
         flags = all - set('crwn')
         for mode in modes:
             for flag in flags:
