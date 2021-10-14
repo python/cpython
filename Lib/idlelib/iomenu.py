@@ -349,6 +349,7 @@ class IOBinding:
 
     filetypes = (
         ("Python files", "*.py *.pyw", "TEXT"),
+        ("Python stub files", "*.pyi", "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
         )

@@ -1,0 +1,2 @@
+IDLE now knows that `.pyi` files can only contain valid Python expressions,
+and will apply syntax highlighting accordingly. Patch by Alex Waygood.

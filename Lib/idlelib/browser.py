@@ -13,6 +13,7 @@ import os
 import pyclbr
 import sys
 
+from idlelib.util import is_python_source, is_python_extension
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
@@ -76,7 +77,7 @@ class ModuleBrowser:
 
         Instance variables:
             name: Module name.
-            file: Full path and module with .py extension.  Used in
+            file: Full path and module with a valid Python extension. Used in
                 creating ModuleBrowserTreeItem as the rootnode for
                 the tree and subsequently in the children.
         """
@@ -161,21 +162,19 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
-        if os.path.normcase(self.file[-3:]) != ".py":
-            return
-        if not os.path.exists(self.file):
-            return
-        file_open(self.file)
+        if self.IsExpandable() and os.path.exists(self.file):
+            file_open(self.file)
 
     def IsExpandable(self):
-        "Return True if Python (.py) file."
-        return os.path.normcase(self.file[-3:]) == ".py"
+        "Identify whether `self.file` is a valid Python file."
+        # see idlelib.util for currently supported Python extensions.
+        return is_python_source(self.file)
 
     def listchildren(self):
         "Return sequenced classes and functions in the module."
         dir, base = os.path.split(self.file)
         name, ext = os.path.splitext(base)
-        if os.path.normcase(ext) != ".py":
+        if not is_python_extension(os.path.normcase(ext)):
             return []
         try:
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)

@@ -15,6 +15,7 @@ from tkinter.ttk import Scrollbar
 from tkinter import simpledialog
 from tkinter import messagebox
 
+import idlelib.util
 from idlelib.config import idleConf
 from idlelib import configdialog
 from idlelib import grep
@@ -754,13 +755,10 @@ class EditorWindow:
             self.center()
 
     def ispythonsource(self, filename):
-        if not filename or os.path.isdir(filename):
-            return True
-        base, ext = os.path.splitext(os.path.basename(filename))
-        if os.path.normcase(ext) in (".py", ".pyw"):
-            return True
-        line = self.text.get('1.0', '1.0 lineend')
-        return line.startswith('#!') and 'python' in line
+        return idlelib.util.is_python_source(
+            filepath=filename,
+            firstline=self.text.get('1.0', '1.0 lineend')
+        )
 
     def close_hook(self):
         if self.flist:

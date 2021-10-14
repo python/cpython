@@ -44,6 +44,24 @@ class IOBindingTest(unittest.TestCase):
         eq(text.get('1.0', 'end-1c'), 'a\n')
         eq(fix(), 'a'+io.eol_convention)
 
+    def check_filetype(self, ext):
+        return any(
+            ext in filetype_tuple[1] for filetype_tuple in self.io.filetypes
+        )
+
+    def test_python_files(self):
+        self.assertTrue(self.check_filetype('*.py'))
+        self.assertTrue(self.check_filetype('*.pyw'))
+
+    def test_python_stub_files(self):
+        self.assertTrue(self.check_filetype('*.pyi'))
+
+    def test_text_files(self):
+        self.assertTrue(self.check_filetype('*.txt'))
+
+    def test_all_files(self):
+        self.assertTrue(self.check_filetype('*'))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
