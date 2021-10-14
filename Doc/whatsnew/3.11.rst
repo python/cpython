@@ -565,6 +565,13 @@ Porting to Python 3.11
   ``exit()`` and ``abort()``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
+* The ``<Python.h>`` header file no longer includes ``<stdio.h>`` if the
+  ``Py_LIMITED_API`` macro is defined. Functions expecting ``FILE*`` are
+  excluded from the limited C API (:pep:`384`). C extensions using
+  ``<stdio.h>`` must now include it explicitly.  The system ``<stdio.h>``
+  header provides functions like ``printf()`` and ``fopen()``.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
 Deprecated
 ----------
 

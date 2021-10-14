@@ -16,12 +16,10 @@
 #  define _SGI_MP_SOURCE
 #endif
 
-#include <stdio.h>                // NULL, FILE*
-#ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
-#endif
-
 #include <string.h>               // memcpy()
+#ifndef Py_LIMITED_API
+#  include <stdio.h>              // FILE*
+#endif
 #ifdef HAVE_ERRNO_H
 #  include <errno.h>              // errno
 #endif
@@ -29,8 +27,7 @@
 #  include <unistd.h>
 #endif
 #ifdef HAVE_STDDEF_H
-   // For size_t
-#  include <stddef.h>
+#  include <stddef.h>             // size_t
 #endif
 
 #include <assert.h>               // assert()
