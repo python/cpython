@@ -541,6 +541,7 @@ def _init_module_attrs(spec, module, *, override=False):
     # __path__
     if override or getattr(module, '__path__', None) is None:
         if spec.submodule_search_locations is not None:
+            # XXX We () should extend __path__ if it's already a list.
             try:
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
@@ -859,7 +860,6 @@ class FrozenImporter:
             if ispkg:
                 if module.__path__ != __path__:
                     assert module.__path__ == [], module.__path__
-                    # XXX _init_module_attrs() should copy like this too.
                     module.__path__.extend(__path__)
         else:
             # These checks ensure that _fix_up_module() is only called
