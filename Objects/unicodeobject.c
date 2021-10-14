@@ -6408,9 +6408,10 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
 
 PyObject *
-_PyUnicode_DecodeUnicodeEscape(const char *s,
+_PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                                Py_ssize_t size,
                                const char *errors,
+                               Py_ssize_t *consumed,
                                const char **first_invalid_escape)
 {
     const char *starts = s;
@@ -6423,6 +6424,9 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
     *first_invalid_escape = NULL;
 
     if (size == 0) {
+        if (consumed) {
+            *consumed = 0;
+        }
         _Py_RETURN_UNICODE_EMPTY();
     }
     /* Escaped strings will always be longer than the resulting
@@ -6473,7 +6477,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
         /* \ - Escapes */
         if (s >= end) {
             message = "\\ at end of string";
-            goto error;
+            goto incomplete;
         }
         c = (unsigned char) *s++;
 
@@ -6527,7 +6531,10 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
             count = 8;
             message = "truncated \\UXXXXXXXX escape";
         hexescape:
-            for (ch = 0; count && s < end; ++s, --count) {
+            for (ch = 0; count; ++s, --count) {
+                if (s >= end) {
+                    goto incomplete;
+                }
                 c = (unsigned char)*s;
                 ch <<= 4;
                 if (c >= '0' && c <= '9') {
@@ -6540,11 +6547,8 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                     ch += c - ('A' - 10);
                 }
                 else {
-                    break;
+                    goto error;
                 }
-            }
-            if (count) {
-                goto error;
             }
 
             /* when we get here, ch is a 32-bit unicode character */
@@ -6572,14 +6576,20 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
             }
 
             message = "malformed \\N character escape";
-            if (s < end && *s == '{') {
+            if (s >= end) {
+                goto incomplete;
+            }
+            if (*s == '{') {
                 const char *start = ++s;
                 size_t namelen;
                 /* look for the closing brace */
                 while (s < end && *s != '}')
                     s++;
+                if (s >= end) {
+                    goto incomplete;
+                }
                 namelen = s - start;
-                if (namelen && s < end) {
+                if (namelen) {
                     /* found a name.  look it up in the unicode database */
                     s++;
                     ch = 0xffffffff; /* in case 'getcode' messes up */
@@ -6605,6 +6615,11 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
             continue;
         }
 
+      incomplete:
+        if (consumed) {
+            *consumed = startinpos;
+            break;
+        }
       error:
         endinpos = s-starts;
         writer.min_length = end - s + writer.pos;
@@ -6633,12 +6648,14 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
 }
 
 PyObject *
-PyUnicode_DecodeUnicodeEscape(const char *s,
+_PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
                               Py_ssize_t size,
-                              const char *errors)
+                              const char *errors,
+                              Py_ssize_t *consumed)
 {
     const char *first_invalid_escape;
-    PyObject *result = _PyUnicode_DecodeUnicodeEscape(s, size, errors,
+    PyObject *result = _PyUnicode_DecodeUnicodeEscapeInternal(s, size, errors,
+                                                      consumed,
                                                       &first_invalid_escape);
     if (result == NULL)
         return NULL;
@@ -6651,6 +6668,14 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
         }
     }
     return result;
+}
+
+PyObject *
+PyUnicode_DecodeUnicodeEscape(const char *s,
+                              Py_ssize_t size,
+                              const char *errors)
+{
+    return _PyUnicode_DecodeUnicodeEscapeStateful(s, size, errors, NULL);
 }
 
 /* Return a Unicode-Escape string version of the Unicode object. */
