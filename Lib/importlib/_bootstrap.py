@@ -864,19 +864,29 @@ class FrozenImporter:
         else:
             # These checks ensure that _fix_up_module() is only called
             # in the right places.
-            assert sorted(vars(state)) == ['filename', 'origname'], state
-            assert state.origname
             __path__ = spec.submodule_search_locations
             ispkg = __path__ is not None
-            (filename, pkgdir,
-             ) = cls._resolve_filename(state.origname, spec.name, ispkg)
-            assert state.filename == filename, (state.filename, filename)
-            if pkgdir:
-                assert __path__ == [pkgdir], (__path__, pkgdir)
-            elif ispkg:
-                assert __path__ == [], __path__
-            assert hasattr(module, '__file__')
-            assert module.__file__ == filename, (module.__file__, filename)
+            # Check the loader state.
+            assert sorted(vars(state)) == ['filename', 'origname'], state
+            if state.origname:
+                # The only frozen modules with "origname" set are stdlib modules.
+                (__file__, pkgdir,
+                 ) = cls._resolve_filename(state.origname, spec.name, ispkg)
+                assert state.filename == __file__, (state.filename, __file__)
+                if pkgdir:
+                    assert __path__ == [pkgdir], (__path__, pkgdir)
+                else:
+                    assert __path__ == ([] if ispkg else None), __path__
+            else:
+                __file__ = None
+                assert state.filename is None, state.filename
+                assert __path__ == ([] if ispkg else None), __path__
+            # Check the file attrs.
+            if __file__:
+                assert hasattr(module, '__file__')
+                assert module.__file__ == __file__, (module.__file__, __file__)
+            else:
+                assert not hasattr(module, '__file__'), module.__file__
             if ispkg:
                 assert hasattr(module, '__path__')
                 assert module.__path__ == __path__, (module.__path__, __path__)
