@@ -1247,6 +1247,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"Unable to find home in {paths!r}")
 
         prefix = exec_prefix = home
+        if MS_WINDOWS:
+            stdlib = os.path.join(home, sys.platlibdir)
+        else:
+            version = f'{sys.version_info.major}.{sys.version_info.minor}'
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
         expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1257,7 +1262,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': exec_prefix,
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
-            'stdlib_dir': home,
+            'stdlib_dir': stdlib,
         }
         self.default_program_name(config)
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
