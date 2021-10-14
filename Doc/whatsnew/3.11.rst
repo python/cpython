@@ -476,6 +476,10 @@ New Features
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
+* Add new functions :c:func:`PyUnicode_DecodeUnicodeEscapeStateful` and
+  :c:func:`PyUnicode_DecodeRawUnicodeEscapeStateful`.
+  (Contributed by Serhiy Storchaka in :issue:`45472`.)
+
 Porting to Python 3.11
 ----------------------
 

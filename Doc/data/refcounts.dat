@@ -2533,6 +2533,12 @@ PyUnicode_DecodeUnicodeEscape:const char*:s::
 PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeUnicodeEscape:const char*:errors::
 
+PyUnicode_DecodeUnicodeEscapeStateful:PyObject*::+1:
+PyUnicode_DecodeUnicodeEscapeStateful:const char*:s::
+PyUnicode_DecodeUnicodeEscapeStateful:Py_ssize_t:size::
+PyUnicode_DecodeUnicodeEscapeStateful:const char*:errors::
+PyUnicode_DecodeUnicodeEscapeStateful:Py_ssize_t*:consumed::
+
 PyUnicode_AsUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsUnicodeEscapeString:PyObject*:unicode:0:
 
@@ -2540,6 +2546,12 @@ PyUnicode_DecodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeRawUnicodeEscape:const char*:s::
 PyUnicode_DecodeRawUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeRawUnicodeEscape:const char*:errors::
+
+PyUnicode_DecodeRawUnicodeEscapeStateful:PyObject*::+1:
+PyUnicode_DecodeRawUnicodeEscapeStateful:const char*:s::
+PyUnicode_DecodeRawUnicodeEscapeStateful:Py_ssize_t:size::
+PyUnicode_DecodeRawUnicodeEscapeStateful:const char*:errors::
+PyUnicode_DecodeRawUnicodeEscapeStateful:Py_ssize_t*:consumed::
 
 PyUnicode_AsRawUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsRawUnicodeEscapeString:PyObject*:unicode:0:
