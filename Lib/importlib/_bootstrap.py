@@ -837,7 +837,7 @@ class FrozenImporter:
             ispkg = hasattr(module, '__path__')
             assert _imp.is_frozen_package(module.__name__) == ispkg, ispkg
             filename, pkgdir = cls._resolve_filename(origname, spec.name, ispkg)
-            spec.loader_state = state = type(sys.implementation)(
+            spec.loader_state = type(sys.implementation)(
                 filename=filename,
                 origname=origname,
             )
@@ -864,7 +864,6 @@ class FrozenImporter:
         else:
             # These checks ensure that _fix_up_module() is only called
             # in the right places.
-            assert state is not None
             assert sorted(vars(state)) == ['filename', 'origname'], state
             assert state.origname
             __path__ = spec.submodule_search_locations
