@@ -4610,23 +4610,19 @@ check_eval_breaker:
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
                 if (!is_generator) {
                     PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
+                    STACK_SHRINK(oparg);
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                         tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
-                                                                stack_pointer-oparg,
+                                                                stack_pointer,
                                                                 nargs, kwnames, 1);
-                    if (new_frame == NULL) {
-                        // When we exit here, we own all variables in the stack
-                        // (the frame creation has not stolen any variable) so
-                        // we need to clean the whole stack (done in the
-                        // "error" label).
-                        goto error;
-                    }
-
-                    STACK_SHRINK(oparg + stackadj);
+                    STACK_SHRINK(stackadj);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     Py_XDECREF(kwnames);
                     Py_DECREF(function);
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     new_frame->depth = frame->depth + 1;
                     tstate->frame = frame = new_frame;
@@ -5397,7 +5393,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL) {
-            goto fail;
+            goto fail_early;
         }
         i = total_args;
         if (co->co_flags & CO_VARARGS) {
@@ -5436,10 +5432,18 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             u = _PyTuple_FromArray(args + n, argcount - n);
         }
         if (u == NULL) {
-            goto fail;
+            goto fail_post_positional;
         }
         assert(localsplus[total_args] == NULL);
         localsplus[total_args] = u;
+    }
+    else if (argcount > n) {
+        /* Too many postional args. Error is reported later */
+        if (steal_args) {
+            for (j = n; j < argcount; j++) {
+                Py_DECREF(args[j]);
+            }
+        }
     }
 
     /* Handle keyword arguments */
@@ -5455,7 +5459,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() keywords must be strings",
                           con->fc_qualname);
-                goto fail;
+                goto kw_fail;
             }
 
             /* Speed hack: do raw pointer compares. As names are
@@ -5476,7 +5480,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     goto kw_found;
                 }
                 else if (cmp < 0) {
-                    goto fail;
+                    goto kw_fail;
                 }
             }
 
@@ -5488,29 +5492,38 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                                                         kwcount, kwnames,
                                                      con->fc_qualname))
                 {
-                    goto fail;
+                    goto kw_fail;
                 }
 
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got an unexpected keyword argument '%S'",
                           con->fc_qualname, keyword);
-                goto fail;
+                goto kw_fail;
             }
 
             if (PyDict_SetItem(kwdict, keyword, value) == -1) {
-                goto fail;
+                goto kw_fail;
             }
             if (steal_args) {
                 Py_DECREF(value);
             }
             continue;
 
+        kw_fail:
+            if (steal_args) {
+                for (;i < kwcount; i++) {
+                    PyObject *value = args[i+argcount];
+                    Py_DECREF(value);
+                }
+            }
+            goto fail_late;
+
         kw_found:
             if (localsplus[j] != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           con->fc_qualname, keyword);
-                goto fail;
+                goto kw_fail;
             }
             if (!steal_args) {
                 Py_INCREF(value);
@@ -5523,7 +5536,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(tstate, co, argcount, con->fc_defaults, localsplus,
                             con->fc_qualname);
-        goto fail;
+        goto fail_late;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
@@ -5539,7 +5552,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, localsplus,
                               con->fc_qualname);
-            goto fail;
+            goto fail_late;
         }
         if (n > m)
             i = n - m;
@@ -5572,7 +5585,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    goto fail;
+                    goto fail_late;
                 }
             }
             missing++;
@@ -5580,7 +5593,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, -1, localsplus,
                               con->fc_qualname);
-            goto fail;
+            goto fail_late;
         }
     }
 
@@ -5593,33 +5606,23 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     return 0;
 
-fail: /* Jump here from prelude on failure */
+fail_early:
     if (steal_args) {
-        // If we failed to initialize locals, make sure the caller still own all the
-        // arguments that were on the stack. We need to increment the reference count
-        // of everything we copied (everything in localsplus) that came from the stack
-        // (everything that is present in the "args" array).
-        Py_ssize_t kwcount = kwnames != NULL ? PyTuple_GET_SIZE(kwnames) : 0;
-        for (Py_ssize_t k=0; k < total_args; k++) {
-            PyObject* arg = localsplus[k];
-            for (Py_ssize_t j=0; j < argcount + kwcount; j++) {
-                if (args[j] == arg) {
-                    Py_XINCREF(arg);
-                    break;
-                }
-            }
-        }
-        // Restore all the **kwargs we placed into the kwargs dictionary
-        if (kwdict) {
-            PyObject *key, *value;
-            Py_ssize_t pos = 0;
-            while (PyDict_Next(kwdict, &pos, &key, &value)) {
-                Py_INCREF(value);
-            }
+        for (j = 0; j < argcount; j++) {
+            Py_DECREF(args[j]);
         }
     }
+    /* fall through */
+fail_post_positional:
+    if (steal_args) {
+        Py_ssize_t kwcount = kwnames != NULL ? PyTuple_GET_SIZE(kwnames) : 0;
+        for (j = argcount; j < argcount+kwcount; j++) {
+            Py_DECREF(args[j]);
+        }
+    }
+    /* fall through */
+fail_late:
     return -1;
-
 }
 
 static InterpreterFrame *
