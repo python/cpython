@@ -1,0 +1,5 @@
+The ``<Python.h>`` header file no longer includes ``<stdio.h>`` if the
+``Py_LIMITED_API`` macro is defined. Functions expecting ``FILE*`` are excluded
+from the limited C API (:pep:`384`). C extensions using ``<stdio.h>`` must now
+include it explicitly.
+Patch by Victor Stinner.
