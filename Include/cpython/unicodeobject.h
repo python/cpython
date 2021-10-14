@@ -796,6 +796,16 @@ PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
                                               string. */
 );
 
+/* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
+
+/* Variant of PyUnicode_DecodeRawUnicodeEscape that supports partial decoding. */
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeRawUnicodeEscapeStateful(
+        const char *string,     /* Unicode-Escape encoded string */
+        Py_ssize_t length,      /* size of string */
+        const char *errors,     /* error handling */
+        Py_ssize_t *consumed    /* bytes consumed */
+);
+
 /* --- Latin-1 Codecs ----------------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) _PyUnicode_AsLatin1String(

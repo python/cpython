@@ -1143,7 +1143,7 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
-"raw_unicode_escape_decode($module, data, errors=None, /)\n"
+"raw_unicode_escape_decode($module, data, errors=None, final=True, /)\n"
 "--\n"
 "\n");
 
@@ -1152,7 +1152,7 @@ PyDoc_STRVAR(_codecs_raw_unicode_escape_decode__doc__,
 
 static PyObject *
 _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
-                                       const char *errors);
+                                       const char *errors, int final);
 
 static PyObject *
 _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1160,8 +1160,9 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
+    int final = 1;
 
-    if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 3)) {
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1202,8 +1203,15 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         _PyArg_BadArgument("raw_unicode_escape_decode", "argument 2", "str or None", args[1]);
         goto exit;
     }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    final = _PyLong_AsInt(args[2]);
+    if (final == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
 skip_optional:
-    return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors);
+    return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
@@ -2809,4 +2817,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=9e9fb1d5d81577e0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=814dae36b6f885cb input=a9049054013a1b77]*/
