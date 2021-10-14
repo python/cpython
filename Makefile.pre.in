@@ -1145,7 +1145,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/fileutils.h \
 		$(srcdir)/Include/floatobject.h \
 		$(srcdir)/Include/frameobject.h \
-		$(srcdir)/Include/funcobject.h \
 		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
 		$(srcdir)/Include/interpreteridobject.h \
@@ -1210,6 +1209,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/fileutils.h \
 		$(srcdir)/Include/cpython/floatobject.h \
 		$(srcdir)/Include/cpython/frameobject.h \
+		$(srcdir)/Include/cpython/funcobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
