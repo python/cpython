@@ -1933,14 +1933,73 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_MULTIPLY) {
+            PREDICTED(BINARY_MULTIPLY);
+            STAT_INC(BINARY_MULTIPLY, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Multiply(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
             SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_MULTIPLY_ADAPTIVE) {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_BinaryMultiply(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_MULTIPLY, deferred);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(BINARY_MULTIPLY, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_MULTIPLY);
+            }
+        }
+
+        TARGET(BINARY_MULTIPLY_INT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
+            STAT_INC(BINARY_MULTIPLY, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(prod);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (prod == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_MULTIPLY_FLOAT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
+            STAT_INC(BINARY_MULTIPLY, hit);
+            record_hit_inline(next_instr, oparg);
+            double dprod = ((PyFloatObject *)left)->ob_fval *
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *prod = PyFloat_FromDouble(dprod);
+            SET_SECOND(prod);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (prod == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -4954,6 +5013,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
+MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
 
 binary_subscr_dict_error:
         {
