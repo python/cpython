@@ -572,10 +572,11 @@ Porting to Python 3.11
   header provides functions like ``printf()`` and ``fopen()``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
-* The non-limited API file ``funcobject.h`` has been moved to the
-  ``Include/cpython`` directory. This file must not be included directly, as it
-  is already included in ``Python.h``: :ref:`Include Files <api-includes>`. If
-  it has been included directly, consider including ``Python.h`` instead.
+* The non-limited API files ``cellobject.h`` and ``funcobject.h`` have been
+  moved to the ``Include/cpython`` directory. These files must not be included
+  directly, as they are already included in ``Python.h``: :ref:`Include Files
+  <api-includes>`. If they have been included directly, consider including
+  ``Python.h`` instead.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
 Deprecated
