@@ -858,7 +858,7 @@ class FrozenImporter:
                     pass
             if ispkg:
                 if module.__path__ != __path__:
-                    assert not module.__path__, module.__path__
+                    assert module.__path__ == [], module.__path__
                     # XXX _init_module_attrs() should copy like this too.
                     module.__path__.extend(__path__)
         else:
