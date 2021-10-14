@@ -183,6 +183,7 @@ def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
             elif n < length:
                 with mv[:n] as smv:
                     fdst_write(smv)
+                break
             else:
                 fdst_write(mv)
 
