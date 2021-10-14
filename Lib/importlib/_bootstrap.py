@@ -484,7 +484,7 @@ def _spec_from_module(module, loader=None, origin=None):
         submodule_search_locations = None
 
     spec = ModuleSpec(name, loader, origin=origin)
-    spec._set_fileattr = origin == location
+    spec._set_fileattr = False if location is None else (origin == location)
     spec.cached = cached
     spec.submodule_search_locations = submodule_search_locations
     return spec
