@@ -4640,7 +4640,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
     s = buf;
 
     const char *first_invalid_escape;
-    v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
+    v = _PyUnicode_DecodeUnicodeEscapeInternal(s, len, NULL, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
         if (warn_invalid_escape_sequence(c, n, *first_invalid_escape) < 0) {

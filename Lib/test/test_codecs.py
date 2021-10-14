@@ -2327,7 +2327,11 @@ class TypesTest(unittest.TestCase):
                          (r"\x5c\x55\x30\x30\x31\x31\x30\x30\x30\x30", 10))
 
 
-class UnicodeEscapeTest(unittest.TestCase):
+class UnicodeEscapeTest(ReadTest, unittest.TestCase):
+    encoding = "unicode-escape"
+
+    test_lone_surrogates = None
+
     def test_empty(self):
         self.assertEqual(codecs.unicode_escape_encode(""), (b"", 0))
         self.assertEqual(codecs.unicode_escape_decode(b""), ("", 0))
@@ -2414,6 +2418,44 @@ class UnicodeEscapeTest(unittest.TestCase):
         self.assertEqual(decode(br"\U00110000", "ignore"), ("", 10))
         self.assertEqual(decode(br"\U00110000", "replace"), ("\ufffd", 10))
 
+    def test_partial(self):
+        self.check_partial(
+            "\x00\t\n\r\\\xff\uffff\U00010000",
+            [
+                '',
+                '',
+                '',
+                '\x00',
+                '\x00',
+                '\x00\t',
+                '\x00\t',
+                '\x00\t\n',
+                '\x00\t\n',
+                '\x00\t\n\r',
+                '\x00\t\n\r',
+                '\x00\t\n\r\\',
+                '\x00\t\n\r\\',
+                '\x00\t\n\r\\',
+                '\x00\t\n\r\\',
+                '\x00\t\n\r\\\xff',
+                '\x00\t\n\r\\\xff',
+                '\x00\t\n\r\\\xff',
+                '\x00\t\n\r\\\xff',
+                '\x00\t\n\r\\\xff',
+                '\x00\t\n\r\\\xff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff',
+                '\x00\t\n\r\\\xff\uffff\U00010000',
+            ]
+        )
 
 class RawUnicodeEscapeTest(unittest.TestCase):
     def test_empty(self):
