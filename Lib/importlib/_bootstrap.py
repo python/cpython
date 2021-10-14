@@ -924,6 +924,18 @@ class FrozenImporter:
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
             return None
+        # We get the marshaled data in exec_module() (the loader
+        # part of the importer), instead of here (the finder part).
+        # The loader is the usual place to get the data that will
+        # be loaded into the module.  (For example, see _LoaderBasics
+        # in _bootstra_external.py.)  Most importantly, this importer
+        # is simpler if we wait to get the data.
+        # However, getting as much data in the finder as possible
+        # to later load the module is okay, and sometimes important.
+        # (That's why ModuleSpec.loader_state exists.)  This is
+        # especially true if it avoids throwing away expensive data
+        # the loader would otherwise duplicate later and can be done
+        # efficiently.  In this case it isn't worth it.
         _, ispkg, origname = info
         spec = spec_from_loader(fullname, cls,
                                 origin=cls._ORIGIN,
