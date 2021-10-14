@@ -1249,6 +1249,7 @@
     <elf-symbol name='_PyUnicode_AsUnicode' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_CheckConsistency' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_Copy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <elf-symbol name='_PyUnicode_DecodeRawUnicodeEscapeStateful' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_DecodeUnicodeEscapeInternal' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_DecodeUnicodeEscapeStateful' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyUnicode_EQ' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
@@ -2357,7 +2358,7 @@
     <function-decl name='__builtin___sprintf_chk' mangled-name='__sprintf_chk' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_DecodeUnicodeEscapeInternal' mangled-name='_PyUnicode_DecodeUnicodeEscapeInternal' filepath='./Include/cpython/unicodeobject.h' line='846' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_DecodeUnicodeEscapeInternal' mangled-name='_PyUnicode_DecodeUnicodeEscapeInternal' filepath='./Include/cpython/unicodeobject.h' line='847' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyUnicode_FromFormat' mangled-name='PyUnicode_FromFormat' filepath='./Include/unicodeobject.h' line='258' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -3376,10 +3377,10 @@
     <function-decl name='PyUnicode_AsUTF8String' mangled-name='PyUnicode_AsUTF8String' filepath='./Include/unicodeobject.h' line='467' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsPrintable' mangled-name='_PyUnicode_IsPrintable' filepath='./Include/cpython/unicodeobject.h' line='1140' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsPrintable' mangled-name='_PyUnicode_IsPrintable' filepath='./Include/cpython/unicodeobject.h' line='1149' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ScanIdentifier' mangled-name='_PyUnicode_ScanIdentifier' filepath='./Include/cpython/unicodeobject.h' line='1160' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ScanIdentifier' mangled-name='_PyUnicode_ScanIdentifier' filepath='./Include/cpython/unicodeobject.h' line='1169' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyToken_ThreeChars' mangled-name='PyToken_ThreeChars' filepath='./Include/token.h' line='91' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -3991,7 +3992,7 @@
       <parameter type-id='type-id-16' name='ob' filepath='Objects/abstract.c' line='2281' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicode_FromId' mangled-name='_PyUnicode_FromId' filepath='./Include/cpython/unicodeobject.h' line='1151' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_FromId' mangled-name='_PyUnicode_FromId' filepath='./Include/cpython/unicodeobject.h' line='1160' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyObject_VectorcallMethod' mangled-name='PyObject_VectorcallMethod' filepath='./Include/cpython/abstract.h' line='187' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -4648,7 +4649,7 @@
     <function-decl name='PyTuple_GetItem' mangled-name='PyTuple_GetItem' filepath='./Include/tupleobject.h' line='32' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_FormatLong' mangled-name='_PyUnicode_FormatLong' filepath='./Include/cpython/unicodeobject.h' line='1148' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_FormatLong' mangled-name='_PyUnicode_FormatLong' filepath='./Include/cpython/unicodeobject.h' line='1157' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyNumber_Long' mangled-name='PyNumber_Long' filepath='./Include/abstract.h' line='538' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -7573,7 +7574,7 @@
     <function-decl name='log' mangled-name='log' filepath='/usr/include/x86_64-linux-gnu/bits/mathcalls.h' line='104' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_TransformDecimalAndSpaceToASCII' mangled-name='_PyUnicode_TransformDecimalAndSpaceToASCII' filepath='./Include/cpython/unicodeobject.h' line='986' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_TransformDecimalAndSpaceToASCII' mangled-name='_PyUnicode_TransformDecimalAndSpaceToASCII' filepath='./Include/cpython/unicodeobject.h' line='995' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='_Py_string_to_number_with_underscores' mangled-name='_Py_string_to_number_with_underscores' filepath='./Include/pystrtod.h' line='22' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -8021,7 +8022,7 @@
     <function-decl name='PyObject_Dir' mangled-name='PyObject_Dir' filepath='./Include/object.h' line='295' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='./Include/cpython/unicodeobject.h' line='1009' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='./Include/cpython/unicodeobject.h' line='1018' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyObject_SetAttrString' mangled-name='PyObject_SetAttrString' filepath='./Include/object.h' line='272' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -9066,7 +9067,7 @@
     <function-decl name='_PyBytesWriter_Prepare' mangled-name='_PyBytesWriter_Prepare' filepath='./Include/cpython/bytesobject.h' line='94' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EqualToASCIIId' mangled-name='_PyUnicode_EqualToASCIIId' filepath='./Include/cpython/unicodeobject.h' line='1001' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_EqualToASCIIId' mangled-name='_PyUnicode_EqualToASCIIId' filepath='./Include/cpython/unicodeobject.h' line='1010' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyObject_Bytes' mangled-name='PyObject_Bytes' filepath='./Include/object.h' line='268' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -10097,7 +10098,7 @@
     <function-decl name='PyBytes_FromObject' mangled-name='PyBytes_FromObject' filepath='./Include/bytesobject.h' line='36' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_AsASCIIString' mangled-name='_PyUnicode_AsASCIIString' filepath='./Include/cpython/unicodeobject.h' line='882' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_AsASCIIString' mangled-name='_PyUnicode_AsASCIIString' filepath='./Include/cpython/unicodeobject.h' line='891' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyUnicode_DecodeASCII' mangled-name='PyUnicode_DecodeASCII' filepath='./Include/unicodeobject.h' line='650' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -10480,7 +10481,7 @@
     <function-decl name='_PyDict_Contains_KnownHash' mangled-name='_PyDict_Contains_KnownHash' filepath='./Include/cpython/dictobject.h' line='49' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EQ' mangled-name='_PyUnicode_EQ' filepath='./Include/cpython/unicodeobject.h' line='1155' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_EQ' mangled-name='_PyUnicode_EQ' filepath='./Include/cpython/unicodeobject.h' line='1164' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
   </abi-instr>
@@ -10892,351 +10893,358 @@
 
     </array-type-def>
     <qualified-type-def type-id='type-id-512' const='yes' id='type-id-513'/>
-    <var-decl name='_Py_ascii_whitespace' type-id='type-id-513' mangled-name='_Py_ascii_whitespace' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='1039' column='1' elf-symbol-id='_Py_ascii_whitespace'/>
+    <var-decl name='_Py_ascii_whitespace' type-id='type-id-513' mangled-name='_Py_ascii_whitespace' visibility='default' filepath='./Include/cpython/unicodeobject.h' line='1048' column='1' elf-symbol-id='_Py_ascii_whitespace'/>
     <var-decl name='PyUnicode_Type' type-id='type-id-149' mangled-name='PyUnicode_Type' visibility='default' filepath='./Include/unicodeobject.h' line='111' column='1' elf-symbol-id='PyUnicode_Type'/>
     <var-decl name='PyUnicodeIter_Type' type-id='type-id-149' mangled-name='PyUnicodeIter_Type' visibility='default' filepath='./Include/unicodeobject.h' line='112' column='1' elf-symbol-id='PyUnicodeIter_Type'/>
-    <function-decl name='PyInit__string' mangled-name='PyInit__string' filepath='Objects/unicodeobject.c' line='16335' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__string'>
+    <function-decl name='PyInit__string' mangled-name='PyInit__string' filepath='Objects/unicodeobject.c' line='16359' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__string'>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_InternFromString' mangled-name='PyUnicode_InternFromString' filepath='Objects/unicodeobject.c' line='15866' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternFromString'>
-      <parameter type-id='type-id-3' name='cp' filepath='Objects/unicodeobject.c' line='15866' column='1'/>
+    <function-decl name='PyUnicode_InternFromString' mangled-name='PyUnicode_InternFromString' filepath='Objects/unicodeobject.c' line='15890' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternFromString'>
+      <parameter type-id='type-id-3' name='cp' filepath='Objects/unicodeobject.c' line='15890' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_InternImmortal' mangled-name='PyUnicode_InternImmortal' filepath='Objects/unicodeobject.c' line='15847' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternImmortal'>
-      <parameter type-id='type-id-86' name='p' filepath='Objects/unicodeobject.c' line='15847' column='1'/>
+    <function-decl name='PyUnicode_InternImmortal' mangled-name='PyUnicode_InternImmortal' filepath='Objects/unicodeobject.c' line='15871' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternImmortal'>
+      <parameter type-id='type-id-86' name='p' filepath='Objects/unicodeobject.c' line='15871' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyUnicode_InternInPlace' mangled-name='PyUnicode_InternInPlace' filepath='Objects/unicodeobject.c' line='15790' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternInPlace'>
-      <parameter type-id='type-id-86' name='p' filepath='Objects/unicodeobject.c' line='15790' column='1'/>
+    <function-decl name='PyUnicode_InternInPlace' mangled-name='PyUnicode_InternInPlace' filepath='Objects/unicodeobject.c' line='15814' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternInPlace'>
+      <parameter type-id='type-id-86' name='p' filepath='Objects/unicodeobject.c' line='15814' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyUnicode_Format' mangled-name='PyUnicode_Format' filepath='Objects/unicodeobject.c' line='15471' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Format'>
-      <parameter type-id='type-id-16' name='format' filepath='Objects/unicodeobject.c' line='15471' column='1'/>
-      <parameter type-id='type-id-16' name='args' filepath='Objects/unicodeobject.c' line='15471' column='1'/>
+    <function-decl name='PyUnicode_Format' mangled-name='PyUnicode_Format' filepath='Objects/unicodeobject.c' line='15495' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Format'>
+      <parameter type-id='type-id-16' name='format' filepath='Objects/unicodeobject.c' line='15495' column='1'/>
+      <parameter type-id='type-id-16' name='args' filepath='Objects/unicodeobject.c' line='15495' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_FormatLong' mangled-name='_PyUnicode_FormatLong' filepath='Objects/unicodeobject.c' line='14709' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_FormatLong'>
-      <parameter type-id='type-id-16' name='val' filepath='Objects/unicodeobject.c' line='14709' column='1'/>
-      <parameter type-id='type-id-9' name='alt' filepath='Objects/unicodeobject.c' line='14709' column='1'/>
-      <parameter type-id='type-id-9' name='prec' filepath='Objects/unicodeobject.c' line='14709' column='1'/>
-      <parameter type-id='type-id-9' name='type' filepath='Objects/unicodeobject.c' line='14709' column='1'/>
+    <function-decl name='_PyUnicode_FormatLong' mangled-name='_PyUnicode_FormatLong' filepath='Objects/unicodeobject.c' line='14733' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_FormatLong'>
+      <parameter type-id='type-id-16' name='val' filepath='Objects/unicodeobject.c' line='14733' column='1'/>
+      <parameter type-id='type-id-9' name='alt' filepath='Objects/unicodeobject.c' line='14733' column='1'/>
+      <parameter type-id='type-id-9' name='prec' filepath='Objects/unicodeobject.c' line='14733' column='1'/>
+      <parameter type-id='type-id-9' name='type' filepath='Objects/unicodeobject.c' line='14733' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_Dealloc' mangled-name='_PyUnicodeWriter_Dealloc' filepath='Objects/unicodeobject.c' line='14346' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_Dealloc'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14346' column='1'/>
+    <function-decl name='_PyUnicodeWriter_Dealloc' mangled-name='_PyUnicodeWriter_Dealloc' filepath='Objects/unicodeobject.c' line='14370' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_Dealloc'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14370' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_WriteLatin1String' mangled-name='_PyUnicodeWriter_WriteLatin1String' filepath='Objects/unicodeobject.c' line='14300' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteLatin1String'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14300' column='1'/>
-      <parameter type-id='type-id-3' name='str' filepath='Objects/unicodeobject.c' line='14301' column='1'/>
-      <parameter type-id='type-id-31' name='len' filepath='Objects/unicodeobject.c' line='14301' column='1'/>
+    <function-decl name='_PyUnicodeWriter_WriteLatin1String' mangled-name='_PyUnicodeWriter_WriteLatin1String' filepath='Objects/unicodeobject.c' line='14324' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteLatin1String'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14324' column='1'/>
+      <parameter type-id='type-id-3' name='str' filepath='Objects/unicodeobject.c' line='14325' column='1'/>
+      <parameter type-id='type-id-31' name='len' filepath='Objects/unicodeobject.c' line='14325' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_WriteASCIIString' mangled-name='_PyUnicodeWriter_WriteASCIIString' filepath='Objects/unicodeobject.c' line='14240' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteASCIIString'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14240' column='1'/>
-      <parameter type-id='type-id-3' name='ascii' filepath='Objects/unicodeobject.c' line='14241' column='1'/>
-      <parameter type-id='type-id-31' name='len' filepath='Objects/unicodeobject.c' line='14241' column='1'/>
+    <function-decl name='_PyUnicodeWriter_WriteASCIIString' mangled-name='_PyUnicodeWriter_WriteASCIIString' filepath='Objects/unicodeobject.c' line='14264' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteASCIIString'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14264' column='1'/>
+      <parameter type-id='type-id-3' name='ascii' filepath='Objects/unicodeobject.c' line='14265' column='1'/>
+      <parameter type-id='type-id-31' name='len' filepath='Objects/unicodeobject.c' line='14265' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_WriteStr' mangled-name='_PyUnicodeWriter_WriteStr' filepath='Objects/unicodeobject.c' line='14174' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteStr'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14174' column='1'/>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='14174' column='1'/>
+    <function-decl name='_PyUnicodeWriter_WriteStr' mangled-name='_PyUnicodeWriter_WriteStr' filepath='Objects/unicodeobject.c' line='14198' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteStr'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14198' column='1'/>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='14198' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_WriteChar' mangled-name='_PyUnicodeWriter_WriteChar' filepath='Objects/unicodeobject.c' line='14168' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteChar'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14168' column='1'/>
-      <parameter type-id='type-id-450' name='ch' filepath='Objects/unicodeobject.c' line='14168' column='1'/>
+    <function-decl name='_PyUnicodeWriter_WriteChar' mangled-name='_PyUnicodeWriter_WriteChar' filepath='Objects/unicodeobject.c' line='14192' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteChar'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14192' column='1'/>
+      <parameter type-id='type-id-450' name='ch' filepath='Objects/unicodeobject.c' line='14192' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_PrepareKindInternal' mangled-name='_PyUnicodeWriter_PrepareKindInternal' filepath='Objects/unicodeobject.c' line='14136' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_PrepareKindInternal'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14136' column='1'/>
-      <parameter type-id='type-id-449' name='kind' filepath='Objects/unicodeobject.c' line='14137' column='1'/>
+    <function-decl name='_PyUnicodeWriter_PrepareKindInternal' mangled-name='_PyUnicodeWriter_PrepareKindInternal' filepath='Objects/unicodeobject.c' line='14160' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_PrepareKindInternal'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14160' column='1'/>
+      <parameter type-id='type-id-449' name='kind' filepath='Objects/unicodeobject.c' line='14161' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_PrepareInternal' mangled-name='_PyUnicodeWriter_PrepareInternal' filepath='Objects/unicodeobject.c' line='14059' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_PrepareInternal'>
+    <function-decl name='_PyUnicodeWriter_PrepareInternal' mangled-name='_PyUnicodeWriter_PrepareInternal' filepath='Objects/unicodeobject.c' line='14083' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_PrepareInternal'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14083' column='1'/>
+      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='14084' column='1'/>
+      <parameter type-id='type-id-450' name='maxchar' filepath='Objects/unicodeobject.c' line='14084' column='1'/>
+      <return type-id='type-id-9'/>
+    </function-decl>
+    <function-decl name='_PyUnicodeWriter_Init' mangled-name='_PyUnicodeWriter_Init' filepath='Objects/unicodeobject.c' line='14059' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_Init'>
       <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14059' column='1'/>
-      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='14060' column='1'/>
-      <parameter type-id='type-id-450' name='maxchar' filepath='Objects/unicodeobject.c' line='14060' column='1'/>
-      <return type-id='type-id-9'/>
-    </function-decl>
-    <function-decl name='_PyUnicodeWriter_Init' mangled-name='_PyUnicodeWriter_Init' filepath='Objects/unicodeobject.c' line='14035' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_Init'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14035' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyUnicode_RSplit' mangled-name='PyUnicode_RSplit' filepath='Objects/unicodeobject.c' line='13610' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_RSplit'>
-      <parameter type-id='type-id-16' name='s' filepath='Objects/unicodeobject.c' line='13610' column='1'/>
-      <parameter type-id='type-id-16' name='sep' filepath='Objects/unicodeobject.c' line='13610' column='1'/>
-      <parameter type-id='type-id-31' name='maxsplit' filepath='Objects/unicodeobject.c' line='13610' column='1'/>
+    <function-decl name='PyUnicode_RSplit' mangled-name='PyUnicode_RSplit' filepath='Objects/unicodeobject.c' line='13634' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_RSplit'>
+      <parameter type-id='type-id-16' name='s' filepath='Objects/unicodeobject.c' line='13634' column='1'/>
+      <parameter type-id='type-id-16' name='sep' filepath='Objects/unicodeobject.c' line='13634' column='1'/>
+      <parameter type-id='type-id-31' name='maxsplit' filepath='Objects/unicodeobject.c' line='13634' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Split' mangled-name='PyUnicode_Split' filepath='Objects/unicodeobject.c' line='13426' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Split'>
-      <parameter type-id='type-id-16' name='s' filepath='Objects/unicodeobject.c' line='13610' column='1'/>
-      <parameter type-id='type-id-16' name='sep' filepath='Objects/unicodeobject.c' line='13610' column='1'/>
-      <parameter type-id='type-id-31' name='maxsplit' filepath='Objects/unicodeobject.c' line='13610' column='1'/>
+    <function-decl name='PyUnicode_Split' mangled-name='PyUnicode_Split' filepath='Objects/unicodeobject.c' line='13450' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Split'>
+      <parameter type-id='type-id-16' name='s' filepath='Objects/unicodeobject.c' line='13634' column='1'/>
+      <parameter type-id='type-id-16' name='sep' filepath='Objects/unicodeobject.c' line='13634' column='1'/>
+      <parameter type-id='type-id-31' name='maxsplit' filepath='Objects/unicodeobject.c' line='13634' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Replace' mangled-name='PyUnicode_Replace' filepath='Objects/unicodeobject.c' line='13074' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Replace'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='13074' column='1'/>
-      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='13075' column='1'/>
-      <parameter type-id='type-id-16' name='replstr' filepath='Objects/unicodeobject.c' line='13076' column='1'/>
-      <parameter type-id='type-id-31' name='maxcount' filepath='Objects/unicodeobject.c' line='13077' column='1'/>
+    <function-decl name='PyUnicode_Replace' mangled-name='PyUnicode_Replace' filepath='Objects/unicodeobject.c' line='13098' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Replace'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='13098' column='1'/>
+      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='13099' column='1'/>
+      <parameter type-id='type-id-16' name='replstr' filepath='Objects/unicodeobject.c' line='13100' column='1'/>
+      <parameter type-id='type-id-31' name='maxcount' filepath='Objects/unicodeobject.c' line='13101' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Substring' mangled-name='PyUnicode_Substring' filepath='Objects/unicodeobject.c' line='12832' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Substring'>
-      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12832' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='12832' column='1'/>
-      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='12832' column='1'/>
+    <function-decl name='PyUnicode_Substring' mangled-name='PyUnicode_Substring' filepath='Objects/unicodeobject.c' line='12856' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Substring'>
+      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12856' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='12856' column='1'/>
+      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='12856' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_XStrip' mangled-name='_PyUnicode_XStrip' filepath='Objects/unicodeobject.c' line='12782' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_XStrip'>
-      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12782' column='1'/>
-      <parameter type-id='type-id-9' name='striptype' filepath='Objects/unicodeobject.c' line='12782' column='1'/>
-      <parameter type-id='type-id-16' name='sepobj' filepath='Objects/unicodeobject.c' line='12782' column='1'/>
+    <function-decl name='_PyUnicode_XStrip' mangled-name='_PyUnicode_XStrip' filepath='Objects/unicodeobject.c' line='12806' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_XStrip'>
+      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12806' column='1'/>
+      <parameter type-id='type-id-9' name='striptype' filepath='Objects/unicodeobject.c' line='12806' column='1'/>
+      <parameter type-id='type-id-16' name='sepobj' filepath='Objects/unicodeobject.c' line='12806' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_IsIdentifier' mangled-name='PyUnicode_IsIdentifier' filepath='Objects/unicodeobject.c' line='12596' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_IsIdentifier'>
-      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12596' column='1'/>
+    <function-decl name='PyUnicode_IsIdentifier' mangled-name='PyUnicode_IsIdentifier' filepath='Objects/unicodeobject.c' line='12620' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_IsIdentifier'>
+      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12620' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ScanIdentifier' mangled-name='_PyUnicode_ScanIdentifier' filepath='Objects/unicodeobject.c' line='12559' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_ScanIdentifier'>
-      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12559' column='1'/>
+    <function-decl name='_PyUnicode_ScanIdentifier' mangled-name='_PyUnicode_ScanIdentifier' filepath='Objects/unicodeobject.c' line='12583' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_ScanIdentifier'>
+      <parameter type-id='type-id-16' name='self' filepath='Objects/unicodeobject.c' line='12583' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='PyUnicode_AppendAndDel' mangled-name='PyUnicode_AppendAndDel' filepath='Objects/unicodeobject.c' line='11831' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AppendAndDel'>
+    <function-decl name='PyUnicode_AppendAndDel' mangled-name='PyUnicode_AppendAndDel' filepath='Objects/unicodeobject.c' line='11855' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AppendAndDel'>
       <parameter type-id='type-id-86' name='pv' filepath='Objects/bytesobject.c' line='2988' column='1'/>
       <parameter type-id='type-id-16' name='w' filepath='Objects/bytesobject.c' line='2988' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyUnicode_Append' mangled-name='PyUnicode_Append' filepath='Objects/unicodeobject.c' line='11748' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Append'>
-      <parameter type-id='type-id-86' name='p_left' filepath='Objects/unicodeobject.c' line='11748' column='1'/>
-      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11748' column='1'/>
+    <function-decl name='PyUnicode_Append' mangled-name='PyUnicode_Append' filepath='Objects/unicodeobject.c' line='11772' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Append'>
+      <parameter type-id='type-id-86' name='p_left' filepath='Objects/unicodeobject.c' line='11772' column='1'/>
+      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11772' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyUnicode_Concat' mangled-name='PyUnicode_Concat' filepath='Objects/unicodeobject.c' line='11697' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Concat'>
-      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11697' column='1'/>
-      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11697' column='1'/>
+    <function-decl name='PyUnicode_Concat' mangled-name='PyUnicode_Concat' filepath='Objects/unicodeobject.c' line='11721' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Concat'>
+      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11721' column='1'/>
+      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11721' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EQ' mangled-name='_PyUnicode_EQ' filepath='Objects/unicodeobject.c' line='11628' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EQ'>
+    <function-decl name='_PyUnicode_EQ' mangled-name='_PyUnicode_EQ' filepath='Objects/unicodeobject.c' line='11652' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EQ'>
       <parameter type-id='type-id-16' name='self' filepath='Objects/exceptions.c' line='330' column='1'/>
       <parameter type-id='type-id-16' name='tb' filepath='Objects/exceptions.c' line='330' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EqualToASCIIId' mangled-name='_PyUnicode_EqualToASCIIId' filepath='Objects/unicodeobject.c' line='11545' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIId'>
-      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11545' column='1'/>
-      <parameter type-id='type-id-453' name='right' filepath='Objects/unicodeobject.c' line='11545' column='1'/>
+    <function-decl name='_PyUnicode_EqualToASCIIId' mangled-name='_PyUnicode_EqualToASCIIId' filepath='Objects/unicodeobject.c' line='11569' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIId'>
+      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11569' column='1'/>
+      <parameter type-id='type-id-453' name='right' filepath='Objects/unicodeobject.c' line='11569' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='PyUnicode_CompareWithASCIIString' mangled-name='PyUnicode_CompareWithASCIIString' filepath='Objects/unicodeobject.c' line='11443' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_CompareWithASCIIString'>
-      <parameter type-id='type-id-16' name='uni' filepath='Objects/unicodeobject.c' line='11443' column='1'/>
-      <parameter type-id='type-id-3' name='str' filepath='Objects/unicodeobject.c' line='11443' column='1'/>
+    <function-decl name='PyUnicode_CompareWithASCIIString' mangled-name='PyUnicode_CompareWithASCIIString' filepath='Objects/unicodeobject.c' line='11467' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_CompareWithASCIIString'>
+      <parameter type-id='type-id-16' name='uni' filepath='Objects/unicodeobject.c' line='11467' column='1'/>
+      <parameter type-id='type-id-3' name='str' filepath='Objects/unicodeobject.c' line='11467' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='PyUnicode_Compare' mangled-name='PyUnicode_Compare' filepath='Objects/unicodeobject.c' line='11422' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Compare'>
-      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11422' column='1'/>
-      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11422' column='1'/>
+    <function-decl name='PyUnicode_Compare' mangled-name='PyUnicode_Compare' filepath='Objects/unicodeobject.c' line='11446' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Compare'>
+      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11446' column='1'/>
+      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11446' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='PyUnicode_Splitlines' mangled-name='PyUnicode_Splitlines' filepath='Objects/unicodeobject.c' line='10611' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Splitlines'>
-      <parameter type-id='type-id-16' name='string' filepath='Objects/unicodeobject.c' line='10611' column='1'/>
-      <parameter type-id='type-id-9' name='keepends' filepath='Objects/unicodeobject.c' line='10611' column='1'/>
+    <function-decl name='PyUnicode_Splitlines' mangled-name='PyUnicode_Splitlines' filepath='Objects/unicodeobject.c' line='10635' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Splitlines'>
+      <parameter type-id='type-id-16' name='string' filepath='Objects/unicodeobject.c' line='10635' column='1'/>
+      <parameter type-id='type-id-9' name='keepends' filepath='Objects/unicodeobject.c' line='10635' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Fill' mangled-name='PyUnicode_Fill' filepath='Objects/unicodeobject.c' line='10535' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Fill'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='10535' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10535' column='1'/>
-      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='10535' column='1'/>
-      <parameter type-id='type-id-450' name='fill_char' filepath='Objects/unicodeobject.c' line='10536' column='1'/>
+    <function-decl name='PyUnicode_Fill' mangled-name='PyUnicode_Fill' filepath='Objects/unicodeobject.c' line='10559' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Fill'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='10559' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10559' column='1'/>
+      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='10559' column='1'/>
+      <parameter type-id='type-id-450' name='fill_char' filepath='Objects/unicodeobject.c' line='10560' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='_PyUnicode_FastFill' mangled-name='_PyUnicode_FastFill' filepath='Objects/unicodeobject.c' line='10521' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_FastFill'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='10521' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10521' column='1'/>
-      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='10521' column='1'/>
-      <parameter type-id='type-id-450' name='fill_char' filepath='Objects/unicodeobject.c' line='10522' column='1'/>
+    <function-decl name='_PyUnicode_FastFill' mangled-name='_PyUnicode_FastFill' filepath='Objects/unicodeobject.c' line='10545' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_FastFill'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='10545' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10545' column='1'/>
+      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='10545' column='1'/>
+      <parameter type-id='type-id-450' name='fill_char' filepath='Objects/unicodeobject.c' line='10546' column='1'/>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_JoinArray' mangled-name='_PyUnicode_JoinArray' filepath='Objects/unicodeobject.c' line='10349' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_JoinArray'>
+    <function-decl name='_PyUnicode_JoinArray' mangled-name='_PyUnicode_JoinArray' filepath='Objects/unicodeobject.c' line='10373' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_JoinArray'>
+      <parameter type-id='type-id-16' name='separator' filepath='Objects/unicodeobject.c' line='10373' column='1'/>
+      <parameter type-id='type-id-156' name='items' filepath='Objects/unicodeobject.c' line='10373' column='1'/>
+      <parameter type-id='type-id-31' name='seqlen' filepath='Objects/unicodeobject.c' line='10373' column='1'/>
+      <return type-id='type-id-16'/>
+    </function-decl>
+    <function-decl name='PyUnicode_Join' mangled-name='PyUnicode_Join' filepath='Objects/unicodeobject.c' line='10349' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Join'>
       <parameter type-id='type-id-16' name='separator' filepath='Objects/unicodeobject.c' line='10349' column='1'/>
-      <parameter type-id='type-id-156' name='items' filepath='Objects/unicodeobject.c' line='10349' column='1'/>
-      <parameter type-id='type-id-31' name='seqlen' filepath='Objects/unicodeobject.c' line='10349' column='1'/>
+      <parameter type-id='type-id-16' name='seq' filepath='Objects/unicodeobject.c' line='10349' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Join' mangled-name='PyUnicode_Join' filepath='Objects/unicodeobject.c' line='10325' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Join'>
-      <parameter type-id='type-id-16' name='separator' filepath='Objects/unicodeobject.c' line='10325' column='1'/>
-      <parameter type-id='type-id-16' name='seq' filepath='Objects/unicodeobject.c' line='10325' column='1'/>
-      <return type-id='type-id-16'/>
-    </function-decl>
-    <function-decl name='PyUnicode_Tailmatch' mangled-name='PyUnicode_Tailmatch' filepath='Objects/unicodeobject.c' line='10078' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Tailmatch'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='10078' column='1'/>
-      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='10079' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10080' column='1'/>
-      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='10081' column='1'/>
-      <parameter type-id='type-id-9' name='direction' filepath='Objects/unicodeobject.c' line='10082' column='1'/>
+    <function-decl name='PyUnicode_Tailmatch' mangled-name='PyUnicode_Tailmatch' filepath='Objects/unicodeobject.c' line='10102' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Tailmatch'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='10102' column='1'/>
+      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='10103' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10104' column='1'/>
+      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='10105' column='1'/>
+      <parameter type-id='type-id-9' name='direction' filepath='Objects/unicodeobject.c' line='10106' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='PyUnicode_FindChar' mangled-name='PyUnicode_FindChar' filepath='Objects/unicodeobject.c' line='9989' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_FindChar'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='9989' column='1'/>
-      <parameter type-id='type-id-450' name='ch' filepath='Objects/unicodeobject.c' line='9989' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='9990' column='1'/>
-      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='9990' column='1'/>
-      <parameter type-id='type-id-9' name='direction' filepath='Objects/unicodeobject.c' line='9991' column='1'/>
+    <function-decl name='PyUnicode_FindChar' mangled-name='PyUnicode_FindChar' filepath='Objects/unicodeobject.c' line='10013' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_FindChar'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='10013' column='1'/>
+      <parameter type-id='type-id-450' name='ch' filepath='Objects/unicodeobject.c' line='10013' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10014' column='1'/>
+      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='10014' column='1'/>
+      <parameter type-id='type-id-9' name='direction' filepath='Objects/unicodeobject.c' line='10015' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='PyUnicode_Find' mangled-name='PyUnicode_Find' filepath='Objects/unicodeobject.c' line='9976' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Find'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='10078' column='1'/>
-      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='10079' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10080' column='1'/>
-      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='10081' column='1'/>
-      <parameter type-id='type-id-9' name='direction' filepath='Objects/unicodeobject.c' line='10082' column='1'/>
+    <function-decl name='PyUnicode_Find' mangled-name='PyUnicode_Find' filepath='Objects/unicodeobject.c' line='10000' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Find'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='10102' column='1'/>
+      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='10103' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='10104' column='1'/>
+      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='10105' column='1'/>
+      <parameter type-id='type-id-9' name='direction' filepath='Objects/unicodeobject.c' line='10106' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
-    <function-decl name='PyUnicode_Count' mangled-name='PyUnicode_Count' filepath='Objects/unicodeobject.c' line='9902' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Count'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='9902' column='1'/>
-      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='9903' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='9904' column='1'/>
-      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='9905' column='1'/>
+    <function-decl name='PyUnicode_Count' mangled-name='PyUnicode_Count' filepath='Objects/unicodeobject.c' line='9926' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Count'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='9926' column='1'/>
+      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='9927' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='9928' column='1'/>
+      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='9929' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
     <pointer-type-def type-id='type-id-450' size-in-bits='64' id='type-id-514'/>
-    <function-decl name='_PyUnicode_InsertThousandsGrouping' mangled-name='_PyUnicode_InsertThousandsGrouping' filepath='Objects/unicodeobject.c' line='9782' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_InsertThousandsGrouping'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='9783' column='1'/>
-      <parameter type-id='type-id-31' name='n_buffer' filepath='Objects/unicodeobject.c' line='9784' column='1'/>
-      <parameter type-id='type-id-16' name='digits' filepath='Objects/unicodeobject.c' line='9785' column='1'/>
-      <parameter type-id='type-id-31' name='d_pos' filepath='Objects/unicodeobject.c' line='9786' column='1'/>
-      <parameter type-id='type-id-31' name='n_digits' filepath='Objects/unicodeobject.c' line='9787' column='1'/>
-      <parameter type-id='type-id-31' name='min_width' filepath='Objects/unicodeobject.c' line='9788' column='1'/>
-      <parameter type-id='type-id-3' name='grouping' filepath='Objects/unicodeobject.c' line='9789' column='1'/>
-      <parameter type-id='type-id-16' name='thousands_sep' filepath='Objects/unicodeobject.c' line='9790' column='1'/>
-      <parameter type-id='type-id-514' name='maxchar' filepath='Objects/unicodeobject.c' line='9791' column='1'/>
+    <function-decl name='_PyUnicode_InsertThousandsGrouping' mangled-name='_PyUnicode_InsertThousandsGrouping' filepath='Objects/unicodeobject.c' line='9806' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_InsertThousandsGrouping'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='9807' column='1'/>
+      <parameter type-id='type-id-31' name='n_buffer' filepath='Objects/unicodeobject.c' line='9808' column='1'/>
+      <parameter type-id='type-id-16' name='digits' filepath='Objects/unicodeobject.c' line='9809' column='1'/>
+      <parameter type-id='type-id-31' name='d_pos' filepath='Objects/unicodeobject.c' line='9810' column='1'/>
+      <parameter type-id='type-id-31' name='n_digits' filepath='Objects/unicodeobject.c' line='9811' column='1'/>
+      <parameter type-id='type-id-31' name='min_width' filepath='Objects/unicodeobject.c' line='9812' column='1'/>
+      <parameter type-id='type-id-3' name='grouping' filepath='Objects/unicodeobject.c' line='9813' column='1'/>
+      <parameter type-id='type-id-16' name='thousands_sep' filepath='Objects/unicodeobject.c' line='9814' column='1'/>
+      <parameter type-id='type-id-514' name='maxchar' filepath='Objects/unicodeobject.c' line='9815' column='1'/>
       <return type-id='type-id-31'/>
     </function-decl>
     <pointer-type-def type-id='type-id-436' size-in-bits='64' id='type-id-515'/>
-    <function-decl name='PyUnicode_EncodeDecimal' mangled-name='PyUnicode_EncodeDecimal' filepath='Objects/unicodeobject.c' line='9593' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeDecimal'>
-      <parameter type-id='type-id-515' name='s' filepath='Objects/unicodeobject.c' line='9593' column='1'/>
-      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='9594' column='1'/>
-      <parameter type-id='type-id-72' name='output' filepath='Objects/unicodeobject.c' line='9595' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9596' column='1'/>
+    <function-decl name='PyUnicode_EncodeDecimal' mangled-name='PyUnicode_EncodeDecimal' filepath='Objects/unicodeobject.c' line='9617' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeDecimal'>
+      <parameter type-id='type-id-515' name='s' filepath='Objects/unicodeobject.c' line='9617' column='1'/>
+      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='9618' column='1'/>
+      <parameter type-id='type-id-72' name='output' filepath='Objects/unicodeobject.c' line='9619' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9620' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='PyUnicode_TransformDecimalToASCII' mangled-name='PyUnicode_TransformDecimalToASCII' filepath='Objects/unicodeobject.c' line='9552' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_TransformDecimalToASCII'>
-      <parameter type-id='type-id-515' name='s' filepath='Objects/unicodeobject.c' line='9552' column='1'/>
-      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='9553' column='1'/>
+    <function-decl name='PyUnicode_TransformDecimalToASCII' mangled-name='PyUnicode_TransformDecimalToASCII' filepath='Objects/unicodeobject.c' line='9576' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_TransformDecimalToASCII'>
+      <parameter type-id='type-id-515' name='s' filepath='Objects/unicodeobject.c' line='9576' column='1'/>
+      <parameter type-id='type-id-31' name='length' filepath='Objects/unicodeobject.c' line='9577' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_TransformDecimalAndSpaceToASCII' mangled-name='_PyUnicode_TransformDecimalAndSpaceToASCII' filepath='Objects/unicodeobject.c' line='9503' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_TransformDecimalAndSpaceToASCII'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='9503' column='1'/>
+    <function-decl name='_PyUnicode_TransformDecimalAndSpaceToASCII' mangled-name='_PyUnicode_TransformDecimalAndSpaceToASCII' filepath='Objects/unicodeobject.c' line='9527' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_TransformDecimalAndSpaceToASCII'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='9527' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Translate' mangled-name='PyUnicode_Translate' filepath='Objects/unicodeobject.c' line='9493' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Translate'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='9493' column='1'/>
-      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9494' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9495' column='1'/>
+    <function-decl name='PyUnicode_Translate' mangled-name='PyUnicode_Translate' filepath='Objects/unicodeobject.c' line='9517' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Translate'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='9517' column='1'/>
+      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9518' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9519' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_TranslateCharmap' mangled-name='PyUnicode_TranslateCharmap' filepath='Objects/unicodeobject.c' line='9478' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_TranslateCharmap'>
-      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='9478' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='9479' column='1'/>
-      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9480' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9481' column='1'/>
+    <function-decl name='PyUnicode_TranslateCharmap' mangled-name='PyUnicode_TranslateCharmap' filepath='Objects/unicodeobject.c' line='9502' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_TranslateCharmap'>
+      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='9502' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='9503' column='1'/>
+      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9504' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9505' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_AsCharmapString' mangled-name='PyUnicode_AsCharmapString' filepath='Objects/unicodeobject.c' line='9053' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsCharmapString'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='9053' column='1'/>
-      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9054' column='1'/>
+    <function-decl name='PyUnicode_AsCharmapString' mangled-name='PyUnicode_AsCharmapString' filepath='Objects/unicodeobject.c' line='9077' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsCharmapString'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='9077' column='1'/>
+      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9078' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_EncodeCharmap' mangled-name='PyUnicode_EncodeCharmap' filepath='Objects/unicodeobject.c' line='9038' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeCharmap'>
-      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='9478' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='9479' column='1'/>
-      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9480' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9481' column='1'/>
+    <function-decl name='PyUnicode_EncodeCharmap' mangled-name='PyUnicode_EncodeCharmap' filepath='Objects/unicodeobject.c' line='9062' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeCharmap'>
+      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='9502' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='9503' column='1'/>
+      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='9504' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='9505' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EncodeCharmap' mangled-name='_PyUnicode_EncodeCharmap' filepath='Objects/unicodeobject.c' line='8966' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EncodeCharmap'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='8966' column='1'/>
-      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='8967' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='8968' column='1'/>
+    <function-decl name='_PyUnicode_EncodeCharmap' mangled-name='_PyUnicode_EncodeCharmap' filepath='Objects/unicodeobject.c' line='8990' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EncodeCharmap'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='8990' column='1'/>
+      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='8991' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='8992' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_BuildEncodingMap' mangled-name='PyUnicode_BuildEncodingMap' filepath='Objects/unicodeobject.c' line='8553' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_BuildEncodingMap'>
-      <parameter type-id='type-id-16' name='string' filepath='Objects/unicodeobject.c' line='8553' column='1'/>
+    <function-decl name='PyUnicode_BuildEncodingMap' mangled-name='PyUnicode_BuildEncodingMap' filepath='Objects/unicodeobject.c' line='8577' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_BuildEncodingMap'>
+      <parameter type-id='type-id-16' name='string' filepath='Objects/unicodeobject.c' line='8577' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_DecodeCharmap' mangled-name='PyUnicode_DecodeCharmap' filepath='Objects/unicodeobject.c' line='8452' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeCharmap'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='8452' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='8453' column='1'/>
-      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='8454' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='8455' column='1'/>
+    <function-decl name='PyUnicode_DecodeCharmap' mangled-name='PyUnicode_DecodeCharmap' filepath='Objects/unicodeobject.c' line='8476' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeCharmap'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='8476' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='8477' column='1'/>
+      <parameter type-id='type-id-16' name='mapping' filepath='Objects/unicodeobject.c' line='8478' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='8479' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_AsASCIIString' mangled-name='PyUnicode_AsASCIIString' filepath='Objects/unicodeobject.c' line='7487' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsASCIIString'>
+    <function-decl name='PyUnicode_AsASCIIString' mangled-name='PyUnicode_AsASCIIString' filepath='Objects/unicodeobject.c' line='7511' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsASCIIString'>
       <parameter type-id='type-id-16' name='im' filepath='Objects/classobject.c' line='25' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_EncodeASCII' mangled-name='PyUnicode_EncodeASCII' filepath='Objects/unicodeobject.c' line='7456' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeASCII'>
-      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='7456' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7457' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7458' column='1'/>
+    <function-decl name='PyUnicode_EncodeASCII' mangled-name='PyUnicode_EncodeASCII' filepath='Objects/unicodeobject.c' line='7480' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeASCII'>
+      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='7480' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7481' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7482' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_DecodeASCII' mangled-name='PyUnicode_DecodeASCII' filepath='Objects/unicodeobject.c' line='7356' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeASCII'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7356' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7357' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7358' column='1'/>
+    <function-decl name='PyUnicode_DecodeASCII' mangled-name='PyUnicode_DecodeASCII' filepath='Objects/unicodeobject.c' line='7380' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeASCII'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7380' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7381' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7382' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_AsLatin1String' mangled-name='PyUnicode_AsLatin1String' filepath='Objects/unicodeobject.c' line='7348' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsLatin1String'>
+    <function-decl name='PyUnicode_AsLatin1String' mangled-name='PyUnicode_AsLatin1String' filepath='Objects/unicodeobject.c' line='7372' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsLatin1String'>
       <parameter type-id='type-id-16' name='im' filepath='Objects/classobject.c' line='25' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_EncodeLatin1' mangled-name='PyUnicode_EncodeLatin1' filepath='Objects/unicodeobject.c' line='7315' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeLatin1'>
-      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='7456' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7457' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7458' column='1'/>
+    <function-decl name='PyUnicode_EncodeLatin1' mangled-name='PyUnicode_EncodeLatin1' filepath='Objects/unicodeobject.c' line='7339' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeLatin1'>
+      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='7480' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7481' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7482' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_DecodeLatin1' mangled-name='PyUnicode_DecodeLatin1' filepath='Objects/unicodeobject.c' line='7032' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeLatin1'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7032' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7033' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7034' column='1'/>
+    <function-decl name='PyUnicode_DecodeLatin1' mangled-name='PyUnicode_DecodeLatin1' filepath='Objects/unicodeobject.c' line='7056' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeLatin1'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7056' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7057' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7058' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_EncodeRawUnicodeEscape' mangled-name='PyUnicode_EncodeRawUnicodeEscape' filepath='Objects/unicodeobject.c' line='7017' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeRawUnicodeEscape'>
-      <parameter type-id='type-id-438' name='s' filepath='Objects/unicodeobject.c' line='7017' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7018' column='1'/>
+    <function-decl name='PyUnicode_EncodeRawUnicodeEscape' mangled-name='PyUnicode_EncodeRawUnicodeEscape' filepath='Objects/unicodeobject.c' line='7041' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeRawUnicodeEscape'>
+      <parameter type-id='type-id-438' name='s' filepath='Objects/unicodeobject.c' line='7041' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7042' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_AsRawUnicodeEscapeString' mangled-name='PyUnicode_AsRawUnicodeEscapeString' filepath='Objects/unicodeobject.c' line='6938' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsRawUnicodeEscapeString'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='6938' column='1'/>
+    <function-decl name='PyUnicode_AsRawUnicodeEscapeString' mangled-name='PyUnicode_AsRawUnicodeEscapeString' filepath='Objects/unicodeobject.c' line='6962' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsRawUnicodeEscapeString'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='6962' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_DecodeRawUnicodeEscape' mangled-name='PyUnicode_DecodeRawUnicodeEscape' filepath='Objects/unicodeobject.c' line='6819' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeRawUnicodeEscape'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='6819' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='6820' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='6821' column='1'/>
+    <function-decl name='PyUnicode_DecodeRawUnicodeEscape' mangled-name='PyUnicode_DecodeRawUnicodeEscape' filepath='Objects/unicodeobject.c' line='6953' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeRawUnicodeEscape'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7056' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7057' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7058' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_EncodeUnicodeEscape' mangled-name='PyUnicode_EncodeUnicodeEscape' filepath='Objects/unicodeobject.c' line='6802' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeUnicodeEscape'>
-      <parameter type-id='type-id-438' name='s' filepath='Objects/unicodeobject.c' line='7017' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7018' column='1'/>
+    <function-decl name='_PyUnicode_DecodeRawUnicodeEscapeStateful' mangled-name='_PyUnicode_DecodeRawUnicodeEscapeStateful' filepath='Objects/unicodeobject.c' line='6817' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_DecodeRawUnicodeEscapeStateful'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='6817' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='6818' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='6819' column='1'/>
+      <parameter type-id='type-id-125' name='consumed' filepath='Objects/unicodeobject.c' line='6820' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_AsUnicodeEscapeString' mangled-name='PyUnicode_AsUnicodeEscapeString' filepath='Objects/unicodeobject.c' line='6684' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsUnicodeEscapeString'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='6938' column='1'/>
+    <function-decl name='PyUnicode_EncodeUnicodeEscape' mangled-name='PyUnicode_EncodeUnicodeEscape' filepath='Objects/unicodeobject.c' line='6800' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeUnicodeEscape'>
+      <parameter type-id='type-id-438' name='s' filepath='Objects/unicodeobject.c' line='7041' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7042' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_DecodeUnicodeEscape' mangled-name='PyUnicode_DecodeUnicodeEscape' filepath='Objects/unicodeobject.c' line='6674' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeUnicodeEscape'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7032' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7033' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7034' column='1'/>
+    <function-decl name='PyUnicode_AsUnicodeEscapeString' mangled-name='PyUnicode_AsUnicodeEscapeString' filepath='Objects/unicodeobject.c' line='6682' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsUnicodeEscapeString'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='6962' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_DecodeUnicodeEscapeStateful' mangled-name='_PyUnicode_DecodeUnicodeEscapeStateful' filepath='Objects/unicodeobject.c' line='6651' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_DecodeUnicodeEscapeStateful'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='6651' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='6652' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='6653' column='1'/>
-      <parameter type-id='type-id-125' name='consumed' filepath='Objects/unicodeobject.c' line='6654' column='1'/>
+    <function-decl name='PyUnicode_DecodeUnicodeEscape' mangled-name='PyUnicode_DecodeUnicodeEscape' filepath='Objects/unicodeobject.c' line='6672' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeUnicodeEscape'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7056' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7057' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7058' column='1'/>
+      <return type-id='type-id-16'/>
+    </function-decl>
+    <function-decl name='_PyUnicode_DecodeUnicodeEscapeStateful' mangled-name='_PyUnicode_DecodeUnicodeEscapeStateful' filepath='Objects/unicodeobject.c' line='6649' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_DecodeUnicodeEscapeStateful'>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='6649' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='6650' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='6651' column='1'/>
+      <parameter type-id='type-id-125' name='consumed' filepath='Objects/unicodeobject.c' line='6652' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='_PyUnicode_DecodeUnicodeEscapeInternal' mangled-name='_PyUnicode_DecodeUnicodeEscapeInternal' filepath='Objects/unicodeobject.c' line='6411' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_DecodeUnicodeEscapeInternal'>
@@ -11316,9 +11324,9 @@
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_EncodeUTF8' mangled-name='PyUnicode_EncodeUTF8' filepath='Objects/unicodeobject.c' line='5709' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeUTF8'>
-      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='7456' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7457' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7458' column='1'/>
+      <parameter type-id='type-id-438' name='p' filepath='Objects/unicodeobject.c' line='7480' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7481' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7482' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='_PyUnicode_AsUTF8String' mangled-name='_PyUnicode_AsUTF8String' filepath='Objects/unicodeobject.c' line='5702' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_AsUTF8String'>
@@ -11334,9 +11342,9 @@
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_DecodeUTF8' mangled-name='PyUnicode_DecodeUTF8' filepath='Objects/unicodeobject.c' line='5076' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeUTF8'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7032' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7033' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7034' column='1'/>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7056' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7057' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7058' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_EncodeUTF7' mangled-name='PyUnicode_EncodeUTF7' filepath='Objects/unicodeobject.c' line='5051' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_EncodeUTF7'>
@@ -11362,9 +11370,9 @@
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_DecodeUTF7' mangled-name='PyUnicode_DecodeUTF7' filepath='Objects/unicodeobject.c' line='4737' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_DecodeUTF7'>
-      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7032' column='1'/>
-      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7033' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7034' column='1'/>
+      <parameter type-id='type-id-3' name='s' filepath='Objects/unicodeobject.c' line='7056' column='1'/>
+      <parameter type-id='type-id-31' name='size' filepath='Objects/unicodeobject.c' line='7057' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7058' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_GetDefaultEncoding' mangled-name='PyUnicode_GetDefaultEncoding' filepath='Objects/unicodeobject.c' line='4388' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_GetDefaultEncoding'>
@@ -11592,15 +11600,15 @@
       <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='385' column='1'/>
       <return type-id='type-id-366'/>
     </function-decl>
-    <function-decl name='PyUnicode_RichCompare' mangled-name='PyUnicode_RichCompare' filepath='Objects/unicodeobject.c' line='11589' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_RichCompare'>
-      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11589' column='1'/>
-      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11589' column='1'/>
-      <parameter type-id='type-id-9' name='op' filepath='Objects/unicodeobject.c' line='11589' column='1'/>
+    <function-decl name='PyUnicode_RichCompare' mangled-name='PyUnicode_RichCompare' filepath='Objects/unicodeobject.c' line='11613' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_RichCompare'>
+      <parameter type-id='type-id-16' name='left' filepath='Objects/unicodeobject.c' line='11613' column='1'/>
+      <parameter type-id='type-id-16' name='right' filepath='Objects/unicodeobject.c' line='11613' column='1'/>
+      <parameter type-id='type-id-9' name='op' filepath='Objects/unicodeobject.c' line='11613' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_Contains' mangled-name='PyUnicode_Contains' filepath='Objects/unicodeobject.c' line='11634' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Contains'>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='11634' column='1'/>
-      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='11634' column='1'/>
+    <function-decl name='PyUnicode_Contains' mangled-name='PyUnicode_Contains' filepath='Objects/unicodeobject.c' line='11658' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Contains'>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='11658' column='1'/>
+      <parameter type-id='type-id-16' name='substr' filepath='Objects/unicodeobject.c' line='11658' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
     <function-decl name='PyUnicode_Resize' mangled-name='PyUnicode_Resize' filepath='Objects/unicodeobject.c' line='2061' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Resize'>
@@ -11631,14 +11639,14 @@
       <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='4297' column='1'/>
       <return type-id='type-id-438'/>
     </function-decl>
-    <function-decl name='_PyUnicode_AsLatin1String' mangled-name='_PyUnicode_AsLatin1String' filepath='Objects/unicodeobject.c' line='7329' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_AsLatin1String'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='7329' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7329' column='1'/>
+    <function-decl name='_PyUnicode_AsLatin1String' mangled-name='_PyUnicode_AsLatin1String' filepath='Objects/unicodeobject.c' line='7353' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_AsLatin1String'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='7353' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7353' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_AsASCIIString' mangled-name='_PyUnicode_AsASCIIString' filepath='Objects/unicodeobject.c' line='7470' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_AsASCIIString'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='7470' column='1'/>
-      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7470' column='1'/>
+    <function-decl name='_PyUnicode_AsASCIIString' mangled-name='_PyUnicode_AsASCIIString' filepath='Objects/unicodeobject.c' line='7494' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_AsASCIIString'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='7494' column='1'/>
+      <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='7494' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_AsEncodedString' mangled-name='PyUnicode_AsEncodedString' filepath='Objects/unicodeobject.c' line='3873' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsEncodedString'>
@@ -11647,30 +11655,30 @@
       <parameter type-id='type-id-3' name='errors' filepath='Objects/unicodeobject.c' line='3875' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='Objects/unicodeobject.c' line='11522' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIString'>
-      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='11522' column='1'/>
-      <parameter type-id='type-id-3' name='str' filepath='Objects/unicodeobject.c' line='11522' column='1'/>
+    <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='Objects/unicodeobject.c' line='11546' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIString'>
+      <parameter type-id='type-id-16' name='unicode' filepath='Objects/unicodeobject.c' line='11546' column='1'/>
+      <parameter type-id='type-id-3' name='str' filepath='Objects/unicodeobject.c' line='11546' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='PyUnicode_Partition' mangled-name='PyUnicode_Partition' filepath='Objects/unicodeobject.c' line='13464' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Partition'>
-      <parameter type-id='type-id-16' name='str_obj' filepath='Objects/unicodeobject.c' line='13464' column='1'/>
-      <parameter type-id='type-id-16' name='sep_obj' filepath='Objects/unicodeobject.c' line='13464' column='1'/>
+    <function-decl name='PyUnicode_Partition' mangled-name='PyUnicode_Partition' filepath='Objects/unicodeobject.c' line='13488' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Partition'>
+      <parameter type-id='type-id-16' name='str_obj' filepath='Objects/unicodeobject.c' line='13488' column='1'/>
+      <parameter type-id='type-id-16' name='sep_obj' filepath='Objects/unicodeobject.c' line='13488' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='PyUnicode_RPartition' mangled-name='PyUnicode_RPartition' filepath='Objects/unicodeobject.c' line='13516' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_RPartition'>
-      <parameter type-id='type-id-16' name='str_obj' filepath='Objects/unicodeobject.c' line='13464' column='1'/>
-      <parameter type-id='type-id-16' name='sep_obj' filepath='Objects/unicodeobject.c' line='13464' column='1'/>
+    <function-decl name='PyUnicode_RPartition' mangled-name='PyUnicode_RPartition' filepath='Objects/unicodeobject.c' line='13540' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_RPartition'>
+      <parameter type-id='type-id-16' name='str_obj' filepath='Objects/unicodeobject.c' line='13488' column='1'/>
+      <parameter type-id='type-id-16' name='sep_obj' filepath='Objects/unicodeobject.c' line='13488' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_WriteSubstring' mangled-name='_PyUnicodeWriter_WriteSubstring' filepath='Objects/unicodeobject.c' line='14205' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteSubstring'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14205' column='1'/>
-      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='14205' column='1'/>
-      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='14206' column='1'/>
-      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='14206' column='1'/>
+    <function-decl name='_PyUnicodeWriter_WriteSubstring' mangled-name='_PyUnicodeWriter_WriteSubstring' filepath='Objects/unicodeobject.c' line='14229' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_WriteSubstring'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14229' column='1'/>
+      <parameter type-id='type-id-16' name='str' filepath='Objects/unicodeobject.c' line='14229' column='1'/>
+      <parameter type-id='type-id-31' name='start' filepath='Objects/unicodeobject.c' line='14230' column='1'/>
+      <parameter type-id='type-id-31' name='end' filepath='Objects/unicodeobject.c' line='14230' column='1'/>
       <return type-id='type-id-9'/>
     </function-decl>
-    <function-decl name='_PyUnicodeWriter_Finish' mangled-name='_PyUnicodeWriter_Finish' filepath='Objects/unicodeobject.c' line='14314' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_Finish'>
-      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14314' column='1'/>
+    <function-decl name='_PyUnicodeWriter_Finish' mangled-name='_PyUnicodeWriter_Finish' filepath='Objects/unicodeobject.c' line='14338' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicodeWriter_Finish'>
+      <parameter type-id='type-id-451' name='writer' filepath='Objects/unicodeobject.c' line='14338' column='1'/>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyUnicode_Decode' mangled-name='PyUnicode_Decode' filepath='Objects/unicodeobject.c' line='3583' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Decode'>
@@ -11704,28 +11712,28 @@
     <function-decl name='PyNumber_ToBase' mangled-name='PyNumber_ToBase' filepath='./Include/abstract.h' line='634' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToDecimalDigit' mangled-name='_PyUnicode_ToDecimalDigit' filepath='./Include/cpython/unicodeobject.h' line='1116' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToDecimalDigit' mangled-name='_PyUnicode_ToDecimalDigit' filepath='./Include/cpython/unicodeobject.h' line='1125' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsXidStart' mangled-name='_PyUnicode_IsXidStart' filepath='./Include/cpython/unicodeobject.h' line='1060' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsXidStart' mangled-name='_PyUnicode_IsXidStart' filepath='./Include/cpython/unicodeobject.h' line='1069' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsXidContinue' mangled-name='_PyUnicode_IsXidContinue' filepath='./Include/cpython/unicodeobject.h' line='1064' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsXidContinue' mangled-name='_PyUnicode_IsXidContinue' filepath='./Include/cpython/unicodeobject.h' line='1073' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='wmemcmp' mangled-name='wmemcmp' filepath='/usr/include/wchar.h' line='258' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsWhitespace' mangled-name='_PyUnicode_IsWhitespace' filepath='./Include/cpython/unicodeobject.h' line='1068' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsWhitespace' mangled-name='_PyUnicode_IsWhitespace' filepath='./Include/cpython/unicodeobject.h' line='1077' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsLinebreak' mangled-name='_PyUnicode_IsLinebreak' filepath='./Include/cpython/unicodeobject.h' line='1072' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsLinebreak' mangled-name='_PyUnicode_IsLinebreak' filepath='./Include/cpython/unicodeobject.h' line='1081' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsCaseIgnorable' mangled-name='_PyUnicode_IsCaseIgnorable' filepath='./Include/cpython/unicodeobject.h' line='1108' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsCaseIgnorable' mangled-name='_PyUnicode_IsCaseIgnorable' filepath='./Include/cpython/unicodeobject.h' line='1117' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsCased' mangled-name='_PyUnicode_IsCased' filepath='./Include/cpython/unicodeobject.h' line='1112' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsCased' mangled-name='_PyUnicode_IsCased' filepath='./Include/cpython/unicodeobject.h' line='1121' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyCodec_StrictErrors' mangled-name='PyCodec_StrictErrors' filepath='./Include/codecs.h' line='222' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -11809,37 +11817,37 @@
     <function-decl name='_PyErr_WriteUnraisableMsg' mangled-name='_PyErr_WriteUnraisableMsg' filepath='./Include/cpython/pyerrors.h' line='195' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToUpperFull' mangled-name='_PyUnicode_ToUpperFull' filepath='./Include/cpython/unicodeobject.h' line='1098' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToUpperFull' mangled-name='_PyUnicode_ToUpperFull' filepath='./Include/cpython/unicodeobject.h' line='1107' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToLowerFull' mangled-name='_PyUnicode_ToLowerFull' filepath='./Include/cpython/unicodeobject.h' line='1088' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToLowerFull' mangled-name='_PyUnicode_ToLowerFull' filepath='./Include/cpython/unicodeobject.h' line='1097' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsUppercase' mangled-name='_PyUnicode_IsUppercase' filepath='./Include/cpython/unicodeobject.h' line='1052' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsUppercase' mangled-name='_PyUnicode_IsUppercase' filepath='./Include/cpython/unicodeobject.h' line='1061' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsLowercase' mangled-name='_PyUnicode_IsLowercase' filepath='./Include/cpython/unicodeobject.h' line='1048' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsLowercase' mangled-name='_PyUnicode_IsLowercase' filepath='./Include/cpython/unicodeobject.h' line='1057' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsNumeric' mangled-name='_PyUnicode_IsNumeric' filepath='./Include/cpython/unicodeobject.h' line='1136' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsNumeric' mangled-name='_PyUnicode_IsNumeric' filepath='./Include/cpython/unicodeobject.h' line='1145' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsDigit' mangled-name='_PyUnicode_IsDigit' filepath='./Include/cpython/unicodeobject.h' line='1132' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsDigit' mangled-name='_PyUnicode_IsDigit' filepath='./Include/cpython/unicodeobject.h' line='1141' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsDecimalDigit' mangled-name='_PyUnicode_IsDecimalDigit' filepath='./Include/cpython/unicodeobject.h' line='1128' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsDecimalDigit' mangled-name='_PyUnicode_IsDecimalDigit' filepath='./Include/cpython/unicodeobject.h' line='1137' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsAlpha' mangled-name='_PyUnicode_IsAlpha' filepath='./Include/cpython/unicodeobject.h' line='1144' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsAlpha' mangled-name='_PyUnicode_IsAlpha' filepath='./Include/cpython/unicodeobject.h' line='1153' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_IsTitlecase' mangled-name='_PyUnicode_IsTitlecase' filepath='./Include/cpython/unicodeobject.h' line='1056' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_IsTitlecase' mangled-name='_PyUnicode_IsTitlecase' filepath='./Include/cpython/unicodeobject.h' line='1065' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToFoldedFull' mangled-name='_PyUnicode_ToFoldedFull' filepath='./Include/cpython/unicodeobject.h' line='1103' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToFoldedFull' mangled-name='_PyUnicode_ToFoldedFull' filepath='./Include/cpython/unicodeobject.h' line='1112' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToTitleFull' mangled-name='_PyUnicode_ToTitleFull' filepath='./Include/cpython/unicodeobject.h' line='1093' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToTitleFull' mangled-name='_PyUnicode_ToTitleFull' filepath='./Include/cpython/unicodeobject.h' line='1102' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='wcscmp' mangled-name='wcscmp' filepath='/usr/include/wchar.h' line='106' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -12936,7 +12944,7 @@
     <function-decl name='_PyDict_LoadGlobal' mangled-name='_PyDict_LoadGlobal' filepath='./Include/cpython/dictobject.h' line='73' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_JoinArray' mangled-name='_PyUnicode_JoinArray' filepath='./Include/cpython/unicodeobject.h' line='992' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_JoinArray' mangled-name='_PyUnicode_JoinArray' filepath='./Include/cpython/unicodeobject.h' line='1001' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='_PyDict_MergeEx' mangled-name='_PyDict_MergeEx' filepath='./Include/cpython/dictobject.h' line='66' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -18810,7 +18818,7 @@
     <function-decl name='_PyMem_Strdup' mangled-name='_PyMem_Strdup' filepath='./Include/cpython/pymem.h' line='17' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_InsertThousandsGrouping' mangled-name='_PyUnicode_InsertThousandsGrouping' filepath='./Include/cpython/unicodeobject.h' line='1024' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_InsertThousandsGrouping' mangled-name='_PyUnicode_InsertThousandsGrouping' filepath='./Include/cpython/unicodeobject.h' line='1033' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
   </abi-instr>
@@ -20053,10 +20061,10 @@
     <function-decl name='PyModule_AddStringConstant' mangled-name='PyModule_AddStringConstant' filepath='./Include/modsupport.h' line='149' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToLowercase' mangled-name='_PyUnicode_ToLowercase' filepath='./Include/cpython/unicodeobject.h' line='1076' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToLowercase' mangled-name='_PyUnicode_ToLowercase' filepath='./Include/cpython/unicodeobject.h' line='1085' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_ToUppercase' mangled-name='_PyUnicode_ToUppercase' filepath='./Include/cpython/unicodeobject.h' line='1080' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_ToUppercase' mangled-name='_PyUnicode_ToUppercase' filepath='./Include/cpython/unicodeobject.h' line='1089' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='_PyBytes_Join' mangled-name='_PyBytes_Join' filepath='./Include/cpython/bytesobject.h' line='38' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -20070,7 +20078,7 @@
     </function-decl>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='./Modules/_codecsmodule.c' comp-dir-path='/src' language='LANG_C99'>
-    <function-decl name='PyInit__codecs' mangled-name='PyInit__codecs' filepath='./Modules/_codecsmodule.c' line='1064' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__codecs'>
+    <function-decl name='PyInit__codecs' mangled-name='PyInit__codecs' filepath='./Modules/_codecsmodule.c' line='1067' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__codecs'>
       <return type-id='type-id-16'/>
     </function-decl>
     <function-decl name='PyCodec_Unregister' mangled-name='PyCodec_Unregister' filepath='./Include/codecs.h' line='34' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -20082,10 +20090,10 @@
     <function-decl name='PyCodec_RegisterError' mangled-name='PyCodec_RegisterError' filepath='./Include/codecs.h' line='214' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_EncodeCharmap' mangled-name='_PyUnicode_EncodeCharmap' filepath='./Include/cpython/unicodeobject.h' line='901' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_EncodeCharmap' mangled-name='_PyUnicode_EncodeCharmap' filepath='./Include/cpython/unicodeobject.h' line='910' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='_PyUnicode_AsLatin1String' mangled-name='_PyUnicode_AsLatin1String' filepath='./Include/cpython/unicodeobject.h' line='870' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_AsLatin1String' mangled-name='_PyUnicode_AsLatin1String' filepath='./Include/cpython/unicodeobject.h' line='879' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='PyUnicode_AsRawUnicodeEscapeString' mangled-name='PyUnicode_AsRawUnicodeEscapeString' filepath='./Include/unicodeobject.h' line='626' column='1' visibility='default' binding='global' size-in-bits='64'>
@@ -20106,7 +20114,7 @@
     <function-decl name='PyUnicode_DecodeCharmap' mangled-name='PyUnicode_DecodeCharmap' filepath='./Include/unicodeobject.h' line='677' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
-    <function-decl name='PyUnicode_DecodeRawUnicodeEscape' mangled-name='PyUnicode_DecodeRawUnicodeEscape' filepath='./Include/unicodeobject.h' line='620' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyUnicode_DecodeRawUnicodeEscapeStateful' mangled-name='_PyUnicode_DecodeRawUnicodeEscapeStateful' filepath='./Include/cpython/unicodeobject.h' line='870' column='1' visibility='default' binding='global' size-in-bits='64'>
       <return type-id='type-id-4'/>
     </function-decl>
     <function-decl name='_PyUnicode_DecodeUnicodeEscapeStateful' mangled-name='_PyUnicode_DecodeUnicodeEscapeStateful' filepath='./Include/cpython/unicodeobject.h' line='838' column='1' visibility='default' binding='global' size-in-bits='64'>
