@@ -30,7 +30,7 @@ class StreamWriter(Codec,codecs.StreamWriter):
 
 class StreamReader(Codec,codecs.StreamReader):
     def decode(self, input, errors='strict'):
-        return codecs.unicode_escape_decode(input, errors, False)
+        return codecs.raw_unicode_escape_decode(input, errors, False)
 
 ### encodings module API
 

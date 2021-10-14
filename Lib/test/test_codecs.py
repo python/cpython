@@ -2484,7 +2484,7 @@ class UnicodeEscapeTest(ReadTest, unittest.TestCase):
         )
 
 class RawUnicodeEscapeTest(ReadTest, unittest.TestCase):
-    encoding = "unicode-escape"
+    encoding = "raw-unicode-escape"
 
     test_lone_surrogates = None
 
@@ -2540,21 +2540,11 @@ class RawUnicodeEscapeTest(ReadTest, unittest.TestCase):
         self.check_partial(
             "\x00\t\n\r\\\xff\uffff\U00010000",
             [
-                '',
-                '',
-                '',
-                '\x00',
                 '\x00',
                 '\x00\t',
-                '\x00\t',
-                '\x00\t\n',
                 '\x00\t\n',
                 '\x00\t\n\r',
                 '\x00\t\n\r',
-                '\x00\t\n\r\\',
-                '\x00\t\n\r\\',
-                '\x00\t\n\r\\',
-                '\x00\t\n\r\\',
                 '\x00\t\n\r\\\xff',
                 '\x00\t\n\r\\\xff',
                 '\x00\t\n\r\\\xff',

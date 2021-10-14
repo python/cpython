@@ -6379,8 +6379,6 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
         unsigned char c = (unsigned char) *s++;
         Py_UCS4 ch;
         int count;
-        Py_ssize_t startinpos;
-        Py_ssize_t endinpos;
         const char *message;
 
 #define WRITE_ASCII_CHAR(ch)                                                  \
@@ -6407,7 +6405,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
             continue;
         }
 
-        startinpos = s - starts - 1;
+        Py_ssize_t startinpos = s - starts - 1;
         /* \ - Escapes */
         if (s >= end) {
             message = "\\ at end of string";
@@ -6554,8 +6552,8 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
             *consumed = startinpos;
             break;
         }
-      error:
-        endinpos = s-starts;
+      error:;
+        Py_ssize_t endinpos = s-starts;
         writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
@@ -6768,8 +6766,6 @@ _PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s,
         unsigned char c = (unsigned char) *s++;
         Py_UCS4 ch;
         int count;
-        Py_ssize_t startinpos;
-        Py_ssize_t endinpos;
         const char *message;
 
 #define WRITE_CHAR(ch)                                                        \
@@ -6788,6 +6784,9 @@ _PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s,
             WRITE_CHAR(c);
             continue;
         }
+
+        Py_ssize_t startinpos = s - starts - 1;
+        /* \ - Escapes */
         if (s >= end) {
             assert(consumed);
             // Set message to silent compiler warning.
@@ -6811,7 +6810,6 @@ _PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s,
             WRITE_CHAR(c);
             continue;
         }
-        startinpos = s - starts - 2;
 
         /* \uHHHH with 4 hex digits, \U00HHHHHH with 8 */
         for (ch = 0; count; ++s, --count) {
@@ -6845,8 +6843,8 @@ _PyUnicode_DecodeRawUnicodeEscapeStateful(const char *s,
             *consumed = startinpos;
             break;
         }
-      error:
-        endinpos = s-starts;
+      error:;
+        Py_ssize_t endinpos = s-starts;
         writer.min_length = end - s + writer.pos;
         if (unicode_decode_call_errorhandler_writer(
                 errors, &errorHandler,
