@@ -254,16 +254,9 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 #define PyUnicode_GET_DATA_SIZE(op) \
     (PyUnicode_GET_SIZE(op) * Py_UNICODE_SIZE)
 
-/* Alias for PyUnicode_AsUnicode().  This will create a wchar_t/Py_UNICODE
-   representation on demand.  Using this macro is very inefficient now,
-   try to port your code to use the new PyUnicode_*BYTE_DATA() macros or
-   use PyUnicode_WRITE() and PyUnicode_READ(). */
-
+/* Alias for PyUnicode_AsUnicode(). */
 /* Py_DEPRECATED(3.3) */
-#define PyUnicode_AS_UNICODE(op) \
-    (assert(PyUnicode_Check(op)), \
-     (((PyASCIIObject *)(op))->wstr) ? (((PyASCIIObject *)(op))->wstr) : \
-      PyUnicode_AsUnicode(_PyObject_CAST(op)))
+#define PyUnicode_AS_UNICODE(op) PyUnicode_AsUnicode(_PyObject_CAST(op))
 
 /* Py_DEPRECATED(3.3) */
 #define PyUnicode_AS_DATA(op) \

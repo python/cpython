@@ -1,0 +1,9 @@
+Convert the following macros to static inline functions to disallow using
+them as l-value:
+
+* :c:func:`PyByteArray_AS_STRING`
+* :c:func:`PyBytes_AS_STRING`
+* :c:func:`PyFloat_AS_DOUBLE`
+
+Moreover, :c:func:`PyUnicode_AS_UNICODE` becomes an alias to
+:c:func:`PyUnicode_AsUnicode`. Patch by Victor Stinner.
