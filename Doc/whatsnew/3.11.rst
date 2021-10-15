@@ -461,7 +461,8 @@ Build Changes
   (Contributed by Mike Gilbert in :issue:`45433`.)
 
 * Building Python now requires a C99 ``<math.h>`` header file providing
-  ``isinf()``, ``isnan()`` and ``isfinite()`` functions.
+  the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
+  ``isinf()``, ``isnan()``, ``round()``.
   (Contributed by Victor Stinner in :issue:`45440`.)
 
 C API Changes
