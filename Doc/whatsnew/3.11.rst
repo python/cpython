@@ -583,13 +583,6 @@ Porting to Python 3.11
 Deprecated
 ----------
 
-Removed
--------
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
-  removed.
-  (Contributed by Mark Shannon in :issue:`40222`.)
-
 * Deprecate the following functions to configure the Python initialization:
 
   * :c:func:`PySys_AddWarnOptionUnicode`
@@ -605,6 +598,13 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Remove the following math macros using the ``errno`` variable:
 
