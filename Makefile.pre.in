@@ -1127,7 +1127,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/boolobject.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
-		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
 		$(srcdir)/Include/classobject.h \
 		$(srcdir)/Include/code.h \
@@ -1201,6 +1200,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/bytearrayobject.h \
 		$(srcdir)/Include/cpython/bytesobject.h \
+		$(srcdir)/Include/cpython/cellobject.h \
 		$(srcdir)/Include/cpython/ceval.h \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
