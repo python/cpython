@@ -515,6 +515,20 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.call_count
             2
 
+    .. attribute:: call_event
+
+        An object that can be used in multithreaded tests to assert that a call was made.
+
+        - :meth:`wait(/, skip=0, timeout=None)` asserts that mock is called
+          *skip* + 1 times during the *timeout*
+
+        - :meth:`wait_for(predicate, /, timeout=None)` asserts that
+          *predicate* was ``True`` at least once during the *timeout*;
+          *predicate* receives exactly one positional argument: the mock itself
+
+        - :meth:`wait_for_call(call, /, skip=0, timeout=None)` asserts that
+          *call* has happened at least *skip* + 1 times during the *timeout*
+
     .. attribute:: return_value
 
         Set this to configure the value returned by calling the mock:

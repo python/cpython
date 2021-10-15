@@ -70,6 +70,25 @@ the ``something`` method:
     >>> real.method()
     >>> real.something.assert_called_once_with(1, 2, 3)
 
+When testing mutltithreaded code it may be important to ensure that certain
+method is eventually called, e.g. as a result of scheduling asynchronous
+operation. :attr:`~Mock.call_event` exposes methods that allow to assert that:
+
+    >>> from threading import Timer
+    >>>
+    >>> class ProductionClass:
+    ...     def method(self):
+    ...         self.t1 = Timer(0.1, self.something, args=(1, 2, 3))
+    ...         self.t1.start()
+    ...         self.t2 = Timer(0.1, self.something, args=(4, 5, 6))
+    ...         self.t2.start()
+    ...     def something(self, a, b, c):
+    ...         pass
+    ...
+    >>> real = ProductionClass()
+    >>> real.something = MagicMock()
+    >>> real.method()
+    >>> real.something.call_event.wait_for_call(call(4, 5, 6), timeout=1.0)
 
 
 Mock for Method Calls on an Object

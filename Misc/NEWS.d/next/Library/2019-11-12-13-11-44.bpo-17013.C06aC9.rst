@@ -1,0 +1,2 @@
+Add :attr:`call_event` to :class:`Mock` that allows to wait for the calls in
+multithreaded tests. Patch by Ilya Kulakov.

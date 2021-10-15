@@ -5,7 +5,7 @@ import tempfile
 
 from test.support import ALWAYS_EQ
 import unittest
-from unittest.test.testmock.support import is_instance
+from unittest.test.testmock.support import is_instance, run_async
 from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,
@@ -2248,6 +2248,78 @@ class MockTest(unittest.TestCase):
         with patch.multiple(
             f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
             pass
+
+    def test_wait_until_called_before(self):
+        mock = Mock(spec=Something)()
+        mock.method_1()
+        mock.method_1.call_event.wait()
+        mock.method_1.assert_called_once()
+
+    def test_wait_until_called(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, delay=0.01)
+        mock.method_1.call_event.wait()
+        mock.method_1.assert_called_once()
+
+    def test_wait_until_called_magic_method(self):
+        mock = MagicMock(spec=Something)()
+        run_async(mock.method_1.__str__, delay=0.01)
+        mock.method_1.__str__.call_event.wait()
+        mock.method_1.__str__.assert_called_once()
+
+    def test_wait_until_called_timeout(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, delay=0.2)
+
+        with self.assertRaises(AssertionError):
+            mock.method_1.call_event.wait(timeout=0.1)
+
+        mock.method_1.assert_not_called()
+        mock.method_1.call_event.wait()
+        mock.method_1.assert_called_once()
+
+    def test_wait_until_any_call_positional(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, 1, delay=0.1)
+        run_async(mock.method_1, 2, delay=0.2)
+        run_async(mock.method_1, 3, delay=0.3)
+
+        for arg in (1, 2, 3):
+            self.assertNotIn(call(arg), mock.method_1.mock_calls)
+            mock.method_1.call_event.wait_for(lambda m: call(arg) in m.call_args_list)
+            mock.method_1.assert_called_with(arg)
+
+    def test_wait_until_any_call_keywords(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, a=1, delay=0.1)
+        run_async(mock.method_1, a=2, delay=0.2)
+        run_async(mock.method_1, a=3, delay=0.3)
+
+        for arg in (1, 2, 3):
+            self.assertNotIn(call(arg), mock.method_1.mock_calls)
+            mock.method_1.call_event.wait_for(lambda m: call(a=arg) in m.call_args_list)
+            mock.method_1.assert_called_with(a=arg)
+
+    def test_wait_until_any_call_no_argument(self):
+        mock = Mock(spec=Something)()
+        mock.method_1(1)
+        mock.method_1.assert_called_once_with(1)
+
+        with self.assertRaises(AssertionError):
+            mock.method_1.call_event.wait_for(lambda m: call() in m.call_args_list, timeout=0.01)
+
+        mock.method_1()
+        mock.method_1.call_event.wait_for(lambda m: call() in m.call_args_list, timeout=0.01)
+
+    def test_wait_until_call(self):
+        mock = Mock(spec=Something)()
+        mock.method_1()
+        run_async(mock.method_1, 1, a=1, delay=0.1)
+
+        with self.assertRaises(AssertionError):
+            mock.method_1.call_event.wait_for_call(call(1, a=1), timeout=0.01)
+
+        mock.method_1.call_event.wait_for_call(call(1, a=1))
 
 
 if __name__ == '__main__':
