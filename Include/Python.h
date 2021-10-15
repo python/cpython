@@ -68,7 +68,7 @@
 #include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
-#include "cellobject.h"
+#include "cpython/cellobject.h"
 #include "iterobject.h"
 #include "genobject.h"
 #include "descrobject.h"
