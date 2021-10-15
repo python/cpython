@@ -16,7 +16,7 @@
 #include "pycore_symtable.h"      // PySTEntry_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "frameobject.h"          // PyFrame_Type
-#include "interpreteridobject.h"  // _PyInterpreterID_Type
+#include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
