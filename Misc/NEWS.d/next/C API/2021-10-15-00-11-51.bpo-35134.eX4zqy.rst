@@ -1,3 +1,4 @@
-Move ``cellobject.h`` and ``funcobject.h`` header files from ``Include/`` to
+Move ``cellobject.h``, ``classobject.h``, ``context.h``, ``funcobject.h``,
+``genobject.h`` and ``longintrepr.h`` header files from ``Include/`` to
 ``Include/cpython/``. C extensions should only include the main ``<Python.h>``
 header. Patch by Victor Stinner.
