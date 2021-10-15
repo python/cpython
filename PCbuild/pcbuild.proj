@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CC9B93A2-439D-4058-9D29-6DCF43774405}</ProjectGuid>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
@@ -15,9 +18,7 @@
 
   <ItemDefinitionGroup>
     <FreezeProjects>
-      <Platform>$(Platform)</Platform>
-      <Platform Condition="$(Platform) == 'ARM'">Win32</Platform>
-      <Platform Condition="$(Platform) == 'ARM64'">x64</Platform>
+      <Platform>$(PreferredToolArchitecture)</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Configuration Condition="$(Configuration) == 'PGInstrument'">Release</Configuration>
       <Properties></Properties>

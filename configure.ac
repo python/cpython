@@ -717,9 +717,6 @@ then
 fi
 
 
-MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-AC_SUBST(MULTIARCH)
-
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
 cat >> conftest.c <<EOF
 #undef bfin
@@ -874,6 +871,11 @@ else
   AC_MSG_RESULT([none])
 fi
 rm -f conftest.c conftest.out
+
+if test x$PLATFORM_TRIPLET != xdarwin; then
+  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+fi
+AC_SUBST(MULTIARCH)
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
@@ -3036,16 +3038,19 @@ fi
 # str, bytes and memoryview hash algorithm
 AH_TEMPLATE(Py_HASH_ALGORITHM,
   [Define hash algorithm for str, bytes and memoryview.
-   SipHash24: 1, FNV: 2, externally defined: 0])
+   SipHash24: 1, FNV: 2, SipHash13: 3, externally defined: 0])
 
 AC_MSG_CHECKING(for --with-hash-algorithm)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(hash_algorithm,
-            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash24@:>@],
-                           [select hash algorithm for use in Python/pyhash.c (default is SipHash24)]),
+            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash13|siphash24@:>@],
+                           [select hash algorithm for use in Python/pyhash.c (default is SipHash13)]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in
+    siphash13)
+        AC_DEFINE(Py_HASH_ALGORITHM, 3)
+        ;;
     siphash24)
         AC_DEFINE(Py_HASH_ALGORITHM, 1)
         ;;
@@ -3099,8 +3104,11 @@ AC_SUBST(TZPATH)
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
-# Haiku system library
-AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+case $ac_sys_system/$ac_sys_release in
+    Haiku*)
+        AC_CHECK_LIB(network, socket, [LIBS="-lnetwork $LIBS"], [], $LIBS)
+    ;;
+esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
@@ -3744,7 +3752,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -4079,6 +4087,8 @@ AC_CHECK_FUNCS(setpgrp,
 
 # We search for both crypt and crypt_r as one or the other may be defined
 # This gets us our -lcrypt in LIBS when required on the target platform.
+# Save/restore LIBS to avoid linking libpython with libcrypt.
+LIBS_SAVE=$LIBS
 AC_SEARCH_LIBS(crypt, crypt)
 AC_SEARCH_LIBS(crypt_r, crypt)
 
@@ -4093,6 +4103,7 @@ char *r = crypt_r("", "", &d);
     [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
     [])
 )
+LIBS=$LIBS_SAVE
 
 AC_CHECK_FUNCS(clock_gettime, [], [
     AC_CHECK_LIB(rt, clock_gettime, [
@@ -4666,7 +4677,6 @@ LIBS="$LIBS $LIBM"
 
 AC_CHECK_FUNCS([acosh asinh atanh copysign erf erfc expm1 finite gamma])
 AC_CHECK_FUNCS([hypot lgamma log1p log2 round tgamma])
-AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,

@@ -44,7 +44,7 @@ Key terms
   ``venv``. It allows virtual environments to be used on versions of
   Python prior to 3.4, which either don't provide ``venv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* The `Python Packaging Index <https://pypi.org>`__ is a public
+* The `Python Package Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users.
 * the `Python Packaging Authority
@@ -78,7 +78,7 @@ The standard packaging tools are all designed to be used from the command
 line.
 
 The following command will install the latest version of a module and its
-dependencies from the Python Packaging Index::
+dependencies from the Python Package Index::
 
     python -m pip install SomePackage
 
@@ -226,7 +226,7 @@ the installation process.
 
 With the introduction of support for the binary ``wheel`` format, and the
 ability to publish wheels for at least Windows and macOS through the
-Python Packaging Index, this problem is expected to diminish over time,
+Python Package Index, this problem is expected to diminish over time,
 as users are more regularly able to install pre-built extensions rather
 than needing to build them themselves.
 

@@ -1,22 +1,9 @@
 #include "Python.h"
 
-#ifdef X87_DOUBLE_ROUNDING
-/* On x86 platforms using an x87 FPU, this function is called from the
-   Py_FORCE_DOUBLE macro (defined in pymath.h) to force a floating-point
-   number out of an 80-bit x87 FPU register and into a 64-bit memory location,
-   thus rounding from extended precision to double precision. */
-double _Py_force_double(double x)
-{
-    volatile double y;
-    y = x;
-    return y;
-}
-#endif
 
 #ifdef HAVE_GCC_ASM_FOR_X87
-
-/* inline assembly for getting and setting the 387 FPU control word on
-   gcc/x86 */
+// Inline assembly for getting and setting the 387 FPU control word on
+// GCC/x86.
 #ifdef _Py_MEMORY_SANITIZER
 __attribute__((no_sanitize_memory))
 #endif
@@ -29,8 +16,7 @@ unsigned short _Py_get_387controlword(void) {
 void _Py_set_387controlword(unsigned short cw) {
     __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
 }
-
-#endif
+#endif  // HAVE_GCC_ASM_FOR_X87
 
 
 #ifndef HAVE_HYPOT

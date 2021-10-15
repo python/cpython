@@ -83,8 +83,17 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xa', '-Xb=c,d=e')
-        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
+        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
+        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
+
+    @unittest.skipIf(interpreter_requires_environment(),
+                     'Cannot run -E tests when PYTHON env vars are required.')
+    def test_unknown_xoptions(self):
+        rc, out, err = assert_python_failure('-X', 'blech')
+        self.assertIn(b'Unknown value for option -X', err)
+        msg = b'Fatal Python error: Unknown value for option -X'
+        self.assertEqual(err.splitlines().count(msg), 1)
+        self.assertEqual(b'', out)
 
     def test_showrefcount(self):
         def run_python(*args):

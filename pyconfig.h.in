@@ -136,14 +136,14 @@
 /* Define to 1 if you have the `clock' function. */
 #undef HAVE_CLOCK
 
-/* Define to 1 if you have the `clock_nanosleep' function. */
-#undef HAVE_CLOCK_NANOSLEEP
-
 /* Define to 1 if you have the `clock_getres' function. */
 #undef HAVE_CLOCK_GETRES
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the `clock_nanosleep' function. */
+#undef HAVE_CLOCK_NANOSLEEP
 
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
@@ -213,18 +213,6 @@
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
-
-/* Define to 1 if you have the declaration of `isfinite', and to 0 if you
-   don't. */
-#undef HAVE_DECL_ISFINITE
-
-/* Define to 1 if you have the declaration of `isinf', and to 0 if you don't.
-   */
-#undef HAVE_DECL_ISINF
-
-/* Define to 1 if you have the declaration of `isnan', and to 0 if you don't.
-   */
-#undef HAVE_DECL_ISNAN
 
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -908,6 +896,9 @@
 /* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
 
+/* Define to 1 if you have the `sem_clockwait' function. */
+#undef HAVE_SEM_CLOCKWAIT
+
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
 
@@ -1436,7 +1427,7 @@
 #undef Py_ENABLE_SHARED
 
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
-   externally defined: 0 */
+   SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
 /* Define if you want to enable tracing references for debugging purpose */
