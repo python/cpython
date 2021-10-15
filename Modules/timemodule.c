@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_namespace.h"     // _PyNamespace_New()
 
 #include <ctype.h>
 
