@@ -14,14 +14,13 @@ TODO:
 """
 from os import path
 
-# PYTHON_EXTENSIONS is used in editor, browser, and iomenu.
 # .pyw is for Windows; .pyi is for stub files.
 PYTHON_EXTENSIONS = frozenset({'.py', '.pyw', '.pyi'})
 
 
-def is_python_extension(extension, is_valid=PYTHON_EXTENSIONS.__contains__):
-    """Identify whether a given string is a valid Python file extension"""
-    return is_valid(extension)
+def is_python_extension(extension, valid_extensions=PYTHON_EXTENSIONS):
+    """Identify whether a given string is a valid Python file extension."""
+    return extension in valid_extensions
 
 
 def is_python_source(filepath, firstline=None):
@@ -29,8 +28,8 @@ def is_python_source(filepath, firstline=None):
     if not filepath or path.isdir(filepath):
         return True
     base, ext = path.splitext(path.basename(filepath))
-    return is_python_extension(path.normcase(ext)) or all((
-        firstline is not None,
-        firstline.startswith('#!'),
-        'python' in firstline
-    ))
+    return is_python_extension(path.normcase(ext)) or (
+        firstline is not None
+        and firstline.startswith('#!')
+        and 'python' in firstline
+    )

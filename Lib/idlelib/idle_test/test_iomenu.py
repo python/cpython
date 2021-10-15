@@ -1,6 +1,6 @@
 "Test , coverage 17%."
 
-from idlelib import iomenu
+from idlelib import iomenu, util
 import unittest
 from test.support import requires
 from tkinter import Tk
@@ -44,23 +44,24 @@ class IOBindingTest(unittest.TestCase):
         eq(text.get('1.0', 'end-1c'), 'a\n')
         eq(fix(), 'a'+io.eol_convention)
 
-    def check_filetype(self, ext):
-        return any(
-            ext in filetype_tuple[1] for filetype_tuple in self.io.filetypes
-        )
 
-    def test_python_files(self):
-        self.assertTrue(self.check_filetype('*.py'))
-        self.assertTrue(self.check_filetype('*.pyw'))
+def _extension_is_in_IOBinding_dot_filetypes(extension):
+    return any(
+        extension in filetype_tuple[1]
+        for filetype_tuple in iomenu.IOBinding.filetypes
+    )
 
-    def test_python_stub_files(self):
-        self.assertTrue(self.check_filetype('*.pyi'))
+
+class FiletypesTest(unittest.TestCase):
+    def test_python_source_files(self):
+        for extension in util.PYTHON_EXTENSIONS:
+            self.assertTrue(_extension_is_in_IOBinding_dot_filetypes(extension))
 
     def test_text_files(self):
-        self.assertTrue(self.check_filetype('*.txt'))
+        self.assertTrue(_extension_is_in_IOBinding_dot_filetypes('*.txt'))
 
     def test_all_files(self):
-        self.assertTrue(self.check_filetype('*'))
+        self.assertTrue(_extension_is_in_IOBinding_dot_filetypes('*'))
 
 
 if __name__ == '__main__':
