@@ -13,7 +13,6 @@
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "longintrepr.h"
 #include "code.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
 

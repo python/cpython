@@ -54,9 +54,6 @@
     <ClInclude Include="..\Include\ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\classobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\code.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -67,9 +64,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\complexobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\context.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
@@ -105,9 +99,6 @@
     <ClInclude Include="..\Include\frameobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\genobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\import.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -118,9 +109,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\listobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\longintrepr.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
@@ -375,11 +363,17 @@
     <ClInclude Include="..\Include\cpython\ceval.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\classobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\code.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\compile.h">
       <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\context.h">
+      <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include\cpython</Filter>
@@ -398,6 +392,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\longintrepr.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\odictobject.h">
       <Filter>Include</Filter>
@@ -455,6 +452,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\funcobject.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\genobject.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\interpreteridobject.h">
       <Filter>Include\cpython</Filter>
