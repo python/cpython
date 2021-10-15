@@ -1,0 +1,1 @@
+Fix a regression in py_compile when reading filenames from standard input.
