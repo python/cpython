@@ -816,12 +816,13 @@ class CodecCallbackTest(unittest.TestCase):
                 ("utf-16", "[\udc80]", "\U0001f40d"),
                 ("utf-32", "[\udc80]", "\U0001f40d"),
         ):
-            with self.assertRaises(UnicodeEncodeError) as cm:
-                input.encode(enc, "test.replacing")
-            exc = cm.exception
-            self.assertEqual(exc.start, 1)
-            self.assertEqual(exc.end, 2)
-            self.assertEqual(exc.object, input)
+            with self.subTest(encoding=enc):
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    input.encode(enc, "test.replacing")
+                exc = cm.exception
+                self.assertEqual(exc.start, 1)
+                self.assertEqual(exc.end, 2)
+                self.assertEqual(exc.object, input)
 
     def test_encode_unencodable_replacement(self):
         def unencrepl(exc):
@@ -839,12 +840,13 @@ class CodecCallbackTest(unittest.TestCase):
                 ("utf-16", "[\udc80]", "\udcff"),
                 ("utf-32", "[\udc80]", "\udcff"),
         ):
-            with self.assertRaises(UnicodeEncodeError) as cm:
-                input.encode(enc, "test.unencreplhandler")
-            exc = cm.exception
-            self.assertEqual(exc.start, 1)
-            self.assertEqual(exc.end, 2)
-            self.assertEqual(exc.object, input)
+            with self.subTest(encoding=enc):
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    input.encode(enc, "test.unencreplhandler")
+                exc = cm.exception
+                self.assertEqual(exc.start, 1)
+                self.assertEqual(exc.end, 2)
+                self.assertEqual(exc.object, input)
 
     def test_encode_bytes_replacement(self):
         def handle(exc):
@@ -864,8 +866,9 @@ class CodecCallbackTest(unittest.TestCase):
                 ("utf-32le", "[\udc80]", b"\xbc\xbd\xbe\xbf"),
                 ("utf-32be", "[\udc80]", b"\xbc\xbd\xbe\xbf"),
         ):
-            res = input.encode(enc, "test.replacing")
-            self.assertEqual(res, "[".encode(enc) + repl + "]".encode(enc))
+            with self.subTest(encoding=enc):
+                res = input.encode(enc, "test.replacing")
+                self.assertEqual(res, "[".encode(enc) + repl + "]".encode(enc))
 
     def test_encode_odd_bytes_replacement(self):
         def handle(exc):
@@ -883,13 +886,14 @@ class CodecCallbackTest(unittest.TestCase):
             *itertools.product(("utf-32le", "utf-32be"),
                                [b"a", b"ab", b"abc", b"abcde"]),
         ):
-            with self.assertRaises(UnicodeEncodeError) as cm:
-                input.encode(enc, "test.replacing")
-            exc = cm.exception
-            self.assertEqual(exc.start, 1)
-            self.assertEqual(exc.end, 2)
-            self.assertEqual(exc.object, input)
-            self.assertEqual(exc.reason, "surrogates not allowed")
+            with self.subTest(encoding=enc, repl=repl):
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    input.encode(enc, "test.replacing")
+                exc = cm.exception
+                self.assertEqual(exc.start, 1)
+                self.assertEqual(exc.end, 2)
+                self.assertEqual(exc.object, input)
+                self.assertEqual(exc.reason, "surrogates not allowed")
 
     def test_badregistercall(self):
         # enhance coverage of:
