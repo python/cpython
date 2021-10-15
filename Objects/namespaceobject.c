@@ -72,8 +72,12 @@ namespace_repr(PyObject *ns)
     PyObject *separator, *pairsrepr, *repr = NULL;
     const char * name;
 
-    name = Py_IS_TYPE(ns, &_PyNamespace_Type) ? "namespace"
-                                               : Py_TYPE(ns)->tp_name;
+    if (Py_IS_TYPE(ns, &_PySimpleNamespace_Type)) {
+        name = "namespace";
+    }
+    else {
+        name = Py_TYPE(ns)->tp_name;
+    }
 
     i = Py_ReprEnter(ns);
     if (i != 0) {
@@ -163,8 +167,8 @@ namespace_clear(_PyNamespaceObject *ns)
 static PyObject *
 namespace_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (PyObject_TypeCheck(self, &_PyNamespace_Type) &&
-        PyObject_TypeCheck(other, &_PyNamespace_Type))
+    if (PyObject_TypeCheck(self, &_PySimpleNamespace_Type) &&
+        PyObject_TypeCheck(other, &_PySimpleNamespace_Type))
         return PyObject_RichCompare(((_PyNamespaceObject *)self)->ns_dict,
                                    ((_PyNamespaceObject *)other)->ns_dict, op);
     Py_RETURN_NOTIMPLEMENTED;
@@ -199,7 +203,7 @@ PyDoc_STRVAR(namespace_doc,
 \n\
 SimpleNamespace(**kwargs)");
 
-PyTypeObject _PyNamespace_Type = {
+PyTypeObject _PySimpleNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "types.SimpleNamespace",                    /* tp_name */
     sizeof(_PyNamespaceObject),                 /* tp_basicsize */
@@ -244,18 +248,28 @@ PyTypeObject _PyNamespace_Type = {
 
 
 PyObject *
-_PyNamespace_New(PyObject *kwds)
+PySimpleNamespace_New(PyObject *attrs)
 {
-    PyObject *ns = namespace_new(&_PyNamespace_Type, NULL, NULL);
-    if (ns == NULL)
-        return NULL;
-
-    if (kwds == NULL)
-        return ns;
-    if (PyDict_Update(((_PyNamespaceObject *)ns)->ns_dict, kwds) != 0) {
-        Py_DECREF(ns);
+    PyObject *ns = namespace_new(&_PySimpleNamespace_Type, NULL, NULL);
+    if (ns == NULL) {
         return NULL;
     }
 
-    return (PyObject *)ns;
+    if (attrs != NULL) {
+        _Py_IDENTIFIER(update);
+
+        PyObject *dict = ((_PyNamespaceObject *)ns)->ns_dict;
+        // Call dict.update() rather than PyDict_Update() to raise TypeError if
+        // attrs has the wrong type and to raise ValueError if it has the wrong
+        // format. PyDict_Update() raises AttributeError if attrs has the wrong
+        // type.
+        PyObject *res = _PyObject_CallMethodIdObjArgs(dict, &PyId_update,
+                                                      attrs, NULL);
+        if (res == NULL) {
+            Py_DECREF(ns);
+            return NULL;
+        }
+        Py_DECREF(res);
+    }
+    return ns;
 }

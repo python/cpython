@@ -1733,6 +1733,33 @@ class SimpleNamespaceTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             types.SimpleNamespace() >= FakeSimpleNamespace()
 
+    def test_capi(self):
+        from test.support import import_helper
+        _testcapi = import_helper.import_module('_testcapi')
+        PySimpleNamespace_New = _testcapi.PySimpleNamespace_New
+
+        def list_attributes(obj):
+            return [name for name in dir(obj) if not name.startswith('_')]
+
+        ns = PySimpleNamespace_New({})
+        self.assertIsInstance(ns, types.SimpleNamespace)
+        self.assertEqual(list_attributes(ns), [])
+
+        value1 = 'value'
+        value2 = 2
+        ns = PySimpleNamespace_New({'attr1': value1, 'attr2': value2})
+        self.assertIsInstance(ns, types.SimpleNamespace)
+        self.assertEqual(list_attributes(ns), ['attr1', 'attr2'])
+        self.assertIs(ns.attr1, value1)
+        self.assertIs(ns.attr2, value2)
+
+        with self.assertRaises(TypeError):
+            PySimpleNamespace_New(123)
+        with self.assertRaises(ValueError):
+            PySimpleNamespace_New('string')
+        with self.assertRaises(ValueError):
+            PySimpleNamespace_New([('key', 'value', 'extra')])
+
 
 class CoroutineTests(unittest.TestCase):
     def test_wrong_args(self):

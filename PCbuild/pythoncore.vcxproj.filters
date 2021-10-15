@@ -342,9 +342,6 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\namespaceobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\interpreteridobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -408,10 +405,13 @@
     <ClInclude Include="..\Include\cpython\methodobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\objimpl.h">
-      <Filter>Include\cpython</Filter>
+    <ClInclude Include="..\Include\cpython\namespaceobject.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\objimpl.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\parser_interface.h">

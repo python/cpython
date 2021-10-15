@@ -1947,7 +1947,7 @@ _PyTypes_Init(void)
     INIT_TYPE(_PyInterpreterID_Type);
     INIT_TYPE(_PyManagedBuffer_Type);
     INIT_TYPE(_PyMethodWrapper_Type);
-    INIT_TYPE(_PyNamespace_Type);
+    INIT_TYPE(_PySimpleNamespace_Type);
     INIT_TYPE(_PyNone_Type);
     INIT_TYPE(_PyNotImplemented_Type);
     INIT_TYPE(_PyWeakref_CallableProxyType);

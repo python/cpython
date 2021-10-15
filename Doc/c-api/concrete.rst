@@ -83,6 +83,7 @@ Container Objects
 
    dict.rst
    set.rst
+   simplenamespace.rst
 
 
 .. _otherobjects:

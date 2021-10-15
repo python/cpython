@@ -2717,7 +2717,7 @@ make_impl_info(PyObject *version_info)
 
     /* dict ready */
 
-    ns = _PyNamespace_New(impl_info);
+    ns = PySimpleNamespace_New(impl_info);
     Py_DECREF(impl_info);
     return ns;
 

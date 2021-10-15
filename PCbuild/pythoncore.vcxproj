@@ -140,6 +140,7 @@
     <ClInclude Include="..\Include\cpython\interpreteridobject.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
+    <ClInclude Include="..\Include\cpython\namespaceobject.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
@@ -231,7 +232,6 @@
     <ClInclude Include="..\Include\methodobject.h" />
     <ClInclude Include="..\Include\modsupport.h" />
     <ClInclude Include="..\Include\moduleobject.h" />
-    <ClInclude Include="..\Include\namespaceobject.h" />
     <ClInclude Include="..\Include\object.h" />
     <ClInclude Include="..\Include\objimpl.h" />
     <ClInclude Include="..\Include\opcode.h" />

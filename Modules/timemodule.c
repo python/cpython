@@ -1653,7 +1653,7 @@ time_get_clock_info(PyObject *self, PyObject *args)
     }
     Py_CLEAR(obj);
 
-    ns = _PyNamespace_New(dict);
+    ns = PySimpleNamespace_New(dict);
     Py_DECREF(dict);
     return ns;
 

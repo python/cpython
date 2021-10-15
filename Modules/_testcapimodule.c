@@ -1167,7 +1167,7 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "int") == 0);
     Py_DECREF(tp_qualname);
 
-    tp_qualname = PyType_GetQualName(&_PyNamespace_Type);
+    tp_qualname = PyType_GetQualName(&_PySimpleNamespace_Type);
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "SimpleNamespace") == 0);
     Py_DECREF(tp_qualname);
 
@@ -5674,6 +5674,18 @@ type_get_version(PyObject *self, PyObject *type)
 }
 
 
+static PyObject *
+test_simplenamespace(PyObject *self, PyObject *args)
+{
+    PyObject *items = NULL;
+    if (!PyArg_ParseTuple(args, "|O", &items)) {
+        return NULL;
+    }
+
+    return PySimpleNamespace_New(items);
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
@@ -5957,6 +5969,7 @@ static PyMethodDef TestMethods[] = {
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"PySimpleNamespace_New", test_simplenamespace, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

@@ -2479,7 +2479,7 @@ _PyImport_BootstrapImp(PyThreadState *tstate)
     if (attrs == NULL) {
         goto error;
     }
-    PyObject *spec = _PyNamespace_New(attrs);
+    PyObject *spec = PySimpleNamespace_New(attrs);
     Py_DECREF(attrs);
     if (spec == NULL) {
         goto error;
