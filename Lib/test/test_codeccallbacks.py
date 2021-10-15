@@ -1056,7 +1056,7 @@ class CodecCallbackTest(unittest.TestCase):
                 self.assertEqual(decoded, 'abcdx' * 51)
 
     def test_encodehelper_bug36819(self):
-        handler = RepeatedPosReturn("x")
+        handler = RepeatedPosReturn()
         codecs.register_error("test.bug36819", handler.handle)
 
         input = "abcd\udc80"
@@ -1064,6 +1064,27 @@ class CodecCallbackTest(unittest.TestCase):
         encodings += ["iso-8859-15"]  # charmap codec
         if sys.platform == 'win32':
             encodings = ["mbcs", "oem"]  # code page codecs
+
+        handler.repl = "\udcff"
+        for enc in encodings:
+            with self.subTest(encoding=enc):
+                handler.count = 50
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    input.encode(enc, "test.bug36819")
+                exc = cm.exception
+                self.assertEqual(exc.start, 4)
+                self.assertEqual(exc.end, 5)
+                self.assertEqual(exc.object, input)
+        if sys.platform == "win32":
+            handler.count = 50
+            with self.assertRaises(UnicodeEncodeError) as cm:
+                codecs.code_page_encode(437, input, "test.bug36819")
+            exc = cm.exception
+            self.assertEqual(exc.start, 4)
+            self.assertEqual(exc.end, 5)
+            self.assertEqual(exc.object, input)
+
+        handler.repl = "x"
         for enc in encodings:
             with self.subTest(encoding=enc):
                 # The interpreter should segfault after a handful of attempts.
@@ -1077,18 +1098,6 @@ class CodecCallbackTest(unittest.TestCase):
             encoded = codecs.code_page_encode(437, input, "test.bug36819")
             self.assertEqual(encoded[0].decode(), "abcdx" * 51)
             self.assertEqual(encoded[1], len(input))
-
-        handler.repl = "\udcff"
-        for enc in encodings:
-            with self.subTest(encoding=enc):
-                handler.count = 50
-                with self.assertRaises(UnicodeEncodeError) as cm:
-                    input.encode(enc, "test.bug36819")
-                exc = cm.exception
-                self.assertEqual(exc.start, 4)
-                self.assertEqual(exc.end, 5)
-                self.assertEqual(exc.object, input)
-
 
     def test_translatehelper(self):
         # enhance coverage of:
