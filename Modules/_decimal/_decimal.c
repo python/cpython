@@ -28,7 +28,6 @@
 
 #include <Python.h>
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "longintrepr.h"
 #include "complexobject.h"
 #include "mpdecimal.h"
 
