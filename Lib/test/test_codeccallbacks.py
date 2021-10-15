@@ -1,5 +1,6 @@
 import codecs
 import html.entities
+import itertools
 import sys
 import unicodedata
 import unittest
@@ -795,20 +796,100 @@ class CodecCallbackTest(unittest.TestCase):
             codecs.lookup_error("namereplace")
         )
 
-    def test_unencodablereplacement(self):
+    def test_encode_nonascii_replacement(self):
+        def handle(exc):
+            if isinstance(exc, UnicodeEncodeError):
+                return (repl, exc.end)
+            raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replacing", handle)
+
+        for enc, input, repl in (
+                ("ascii", "[¤]", "abc"),
+                ("iso-8859-1", "[€]", "½¾"),
+                ("iso-8859-15", "[¤]", "œŸ"),
+        ):
+            res = input.encode(enc, "test.replacing")
+            self.assertEqual(res, ("[" + repl + "]").encode(enc))
+
+        for enc, input, repl in (
+                ("utf-8", "[\udc80]", "\U0001f40d"),
+                ("utf-16", "[\udc80]", "\U0001f40d"),
+                ("utf-32", "[\udc80]", "\U0001f40d"),
+        ):
+            with self.assertRaises(UnicodeEncodeError) as cm:
+                input.encode(enc, "test.replacing")
+            exc = cm.exception
+            self.assertEqual(exc.start, 1)
+            self.assertEqual(exc.end, 2)
+            self.assertEqual(exc.object, input)
+
+    def test_encode_unencodable_replacement(self):
         def unencrepl(exc):
             if isinstance(exc, UnicodeEncodeError):
-                return ("\u4242", exc.end)
+                return (repl, exc.end)
             else:
                 raise TypeError("don't know how to handle %r" % exc)
         codecs.register_error("test.unencreplhandler", unencrepl)
-        for enc in ("ascii", "iso-8859-1", "iso-8859-15"):
-            self.assertRaises(
-                UnicodeEncodeError,
-                "\u4242".encode,
-                enc,
-                "test.unencreplhandler"
-            )
+
+        for enc, input, repl in (
+                ("ascii", "[¤]", "½"),
+                ("iso-8859-1", "[€]", "œ"),
+                ("iso-8859-15", "[¤]", "½"),
+                ("utf-8", "[\udc80]", "\udcff"),
+                ("utf-16", "[\udc80]", "\udcff"),
+                ("utf-32", "[\udc80]", "\udcff"),
+        ):
+            with self.assertRaises(UnicodeEncodeError) as cm:
+                input.encode(enc, "test.unencreplhandler")
+            exc = cm.exception
+            self.assertEqual(exc.start, 1)
+            self.assertEqual(exc.end, 2)
+            self.assertEqual(exc.object, input)
+
+    def test_encode_bytes_replacement(self):
+        def handle(exc):
+            if isinstance(exc, UnicodeEncodeError):
+                return (repl, exc.end)
+            raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replacing", handle)
+
+        # It works even if the bytes sequence is not decodable.
+        for enc, input, repl in (
+                ("ascii", "[¤]", b"\xbd\xbe"),
+                ("iso-8859-1", "[€]", b"\xbd\xbe"),
+                ("iso-8859-15", "[¤]", b"\xbd\xbe"),
+                ("utf-8", "[\udc80]", b"\xbd\xbe"),
+                ("utf-16le", "[\udc80]", b"\xbd\xbe"),
+                ("utf-16be", "[\udc80]", b"\xbd\xbe"),
+                ("utf-32le", "[\udc80]", b"\xbc\xbd\xbe\xbf"),
+                ("utf-32be", "[\udc80]", b"\xbc\xbd\xbe\xbf"),
+        ):
+            res = input.encode(enc, "test.replacing")
+            self.assertEqual(res, "[".encode(enc) + repl + "]".encode(enc))
+
+    def test_encode_odd_bytes_replacement(self):
+        def handle(exc):
+            if isinstance(exc, UnicodeEncodeError):
+                return (repl, exc.end)
+            raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replacing", handle)
+
+        input = "[\udc80]"
+        # Tests in which the replacement bytestring contains not whole number
+        # of code units.
+        for enc, repl in (
+            *itertools.product(("utf-16le", "utf-16be"),
+                               [b"a", b"abc"]),
+            *itertools.product(("utf-32le", "utf-32be"),
+                               [b"a", b"ab", b"abc", b"abcde"]),
+        ):
+            with self.assertRaises(UnicodeEncodeError) as cm:
+                input.encode(enc, "test.replacing")
+            exc = cm.exception
+            self.assertEqual(exc.start, 1)
+            self.assertEqual(exc.end, 2)
+            self.assertEqual(exc.object, input)
+            self.assertEqual(exc.reason, "surrogates not allowed")
 
     def test_badregistercall(self):
         # enhance coverage of:
@@ -963,17 +1044,17 @@ class CodecCallbackTest(unittest.TestCase):
             ("utf-32be", b'\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\xdc\xff'),
             ("iso-8859-6", b"abcd\xff"),
         ]
-        for enc, data in testcases:
+        for enc, input in testcases:
             with self.subTest(encoding=enc):
                 handler.count = 50
-                decoded = data.decode(enc, "test.bug36819")
+                decoded = input.decode(enc, "test.bug36819")
                 self.assertEqual(decoded, 'abcdx' * 51)
 
     def test_encodehelper_bug36819(self):
         handler = RepeatedPosReturn("x")
         codecs.register_error("test.bug36819", handler.handle)
 
-        string = "abcd\udcff"
+        input = "abcd\udcff"
         encodings = ["ascii", "latin1", "utf-8", "utf-16", "utf-32"]  # built-in
         encodings += ["iso-8859-15"]  # charmap codec
         if sys.platform == 'win32':
@@ -984,13 +1065,13 @@ class CodecCallbackTest(unittest.TestCase):
                 # 50 was chosen to try to ensure a segfault without a fix,
                 # but not OOM a machine with one.
                 handler.count = 50
-                encoded = string.encode(enc, "test.bug36819")
+                encoded = input.encode(enc, "test.bug36819")
                 self.assertEqual(encoded.decode(enc), "abcdx" * 51)
         if sys.platform == "win32":
             handler.count = 50
-            encoded = codecs.code_page_encode(437, string, "test.bug36819")
+            encoded = codecs.code_page_encode(437, input, "test.bug36819")
             self.assertEqual(encoded[0].decode(), "abcdx" * 51)
-            self.assertEqual(encoded[1], len(string))
+            self.assertEqual(encoded[1], len(input))
 
     def test_translatehelper(self):
         # enhance coverage of:
