@@ -333,9 +333,6 @@
     <ClInclude Include="..\Include\namespaceobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\interpreteridobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\hashtable.h">
       <Filter>Modules</Filter>
     </ClInclude>
@@ -456,9 +453,6 @@
     <ClInclude Include="..\Include\cpython\genobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\interpreteridobject.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\pythonrun.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -554,6 +548,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_interp.h">
       <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpreteridobject.h">
+      <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
       <Filter>Include\internal</Filter>
