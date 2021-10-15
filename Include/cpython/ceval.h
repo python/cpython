@@ -2,6 +2,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+PyAPI_FUNC(PyObject *) _PyEval_CallTracing(PyObject *func, PyObject *args);
+
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_DATA(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
