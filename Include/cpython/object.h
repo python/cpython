@@ -296,7 +296,7 @@ typedef struct _heaptypeobject {
 
 /* access macro to the members which are floating "behind" the object */
 #define PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
+    _Py_RVALUE((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);

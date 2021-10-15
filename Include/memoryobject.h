@@ -15,9 +15,11 @@ PyAPI_DATA(PyTypeObject) PyMemoryView_Type;
 
 #ifndef Py_LIMITED_API
 /* Get a pointer to the memoryview's private copy of the exporter's buffer. */
-#define PyMemoryView_GET_BUFFER(op) (&((PyMemoryViewObject *)(op))->view)
+#define PyMemoryView_GET_BUFFER(op) \
+    _Py_RVALUE(&((PyMemoryViewObject *)(op))->view)
 /* Get a pointer to the exporting object (this may be NULL!). */
-#define PyMemoryView_GET_BASE(op) (((PyMemoryViewObject *)(op))->view.obj)
+#define PyMemoryView_GET_BASE(op) \
+    _Py_RVALUE(((PyMemoryViewObject *)(op))->view.obj)
 #endif
 
 PyAPI_FUNC(PyObject *) PyMemoryView_FromObject(PyObject *base);

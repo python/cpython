@@ -675,6 +675,39 @@ Porting to Python 3.11
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
+* The following "GET" and "AS" functions can no longer be used as l-value (to
+  modify a Python object):
+
+  * :c:func:`PyByteArray_GET_SIZE`
+  * :c:func:`PyBytes_GET_SIZE`
+  * :c:func:`PyCFunction_GET_CLASS`
+  * :c:func:`PyCFunction_GET_FLAGS`
+  * :c:func:`PyCFunction_GET_FUNCTION`
+  * :c:func:`PyCFunction_GET_SELF`
+  * :c:func:`PyDict_GET_SIZE`
+  * :c:func:`PyFloat_AS_DOUBLE`
+  * :c:func:`PyFunction_GET_ANNOTATIONS`
+  * :c:func:`PyFunction_GET_CLOSURE`
+  * :c:func:`PyFunction_GET_CODE`
+  * :c:func:`PyFunction_GET_DEFAULTS`
+  * :c:func:`PyFunction_GET_GLOBALS`
+  * :c:func:`PyFunction_GET_KW_DEFAULTS`
+  * :c:func:`PyFunction_GET_MODULE`
+  * :c:func:`PyHeapType_GET_MEMBERS`
+  * :c:func:`PyInstanceMethod_GET_FUNCTION`
+  * :c:func:`PyList_GET_SIZE`
+  * :c:func:`PyMemoryView_GET_BASE`
+  * :c:func:`PyMemoryView_GET_BUFFER`
+  * :c:func:`PyMethod_GET_FUNCTION`
+  * :c:func:`PyMethod_GET_SELF`
+  * :c:func:`PySet_GET_SIZE`
+  * :c:func:`PyTuple_GET_SIZE`
+  * :c:func:`PyWeakref_GET_OBJECT`
+
+  For example, ``PyList_GET_SIZE(list) = 5;`` now fails with a compiler error.
+  The :c:func:`Py_SET_SIZE` function must be used instead.
+  (Contributed by Victor Stinner in :issue:`45476`.)
+
 Deprecated
 ----------
 

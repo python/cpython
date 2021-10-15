@@ -86,20 +86,21 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
+#define _PyFunction_CAST(func) ((PyFunctionObject *)func)
 #define PyFunction_GET_CODE(func) \
-        (((PyFunctionObject *)func) -> func_code)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_code)
 #define PyFunction_GET_GLOBALS(func) \
-        (((PyFunctionObject *)func) -> func_globals)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_globals)
 #define PyFunction_GET_MODULE(func) \
-        (((PyFunctionObject *)func) -> func_module)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_module)
 #define PyFunction_GET_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_defaults)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_defaults)
 #define PyFunction_GET_KW_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_kwdefaults)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_kwdefaults)
 #define PyFunction_GET_CLOSURE(func) \
-        (((PyFunctionObject *)func) -> func_closure)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_closure)
 #define PyFunction_GET_ANNOTATIONS(func) \
-        (((PyFunctionObject *)func) -> func_annotations)
+        _Py_RVALUE(_PyFunction_CAST(func)->func_annotations)
 
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;

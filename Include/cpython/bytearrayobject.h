@@ -11,10 +11,13 @@ typedef struct {
     Py_ssize_t ob_exports; /* How many buffer exports */
 } PyByteArrayObject;
 
+PyAPI_DATA(char) _PyByteArray_empty_string[];
+
 /* Macros, trading safety for speed */
+#define _PyByteArray_CAST(op) \
+    (assert(PyByteArray_Check(op)), (PyByteArrayObject *)(op))
 #define PyByteArray_AS_STRING(self) \
     (assert(PyByteArray_Check(self)), \
      Py_SIZE(self) ? ((PyByteArrayObject *)(self))->ob_start : _PyByteArray_empty_string)
-#define PyByteArray_GET_SIZE(self) (assert(PyByteArray_Check(self)), Py_SIZE(self))
-
-PyAPI_DATA(char) _PyByteArray_empty_string[];
+#define PyByteArray_GET_SIZE(self) \
+    _Py_RVALUE(Py_SIZE(_PyByteArray_CAST(self)))
