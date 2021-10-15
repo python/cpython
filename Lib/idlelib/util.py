@@ -10,7 +10,7 @@ TODO:
     * Python versions (editor and help_about),
     * tk version and patchlevel (pyshell, help_about, maxos?, editor?),
     * std streams (pyshell, run),
-    * warning stuff (ditto).
+    * warning stuff (pyshell, run).
 """
 from os import path
 
