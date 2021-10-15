@@ -2,7 +2,7 @@
 Enum HOWTO
 ==========
 
-:Author: Ethan Furman <ethan at stoneleaf dot us>
+:Author: Ethan Furman <ethan@stoneleaf.us>
 
 .. _enum-basic-tutorial:
 

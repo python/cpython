@@ -5,7 +5,7 @@ Descriptor HowTo Guide
 ======================
 
 :Author: Raymond Hettinger
-:Contact: <python at rcn dot com>
+:Contact: <python@rcn.com>
 
 .. Contents::
 
