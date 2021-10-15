@@ -137,7 +137,8 @@ Functions for integers
 
    .. versionchanged:: 3.11
       Automatic conversion of non-integer types is no longer supported.
-      Float arguments such as ``randrange(10.0)`` now raise a :exc:`TypeError`.
+      Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
+      now raise a :exc:`TypeError`.
 
 .. function:: randint(a, b)
 
