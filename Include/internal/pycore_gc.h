@@ -43,7 +43,7 @@ typedef struct {
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 #define _PyGCHead_NEXT(g)        ((PyGC_Head*)(g)->_gc_next)
-#define _PyGCHead_SET_NEXT(g, p) ((g)->_gc_next = (uintptr_t)(p))
+#define _PyGCHead_SET_NEXT(g, p) ((void)((g)->_gc_next = (uintptr_t)(p)))
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
 #define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->_gc_prev & _PyGC_PREV_MASK))
@@ -56,7 +56,7 @@ typedef struct {
 #define _PyGCHead_FINALIZED(g) \
     (((g)->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
 #define _PyGCHead_SET_FINALIZED(g) \
-    ((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED)
+    ((void)((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED))
 
 #define _PyGC_FINALIZED(o) \
     _PyGCHead_FINALIZED(_Py_AS_GC(o))
