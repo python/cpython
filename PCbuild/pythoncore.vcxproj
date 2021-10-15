@@ -166,7 +166,6 @@
     <ClInclude Include="..\Include\dynamic_annotations.h" />
     <ClInclude Include="..\Include\enumobject.h" />
     <ClInclude Include="..\Include\errcode.h" />
-    <ClInclude Include="..\Include\eval.h" />
     <ClInclude Include="..\Include\fileobject.h" />
     <ClInclude Include="..\Include\fileutils.h" />
     <ClInclude Include="..\Include\floatobject.h" />
