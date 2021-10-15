@@ -483,12 +483,16 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
     def test_randrange_errors(self):
         raises_value_error = partial(self.assertRaises, ValueError, self.gen.randrange)
         raises_type_error = partial(self.assertRaises, TypeError, self.gen.randrange)
+
         # Empty range
         raises_value_error(3, 3)
         raises_value_error(-721)
         raises_value_error(0, 100, -12)
-        # Non-integer start/stop
 
+        # Zero step
+        raises_value_error(0, 42, 0)
+
+        # Non-integer start/stop/step
         raises_type_error(3.14159)
         raises_type_error(3.0)
         raises_type_error(Fraction(3, 1))
@@ -498,10 +502,9 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises_type_error(0, Fraction(2, 1))
         raises_type_error(0, '2')
 
-        # Zero and non-integer step
-        raises_value_error(0, 42, 0)
-        raises_type_error(0, 42, 0.0)
-        raises_type_error(0, 0, 0.0)
+        # Non-integer step
+        raises_type_error(0, 42, 1.0)
+        raises_type_error(0, 0, 1.0)
         raises_type_error(0, 42, 3.14159)
         raises_type_error(0, 42, 3.0)
         raises_type_error(0, 42, Fraction(3, 1))
