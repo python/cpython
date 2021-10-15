@@ -1,4 +1,4 @@
-"Test , coverage 17%."
+"Test, coverage 22%."
 
 from idlelib import iomenu, util
 import unittest

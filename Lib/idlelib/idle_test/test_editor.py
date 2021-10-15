@@ -1,4 +1,4 @@
-"Test editor, coverage 35%."
+"Test editor, coverage 54%."
 
 from idlelib import editor
 import unittest

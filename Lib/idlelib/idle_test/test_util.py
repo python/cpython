@@ -1,4 +1,4 @@
-"Test constants and functions found in idlelib.util"
+"Test constants and functions found in idlelib.util, coverage 100%"
 
 import unittest
 from unittest import mock
