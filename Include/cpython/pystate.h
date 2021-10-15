@@ -185,6 +185,13 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
 PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
 
+// Disable tracing and profiling.
+PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
+
+// Reset tracing and profiling: enable them if a trace function or a profile
+// function is set, otherwise disable them.
+PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
