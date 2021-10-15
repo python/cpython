@@ -248,7 +248,6 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 {
     char *p = buf;
     int c;
-    int skipnextlf = 0;
 
     if (fobj) {
         errno = ENXIO;          /* What can you do... */
@@ -256,34 +255,21 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
     }
     FLOCKFILE(stream);
     while (--n > 0 && (c = GETC(stream)) != EOF ) {
-        if (skipnextlf) {
-            skipnextlf = 0;
-            if (c == '\n') {
-                /* Seeing a \n here with skipnextlf true
-                ** means we saw a \r before.
-                */
-                c = GETC(stream);
-                if (c == EOF) break;
+        if (c == '\r') {
+            // A \r is translated into a \n, and we skip an adjacent \n, if any.
+            c = GETC(stream);
+            if (c != '\n') {
+                ungetc(c, stream);
+                c = '\n';
             }
         }
-        if (c == '\r') {
-            /* A \r is translated into a \n, and we skip
-            ** an adjacent \n, if any. We don't set the
-            ** newlinetypes flag until we've seen the next char.
-            */
-            skipnextlf = 1;
-            c = '\n';
-        }
         *p++ = c;
-        if (c == '\n') break;
+        if (c == '\n') {
+            break;
+        }
     }
     FUNLOCKFILE(stream);
     *p = '\0';
-    if (skipnextlf) {
-        int c = GETC(stream);
-        if (c != '\n')
-            ungetc(c, stream);
-    }
     if (p == buf)
         return NULL;
     return buf;
