@@ -1038,13 +1038,14 @@ class CodecCallbackTest(unittest.TestCase):
         codecs.register_error("test.bug36819", handler.handle)
 
         testcases = [
-            ("ascii", b"abcd\xff"),
-            ("utf-8", b"abcd\xff"),
-            ("utf-16be", b'\x00a\x00b\x00c\x00d\xdc\xff'),
-            ("utf-32be", b'\x00\x00\x00a\x00\x00\x00b\x00\x00\x00c\x00\x00\x00d\x00\x00\xdc\xff'),
-            ("iso-8859-6", b"abcd\xff"),
+            ("ascii", b"\xff"),
+            ("utf-8", b"\xff"),
+            ("utf-16be", b'\xdc\x80'),
+            ("utf-32be", b'\x00\x00\xdc\x80'),
+            ("iso-8859-6", b"\xff"),
         ]
-        for enc, input in testcases:
+        for enc, bad in testcases:
+            input = "abcd".encode(enc) + bad
             with self.subTest(encoding=enc):
                 handler.count = 50
                 decoded = input.decode(enc, "test.bug36819")
@@ -1054,7 +1055,7 @@ class CodecCallbackTest(unittest.TestCase):
         handler = RepeatedPosReturn("x")
         codecs.register_error("test.bug36819", handler.handle)
 
-        input = "abcd\udcff"
+        input = "abcd\udc80"
         encodings = ["ascii", "latin1", "utf-8", "utf-16", "utf-32"]  # built-in
         encodings += ["iso-8859-15"]  # charmap codec
         if sys.platform == 'win32':
@@ -1072,6 +1073,18 @@ class CodecCallbackTest(unittest.TestCase):
             encoded = codecs.code_page_encode(437, input, "test.bug36819")
             self.assertEqual(encoded[0].decode(), "abcdx" * 51)
             self.assertEqual(encoded[1], len(input))
+
+        handler.repl = "\udcff"
+        for enc in encodings:
+            with self.subTest(encoding=enc):
+                handler.count = 50
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    input.encode(enc, "test.bug36819")
+                exc = cm.exception
+                self.assertEqual(exc.start, 4)
+                self.assertEqual(exc.end, 5)
+                self.assertEqual(exc.object, input)
+
 
     def test_translatehelper(self):
         # enhance coverage of:
