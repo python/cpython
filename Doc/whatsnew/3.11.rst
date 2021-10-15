@@ -252,7 +252,7 @@ threading
   the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
   than using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected
   by system clock changes.
-  (Contributed by Livius and Victor Stinner in :issue:`41710`.)
+  (Contributed by Victor Stinner in :issue:`41710`.)
 
 time
 ----
@@ -480,6 +480,11 @@ New Features
   :c:func:`PyUnicode_DecodeRawUnicodeEscapeStateful`.
   (Contributed by Serhiy Storchaka in :issue:`45472`.)
 
+* Add new :c:func:`PyThreadState_EnterTracing` and
+  :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
+  suspend and resume tracing and profiling.
+  (Contributed by Victor Stinner in :issue:`43760`.)
+
 Porting to Python 3.11
 ----------------------
 
@@ -569,15 +574,23 @@ Porting to Python 3.11
   ``exit()`` and ``abort()``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
+* The ``<Python.h>`` header file no longer includes ``<stdio.h>`` if the
+  ``Py_LIMITED_API`` macro is defined. Functions expecting ``FILE*`` are
+  excluded from the limited C API (:pep:`384`). C extensions using
+  ``<stdio.h>`` must now include it explicitly.  The system ``<stdio.h>``
+  header provides functions like ``printf()`` and ``fopen()``.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+  ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
+  the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
+  removed. These files must not be included directly, as they are already
+  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  been included directly, consider including ``Python.h`` instead.
+  (Contributed by Victor Stinner in :issue:`35134`.)
+
 Deprecated
 ----------
-
-Removed
--------
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
-  removed.
-  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Deprecate the following functions to configure the Python initialization:
 
@@ -594,6 +607,13 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Remove the following math macros using the ``errno`` variable:
 
@@ -617,3 +637,13 @@ Removed
 * Remove the ``Py_FORCE_DOUBLE()`` macro. It was used by the
   ``Py_IS_INFINITY()`` macro.
   (Contributed by Victor Stinner in :issue:`45440`.)
+
+* Remove two functions from the limited C API:
+
+  * :c:func:`PyMarshal_WriteLongToFile`
+  * :c:func:`PyMarshal_WriteObjectToFile`
+
+  The :pep:`384` excludes functions expecting ``FILE*`` from the stable ABI.
+
+  Remove also the ``Py_MARSHAL_VERSION`` macro from the limited C API.
+  (Contributed by Victor Stinner in :issue:`45474`.)

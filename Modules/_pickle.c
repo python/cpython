@@ -9,6 +9,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 

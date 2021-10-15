@@ -125,13 +125,30 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 }
 
 
-/* Other */
+// PyThreadState functions
 
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
+
+static inline void
+_PyThreadState_DisableTracing(PyThreadState *tstate)
+{
+    tstate->cframe->use_tracing = 0;
+}
+
+static inline void
+_PyThreadState_ResetTracing(PyThreadState *tstate)
+{
+    int use_tracing = (tstate->c_tracefunc != NULL
+                       || tstate->c_profilefunc != NULL);
+    tstate->cframe->use_tracing = (use_tracing ? 255 : 0);
+}
+
+
+/* Other */
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
     struct _gilstate_runtime_state *gilstate,

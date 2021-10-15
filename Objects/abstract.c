@@ -10,7 +10,6 @@
 #include "pycore_unionobject.h"   // _PyUnion_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
-#include "longintrepr.h"
 
 
 

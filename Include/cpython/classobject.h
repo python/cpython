@@ -53,5 +53,5 @@ PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_CLASSOBJECT_H */
-#endif /* Py_LIMITED_API */
+#endif   // !Py_CLASSOBJECT_H
+#endif   // !Py_LIMITED_API

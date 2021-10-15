@@ -34,7 +34,6 @@ EXCLUDED_HEADERS = {
     "datetime.h",
     "dtoa.h",
     "frameobject.h",
-    "funcobject.h",
     "genobject.h",
     "longintrepr.h",
     "parsetok.h",
