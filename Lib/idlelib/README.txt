@@ -81,8 +81,8 @@ statusbar.py      # Define status bar for windows (nim).
 tabbedpages.py    # Define tabbed pages widget (nim).
 textview.py       # Define read-only text widget (nim).
 tree.py           # Define tree widget, used in browsers (nim).
-util.py           # Define objects imported elsewhere with no dependencies (nim)
 undo.py           # Manage undo stack.
+util.py           # Define objects imported elsewhere with no dependencies (nim)
 windows.py        # Manage window list and define listed top level.
 zoomheight.py     # Zoom window to full height of screen.
 
