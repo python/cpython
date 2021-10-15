@@ -89,7 +89,8 @@ For example:
   >>>
 
 To deactivate a virtual environment, type::
-  deactivate
+
+    deactivate
 into the terminal. This is a shell function defined by the script when the virtual environment is activated.
 
 Managing Packages with pip
