@@ -12,6 +12,7 @@ from .abc import ResourceReader, Traversable
 from ._adapters import wrap_spec
 
 Package = Union[types.ModuleType, str]
+Resource = Union[str, os.PathLike]
 
 
 def files(package):
@@ -86,8 +87,10 @@ def _tempfile(reader, suffix=''):
     # properly.
     fd, raw_path = tempfile.mkstemp(suffix=suffix)
     try:
-        os.write(fd, reader())
-        os.close(fd)
+        try:
+            os.write(fd, reader())
+        finally:
+            os.close(fd)
         del reader
         yield pathlib.Path(raw_path)
     finally:

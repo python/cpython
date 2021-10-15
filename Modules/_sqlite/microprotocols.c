@@ -29,9 +29,6 @@
 #include "microprotocols.h"
 #include "prepare_protocol.h"
 
-/** the adapters registry **/
-
-static PyObject *psyco_adapters = NULL;
 
 /* pysqlite_microprotocols_init - initialize the adapters dictionary */
 
@@ -39,14 +36,13 @@ int
 pysqlite_microprotocols_init(PyObject *module)
 {
     /* create adapters dictionary and put it in module namespace */
-    if ((psyco_adapters = PyDict_New()) == NULL) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->psyco_adapters = PyDict_New();
+    if (state->psyco_adapters == NULL) {
         return -1;
     }
 
-    int res = PyModule_AddObjectRef(module, "adapters", psyco_adapters);
-    Py_DECREF(psyco_adapters);
-
-    return res;
+    return PyModule_AddObjectRef(module, "adapters", state->psyco_adapters);
 }
 
 
@@ -65,7 +61,8 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
         return -1;
     }
 
-    rc = PyDict_SetItem(psyco_adapters, key, cast);
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    rc = PyDict_SetItem(state->psyco_adapters, key, cast);
     Py_DECREF(key);
 
     return rc;
@@ -74,7 +71,8 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 /* pysqlite_microprotocols_adapt - adapt an object to the built-in protocol */
 
 PyObject *
-pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
+pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
+                              PyObject *proto, PyObject *alt)
 {
     _Py_IDENTIFIER(__adapt__);
     _Py_IDENTIFIER(__conform__);
@@ -89,7 +87,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     if (!key) {
         return NULL;
     }
-    adapter = PyDict_GetItemWithError(psyco_adapters, key);
+    adapter = PyDict_GetItemWithError(state->psyco_adapters, key);
     Py_DECREF(key);
     if (adapter) {
         Py_INCREF(adapter);
@@ -143,6 +141,6 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         return Py_NewRef(alt);
     }
     /* else set the right exception and return NULL */
-    PyErr_SetString(pysqlite_ProgrammingError, "can't adapt");
+    PyErr_SetString(state->ProgrammingError, "can't adapt");
     return NULL;
 }

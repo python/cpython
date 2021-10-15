@@ -136,15 +136,42 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
-#define JUMP_ABSOLUTE_QUICK       7
-#define LOAD_ATTR_ADAPTIVE        8
-#define LOAD_ATTR_SPLIT_KEYS     13
-#define LOAD_ATTR_WITH_HINT      14
-#define LOAD_ATTR_SLOT           18
-#define LOAD_ATTR_MODULE         21
-#define LOAD_GLOBAL_ADAPTIVE     36
-#define LOAD_GLOBAL_MODULE       38
-#define LOAD_GLOBAL_BUILTIN      39
+#define BINARY_ADD_ADAPTIVE       7
+#define BINARY_ADD_INT            8
+#define BINARY_ADD_FLOAT         13
+#define BINARY_ADD_UNICODE       14
+#define BINARY_ADD_UNICODE_INPLACE_FAST  18
+#define BINARY_MULTIPLY_ADAPTIVE  21
+#define BINARY_MULTIPLY_INT      36
+#define BINARY_MULTIPLY_FLOAT    38
+#define BINARY_SUBSCR_ADAPTIVE   39
+#define BINARY_SUBSCR_LIST_INT   40
+#define BINARY_SUBSCR_TUPLE_INT  41
+#define BINARY_SUBSCR_DICT       42
+#define JUMP_ABSOLUTE_QUICK      43
+#define LOAD_ATTR_ADAPTIVE       44
+#define LOAD_ATTR_INSTANCE_VALUE  45
+#define LOAD_ATTR_WITH_HINT      46
+#define LOAD_ATTR_SLOT           47
+#define LOAD_ATTR_MODULE         48
+#define LOAD_GLOBAL_ADAPTIVE     58
+#define LOAD_GLOBAL_MODULE       80
+#define LOAD_GLOBAL_BUILTIN      81
+#define LOAD_METHOD_ADAPTIVE     87
+#define LOAD_METHOD_CACHED       88
+#define LOAD_METHOD_CLASS       120
+#define LOAD_METHOD_MODULE      122
+#define LOAD_METHOD_NO_DICT     123
+#define STORE_ATTR_ADAPTIVE     127
+#define STORE_ATTR_INSTANCE_VALUE 128
+#define STORE_ATTR_SLOT         134
+#define STORE_ATTR_WITH_HINT    140
+#define LOAD_FAST__LOAD_FAST    143
+#define STORE_FAST__LOAD_FAST   149
+#define LOAD_FAST__LOAD_CONST   150
+#define LOAD_CONST__LOAD_FAST   151
+#define STORE_FAST__STORE_FAST  153
+#define DO_TRACING              255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
@@ -167,6 +194,10 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
 };
 #endif /* OPCODE_TABLES */
+
+#define HAS_CONST(op) (false\
+    || ((op) == 100) \
+    )
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 

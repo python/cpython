@@ -585,8 +585,8 @@ Here's an overview of the logical flow of a match statement:
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
 
-   * If the guard evaluates as truthy or missing, the ``block`` inside ``case_block`` is
-     executed.
+   * If the guard evaluates as true or is missing, the ``block`` inside
+     ``case_block`` is executed.
 
    * Otherwise, the next ``case_block`` is attempted as described above.
 
@@ -637,10 +637,10 @@ The logical flow of a ``case`` block with a ``guard`` follows:
 
 #. If the pattern succeeded, evaluate the ``guard``.
 
-   * If the ``guard`` condition evaluates to "truthy", the case block is
+   * If the ``guard`` condition evaluates as true, the case block is
      selected.
 
-   * If the ``guard`` condition evaluates to "falsy", the case block is not
+   * If the ``guard`` condition evaluates as false, the case block is not
      selected.
 
    * If the ``guard`` raises an exception during evaluation, the exception
@@ -968,9 +968,9 @@ Syntax:
 At most one double star pattern may be in a mapping pattern.  The double star
 pattern must be the last subpattern in the mapping pattern.
 
-Duplicate key values in mapping patterns are disallowed. (If all key patterns
-are literal patterns this is considered a syntax error; otherwise this is a
-runtime error and will raise :exc:`ValueError`.)
+Duplicate keys in mapping patterns are disallowed. Duplicate literal keys will
+raise a :exc:`SyntaxError`. Two keys that otherwise have the same value will
+raise a :exc:`ValueError` at runtime.
 
 The following is the logical flow for matching a mapping pattern against a
 subject value:
@@ -982,7 +982,8 @@ subject value:
    mapping, the mapping pattern succeeds.
 
 #. If duplicate keys are detected in the mapping pattern, the pattern is
-   considered invalid and :exc:`ValueError` is raised.
+   considered invalid. A :exc:`SyntaxError` is raised for duplicate literal
+   values; or a :exc:`ValueError` for named keys of the same value.
 
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
@@ -1016,7 +1017,7 @@ A class pattern represents a class and its positional and keyword arguments
 
 The same keyword should not be repeated in class patterns.
 
-The following is the logical flow for matching a mapping pattern against a
+The following is the logical flow for matching a class pattern against a
 subject value:
 
 #. If ``name_or_attr`` is not an instance of the builtin :class:`type` , raise
@@ -1054,7 +1055,7 @@ subject value:
    patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
+   I. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
 
       * If this raises an exception, the exception bubbles up.
 

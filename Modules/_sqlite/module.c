@@ -41,18 +41,6 @@ module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
-/* static objects at module-level */
-
-PyObject *pysqlite_OperationalError = NULL;
-PyObject *pysqlite_ProgrammingError = NULL;
-PyObject *pysqlite_IntegrityError = NULL;
-PyObject *pysqlite_DataError = NULL;
-PyObject *pysqlite_NotSupportedError = NULL;
-
-PyObject* _pysqlite_converters = NULL;
-int _pysqlite_enable_callback_tracebacks = 0;
-int pysqlite_BaseTypeAdapted = 0;
-
 pysqlite_state pysqlite_global_state;
 
 // NOTE: This must equal sqlite3.Connection.__init__ argument spec!
@@ -137,7 +125,8 @@ pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
     rc = sqlite3_enable_shared_cache(do_enable);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
+        pysqlite_state *state = pysqlite_get_state(module);
+        PyErr_SetString(state->OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -165,10 +154,11 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
             || type == &PyUnicode_Type || type == &PyByteArray_Type) {
-        pysqlite_BaseTypeAdapted = 1;
+        pysqlite_state *state = pysqlite_get_state(module);
+        state->BaseTypeAdapted = 1;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
+    pysqlite_state *state = pysqlite_get_state(module);
     PyObject *protocol = (PyObject *)state->PrepareProtocolType;
     rc = pysqlite_microprotocols_add(type, protocol, caster);
     if (rc == -1) {
@@ -203,7 +193,8 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
         goto error;
     }
 
-    if (PyDict_SetItem(_pysqlite_converters, name, callable) != 0) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    if (PyDict_SetItem(state->converters, name, callable) != 0) {
         goto error;
     }
 
@@ -226,7 +217,8 @@ static PyObject *
 pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
 /*[clinic end generated code: output=4ff1d051c698f194 input=cb79d3581eb77c40]*/
 {
-    _pysqlite_enable_callback_tracebacks = enable;
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->enable_callback_tracebacks = enable;
 
     Py_RETURN_NONE;
 }
@@ -247,20 +239,19 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
 /*[clinic end generated code: output=0c3927c5fcd23dd9 input=c8995aeb25d0e542]*/
 {
-    return pysqlite_microprotocols_adapt(obj, proto, alt);
+    pysqlite_state *state = pysqlite_get_state(module);
+    return pysqlite_microprotocols_adapt(state, obj, proto, alt);
 }
 
 static int converters_init(PyObject* module)
 {
-    _pysqlite_converters = PyDict_New();
-    if (!_pysqlite_converters) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->converters = PyDict_New();
+    if (state->converters == NULL) {
         return -1;
     }
 
-    int res = PyModule_AddObjectRef(module, "converters", _pysqlite_converters);
-    Py_DECREF(_pysqlite_converters);
-
-    return res;
+    return PyModule_AddObjectRef(module, "converters", state->converters);
 }
 
 static int
@@ -291,12 +282,79 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
+/* SQLite API error codes */
+static const struct {
+    const char *name;
+    long value;
+} error_codes[] = {
+#define DECLARE_ERROR_CODE(code) {#code, code}
+    // Primary result code list
+    DECLARE_ERROR_CODE(SQLITE_ABORT),
+    DECLARE_ERROR_CODE(SQLITE_AUTH),
+    DECLARE_ERROR_CODE(SQLITE_BUSY),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT),
+    DECLARE_ERROR_CODE(SQLITE_DONE),
+    DECLARE_ERROR_CODE(SQLITE_EMPTY),
+    DECLARE_ERROR_CODE(SQLITE_ERROR),
+    DECLARE_ERROR_CODE(SQLITE_FORMAT),
+    DECLARE_ERROR_CODE(SQLITE_FULL),
+    DECLARE_ERROR_CODE(SQLITE_INTERNAL),
+    DECLARE_ERROR_CODE(SQLITE_INTERRUPT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED),
+    DECLARE_ERROR_CODE(SQLITE_MISMATCH),
+    DECLARE_ERROR_CODE(SQLITE_MISUSE),
+    DECLARE_ERROR_CODE(SQLITE_NOLFS),
+    DECLARE_ERROR_CODE(SQLITE_NOMEM),
+    DECLARE_ERROR_CODE(SQLITE_NOTADB),
+    DECLARE_ERROR_CODE(SQLITE_NOTFOUND),
+    DECLARE_ERROR_CODE(SQLITE_OK),
+    DECLARE_ERROR_CODE(SQLITE_PERM),
+    DECLARE_ERROR_CODE(SQLITE_PROTOCOL),
+    DECLARE_ERROR_CODE(SQLITE_READONLY),
+    DECLARE_ERROR_CODE(SQLITE_ROW),
+    DECLARE_ERROR_CODE(SQLITE_SCHEMA),
+    DECLARE_ERROR_CODE(SQLITE_TOOBIG),
+#if SQLITE_VERSION_NUMBER >= 3007017
+    DECLARE_ERROR_CODE(SQLITE_NOTICE),
+    DECLARE_ERROR_CODE(SQLITE_WARNING),
+#endif
+#undef DECLARE_ERROR_CODE
+    {NULL, 0},
+};
+
+static int
+add_error_constants(PyObject *module)
+{
+    for (int i = 0; error_codes[i].name != NULL; i++) {
+        const char *name = error_codes[i].name;
+        const long value = error_codes[i].value;
+        if (PyModule_AddIntConstant(module, name, value) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+const char *
+pysqlite_error_name(int rc)
+{
+    for (int i = 0; error_codes[i].name != NULL; i++) {
+        if (error_codes[i].value == rc) {
+            return error_codes[i].name;
+        }
+    }
+    // No error code matched.
+    return NULL;
+}
+
 static int add_integer_constants(PyObject *module) {
     int ret = 0;
 
     ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
     ret += PyModule_AddIntMacro(module, PARSE_COLNAMES);
-    ret += PyModule_AddIntMacro(module, SQLITE_OK);
     ret += PyModule_AddIntMacro(module, SQLITE_DENY);
     ret += PyModule_AddIntMacro(module, SQLITE_IGNORE);
     ret += PyModule_AddIntMacro(module, SQLITE_CREATE_INDEX);
@@ -334,7 +392,6 @@ static int add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3008003
     ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
 #endif
-    ret += PyModule_AddIntMacro(module, SQLITE_DONE);
     return ret;
 }
 
@@ -357,17 +414,13 @@ do {                                           \
     }                                          \
 } while (0)
 
-#define ADD_EXCEPTION(module, name, exc, base)                  \
-do {                                                            \
-    exc = PyErr_NewException(MODULE_NAME "." name, base, NULL); \
-    if (!exc) {                                                 \
-        goto error;                                             \
-    }                                                           \
-    int res = PyModule_AddObjectRef(module, name, exc);         \
-    Py_DECREF(exc);                                             \
-    if (res < 0) {                                              \
-        goto error;                                             \
-    }                                                           \
+#define ADD_EXCEPTION(module, state, exc, base)                        \
+do {                                                                   \
+    state->exc = PyErr_NewException(MODULE_NAME "." #exc, base, NULL); \
+    if (state->exc == NULL) {                                          \
+        goto error;                                                    \
+    }                                                                  \
+    ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
 } while (0)
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
@@ -404,27 +457,25 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-    ADD_EXCEPTION(module, "Error", state->Error, PyExc_Exception);
-    ADD_EXCEPTION(module, "Warning", state->Warning, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Error, PyExc_Exception);
+    ADD_EXCEPTION(module, state, Warning, PyExc_Exception);
 
     /* Error subclasses */
-    ADD_EXCEPTION(module, "InterfaceError", state->InterfaceError,
-                  state->Error);
-    ADD_EXCEPTION(module, "DatabaseError", state->DatabaseError, state->Error);
+    ADD_EXCEPTION(module, state, InterfaceError, state->Error);
+    ADD_EXCEPTION(module, state, DatabaseError, state->Error);
 
     /* DatabaseError subclasses */
-    ADD_EXCEPTION(module, "InternalError", state->InternalError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "DataError", pysqlite_DataError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError,
-                  state->DatabaseError);
+    ADD_EXCEPTION(module, state, InternalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, OperationalError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, ProgrammingError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, IntegrityError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, DataError, state->DatabaseError);
+    ADD_EXCEPTION(module, state, NotSupportedError, state->DatabaseError);
+
+    /* Set error constants */
+    if (add_error_constants(module) < 0) {
+        goto error;
+    }
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {

@@ -171,7 +171,7 @@ recommended for best performance.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --with-lto
+.. cmdoption:: --with-lto=[full|thin|no|yes]
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
@@ -179,6 +179,9 @@ recommended for best performance.
    as an LTO-aware linker (``ld.gold`` or ``lld``).
 
    .. versionadded:: 3.6
+
+   .. versionadded:: 3.11
+      To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
 
 .. cmdoption:: --with-computed-gotos
 
@@ -413,14 +416,18 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash24]
+.. cmdoption:: --with-hash-algorithm=[fnv|siphash13|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
-   * ``siphash24`` (default).
-   * ``fnv``;
+   * ``siphash13`` (default);
+   * ``siphash24``;
+   * ``fnv``.
 
    .. versionadded:: 3.4
+
+   .. versionadded:: 3.11
+      ``siphash13`` is added and it is the new default.
 
 .. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
@@ -550,7 +557,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensions are built as dynamic libraires, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 

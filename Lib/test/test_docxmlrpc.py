@@ -90,7 +90,17 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         response = self.client.getresponse()
 
         self.assertEqual(response.status, 200)
-        self.assertEqual(response.getheader("Content-type"), "text/html")
+        self.assertEqual(response.getheader("Content-type"), "text/html; charset=UTF-8")
+
+        # Server raises an exception if we don't start to read the data
+        response.read()
+
+    def test_get_css(self):
+        self.client.request("GET", "/pydoc.css")
+        response = self.client.getresponse()
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.getheader("Content-type"), "text/css; charset=UTF-8")
 
         # Server raises an exception if we don't start to read the data
         response.read()
@@ -133,7 +143,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.assertIn(
             (b'<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd>'
              b'<tt>Add&nbsp;two&nbsp;instances&nbsp;together.&nbsp;This&nbsp;'
-             b'follows&nbsp;<a href="http://www.python.org/dev/peps/pep-0008/">'
+             b'follows&nbsp;<a href="https://www.python.org/dev/peps/pep-0008/">'
              b'PEP008</a>,&nbsp;but&nbsp;has&nbsp;nothing<br>\nto&nbsp;do&nbsp;'
              b'with&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1952.txt">'
              b'RFC1952</a>.&nbsp;Case&nbsp;should&nbsp;matter:&nbsp;pEp008&nbsp;'

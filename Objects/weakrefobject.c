@@ -363,7 +363,7 @@ static PyMemberDef weakref_members[] = {
 };
 
 static PyMethodDef weakref_methods[] = {
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL} /* Sentinel */
 };
@@ -657,6 +657,12 @@ proxy_iternext(PyWeakReference *proxy)
         return NULL;
 
     PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    if (!PyIter_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+            "Weakref proxy referenced a non-iterator '%.200s' object",
+            Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
     Py_INCREF(obj);
     PyObject* res = PyIter_Next(obj);
     Py_DECREF(obj);

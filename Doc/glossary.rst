@@ -216,16 +216,6 @@ Glossary
       A variable defined in a class and intended to be modified only at
       class level (i.e., not in an instance of the class).
 
-   coercion
-      The implicit conversion of an instance of one type to another during an
-      operation which involves two arguments of the same type.  For example,
-      ``int(3.15)`` converts the floating point number to the integer ``3``, but
-      in ``3+4.5``, each argument is of a different type (one int, one float),
-      and both must be converted to the same type before they can be added or it
-      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
-      compatible types would have to be normalized to the same value by the
-      programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
-
    complex number
       An extension of the familiar real number system in which all numbers are
       expressed as a sum of a real part and an imaginary part.  Imaginary
@@ -461,12 +451,13 @@ Glossary
       for best practices on working with annotations.
 
    __future__
-      A pseudo-module which programmers can use to enable new language features
-      which are not compatible with the current interpreter.
-
-      By importing the :mod:`__future__` module and evaluating its variables,
-      you can see when a new feature was first added to the language and when it
-      becomes the default::
+      A :ref:`future statement <future>`, ``from __future__ import <feature>``,
+      directs the compiler to compile the current module using syntax or
+      semantics that will become standard in a future release of Python.
+      The :mod:`__future__` module documents the possible values of
+      *feature*.  By importing this module and evaluating its variables,
+      you can see when a new feature was first added to the language and
+      when it will (or did) become the default::
 
          >>> import __future__
          >>> __future__.division

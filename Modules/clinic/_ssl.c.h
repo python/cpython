@@ -271,25 +271,25 @@ PyDoc_STRVAR(_ssl__SSLSocket_read__doc__,
     {"read", (PyCFunction)_ssl__SSLSocket_read, METH_VARARGS, _ssl__SSLSocket_read__doc__},
 
 static PyObject *
-_ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
-                          Py_buffer *buffer);
+_ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
+                          int group_right_1, Py_buffer *buffer);
 
 static PyObject *
 _ssl__SSLSocket_read(PySSLSocket *self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    int len;
+    Py_ssize_t len;
     int group_right_1 = 0;
     Py_buffer buffer = {NULL, NULL};
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "i:read", &len)) {
+            if (!PyArg_ParseTuple(args, "n:read", &len)) {
                 goto exit;
             }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "iw*:read", &len, &buffer)) {
+            if (!PyArg_ParseTuple(args, "nw*:read", &len, &buffer)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -408,7 +408,8 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     int proto_version;
 
-    if ((type == get_state_type(type)->PySSLContext_Type) &&
+    if ((type == get_state_type(type)->PySSLContext_Type ||
+         type->tp_init == get_state_type(type)->PySSLContext_Type->tp_init) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
@@ -884,11 +885,13 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
+         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
+         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1358,4 +1361,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=3b6f4471fb187d85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd2a53c26eda295e input=a9049054013a1b77]*/

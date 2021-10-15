@@ -9,11 +9,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "longintrepr.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_code.h"          // _PyCode_New()
+#include "pycore_floatobject.h"   // _PyFloat_Pack8()
+#include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "code.h"
-#include "marshal.h"
-#include "pycore_hashtable.h"
-#include "pycore_code.h"        // _PyCode_New()
+#include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]
 module marshal
@@ -503,9 +504,44 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_TYPE(TYPE_SET, p);
         n = PySet_GET_SIZE(v);
         W_SIZE(n, p);
+        // bpo-37596: To support reproducible builds, sets and frozensets need
+        // to have their elements serialized in a consistent order (even when
+        // they have been scrambled by hash randomization). To ensure this, we
+        // use an order equivalent to sorted(v, key=marshal.dumps):
+        PyObject *pairs = PyList_New(n);
+        if (pairs == NULL) {
+            p->error = WFERR_NOMEMORY;
+            return;
+        }
+        Py_ssize_t i = 0;
         while (_PySet_NextEntry(v, &pos, &value, &hash)) {
+            PyObject *dump = PyMarshal_WriteObjectToString(value, p->version);
+            if (dump == NULL) {
+                p->error = WFERR_UNMARSHALLABLE;
+                Py_DECREF(pairs);
+                return;
+            }
+            PyObject *pair = PyTuple_Pack(2, dump, value);
+            Py_DECREF(dump);
+            if (pair == NULL) {
+                p->error = WFERR_NOMEMORY;
+                Py_DECREF(pairs);
+                return;
+            }
+            PyList_SET_ITEM(pairs, i++, pair);
+        }
+        assert(i == n);
+        if (PyList_Sort(pairs)) {
+            p->error = WFERR_NOMEMORY;
+            Py_DECREF(pairs);
+            return;
+        }
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *pair = PyList_GET_ITEM(pairs, i);
+            value = PyTuple_GET_ITEM(pair, 1);
             w_object(value, p);
         }
+        Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
         PyCodeObject *co = (PyCodeObject *)v;
@@ -522,6 +558,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_localspluskinds, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
+        w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
         w_object(co->co_endlinetable, p);
@@ -855,7 +892,7 @@ r_float_bin(RFILE *p)
 
 /* Issue #33720: Disable inlining for reducing the C stack consumption
    on PGO builds. */
-_Py_NO_INLINE static double
+Py_NO_INLINE static double
 r_float_str(RFILE *p)
 {
     int n;
@@ -1256,7 +1293,7 @@ r_object(RFILE *p)
 
         if (n == 0 && type == TYPE_FROZENSET) {
             /* call frozenset() to get the empty frozenset singleton */
-            v = _PyObject_CallNoArg((PyObject*)&PyFrozenSet_Type);
+            v = _PyObject_CallNoArgs((PyObject*)&PyFrozenSet_Type);
             if (v == NULL)
                 break;
             R_REF(v);
@@ -1315,6 +1352,7 @@ r_object(RFILE *p)
             PyObject *localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
+            PyObject *qualname = NULL;
             int firstlineno;
             PyObject *linetable = NULL;
             PyObject* endlinetable = NULL;
@@ -1365,6 +1403,9 @@ r_object(RFILE *p)
             name = r_object(p);
             if (name == NULL)
                 goto code_error;
+            qualname = r_object(p);
+            if (qualname == NULL)
+                goto code_error;
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
@@ -1384,6 +1425,7 @@ r_object(RFILE *p)
             struct _PyCodeConstructor con = {
                 .filename = filename,
                 .name = name,
+                .qualname = qualname,
                 .flags = flags,
 
                 .code = code,
@@ -1426,6 +1468,7 @@ r_object(RFILE *p)
             Py_XDECREF(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
+            Py_XDECREF(qualname);
             Py_XDECREF(linetable);
             Py_XDECREF(endlinetable);
             Py_XDECREF(columntable);

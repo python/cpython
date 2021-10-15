@@ -28,6 +28,12 @@ class AsyncYield:
         yield self.value
 
 
+async def asynciter(iterable):
+    """Convert an iterable to an asynchronous iterator."""
+    for x in iterable:
+        yield x
+
+
 def run_async(coro):
     assert coro.__class__ in {types.GeneratorType, types.CoroutineType}
 
@@ -127,6 +133,11 @@ class AsyncBadSyntaxTest(unittest.TestCase):
 
             """async def foo():
                 def bar():
+                 [[async for i in b] for b in els]
+            """,
+
+            """async def foo():
+                def bar():
                  [i for i in els
                     for b in await els]
             """,
@@ -198,6 +209,13 @@ class AsyncBadSyntaxTest(unittest.TestCase):
 
             """def bar():
                  [i for i in els if await i]
+            """,
+
+            """def bar():
+                 [[i async for i in a] for a in elts]
+            """,
+
+            """[[i async for i in a] for a in elts]
             """,
 
             """async def foo():
@@ -2010,6 +2028,60 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(
             run_async(f()),
             ([], {1: 1, 2: 2, 3: 3}))
+
+    def test_nested_comp(self):
+        async def run_list_inside_list():
+            return [[i + j async for i in asynciter([1, 2])] for j in [10, 20]]
+        self.assertEqual(
+            run_async(run_list_inside_list()),
+            ([], [[11, 12], [21, 22]]))
+
+        async def run_set_inside_list():
+            return [{i + j async for i in asynciter([1, 2])} for j in [10, 20]]
+        self.assertEqual(
+            run_async(run_set_inside_list()),
+            ([], [{11, 12}, {21, 22}]))
+
+        async def run_list_inside_set():
+            return {sum([i async for i in asynciter(range(j))]) for j in [3, 5]}
+        self.assertEqual(
+            run_async(run_list_inside_set()),
+            ([], {3, 10}))
+
+        async def run_dict_inside_dict():
+            return {j: {i: i + j async for i in asynciter([1, 2])} for j in [10, 20]}
+        self.assertEqual(
+            run_async(run_dict_inside_dict()),
+            ([], {10: {1: 11, 2: 12}, 20: {1: 21, 2: 22}}))
+
+        async def run_list_inside_gen():
+            gen = ([i + j async for i in asynciter([1, 2])] for j in [10, 20])
+            return [x async for x in gen]
+        self.assertEqual(
+            run_async(run_list_inside_gen()),
+            ([], [[11, 12], [21, 22]]))
+
+        async def run_gen_inside_list():
+            gens = [(i async for i in asynciter(range(j))) for j in [3, 5]]
+            return [x for g in gens async for x in g]
+        self.assertEqual(
+            run_async(run_gen_inside_list()),
+            ([], [0, 1, 2, 0, 1, 2, 3, 4]))
+
+        async def run_gen_inside_gen():
+            gens = ((i async for i in asynciter(range(j))) for j in [3, 5])
+            return [x for g in gens async for x in g]
+        self.assertEqual(
+            run_async(run_gen_inside_gen()),
+            ([], [0, 1, 2, 0, 1, 2, 3, 4]))
+
+        async def run_list_inside_list_inside_list():
+            return [[[i + j + k async for i in asynciter([1, 2])]
+                     for j in [10, 20]]
+                    for k in [100, 200]]
+        self.assertEqual(
+            run_async(run_list_inside_list_inside_list()),
+            ([], [[[111, 112], [121, 122]], [[211, 212], [221, 222]]]))
 
     def test_copy(self):
         async def func(): pass

@@ -1303,6 +1303,12 @@ order (MRO) for bases """
         with self.assertRaises(AttributeError):
             del X().a
 
+        # Inherit from object on purpose to check some backwards compatibility paths
+        class X(object):
+            __slots__ = "a"
+        with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
+            X().a
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -4990,8 +4996,11 @@ class DictProxyTests(unittest.TestCase):
             self.assertIn('{!r}: {!r}'.format(k, v), r)
 
 
-class PTypesLongInitTest(unittest.TestCase):
+class AAAPTypesLongInitTest(unittest.TestCase):
     # This is in its own TestCase so that it can be run before any other tests.
+    # (Hence the 'AAA' in the test class name: to make it the first
+    # item in a list sorted by name, like
+    # unittest.TestLoader.getTestCaseNames() does.)
     def test_pytype_long_ready(self):
         # Testing SF bug 551412 ...
 
@@ -5491,17 +5500,19 @@ class SharedKeyTests(unittest.TestCase):
         class B(A):
             pass
 
+        #Shrink keys by repeatedly creating instances
+        [(A(), B()) for _ in range(20)]
+
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
-        # Initial hash table can contain at most 5 elements.
+        # Initial hash table can contain only one or two elements.
         # Set 6 attributes to cause internal resizing.
         a.x, a.y, a.z, a.w, a.v, a.u = range(6)
         self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         a2 = A()
-        self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
-        b.u, b.v, b.w, b.t, b.s, b.r = range(6)
+        self.assertGreater(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
+        self.assertLess(sys.getsizeof(vars(a2)), sys.getsizeof({"a":1}))
         self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({"a":1}))
 
 
@@ -5714,7 +5725,7 @@ class MroTest(unittest.TestCase):
 
     def test_incomplete_super(self):
         """
-        Attrubute lookup on a super object must be aware that
+        Attribute lookup on a super object must be aware that
         its target type can be uninitialized (type->tp_mro == NULL).
         """
         class M(DebugHelperMeta):
@@ -5729,12 +5740,5 @@ class MroTest(unittest.TestCase):
             pass
 
 
-def test_main():
-    # Run all local test cases, with PTypesLongInitTest first.
-    support.run_unittest(PTypesLongInitTest, OperatorsTest,
-                         ClassPropertiesAndMethods, DictProxyTests,
-                         MiscTests, PicklingTests, SharedKeyTests,
-                         MroTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

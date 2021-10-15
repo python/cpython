@@ -507,12 +507,12 @@ _operator_indexOf_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic input]
 _operator.countOf = _operator.indexOf
 
-Return the number of times b occurs in a.
+Return the number of items in a which are, or which equal, b.
 [clinic start generated code]*/
 
 static Py_ssize_t
 _operator_countOf_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=9e1623197daf3382 input=0c3a2656add252db]*/
+/*[clinic end generated code: output=9e1623197daf3382 input=93ea57f170f3f0bb]*/
 {
     return PySequence_Count(a, b);
 }
@@ -704,10 +704,8 @@ static PyObject *
 _operator_is__impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=bcd47a402e482e1d input=5fa9b97df03c427f]*/
 {
-    PyObject *result;
-    result = (a == b) ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    PyObject *result = Py_Is(a, b) ? Py_True : Py_False;
+    return Py_NewRef(result);
 }
 
 /*[clinic input]
@@ -886,6 +884,27 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
     return PyBool_FromLong(rc);
 }
 
+PyDoc_STRVAR(_operator_call__doc__,
+"call($module, obj, /, *args, **kwargs)\n"
+"--\n"
+"\n"
+"Same as obj(*args, **kwargs).");
+
+#define _OPERATOR_CALL_METHODDEF    \
+    {"call", (PyCFunction)(void(*)(void))_operator_call, METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
+
+static PyObject *
+_operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (!_PyArg_CheckPositional("call", nargs, 1, PY_SSIZE_T_MAX)) {
+        return NULL;
+    }
+    return PyObject_Vectorcall(
+            args[0],
+            &args[1], (PyVectorcall_NARGS(nargs) - 1) | PY_VECTORCALL_ARGUMENTS_OFFSET,
+            kwnames);
+}
+
 /* operator methods **********************************************************/
 
 static struct PyMethodDef operator_methods[] = {
@@ -942,6 +961,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
+    _OPERATOR_CALL_METHODDEF
     {NULL,              NULL}           /* sentinel */
 
 };

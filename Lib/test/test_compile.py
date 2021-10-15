@@ -9,7 +9,7 @@ import tempfile
 import types
 import textwrap
 from test import support
-from test.support import script_helper
+from test.support import script_helper, requires_debug_ranges
 from test.support.os_helper import FakePath
 
 
@@ -650,6 +650,17 @@ if 1:
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
         self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
 
+    # Stripping unused constants is not a strict requirement for the
+    # Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_strip_unused_consts(self):
+        # Python 3.10rc1 appended None to co_consts when None is not used
+        # at all. See bpo-45056.
+        def f1():
+            "docstring"
+            return 42
+        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
     # that peephole optimization was actually done though that isn't an
@@ -943,10 +954,20 @@ if 1:
         genexp_lines = [None, 1, 3, 1]
 
         genexp_code = return_genexp.__code__.co_consts[1]
-        code_lines = [None if line is None else line-return_genexp.__code__.co_firstlineno
+        code_lines = [ None if line is None else line-return_genexp.__code__.co_firstlineno
                       for (_, _, line) in genexp_code.co_lines() ]
         self.assertEqual(genexp_lines, code_lines)
 
+    def test_line_number_implicit_return_after_async_for(self):
+
+        async def test(aseq):
+            async for i in aseq:
+                body
+
+        expected_lines = [None, 1, 2, 1]
+        code_lines = [ None if line is None else line-test.__code__.co_firstlineno
+                      for (_, _, line) in test.__code__.co_lines() ]
+        self.assertEqual(expected_lines, code_lines)
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -985,7 +1006,7 @@ if 1:
             elif instr.opname in HANDLED_JUMPS:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
 
-
+@requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers
     # in `co_positions()`.
@@ -1006,8 +1027,8 @@ class TestSourcePositions(unittest.TestCase):
                     return
                 lines.add(node.lineno)
                 end_lines.add(node.end_lineno)
-                columns.add(node.col_offset + 1)
-                end_columns.add(node.end_col_offset + 1)
+                columns.add(node.col_offset)
+                end_columns.add(node.end_col_offset)
 
         SourceOffsetVisitor().visit(ast_tree)
 
@@ -1058,10 +1079,10 @@ class TestSourcePositions(unittest.TestCase):
 
         self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
             line=10_000 + 2, end_line=10_000 + 2,
-            column=3, end_column=9)
+            column=2, end_column=8)
         self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
             line=10_000 + 4, end_line=10_000 + 4,
-            column=3, end_column=10)
+            column=2, end_column=9)
 
     def test_multiline_expression(self):
         snippet = """\
@@ -1071,7 +1092,7 @@ f(
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
-            line=1, end_line=3, column=1, end_column=2)
+            line=1, end_line=3, column=0, end_column=1)
 
     def test_very_long_line_end_offset(self):
         # Make sure we get None for when the column offset is too large to
@@ -1088,15 +1109,15 @@ f(
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
-            line=1, end_line=1, column=14, end_column=22)
+            line=1, end_line=1, column=13, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
-            line=1, end_line=1, column=10, end_column=22)
+            line=1, end_line=1, column=9, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
-            line=1, end_line=1, column=10, end_column=27)
+            line=1, end_line=1, column=9, end_column=26)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
-            line=1, end_line=1, column=5, end_column=28)
+            line=1, end_line=1, column=4, end_column=27)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
-            line=1, end_line=1, column=1, end_column=28)
+            line=1, end_line=1, column=0, end_column=27)
 
 
 class TestExpressionStackSize(unittest.TestCase):

@@ -30,12 +30,29 @@
 #define MODULE_NAME "sqlite3"
 
 typedef struct {
+    PyObject *DataError;
     PyObject *DatabaseError;
     PyObject *Error;
+    PyObject *IntegrityError;
     PyObject *InterfaceError;
     PyObject *InternalError;
+    PyObject *NotSupportedError;
+    PyObject *OperationalError;
+    PyObject *ProgrammingError;
     PyObject *Warning;
+
+
+    /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
+     * functions, that convert the SQL value to the appropriate Python value.
+     * The key is uppercase.
+     */
+    PyObject *converters;
+
     PyObject *lru_cache;
+    PyObject *psyco_adapters;  // The adapters registry
+    int BaseTypeAdapted;
+    int enable_callback_tracebacks;
+
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
     PyTypeObject *PrepareProtocolType;
@@ -48,23 +65,23 @@ extern pysqlite_state pysqlite_global_state;
 static inline pysqlite_state *
 pysqlite_get_state(PyObject *Py_UNUSED(module))
 {
+    return &pysqlite_global_state;  // Replace with PyModule_GetState
+}
+
+static inline pysqlite_state *
+pysqlite_get_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+{
+    return &pysqlite_global_state;  // Replace with PyType_GetModuleState
+}
+
+static inline pysqlite_state *
+pysqlite_get_state_by_type(PyTypeObject *Py_UNUSED(tp))
+{
+    // Replace with _PyType_GetModuleByDef & PyModule_GetState
     return &pysqlite_global_state;
 }
 
-extern PyObject* pysqlite_OperationalError;
-extern PyObject* pysqlite_ProgrammingError;
-extern PyObject* pysqlite_IntegrityError;
-extern PyObject* pysqlite_DataError;
-extern PyObject* pysqlite_NotSupportedError;
-
-/* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
- * functions, that convert the SQL value to the appropriate Python value.
- * The key is uppercase.
- */
-extern PyObject* _pysqlite_converters;
-
-extern int _pysqlite_enable_callback_tracebacks;
-extern int pysqlite_BaseTypeAdapted;
+extern const char *pysqlite_error_name(int rc);
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

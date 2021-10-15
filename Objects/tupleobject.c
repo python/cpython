@@ -6,6 +6,7 @@
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -287,6 +288,17 @@ tupledealloc(PyTupleObject *op)
         }
 #endif
     }
+#if defined(Py_DEBUG) && PyTuple_MAXSAVESIZE > 0
+    else {
+        assert(len == 0);
+        struct _Py_tuple_state *state = get_tuple_state();
+        // The empty tuple singleton must only be deallocated by
+        // _PyTuple_Fini(): not before, not after
+        if (op == state->free_list[0] && state->numfree[0] != 0) {
+            _Py_FatalRefcountError("deallocating the empty tuple singleton");
+        }
+    }
+#endif
     Py_TYPE(op)->tp_free((PyObject *)op);
 
 #if PyTuple_MAXSAVESIZE > 0
@@ -466,6 +478,26 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
         Py_INCREF(item);
+        dst[i] = item;
+    }
+    _PyObject_GC_TRACK(tuple);
+    return (PyObject *)tuple;
+}
+
+PyObject *
+_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return tuple_get_empty();
+    }
+
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
         dst[i] = item;
     }
     _PyObject_GC_TRACK(tuple);
@@ -887,7 +919,7 @@ static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1048,11 +1080,16 @@ _PyTuple_Fini(PyInterpreterState *interp)
     struct _Py_tuple_state *state = &interp->tuple;
     // The empty tuple singleton must not be tracked by the GC
     assert(!_PyObject_GC_IS_TRACKED(state->free_list[0]));
+
+#ifdef Py_DEBUG
+    state->numfree[0] = 0;
+#endif
     Py_CLEAR(state->free_list[0]);
-    _PyTuple_ClearFreeList(interp);
 #ifdef Py_DEBUG
     state->numfree[0] = -1;
 #endif
+
+    _PyTuple_ClearFreeList(interp);
 #endif
 }
 
