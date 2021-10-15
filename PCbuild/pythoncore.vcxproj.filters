@@ -327,9 +327,6 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\namespaceobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\hashtable.h">
       <Filter>Modules</Filter>
     </ClInclude>
@@ -557,6 +554,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h">
       <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_namespace.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include\internal</Filter>

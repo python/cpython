@@ -1167,8 +1167,8 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "int") == 0);
     Py_DECREF(tp_qualname);
 
-    tp_qualname = PyType_GetQualName(&_PyNamespace_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "SimpleNamespace") == 0);
+    tp_qualname = PyType_GetQualName(&PyODict_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "OrderedDict") == 0);
     Py_DECREF(tp_qualname);
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);

@@ -20,6 +20,7 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // InterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
