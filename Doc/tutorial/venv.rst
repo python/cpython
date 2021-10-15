@@ -91,6 +91,7 @@ For example:
 To deactivate a virtual environment, type::
 
     deactivate
+
 into the terminal.
 
 Managing Packages with pip
