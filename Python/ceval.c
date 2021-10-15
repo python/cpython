@@ -4663,7 +4663,7 @@ check_eval_breaker:
             if (cache->adaptive.counter == 0) {
                 PyObject *callable = PEEK(nargs+1);
                 next_instr--;
-                if (_Py_Specialize_CallFunction(tstate, callable, nargs, next_instr, cache) < 0) {
+                if (_Py_Specialize_CallFunction(callable, next_instr, nargs, cache) < 0) {
                     goto error;
                 }
                 DISPATCH();
@@ -4676,6 +4676,36 @@ check_eval_breaker:
                 postcall_shrink = 1;
                 goto call_function;
             }
+        }
+
+        TARGET(CALL_FUNCTION_PY_SIMPLE) {
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            int argcount = cache0->original_oparg;
+            PyObject *callable = PEEK(argcount+1);
+            DEOPT_IF(!PyFunction_Check(callable), CALL_FUNCTION);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            DEOPT_IF(func->func_version != cache0->version, CALL_FUNCTION);
+            /* PEP 523 */
+            DEOPT_IF(tstate->interp->eval_frame != NULL, CALL_FUNCTION);
+            STAT_INC(CALL_FUNCTION, hit);
+            record_cache_hit(cache0);
+            InterpreterFrame *new_frame = _PyThreadState_PushFrame(
+                tstate, PyFunction_AS_FRAME_CONSTRUCTOR(func), NULL);
+            if (new_frame == NULL) {
+                goto error;
+            }
+            STACK_SHRINK(argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = stack_pointer[i];
+            }
+            STACK_SHRINK(1);
+            Py_DECREF(func);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->previous = tstate->frame;
+            new_frame->depth = frame->depth + 1;
+            tstate->frame = frame = new_frame;
+            goto start_frame;
         }
 
         TARGET(CALL_FUNCTION_EX) {
@@ -4946,6 +4976,7 @@ MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
+MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 

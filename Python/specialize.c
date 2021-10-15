@@ -457,7 +457,11 @@ _Py_Quicken(PyCodeObject *code) {
 /* Calls */
 #define SPEC_FAIL_BUILTIN_FUNCTION 7
 #define SPEC_FAIL_CLASS 8
-#define SPEC_FAIL_PYTHON_FUNCTION 9
+#define SPEC_FAIL_GENERATOR 9
+#define SPEC_FAIL_COMPLEX_PARAMETERS 10
+#define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 10
+#define SPEC_FAIL_CO_NOT_OPTIMIZED 11
+#define SPEC_FAIL_FREE_VARS 12
 
 
 static int
@@ -1196,42 +1200,79 @@ success:
     return 0;
 }
 
-static int specialize_c_call(
-    PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+static int
+specialize_c_call(
+    PyObject *callable, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache)
 {
     SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_BUILTIN_FUNCTION);
     return -1;
 }
 
-static int specialize_class_call(
-    PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+static int
+specialize_class_call(
+    PyObject *callable, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache)
 {
     SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CLASS);
     return -1;
 }
 
-static int specialize_py_call(PyThreadState *tstate,
-    PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+static int
+specialize_py_call(
+    PyFunctionObject *func, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache)
 {
-    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYTHON_FUNCTION);
-    return -1;
+    /* Exclude generator or coroutines for now */
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    int flags = code->co_flags;
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_GENERATOR);
+        return -1;
+    }
+    if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_COMPLEX_PARAMETERS);
+        return -1;
+    }
+    if (code->co_argcount != nargs) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+        return -1;
+    }
+    if ((flags & CO_OPTIMIZED) == 0) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CO_NOT_OPTIMIZED);
+        return -1;
+    }
+    if (code->co_nfreevars) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_FREE_VARS);
+        return -1;
+    }
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    int version = _PyFunction_GetVersionForCurrentState(func);
+    if (version == 0) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    cache0->version = version;
+    *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_PY_SIMPLE, _Py_OPARG(*instr));
+    return 0;
 }
+
 
 int
 _Py_Specialize_CallFunction(
-    PyThreadState *tstate, PyObject *callable, int nargs,
-    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+    PyObject *callable, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     int fail;
     if (PyCFunction_CheckExact(callable)) {
-        fail = specialize_c_call(callable, nargs, instr, cache);
+        fail = specialize_c_call(callable, instr, nargs, cache);
     }
     else if (PyFunction_Check(callable)) {
-        fail = specialize_py_call(tstate, callable, nargs, instr, cache);
+        fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, cache);
     }
     else if (PyType_Check(callable)) {
-        fail = specialize_class_call(callable, nargs, instr, cache);
+        fail = specialize_class_call(callable, instr, nargs, cache);
     }
     else {
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OTHER);

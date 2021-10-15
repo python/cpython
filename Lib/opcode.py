@@ -248,6 +248,7 @@ _specialized_instructions = [
     "STORE_ATTR_SLOT",
     "STORE_ATTR_WITH_HINT",
     "CALL_FUNCTION_ADAPTIVE",
+    "CALL_FUNCTION_PY_SIMPLE",
     # Super instructions
     "LOAD_FAST__LOAD_FAST",
     "STORE_FAST__LOAD_FAST",

@@ -164,11 +164,12 @@ extern "C" {
 #define STORE_ATTR_SLOT         123
 #define STORE_ATTR_WITH_HINT    127
 #define CALL_FUNCTION_ADAPTIVE  128
-#define LOAD_FAST__LOAD_FAST    134
-#define STORE_FAST__LOAD_FAST   140
-#define LOAD_FAST__LOAD_CONST   143
-#define LOAD_CONST__LOAD_FAST   149
-#define STORE_FAST__STORE_FAST  150
+#define CALL_FUNCTION_PY_SIMPLE 134
+#define LOAD_FAST__LOAD_FAST    140
+#define STORE_FAST__LOAD_FAST   143
+#define LOAD_FAST__LOAD_CONST   149
+#define LOAD_CONST__LOAD_FAST   150
+#define STORE_FAST__STORE_FAST  151
 #define DO_TRACING              255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {

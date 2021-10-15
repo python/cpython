@@ -17,6 +17,7 @@ typedef struct {
     uint8_t original_oparg;
     uint8_t counter;
     uint16_t index;
+    uint32_t version;
 } _PyAdaptiveEntry;
 
 
@@ -308,7 +309,7 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
 int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
-int _Py_Specialize_CallFunction(PyThreadState *tstate, PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache);
 
 #define PRINT_SPECIALIZATION_STATS 0
 #define PRINT_SPECIALIZATION_STATS_DETAILED 0
