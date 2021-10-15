@@ -1,18 +1,20 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
 import collections.abc
-from collections import namedtuple
 import copy
 import gc
 import inspect
-import pickle
 import locale
+import pickle
 import sys
 import types
+import typing
 import unittest.mock
 import weakref
-import typing
+
+from collections import namedtuple
+from test.support import run_with_locale, cpython_only
+from test.support import import_helper
 
 
 T = typing.TypeVar("T")
@@ -1734,17 +1736,13 @@ class SimpleNamespaceTests(unittest.TestCase):
             types.SimpleNamespace() >= FakeSimpleNamespace()
 
     def test_capi(self):
-        from test.support import import_helper
         _testcapi = import_helper.import_module('_testcapi')
         PySimpleNamespace_New = _testcapi.PySimpleNamespace_New
 
         def list_attributes(obj):
             return [name for name in dir(obj) if not name.startswith('_')]
 
-        ns = PySimpleNamespace_New({})
-        self.assertIsInstance(ns, types.SimpleNamespace)
-        self.assertEqual(list_attributes(ns), [])
-
+        # two attributes
         value1 = 'value'
         value2 = 2
         ns = PySimpleNamespace_New({'attr1': value1, 'attr2': value2})
@@ -1753,12 +1751,28 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertIs(ns.attr1, value1)
         self.assertIs(ns.attr2, value2)
 
-        with self.assertRaises(TypeError):
-            PySimpleNamespace_New(123)
-        with self.assertRaises(ValueError):
-            PySimpleNamespace_New('string')
-        with self.assertRaises(ValueError):
-            PySimpleNamespace_New([('key', 'value', 'extra')])
+        # it's possible to modify a namespace
+        ns.attr1 = 1
+        self.assertEqual(ns.attr1, 1)
+        ns.attr3 = 3
+        self.assertEqual(list_attributes(ns), ['attr1', 'attr2', 'attr3'])
+
+        # empty namespace
+        ns = PySimpleNamespace_New({})
+        self.assertIsInstance(ns, types.SimpleNamespace)
+        self.assertEqual(list_attributes(ns), [])
+
+        # invalid arguments
+        for invalid_arg in (
+            123,
+            'string',
+            [('key', 'value')],
+            # non-string key
+            {123: 'value'},
+        ):
+            with (self.subTest(invalid_arg=invalid_arg),
+                  self.assertRaises(TypeError)):
+                PySimpleNamespace_New(invalid_arg)
 
 
 class CoroutineTests(unittest.TestCase):

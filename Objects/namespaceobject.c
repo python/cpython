@@ -250,26 +250,30 @@ PyTypeObject _PySimpleNamespace_Type = {
 PyObject *
 PySimpleNamespace_New(PyObject *attrs)
 {
+    if (attrs != NULL && !PyDict_Check(attrs)) {
+        PyErr_Format(PyExc_TypeError, "expected dict, got %s",
+                     Py_TYPE(attrs)->tp_name);
+        return NULL;
+    }
+
     PyObject *ns = namespace_new(&_PySimpleNamespace_Type, NULL, NULL);
     if (ns == NULL) {
         return NULL;
     }
 
-    if (attrs != NULL) {
-        _Py_IDENTIFIER(update);
+    if (attrs == NULL) {
+        return ns;
+    }
 
-        PyObject *dict = ((_PyNamespaceObject *)ns)->ns_dict;
-        // Call dict.update() rather than PyDict_Update() to raise TypeError if
-        // attrs has the wrong type and to raise ValueError if it has the wrong
-        // format. PyDict_Update() raises AttributeError if attrs has the wrong
-        // type.
-        PyObject *res = _PyObject_CallMethodIdObjArgs(dict, &PyId_update,
-                                                      attrs, NULL);
-        if (res == NULL) {
-            Py_DECREF(ns);
-            return NULL;
-        }
-        Py_DECREF(res);
+    if (!PyArg_ValidateKeywordArguments(attrs)) {
+        goto error;
+    }
+    if (PyDict_Update(((_PyNamespaceObject *)ns)->ns_dict, attrs) < 0) {
+        goto error;
     }
     return ns;
+
+error:
+    Py_DECREF(ns);
+    return NULL;
 }
