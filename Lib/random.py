@@ -97,7 +97,6 @@ LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
-_ONE = 1
 
 
 class Random(_random.Random):
@@ -285,7 +284,7 @@ class Random(_random.Random):
 
     ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=_ONE):
+    def randrange(self, start, stop=None, step=1):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -295,68 +294,38 @@ class Random(_random.Random):
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        try:
-            istart = _index(start)
-        except TypeError:
-            istart = int(start)
-            if istart != start:
-                _warn('randrange() will raise TypeError in the future',
-                      DeprecationWarning, 2)
-                raise ValueError("non-integer arg 1 for randrange()")
-            _warn('non-integer arguments to randrange() have been deprecated '
-                  'since Python 3.10 and will be removed in a subsequent '
-                  'version',
-                  DeprecationWarning, 2)
+        istart = int(start)
+        if istart != start:
+            raise ValueError("non-integer arg 1 for randrange()")
         if stop is None:
-            # We don't check for "step != 1" because it hasn't been
-            # type checked and converted to an integer yet.
-            if step is not _ONE:
-                raise TypeError('Missing a non-None stop argument')
             if istart > 0:
                 return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
-        try:
-            istop = _index(stop)
-        except TypeError:
-            istop = int(stop)
-            if istop != stop:
-                _warn('randrange() will raise TypeError in the future',
-                      DeprecationWarning, 2)
-                raise ValueError("non-integer stop for randrange()")
-            _warn('non-integer arguments to randrange() have been deprecated '
-                  'since Python 3.10 and will be removed in a subsequent '
-                  'version',
-                  DeprecationWarning, 2)
+        istop = int(stop)
+        if istop != stop:
+            raise ValueError("non-integer stop for randrange()")
         width = istop - istart
-        try:
-            istep = _index(step)
-        except TypeError:
-            istep = int(step)
-            if istep != step:
-                _warn('randrange() will raise TypeError in the future',
-                      DeprecationWarning, 2)
-                raise ValueError("non-integer step for randrange()")
-            _warn('non-integer arguments to randrange() have been deprecated '
-                  'since Python 3.10 and will be removed in a subsequent '
-                  'version',
-                  DeprecationWarning, 2)
-        # Fast path.
-        if istep == 1:
-            if width > 0:
-                return istart + self._randbelow(width)
+        if step == 1 and width > 0:
+            return istart + self._randbelow(width)
+        if step == 1:
             raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
+        istep = int(step)
+        if istep != step:
+            raise ValueError("non-integer step for randrange()")
         if istep > 0:
             n = (width + istep - 1) // istep
         elif istep < 0:
             n = (width + istep + 1) // istep
         else:
             raise ValueError("zero step for randrange()")
+
         if n <= 0:
             raise ValueError("empty range for randrange()")
+
         return istart + istep * self._randbelow(n)
 
     def randint(self, a, b):
