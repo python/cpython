@@ -126,6 +126,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
+    err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -182,6 +183,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
+    print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     if (out != stderr) {
         fclose(out);
     }
