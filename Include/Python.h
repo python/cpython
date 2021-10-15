@@ -77,7 +77,6 @@
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
-#include "namespaceobject.h"
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
 #include "codecs.h"

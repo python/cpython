@@ -1043,7 +1043,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.add(Extension('_testmultiphase', ['_testmultiphase.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Fuzz tests.
         self.add(Extension('_xxtestfuzz',
