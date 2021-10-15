@@ -84,9 +84,6 @@
     <ClInclude Include="..\Include\errcode.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\eval.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\fileobject.h">
       <Filter>Include</Filter>
     </ClInclude>
