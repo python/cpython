@@ -232,6 +232,7 @@ static uint8_t adaptive_opcodes[256] = {
     [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
+    [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -242,6 +243,7 @@ static uint8_t cache_requirements[256] = {
     [BINARY_ADD] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
+    [CALL_FUNCTION] = 1 /* _PyAdaptiveEntry */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -451,6 +453,11 @@ _Py_Quicken(PyCodeObject *code) {
 
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
+
+/* Calls */
+#define SPEC_FAIL_BUILTIN_FUNCTION 7
+#define SPEC_FAIL_CLASS 8
+#define SPEC_FAIL_PYTHON_FUNCTION 9
 
 
 static int
@@ -1186,5 +1193,59 @@ fail:
 success:
     STAT_INC(BINARY_ADD, specialization_success);
     assert(!PyErr_Occurred());
+    return 0;
+}
+
+static int specialize_c_call(
+    PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_BUILTIN_FUNCTION);
+    return -1;
+}
+
+static int specialize_class_call(
+    PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CLASS);
+    return -1;
+}
+
+static int specialize_py_call(PyThreadState *tstate,
+    PyObject *callable, int nargs, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_PYTHON_FUNCTION);
+    return -1;
+}
+
+int
+_Py_Specialize_CallFunction(
+    PyThreadState *tstate, PyObject *callable, int nargs,
+    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    int fail;
+    if (PyCFunction_CheckExact(callable)) {
+        fail = specialize_c_call(callable, nargs, instr, cache);
+    }
+    else if (PyFunction_Check(callable)) {
+        fail = specialize_py_call(tstate, callable, nargs, instr, cache);
+    }
+    else if (PyType_Check(callable)) {
+        fail = specialize_class_call(callable, nargs, instr, cache);
+    }
+    else {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OTHER);
+        fail = -1;
+    }
+    if (fail) {
+        STAT_INC(CALL_FUNCTION, specialization_failure);
+        assert(!PyErr_Occurred());
+        cache_backoff(cache0);
+    }
+    else {
+        STAT_INC(CALL_FUNCTION, specialization_success);
+        assert(!PyErr_Occurred());
+        cache0->counter = saturating_start();
+    }
     return 0;
 }

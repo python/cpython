@@ -4598,6 +4598,7 @@ check_eval_breaker:
 
         TARGET(CALL_FUNCTION) {
             PREDICTED(CALL_FUNCTION);
+            STAT_INC(CALL_FUNCTION, unquickened);
             PyObject *function;
             nargs = oparg;
             kwnames = NULL;
@@ -4653,6 +4654,28 @@ check_eval_breaker:
             }
             CHECK_EVAL_BREAKER();
             DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_ADAPTIVE) {
+            assert(cframe.use_tracing == 0);
+            SpecializedCacheEntry *cache = GET_CACHE();
+            nargs = cache->adaptive.original_oparg;
+            if (cache->adaptive.counter == 0) {
+                PyObject *callable = PEEK(nargs+1);
+                next_instr--;
+                if (_Py_Specialize_CallFunction(tstate, callable, nargs, next_instr, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(CALL_FUNCTION, deferred);
+                cache->adaptive.counter--;
+                oparg = nargs;
+                kwnames = NULL;
+                postcall_shrink = 1;
+                goto call_function;
+            }
         }
 
         TARGET(CALL_FUNCTION_EX) {
