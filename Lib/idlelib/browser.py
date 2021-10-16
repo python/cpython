@@ -77,9 +77,9 @@ class ModuleBrowser:
 
         Instance variables:
             name: Module name.
-            file: Full path and module with a valid Python extension. Used in
-                creating ModuleBrowserTreeItem as the rootnode for
-                the tree and subsequently in the children.
+            file: Full path and module with a valid Python extension.
+                Used in creating ModuleBrowserTreeItem as the rootnode
+                for the tree and subsequently in the children.
         """
         self.master = master
         self.path = path

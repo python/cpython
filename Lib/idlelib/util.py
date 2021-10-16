@@ -19,7 +19,7 @@ PYTHON_EXTENSIONS = frozenset({'.py', '.pyw', '.pyi'})
 
 
 def is_python_extension(extension, valid_extensions=PYTHON_EXTENSIONS):
-    """Identify whether a given string is a valid Python file extension."""
+    "Identify whether a given string is a valid Python file extension."
     return extension in valid_extensions
 
 
@@ -33,3 +33,8 @@ def is_python_source(filepath, firstline=None):
         and firstline.startswith('#!')
         and 'python' in firstline
     )
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_util', verbosity=2)

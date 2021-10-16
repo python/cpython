@@ -47,7 +47,7 @@ class IOBindingTest(unittest.TestCase):
 
 def _extension_is_in_IOBinding_dot_filetypes(extension):
     return any(
-        extension in filetype_tuple[1]
+        f'*{extension}' in filetype_tuple[1]
         for filetype_tuple in iomenu.IOBinding.filetypes
     )
 
@@ -58,10 +58,10 @@ class FiletypesTest(unittest.TestCase):
             self.assertTrue(_extension_is_in_IOBinding_dot_filetypes(extension))
 
     def test_text_files(self):
-        self.assertTrue(_extension_is_in_IOBinding_dot_filetypes('*.txt'))
+        self.assertTrue(_extension_is_in_IOBinding_dot_filetypes('.txt'))
 
     def test_all_files(self):
-        self.assertTrue(_extension_is_in_IOBinding_dot_filetypes('*'))
+        self.assertTrue(_extension_is_in_IOBinding_dot_filetypes(''))
 
 
 if __name__ == '__main__':
