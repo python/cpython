@@ -66,6 +66,8 @@ In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last
 exception that was raised.
 
+.. warning:: Creating a subclass that inherits from multiple exceptions may not
+   work and the potential conflicts may change in new versions.
 
 Base classes
 ------------
