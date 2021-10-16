@@ -22,24 +22,24 @@ class TextTest(object):
     def test_index_empty(self):
         index = self.text.index
 
-        for dex in (-1.0, 0.3, '1.-1', '1.0', '1.0 lineend', '1.end', '1.33',
+        for dex in ('0.0', '0.3', '1.0', '1.0 lineend', '1.end', '1.33',
                 'insert'):
             self.assertEqual(index(dex), '1.0')
 
-        for dex in 'end', 2.0, '2.1', '33.44':
+        for dex in 'end', '2.0', '2.1', '33.44':
             self.assertEqual(index(dex), '2.0')
 
     def test_index_data(self):
         index = self.text.index
         self.text.insert('1.0', self.hw)
 
-        for dex in -1.0, 0.3, '1.-1', '1.0':
+        for dex in '0.0', '0.3', '1.0':
             self.assertEqual(index(dex), '1.0')
 
         for dex in '1.0 lineend', '1.end', '1.33':
             self.assertEqual(index(dex), '1.5')
 
-        for dex in 'end',  '33.44':
+        for dex in 'end', '33.44':
             self.assertEqual(index(dex), '3.0')
 
     def test_get(self):

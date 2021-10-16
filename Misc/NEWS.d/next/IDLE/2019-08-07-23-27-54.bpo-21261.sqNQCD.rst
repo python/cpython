@@ -1,0 +1,2 @@
+IDLE's shell auto-completion works for dict keys of types :class:`str`
+and :class:`bytes`.
