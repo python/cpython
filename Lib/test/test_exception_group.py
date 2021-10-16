@@ -24,37 +24,34 @@ class BadConstructorArgs(unittest.TestCase):
     def test_bad_EG_construction__too_many_args(self):
         MSG = 'function takes exactly 2 arguments'
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup('no errors')
+            ExceptionGroup('no errors')
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup([ValueError('no msg')])
+            ExceptionGroup([ValueError('no msg')])
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup('eg', [ValueError('too')], [TypeError('many')])
+            ExceptionGroup('eg', [ValueError('too')], [TypeError('many')])
 
     def test_bad_EG_construction__bad_message(self):
         MSG = 'argument 1 must be str, not '
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup(ValueError(12), SyntaxError('bad syntax'))
+            ExceptionGroup(ValueError(12), SyntaxError('bad syntax'))
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup(None, [ValueError(12)])
+            ExceptionGroup(None, [ValueError(12)])
 
     def test_bad_EG_construction__bad_excs_sequence(self):
         MSG = 'argument 2 must be a non-empty sequence'
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup('errors not sequence', {ValueError(42)})
+            ExceptionGroup('errors not sequence', {ValueError(42)})
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup("eg", [])
+            ExceptionGroup("eg", [])
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup("eg", None)
+            ExceptionGroup("eg", None)
 
     def test_bad_EG_construction__nested_non_exceptions(self):
         MSG = 'Item [0-9]+ of argument 2 is not an exception instance'
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup('expect instance, not type', [ValueError]);
+            ExceptionGroup('expect instance, not type', [ValueError]);
         with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup('bad error', ["not an exception"])
-        with self.assertRaisesRegex(TypeError, MSG):
-            _ = ExceptionGroup('eg1',
-                               [ExceptionGroup('eg2', ["not an exception"])])
+            ExceptionGroup('bad error', ["not an exception"])
 
 
 class InstanceCreation(unittest.TestCase):
@@ -108,6 +105,7 @@ def leaf_generator(exc, tbs=None):
 
 
 def tb_funcnames(tbs):
+    # tbs is a traceback or a list of tracebacks
     def names_list(tb):
         if tb is None:
             return None
@@ -116,19 +114,27 @@ def tb_funcnames(tbs):
 
     if isinstance(tbs, types.TracebackType):
         return names_list(tbs)
-    else:
+    else:  # list of tracebacks
         return [names_list(tb) for tb in tbs]
 
 
 def tbs_for_leaf(leaf, eg):
     for e, tbs in leaf_generator(eg):
-        if e == leaf:
+        if e is leaf:
             return tbs
 
 
 class ExceptionGroupTestBase(unittest.TestCase):
     def assertMatchesTemplate(self, exc, exc_type, template):
-        """ Assert that the exception matches the template """
+        """ Assert that the exception matches the template
+
+            A template describes the shape of exc. If exc is a
+            leaf exception (i.e., not an exception group) then
+            template is an exception instance that has the
+            expected type and args value of exc. If exc is an
+            exception group, then template is a list of the
+            templates of its nested exceptions.
+        """
         if exc_type is not None:
             self.assertIs(type(exc), exc_type)
 
@@ -229,10 +235,10 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
         eg = self.eg
         self.assertEqual(type(eg.exceptions), tuple)
 
-        _ = eg.message
+        eg.message
         with self.assertRaises(AttributeError):
             eg.message = "new msg"
-        _ = eg.exceptions
+        eg.exceptions
         with self.assertRaises(AttributeError):
             eg.exceptions = [OSError('xyz')]
 
@@ -247,7 +253,7 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
              [self.root_tb_fnames, self.type_error_tb_fnames],
              [self.root_tb_fnames, self.value_error_tb_fnames]])
 
-    def test_basics_tbs_for_leaf(self):
+    def test_basics__tbs_for_leaf__helper_works(self):
         eg = self.eg
         for e, tbs in leaf_generator(eg):
             self.assertSequenceEqual(tbs, tbs_for_leaf(e, eg))
@@ -318,11 +324,16 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
 
     def test_basics_split_by_type__match(self):
         eg = self.eg
+        VE = ValueError
+        TE = TypeError
         testcases = [
             # (matcher, match_template, rest_template)
-            (ValueError, [ValueError(1), ValueError(2)], [TypeError(int)]),
-            (TypeError, [TypeError(int)], [ValueError(1), ValueError(2)]),
-            ((ValueError, TypeError), self.eg_template, None)]
+            (VE, [VE(1), VE(2)], [TE(int)]),
+            (TE, [TE(int)], [VE(1), VE(2)]),
+            ((VE, TE), self.eg_template, None),
+            ((OSError, VE), [VE(1), VE(2)], [TE(int)]),
+        ]
+
         for match_type, match_template, rest_template in testcases:
             match, rest = eg.split(match_type)
             self.assertEqual(match.message, eg.message)
@@ -332,6 +343,8 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
                 self.assertEqual(rest.message, eg.message)
                 self.assertMatchesTemplate(
                     rest, ExceptionGroup, rest_template)
+            else:
+                self.assertIsNone(rest)
 
     def test_basics_split_by_predicate__passthrough(self):
         match, rest = self.eg.split(lambda e: True)
@@ -345,11 +358,15 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
 
     def test_basics_split_by_predicate__match(self):
         eg = self.eg
+        VE = ValueError
+        TE = TypeError
         testcases = [
             # (matcher, match_template, rest_template)
-            (ValueError, [ValueError(1), ValueError(2)], [TypeError(int)]),
-            (TypeError, [TypeError(int)], [ValueError(1), ValueError(2)]),
-            ((ValueError, TypeError), self.eg_template, None)]
+            (VE, [VE(1), VE(2)], [TE(int)]),
+            (TE, [TE(int)], [VE(1), VE(2)]),
+            ((VE, TE), self.eg_template, None),
+        ]
+
         for match_type, match_template, rest_template in testcases:
             match, rest = eg.split(lambda e: isinstance(e, match_type))
             self.assertEqual(match.message, eg.message)
