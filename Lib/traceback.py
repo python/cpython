@@ -781,7 +781,7 @@ class TracebackException:
 
             if self.offset is not None:
                 offset = self.offset
-                end_offset = self.end_offset if self.end_offset is not None else offset
+                end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
                 if offset == end_offset or end_offset == -1:
                     end_offset = offset + 1
 
