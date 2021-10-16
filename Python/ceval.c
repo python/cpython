@@ -1933,14 +1933,73 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_MULTIPLY) {
+            PREDICTED(BINARY_MULTIPLY);
+            STAT_INC(BINARY_MULTIPLY, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Multiply(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
             SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_MULTIPLY_ADAPTIVE) {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_BinaryMultiply(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_MULTIPLY, deferred);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(BINARY_MULTIPLY, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_MULTIPLY);
+            }
+        }
+
+        TARGET(BINARY_MULTIPLY_INT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
+            STAT_INC(BINARY_MULTIPLY, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(prod);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (prod == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_MULTIPLY_FLOAT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
+            STAT_INC(BINARY_MULTIPLY, hit);
+            record_hit_inline(next_instr, oparg);
+            double dprod = ((PyFloatObject *)left)->ob_fval *
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *prod = PyFloat_FromDouble(dprod);
+            SET_SECOND(prod);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (prod == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -4954,6 +5013,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
+MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
 
 binary_subscr_dict_error:
         {
@@ -6127,7 +6187,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     if (tstate->tracing)
         return 0;
     tstate->tracing++;
-    tstate->cframe->use_tracing = 0;
+    _PyThreadState_DisableTracing(tstate);
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
@@ -6141,8 +6201,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
-    tstate->cframe->use_tracing = ((tstate->c_tracefunc != NULL)
-                           || (tstate->c_profilefunc != NULL)) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     tstate->tracing--;
     return result;
 }
@@ -6156,8 +6215,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
     PyObject *result;
 
     tstate->tracing = 0;
-    tstate->cframe->use_tracing = ((tstate->c_tracefunc != NULL)
-                           || (tstate->c_profilefunc != NULL)) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     result = PyObject_Call(func, args, NULL);
     tstate->tracing = save_tracing;
     tstate->cframe->use_tracing = save_use_tracing;
@@ -6214,7 +6272,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = NULL;
     tstate->c_profileobj = NULL;
     /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    tstate->cframe->use_tracing = tstate->c_tracefunc != NULL;
+    _PyThreadState_ResetTracing(tstate);
     Py_XDECREF(profileobj);
 
     Py_XINCREF(arg);
@@ -6222,7 +6280,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    tstate->cframe->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     return 0;
 }
 
@@ -6255,7 +6313,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = NULL;
     tstate->c_traceobj = NULL;
     /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    tstate->cframe->use_tracing = (tstate->c_profilefunc != NULL) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     Py_XDECREF(traceobj);
 
     Py_XINCREF(arg);
@@ -6263,8 +6321,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    tstate->cframe->use_tracing = ((func != NULL)
-                           || (tstate->c_profilefunc != NULL)) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
 
     return 0;
 }

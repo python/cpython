@@ -6,6 +6,7 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 
 #include <ffi.h>
 #include "ctypes.h"

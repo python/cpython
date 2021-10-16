@@ -2169,6 +2169,18 @@ _Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
 }
 
 
+size_t
+_Py_find_basename(const wchar_t *filename)
+{
+    for (size_t i = wcslen(filename); i > 0; --i) {
+        if (filename[i] == SEP) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+
 /* Get the current directory. buflen is the buffer size in wide characters
    including the null character. Decode the path from the locale encoding.
 

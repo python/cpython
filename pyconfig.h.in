@@ -160,9 +160,6 @@
 /* Define to 1 if you have the <conio.h> header file. */
 #undef HAVE_CONIO_H
 
-/* Define to 1 if you have the `copysign' function. */
-#undef HAVE_COPYSIGN
-
 /* Define to 1 if you have the `copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
@@ -538,9 +535,6 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
-/* Define to 1 if you have the `hypot' function. */
-#undef HAVE_HYPOT
-
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
@@ -871,9 +865,6 @@
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
-
-/* Define to 1 if you have the `round' function. */
-#undef HAVE_ROUND
 
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN

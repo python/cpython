@@ -1,0 +1,1 @@
+Specialized the ``BINARY_MULTIPLY`` opcode to ``BINARY_MULTIPLY_INT`` and ``BINARY_MULTIPLY_FLOAT`` using the PEP 659 machinery.
