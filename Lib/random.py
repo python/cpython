@@ -313,7 +313,7 @@ class Random(_random.Random):
         if istep == 1:
             if width > 0:
                 return istart + self._randbelow(width)
-            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
+            raise ValueError(f"empty range in randrange({start}, {stop}, {step})")
 
         # Non-unit step argument supplied.
         if istep > 0:
@@ -323,7 +323,7 @@ class Random(_random.Random):
         else:
             raise ValueError("zero step for randrange()")
         if n <= 0:
-            raise ValueError("empty range for randrange()")
+            raise ValueError(f"empty range in randrange({start}, {stop}, {step})")
         return istart + istep * self._randbelow(n)
 
     def randint(self, a, b):
