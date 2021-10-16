@@ -184,7 +184,7 @@ The :mod:`csv` module defines the following classes:
        Eric Idle
        John Cleese
 
-       >>> print(row)
+       >>> print(reader)
        {'first_name': 'John', 'last_name': 'Cleese'}
 
 
