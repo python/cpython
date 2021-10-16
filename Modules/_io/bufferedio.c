@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_object.h"
 #include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
@@ -1550,7 +1551,7 @@ _bufferedreader_read_all(buffered *self)
         goto cleanup;
     }
     if (readall) {
-        tmp = _PyObject_CallNoArg(readall);
+        tmp = _PyObject_CallNoArgs(readall);
         Py_DECREF(readall);
         if (tmp == NULL)
             goto cleanup;

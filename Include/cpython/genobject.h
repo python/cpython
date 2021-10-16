@@ -1,4 +1,3 @@
-
 /* Generator object interface */
 
 #ifndef Py_LIMITED_API
@@ -8,8 +7,7 @@
 extern "C" {
 #endif
 
-#include "pystate.h"   /* _PyErr_StackItem */
-#include "abstract.h" /* PySendResult */
+/* --- Generators --------------------------------------------------------- */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
@@ -45,7 +43,9 @@ PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
-#ifndef Py_LIMITED_API
+
+/* --- PyCoroObject ------------------------------------------------------- */
+
 typedef struct {
     _PyGenObject_HEAD(cr)
     PyObject *cr_origin;
@@ -59,7 +59,8 @@ PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
-/* Asynchronous Generators */
+
+/* --- Asynchronous Generators -------------------------------------------- */
 
 typedef struct {
     _PyGenObject_HEAD(ag)
@@ -89,7 +90,6 @@ PyAPI_FUNC(PyObject *) PyAsyncGen_New(PyFrameObject *,
 
 PyObject *_PyAsyncGenValueWrapperNew(PyObject *);
 
-#endif
 
 #undef _PyGenObject_HEAD
 

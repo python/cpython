@@ -35,6 +35,7 @@ static inline PyObject* _PyLong_GetOne(void)
 { return __PyLong_GetSmallInt_internal(1); }
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
+PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 
 #ifdef __cplusplus
 }

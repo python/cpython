@@ -942,7 +942,8 @@ class PyBuildExt(build_ext):
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # profiler (_lsprof is for cProfile.py)
-        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
+        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
                            depends=['unicodedata_db.h', 'unicodename_db.h'],
@@ -999,7 +1000,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -1041,7 +1043,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.add(Extension('_testmultiphase', ['_testmultiphase.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Fuzz tests.
         self.add(Extension('_xxtestfuzz',
@@ -1707,12 +1710,12 @@ class PyBuildExt(build_ext):
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         if have_zlib:
-            extra_compile_args = ['-DUSE_ZLIB_CRC32']
+            extra_compile_args.append('-DUSE_ZLIB_CRC32')
             libraries = ['z']
             extra_link_args = zlib_extra_link_args
         else:
-            extra_compile_args = []
             libraries = []
             extra_link_args = []
         self.add(Extension('binascii', ['binascii.c'],
@@ -2309,7 +2312,7 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        extra_compile_args = []
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
@@ -2467,6 +2470,7 @@ class PyBuildExt(build_ext):
             library_dirs=openssl_libdirs,
             libraries=openssl_libs,
             runtime_library_dirs=runtime_library_dirs,
+            extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
         )
 
         # This static linking is NOT OFFICIALLY SUPPORTED.
@@ -2528,27 +2532,29 @@ class PyBuildExt(build_ext):
         if "sha256" in configured:
             self.add(Extension(
                 '_sha256', ['sha256module.c'],
+                depends=['hashlib.h'],
                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                depends=['hashlib.h']
             ))
 
         if "sha512" in configured:
             self.add(Extension(
                 '_sha512', ['sha512module.c'],
+                depends=['hashlib.h'],
                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                depends=['hashlib.h']
             ))
 
         if "md5" in configured:
             self.add(Extension(
                 '_md5', ['md5module.c'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
         if "sha1" in configured:
             self.add(Extension(
                 '_sha1', ['sha1module.c'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
         if "blake2" in configured:
@@ -2563,7 +2569,8 @@ class PyBuildExt(build_ext):
                     '_blake2/blake2b_impl.c',
                     '_blake2/blake2s_impl.c'
                 ],
-                depends=blake2_deps
+                depends=blake2_deps,
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
         if "sha3" in configured:
@@ -2574,7 +2581,8 @@ class PyBuildExt(build_ext):
             self.add(Extension(
                 '_sha3',
                 ['_sha3/sha3module.c'],
-                depends=sha3_deps
+                depends=sha3_deps,
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
     def detect_nis(self):
