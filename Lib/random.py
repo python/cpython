@@ -288,8 +288,9 @@ class Random(_random.Random):
     def randrange(self, start, stop=None, step=_ONE):
         """Choose a random item from range(stop) or range(start, stop[, step]).
 
-        Roughly equivalent to:  choice(range(start, stop, step))
-        but runs faster and supports a larger range.
+        Roughly equivalent to ``choice(range(start, stop, step))``
+        but supports arbitrarily large ranges and is optimized
+        for common cases.
 
         """
 
