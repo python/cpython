@@ -262,7 +262,7 @@ Compiler now removes trailing unused constants from co_consts.
 
 Add a new command line option, "-X frozen_modules=[on|off]" to opt out of
 (or into) using optional frozen modules.  This defaults to "on" (or "off" if
-it's a debug build).
+it's running out of the source tree).
 
 ..
 
