@@ -109,7 +109,7 @@ process will perform the following steps:
 The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
 
-An instrumented version of the interpreter is built, using suitable compiler
+An instrumented version of the interpreter is built whilst using suitable compiler
 flags for each flavor. Note that this is just an intermediary step.  The
 binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
@@ -120,8 +120,8 @@ Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
 The final step is to build the actual interpreter, using the information
-collected from the instrumented one.  The end result will be a Python binary
-that is optimized; suitable for distribution or production installation.
+collected from the instrumented one. The end result will be a Python binary
+that is optimized; suitable for distribution/production installation.
 
 
 Link Time Optimization
@@ -153,7 +153,7 @@ Documentation
 `Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
 updated daily.
 
-It can also be downloaded in many formats for faster access.  The documentation
+This can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
