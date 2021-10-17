@@ -6,6 +6,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <stdbool.h>
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "structmember.h"         // PyMemberDef
@@ -540,7 +541,7 @@ StopIteration_clear(PyStopIterationObject *self)
 static void
 StopIteration_dealloc(PyStopIterationObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     StopIteration_clear(self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -657,12 +658,13 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         numexcs = PySequence_Length(excs);
     }
     if (numexcs <= 0) {
-        PyErr_SetString(PyExc_TypeError,
-                        "argument 2 must be a non-empty sequence");
+        PyErr_SetString(
+            PyExc_TypeError,
+            "second argument (exceptions) must be a non-empty sequence");
         return NULL;
     }
 
-    int nested_base_exceptions = 0;
+    bool nested_base_exceptions = false;
     for (Py_ssize_t i = 0; i < numexcs; i++) {
         PyObject *exc = PySequence_GetItem(excs, i);
         if (!exc) {
@@ -670,18 +672,19 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         if (!PyExceptionInstance_Check(exc)) {
             PyErr_Format(
-                PyExc_TypeError,
-                "Item %d of argument 2 is not an exception instance", i);
+                PyExc_ValueError,
+                "Item %d of second argument (exceptions) is not an exception",
+                i);
             Py_DECREF(exc);
             return NULL;
         }
-        int is_exception = PyObject_IsInstance(exc, PyExc_Exception);
+        int is_nonbase_exception = PyObject_IsInstance(exc, PyExc_Exception);
         Py_DECREF(exc);
-        if (is_exception < 0) {
+        if (is_nonbase_exception < 0) {
             return NULL;
         }
-        else if (is_exception == 0) {
-            nested_base_exceptions = 1;
+        else if (is_nonbase_exception == 0) {
+            nested_base_exceptions = true;
         }
     }
 
@@ -742,7 +745,8 @@ BaseExceptionGroup_dealloc(PyBaseExceptionGroupObject *self)
 }
 
 static int
-BaseExceptionGroup_traverse(PyBaseExceptionGroupObject *self, visitproc visit, void *arg)
+BaseExceptionGroup_traverse(PyBaseExceptionGroupObject *self,
+     visitproc visit, void *arg)
 {
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
@@ -758,7 +762,8 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 }
 
 static PyObject *
-BaseExceptionGroup_derive(PyObject *self_, PyObject *args) {
+BaseExceptionGroup_derive(PyObject *self_, PyObject *args)
+{
     PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
     PyObject *excs = NULL;
     if (!PyArg_ParseTuple(args, "O", &excs)) {

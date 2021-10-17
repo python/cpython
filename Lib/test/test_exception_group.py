@@ -38,7 +38,7 @@ class BadConstructorArgs(unittest.TestCase):
             ExceptionGroup(None, [ValueError(12)])
 
     def test_bad_EG_construction__bad_excs_sequence(self):
-        MSG = 'argument 2 must be a non-empty sequence'
+        MSG = 'second argument \(exceptions\) must be a non-empty sequence'
         with self.assertRaisesRegex(TypeError, MSG):
             ExceptionGroup('errors not sequence', {ValueError(42)})
         with self.assertRaisesRegex(TypeError, MSG):
@@ -47,10 +47,10 @@ class BadConstructorArgs(unittest.TestCase):
             ExceptionGroup("eg", None)
 
     def test_bad_EG_construction__nested_non_exceptions(self):
-        MSG = 'Item [0-9]+ of argument 2 is not an exception instance'
-        with self.assertRaisesRegex(TypeError, MSG):
-            ExceptionGroup('expect instance, not type', [ValueError]);
-        with self.assertRaisesRegex(TypeError, MSG):
+        MSG = 'Item [0-9]+ of second argument \(exceptions\) is not an exception'
+        with self.assertRaisesRegex(ValueError, MSG):
+            ExceptionGroup('expect instance, not type', [OSError]);
+        with self.assertRaisesRegex(ValueError, MSG):
             ExceptionGroup('bad error', ["not an exception"])
 
 
