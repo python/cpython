@@ -821,8 +821,8 @@ of the bind method is::
 where:
 
 sequence
-   is a string that denotes the target kind of event.  (See the bind man page and
-   page 201 of John Ousterhout's book for details).
+   is a string that denotes the target kind of event.  (See the bind(3tk) man page
+   and page 201 of John Ousterhout's book for details).
 
 func
    is a Python function, taking one argument, to be invoked when the event occurs.
