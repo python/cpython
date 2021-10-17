@@ -1,0 +1,5 @@
+Miscellaneous source files for the main Python shared library
+
+Esse meu projeto feito em aula :
+De  um Simulador de Caixa Eletroico
+print('=' * 30) print('{:^30}'.format('BANCO CEV ')) print('=' * 30) valor = int(input('Qual Valor Deseja Sacar? R$ ')) total = valor ced = 200 totCed = 0 while True: if total >= ced: total -= ced totCed += 1 else: if totCed > 0: print(f'Total de {totCed} Cédulas de R${ced} ') if ced == 200: ced = 100 elif ced == 100: ced = 50 elif ced == 50: ced = 20 elif ced == 20: ced = 10 elif ced == 10: ced = 5 elif ced == 5: ced = 2 totCed = 0 if total == 0: break print('=' * 30) print('OBRIGADO POR USAR NOSSOS SERVIÇOS!! ')
