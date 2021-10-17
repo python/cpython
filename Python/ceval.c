@@ -2446,21 +2446,113 @@ check_eval_breaker:
         }
 
         TARGET(INPLACE_ADD) {
+            PREDICTED(INPLACE_ADD);
+            STAT_INC(INPLACE_ADD, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *sum;
-            if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
-                /* unicode_concatenate consumed the ref to left */
-            }
-            else {
-                sum = PyNumber_InPlaceAdd(left, right);
-                Py_DECREF(left);
-            }
+            PyObject *sum = PyNumber_InPlaceAdd(left, right);
+            Py_DECREF(left);
             Py_DECREF(right);
             SET_TOP(sum);
             if (sum == NULL)
                 goto error;
+            DISPATCH();
+        }
+
+        TARGET(INPLACE_ADD_ADAPTIVE) {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_InplaceAdd(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(INPLACE_ADD, deferred);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(INPLACE_ADD, unquickened);
+                JUMP_TO_INSTRUCTION(INPLACE_ADD);
+            }
+        }
+
+        TARGET(INPLACE_ADD_INT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), INPLACE_ADD);
+            DEOPT_IF(!PyLong_CheckExact(right), INPLACE_ADD);
+            STAT_INC(INPLACE_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sum);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(INPLACE_ADD_FLOAT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), INPLACE_ADD);
+            DEOPT_IF(!PyFloat_CheckExact(right), INPLACE_ADD);
+            STAT_INC(INPLACE_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            double dsum = ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            PyObject *sum = PyFloat_FromDouble(dsum);
+            SET_SECOND(sum);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            STACK_SHRINK(1);
+            if (sum == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(INPLACE_ADD_UNICODE) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), INPLACE_ADD);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), INPLACE_ADD);
+            STAT_INC(BINARY_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *res = PyUnicode_Concat(left, right);
+            STACK_SHRINK(1);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (TOP() == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(INPLACE_ADD_UNICODE_FAST) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyUnicode_CheckExact(left), INPLACE_ADD);
+            DEOPT_IF(!PyUnicode_CheckExact(right), INPLACE_ADD);
+            DEOPT_IF(Py_REFCNT(left) != 2, INPLACE_ADD);
+            int next_oparg = _Py_OPARG(*next_instr);
+            assert(_Py_OPCODE(*next_instr) == STORE_FAST);
+            PyObject *var = GETLOCAL(next_oparg);
+            DEOPT_IF(var != left, INPLACE_ADD);
+            STAT_INC(INPLACE_ADD, hit);
+            record_hit_inline(next_instr, oparg);
+            GETLOCAL(next_oparg) = NULL;
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            PyUnicode_Append(&TOP(), right);
+            Py_DECREF(right);
+            if (TOP() == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -5013,6 +5105,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
+MISS_WITH_OPARG_COUNTER(INPLACE_ADD)
 MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
 
 binary_subscr_dict_error:
