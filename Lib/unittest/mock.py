@@ -1355,7 +1355,8 @@ class _patch(object):
             with self.decoration_helper(patched,
                                         args,
                                         keywargs) as (newargs, newkeywargs):
-                yield from func(*newargs, **newkeywargs)
+                out = yield from func(*newargs, **newkeywargs)
+                return out
 
         patched.patchings = [self]
         return patched
