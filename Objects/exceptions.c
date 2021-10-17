@@ -647,28 +647,28 @@ _PyBaseExceptionGroupObject_cast(PyObject *exc)
 static PyObject *
 BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *msg = NULL;
-    PyObject *excs = NULL;
+    PyObject *message = NULL;
+    PyObject *exceptions = NULL;
 
-    if (!PyArg_ParseTuple(args, "UO", &msg, &excs)) {
+    if (!PyArg_ParseTuple(args, "UO", &message, &exceptions)) {
         return NULL;
     }
 
-    if (!PySequence_Check(excs)) {
+    if (!PySequence_Check(exceptions)) {
         PyErr_SetString(
             PyExc_TypeError,
             "second argument (exceptions) must be a sequence");
         return NULL;
     }
 
-    excs = PySequence_Tuple(excs);
-    if (!excs) {
+    exceptions = PySequence_Tuple(exceptions);
+    if (!exceptions) {
         return NULL;
     }
 
-    /* We are now holding a ref to the excs tuple */
+    /* We are now holding a ref to the exceptions tuple */
 
-    Py_ssize_t numexcs = PySequence_Length(excs);
+    Py_ssize_t numexcs = PySequence_Length(exceptions);
     if (numexcs <= 0) {
         PyErr_SetString(
             PyExc_TypeError,
@@ -678,7 +678,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     bool nested_base_exceptions = false;
     for (Py_ssize_t i = 0; i < numexcs; i++) {
-        PyObject *exc = PyTuple_GET_ITEM(excs, i);
+        PyObject *exc = PyTuple_GET_ITEM(exceptions, i);
         if (!exc) {
             goto error;
         }
@@ -724,11 +724,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    self->msg = Py_NewRef(msg);
-    self->excs = excs;
+    self->msg = Py_NewRef(message);
+    self->excs = exceptions;
     return (PyObject*)self;
 error:
-    Py_DECREF(excs);
+    Py_DECREF(exceptions);
     return NULL;
 }
 
