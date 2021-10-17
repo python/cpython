@@ -503,7 +503,7 @@ between the effects of a drug versus a placebo::
 
 Simulation of arrival times and service deliveries for a multiserver queue::
 
-    from heapq import heapreplace
+    from heapq import heapify, heapreplace
     from random import expovariate, gauss
     from statistics import mean, quantiles
 
@@ -515,6 +515,7 @@ Simulation of arrival times and service deliveries for a multiserver queue::
     waits = []
     arrival_time = 0.0
     servers = [0.0] * num_servers  # time when each server becomes available
+    heapify(servers)
     for i in range(1_000_000):
         arrival_time += expovariate(1.0 / average_arrival_interval)
         next_server_available = servers[0]
