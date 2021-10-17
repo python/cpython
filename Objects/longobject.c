@@ -3158,9 +3158,8 @@ long_add(PyLongObject *a, PyLongObject *b)
     return _PyLong_Add(a, b);
 }
 
-
-static PyObject *
-long_sub(PyLongObject *a, PyLongObject *b)
+PyObject *
+_PyLong_Subtract(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
 
@@ -3188,6 +3187,13 @@ long_sub(PyLongObject *a, PyLongObject *b)
             z = x_sub(a, b);
     }
     return (PyObject *)z;
+}
+
+static PyObject *
+long_sub(PyLongObject *a, PyLongObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Subtract(a, b);
 }
 
 /* Grade school multiplication, ignoring the signs.

@@ -126,6 +126,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_METHOD, "load_method");
     err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_MULTIPLY, "binary_multiply");
+    err += add_stat_dict(stats, BINARY_SUBTRACT, "binary_subtract");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
@@ -184,6 +185,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
     print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
     print_stats(out, &_specialization_stats[BINARY_MULTIPLY], "binary_multiply");
+    print_stats(out, &_specialization_stats[BINARY_SUBTRACT], "binary_subtract");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
@@ -236,6 +238,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_MULTIPLY] = BINARY_MULTIPLY_ADAPTIVE,
+    [BINARY_SUBTRACT] = BINARY_SUBTRACT_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
@@ -248,6 +251,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_ADD] = 0,
     [BINARY_MULTIPLY] = 0,
+    [BINARY_SUBTRACT] = 0,
     [BINARY_SUBSCR] = 0,
     [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
@@ -1253,6 +1257,35 @@ success:
     return 0;
 }
 
+int
+_Py_Specialize_BinarySubtract(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
+{
+    if (!Py_IS_TYPE(left, Py_TYPE(right))) {
+        SPECIALIZATION_FAIL(BINARY_SUBTRACT, SPEC_FAIL_DIFFERENT_TYPES);
+        goto fail;
+    }
+    if (PyLong_CheckExact(left)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_INT, saturating_start());
+        goto success;
+    }
+    else if (PyFloat_CheckExact(left)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_FLOAT, saturating_start());
+        goto success;
+    }
+    else {
+        SPECIALIZATION_FAIL(BINARY_SUBTRACT, SPEC_FAIL_OTHER);
+    }
+fail:
+    STAT_INC(BINARY_SUBTRACT, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(BINARY_SUBTRACT, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}
+
 static int
 specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
@@ -1446,5 +1479,6 @@ _Py_Specialize_CallFunction(
         assert(!PyErr_Occurred());
         cache0->counter = initial_counter_value();
     }
+
     return 0;
 }

@@ -2171,14 +2171,72 @@ check_eval_breaker:
         }
 
         TARGET(BINARY_SUBTRACT) {
+            PREDICTED(BINARY_SUBTRACT);
+            STAT_INC(BINARY_SUBTRACT, unquickened);
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_Subtract(left, right);
             Py_DECREF(right);
             Py_DECREF(left);
             SET_TOP(diff);
-            if (diff == NULL)
+            if (diff == NULL) {
                 goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_SUBTRACT_ADAPTIVE) {
+            if (oparg == 0) {
+                PyObject *left = SECOND();
+                PyObject *right = TOP();
+                next_instr--;
+                if (_Py_Specialize_BinarySubtract(left, right, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(BINARY_SUBTRACT, deferred);
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(BINARY_SUBTRACT, unquickened);
+                JUMP_TO_INSTRUCTION(BINARY_SUBTRACT);
+            }
+        }
+
+        TARGET(BINARY_SUBTRACT_INT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_SUBTRACT);
+            DEOPT_IF(!PyLong_CheckExact(right), BINARY_SUBTRACT);
+            STAT_INC(BINARY_SUBTRACT, hit);
+            record_hit_inline(next_instr, oparg);
+            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(BINARY_SUBTRACT_FLOAT) {
+            PyObject *left = SECOND();
+            PyObject *right = TOP();
+            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_SUBTRACT);
+            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_SUBTRACT);
+            STAT_INC(BINARY_SUBTRACT, hit);
+            record_hit_inline(next_instr, oparg);
+            double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
+            PyObject *sub = PyFloat_FromDouble(dsub);
+            SET_SECOND(sub);
+            Py_DECREF(right);
+            Py_DECREF(left);
+            STACK_SHRINK(1);
+            if (sub == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -5135,6 +5193,7 @@ MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
+MISS_WITH_OPARG_COUNTER(BINARY_SUBTRACT)
 
 binary_subscr_dict_error:
         {
