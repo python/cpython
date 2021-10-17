@@ -1,0 +1,2 @@
+Fix reverse pointer generation for :class:`ipaddress.IPv4Network` and
+:class:`ipaddress.IPv6Network` objects.
