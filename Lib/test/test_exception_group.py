@@ -45,7 +45,7 @@ class BadConstructorArgs(unittest.TestCase):
             ExceptionGroup("eg", None)
 
         MSG = 'second argument \(exceptions\) must be a non-empty sequence'
-        with self.assertRaisesRegex(TypeError, MSG):
+        with self.assertRaisesRegex(ValueError, MSG):
             ExceptionGroup("eg", [])
 
     def test_bad_EG_construction__nested_non_exceptions(self):

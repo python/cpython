@@ -671,7 +671,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numexcs = PySequence_Length(exceptions);
     if (numexcs <= 0) {
         PyErr_SetString(
-            PyExc_TypeError,
+            PyExc_ValueError,
             "second argument (exceptions) must be a non-empty sequence");
         goto error;
     }
