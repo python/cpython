@@ -6,8 +6,9 @@
 #include "pycore_pathconfig.h"
 #include "osdefs.h"               // DELIM
 
-#include <sys/types.h>
+#include <stdlib.h>               // getenv()
 #include <string.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
@@ -1457,7 +1458,7 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     /* If a pyvenv.cfg configure file is found,
-       argv0_path is overriden with its 'home' variable. */
+       argv0_path is overridden with its 'home' variable. */
     status = calculate_read_pyenv(calculate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1489,6 +1490,16 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         status = calculate_module_search_path(calculate, pathconfig);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
+        }
+    }
+
+    if (pathconfig->stdlib_dir == NULL) {
+        if (calculate->prefix_found) {
+            /* This must be done *before* calculate_set_prefix() is called. */
+            pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->prefix);
+            if (pathconfig->stdlib_dir == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
         }
     }
 

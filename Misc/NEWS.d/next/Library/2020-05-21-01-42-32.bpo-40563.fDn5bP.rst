@@ -1,1 +1,0 @@
-Support pathlike objects on dbm/shelve. Patch by Hakan Çelik and Henry-Joseph Audéoud.

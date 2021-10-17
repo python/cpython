@@ -50,13 +50,6 @@ This article explains the new features in Python 3.10, compared to 3.9.
 
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
-
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.10 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
-
 Summary -- Release highlights
 =============================
 
@@ -1003,7 +996,7 @@ Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 Keyword-only fields
 ~~~~~~~~~~~~~~~~~~~
 
-dataclassses now supports fields that are keyword-only in the
+dataclasses now supports fields that are keyword-only in the
 generated __init__ method.  There are a number of ways of specifying
 keyword-only fields.
 
@@ -1583,7 +1576,7 @@ Deprecated
 
 * Currently Python accepts numeric literals immediately followed by keywords,
   for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
-  and ambigious expressions like ``[0x1for x in y]`` (which can be
+  and ambiguous expressions like ``[0x1for x in y]`` (which can be
   interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  Starting in
   this release, a deprecation warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
@@ -1920,7 +1913,7 @@ Changes in the Python API
   if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
   ``{"None": None}`` as builtins: same behavior as :func:`eval` and
   :func:`exec` functions.  Defining a function with ``def function(...): ...``
-  in Python is not affected, globals cannot be overriden with this syntax: it
+  in Python is not affected, globals cannot be overridden with this syntax: it
   also inherits the current builtins.
   (Contributed by Victor Stinner in :issue:`42990`.)
 

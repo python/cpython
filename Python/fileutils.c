@@ -3,6 +3,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
+#include <stdlib.h>               // mbstowcs()
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
@@ -221,7 +222,7 @@ check_force_ascii(void)
         ch = (unsigned char)0xA7;
         res = _Py_mbstowcs(&wch, (char*)&ch, 1);
         if (res != DECODE_ERROR && wch == L'\xA7') {
-            /* On HP-UX withe C locale or the POSIX locale,
+            /* On HP-UX with C locale or the POSIX locale,
                nl_langinfo(CODESET) announces "roman8", whereas mbstowcs() uses
                Latin1 encoding in practice. Force ASCII in this case.
 
@@ -2165,6 +2166,18 @@ _Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
     assert(dirname != NULL && relfile != NULL);
     assert(bufsize > 0);
     return join_relfile(dirname, bufsize, dirname, relfile);
+}
+
+
+size_t
+_Py_find_basename(const wchar_t *filename)
+{
+    for (size_t i = wcslen(filename); i > 0; --i) {
+        if (filename[i] == SEP) {
+            return i + 1;
+        }
+    }
+    return 0;
 }
 
 

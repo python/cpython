@@ -2,7 +2,7 @@ import sys
 import unittest
 import tkinter
 from tkinter import ttk
-from test.support import requires, run_unittest, gc_collect
+from test.support import requires, gc_collect
 from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
@@ -308,7 +308,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self._test_widget(ttk.LabeledScale)
 
 
-tests_gui = (LabeledScaleTest, OptionMenuTest, DefaultRootTest)
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()
