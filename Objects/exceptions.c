@@ -653,35 +653,45 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "UO", &msg, &excs)) {
         return NULL;
     }
-    Py_ssize_t numexcs = -1;
-    if (PySequence_Check(excs)) {
-        numexcs = PySequence_Length(excs);
+
+    if (!PySequence_Check(excs)) {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "second argument (exceptions) must be a sequence");
+        return NULL;
     }
+
+    excs = PySequence_Tuple(excs);
+    if (!excs) {
+        return NULL;
+    }
+
+    /* We are now holding a ref to the excs tuple */
+
+    Py_ssize_t numexcs = PySequence_Length(excs);
     if (numexcs <= 0) {
         PyErr_SetString(
             PyExc_TypeError,
             "second argument (exceptions) must be a non-empty sequence");
-        return NULL;
+        goto error;
     }
 
     bool nested_base_exceptions = false;
     for (Py_ssize_t i = 0; i < numexcs; i++) {
-        PyObject *exc = PySequence_GetItem(excs, i);
+        PyObject *exc = PyTuple_GET_ITEM(excs, i);
         if (!exc) {
-            return NULL;
+            goto error;
         }
         if (!PyExceptionInstance_Check(exc)) {
             PyErr_Format(
                 PyExc_ValueError,
                 "Item %d of second argument (exceptions) is not an exception",
                 i);
-            Py_DECREF(exc);
-            return NULL;
+            goto error;
         }
         int is_nonbase_exception = PyObject_IsInstance(exc, PyExc_Exception);
-        Py_DECREF(exc);
         if (is_nonbase_exception < 0) {
-            return NULL;
+            goto error;
         }
         else if (is_nonbase_exception == 0) {
             nested_base_exceptions = true;
@@ -693,7 +703,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (nested_base_exceptions) {
             PyErr_SetString(PyExc_TypeError,
                 "Cannot nest BaseExceptions in an ExceptionGroup");
-            return NULL;
+            goto error;
         }
     }
     else if (cls == (PyTypeObject*)PyExc_BaseExceptionGroup) {
@@ -710,9 +720,16 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     PyBaseExceptionGroupObject *self =
         _PyBaseExceptionGroupObject_cast(BaseException_new(cls, args, kwds));
+    if (!self) {
+        goto error;
+    }
+
     self->msg = Py_NewRef(msg);
-    self->excs = PySequence_Tuple(excs);
+    self->excs = excs;
     return (PyObject*)self;
+error:
+    Py_DECREF(excs);
+    return NULL;
 }
 
 static int
