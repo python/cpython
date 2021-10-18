@@ -644,3 +644,8 @@ Removed
 
   Remove also the ``Py_MARSHAL_VERSION`` macro from the limited C API.
   (Contributed by Victor Stinner in :issue:`45474`.)
+
+* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  limited C API.
+  (Contributed by Victor Stinner in :issue:`35134`.)
