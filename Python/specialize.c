@@ -245,7 +245,7 @@ static uint8_t cache_requirements[256] = {
     [BINARY_ADD] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
-    [CALL_FUNCTION] = 1 /* _PyAdaptiveEntry */
+    [CALL_FUNCTION] = 2 /* _PyAdaptiveEntry and _PyCallCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -1225,6 +1225,7 @@ specialize_py_call(
     PyFunctionObject *func, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
+    _PyCallCache *cache1 = &cache[-1].call;
     /* Exclude generator or coroutines for now */
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int flags = code->co_flags;
@@ -1236,10 +1237,6 @@ specialize_py_call(
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_COMPLEX_PARAMETERS);
         return -1;
     }
-    if (code->co_argcount != nargs) {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-        return -1;
-    }
     if ((flags & CO_OPTIMIZED) == 0) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CO_NOT_OPTIMIZED);
         return -1;
@@ -1248,13 +1245,31 @@ specialize_py_call(
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_FREE_VARS);
         return -1;
     }
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    int argcount = code->co_argcount;
+    int defcount = func->func_defaults == NULL ? 0 : (int)PyTuple_GET_SIZE(func->func_defaults);
+    assert(defcount <= argcount);
+    int min_args = argcount-defcount;
+    if (nargs > argcount || nargs < min_args) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+        return -1;
+    }
+    assert(nargs <= argcount && nargs >= min_args);
+    int defstart = nargs - min_args;
+    int deflen = argcount - nargs;
+    assert(defstart >= 0 && deflen >= 0);
+    assert(deflen == 0 || func->func_defaults != NULL);
+    if (defstart > 0xffff || deflen > 0xffff) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_RANGE);
+        return -1;
+    }
     int version = _PyFunction_GetVersionForCurrentState(func);
     if (version == 0) {
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
-    cache0->version = version;
+    cache1->func_version = version;
+    cache1->defaults_start = defstart;
+    cache1->defaults_len = deflen;
     *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_PY_SIMPLE, _Py_OPARG(*instr));
     return 0;
 }
@@ -1265,7 +1280,6 @@ _Py_Specialize_CallFunction(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
     int fail;
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs, cache);
@@ -1280,6 +1294,7 @@ _Py_Specialize_CallFunction(
         SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OTHER);
         fail = -1;
     }
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
     if (fail) {
         STAT_INC(CALL_FUNCTION, specialization_failure);
         assert(!PyErr_Occurred());
