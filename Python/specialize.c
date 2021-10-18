@@ -1,4 +1,3 @@
-
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_dict.h"
@@ -7,6 +6,8 @@
 #include "pycore_object.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
+#include <stdlib.h> // rand()
 
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
