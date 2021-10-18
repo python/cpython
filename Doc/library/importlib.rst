@@ -817,7 +817,7 @@ ABC hierarchy::
 
     .. abstractmethod:: name()
 
-      The base name of this object without any parent references.
+       The base name of this object without any parent references.
 
     .. abstractmethod:: iterdir()
 
