@@ -962,25 +962,22 @@ exceptiongroup_split_recursive(PyObject *exc,
         if (!rec) {
             goto done;
         }
-        if (!PyTuple_CheckExact(rec) || PyTuple_GET_SIZE(rec) != 2) {
-            PyErr_SetString(PyExc_RuntimeError,
-                "Internal error: invalid value");
-            Py_DECREF(rec);
-            goto done;
-        }
-        int res = 0;
+        assert(PyTuple_CheckExact(rec) && PyTuple_GET_SIZE(rec) == 2);
         PyObject *e_match = PyTuple_GET_ITEM(rec, 0);
         if (e_match != Py_None) {
-            res += PyList_Append(match_list, e_match);
+            if (PyList_Append(match_list, e_match) < 0) {
+                Py_DECREF(rec);
+                goto done;
+            }
         }
         PyObject *e_rest = PyTuple_GET_ITEM(rec, 1);
         if (e_rest != Py_None) {
-            res += PyList_Append(rest_list, e_rest);
+            if (PyList_Append(rest_list, e_rest) < 0) {
+                Py_DECREF(rec);
+                goto done;
+            }
         }
         Py_DECREF(rec);
-        if (res < 0) {
-            goto done;
-        }
     }
 
     /* construct result */
