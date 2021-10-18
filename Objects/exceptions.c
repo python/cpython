@@ -1091,9 +1091,6 @@ create_exception_group_class(void) {
     PyExc_ExceptionGroup = PyErr_NewException(
         "builtins.ExceptionGroup", bases, NULL);
     Py_DECREF(bases);
-    if (PyExc_ExceptionGroup == NULL) {
-        return NULL;
-    }
     return PyExc_ExceptionGroup;
 }
 
