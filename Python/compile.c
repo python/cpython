@@ -1702,11 +1702,6 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
     } \
 }
 
-#define VISIT_SLICE(C, V, CTX) {\
-    if (!compiler_visit_slice((C), (V), (CTX))) \
-        return 0; \
-}
-
 #define VISIT_SEQ(C, TYPE, SEQ) { \
     int _i; \
     asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
