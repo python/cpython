@@ -842,31 +842,27 @@ error:
     return NULL;
 }
 
-enum _exceptiongroup_split_matcher_type {
+typedef enum {
     /* Exception type or tuple of thereof */
     EXCEPTION_GROUP_MATCH_BY_TYPE = 0,
     /* A PyFunction returning True for matching exceptions */
     EXCEPTION_GROUP_MATCH_BY_PREDICATE = 1,
     /* An instance or container thereof, checked with equality */
     EXCEPTION_GROUP_MATCH_INSTANCES = 2
-};
-
-struct _exceptiongroup_matcher {
-    enum _exceptiongroup_split_matcher_type type;
-    PyObject *value;
-};
+} _exceptiongroup_split_matcher_type;
 
 static int
-_set_matcher_type(struct _exceptiongroup_matcher *matcher)
+_get_matcher_type(PyObject *value,
+                  _exceptiongroup_split_matcher_type *type)
 {
     /* the python API supports only BY_TYPE and BY_PREDICATE */
-    if (PyExceptionClass_Check(matcher->value) ||
-        PyTuple_CheckExact(matcher->value)) {
-        matcher->type = EXCEPTION_GROUP_MATCH_BY_TYPE;
+    if (PyExceptionClass_Check(value) ||
+        PyTuple_CheckExact(value)) {
+        *type = EXCEPTION_GROUP_MATCH_BY_TYPE;
         return 0;
     }
-    else if (PyFunction_Check(matcher->value)) {
-        matcher->type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
+    if (PyFunction_Check(value)) {
+        *type = EXCEPTION_GROUP_MATCH_BY_PREDICATE;
         return 0;
     }
     PyErr_SetString(
@@ -877,14 +873,15 @@ _set_matcher_type(struct _exceptiongroup_matcher *matcher)
 
 static int
 exceptiongroup_split_check_match(PyObject *exc,
-                                 const struct _exceptiongroup_matcher *matcher)
+                                 _exceptiongroup_split_matcher_type matcher_type,
+                                 PyObject *matcher_value)
 {
-    switch (matcher->type) {
+    switch (matcher_type) {
     case EXCEPTION_GROUP_MATCH_BY_TYPE: {
-        return PyErr_GivenExceptionMatches(exc, matcher->value);
+        return PyErr_GivenExceptionMatches(exc, matcher_value);
     }
     case EXCEPTION_GROUP_MATCH_BY_PREDICATE: {
-        PyObject *exc_matches = PyObject_CallOneArg(matcher->value, exc);
+        PyObject *exc_matches = PyObject_CallOneArg(matcher_value, exc);
         if (exc_matches == NULL) {
             return -1;
         }
@@ -893,10 +890,10 @@ exceptiongroup_split_check_match(PyObject *exc,
         return is_true;
     }
     case EXCEPTION_GROUP_MATCH_INSTANCES: {
-        if (PySequence_Check(matcher->value)) {
-            return PySequence_Contains(matcher->value, exc);
+        if (PySequence_Check(matcher_value)) {
+            return PySequence_Contains(matcher_value, exc);
         }
-        return matcher->value == exc;
+        return matcher_value == exc;
     }
     }
     return 0;
@@ -904,10 +901,12 @@ exceptiongroup_split_check_match(PyObject *exc,
 
 static PyObject *
 exceptiongroup_split_recursive(PyObject *exc,
-                               const struct _exceptiongroup_matcher* matcher,
+                               _exceptiongroup_split_matcher_type matcher_type,
+                               PyObject *matcher_value,
                                int construct_rest)
 {
-    int is_match = exceptiongroup_split_check_match(exc, matcher);
+    int is_match = exceptiongroup_split_check_match(
+        exc, matcher_type, matcher_value);
     if (is_match < 0) {
         return NULL;
     }
@@ -951,7 +950,7 @@ exceptiongroup_split_recursive(PyObject *exc,
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
         assert(e);
         PyObject *rec = exceptiongroup_split_recursive(
-            e, matcher, construct_rest);
+            e, matcher_type, matcher_value, construct_rest);
         if (!rec) {
             goto done;
         }
@@ -1008,13 +1007,12 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    struct _exceptiongroup_matcher matcher;
-    matcher.value = matcher_value;
-    if (_set_matcher_type(&matcher) == -1) {
+    _exceptiongroup_split_matcher_type matcher_type;
+    if (_get_matcher_type(matcher_value, &matcher_type) == -1) {
         return NULL;
     }
     return exceptiongroup_split_recursive(
-        self, &matcher, 1 /* with_construct_rest */);
+        self, matcher_type, matcher_value, 1 /* with_construct_rest */);
 }
 
 static PyObject *
@@ -1025,13 +1023,12 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    struct _exceptiongroup_matcher matcher;
-    matcher.value = matcher_value;
-    if (_set_matcher_type(&matcher) == -1) {
+    _exceptiongroup_split_matcher_type matcher_type;
+    if (_get_matcher_type(matcher_value, &matcher_type) == -1) {
         return NULL;
     }
     PyObject *ret = exceptiongroup_split_recursive(
-        self, &matcher, 0 /* without construct_rest */);
+        self, matcher_type, matcher_value, 0 /* without construct_rest */);
 
     if (!ret) {
         return NULL;
