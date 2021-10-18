@@ -322,6 +322,63 @@ absolutize(wchar_t **path_p)
 }
 
 
+/* Remove navigation elements such as "." and "..". */
+// This is similar to canonicalize() is PC/getpathp.c.
+static PyStatus
+normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
+{
+    assert(orig && *orig != L'\0');
+    // We disallow trailing dots to keep this function simpler.
+    assert(orig[wcslen(orig)-1] != L'.');
+    if (wcslen(orig) + 1 >= buf_len) {
+        return PATHLEN_ERR();
+    }
+
+    int dots = -1;
+    wchar_t *buf_next = buf;
+    // The resulting filename will never be longer than orig.
+    for (const wchar_t *unused = orig; *unused != L'\0'; unused++) {
+        wchar_t c = *unused;
+        buf_next[0] = c;
+        buf_next++;
+        if (c == SEP) {
+            assert(dots <= 2);
+            if (dots == 2) {
+                buf_next -= 3;  // "../"
+                assert(buf_next != buf);
+                // Turn "/x/y/../z" into "/x/z".  We cap it off at the root,
+                // so "/../spam" becomes "/spam".
+                if (buf_next - 1 != buf) {
+                    buf_next--;
+                    assert(*buf_next == SEP);
+                    // Move to the previous SEP in the buffer.
+                    while (*(buf_next - 1) != SEP) {
+                        buf_next--;
+                    }
+                }
+            }
+            else if (dots == 1) {
+                // Turn "/./" into "/".
+                buf_next -= 2;  // "./"
+                assert(*(buf_next - 1) == SEP);
+            }
+            dots = 0;
+        }
+        else if (dots >= 0) {
+            if (c == L'.') {
+                assert(dots <= 2);
+                dots++;
+            }
+            else {
+                dots = -1;
+            }
+        }
+    }
+    *buf_next = L'\0';
+    return _PyStatus_OK();
+}
+
+
 /* Is module -- check for .pyc too */
 static PyStatus
 ismodule(const wchar_t *path, int *result)
@@ -515,6 +572,28 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
     /* Fail */
     *found = 0;
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+calculate_set_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+{
+    // Note that, unlike calculate_set_prefix(), here we allow a negative
+    // prefix_found.  That means the source tree Lib dir gets used.
+    if (!calculate->prefix_found) {
+        return _PyStatus_OK();
+    }
+    wchar_t buf[MAXPATHLEN + 1];
+    PyStatus status = normalize(calculate->prefix,
+                                buf, Py_ARRAY_LENGTH(buf));
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    pathconfig->stdlib_dir = _PyMem_RawWcsdup(buf);
+    if (pathconfig->stdlib_dir == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
     return _PyStatus_OK();
 }
 
@@ -1494,12 +1573,10 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     if (pathconfig->stdlib_dir == NULL) {
-        if (calculate->prefix_found) {
-            /* This must be done *before* calculate_set_prefix() is called. */
-            pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->prefix);
-            if (pathconfig->stdlib_dir == NULL) {
-                return _PyStatus_NO_MEMORY();
-            }
+        /* This must be done *before* calculate_set_prefix() is called. */
+        status = calculate_set_stdlib_dir(calculate, pathconfig);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
     }
 
