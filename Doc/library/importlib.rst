@@ -805,6 +805,46 @@ ABC hierarchy::
 
     .. versionadded:: 3.9
 
+    .. abstractmethod:: name()
+
+       The base name of this object without any parent references.
+
+    .. abstractmethod:: iterdir()
+
+       Yield Traversable objects in self.
+
+    .. abstractmethod:: is_dir()
+
+       Return True if self is a directory.
+
+    .. abstractmethod:: is_file()
+
+       Return True if self is a file.
+
+    .. abstractmethod:: joinpath(child)
+
+       Return Traversable child in self.
+
+    .. abstractmethod:: __truediv__(child)
+
+       Return Traversable child in self.
+
+    .. abstractmethod:: open(mode='r', *args, **kwargs)
+
+       *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
+       suitable for reading (same as :attr:`pathlib.Path.open`).
+
+       When opening as text, accepts encoding parameters such as those
+       accepted by :attr:`io.TextIOWrapper`.
+
+    .. method:: read_bytes()
+
+       Read contents of self as bytes.
+
+    .. method:: read_text(encoding=None)
+
+       Read contents of self as text.
+
 
 .. class:: TraversableResources
 
