@@ -19,7 +19,7 @@ struct _warnings_runtime_state {
 
 extern int _PyWarnings_InitState(PyInterpreterState *interp);
 
-extern PyObject* _PyWarnings_Init(void);
+PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
 
 extern void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
 
