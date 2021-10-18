@@ -825,7 +825,7 @@ ABC hierarchy::
 
     .. abstractmethod:: is_dir()
 
-       Return True if self is a directtory.
+       Return True if self is a directory.
 
     .. abstractmethod:: is_file()
 
