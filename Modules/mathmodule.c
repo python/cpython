@@ -3321,6 +3321,17 @@ error:
     return NULL;
 }
 
+static const long long fast_comb_limits[] = {
+#if SIZEOF_LONG_LONG >= 8
+    0, 0, 4294967296LL, 3329022LL, 102570LL, 13467LL, 3612LL, 1449LL,  // 0-7
+    746LL, 453LL, 308LL, 227LL, 178LL, 147LL, 125LL, 110LL,  // 8-15
+    99LL, 90LL, 84LL, 79LL, 75LL, 72LL, 69LL, 68LL,  // 16-23
+    66LL, 65LL, 64LL, 63LL, 63LL, 62LL, 62LL, 62LL,  // 24-31
+#elif SIZEOF_LONG_LONG >= 4
+    0, 0, 65536LL, 2049LL, 402LL, 161LL, 92LL, 63LL,  // 0-7
+    49LL, 42LL, 37LL, 34LL, 33LL, 31LL, 31LL, 30LL,  // 8-15
+#endif
+};
 
 /*[clinic input]
 math.comb
@@ -3347,9 +3358,9 @@ static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
 /*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
 {
-    PyObject *result = NULL, *factor = NULL, *temp;
+    PyObject *result = NULL, *temp;
     int overflow, cmp;
-    long long i, factors;
+    long long i, factors, numerator;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -3372,37 +3383,63 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto error;
     }
 
-    /* k = min(k, n - k) */
-    temp = PyNumber_Subtract(n, k);
-    if (temp == NULL) {
-        goto error;
-    }
-    if (Py_SIZE(temp) < 0) {
-        Py_DECREF(temp);
-        result = PyLong_FromLong(0);
-        goto done;
-    }
-    cmp = PyObject_RichCompareBool(temp, k, Py_LT);
-    if (cmp > 0) {
-        Py_SETREF(k, temp);
-    }
-    else {
-        Py_DECREF(temp);
-        if (cmp < 0) {
-            goto error;
+    numerator = PyLong_AsLongLongAndOverflow(n, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (!overflow) {
+        assert(numerator >= 0);
+        factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+        assert(overflow >= 0 && !PyErr_Occurred());
+        if (overflow > 0 || factors > numerator) {
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        assert(factors >= 0);
+        if (factors > numerator - factors) {
+            factors = numerator - factors;
+        }
+        if (factors > 1 && factors < (int)Py_ARRAY_LENGTH(fast_comb_limits)
+            && numerator <= fast_comb_limits[factors])
+        {
+            unsigned long long res = numerator;
+            for (i = 1; i < factors;) {
+                res *= (unsigned long long)--numerator;
+                res /= (unsigned long long)++i;
+            }
+            result = PyLong_FromUnsignedLongLong(res);
+            goto done;
         }
     }
+    else {
+        /* k = min(k, n - k) */
+        temp = PyNumber_Subtract(n, k);
+        if (temp == NULL) {
+            goto error;
+        }
+        if (Py_SIZE(temp) < 0) {
+            Py_DECREF(temp);
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        cmp = PyObject_RichCompareBool(temp, k, Py_LT);
+        if (cmp > 0) {
+            Py_SETREF(k, temp);
+        }
+        else {
+            Py_DECREF(temp);
+            if (cmp < 0) {
+                goto error;
+            }
+        }
 
-    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
-    if (overflow > 0) {
-        PyErr_Format(PyExc_OverflowError,
-                     "min(n - k, k) must not exceed %lld",
-                     LLONG_MAX);
-        goto error;
-    }
-    if (factors == -1) {
-        /* k is nonnegative, so a return value of -1 can only indicate error */
-        goto error;
+        factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+        assert(overflow >= 0 && !PyErr_Occurred());
+        if (overflow > 0) {
+            PyErr_Format(PyExc_OverflowError,
+                        "min(n - k, k) must not exceed %lld",
+                        LLONG_MAX);
+            goto error;
+        }
+        assert(factors >= 0);
     }
 
     if (factors == 0) {
@@ -3416,14 +3453,13 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto done;
     }
 
-    factor = Py_NewRef(n);
     PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, one));
-        if (factor == NULL) {
+        Py_SETREF(n, PyNumber_Subtract(n, one));
+        if (n == NULL) {
             goto error;
         }
-        Py_SETREF(result, PyNumber_Multiply(result, factor));
+        Py_SETREF(result, PyNumber_Multiply(result, n));
         if (result == NULL) {
             goto error;
         }
@@ -3438,7 +3474,6 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
             goto error;
         }
     }
-    Py_DECREF(factor);
 
 done:
     Py_DECREF(n);
@@ -3446,7 +3481,6 @@ done:
     return result;
 
 error:
-    Py_XDECREF(factor);
     Py_XDECREF(result);
     Py_DECREF(n);
     Py_DECREF(k);
