@@ -1342,7 +1342,7 @@ _Py_Specialize_CallFunction(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache,
     PyObject *builtins)
-{;
+{
     int fail;
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs, cache, builtins);
