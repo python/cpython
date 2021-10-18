@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -9,7 +10,6 @@
 #include "pycore_unionobject.h"   // _PyUnion_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
-#include "longintrepr.h"
 
 
 
@@ -114,7 +114,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         }
         return defaultvalue;
     }
-    result = _PyObject_CallNoArg(hint);
+    result = _PyObject_CallNoArgs(hint);
     Py_DECREF(hint);
     if (result == NULL) {
         PyThreadState *tstate = _PyThreadState_GET();
@@ -1576,7 +1576,7 @@ PyNumber_Long(PyObject *o)
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
-        result = _PyObject_CallNoArg(trunc_func);
+        result = _PyObject_CallNoArgs(trunc_func);
         Py_DECREF(trunc_func);
         if (result == NULL || PyLong_CheckExact(result)) {
             return result;
@@ -2608,7 +2608,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type, a tuple of types or a union"))
+            "isinstance() arg 2 must be a type, a tuple of types, or a union"))
             return -1;
         retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
         if (icls != NULL) {
@@ -2704,7 +2704,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 
     if (!_PyUnion_Check(cls) && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
-                            " a tuple of classes, or a union.")) {
+                            " a tuple of classes, or a union")) {
         return -1;
     }
 

@@ -31,6 +31,7 @@ typedef struct _interpreter_frame {
     int f_lasti;       /* Last instruction if called */
     int stacktop;     /* Offset of TOS from localsplus  */
     PyFrameState f_state;  /* What state the frame is in */
+    int depth; /* Depth of the frame in a ceval loop */
     PyObject *localsplus[1];
 } InterpreterFrame;
 
@@ -85,6 +86,7 @@ _PyFrame_InitializeSpecials(
     frame->generator = NULL;
     frame->f_lasti = -1;
     frame->f_state = FRAME_CREATED;
+    frame->depth = 0;
 }
 
 /* Gets the pointer to the locals array
@@ -128,7 +130,7 @@ _PyFrame_GetFrameObject(InterpreterFrame *frame)
 
 /* Clears all references in the frame.
  * If take is non-zero, then the InterpreterFrame frame
- * may be transfered to the frame object it references
+ * may be transferred to the frame object it references
  * instead of being cleared. Either way
  * the caller no longer owns the references
  * in the frame.

@@ -255,7 +255,7 @@ function::
 Package distributions
 ---------------------
 
-A convience method to resolve the distribution or
+A convenience method to resolve the distribution or
 distributions (in the case of a namespace package) for top-level
 Python packages or modules::
 

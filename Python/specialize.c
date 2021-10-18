@@ -1,11 +1,13 @@
-
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
+#include "pycore_object.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
+
+#include <stdlib.h> // rand()
 
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
@@ -123,6 +125,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
     err += add_stat_dict(stats, LOAD_METHOD, "load_method");
     err += add_stat_dict(stats, BINARY_ADD, "binary_add");
+    err += add_stat_dict(stats, BINARY_MULTIPLY, "binary_multiply");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     if (err < 0) {
@@ -179,6 +182,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
     print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
     print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
+    print_stats(out, &_specialization_stats[BINARY_MULTIPLY], "binary_multiply");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
     if (out != stderr) {
@@ -229,6 +233,7 @@ static uint8_t adaptive_opcodes[256] = {
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
     [LOAD_METHOD] = LOAD_METHOD_ADAPTIVE,
     [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
+    [BINARY_MULTIPLY] = BINARY_MULTIPLY_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
@@ -239,6 +244,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_ADD] = 0,
+    [BINARY_MULTIPLY] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -462,6 +468,7 @@ specialize_module_load_attr(
     PyObject *value = NULL;
     PyObject *getattr;
     _Py_IDENTIFIER(__getattr__);
+    assert(owner->ob_type->tp_inline_values_offset == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NO_DICT);
@@ -489,7 +496,7 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
-    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
     if (keys_version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
@@ -584,51 +591,40 @@ specialize_dict_access(
     PyObject *owner, _Py_CODEUNIT *instr, PyTypeObject *type,
     DesciptorClassification kind, PyObject *name,
     _PyAdaptiveEntry *cache0, _PyAttrCache *cache1,
-    int base_op, int split_op, int hint_op)
+    int base_op, int values_op, int hint_op)
 {
     assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT ||
         kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD);
-    // No desciptor, or non overriding.
+    // No descriptor, or non overriding.
     if (type->tp_dictoffset < 0) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
         return 0;
     }
     if (type->tp_dictoffset > 0) {
         PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
-            return 0;
-        }
-        // We found an instance with a __dict__.
         PyDictObject *dict = (PyDictObject *)*dictptr;
-        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
-        ) {
-            // Keys are shared
+        if (type->tp_inline_values_offset && dict == NULL) {
+            // Virtual dictionary
+            PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
+            assert(type->tp_inline_values_offset > 0);
             assert(PyUnicode_CheckExact(name));
-            Py_hash_t hash = PyObject_Hash(name);
-            if (hash == -1) {
-                return -1;
-            }
-            PyObject *value;
-            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+            Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
             assert (index != DKIX_ERROR);
             if (index != (uint16_t)index) {
                 SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
                 return 0;
             }
-            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
-            if (keys_version == 0) {
-                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_VERSIONS);
-                return 0;
-            }
-            cache1->dk_version_or_hint = keys_version;
             cache1->tp_version = type->tp_version_tag;
             cache0->index = (uint16_t)index;
-            *instr = _Py_MAKECODEUNIT(split_op, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(values_op, _Py_OPARG(*instr));
             return 0;
         }
         else {
+            if (dict == NULL || !PyDict_CheckExact(dict)) {
+                SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
+                return 0;
+            }
+            // We found an instance with a __dict__.
             PyObject *value = NULL;
             Py_ssize_t hint =
                 _PyDict_GetItemHint(dict, name, -1, &value);
@@ -740,7 +736,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
     int err = specialize_dict_access(
         owner, instr, type, kind, name, cache0, cache1,
-        LOAD_ATTR, LOAD_ATTR_SPLIT_KEYS, LOAD_ATTR_WITH_HINT
+        LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT
     );
     if (err < 0) {
         return -1;
@@ -822,7 +818,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
 
     int err = specialize_dict_access(
         owner, instr, type, kind, name, cache0, cache1,
-        STORE_ATTR, STORE_ATTR_SPLIT_KEYS, STORE_ATTR_WITH_HINT
+        STORE_ATTR, STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT
     );
     if (err < 0) {
         return -1;
@@ -843,6 +839,63 @@ success:
 }
 
 
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+load_method_fail_kind(DesciptorClassification kind)
+{
+    switch (kind) {
+        case OVERRIDING:
+            return SPEC_FAIL_OVERRIDING_DESCRIPTOR;
+        case METHOD:
+            return SPEC_FAIL_METHOD;
+        case PROPERTY:
+            return SPEC_FAIL_PROPERTY;
+        case OBJECT_SLOT:
+            return SPEC_FAIL_OBJECT_SLOT;
+        case OTHER_SLOT:
+            return SPEC_FAIL_NON_OBJECT_SLOT;
+        case DUNDER_CLASS:
+            return SPEC_FAIL_OTHER;
+        case MUTABLE:
+            return SPEC_FAIL_MUTABLE_CLASS;
+        case GETSET_OVERRIDDEN:
+            return SPEC_FAIL_OVERRIDDEN;
+        case BUILTIN_CLASSMETHOD:
+            return SPEC_FAIL_BUILTIN_CLASS_METHOD;
+        case PYTHON_CLASSMETHOD:
+            return SPEC_FAIL_CLASS_METHOD_OBJ;
+        case NON_OVERRIDING:
+            return SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR;
+        case NON_DESCRIPTOR:
+            return SPEC_FAIL_NOT_DESCRIPTOR;
+        case ABSENT:
+            return SPEC_FAIL_EXPECTED_ERROR;
+    }
+    Py_UNREACHABLE();
+}
+#endif
+
+static int
+specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+                           _PyAttrCache *cache1, _PyObjectCache *cache2)
+{
+
+    PyObject *descr = NULL;
+    DesciptorClassification kind = 0;
+    kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
+    switch (kind) {
+        case METHOD:
+        case NON_DESCRIPTOR:
+            cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
+            cache2->obj = descr;
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
+            return 0;
+        default:
+            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            return -1;
+    }
+}
+
 // Please collect stats carefully before and after modifying. A subtle change
 // can cause a significant drop in cache hits. A possible test is
 // python.exe -m test_typing test_re test_dis test_zlib.
@@ -854,7 +907,6 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
     _PyObjectCache *cache2 = &cache[-2].obj;
 
     PyTypeObject *owner_cls = Py_TYPE(owner);
-    PyDictObject *owner_dict = NULL;
     if (PyModule_CheckExact(owner)) {
         int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
             LOAD_METHOD, LOAD_METHOD_MODULE);
@@ -868,9 +920,12 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
             return -1;
         }
     }
-    if (Py_TYPE(owner_cls)->tp_dictoffset < 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
-        goto fail;
+    if (PyType_Check(owner)) {
+        int err = specialize_class_load_method(owner, instr, name, cache1, cache2);
+        if (err) {
+            goto fail;
+        }
+        goto success;
     }
     // Technically this is fine for bound method calls, but it's uncommon and
     // slightly slower at runtime to get dict.
@@ -878,132 +933,68 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
-    PyObject **owner_dictptr = _PyObject_GetDictPtr(owner);
-    int owner_has_dict = (owner_dictptr != NULL && *owner_dictptr != NULL);
-    owner_dict = owner_has_dict ? (PyDictObject *)*owner_dictptr : NULL;
-    // Make sure dict doesn't get GC-ed halfway.
-    Py_XINCREF(owner_dict);
-    // Check for classmethods.
-    int owner_is_class = PyType_Check(owner);
-    owner_cls = owner_is_class ? (PyTypeObject *)owner : owner_cls;
-
-    if ((owner_cls->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG) == 0 ||
-        owner_cls->tp_version_tag == 0) {
-        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
-        goto fail;
-    }
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
-    // Store the version right away, in case it's modified halfway through.
-    cache1->tp_version = owner_cls->tp_version_tag;
-
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
-    switch (kind) {
-        case OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDING_DESCRIPTOR);
-            goto fail;
-        case METHOD:
-            break;
-        case PROPERTY:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_PROPERTY);
-            goto fail;
-        case OBJECT_SLOT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OBJECT_SLOT);
-            goto fail;
-        case OTHER_SLOT:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NON_OBJECT_SLOT);
-            goto fail;
-        case DUNDER_CLASS:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
-            goto fail;
-        case MUTABLE:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_MUTABLE_CLASS);
-            goto fail;
-        case GETSET_OVERRIDDEN:
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OVERRIDDEN);
-            goto fail;
-        case BUILTIN_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_BUILTIN_CLASS_METHOD);
-            goto fail;
-        case PYTHON_CLASSMETHOD:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_CLASS_METHOD_OBJ);
-            goto fail;
-        case NON_OVERRIDING:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NON_OVERRIDING_DESCRIPTOR);
-            goto fail;
-        case NON_DESCRIPTOR:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_NOT_DESCRIPTOR);
-            goto fail;
-        case ABSENT:
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_EXPECTED_ERROR);
-            goto fail;
+    if (kind != METHOD) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+        goto fail;
     }
-
-    assert(kind == METHOD);
-    // If o.__dict__ changes, the method might be found in o.__dict__
-    // instead of old type lookup. So record o.__dict__'s keys.
-    uint32_t keys_version = UINT32_MAX;
-    if (owner_has_dict) {
-        // _PyDictKeys_GetVersionForCurrentState isn't accurate for
-        // custom dict subclasses at the moment.
-        if (!PyDict_CheckExact(owner_dict)) {
-            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_DICT_SUBCLASS);
+    if (owner_cls->tp_inline_values_offset) {
+        PyObject **owner_dictptr = _PyObject_DictPointer(owner);
+        assert(owner_dictptr);
+        if (*owner_dictptr) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
             goto fail;
         }
-        assert(PyUnicode_CheckExact(name));
-        Py_hash_t hash = PyObject_Hash(name);
-        if (hash == -1) {
-            return -1;
+        PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
+        Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
+        if (index != DKIX_EMPTY) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+            goto fail;
         }
-        PyObject *value = NULL;
-        if (!owner_is_class) {
-            // Instance methods shouldn't be in o.__dict__. That makes
-            // it an attribute.
-            Py_ssize_t ix = _Py_dict_lookup(owner_dict, name, hash, &value);
-            assert(ix != DKIX_ERROR);
-            if (ix != DKIX_EMPTY) {
-                SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
-                goto fail;
-            }
-        }
-        keys_version = _PyDictKeys_GetVersionForCurrentState(owner_dict);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
         if (keys_version == 0) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        // Fall through.
-    } // Else owner is maybe a builtin with no dict, or __slots__. Doesn't matter.
-
-    /* `descr` is borrowed. Just check tp_version_tag before accessing in case
-    *  it's deleted.  This is safe for methods (even inherited ones from super
-    *  classes!) as long as tp_version_tag is validated for two main reasons:
+        cache1->dk_version_or_hint = keys_version;
+        *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CACHED, _Py_OPARG(*instr));
+    }
+    else {
+        if (owner_cls->tp_dictoffset == 0) {
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_NO_DICT, _Py_OPARG(*instr));
+        }
+        else {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_IS_ATTR);
+            goto fail;
+        }
+    }
+    /* `descr` is borrowed. This is safe for methods (even inherited ones from
+    *  super classes!) as long as tp_version_tag is validated for two main reasons:
     *
     *  1. The class will always hold a reference to the method so it will
     *  usually not be GC-ed. Should it be deleted in Python, e.g.
     *  `del obj.meth`, tp_version_tag will be invalidated, because of reason 2.
     *
     *  2. The pre-existing type method cache (MCACHE) uses the same principles
-    *  of caching a borrowed descriptor. It does all the heavy lifting for us.
-    *  E.g. it invalidates on any MRO modification, on any type object
-    *  change along said MRO, etc. (see PyType_Modified usages in typeobject.c).
-    *  The type method cache has been working since Python 2.6 and it's
-    *  battle-tested.
+    *  of caching a borrowed descriptor. The MCACHE infrastructure does all the
+    *  heavy lifting for us. E.g. it invalidates tp_version_tag on any MRO
+    *  modification, on any type object change along said MRO, etc. (see
+    *  PyType_Modified usages in typeobject.c). The MCACHE has been
+    *  working since Python 2.6 and it's battle-tested.
     */
+    cache1->tp_version = owner_cls->tp_version_tag;
     cache2->obj = descr;
-    cache1->dk_version_or_hint = keys_version;
-    *instr = _Py_MAKECODEUNIT(owner_is_class ? LOAD_METHOD_CLASS :
-        LOAD_METHOD_CACHED, _Py_OPARG(*instr));
     // Fall through.
 success:
-    Py_XDECREF(owner_dict);
     STAT_INC(LOAD_METHOD, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
 fail:
-    Py_XDECREF(owner_dict);
     STAT_INC(LOAD_METHOD, specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
@@ -1023,17 +1014,17 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(globals)) {
         goto fail;
     }
-    if (((PyDictObject *)globals)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+    PyDictKeysObject * globals_keys = ((PyDictObject *)globals)->ma_keys;
+    Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
+    if (index == DKIX_ERROR) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    PyObject *value = NULL;
-    Py_ssize_t index = _PyDict_GetItemHint((PyDictObject *)globals, name, -1, &value);
-    assert (index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
             goto fail;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
         if (keys_version == 0) {
             goto fail;
         }
@@ -1045,20 +1036,23 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(builtins)) {
         goto fail;
     }
-    if (((PyDictObject *)builtins)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+    PyDictKeysObject * builtin_keys = ((PyDictObject *)builtins)->ma_keys;
+    index = _PyDictKeys_StringLookup(builtin_keys, name);
+    if (index == DKIX_ERROR) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_NON_STRING_OR_SPLIT);
         goto fail;
     }
-    index = _PyDict_GetItemHint((PyDictObject *)builtins, name, -1, &value);
-    assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         goto fail;
     }
-    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
     if (globals_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(builtin_keys);
     if (builtins_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
     cache1->module_keys_version = globals_version;
@@ -1117,6 +1111,7 @@ binary_subscr_faiL_kind(PyTypeObject *container_type, PyObject *sub)
     return SPEC_FAIL_OTHER;
 }
 #endif
+
 int
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
@@ -1195,6 +1190,35 @@ fail:
     return 0;
 success:
     STAT_INC(BINARY_ADD, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}
+
+int
+_Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
+{
+    if (!Py_IS_TYPE(left, Py_TYPE(right))) {
+        SPECIALIZATION_FAIL(BINARY_MULTIPLY, SPEC_FAIL_DIFFERENT_TYPES);
+        goto fail;
+    }
+    if (PyLong_CheckExact(left)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, saturating_start());
+        goto success;
+    }
+    else if (PyFloat_CheckExact(left)) {
+        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, saturating_start());
+        goto success;
+    }
+    else {
+        SPECIALIZATION_FAIL(BINARY_MULTIPLY, SPEC_FAIL_OTHER);
+    }
+fail:
+    STAT_INC(BINARY_MULTIPLY, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(BINARY_MULTIPLY, specialization_success);
     assert(!PyErr_Occurred());
     return 0;
 }

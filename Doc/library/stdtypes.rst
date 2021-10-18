@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length, byteorder, *, signed=False)
+.. method:: int.to_bytes(length=1, byteorder='big', *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -513,25 +513,31 @@ class`. In addition, it provides a few more methods:
         >>> x.to_bytes((x.bit_length() + 7) // 8, byteorder='little')
         b'\xe8\x03'
 
-    The integer is represented using *length* bytes.  An :exc:`OverflowError`
-    is raised if the integer is not representable with the given number of
-    bytes.
+    The integer is represented using *length* bytes, and defaults to 1.  An
+    :exc:`OverflowError` is raised if the integer is not representable with
+    the given number of bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
-    beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    integer, and defaults to ``"big"``.  If *byteorder* is
+    ``"big"``, the most significant byte is at the beginning of the byte
+    array.  If *byteorder* is ``"little"``, the most significant byte is at
+    the end of the byte array.
 
     The *signed* argument determines whether two's complement is used to
     represent the integer.  If *signed* is ``False`` and a negative integer is
     given, an :exc:`OverflowError` is raised. The default value for *signed*
     is ``False``.
 
+    The default values can be used to conveniently turn an integer into a
+    single byte object.  However, when using the default arguments, don't try
+    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
+
+        >>> (65).to_bytes()
+        b'A'
+
     Equivalent to::
 
-        def to_bytes(n, length, byteorder, signed=False):
+        def to_bytes(n, length=1, byteorder='big', signed=False):
             if byteorder == 'little':
                 order = range(length)
             elif byteorder == 'big':
@@ -542,8 +548,10 @@ class`. In addition, it provides a few more methods:
             return bytes((n >> i*8) & 0xff for i in order)
 
     .. versionadded:: 3.2
+    .. versionchanged:: 3.11
+       Added default argument values for ``length`` and ``byteorder``.
 
-.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder='big', *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -562,18 +570,18 @@ class`. In addition, it provides a few more methods:
     iterable producing bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
-    beginning of the byte array.  If *byteorder* is ``"little"``, the most
-    significant byte is at the end of the byte array.  To request the native
-    byte order of the host system, use :data:`sys.byteorder` as the byte order
-    value.
+    integer, and defaults to ``"big"``.  If *byteorder* is
+    ``"big"``, the most significant byte is at the beginning of the byte
+    array.  If *byteorder* is ``"little"``, the most significant byte is at
+    the end of the byte array.  To request the native byte order of the host
+    system, use :data:`sys.byteorder` as the byte order value.
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.
 
     Equivalent to::
 
-        def from_bytes(bytes, byteorder, signed=False):
+        def from_bytes(bytes, byteorder='big', signed=False):
             if byteorder == 'little':
                 little_ordered = list(bytes)
             elif byteorder == 'big':
@@ -588,6 +596,8 @@ class`. In addition, it provides a few more methods:
             return n
 
     .. versionadded:: 3.2
+    .. versionchanged:: 3.11
+       Added default argument value for ``byteorder``.
 
 .. method:: int.as_integer_ratio()
 

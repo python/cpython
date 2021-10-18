@@ -1,0 +1,3 @@
+Remove the ``pystrhex.h`` header file. It only contains private functions. C
+extensions should only include the main ``<Python.h>`` header file. Patch by
+Victor Stinner.

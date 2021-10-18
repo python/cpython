@@ -460,43 +460,29 @@ static PyObject *
 pysqlite_connection_commit_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=3da45579e89407f2 input=39c12c04dda276a8]*/
 {
-    int rc;
-    sqlite3_stmt* statement;
-
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
     if (!sqlite3_get_autocommit(self->db)) {
+        int rc;
 
         Py_BEGIN_ALLOW_THREADS
+        sqlite3_stmt *statement;
         rc = sqlite3_prepare_v2(self->db, "COMMIT", 7, &statement, NULL);
+        if (rc == SQLITE_OK) {
+            (void)sqlite3_step(statement);
+            rc = sqlite3_finalize(statement);
+        }
         Py_END_ALLOW_THREADS
+
         if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->state, self->db);
-            goto error;
+            (void)_pysqlite_seterror(self->state, self->db);
+            return NULL;
         }
-
-        rc = pysqlite_step(statement);
-        if (rc != SQLITE_DONE) {
-            _pysqlite_seterror(self->state, self->db);
-        }
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_finalize(statement);
-        Py_END_ALLOW_THREADS
-        if (rc != SQLITE_OK && !PyErr_Occurred()) {
-            _pysqlite_seterror(self->state, self->db);
-        }
-
     }
 
-error:
-    if (PyErr_Occurred()) {
-        return NULL;
-    } else {
-        Py_RETURN_NONE;
-    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -509,9 +495,6 @@ static PyObject *
 pysqlite_connection_rollback_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=b66fa0d43e7ef305 input=12d4e8d068942830]*/
 {
-    int rc;
-    sqlite3_stmt* statement;
-
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
@@ -519,34 +502,25 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
     if (!sqlite3_get_autocommit(self->db)) {
         pysqlite_do_all_statements(self);
 
+        int rc;
+
         Py_BEGIN_ALLOW_THREADS
+        sqlite3_stmt *statement;
         rc = sqlite3_prepare_v2(self->db, "ROLLBACK", 9, &statement, NULL);
+        if (rc == SQLITE_OK) {
+            (void)sqlite3_step(statement);
+            rc = sqlite3_finalize(statement);
+        }
         Py_END_ALLOW_THREADS
+
         if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->state, self->db);
-            goto error;
-        }
-
-        rc = pysqlite_step(statement);
-        if (rc != SQLITE_DONE) {
-            _pysqlite_seterror(self->state, self->db);
-        }
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_finalize(statement);
-        Py_END_ALLOW_THREADS
-        if (rc != SQLITE_OK && !PyErr_Occurred()) {
-            _pysqlite_seterror(self->state, self->db);
+            (void)_pysqlite_seterror(self->state, self->db);
+            return NULL;
         }
 
     }
 
-error:
-    if (PyErr_Occurred()) {
-        return NULL;
-    } else {
-        Py_RETURN_NONE;
-    }
+    Py_RETURN_NONE;
 }
 
 static int
@@ -694,7 +668,7 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
 }
 
 static void
-_pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
+func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
     PyGILState_STATE threadstate = PyGILState_Ensure();
 
@@ -737,7 +711,7 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     if (*aggregate_instance == NULL) {
         callback_context *ctx = (callback_context *)sqlite3_user_data(context);
         assert(ctx != NULL);
-        *aggregate_instance = _PyObject_CallNoArg(ctx->callable);
+        *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
         if (!*aggregate_instance) {
             set_sqlite_error(context,
                     "user-defined aggregate's '__init__' method raised error");
@@ -935,7 +909,7 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         return NULL;
     }
     rc = sqlite3_create_function_v2(self->db, name, narg, flags, ctx,
-                                    _pysqlite_func_callback,
+                                    func_callback,
                                     NULL,
                                     NULL,
                                     &destructor_callback);  // will decref func
@@ -1035,7 +1009,7 @@ progress_callback(void *ctx)
 
     assert(ctx != NULL);
     PyObject *callable = ((callback_context *)ctx)->callable;
-    ret = _PyObject_CallNoArg(callable);
+    ret = PyObject_CallNoArgs(callable);
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;
@@ -1528,10 +1502,8 @@ error:
 /* ------------------------- COLLATION CODE ------------------------ */
 
 static int
-pysqlite_collation_callback(
-        void* context,
-        int text1_length, const void* text1_data,
-        int text2_length, const void* text2_data)
+collation_callback(void *context, int text1_length, const void *text1_data,
+                   int text2_length, const void *text2_data)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
@@ -1805,7 +1777,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
             return NULL;
         }
         rc = sqlite3_create_collation_v2(self->db, name, flags, ctx,
-                                         &pysqlite_collation_callback,
+                                         &collation_callback,
                                          &destructor_callback);
     }
 
