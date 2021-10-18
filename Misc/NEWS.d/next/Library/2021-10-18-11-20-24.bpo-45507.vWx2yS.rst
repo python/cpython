@@ -1,0 +1,2 @@
+Add regression tests for errors that are thrown when decompressing with the
+``gzip`` module to ensure backwards-compatibility between Python versions.
