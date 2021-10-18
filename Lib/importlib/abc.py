@@ -381,7 +381,7 @@ class Traversable(Protocol):
     @abc.abstractmethod
     def is_dir(self) -> bool:
         """
-        Return True if self is a directory
+        Return True if self is a dir
         """
 
     @abc.abstractmethod
