@@ -1479,6 +1479,5 @@ _Py_Specialize_CallFunction(
         assert(!PyErr_Occurred());
         cache0->counter = initial_counter_value();
     }
-
     return 0;
 }

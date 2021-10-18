@@ -1,0 +1,2 @@
+Specialized the ``BINARY_SUBTRACT`` opcode to ``BINARY_SUBTRACT_INT`` and
+``BINARY_SUBTRACT_FLOAT`` using the :pep:`659` machinery.
