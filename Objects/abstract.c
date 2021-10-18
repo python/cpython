@@ -2525,7 +2525,8 @@ abstract_get_bases(PyObject *cls)
 
 
 static int
-abstract_issubclass(PyObject *derived, PyObject *cls)
+_abstract_issubclass_inner(PyObject *derived, PyObject *cls,
+                          PyObject* visited_set)
 {
     PyObject *bases = NULL;
     Py_ssize_t i, n;
@@ -2558,13 +2559,45 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
             continue;
         }
         for (i = 0; i < n; i++) {
-            r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
+            PyObject *borrowed_base = PyTuple_GET_ITEM(bases, i);
+            PyObject *visitor = PyLong_FromVoidPtr(borrowed_base);
+            if (visitor == NULL) {
+                Py_DECREF(bases);
+                return -1;
+            }
+            if (PySet_Contains(visited_set, visitor)) {
+                Py_DECREF(visitor);
+                continue;
+            }
+            if (PySet_Add(visited_set, visitor) < 0) {
+                Py_DECREF(visitor);
+                Py_DECREF(bases);
+                return -1;
+            }
+            Py_DECREF(visitor);  // PySet_Add does its own INCREF.
+            r = _abstract_issubclass_inner(
+                    borrowed_base, cls, visited_set);
             if (r != 0)
                 break;
         }
         Py_DECREF(bases);
         return r;
     }
+}
+
+static int
+abstract_issubclass(PyObject *derived, PyObject *cls)
+{
+    int result;
+    /* I would much rather use a C++ hash_map but we're stuck in C so
+     * we'll use our own high overhead for the purpose data structure. */
+    PyObject *visited_set = PySet_New(NULL);
+    if (visited_set == NULL) {
+        return -1;
+    }
+    result = _abstract_issubclass_inner(derived, cls, visited_set);
+    Py_DECREF(visited_set);
+    return result;
 }
 
 static int
