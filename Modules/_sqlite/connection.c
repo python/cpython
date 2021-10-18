@@ -306,14 +306,15 @@ static void
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
-        int rc;
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_close_v2(self->db);
-        Py_END_ALLOW_THREADS
         free_callback_contexts(self);
 
-        assert(rc == SQLITE_OK), (void)rc;
+        sqlite3 *db = self->db;
         self->db = NULL;
+
+        Py_BEGIN_ALLOW_THREADS
+        int rc = sqlite3_close_v2(db);
+        assert(rc == SQLITE_OK), (void)rc;
+        Py_END_ALLOW_THREADS
     }
 }
 
