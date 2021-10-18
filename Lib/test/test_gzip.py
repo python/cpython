@@ -562,6 +562,14 @@ class TestGzip(BaseTest):
             datac = gzip.compress(data)
             self.assertEqual(gzip.decompress(datac), data)
 
+    def test_decompress_truncated_trailer(self):
+        compressed_data = gzip.compress(data1)
+        self.assertRaises(EOFError, gzip.decompress, compressed_data[:-4])
+
+    def test_decompress_missing_trailer(self):
+        compressed_data = gzip.compress(data1)
+        self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
+
     def test_read_truncated(self):
         data = data1*50
         # Drop the CRC (4 bytes) and file size (4 bytes).
