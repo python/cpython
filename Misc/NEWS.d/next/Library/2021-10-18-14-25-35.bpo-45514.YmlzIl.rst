@@ -1,1 +1,1 @@
-Deprecated legacy functions in importlib.resources.
+Deprecated legacy functions in :mod:`importlib.resources`.
