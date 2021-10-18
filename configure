@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+VENDOR_CONFIG
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -864,6 +865,7 @@ with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
 with_static_libpython
 enable_test_modules
+with_vendor_config
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1630,6 +1632,9 @@ Optional Packages:
   --without-static-libpython
                           do not build libpythonMAJOR.MINOR.a and do not
                           install python.o (default is yes)
+  --with-vendor-config=<config.py>
+                           use a vendor config to customize the certain details of the Python installation
+
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -18103,6 +18108,49 @@ else
     TEST_MODULES=yes
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+fi
+
+
+# --with-vendor-config
+VENDOR_CONFIG=''
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-vendor-config" >&5
+$as_echo_n "checking for --with-vendor-config... " >&6; }
+
+# Check whether --with-vendor-config was given.
+if test "${with_vendor_config+set}" = set; then :
+  withval=$with_vendor_config;
+    as_ac_File=`$as_echo "ac_cv_file_"$withval"" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for \"$withval\"" >&5
+$as_echo_n "checking for \"$withval\"... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r ""$withval""; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+        if ( echo "$withval" | grep '.*\.py$' > /dev/null); then
+            VENDOR_CONFIG="$withval"
+        else
+            as_fn_error $? "--with-vendor-config requires a Python file" "$LINENO" 5
+        fi
+
+else
+
+        as_fn_error $? "--with-vendor-config requires a valid file" "$LINENO" 5
+
+fi
+
+
 fi
 
 
