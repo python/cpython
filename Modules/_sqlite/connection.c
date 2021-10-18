@@ -178,7 +178,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     } else {
         Py_INCREF(isolation_level);
     }
-    Py_CLEAR(self->isolation_level);
     if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
         Py_DECREF(isolation_level);
         return -1;
@@ -263,7 +262,6 @@ static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->isolation_level);
     Py_VISIT(self->statement_cache);
     Py_VISIT(self->cursors);
     Py_VISIT(self->row_factory);
@@ -286,7 +284,6 @@ clear_callback_context(callback_context *ctx)
 static int
 connection_clear(pysqlite_Connection *self)
 {
-    Py_CLEAR(self->isolation_level);
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->row_factory);
@@ -1287,7 +1284,13 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    return Py_NewRef(self->isolation_level);
+    if (self->begin_statement != NULL) {
+        assert(strlen(self->begin_statement) >= 6);
+        const char *stmt = self->begin_statement + 6;
+        assert(stmt != NULL);
+        return PyUnicode_FromString(stmt);
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self, void* unused)
@@ -1362,8 +1365,6 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         self->begin_statement = *candidate;
     }
 
-    Py_INCREF(isolation_level);
-    Py_XSETREF(self->isolation_level, isolation_level);
     return 0;
 }
 
