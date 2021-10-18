@@ -1205,14 +1205,14 @@ void
 PyThreadState_EnterTracing(PyThreadState *tstate)
 {
     tstate->tracing++;
-    _PyThreadState_DisableTracing(tstate);
+    _PyThreadState_PauseTracing(tstate);
 }
 
 void
 PyThreadState_LeaveTracing(PyThreadState *tstate)
 {
     tstate->tracing--;
-    _PyThreadState_ResetTracing(tstate);
+    _PyThreadState_ResumeTracing(tstate);
 }
 
 
