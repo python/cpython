@@ -1237,7 +1237,7 @@ success:
 }
 
 
-int
+static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     SpecializedCacheEntry *cache, PyObject *builtins)
 {
@@ -1307,7 +1307,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
 }
 
 #if COLLECT_SPECIALIZATION_STATS_DETAILED
-int
+static int
 c_call_fail_kind(PyObject *callable)
 {
 /* These might be implemented in the future. Collecting stats for now. */
