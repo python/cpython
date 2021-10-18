@@ -3,19 +3,19 @@
 #include "Python.h"
 
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
-#include "pycore_initconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pyhash.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"
-#include "marshal.h"
-#include "code.h"
-#include "importdl.h"
-#include "pydtrace.h"
-#include <stdbool.h>
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "marshal.h"              // PyMarshal_ReadObjectFromString()
+#include "importdl.h"             // _PyImport_DynLoadFiletab
+#include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
+#include <stdbool.h>              // bool
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>

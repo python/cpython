@@ -8,24 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
-// Python provides implementations for copysign(), round() and hypot() in
-// Python/pymath.c just in case your math library doesn't provide the
-// functions.
-//
-// Note: PC/pyconfig.h defines copysign as _copysign
-#ifndef HAVE_COPYSIGN
-extern double copysign(double, double);
-#endif
-
-#ifndef HAVE_ROUND
-extern double round(double);
-#endif
-
-#ifndef HAVE_HYPOT
-extern double hypot(double, double);
-#endif
-
 // Extra declarations
 #if !defined(_MSC_VER) && !defined(__STDC__)
 extern double fmod (double, double);

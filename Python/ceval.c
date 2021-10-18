@@ -50,9 +50,9 @@
 _Py_IDENTIFIER(__name__);
 
 /* Forward declarations */
-Py_LOCAL_INLINE(PyObject *) call_function(
-    PyThreadState *tstate, PyObject ***pp_stack,
-    Py_ssize_t oparg, PyObject *kwnames, int use_tracing);
+static PyObject *trace_call_function(
+    PyThreadState *tstate, PyObject *callable, PyObject **stack,
+    Py_ssize_t oparg, PyObject *kwnames);
 static PyObject * do_call_core(
     PyThreadState *tstate, PyObject *func,
     PyObject *callargs, PyObject *kwdict, int use_tracing);
@@ -1701,6 +1701,11 @@ check_eval_breaker:
     dispatch_opcode:
         switch (opcode) {
 #endif
+
+        /* Variables used for making calls */
+        PyObject *kwnames;
+        int nargs;
+        int postcall_shrink;
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -4691,10 +4696,6 @@ check_eval_breaker:
 
         TARGET(CALL_METHOD) {
             /* Designed to work in tamdem with LOAD_METHOD. */
-            PyObject **sp, *res;
-            int meth_found;
-
-            sp = stack_pointer;
             /* `meth` is NULL when LOAD_METHOD thinks that it's not
                 a method call.
 
@@ -4720,114 +4721,84 @@ check_eval_breaker:
                We'll be passing `oparg + 1` to call_function, to
                make it accept the `self` as a first argument.
             */
-            meth_found = (PEEK(oparg + 2) != NULL);
-            res = call_function(tstate, &sp, oparg + meth_found, NULL, cframe.use_tracing);
-            stack_pointer = sp;
-
-            STACK_SHRINK(1 - meth_found);
-            PUSH(res);
-            if (res == NULL) {
-                goto error;
-            }
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
+            int is_method = (PEEK(oparg + 2) != NULL);
+            oparg += is_method;
+            nargs = oparg;
+            kwnames = NULL;
+            postcall_shrink = 2-is_method;
+            goto call_function;
         }
 
         TARGET(CALL_METHOD_KW) {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
-            PyObject **sp, *res;
-            PyObject *names = NULL;
-            int meth_found;
+            kwnames = POP();
+            int is_method = (PEEK(oparg + 2) != NULL);
+            oparg += is_method;
+            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
+            postcall_shrink = 2-is_method;
+            goto call_function;
+        }
 
-            names = POP();
-
-            sp = stack_pointer;
-            meth_found = (PEEK(oparg + 2) != NULL);
-            res = call_function(tstate, &sp, oparg + meth_found, names, cframe.use_tracing);
-            stack_pointer = sp;
-
-            STACK_SHRINK(1 - meth_found);
-            PUSH(res);
-            Py_DECREF(names);
-            if (res == NULL) {
-                goto error;
-            }
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
+        TARGET(CALL_FUNCTION_KW) {
+            kwnames = POP();
+            nargs = oparg - (int)PyTuple_GET_SIZE(kwnames);
+            postcall_shrink = 1;
+            goto call_function;
         }
 
         TARGET(CALL_FUNCTION) {
             PREDICTED(CALL_FUNCTION);
-            PyObject *res;
-
+            PyObject *function;
+            nargs = oparg;
+            kwnames = NULL;
+            postcall_shrink = 1;
+        call_function:
             // Check if the call can be inlined or not
-            PyObject *function = PEEK(oparg + 1);
+            function = PEEK(oparg + 1);
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
-                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
                 if (!is_generator) {
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : PyFunction_GET_GLOBALS(function);
+                    STACK_SHRINK(oparg);
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                         tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
-                                                                stack_pointer-oparg,
-                                                                oparg, NULL, 1);
-                    if (new_frame == NULL) {
-                        // When we exit here, we own all variables in the stack
-                        // (the frame creation has not stolen any variable) so
-                        // we need to clean the whole stack (done in the
-                        // "error" label).
-                        goto error;
-                    }
-
-                    STACK_SHRINK(oparg + 1);
+                                                                stack_pointer,
+                                                                nargs, kwnames, 1);
+                    STACK_SHRINK(postcall_shrink);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
+                    Py_XDECREF(kwnames);
                     Py_DECREF(function);
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     new_frame->depth = frame->depth + 1;
                     tstate->frame = frame = new_frame;
                     goto start_frame;
                 }
-                else {
-                    /* Callable is a generator or coroutine function: create
-                     * coroutine or generator. */
-                    res = make_coro(tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function),
-                                    locals, stack_pointer-oparg, oparg, NULL);
-                    STACK_SHRINK(oparg + 1);
-                    for (int i = 0; i < oparg + 1; i++) {
-                        Py_DECREF(stack_pointer[i]);
-                    }
-                }
+            }
+            /* Callable is not a normal Python function */
+            PyObject *res;
+            if (cframe.use_tracing) {
+                res = trace_call_function(tstate, function, stack_pointer-oparg, nargs, kwnames);
             }
             else {
-                /* Callable is not a Python function */
-                PyObject **sp = stack_pointer;
-                res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
-                stack_pointer = sp;
+                res = PyObject_Vectorcall(function, stack_pointer-oparg,
+                                          nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
             }
-
-            PUSH(res);
-            if (res == NULL) {
-                goto error;
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(function);
+            Py_XDECREF(kwnames);
+            /* Clear the stack */
+            STACK_SHRINK(oparg);
+            for (int i = 0; i < oparg; i++) {
+                Py_DECREF(stack_pointer[i]);
             }
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
-        }
-
-        TARGET(CALL_FUNCTION_KW) {
-            PyObject **sp, *res, *names;
-
-            names = POP();
-            assert(PyTuple_Check(names));
-            assert(PyTuple_GET_SIZE(names) <= oparg);
-            /* We assume without checking that names contains only strings */
-            sp = stack_pointer;
-            res = call_function(tstate, &sp, oparg, names, cframe.use_tracing);
-            stack_pointer = sp;
+            STACK_SHRINK(postcall_shrink);
             PUSH(res);
-            Py_DECREF(names);
-
             if (res == NULL) {
                 goto error;
             }
@@ -5575,7 +5546,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL) {
-            goto fail;
+            goto fail_pre_positional;
         }
         i = total_args;
         if (co->co_flags & CO_VARARGS) {
@@ -5614,10 +5585,18 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             u = _PyTuple_FromArray(args + n, argcount - n);
         }
         if (u == NULL) {
-            goto fail;
+            goto fail_post_positional;
         }
         assert(localsplus[total_args] == NULL);
         localsplus[total_args] = u;
+    }
+    else if (argcount > n) {
+        /* Too many postional args. Error is reported later */
+        if (steal_args) {
+            for (j = n; j < argcount; j++) {
+                Py_DECREF(args[j]);
+            }
+        }
     }
 
     /* Handle keyword arguments */
@@ -5633,7 +5612,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() keywords must be strings",
                           con->fc_qualname);
-                goto fail;
+                goto kw_fail;
             }
 
             /* Speed hack: do raw pointer compares. As names are
@@ -5654,7 +5633,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     goto kw_found;
                 }
                 else if (cmp < 0) {
-                    goto fail;
+                    goto kw_fail;
                 }
             }
 
@@ -5666,29 +5645,38 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                                                         kwcount, kwnames,
                                                      con->fc_qualname))
                 {
-                    goto fail;
+                    goto kw_fail;
                 }
 
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got an unexpected keyword argument '%S'",
                           con->fc_qualname, keyword);
-                goto fail;
+                goto kw_fail;
             }
 
             if (PyDict_SetItem(kwdict, keyword, value) == -1) {
-                goto fail;
+                goto kw_fail;
             }
             if (steal_args) {
                 Py_DECREF(value);
             }
             continue;
 
+        kw_fail:
+            if (steal_args) {
+                for (;i < kwcount; i++) {
+                    PyObject *value = args[i+argcount];
+                    Py_DECREF(value);
+                }
+            }
+            goto fail_noclean;
+
         kw_found:
             if (localsplus[j] != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           con->fc_qualname, keyword);
-                goto fail;
+                goto kw_fail;
             }
             if (!steal_args) {
                 Py_INCREF(value);
@@ -5701,7 +5689,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(tstate, co, argcount, con->fc_defaults, localsplus,
                             con->fc_qualname);
-        goto fail;
+        goto fail_noclean;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
@@ -5717,7 +5705,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, localsplus,
                               con->fc_qualname);
-            goto fail;
+            goto fail_noclean;
         }
         if (n > m)
             i = n - m;
@@ -5750,7 +5738,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    goto fail;
+                    goto fail_noclean;
                 }
             }
             missing++;
@@ -5758,7 +5746,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, -1, localsplus,
                               con->fc_qualname);
-            goto fail;
+            goto fail_noclean;
         }
     }
 
@@ -5771,33 +5759,23 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     return 0;
 
-fail: /* Jump here from prelude on failure */
+fail_pre_positional:
     if (steal_args) {
-        // If we failed to initialize locals, make sure the caller still own all the
-        // arguments that were on the stack. We need to increment the reference count
-        // of everything we copied (everything in localsplus) that came from the stack
-        // (everything that is present in the "args" array).
-        Py_ssize_t kwcount = kwnames != NULL ? PyTuple_GET_SIZE(kwnames) : 0;
-        for (Py_ssize_t k=0; k < total_args; k++) {
-            PyObject* arg = localsplus[k];
-            for (Py_ssize_t j=0; j < argcount + kwcount; j++) {
-                if (args[j] == arg) {
-                    Py_XINCREF(arg);
-                    break;
-                }
-            }
-        }
-        // Restore all the **kwargs we placed into the kwargs dictionary
-        if (kwdict) {
-            PyObject *key, *value;
-            Py_ssize_t pos = 0;
-            while (PyDict_Next(kwdict, &pos, &key, &value)) {
-                Py_INCREF(value);
-            }
+        for (j = 0; j < argcount; j++) {
+            Py_DECREF(args[j]);
         }
     }
+    /* fall through */
+fail_post_positional:
+    if (steal_args) {
+        Py_ssize_t kwcount = kwnames != NULL ? PyTuple_GET_SIZE(kwnames) : 0;
+        for (j = argcount; j < argcount+kwcount; j++) {
+            Py_DECREF(args[j]);
+        }
+    }
+    /* fall through */
+fail_noclean:
     return -1;
-
 }
 
 static InterpreterFrame *
@@ -6280,7 +6258,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     if (tstate->tracing)
         return 0;
     tstate->tracing++;
-    tstate->cframe->use_tracing = 0;
+    _PyThreadState_DisableTracing(tstate);
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
@@ -6294,8 +6272,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
-    tstate->cframe->use_tracing = ((tstate->c_tracefunc != NULL)
-                           || (tstate->c_profilefunc != NULL)) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     tstate->tracing--;
     return result;
 }
@@ -6309,8 +6286,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
     PyObject *result;
 
     tstate->tracing = 0;
-    tstate->cframe->use_tracing = ((tstate->c_tracefunc != NULL)
-                           || (tstate->c_profilefunc != NULL)) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     result = PyObject_Call(func, args, NULL);
     tstate->tracing = save_tracing;
     tstate->cframe->use_tracing = save_use_tracing;
@@ -6367,7 +6343,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = NULL;
     tstate->c_profileobj = NULL;
     /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    tstate->cframe->use_tracing = tstate->c_tracefunc != NULL;
+    _PyThreadState_ResetTracing(tstate);
     Py_XDECREF(profileobj);
 
     Py_XINCREF(arg);
@@ -6375,7 +6351,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    tstate->cframe->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     return 0;
 }
 
@@ -6408,7 +6384,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = NULL;
     tstate->c_traceobj = NULL;
     /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    tstate->cframe->use_tracing = (tstate->c_profilefunc != NULL) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
     Py_XDECREF(traceobj);
 
     Py_XINCREF(arg);
@@ -6416,8 +6392,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    tstate->cframe->use_tracing = ((func != NULL)
-                           || (tstate->c_profilefunc != NULL)) ? 255 : 0;
+    _PyThreadState_ResetTracing(tstate);
 
     return 0;
 }
@@ -6687,40 +6662,6 @@ trace_call_function(PyThreadState *tstate,
         return x;
     }
     return PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
-}
-
-/* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
-   to reduce the stack consumption. */
-Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_function(PyThreadState *tstate,
-              PyObject ***pp_stack,
-              Py_ssize_t oparg,
-              PyObject *kwnames,
-              int use_tracing)
-{
-    PyObject **pfunc = (*pp_stack) - oparg - 1;
-    PyObject *func = *pfunc;
-    PyObject *x, *w;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nargs = oparg - nkwargs;
-    PyObject **stack = (*pp_stack) - nargs - nkwargs;
-
-    if (use_tracing) {
-        x = trace_call_function(tstate, func, stack, nargs, kwnames);
-    }
-    else {
-        x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
-    }
-
-    assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
-    /* Clear the stack of the function object. */
-    while ((*pp_stack) > pfunc) {
-        w = EXT_POP(*pp_stack);
-        Py_DECREF(w);
-    }
-
-    return x;
 }
 
 static PyObject *

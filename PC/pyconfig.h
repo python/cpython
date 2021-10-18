@@ -58,7 +58,6 @@ WIN32 is still required for the locale module.
 
 #include <io.h>
 
-#define HAVE_HYPOT
 #define HAVE_STRFTIME
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
@@ -347,14 +346,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define PY_INT64_T int64_t
 
 /* Fairly standard from here! */
-
-/* Define to 1 if you have the `copysign' function. */
-#define HAVE_COPYSIGN 1
-
-/* Define to 1 if you have the `round' function. */
-#if _MSC_VER >= 1800
-#  define HAVE_ROUND 1
-#endif
 
 /* Define if on AIX 3.
    System headers sometimes define this.

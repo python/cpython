@@ -261,12 +261,12 @@ time
   ``nanosleep()`` function, if available, which has a resolution of 1 nanosecond
   (10\ :sup:`-9` seconds), rather than using ``select()`` which has a resolution
   of 1 microsecond (10\ :sup:`-6` seconds).
-  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
 * On Windows, :func:`time.sleep` now uses a waitable timer which has a
   resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
   a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
 unicodedata
 -----------
@@ -461,7 +461,8 @@ Build Changes
   (Contributed by Mike Gilbert in :issue:`45433`.)
 
 * Building Python now requires a C99 ``<math.h>`` header file providing
-  ``isinf()``, ``isnan()`` and ``isfinite()`` functions.
+  the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
+  ``isinf()``, ``isnan()``, ``round()``.
   (Contributed by Victor Stinner in :issue:`45440`.)
 
 C API Changes
@@ -475,6 +476,11 @@ New Features
 
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
+
+* Add new :c:func:`PyThreadState_EnterTracing` and
+  :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
+  suspend and resume tracing and profiling.
+  (Contributed by Victor Stinner in :issue:`43760`.)
 
 Porting to Python 3.11
 ----------------------
@@ -572,22 +578,16 @@ Porting to Python 3.11
   header provides functions like ``printf()`` and ``fopen()``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
-* The non-limited API files ``cellobject.h`` and ``funcobject.h`` have been
-  moved to the ``Include/cpython`` directory. These files must not be included
-  directly, as they are already included in ``Python.h``: :ref:`Include Files
-  <api-includes>`. If they have been included directly, consider including
-  ``Python.h`` instead.
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+  ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
+  the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
+  removed. These files must not be included directly, as they are already
+  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  been included directly, consider including ``Python.h`` instead.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
 Deprecated
 ----------
-
-Removed
--------
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
-  removed.
-  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Deprecate the following functions to configure the Python initialization:
 
@@ -604,6 +604,13 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Remove the following math macros using the ``errno`` variable:
 
