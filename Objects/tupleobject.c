@@ -490,9 +490,11 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     if (n == 0) {
         return tuple_get_empty();
     }
-
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(src[i]);
+        }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
