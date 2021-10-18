@@ -1259,7 +1259,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                 cache1->obj = builtin_len;  // borrowed
                 *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_LEN,
                     _Py_OPARG(*instr));
-                return 1;
+                return 0;
             }
             *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_O,
                 _Py_OPARG(*instr));
