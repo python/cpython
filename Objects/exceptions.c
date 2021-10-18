@@ -668,8 +668,8 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* We are now holding a ref to the exceptions tuple */
 
-    Py_ssize_t numexcs = PySequence_Length(exceptions);
-    if (numexcs <= 0) {
+    Py_ssize_t numexcs = PyTuple_GET_SIZE(exceptions);
+    if (numexcs == 0) {
         PyErr_SetString(
             PyExc_ValueError,
             "second argument (exceptions) must be a non-empty sequence");
@@ -930,7 +930,8 @@ exceptiongroup_split_recursive(PyObject *exc,
     PyObject *rest_exc = NULL;
     PyObject *result = NULL;
 
-    Py_ssize_t num_excs = PySequence_Length(eg->excs);
+    assert(PyTuple_CheckExact(eg->excs));
+    Py_ssize_t num_excs = PyTuple_Size(eg->excs);
     if (num_excs < 0) {
         goto done;
     }
@@ -947,19 +948,17 @@ exceptiongroup_split_recursive(PyObject *exc,
     }
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
-        PyObject *e = PySequence_GetItem(eg->excs, i);
-        if (!e) {
-            goto done;
-        }
+        PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
+        assert(e);
         PyObject *rec = exceptiongroup_split_recursive(
             e, matcher, construct_rest);
-        Py_DECREF(e);
         if (!rec) {
             goto done;
         }
         assert(PyTuple_CheckExact(rec) && PyTuple_GET_SIZE(rec) == 2);
         PyObject *e_match = PyTuple_GET_ITEM(rec, 0);
         if (e_match != Py_None) {
+            assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, e_match) < 0) {
                 Py_DECREF(rec);
                 goto done;
