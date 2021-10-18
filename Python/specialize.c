@@ -1241,7 +1241,6 @@ static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     SpecializedCacheEntry *cache, PyObject *builtins)
 {
-    _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyObjectCache *cache1 = &cache[-1].obj;
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
         return 1;
