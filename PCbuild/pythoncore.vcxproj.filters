@@ -393,6 +393,12 @@
     <ClInclude Include="..\Include\cpython\unicodeobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\warnings.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\weakrefobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\methodobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>

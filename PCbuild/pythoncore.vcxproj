@@ -160,6 +160,8 @@
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
+    <ClInclude Include="..\Include\cpython\warnings.h" />
+    <ClInclude Include="..\Include\cpython\weakrefobject.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
