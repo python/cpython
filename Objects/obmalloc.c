@@ -2,7 +2,11 @@
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
 
 #include <stdbool.h>
+#ifdef WITH_MIMALLOC
+#include <mimalloc.h>
+#else
 #include <stdlib.h>               // malloc()
+#endif
 
 
 /* Defined in tracemalloc.c */
@@ -91,6 +95,9 @@ struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
 {
+#ifdef WITH_MIMALLOC
+    return mi_malloc(size);
+#else
     /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
        for malloc(0), which would be treated as an error. Some platforms would
        return a pointer with no memory behind it, which would break pymalloc.
@@ -98,11 +105,15 @@ _PyMem_RawMalloc(void *ctx, size_t size)
     if (size == 0)
         size = 1;
     return malloc(size);
+#endif
 }
 
 static void *
 _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
 {
+#ifdef WITH_MIMALLOC
+    return mi_calloc(nelem, elsize);
+#else
     /* PyMem_RawCalloc(0, 0) means calloc(1, 1). Some systems would return NULL
        for calloc(0, 0), which would be treated as an error. Some platforms
        would return a pointer with no memory behind it, which would break
@@ -112,24 +123,46 @@ _PyMem_RawCalloc(void *ctx, size_t nelem, size_t elsize)
         elsize = 1;
     }
     return calloc(nelem, elsize);
+#endif
 }
 
 static void *
 _PyMem_RawRealloc(void *ctx, void *ptr, size_t size)
 {
+#ifdef WITH_MIMALLOC
+    return mi_realloc(ptr, size);
+#else
     if (size == 0)
         size = 1;
     return realloc(ptr, size);
+#endif
 }
 
 static void
 _PyMem_RawFree(void *ctx, void *ptr)
 {
+#ifdef WITH_MIMALLOC
+    mi_free(ptr);
+#else
     free(ptr);
+#endif
 }
 
 
-#ifdef MS_WINDOWS
+#ifdef WITH_MIMALLOC
+static void *
+_PyObject_ArenaMiallocMalloc(void *ctx, size_t size)
+{
+    return mi_malloc(size);
+}
+
+static void
+_PyObject_ArenaMiallocFree(void *ctx, void *ptr, size_t size)
+{
+    mi_free(ptr);
+}
+
+#elif defined(MS_WINDOWS)
 static void *
 _PyObject_ArenaVirtualAlloc(void *ctx, size_t size)
 {
@@ -433,7 +466,9 @@ _PyMem_GetCurrentAllocatorName(void)
 
 
 static PyObjectArenaAllocator _PyObject_Arena = {NULL,
-#ifdef MS_WINDOWS
+#ifdef WITH_MIMALLOC
+    _PyObject_ArenaMiallocMalloc, _PyObject_ArenaMiallocFree
+#elif defined(MS_WINDOWS)
     _PyObject_ArenaVirtualAlloc, _PyObject_ArenaVirtualFree
 #elif defined(ARENAS_USE_MMAP)
     _PyObject_ArenaMmap, _PyObject_ArenaMunmap

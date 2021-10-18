@@ -5839,6 +5839,7 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
   Parser \
   Programs \
   Python \
