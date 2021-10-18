@@ -77,6 +77,13 @@ PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
                                   Py_ssize_t len, int readonly,
                                   int flags);
 
+/* Allocate a new buffer struct on the heap. */
+PyAPI_FUNC(Py_buffer *) PyBuffer_New(void);
+
+/* Release and free buffer struct which has been allocated
+    by PyBuffer_New(). */
+PyAPI_FUNC(void) PyBuffer_Free(Py_buffer *view);
+
 /* Releases a Py_buffer obtained from getbuffer ParseTuple's "s*". */
 PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 

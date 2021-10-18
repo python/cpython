@@ -763,6 +763,25 @@ PyBuffer_Release(Py_buffer *view)
     Py_DECREF(obj);
 }
 
+Py_buffer*
+PyBuffer_New(void)
+{
+    Py_buffer *view = PyMem_Calloc(1, sizeof(Py_buffer));
+    if (view == NULL) {
+        PyErr_NoMemory();
+    }
+    return view;
+}
+
+void
+PyBuffer_Free(Py_buffer *view)
+{
+    if (view != NULL) {
+        PyBuffer_Release(view);
+        PyMem_Free(view);
+    }
+}
+
 PyObject *
 PyObject_Format(PyObject *obj, PyObject *format_spec)
 {
