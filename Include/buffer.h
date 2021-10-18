@@ -86,8 +86,12 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 /* Flags for getting buffers */
 #define PyBUF_SIMPLE 0
 #define PyBUF_WRITABLE 0x0001
+
+#ifndef Py_LIMITED_API
 /*  we used to include an E, backwards compatible alias */
 #define PyBUF_WRITEABLE PyBUF_WRITABLE
+#endif
+
 #define PyBUF_FORMAT 0x0004
 #define PyBUF_ND 0x0008
 #define PyBUF_STRIDES (0x0010 | PyBUF_ND)
