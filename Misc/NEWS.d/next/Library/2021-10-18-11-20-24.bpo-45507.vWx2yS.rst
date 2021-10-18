@@ -1,2 +1,3 @@
-Add regression tests for errors that are thrown when decompressing with the
-``gzip`` module to ensure backwards-compatibility between Python versions.
+Make sure EOFerror is thrown when gzip headers have missing or truncated 
+NAME or COMMENT fields when FNAME or FCOMMENT flags are set.
+

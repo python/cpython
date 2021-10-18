@@ -562,7 +562,7 @@ class TestGzip(BaseTest):
             datac = gzip.compress(data)
             self.assertEqual(gzip.decompress(datac), data)
 
-    def test_decompress_uncompressed_header(self):
+    def test_truncated_header(self):
         truncated_headers = [
             b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00",             # Missing OS byte
             b"\x1f\x8b\x08\x02\x00\x00\x00\x00\x00\xff",         # FHRC, but no checksum
@@ -573,7 +573,8 @@ class TestGzip(BaseTest):
         ]
         for header in truncated_headers:
             with self.subTest(header=header):
-                self.assertRaises(EOFError, gzip.decompress, header)
+                self.assertRaises(EOFError, gzip._read_gzip_header,
+                                  io.BytesIO(header))
 
     def test_read_truncated(self):
         data = data1*50

@@ -442,14 +442,14 @@ def _read_gzip_header(fp):
     if flag & FNAME:
         # Read and discard a null-terminated string containing the filename
         while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
+            s = _read_exact(fp, 1)
+            if s == b'\000':
                 break
     if flag & FCOMMENT:
         # Read and discard a null-terminated string containing a comment
         while True:
-            s = fp.read(1)
-            if not s or s==b'\000':
+            s = _read_exact(fp, 1)
+            if s == b'\000':
                 break
     if flag & FHCRC:
         _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
