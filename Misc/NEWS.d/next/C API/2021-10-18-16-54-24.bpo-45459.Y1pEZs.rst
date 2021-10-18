@@ -1,0 +1,1 @@
+Add :c:type:`Py_buffer` to limited API / stable ABI.
