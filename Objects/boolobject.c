@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
-#include "longintrepr.h"
 
 /* We define bool_repr to return "False" or "True" */
 

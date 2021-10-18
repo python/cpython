@@ -16,12 +16,10 @@
 #  define _SGI_MP_SOURCE
 #endif
 
-#include <stdio.h>                // NULL, FILE*
-#ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
-#endif
-
 #include <string.h>               // memcpy()
+#ifndef Py_LIMITED_API
+#  include <stdio.h>              // FILE*
+#endif
 #ifdef HAVE_ERRNO_H
 #  include <errno.h>              // errno
 #endif
@@ -29,11 +27,11 @@
 #  include <unistd.h>
 #endif
 #ifdef HAVE_STDDEF_H
-   // For size_t
-#  include <stddef.h>
+#  include <stddef.h>             // size_t
 #endif
 
-#include <assert.h>
+#include <assert.h>               // assert()
+#include <wchar.h>                // wchar_t
 
 #include "pyport.h"
 #include "pymacro.h"
@@ -48,7 +46,7 @@
 #include "bytesobject.h"
 #include "unicodeobject.h"
 #include "longobject.h"
-#include "longintrepr.h"
+#include "cpython/longintrepr.h"
 #include "boolobject.h"
 #include "floatobject.h"
 #include "complexobject.h"
@@ -62,31 +60,30 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "funcobject.h"
-#include "classobject.h"
+#include "cpython/funcobject.h"
+#include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
 #include "code.h"
 #include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
-#include "cellobject.h"
+#include "cpython/cellobject.h"
 #include "iterobject.h"
-#include "genobject.h"
+#include "pystate.h"
+#include "cpython/genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
-#include "namespaceobject.h"
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
 #include "codecs.h"
 #include "pyerrors.h"
 #include "cpython/initconfig.h"
 #include "pythread.h"
-#include "pystate.h"
-#include "context.h"
+#include "cpython/context.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -98,7 +95,6 @@
 #include "import.h"
 #include "abstract.h"
 #include "bltinmodule.h"
-#include "eval.h"
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"

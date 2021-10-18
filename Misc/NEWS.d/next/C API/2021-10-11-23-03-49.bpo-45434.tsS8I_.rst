@@ -1,3 +1,6 @@
 The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
-extensions using ``<stdlib.h>`` must now include it explicitly. Patch by
-Victor Stinner.
+extensions using ``<stdlib.h>`` must now include it explicitly.
+The system ``<stdlib.h>`` header provides functions like:
+``malloc()``/``free()``, ``getenv()``, ``strtol()``, ``abs()``, ``strtol()``,
+``exit()`` and ``abort()``.
+Patch by Victor Stinner.

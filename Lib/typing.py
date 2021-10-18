@@ -719,6 +719,12 @@ class ForwardRef(_Final, _root=True):
     def __hash__(self):
         return hash(self.__forward_arg__)
 
+    def __or__(self, other):
+        return Union[self, other]
+
+    def __ror__(self, other):
+        return Union[other, self]
+
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
 

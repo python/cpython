@@ -10,7 +10,9 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "osdefs.h"               // DELIM
+
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #  ifdef HAVE_IO_H
 #    include <io.h>
@@ -737,6 +739,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    config->use_frozen_modules = -1;
 }
 
 
@@ -2088,6 +2091,44 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 }
 
 
+/* Determine if the current build is a "development" build (e.g. running
+   out of the source tree) or not.
+
+   A return value of -1 indicates that we do not know.
+  */
+static int
+is_dev_env(PyConfig *config)
+{
+    // This should only ever get called early in runtime initialization,
+    // before the global path config is written.  Otherwise we would
+    // use Py_GetProgramFullPath() and _Py_GetStdlibDir().
+    assert(config != NULL);
+
+    const wchar_t *executable = config->executable;
+    const wchar_t *stdlib = config->stdlib_dir;
+    if (executable == NULL || *executable == L'\0' ||
+            stdlib == NULL || *stdlib == L'\0') {
+        // _PyPathConfig_Calculate() hasn't run yet.
+        return -1;
+    }
+    size_t len = _Py_find_basename(executable);
+    if (wcscmp(executable + len, L"python") != 0 &&
+            wcscmp(executable + len, L"python.exe") != 0) {
+        return 0;
+    }
+    /* If dirname() is the same for both then it is a dev build. */
+    if (len != _Py_find_basename(stdlib)) {
+        return 0;
+    }
+    // We do not bother normalizing the two filenames first since
+    // for config_init_import() is does the right thing as-is.
+    if (wcsncmp(stdlib, executable, len) != 0) {
+        return 0;
+    }
+    return 1;
+}
+
+
 static PyStatus
 config_init_import(PyConfig *config, int compute_path_config)
 {
@@ -2099,25 +2140,28 @@ config_init_import(PyConfig *config, int compute_path_config)
     }
 
     /* -X frozen_modules=[on|off] */
-    const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
-    if (value == NULL) {
-        // For now we always default to "off".
-        // In the near future we will be factoring in PGO and in-development.
-        config->use_frozen_modules = 0;
-    }
-    else if (wcscmp(value, L"on") == 0) {
-        config->use_frozen_modules = 1;
-    }
-    else if (wcscmp(value, L"off") == 0) {
-        config->use_frozen_modules = 0;
-    }
-    else if (wcslen(value) == 0) {
-        // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
-        config->use_frozen_modules = 1;
-    }
-    else {
-        return PyStatus_Error("bad value for option -X frozen_modules "
-                              "(expected \"on\" or \"off\")");
+    if (config->use_frozen_modules < 0) {
+        const wchar_t *value = config_get_xoption_value(config, L"frozen_modules");
+        if (value == NULL) {
+            int isdev = is_dev_env(config);
+            if (isdev >= 0) {
+                config->use_frozen_modules = !isdev;
+            }
+        }
+        else if (wcscmp(value, L"on") == 0) {
+            config->use_frozen_modules = 1;
+        }
+        else if (wcscmp(value, L"off") == 0) {
+            config->use_frozen_modules = 0;
+        }
+        else if (wcslen(value) == 0) {
+            // "-X frozen_modules" and "-X frozen_modules=" both imply "on".
+            config->use_frozen_modules = 1;
+        }
+        else {
+            return PyStatus_Error("bad value for option -X frozen_modules "
+                                  "(expected \"on\" or \"off\")");
+        }
     }
 
     return _PyStatus_OK();
@@ -2129,6 +2173,49 @@ _PyConfig_InitImportConfig(PyConfig *config)
     return config_init_import(config, 1);
 }
 
+// List of known xoptions to validate against the provided ones. Note that all
+// options are listed, even if they are only available if a specific macro is
+// set, like -X showrefcount which requires a debug build. In this case unknown
+// options are silently ignored.
+const wchar_t* known_xoptions[] = {
+    L"faulthandler",
+    L"showrefcount",
+    L"tracemalloc",
+    L"importtime",
+    L"dev",
+    L"utf8",
+    L"pycache_prefix",
+    L"warn_default_encoding",
+    L"no_debug_ranges",
+    L"frozen_modules",
+    NULL,
+};
+
+static const wchar_t*
+_Py_check_xoptions(const PyWideStringList *xoptions, const wchar_t **names)
+{
+    for (Py_ssize_t i=0; i < xoptions->length; i++) {
+        const wchar_t *option = xoptions->items[i];
+        size_t len;
+        wchar_t *sep = wcschr(option, L'=');
+        if (sep != NULL) {
+            len = (sep - option);
+        }
+        else {
+            len = wcslen(option);
+        }
+        int found = 0;
+        for (const wchar_t** name = names; *name != NULL; name++) {
+            if (wcsncmp(option, *name, len) == 0 && (*name)[len] == L'\0') {
+                found = 1;
+            }
+        }
+        if (found == 0) {
+            return option;
+        }
+    }
+    return NULL;
+}
 
 static PyStatus
 config_read(PyConfig *config, int compute_path_config)
@@ -2144,6 +2231,11 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     /* -X options */
+    const wchar_t* option = _Py_check_xoptions(&config->xoptions, known_xoptions);
+    if (option != NULL) {
+        return PyStatus_Error("Unknown value for option -X");
+    }
+
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
     }

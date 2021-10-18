@@ -5,6 +5,7 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
@@ -13,6 +14,7 @@
 
 #include <ctype.h>
 #include <float.h>
+#include <stdlib.h>               // strtol()
 
 /*[clinic input]
 class float "PyObject *" "&PyFloat_Type"

@@ -15066,7 +15066,7 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-for ac_func in acosh asinh atanh copysign erf erfc expm1 finite gamma
+for ac_func in acosh asinh atanh erf erfc expm1 finite gamma
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -15078,7 +15078,7 @@ _ACEOF
 fi
 done
 
-for ac_func in hypot lgamma log1p log2 round tgamma
+for ac_func in lgamma log1p log2 tgamma
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -15089,40 +15089,6 @@ _ACEOF
 
 fi
 done
-
-ac_fn_c_check_decl "$LINENO" "isinf" "ac_cv_have_decl_isinf" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isinf" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISINF $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "isnan" "ac_cv_have_decl_isnan" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isnan" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISNAN $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "isfinite" "ac_cv_have_decl_isfinite" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isfinite" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISFINITE $ac_have_decl
-_ACEOF
 
 
 # For multiprocessing module, check that sem_open

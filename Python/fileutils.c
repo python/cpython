@@ -3,6 +3,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
+#include <stdlib.h>               // mbstowcs()
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
@@ -2165,6 +2166,18 @@ _Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
     assert(dirname != NULL && relfile != NULL);
     assert(bufsize > 0);
     return join_relfile(dirname, bufsize, dirname, relfile);
+}
+
+
+size_t
+_Py_find_basename(const wchar_t *filename)
+{
+    for (size_t i = wcslen(filename); i > 0; --i) {
+        if (filename[i] == SEP) {
+            return i + 1;
+        }
+    }
+    return 0;
 }
 
 

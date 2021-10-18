@@ -119,6 +119,7 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"
+#include <stdlib.h>               // exit()
 
 /* if PY_NO_SHORT_FLOAT_REPR is defined, then don't even try to compile
    the following code */
