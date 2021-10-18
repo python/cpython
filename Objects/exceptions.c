@@ -833,14 +833,8 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
             goto error;
         }
     }
-    PyObject *context = PyException_GetContext((PyObject*)orig);
-    if (context) {
-        PyException_SetContext(eg, context); /* steals a ref */
-    }
-    PyObject *cause = PyException_GetCause((PyObject*)orig);
-    if (cause) {
-        PyException_SetCause(eg, cause); /* steals a ref */
-    }
+    PyException_SetContext(eg, PyException_GetContext((PyObject*)orig));
+    PyException_SetCause(eg, PyException_GetCause((PyObject*)orig));
     return eg;
 error:
     Py_DECREF(eg);
