@@ -4657,6 +4657,7 @@ check_eval_breaker:
 
         TARGET(CALL_FUNCTION) {
             PREDICTED(CALL_FUNCTION);
+            STAT_INC(CALL_FUNCTION, unquickened);
             PyObject *function;
             nargs = oparg;
             kwnames = NULL;
@@ -4714,14 +4715,13 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_FUNCTION_ADAPTIVE): {
+        TARGET(CALL_FUNCTION_ADAPTIVE) {
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 next_instr--;
+                int nargs = cache->adaptive.original_oparg;
                 if (_Py_Specialize_CallFunction(
-                    BUILTINS(),
-                    stack_pointer,
-                    cache->adaptive.original_oparg, next_instr, cache) < 0) {
+                    PEEK(nargs + 1), next_instr, nargs, cache, BUILTINS()) < 0) {
                     goto error;
                 }
                 DISPATCH();
@@ -4734,7 +4734,7 @@ check_eval_breaker:
             }
         }
 
-        TARGET(CALL_FUNCTION_BUILTIN_O): {
+        TARGET(CALL_FUNCTION_BUILTIN_O) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
 
@@ -4758,7 +4758,7 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_FUNCTION_BUILTIN_FAST): {
+        TARGET(CALL_FUNCTION_BUILTIN_FAST) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
@@ -4797,7 +4797,7 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_FUNCTION_LEN): {
+        TARGET(CALL_FUNCTION_LEN) {
             assert(cframe.use_tracing == 0);
             /* len(o) */
             SpecializedCacheEntry *caches = GET_CACHE();
@@ -4824,7 +4824,7 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(CALL_FUNCTION_ISINSTANCE): {
+        TARGET(CALL_FUNCTION_ISINSTANCE) {
             assert(cframe.use_tracing == 0);
             /* isinstance(o, o2) */
             SpecializedCacheEntry *caches = GET_CACHE();
