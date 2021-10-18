@@ -640,7 +640,7 @@ PyObject *PyExc_ExceptionGroup;
 static inline PyBaseExceptionGroupObject*
 _PyBaseExceptionGroupObject_cast(PyObject *exc)
 {
-    assert(PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_BaseExceptionGroup));
+    assert(_PyBaseExceptionGroup_Check(exc));
     return (PyBaseExceptionGroupObject *)exc;
 }
 
@@ -819,7 +819,7 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
         return NULL;
     }
 
-    if (!PyObject_TypeCheck(eg, (PyTypeObject *)PyExc_BaseExceptionGroup)) {
+    if (!_PyBaseExceptionGroup_Check(eg)) {
         PyErr_SetString(PyExc_TypeError,
             "derive must return an instance of BaseExceptionGroup");
         goto error;
@@ -921,7 +921,7 @@ exceptiongroup_split_recursive(PyObject *exc,
         /* Full match */
         return PyTuple_Pack(2, exc, Py_None);
     }
-    else if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_BaseExceptionGroup)) {
+    else if (!_PyBaseExceptionGroup_Check(exc)) {
         /* Leaf exception and no match */
         return PyTuple_Pack(
             2, Py_None, construct_rest ? (PyObject*)exc : Py_None);

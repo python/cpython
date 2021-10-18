@@ -60,6 +60,8 @@ PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 
 #define PyExceptionInstance_Class(x) ((PyObject*)Py_TYPE(x))
 
+#define _PyBaseExceptionGroup_Check(x)                   \
+    PyObject_TypeCheck(x, (PyTypeObject *)PyExc_BaseExceptionGroup)
 
 /* Predefined exceptions */
 
