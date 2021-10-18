@@ -124,6 +124,9 @@ complete listing.
    worse performances (due to increased code size for example). The compiler is
    usually smarter than the developer for the cost/benefit analysis.
 
+   If Python is :ref:`built in debug mode <debug-build>` (if the ``Py_DEBUG``
+   macro is defined), the :c:macro:`Py_ALWAYS_INLINE` macro does nothing.
+
    It must be specified before the function return type. Usage::
 
        static inline Py_ALWAYS_INLINE int random(void) { return 4; }

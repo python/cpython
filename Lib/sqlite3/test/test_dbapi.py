@@ -38,13 +38,14 @@ from test.support.os_helper import TESTFN, unlink, temp_dir
 
 # Helper for tests using TESTFN
 @contextlib.contextmanager
-def managed_connect(*args, **kwargs):
+def managed_connect(*args, in_mem=False, **kwargs):
     cx = sqlite.connect(*args, **kwargs)
     try:
         yield cx
     finally:
         cx.close()
-        unlink(TESTFN)
+        if not in_mem:
+            unlink(TESTFN)
 
 
 class ModuleTests(unittest.TestCase):
@@ -167,9 +168,9 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_TRANSACTION",
             "SQLITE_UPDATE",
         ]
-        if sqlite.version_info >= (3, 7, 17):
+        if sqlite.sqlite_version_info >= (3, 7, 17):
             consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
-        if sqlite.version_info >= (3, 8, 3):
+        if sqlite.sqlite_version_info >= (3, 8, 3):
             consts.append("SQLITE_RECURSIVE")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         for const in consts:
@@ -615,7 +616,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row, None)
 
     def test_array_size(self):
-        # must default ot 1
+        # must default to 1
         self.assertEqual(self.cu.arraysize, 1)
 
         # now set to 2

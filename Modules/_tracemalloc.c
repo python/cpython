@@ -5,7 +5,10 @@
 #include "pycore_hashtable.h"
 #include <pycore_frame.h>
 
+#include <stdlib.h>               // malloc()
+
 #include "clinic/_tracemalloc.c.h"
+
 /*[clinic input]
 module _tracemalloc
 [clinic start generated code]*/
@@ -302,7 +305,7 @@ static void
 tracemalloc_get_frame(InterpreterFrame *pyframe, frame_t *frame)
 {
     frame->filename = unknown_filename;
-    int lineno = PyCode_Addr2Line(pyframe->f_code, pyframe->f_lasti*2);
+    int lineno = PyCode_Addr2Line(pyframe->f_code, pyframe->f_lasti*sizeof(_Py_CODEUNIT));
     if (lineno < 0) {
         lineno = 0;
     }
@@ -833,7 +836,7 @@ tracemalloc_clear_filename(void *value)
 static void
 tracemalloc_clear_traces(void)
 {
-    /* The GIL protects variables againt concurrent access */
+    /* The GIL protects variables against concurrent access */
     assert(PyGILState_Check());
 
     TABLES_LOCK();

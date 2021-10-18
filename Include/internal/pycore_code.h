@@ -307,7 +307,8 @@ int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
-int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
 int _Py_Specialize_CallFunction(PyObject *builtins, PyObject **stack_pointer, uint8_t original_oparg, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 #define PRINT_SPECIALIZATION_STATS 0

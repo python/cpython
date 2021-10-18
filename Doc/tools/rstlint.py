@@ -256,7 +256,7 @@ def hide_comments(lines):
     """Tool to remove comments from given lines.
 
     It yields empty lines in place of comments, so line numbers are
-    still meaningfull.
+    still meaningful.
     """
     in_multiline_comment = False
     for line in lines:
