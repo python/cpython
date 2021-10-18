@@ -972,6 +972,8 @@ exceptiongroup_split_recursive(PyObject *exc,
         }
         PyObject *e_rest = PyTuple_GET_ITEM(rec, 1);
         if (e_rest != Py_None) {
+            assert(construct_rest);
+            assert(PyList_CheckExact(rest_list));
             if (PyList_Append(rest_list, e_rest) < 0) {
                 Py_DECREF(rec);
                 goto done;
@@ -1040,12 +1042,7 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
     if (!ret) {
         return NULL;
     }
-    if (!PyTuple_CheckExact(ret)) {
-        PyErr_SetString(PyExc_RuntimeError,
-            "Internal error: expected a 2-tuple");
-        Py_DECREF(ret);
-        return NULL;
-    }
+    assert(PyTuple_CheckExact(ret) && PyTuple_GET_SIZE(ret) == 2);
     PyObject *match = Py_NewRef(PyTuple_GET_ITEM(ret, 0));
     Py_DECREF(ret);
     return match;
