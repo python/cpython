@@ -1,0 +1,1 @@
+Specialized the ``INPLACE_ADD`` opcode to match the specializations of ``BINARY_ADD`` (see PEP 659 for details).
