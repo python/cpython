@@ -694,6 +694,9 @@
 /* Define to 1 if you have the `memrchr' function. */
 #undef HAVE_MEMRCHR
 
+/* Define to 1 if you have the <mimalloc.h> header file. */
+#undef HAVE_MIMALLOC_H
+
 /* Define to 1 if you have the `mkdirat' function. */
 #undef HAVE_MKDIRAT
 
@@ -1403,6 +1406,9 @@
 
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Define Python uses mimalloc memory allocator. */
+#undef PY_MIMALLOC
 
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */
