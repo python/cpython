@@ -3349,7 +3349,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
 {
     PyObject *result = NULL, *factor = NULL, *temp;
     int overflow, cmp;
-    long long i, factors;
+    long long i, factors, numerator;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -3407,6 +3407,23 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
 
     if (factors == 0) {
         result = PyLong_FromLong(1);
+        goto done;
+    }
+
+    numerator = PyLong_AsLongLongAndOverflow(n, &overflow);
+
+    // fast path for small n
+    if (numerator <= 62 && overflow == 0) {
+        uint64_t top = (uint64_t)numerator;
+        uint64_t reps = top - factors;
+        uint64_t fact = 1;
+        uint64_t bot = 1;
+
+        for (uint64_t i = 0; i < reps; ++i) {
+            fact *= top--;
+            fact /= bot++;
+        }
+        result = PyLong_FromUnsignedLongLong(fact);
         goto done;
     }
 
