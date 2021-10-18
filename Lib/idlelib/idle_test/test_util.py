@@ -39,8 +39,11 @@ class IsPythonSourceTest(unittest.TestCase):
                 util.is_python_source(filepath='asdfoijf9245-98-$%^&*.json')
             )
 
-    def test_python_extension(self):
-        with mock.patch('idlelib.util.is_python_extension', return_value=True):
+    def test_filepath_with_python_extension(self):
+        with (
+            mock.patch('os.path.isdir', return_value=False),
+            mock.patch('idlelib.util.is_python_extension', return_value=True)
+        ):
             self.assertTrue(
                 util.is_python_source(filepath='asdfe798723%^&*^%£(.docx')
             )
