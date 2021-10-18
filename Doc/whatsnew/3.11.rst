@@ -564,18 +564,9 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
-* The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
-  extensions using ``<stdlib.h>`` must now include it explicitly.
-  The system ``<stdlib.h>`` header provides functions like:
-  ``malloc()``/``free()``, ``getenv()``, ``strtol()``, ``abs()``, ``strtol()``,
-  ``exit()`` and ``abort()``.
-  (Contributed by Victor Stinner in :issue:`45434`.)
-
-* The ``<Python.h>`` header file no longer includes ``<stdio.h>`` if the
-  ``Py_LIMITED_API`` macro is defined. Functions expecting ``FILE*`` are
-  excluded from the limited C API (:pep:`384`). C extensions using
-  ``<stdio.h>`` must now include it explicitly.  The system ``<stdio.h>``
-  header provides functions like ``printf()`` and ``fopen()``.
+* The Python 3.11 limited C API no longer includes ``<stdlib.h>``,
+  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>``. C extensions using these
+  headers must now include them explicitly.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
 * The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,

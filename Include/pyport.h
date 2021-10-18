@@ -203,7 +203,9 @@ typedef Py_ssize_t Py_ssize_clean_t;
 
 /* Py_MEMCPY is kept for backwards compatibility,
  * see https://bugs.python.org/issue28126 */
-#define Py_MEMCPY memcpy
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
+#  define Py_MEMCPY memcpy
+#endif
 
 #ifdef HAVE_IEEEFP_H
 #include <ieeefp.h>  /* needed for 'finite' declaration on some platforms */
