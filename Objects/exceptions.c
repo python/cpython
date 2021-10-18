@@ -797,7 +797,7 @@ BaseExceptionGroup_derive(PyObject *self_, PyObject *args)
 }
 
 static PyObject*
-exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
+exceptiongroup_subset(PyBaseExceptionGroupObject *_orig, PyObject *excs)
 {
     /* Return an ExceptionGroup wrapping excs with metadata from orig.
 
@@ -805,6 +805,7 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
     so excs is the matching or non-matching sub-sequence of orig->excs
     (this function does not verify that it is a subsequence).
     */
+    PyObject *orig = (PyObject *)_orig;
     Py_ssize_t num_excs = PySequence_Size(excs);
     if (num_excs < 0) {
         return NULL;
@@ -814,7 +815,7 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
     }
 
     PyObject *eg = PyObject_CallMethod(
-        (PyObject*)orig, "derive", "(O)", excs);
+        orig, "derive", "(O)", excs);
     if (!eg) {
         return NULL;
     }
@@ -825,7 +826,7 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
         goto error;
     }
 
-    PyObject *tb = PyException_GetTraceback((PyObject*)orig);
+    PyObject *tb = PyException_GetTraceback(orig);
     if (tb) {
         int res = PyException_SetTraceback(eg, tb);
         Py_DECREF(tb);
@@ -833,8 +834,8 @@ exceptiongroup_subset(PyBaseExceptionGroupObject *orig, PyObject *excs)
             goto error;
         }
     }
-    PyException_SetContext(eg, PyException_GetContext((PyObject*)orig));
-    PyException_SetCause(eg, PyException_GetCause((PyObject*)orig));
+    PyException_SetContext(eg, PyException_GetContext(orig));
+    PyException_SetCause(eg, PyException_GetCause(orig));
     return eg;
 error:
     Py_DECREF(eg);
