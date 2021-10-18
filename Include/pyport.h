@@ -201,9 +201,8 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-/* Py_MEMCPY is kept for backwards compatibility,
- * see https://bugs.python.org/issue28126 */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
+// bpo-28126: Py_MEMCPY is kept for backwards compatibility,
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
 

@@ -565,8 +565,9 @@ Porting to Python 3.11
   (Contributed by Victor Stinner in :issue:`39573`.)
 
 * The Python 3.11 limited C API no longer includes ``<stdlib.h>``,
-  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>``. C extensions using these
-  headers must now include them explicitly.
+  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>``:
+  if ``Py_LIMITED_API >= 0x030b0000``. C extensions using these headers must
+  now include them explicitly.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
 * The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
