@@ -709,10 +709,12 @@ PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
     return;
 }
 
+
 int
-PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
-                  int readonly, int flags)
-{
+PyBuffer_FillInfoEx(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
+                    int readonly, int flags, Py_ssize_t itemsize, int ndim,
+                    char *format, Py_ssize_t *shape, Py_ssize_t *strides,
+                    Py_ssize_t *suboffsets, void *internal) {
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
                         "PyBuffer_FillInfo: view==NULL argument is obsolete");
@@ -726,26 +728,46 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
+    /* TODO: perform basic validation of arguments */
+
     view->obj = obj;
     if (obj)
         Py_INCREF(obj);
     view->buf = buf;
     view->len = len;
     view->readonly = readonly;
-    view->itemsize = 1;
-    view->format = NULL;
-    if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
+    view->itemsize = itemsize;
+
+    if ((format == NULL) && ((flags & PyBUF_FORMAT) == PyBUF_FORMAT))
         view->format = "B";
-    view->ndim = 1;
-    view->shape = NULL;
-    if ((flags & PyBUF_ND) == PyBUF_ND)
+    else
+        view->format = format;
+
+    view->ndim = ndim;
+
+    if ((shape == NULL) && ((flags & PyBUF_ND) == PyBUF_ND))
         view->shape = &(view->len);
-    view->strides = NULL;
-    if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
+    else
+        view->shape = shape;
+
+    if ((strides == NULL) && ((flags & PyBUF_STRIDES) == PyBUF_STRIDES))
         view->strides = &(view->itemsize);
-    view->suboffsets = NULL;
-    view->internal = NULL;
+    else
+        view->strides = strides;
+
+    view->suboffsets = suboffsets;
+    view->internal = internal;
+
     return 0;
+}
+
+int
+PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
+                  int readonly, int flags)
+{
+    return PyBuffer_FillInfoEx(
+        view, obj, buf, len, readonly, flags, 1, 1, NULL, NULL, NULL, NULL, NULL
+    );
 }
 
 void
@@ -781,6 +803,50 @@ PyBuffer_Free(Py_buffer *view)
         PyMem_Free(view);
     }
 }
+
+PyObject *
+PyBuffer_GetObject(Py_buffer *view) {
+    return Py_XNewRef(view->obj);
+}
+
+Py_ssize_t
+PyBuffer_GetLength(Py_buffer *view) {
+    return view->len;
+}
+
+Py_ssize_t
+PyBuffer_GetItemSize(Py_buffer *view) {
+    return view->itemsize;
+}
+
+int
+PyBuffer_IsReadonly(Py_buffer *view) {
+    return view->readonly;
+}
+
+void *
+PyBuffer_GetInternal(Py_buffer *view) {
+    return view->internal;
+}
+
+int
+PyBuffer_GetLayout(Py_buffer *view, char **format, Py_ssize_t **shape,
+                   Py_ssize_t **strides, Py_ssize_t **suboffsets) {
+    if (format != NULL) {
+        *format = view->format;
+    }
+    if (shape != NULL) {
+        *shape = view->shape;
+    }
+    if (strides != NULL) {
+        *strides = view->strides;
+    }
+    if (suboffsets != NULL) {
+        *suboffsets = view->suboffsets;
+    }
+    return view->ndim;
+}
+
 
 PyObject *
 PyObject_Format(PyObject *obj, PyObject *format_spec)

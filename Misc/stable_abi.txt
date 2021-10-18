@@ -2171,11 +2171,25 @@ function PyBuffer_FillContiguousStrides
     added 3.11
 function PyBuffer_FillInfo
     added 3.11
+function PyBuffer_FillInfoEx
+    added 3.11
 function PyBuffer_New
     added 3.11
 function PyBuffer_Free
     added 3.11
 function PyBuffer_Release
+    added 3.11
+function PyBuffer_GetObject
+    added 3.11
+function PyBuffer_GetLength
+    added 3.11
+function PyBuffer_GetItemSize
+    added 3.11
+function PyBuffer_IsReadonly
+    added 3.11
+function PyBuffer_GetInternal
+    added 3.11
+function PyBuffer_GetLayout
     added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on
