@@ -17,6 +17,9 @@ This is Python version 3.11.0 alpha 1
    :alt: Python Discourse chat
    :target: https://discuss.python.org/
    
+.. image:: https://visitor-badge.glitch.me/badge?page_id=python.python
+   :alt: Python Discourse chat
+   :target: https://github.com/python/cpython
    
 
 
@@ -267,6 +270,3 @@ so it may be used in proprietary projects.  There are interfaces to some GNU
 code but these are entirely optional.
 
 All trademarks referenced herein are property of their respective holders.
-
-
-![](https://visitor-badge.glitch.me/badge?page_id=python.python)
