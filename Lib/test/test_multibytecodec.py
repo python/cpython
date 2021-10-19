@@ -403,8 +403,6 @@ class TestHZStateful(TestStateful):
     reset = b'~}'
     expected_reset = expected + reset
 
-def test_main():
-    support.run_unittest(__name__)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

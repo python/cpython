@@ -19,6 +19,14 @@ enum decoding_state {
     STATE_NORMAL
 };
 
+enum interactive_underflow_t {
+    /* Normal mode of operation: return a new token when asked in interactie mode */
+    IUNDERFLOW_NORMAL,
+    /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
+     * can be used to prevent the tokenizer to prompt the user for new tokens */
+    IUNDERFLOW_STOP,
+};
+
 /* Tokenizer state */
 struct tok_state {
     /* Input state; buf <= cur <= inp <= end */
@@ -74,14 +82,16 @@ struct tok_state {
     int async_def_indent; /* Indentation level of the outermost 'async def'. */
     int async_def_nl;     /* =1 if the outermost 'async def' had at least one
                              NEWLINE token after it. */
+    /* How to proceed when asked for a new token in interactive mode */
+    enum interactive_underflow_t interactive_underflow;
 };
 
-extern struct tok_state *PyTokenizer_FromString(const char *, int);
-extern struct tok_state *PyTokenizer_FromUTF8(const char *, int);
-extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
+extern struct tok_state *_PyTokenizer_FromString(const char *, int);
+extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
+extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
-extern void PyTokenizer_Free(struct tok_state *);
-extern int PyTokenizer_Get(struct tok_state *, const char **, const char **);
+extern void _PyTokenizer_Free(struct tok_state *);
+extern int _PyTokenizer_Get(struct tok_state *, const char **, const char **);
 
 #define tok_dump _Py_tok_dump
 

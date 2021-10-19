@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_ast.h"           // _PyAST_Validate(),
 #include <errcode.h>
 #include "tokenizer.h"
 
@@ -7,7 +7,7 @@
 #include "string_parser.h"
 
 PyObject *
-_PyPegen_new_type_comment(Parser *p, char *s)
+_PyPegen_new_type_comment(Parser *p, const char *s)
 {
     PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
     if (res == NULL) {
@@ -26,7 +26,7 @@ _PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
     if (tc == NULL) {
         return a;
     }
-    char *bytes = PyBytes_AsString(tc->bytes);
+    const char *bytes = PyBytes_AsString(tc->bytes);
     if (bytes == NULL) {
         return NULL;
     }
@@ -66,7 +66,7 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     assert(t->bytes != NULL);
     assert(t->type == NOTEQUAL);
 
-    char* tok_str = PyBytes_AS_STRING(t->bytes);
+    const char* tok_str = PyBytes_AS_STRING(t->bytes);
     if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>") != 0) {
         RAISE_SYNTAX_ERROR("with Barry as BDFL, use '<>' instead of '!='");
         return -1;
@@ -77,8 +77,20 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     return 0;
 }
 
+int
+_PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
+    assert(name->kind == Name_kind);
+    const char* candidates[2] = {"print", "exec"};
+    for (int i=0; i<2; i++) {
+        if (PyUnicode_CompareWithASCIIString(name->v.Name.id, candidates[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 PyObject *
-_PyPegen_new_identifier(Parser *p, char *n)
+_PyPegen_new_identifier(Parser *p, const char *n)
 {
     PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     if (!id) {
@@ -139,27 +151,6 @@ _create_dummy_identifier(Parser *p)
     return _PyPegen_new_identifier(p, "");
 }
 
-static inline Py_ssize_t
-byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
-{
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return 0;
-    }
-    Py_ssize_t len = strlen(str);
-    if (col_offset > len) {
-        col_offset = len;
-    }
-    assert(col_offset >= 0);
-    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
-    if (!text) {
-        return 0;
-    }
-    Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    Py_DECREF(text);
-    return size;
-}
-
 const char *
 _PyPegen_get_expr_name(expr_ty e)
 {
@@ -184,7 +175,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case BoolOp_kind:
         case BinOp_kind:
         case UnaryOp_kind:
-            return "operator";
+            return "expression";
         case GeneratorExp_kind:
             return "generator expression";
         case Yield_kind:
@@ -199,7 +190,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case DictComp_kind:
             return "dict comprehension";
         case Dict_kind:
-            return "dict display";
+            return "dict literal";
         case Set_kind:
             return "set display";
         case JoinedStr_kind:
@@ -217,7 +208,7 @@ _PyPegen_get_expr_name(expr_ty e)
                 return "True";
             }
             if (value == Py_Ellipsis) {
-                return "Ellipsis";
+                return "ellipsis";
             }
             return "literal";
         }
@@ -274,7 +265,7 @@ raise_unclosed_parentheses_error(Parser *p) {
        int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
        int error_col = p->tok->parencolstack[p->tok->level-1];
        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
-                                  error_lineno, error_col,
+                                  error_lineno, error_col, error_lineno, -1,
                                   "'%c' was never closed",
                                   p->tok->parenstack[p->tok->level-1]);
 }
@@ -283,6 +274,7 @@ static void
 raise_tokenizer_init_error(PyObject *filename)
 {
     if (!(PyErr_ExceptionMatches(PyExc_LookupError)
+          || PyErr_ExceptionMatches(PyExc_SyntaxError)
           || PyErr_ExceptionMatches(PyExc_ValueError)
           || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
         return;
@@ -366,7 +358,7 @@ tokenizer_error(Parser *p)
             msg = "unknown parsing error";
     }
 
-    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, msg);
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, p->tok->lineno, -1, msg);
     return -1;
 }
 
@@ -375,6 +367,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
+    Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
         col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
                                       intptr_t, int);
@@ -382,10 +375,13 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
         col_offset = t->col_offset + 1;
     }
 
+    if (t->end_col_offset != -1) {
+        end_col_offset = t->end_col_offset + 1;
+    }
+
     va_list va;
     va_start(va, errmsg);
-    _PyPegen_raise_error_known_location(p, errtype, t->lineno,
-                                        col_offset, errmsg, va);
+    _PyPegen_raise_error_known_location(p, errtype, t->lineno, col_offset, t->end_lineno, end_col_offset, errmsg, va);
     va_end(va);
 
     return NULL;
@@ -413,9 +409,31 @@ get_error_line(Parser *p, Py_ssize_t lineno)
     return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
 }
 
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+{
+    const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return -1;
+    }
+    Py_ssize_t len = strlen(str);
+    if (col_offset > len + 1) {
+        col_offset = len + 1;
+    }
+    assert(col_offset >= 0);
+    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
+    if (!text) {
+        return -1;
+    }
+    Py_ssize_t size = PyUnicode_GET_LENGTH(text);
+    Py_DECREF(text);
+    return size;
+}
+
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
+                                    Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
@@ -423,6 +441,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *error_line = NULL;
     PyObject *tmp = NULL;
     p->error_indicator = 1;
+
+    if (end_lineno == CURRENT_POS) {
+        end_lineno = p->tok->lineno;
+    }
+    if (end_col_offset == CURRENT_POS) {
+        end_col_offset = p->tok->cur - p->tok->line_start;
+    }
 
     if (p->start_rule == Py_fstring_input) {
         const char *fstring_msg = "f-string: ";
@@ -444,10 +469,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
+    // PyErr_ProgramTextObject assumes that the text is utf-8 so we cannot call it with a file
+    // with an arbitrary encoding or otherwise we could get some badly decoded text.
+    int uses_utf8_codec = (!p->tok->encoding || strcmp(p->tok->encoding, "utf-8") == 0);
     if (p->tok->fp_interactive) {
         error_line = get_error_line(p, lineno);
     }
-    else if (p->start_rule == Py_file_input) {
+    else if (uses_utf8_codec && p->start_rule == Py_file_input) {
         error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
@@ -459,7 +487,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            we're actually parsing from a file, which has an E_EOF SyntaxError and in that case
            `PyErr_ProgramTextObject` fails because lineno points to last_file_line + 1, which
            does not physically exist */
-        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
+        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF || !uses_utf8_codec);
 
         if (p->tok->lineno <= lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
@@ -475,14 +503,27 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (p->start_rule == Py_fstring_input) {
         col_offset -= p->starting_col_offset;
+        end_col_offset -= p->starting_col_offset;
     }
+
     Py_ssize_t col_number = col_offset;
+    Py_ssize_t end_col_number = end_col_offset;
 
     if (p->tok->encoding != NULL) {
-        col_number = byte_offset_to_character_offset(error_line, col_offset);
+        col_number = _PyPegen_byte_offset_to_character_offset(error_line, col_offset);
+        if (col_number < 0) {
+            goto error;
+        }
+        if (end_col_number > 0) {
+            Py_ssize_t end_col_offset = _PyPegen_byte_offset_to_character_offset(error_line, end_col_number);
+            if (end_col_offset < 0) {
+                goto error;
+            } else {
+                end_col_number = end_col_offset;
+            }
+        }
     }
-
-    tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
+    tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
     }
@@ -688,7 +729,7 @@ _PyPegen_fill_token(Parser *p)
 {
     const char *start;
     const char *end;
-    int type = PyTokenizer_Get(p->tok, &start, &end);
+    int type = _PyTokenizer_Get(p->tok, &start, &end);
 
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
@@ -705,7 +746,7 @@ _PyPegen_fill_token(Parser *p)
             PyErr_NoMemory();
             return -1;
         }
-        type = PyTokenizer_Get(p->tok, &start, &end);
+        type = _PyTokenizer_Get(p->tok, &start, &end);
     }
 
     // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
@@ -856,6 +897,19 @@ _PyPegen_expect_token(Parser *p, int type)
     return t;
 }
 
+void*
+_PyPegen_expect_forced_result(Parser *p, void* result, const char* expected) {
+
+    if (p->error_indicator == 1) {
+        return NULL;
+    }
+    if (result == NULL) {
+        RAISE_SYNTAX_ERROR("expected (%s)", expected);
+        return NULL;
+    }
+    return result;
+}
+
 Token *
 _PyPegen_expect_forced_token(Parser *p, int type, const char* expected) {
 
@@ -891,7 +945,7 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
     if (t->type != NAME) {
         return NULL;
     }
-    char *s = PyBytes_AsString(t->bytes);
+    const char *s = PyBytes_AsString(t->bytes);
     if (!s) {
         p->error_indicator = 1;
         return NULL;
@@ -916,14 +970,13 @@ _PyPegen_get_last_nonnwhitespace_token(Parser *p)
     return token;
 }
 
-expr_ty
-_PyPegen_name_token(Parser *p)
+static expr_ty
+_PyPegen_name_from_token(Parser *p, Token* t)
 {
-    Token *t = _PyPegen_expect_token(p, NAME);
     if (t == NULL) {
         return NULL;
     }
-    char* s = PyBytes_AsString(t->bytes);
+    const char *s = PyBytes_AsString(t->bytes);
     if (!s) {
         p->error_indicator = 1;
         return NULL;
@@ -937,10 +990,35 @@ _PyPegen_name_token(Parser *p)
                        t->end_col_offset, p->arena);
 }
 
+
+expr_ty
+_PyPegen_name_token(Parser *p)
+{
+    Token *t = _PyPegen_expect_token(p, NAME);
+    return _PyPegen_name_from_token(p, t);
+}
+
 void *
 _PyPegen_string_token(Parser *p)
 {
     return _PyPegen_expect_token(p, STRING);
+}
+
+
+expr_ty _PyPegen_soft_keyword_token(Parser *p) {
+    Token *t = _PyPegen_expect_token(p, NAME);
+    if (t == NULL) {
+        return NULL;
+    }
+    char *the_token;
+    Py_ssize_t size;
+    PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
+    for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
+        if (strncmp(*keyword, the_token, size) == 0) {
+            return _PyPegen_name_from_token(p, t);
+        }
+    }
+    return NULL;
 }
 
 static PyObject *
@@ -1024,7 +1102,7 @@ _PyPegen_number_token(Parser *p)
         return NULL;
     }
 
-    char *num_raw = PyBytes_AsString(t->bytes);
+    const char *num_raw = PyBytes_AsString(t->bytes);
     if (num_raw == NULL) {
         p->error_indicator = 1;
         return NULL;
@@ -1151,6 +1229,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
+    p->soft_keywords = NULL;
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyMem_Free(p);
@@ -1187,7 +1266,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-
+    p->in_raw_rule = 0;
     return p;
 }
 
@@ -1199,6 +1278,9 @@ reset_parser_state(Parser *p)
     }
     p->mark = 0;
     p->call_invalid_rules = 1;
+    // Don't try to get extra tokens in interactive mode when trying to
+    // raise specialized errors in the second pass.
+    p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
 static int
@@ -1213,19 +1295,25 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         return 0;
     }
 
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+
     Token *current_token = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t current_err_line = current_token->lineno;
+
+    int ret = 0;
 
     for (;;) {
         const char *start;
         const char *end;
-        switch (PyTokenizer_Get(p->tok, &start, &end)) {
+        switch (_PyTokenizer_Get(p->tok, &start, &end)) {
             case ERRORTOKEN:
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {
                         raise_unclosed_parentheses_error(p);
-                        return -1;
+                        ret = -1;
+                        goto exit;
                     }
                 }
                 break;
@@ -1237,7 +1325,16 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         break;
     }
 
-    return 0;
+
+exit:
+    if (PyErr_Occurred()) {
+        Py_XDECREF(value);
+        Py_XDECREF(type);
+        Py_XDECREF(traceback);
+    } else {
+        PyErr_Restore(type, value, traceback);
+    }
+    return ret;
 }
 
 void *
@@ -1245,9 +1342,18 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            return NULL;
+        }
+        Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
+            // Prioritize tokenizer errors to custom syntax errors raised
+            // on the second phase only if the errors come from the parser.
+            if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+                _PyPegen_check_tokenizer_errors(p);
+            }
             return NULL;
         }
         if (p->fill == 0) {
@@ -1268,7 +1374,11 @@ _PyPegen_run_parser(Parser *p)
                 RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid syntax");
+                // Use the last token we found on the first pass to avoid reporting
+                // incorrect locations for generic syntax errors just because we reached
+                // further away when trying to find specific syntax errors in the second
+                // pass.
+                RAISE_SYNTAX_ERROR_KNOWN_LOCATION(last_token, "invalid syntax");
                 // _PyPegen_check_tokenizer_errors will override the existing
                 // generic SyntaxError we just raised if errors are found.
                 _PyPegen_check_tokenizer_errors(p);
@@ -1301,7 +1411,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              const char *enc, const char *ps1, const char *ps2,
                              PyCompilerFlags *flags, int *errcode, PyArena *arena)
 {
-    struct tok_state *tok = PyTokenizer_FromFile(fp, enc, ps1, ps2);
+    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             raise_tokenizer_init_error(filename_ob);
@@ -1331,7 +1441,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     _PyPegen_Parser_Free(p);
 
 error:
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -1343,9 +1453,9 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
 
     struct tok_state *tok;
     if (flags == NULL || flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = PyTokenizer_FromUTF8(str, exec_input);
+        tok = _PyTokenizer_FromUTF8(str, exec_input);
     } else {
-        tok = PyTokenizer_FromString(str, exec_input);
+        tok = _PyTokenizer_FromString(str, exec_input);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1373,7 +1483,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     _PyPegen_Parser_Free(p);
 
 error:
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -1475,6 +1585,20 @@ _PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
 
     return flattened_seq;
 }
+
+void *
+_PyPegen_seq_last_item(asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    return asdl_seq_GET_UNTYPED(seq, len - 1);
+}
+
+void *
+_PyPegen_seq_first_item(asdl_seq *seq)
+{
+    return asdl_seq_GET_UNTYPED(seq, 0);
+}
+
 
 /* Creates a new name of the form <first_name>.<second_name> */
 expr_ty
@@ -1772,6 +1896,51 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
     for (Py_ssize_t i = 0; i < len; i++) {
         KeyValuePair *pair = asdl_seq_GET_UNTYPED(seq, i);
         asdl_seq_SET(new_seq, i, pair->value);
+    }
+    return new_seq;
+}
+
+/* Constructs a KeyPatternPair that is used when parsing mapping & class patterns */
+KeyPatternPair *
+_PyPegen_key_pattern_pair(Parser *p, expr_ty key, pattern_ty pattern)
+{
+    KeyPatternPair *a = _PyArena_Malloc(p->arena, sizeof(KeyPatternPair));
+    if (!a) {
+        return NULL;
+    }
+    a->key = key;
+    a->pattern = pattern;
+    return a;
+}
+
+/* Extracts all keys from an asdl_seq* of KeyPatternPair*'s */
+asdl_expr_seq *
+_PyPegen_get_pattern_keys(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeyPatternPair *pair = asdl_seq_GET_UNTYPED(seq, i);
+        asdl_seq_SET(new_seq, i, pair->key);
+    }
+    return new_seq;
+}
+
+/* Extracts all patterns from an asdl_seq* of KeyPatternPair*'s */
+asdl_pattern_seq *
+_PyPegen_get_patterns(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_pattern_seq *new_seq = _Py_asdl_pattern_seq_new(len, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeyPatternPair *pair = asdl_seq_GET_UNTYPED(seq, i);
+        asdl_seq_SET(new_seq, i, pair->pattern);
     }
     return new_seq;
 }
@@ -2261,6 +2430,26 @@ error:
     return NULL;
 }
 
+expr_ty
+_PyPegen_ensure_imaginary(Parser *p, expr_ty exp)
+{
+    if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "imaginary number required in complex literal");
+        return NULL;
+    }
+    return exp;
+}
+
+expr_ty
+_PyPegen_ensure_real(Parser *p, expr_ty exp)
+{
+    if (exp->kind != Constant_kind || PyComplex_CheckExact(exp->v.Constant.value)) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "real number required in complex literal");
+        return NULL;
+    }
+    return exp;
+}
+
 mod_ty
 _PyPegen_make_module(Parser *p, asdl_stmt_seq *a) {
     asdl_type_ignore_seq *type_ignores = NULL;
@@ -2365,8 +2554,17 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     return RAISE_SYNTAX_ERROR(msg);
 }
 
+
+static inline expr_ty
+_PyPegen_get_last_comprehension_item(comprehension_ty comprehension) {
+    if (comprehension->ifs == NULL || asdl_seq_LEN(comprehension->ifs) == 0) {
+        return comprehension->iter;
+    }
+    return PyPegen_last_item(comprehension->ifs, expr_ty);
+}
+
 void *
-_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
+_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions)
 {
     /* The rule that calls this function is 'args for_if_clauses'.
        For the input f(L, x for x in y), L and x are in args and
@@ -2380,8 +2578,11 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         return NULL;
     }
 
-    return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+    comprehension_ty last_comprehension = PyPegen_last_item(comprehensions, comprehension_ty);
+
+    return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
         (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
+        _PyPegen_get_last_comprehension_item(last_comprehension),
         "Generator expression must be parenthesized"
     );
 }

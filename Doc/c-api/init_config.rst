@@ -22,7 +22,7 @@ There are two kinds of configuration:
 * The :ref:`Isolated Configuration <init-isolated-conf>` can be used to embed
   Python into an application. It isolates Python from the system. For example,
   environments variables are ignored, the LC_CTYPE locale is left unchanged and
-  no signal handler is registred.
+  no signal handler is registered.
 
 The :c:func:`Py_RunMain` function can be used to write a customized Python
 program.
@@ -229,17 +229,20 @@ PyPreConfig
       Name of the Python memory allocators:
 
       * ``PYMEM_ALLOCATOR_NOT_SET`` (``0``): don't change memory allocators
-        (use defaults)
-      * ``PYMEM_ALLOCATOR_DEFAULT`` (``1``): default memory allocators
-      * ``PYMEM_ALLOCATOR_DEBUG`` (``2``): default memory allocators with
-        debug hooks
-      * ``PYMEM_ALLOCATOR_MALLOC`` (``3``): force usage of ``malloc()``
+        (use defaults).
+      * ``PYMEM_ALLOCATOR_DEFAULT`` (``1``): :ref:`default memory allocators
+        <default-memory-allocators>`.
+      * ``PYMEM_ALLOCATOR_DEBUG`` (``2``): :ref:`default memory allocators
+        <default-memory-allocators>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
+      * ``PYMEM_ALLOCATOR_MALLOC`` (``3``): use ``malloc()`` of the C library.
       * ``PYMEM_ALLOCATOR_MALLOC_DEBUG`` (``4``): force usage of
-        ``malloc()`` with debug hooks
+        ``malloc()`` with :ref:`debug hooks <pymem-debug-hooks>`.
       * ``PYMEM_ALLOCATOR_PYMALLOC`` (``5``): :ref:`Python pymalloc memory
-        allocator <pymalloc>`
+        allocator <pymalloc>`.
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
-        memory allocator <pymalloc>` with debug hooks
+        memory allocator <pymalloc>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
 
       ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` are
       not supported if Python is :option:`configured using --without-pymalloc
@@ -593,6 +596,16 @@ PyConfig
 
       .. versionadded:: 3.10
 
+   .. c:member:: int no_debug_ranges
+
+      If equals to ``1``, disables the inclusion of the end line and column
+      mappings in code objects. Also disables traceback printing carets to
+      specific error locations.
+
+      Default: ``0``.
+
+      .. versionadded:: 3.11
+
    .. c:member:: wchar_t* check_hash_pycs_mode
 
       Control the validation behavior of hash-based ``.pyc`` files:
@@ -638,7 +651,7 @@ PyConfig
       Set to ``1`` by the :envvar:`PYTHONDUMPREFS` environment variable.
 
       Need a special build of Python with the ``Py_TRACE_REFS`` macro defined:
-      see :option:`configure --with-trace-refs <--with-trace-refs>`.
+      see the :option:`configure --with-trace-refs option <--with-trace-refs>`.
 
       Default: ``0``.
 
@@ -693,7 +706,7 @@ PyConfig
       * Otherwise, use the :term:`locale encoding`:
         ``nl_langinfo(CODESET)`` result.
 
-      At Python statup, the encoding name is normalized to the Python codec
+      At Python startup, the encoding name is normalized to the Python codec
       name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
@@ -820,7 +833,7 @@ PyConfig
       Set to ``1`` by the :envvar:`PYTHONMALLOCSTATS` environment variable.
 
       The option is ignored if Python is :option:`configured using
-      --without-pymalloc <--without-pymalloc>`.
+      the --without-pymalloc option <--without-pymalloc>`.
 
       Default: ``0``.
 
@@ -831,8 +844,8 @@ PyConfig
       Set by the :envvar:`PYTHONPLATLIBDIR` environment variable.
 
       Default: value of the ``PLATLIBDIR`` macro which is set by the
-      :option`configure --with-platlibdir option <--with-platlibdir>` (default:
-      ``"lib"``).
+      :option:`configure --with-platlibdir option <--with-platlibdir>`
+      (default: ``"lib"``).
 
       Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
@@ -1135,6 +1148,13 @@ PyConfig
       item of :data:`warnings.filters` which is checked first (highest
       priority).
 
+      The :option:`-W` command line options adds its value to
+      :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
+
+      The :envvar:`PYTHONWARNINGS` environment variable can also be used to add
+      warning options. Multiple options can be specified, separated by commas
+      (``,``).
+
       Default: empty list.
 
    .. c:member:: int write_bytecode
@@ -1183,7 +1203,10 @@ The caller is responsible to handle exceptions (error or exit) using
 
 If :c:func:`PyImport_FrozenModules`, :c:func:`PyImport_AppendInittab` or
 :c:func:`PyImport_ExtendInittab` are used, they must be set or called after
-Python preinitialization and before the Python initialization.
+Python preinitialization and before the Python initialization. If Python is
+initialized multiple times, :c:func:`PyImport_AppendInittab` or
+:c:func:`PyImport_ExtendInittab` must be called before each Python
+initialization.
 
 The current configuration (``PyConfig`` type) is stored in
 ``PyInterpreterState.config``.

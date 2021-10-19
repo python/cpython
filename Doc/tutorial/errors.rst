@@ -53,7 +53,7 @@ programs, however, and result in error messages as shown here::
    >>> '2' + 2
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: Can't convert 'int' object to str implicitly
+   TypeError: can only concatenate str (not "int") to str
 
 The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
@@ -147,10 +147,10 @@ For example, the following code will print B, C, D in that order::
 Note that if the *except clauses* were reversed (with ``except B`` first), it
 would have printed B, B, B --- the first matching *except clause* is triggered.
 
-The last *except clause* may omit the exception name(s), to serve as a wildcard.
-Use this with extreme caution, since it is easy to mask a real programming error
-in this way!  It can also be used to print an error message and then re-raise
-the exception (allowing a caller to handle the exception as well)::
+All exceptions inherit from :exc:`BaseException`, and so it can be used to serve
+as a wildcard. Use this with extreme caution, since it is easy to mask a real
+programming error in this way!  It can also be used to print an error message and
+then re-raise the exception (allowing a caller to handle the exception as well)::
 
    import sys
 
@@ -162,9 +162,12 @@ the exception (allowing a caller to handle the exception as well)::
        print("OS error: {0}".format(err))
    except ValueError:
        print("Could not convert data to an integer.")
-   except:
-       print("Unexpected error:", sys.exc_info()[0])
+   except BaseException as err:
+       print(f"Unexpected {err=}, {type(err)=}")
        raise
+
+Alternatively the last except clause may omit the exception name(s), however the exception
+value must then be retrieved from ``sys.exc_info()[1]``.
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
 clause*, which, when present, must follow all *except clauses*.  It is useful
@@ -272,7 +275,7 @@ re-raise the exception::
 Exception Chaining
 ==================
 
-The :keyword:`raise` statement allows an optional :keyword:`from` which enables
+The :keyword:`raise` statement allows an optional :keyword:`from<raise>` which enables
 chaining exceptions. For example::
 
     # exc must be exception instance or None.
@@ -305,7 +308,7 @@ disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
-    ... except IOError:
+    ... except OSError:
     ...     raise RuntimeError from None
     ...
     Traceback (most recent call last):
@@ -405,6 +408,10 @@ points discuss more complex cases when an exception occurs:
   or :keyword:`!else` clause. Again, the exception is re-raised after
   the :keyword:`!finally` clause has been executed.
 
+* If the :keyword:`!finally` clause executes a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, exceptions are not
+  re-raised.
+
 * If the :keyword:`!try` statement reaches a :keyword:`break`,
   :keyword:`continue` or :keyword:`return` statement, the
   :keyword:`!finally` clause will execute just prior to the
@@ -489,5 +496,3 @@ used in a way that ensures they are always cleaned up promptly and correctly. ::
 After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
-
-

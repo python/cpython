@@ -11,7 +11,7 @@ Internet Protocols and Support
 
 .. index:: module: socket
 
-The modules described in this chapter implement Internet protocols and  support
+The modules described in this chapter implement internet protocols and  support
 for related technology.  They are all implemented in Python. Most of these
 modules require the presence of the system-dependent module :mod:`socket`, which
 is currently supported on most popular platforms.  Here is an overview:

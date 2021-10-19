@@ -42,7 +42,7 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
    fills newly allocated memory with CLEANBYTE (0xCD) and newly freed memory
    with DEADBYTE (0xDD). Detect also "untouchable bytes" marked
    with FORBIDDENBYTE (0xFD). */
-static inline int _PyMem_IsPtrFreed(void *ptr)
+static inline int _PyMem_IsPtrFreed(const void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
@@ -94,8 +94,13 @@ struct _PyTraceMalloc_Config {
 
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 
+/* Allocate memory directly from the O/S virtual memory system,
+ * where supported. Otherwise fallback on malloc */
+void *_PyObject_VirtualAlloc(size_t size);
+void _PyObject_VirtualFree(void *, size_t size);
+
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_PYMEM_H */
+#endif  // !Py_INTERNAL_PYMEM_H

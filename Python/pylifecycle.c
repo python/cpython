@@ -16,6 +16,11 @@
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
+
+#if defined(__APPLE__)
+#include <mach-o/loader.h>
+#endif
 
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIG_IGN
@@ -33,7 +38,6 @@
 #  define PyWindowsConsoleIO_Check(op) \
        (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
-
 
 #define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
@@ -59,7 +63,30 @@ static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
 int _Py_UnhandledKeyboardInterrupt = 0;
-_PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+
+/* The following places the `_PyRuntime` structure in a location that can be
+ * found without any external information. This is meant to ease access to the
+ * interpreter state for various runtime debugging tools, but is *not* an
+ * officially supported feature */
+
+#if defined(MS_WINDOWS)
+
+#pragma section("PyRuntime", read, write)
+__declspec(allocate("PyRuntime"))
+
+#elif defined(__APPLE__)
+
+__attribute__((
+    section(SEG_DATA ",PyRuntime")
+))
+
+#endif
+
+_PyRuntimeState _PyRuntime
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+__attribute__ ((section (".PyRuntime")))
+#endif
+= _PyRuntimeState_INIT;
 static int runtime_initialized = 0;
 
 PyStatus
@@ -446,7 +473,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 int
 _PyInterpreterState_SetConfig(const PyConfig *src_config)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     int res = -1;
 
     PyConfig config;
@@ -1031,6 +1058,8 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
+    extern void _PyThread_debug_deprecation(void);
+
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
@@ -1050,8 +1079,8 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    // Compute the path configuration
-    status = _PyConfig_InitPathConfig(&interp->config, 1);
+    // Initialize the import-related configuration.
+    status = _PyConfig_InitImportConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1131,6 +1160,9 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
+
+    // Warn about PYTHONTHREADDEBUG deprecation
+    _PyThread_debug_deprecation();
 
     assert(!_PyErr_Occurred(tstate));
 
@@ -1706,6 +1738,7 @@ Py_FinalizeEx(void)
 #endif
 #ifdef Py_TRACE_REFS
     int dump_refs = tstate->interp->config.dump_refs;
+    wchar_t *dump_refs_file = tstate->interp->config.dump_refs_file;
 #endif
 #ifdef WITH_PYMALLOC
     int malloc_stats = tstate->interp->config.malloc_stats;
@@ -1804,8 +1837,21 @@ Py_FinalizeEx(void)
      * Alas, a lot of stuff may still be alive now that will be cleaned
      * up later.
      */
+
+    FILE *dump_refs_fp = NULL;
+    if (dump_refs_file != NULL) {
+        dump_refs_fp = _Py_wfopen(dump_refs_file, L"w");
+        if (dump_refs_fp == NULL) {
+            fprintf(stderr, "PYTHONDUMPREFSFILE: cannot create file: %ls\n", dump_refs_file);
+        }
+    }
+
     if (dump_refs) {
         _Py_PrintReferences(stderr);
+    }
+
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferences(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1817,8 +1863,14 @@ Py_FinalizeEx(void)
      * An address can be used to find the repr of the object, printed
      * above by _Py_PrintReferences.
      */
+
     if (dump_refs) {
         _Py_PrintReferenceAddresses(stderr);
+    }
+
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferenceAddresses(dump_refs_fp);
+        fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
@@ -2241,7 +2293,7 @@ error:
     return NULL;
 }
 
-/* Set builtins.open to io.OpenWrapper */
+/* Set builtins.open to io.open */
 static PyStatus
 init_set_builtins_open(void)
 {
@@ -2257,7 +2309,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+    if (!(wrapper = PyObject_GetAttrString(iomod, "open"))) {
         goto error;
     }
 
@@ -2279,7 +2331,7 @@ done:
 }
 
 
-/* Initialize sys.stdin, stdout, stderr and builtins.open */
+/* Create sys.stdin, sys.stdout and sys.stderr */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
@@ -2751,6 +2803,16 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     fflush(stream);
 
     fatal_error(fd, 0, NULL, NULL, -1);
+}
+
+
+void _Py_NO_RETURN
+_Py_FatalRefcountErrorFunc(const char *func, const char *msg)
+{
+    _Py_FatalErrorFormat(func,
+                         "%s: bug likely caused by a refcount error "
+                         "in a C extension",
+                         msg);
 }
 
 

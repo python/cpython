@@ -79,7 +79,13 @@ class MultiplexedPathTest(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(
             repr(MultiplexedPath(self.folder)),
-            "MultiplexedPath('{}')".format(self.folder),
+            f"MultiplexedPath('{self.folder}')",
+        )
+
+    def test_name(self):
+        self.assertEqual(
+            MultiplexedPath(self.folder).name,
+            os.path.basename(self.folder),
         )
 
 
@@ -115,7 +121,7 @@ class NamespaceReaderTest(unittest.TestCase):
         reader = NamespaceReader(namespacedata01.__spec__.submodule_search_locations)
         root = os.path.abspath(os.path.join(__file__, '..', 'namespacedata01'))
         self.assertIsInstance(reader.files(), MultiplexedPath)
-        self.assertEqual(repr(reader.files()), "MultiplexedPath('{}')".format(root))
+        self.assertEqual(repr(reader.files()), f"MultiplexedPath('{root}')")
 
 
 if __name__ == '__main__':

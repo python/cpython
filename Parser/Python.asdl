@@ -89,10 +89,6 @@ module Python
          -- can appear only in Subscript
          | Slice(expr? lower, expr? upper, expr? step)
 
-         -- only used in patterns
-         | MatchAs(expr pattern, identifier name)
-         | MatchOr(expr* patterns)
-
           -- col_offset is the byte offset in the utf8 string the parser uses
           attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
@@ -128,7 +124,21 @@ module Python
 
     withitem = (expr context_expr, expr? optional_vars)
 
-    match_case = (expr pattern, expr? guard, stmt* body)
+    match_case = (pattern pattern, expr? guard, stmt* body)
+
+    pattern = MatchValue(expr value)
+            | MatchSingleton(constant value)
+            | MatchSequence(pattern* patterns)
+            | MatchMapping(expr* keys, pattern* patterns, identifier? rest)
+            | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)
+
+            | MatchStar(identifier? name)
+            -- The optional "rest" MatchMapping parameter handles capturing extra mapping keys
+
+            | MatchAs(pattern? pattern, identifier? name)
+            | MatchOr(pattern* patterns)
+
+             attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 
     type_ignore = TypeIgnore(int lineno, string tag)
 }

@@ -236,11 +236,19 @@ class OrderedDict(dict):
         is raised.
 
         '''
-        if key in self:
-            result = self[key]
-            del self[key]
+        marker = self.__marker
+        result = dict.pop(self, key, marker)
+        if result is not marker:
+            # The same as in __delitem__().
+            link = self.__map.pop(key)
+            link_prev = link.prev
+            link_next = link.next
+            link_prev.next = link_next
+            link_next.prev = link_prev
+            link.prev = None
+            link.next = None
             return result
-        if default is self.__marker:
+        if default is marker:
             raise KeyError(key)
         return default
 
@@ -580,6 +588,10 @@ class Counter(dict):
         'The count of elements not in the Counter is zero.'
         # Needed so that self[missing_item] does not raise KeyError
         return 0
+
+    def total(self):
+        'Sum of the counts'
+        return sum(self.values())
 
     def most_common(self, n=None):
         '''List the n most common elements and their counts from the most

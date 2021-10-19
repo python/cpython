@@ -47,6 +47,8 @@ typedef struct _withitem *withitem_ty;
 
 typedef struct _match_case *match_case_ty;
 
+typedef struct _pattern *pattern_ty;
+
 typedef struct _type_ignore *type_ignore_ty;
 
 
@@ -129,6 +131,13 @@ typedef struct {
 
 asdl_match_case_seq *_Py_asdl_match_case_seq_new(Py_ssize_t size, PyArena
                                                  *arena);
+
+typedef struct {
+    _ASDL_SEQ_HEAD
+    pattern_ty typed_elements[1];
+} asdl_pattern_seq;
+
+asdl_pattern_seq *_Py_asdl_pattern_seq_new(Py_ssize_t size, PyArena *arena);
 
 typedef struct {
     _ASDL_SEQ_HEAD
@@ -327,8 +336,7 @@ enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
                   FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
                   Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
-                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27,
-                  MatchAs_kind=28, MatchOr_kind=29};
+                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -471,15 +479,6 @@ struct _expr {
             expr_ty step;
         } Slice;
 
-        struct {
-            expr_ty pattern;
-            identifier name;
-        } MatchAs;
-
-        struct {
-            asdl_expr_seq *patterns;
-        } MatchOr;
-
     } v;
     int lineno;
     int col_offset;
@@ -555,9 +554,61 @@ struct _withitem {
 };
 
 struct _match_case {
-    expr_ty pattern;
+    pattern_ty pattern;
     expr_ty guard;
     asdl_stmt_seq *body;
+};
+
+enum _pattern_kind {MatchValue_kind=1, MatchSingleton_kind=2,
+                     MatchSequence_kind=3, MatchMapping_kind=4,
+                     MatchClass_kind=5, MatchStar_kind=6, MatchAs_kind=7,
+                     MatchOr_kind=8};
+struct _pattern {
+    enum _pattern_kind kind;
+    union {
+        struct {
+            expr_ty value;
+        } MatchValue;
+
+        struct {
+            constant value;
+        } MatchSingleton;
+
+        struct {
+            asdl_pattern_seq *patterns;
+        } MatchSequence;
+
+        struct {
+            asdl_expr_seq *keys;
+            asdl_pattern_seq *patterns;
+            identifier rest;
+        } MatchMapping;
+
+        struct {
+            expr_ty cls;
+            asdl_pattern_seq *patterns;
+            asdl_identifier_seq *kwd_attrs;
+            asdl_pattern_seq *kwd_patterns;
+        } MatchClass;
+
+        struct {
+            identifier name;
+        } MatchStar;
+
+        struct {
+            pattern_ty pattern;
+            identifier name;
+        } MatchAs;
+
+        struct {
+            asdl_pattern_seq *patterns;
+        } MatchOr;
+
+    } v;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 };
 
 enum _type_ignore_kind {TypeIgnore_kind=1};
@@ -733,11 +784,6 @@ expr_ty _PyAST_Tuple(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int
 expr_ty _PyAST_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno,
                      int col_offset, int end_lineno, int end_col_offset,
                      PyArena *arena);
-expr_ty _PyAST_MatchAs(expr_ty pattern, identifier name, int lineno, int
-                       col_offset, int end_lineno, int end_col_offset, PyArena
-                       *arena);
-expr_ty _PyAST_MatchOr(asdl_expr_seq * patterns, int lineno, int col_offset,
-                       int end_lineno, int end_col_offset, PyArena *arena);
 comprehension_ty _PyAST_comprehension(expr_ty target, expr_ty iter,
                                       asdl_expr_seq * ifs, int is_async,
                                       PyArena *arena);
@@ -760,8 +806,32 @@ alias_ty _PyAST_alias(identifier name, identifier asname, int lineno, int
                       *arena);
 withitem_ty _PyAST_withitem(expr_ty context_expr, expr_ty optional_vars,
                             PyArena *arena);
-match_case_ty _PyAST_match_case(expr_ty pattern, expr_ty guard, asdl_stmt_seq *
-                                body, PyArena *arena);
+match_case_ty _PyAST_match_case(pattern_ty pattern, expr_ty guard,
+                                asdl_stmt_seq * body, PyArena *arena);
+pattern_ty _PyAST_MatchValue(expr_ty value, int lineno, int col_offset, int
+                             end_lineno, int end_col_offset, PyArena *arena);
+pattern_ty _PyAST_MatchSingleton(constant value, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset, PyArena
+                                 *arena);
+pattern_ty _PyAST_MatchSequence(asdl_pattern_seq * patterns, int lineno, int
+                                col_offset, int end_lineno, int end_col_offset,
+                                PyArena *arena);
+pattern_ty _PyAST_MatchMapping(asdl_expr_seq * keys, asdl_pattern_seq *
+                               patterns, identifier rest, int lineno, int
+                               col_offset, int end_lineno, int end_col_offset,
+                               PyArena *arena);
+pattern_ty _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns,
+                             asdl_identifier_seq * kwd_attrs, asdl_pattern_seq
+                             * kwd_patterns, int lineno, int col_offset, int
+                             end_lineno, int end_col_offset, PyArena *arena);
+pattern_ty _PyAST_MatchStar(identifier name, int lineno, int col_offset, int
+                            end_lineno, int end_col_offset, PyArena *arena);
+pattern_ty _PyAST_MatchAs(pattern_ty pattern, identifier name, int lineno, int
+                          col_offset, int end_lineno, int end_col_offset,
+                          PyArena *arena);
+pattern_ty _PyAST_MatchOr(asdl_pattern_seq * patterns, int lineno, int
+                          col_offset, int end_lineno, int end_col_offset,
+                          PyArena *arena);
 type_ignore_ty _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena);
 
 

@@ -1,5 +1,6 @@
 from test.support import (gc_collect, bigmemtest, _2G,
-                          cpython_only, captured_stdout)
+                          cpython_only, captured_stdout,
+                          check_disallow_instantiation)
 import locale
 import re
 import sre_compile
@@ -2104,6 +2105,12 @@ ELSE
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
+    def test_bug_40736(self):
+        with self.assertRaisesRegex(TypeError, "got 'int'"):
+            re.search("x*", 5)
+        with self.assertRaisesRegex(TypeError, "got 'type'"):
+            re.search("x*", type)
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
@@ -2190,6 +2197,18 @@ class ImplementationTest(unittest.TestCase):
     Test implementation details of the re module.
     """
 
+    @cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that re types are immutable
+        with self.assertRaises(TypeError):
+            re.Match.foo = 1
+        with self.assertRaises(TypeError):
+            re.Pattern.foo = 1
+        with self.assertRaises(TypeError):
+            pat = re.compile("")
+            tp = type(pat.scanner(""))
+            tp.foo = 1
+
     def test_overlap_table(self):
         f = sre_compile._generate_overlap_table
         self.assertEqual(f(""), [])
@@ -2202,6 +2221,14 @@ class ImplementationTest(unittest.TestCase):
     def test_signedness(self):
         self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
         self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        check_disallow_instantiation(self, re.Match)
+        check_disallow_instantiation(self, re.Pattern)
+        pat = re.compile("")
+        check_disallow_instantiation(self, type(pat.scanner("")))
 
 
 class ExternalTests(unittest.TestCase):

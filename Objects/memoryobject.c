@@ -11,10 +11,10 @@
  */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_object.h"
-#include "pystrhex.h"
-#include <stddef.h>
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
@@ -3287,7 +3287,8 @@ PyTypeObject PyMemoryView_Type = {
     PyObject_GenericGetAttr,                  /* tp_getattro */
     0,                                        /* tp_setattro */
     &memory_as_buffer,                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+       Py_TPFLAGS_SEQUENCE,                   /* tp_flags */
     memoryview__doc__,                        /* tp_doc */
     (traverseproc)memory_traverse,            /* tp_traverse */
     (inquiry)memory_clear,                    /* tp_clear */

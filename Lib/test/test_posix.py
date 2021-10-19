@@ -1070,7 +1070,7 @@ class PosixTester(unittest.TestCase):
         # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
         if sys.platform == 'darwin':
             import sysconfig
-            dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'
+            dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.3'
             if tuple(int(n) for n in dt.split('.')[0:2]) < (10, 6):
                 raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
 
@@ -2171,17 +2171,9 @@ class TestPosixWeaklinking(unittest.TestCase):
                 os.utime("path", dir_fd=0)
 
 
-def test_main():
-    try:
-        support.run_unittest(
-            PosixTester,
-            PosixGroupsTester,
-            TestPosixSpawn,
-            TestPosixSpawnP,
-            TestPosixWeaklinking
-        )
-    finally:
-        support.reap_children()
+def tearDownModule():
+    support.reap_children()
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

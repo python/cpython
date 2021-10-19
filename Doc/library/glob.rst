@@ -65,6 +65,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    match.
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
+   .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -83,6 +84,13 @@ For example, ``'[?]'`` matches the character ``'?'``.
    without actually storing them all simultaneously.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
+   .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
+
+   .. versionchanged:: 3.5
+      Support for recursive globs using "``**``".
+
+   .. versionchanged:: 3.10
+      Added the *root_dir* and *dir_fd* parameters.
 
 
 .. function:: escape(pathname)
@@ -128,4 +136,3 @@ default. For example, consider a directory containing :file:`card.gif` and
 
    Module :mod:`fnmatch`
       Shell-style filename (not path) expansion
-

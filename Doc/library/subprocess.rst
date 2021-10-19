@@ -543,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In POSIX, the function
+   :term:`path-like <path-like object>` object.  On POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
@@ -689,7 +689,10 @@ execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
-:exc:`OSError` exceptions.
+:exc:`OSError` exceptions. Note that, when ``shell=True``, :exc:`OSError`
+will be raised by the child only if the selected shell itself was not found.
+To determine if the shell failed to find the requested application, it is
+necessary to check the return code or output from the subprocess.
 
 A :exc:`ValueError` will be raised if :class:`Popen` is called with invalid
 arguments.
@@ -707,6 +710,7 @@ Exceptions defined in this module all inherit from :exc:`SubprocessError`.
    .. versionadded:: 3.3
       The :exc:`SubprocessError` base class was added.
 
+.. _subprocess-security:
 
 Security Considerations
 -----------------------
@@ -1145,6 +1149,8 @@ calls these functions.
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
+   If :func:`check_call` was unable to start the process it will propagate the exception
+   that was raised.
 
    Code needing to capture stdout or stderr should use :func:`run` instead::
 
@@ -1292,11 +1298,17 @@ Replacing :func:`os.system`
 
    sts = os.system("mycmd" + " myarg")
    # becomes
-   sts = call("mycmd" + " myarg", shell=True)
+   retcode = call("mycmd" + " myarg", shell=True)
 
 Notes:
 
 * Calling the program through the shell is usually not required.
+* The :func:`call` return value is encoded differently to that of
+  :func:`os.system`.
+
+* The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
+  the command is running, but the caller must do this separately when
+  using the :mod:`subprocess` module.
 
 A more realistic example would look like this::
 

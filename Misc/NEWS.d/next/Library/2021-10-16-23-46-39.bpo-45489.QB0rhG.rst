@@ -1,0 +1,2 @@
+Update :class:`~typing.ForwardRef` to support ``|`` operator. Patch by
+Dong-hee Na.

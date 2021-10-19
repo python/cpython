@@ -14,7 +14,7 @@
  */
 
 #include "Python.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 
 #include "../hashlib.h"
 #include "blake2ns.h"
@@ -408,6 +408,6 @@ static PyType_Slot blake2s_type_slots[] = {
 PyType_Spec blake2s_type_spec = {
     .name = "_blake2.blake2s",
     .basicsize =  sizeof(BLAKE2sObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = blake2s_type_slots
 };

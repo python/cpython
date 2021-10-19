@@ -77,7 +77,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
    .. versionadded:: 3.2
 
-.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
+.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=None)
 
    Reads the logging configuration from a :mod:`configparser`\-format file. The
    format of the file should be as described in
@@ -111,6 +111,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
+    :param encoding: The encoding used to open file when *fname* is filename.
+
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
       now accepted as a value for ``fname``. This facilitates:
@@ -120,6 +122,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       * Use of a configuration read from a file, and then modified by the using
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
+
+    .. versionadded:: 3.10
+       The *encoding* parameter is added.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
@@ -147,6 +152,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    send it to the socket as a sequence of bytes preceded by a four-byte length
    string packed in binary using ``struct.pack('>L', n)``.
 
+   .. _logging-eval-security:
+
    .. note::
 
       Because portions of the configuration are passed through
@@ -161,7 +168,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used). To avoid the risk of this happening, use the
+      different port is used. To avoid the risk of this happening, use the
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 
