@@ -4741,6 +4741,9 @@ check_eval_breaker:
             PyObject *callable = SECOND();
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL_FUNCTION);
+            _PyAdaptiveEntry *cache0 = &GET_CACHE()[0].adaptive;
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             PyObject *arg = POP();
@@ -4751,7 +4754,6 @@ check_eval_breaker:
             Py_DECREF(arg);
             Py_DECREF(callable);
             SET_TOP(res);
-            STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
                 goto error;
             }
@@ -4769,6 +4771,8 @@ check_eval_breaker:
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
@@ -4784,8 +4788,6 @@ check_eval_breaker:
                 Py_DECREF(x);
             }
             PUSH(res);
-            record_cache_hit(cache0);
-            STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
                 /* Not deopting because this doesn't mean our optimization was
                    wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
