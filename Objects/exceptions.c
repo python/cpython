@@ -647,7 +647,8 @@ static PyObject *
 BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     struct _Py_exc_state *state = get_exc_state();
-    PyObject *PyExc_ExceptionGroup = state->PyExc_ExceptionGroup;
+    PyTypeObject *PyExc_ExceptionGroup =
+        (PyTypeObject*)state->PyExc_ExceptionGroup;
 
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
@@ -701,7 +702,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     PyTypeObject *cls = type;
-    if (cls == (PyTypeObject*)PyExc_ExceptionGroup) {
+    if (cls == PyExc_ExceptionGroup) {
         if (nested_base_exceptions) {
             PyErr_SetString(PyExc_TypeError,
                 "Cannot nest BaseExceptions in an ExceptionGroup");
@@ -713,7 +714,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             /* All nested exceptions are Exception subclasses,
              * wrap them in an ExceptionGroup
              */
-            cls = (PyTypeObject*)PyExc_ExceptionGroup;
+            cls = PyExc_ExceptionGroup;
         }
     }
     else {
@@ -805,7 +806,7 @@ BaseExceptionGroup_derive(PyObject *self_, PyObject *args)
 static PyObject*
 exceptiongroup_subset(PyBaseExceptionGroupObject *_orig, PyObject *excs)
 {
-    /* Return an ExceptionGroup wrapping excs with metadata from orig.
+    /* Return an ExceptionGroup wrapping excs with metadata from _orig.
 
     This function is used by split() to construct the match/rest parts,
     so excs is the matching or non-matching sub-sequence of orig->excs
