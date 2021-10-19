@@ -489,6 +489,8 @@ class RegressionTests(unittest.TestCase):
 
 
 class ConverterProgrammingErrorTestCase(unittest.TestCase):
+    msg = "Recursive use of cursors not allowed"
+
     def setUp(self):
         self.con = sqlite.connect(":memory:",
                                   detect_types=sqlite.PARSE_COLNAMES)
@@ -505,19 +507,22 @@ class ConverterProgrammingErrorTestCase(unittest.TestCase):
         conv = lambda x: self.cur.__init__(self.con)
         with patch.dict(sqlite.converters, {"INIT": conv}):
             self.cur.execute(f'select x as "x [INIT]", x from test')
-            self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
+            self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
+                                   self.cur.fetchall)
 
     def test_recursive_cursor_close(self):
         conv = lambda x: self.cur.close()
         with patch.dict(sqlite.converters, {"CLOSE": conv}):
             self.cur.execute(f'select x as "x [CLOSE]", x from test')
-            self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
+            self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
+                                   self.cur.fetchall)
 
     def test_recursive_cursor_iter(self):
         conv = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
         with patch.dict(sqlite.converters, {"ITER": conv}):
             self.cur.execute(f'select x as "x [ITER]", x from test')
-            self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
+            self.assertRaisesRegex(sqlite.ProgrammingError, self.msg,
+                                   self.cur.fetchall)
 
 
 if __name__ == "__main__":
