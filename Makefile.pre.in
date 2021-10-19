@@ -55,6 +55,7 @@ DTRACE=         @DTRACE@
 DFLAGS=         @DFLAGS@
 DTRACE_HEADERS= @DTRACE_HEADERS@
 DTRACE_OBJS=    @DTRACE_OBJS@
+WITH_MIMALLOC=	@WITH_MIMALLOC@
 
 GNULD=		@GNULD@
 
@@ -99,7 +100,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/mimalloc
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -509,6 +510,26 @@ DEEPFREEZE_OBJS = \
 		Python/deepfreeze/__phello__.spam.o \
 		Python/deepfreeze/frozen_only.o
 # End DEEPFREEZE_OBJS
+
+MIMALLOC_OBJS = \
+		Objects/mimalloc/alloc-aligned.o \
+		Objects/mimalloc/alloc-posix.o \
+		Objects/mimalloc/alloc.o \
+		Objects/mimalloc/arena.o \
+		Objects/mimalloc/bitmap.o \
+		Objects/mimalloc/heap.o \
+		Objects/mimalloc/init.o \
+		Objects/mimalloc/options.o \
+		Objects/mimalloc/os.o \
+		Objects/mimalloc/page.o \
+		Objects/mimalloc/random.o \
+		Objects/mimalloc/region.o \
+		Objects/mimalloc/segment.o \
+		Objects/mimalloc/stats.o
+
+ifeq ($(WITH_MIMALLOC),1)
+OBJECT_OBJS :=	$(OBJECT_OBJS) $(MIMALLOC_OBJS)
+endif
 
 ##########################################################################
 # objects that get linked into the Python library
@@ -1663,6 +1684,16 @@ PYTHON_HEADERS= \
 		$(DTRACE_HEADERS) \
 		\
 		$(srcdir)/Python/stdlib_module_names.h
+
+MIMALLOC_HEADERS = \
+		$(srcdir)/Include/mimalloc/mimalloc-atomic.h \
+		$(srcdir)/Include/mimalloc/mimalloc.h \
+		$(srcdir)/Include/mimalloc/mimalloc-internal.h \
+		$(srcdir)/Include/mimalloc/mimalloc-types.h \
+
+ifeq ($(WITH_MIMALLOC),1)
+PYTHON_HEADERS := $(PYTHON_HEADERS) $(MIMALLOC_HEADERS)
+endif
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 

@@ -817,6 +817,7 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+WITH_MIMALLOC
 GDBM_LIBS
 GDBM_CFLAGS
 TCLTK_LIBS
@@ -1030,6 +1031,7 @@ with_tcltk_libs
 with_dbmliborder
 enable_ipv6
 with_doc_strings
+with_mimalloc
 with_pymalloc
 with_freelists
 with_c_locale_coercion
@@ -1799,6 +1801,8 @@ Optional Packages:
                           value is a colon separated string with the backend
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
+  --with-mimalloc         build with mimalloc memory allocator (default is
+                          yes)
   --with-pymalloc         enable specialized mallocs (default is yes)
   --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
@@ -13372,6 +13376,38 @@ $as_echo "#define WITH_DOC_STRINGS 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_doc_strings" >&5
 $as_echo "$with_doc_strings" >&6; }
+
+# --with-mimalloc
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
+$as_echo_n "checking for --with-mimalloc... " >&6; }
+
+# Check whether --with-mimalloc was given.
+if test "${with_mimalloc+set}" = set; then :
+  withval=$with_mimalloc;
+else
+  with_mimalloc="yes"
+
+fi
+
+
+if test "$with_mimalloc" != no; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  # disable pymalloc and freelists with mimalloc
+  with_pymalloc="no"
+  with_freelists="no"
+  # AC_CHECK_HEADERS([mimalloc.h], [], [AC_MSG_ERROR([--with-mimalloc requires mimalloc.h])]  )
+  # AC_SEARCH_LIBS([mi_malloc], [mimalloc], [], [AC_MSG_ERROR([--with-mimalloc requires libmimalloc])]  )
+
+$as_echo "#define WITH_MIMALLOC 1" >>confdefs.h
+
+  WITH_MIMALLOC=1
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
 
 # Check for Python-specific malloc support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc" >&5
