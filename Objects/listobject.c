@@ -19,13 +19,14 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
-
+#if PyList_MAXFREELIST > 0
 static struct _Py_list_state *
 get_list_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->list;
 }
+#endif
 
 
 /* Ensure ob_item has room for at least newsize elements, and set
@@ -108,19 +109,21 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = &interp->list;
     while (state->numfree) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
+#endif
 }
 
 void
 _PyList_Fini(PyInterpreterState *interp)
 {
     _PyList_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyList_MAXFREELIST > 0
     struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
@@ -130,32 +133,38 @@ _PyList_Fini(PyInterpreterState *interp)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                            state->numfree, sizeof(PyListObject));
+#endif
 }
 
 PyObject *
 PyList_New(Py_ssize_t size)
 {
+    PyListObject *op;
+
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
-    PyListObject *op;
 #ifdef Py_DEBUG
     // PyList_New() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree) {
+    if (PyList_MAXFREELIST && state->numfree) {
         state->numfree--;
         op = state->free_list[state->numfree];
         _Py_NewReference((PyObject *)op);
     }
-    else {
+    else
+#endif
+    {
         op = PyObject_GC_New(PyListObject, &PyList_Type);
         if (op == NULL) {
             return NULL;
@@ -344,6 +353,7 @@ list_dealloc(PyListObject *op)
         }
         PyMem_Free(op->ob_item);
     }
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
 #ifdef Py_DEBUG
     // list_dealloc() must not be called after _PyList_Fini()
@@ -352,7 +362,9 @@ list_dealloc(PyListObject *op)
     if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
         state->free_list[state->numfree++] = op;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
     Py_TRASHCAN_END

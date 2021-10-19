@@ -482,6 +482,11 @@ New Features
   suspend and resume tracing and profiling.
   (Contributed by Victor Stinner in :issue:`43760`.)
 
+* Internal ``Py*_MAXFREELIST`` macros can now be defined as ``0`` without
+  causing compiler warnings and segfaults. This effectively disables and
+  removes the freelist.
+  (Contributed by Christian Heimes in :issue:`45522`)
+
 Porting to Python 3.11
 ----------------------
 
