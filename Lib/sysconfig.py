@@ -1,4 +1,8 @@
-"""Access to Python's configuration information."""
+"""Access to Python's configuration information.
+
+This module is split into _sysconfig, with the bits that are required at startup
+(by the site module), and sysconfig, with the rest of the module functionality.
+"""
 
 import os
 import sys

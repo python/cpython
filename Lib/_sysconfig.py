@@ -1,3 +1,5 @@
+"""Bits of sysconfig that are required at startup (by the site module)"""
+
 import os
 import sys
 
