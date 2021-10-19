@@ -275,6 +275,19 @@ class ReadTests(ExpectAndReadTestCase):
             self.assertTrue(want.startswith(data))
         self.assertEqual(data, want)
 
+    def test_fill_rawq_callback(self):
+        """
+        set_fill_rawq_callback(callback)
+        Modify buffer before adding to raw_queue
+        """
+        sent = [b'xxxsentyyy']
+        expect = b'xxxsentyyymod'
+        telnet = test_telnet(sent)
+        telnet.set_debuglevel(5)
+        telnet.set_fill_rawq_callback(lambda rawq, eof : b'' if eof else rawq + b'mod')
+        data = telnet.read_all()
+        self.assertEqual(data, expect)
+
 class nego_collector(object):
     def __init__(self, sb_getter=None):
         self.seen = b''

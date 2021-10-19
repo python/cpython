@@ -224,6 +224,13 @@ Telnet Objects
    (DO/DONT/WILL/WONT), option).  No other action is done afterwards by telnetlib.
 
 
+.. method:: Telnet.set_fill_rawq_callback(callback)
+
+   This callback is called before incoming buffer added to raw queue. In some cases
+   incoming data might be compressed and needed to decompress before pushing to stack.
+   *callback* must return the buffer in bytes so that it can be pushed back.
+
+
 .. _telnet-example:
 
 Telnet Example
