@@ -4,6 +4,10 @@ This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE   // for syscall() on Linux
+#endif
+
 #include "mimalloc.h"
 #include "mimalloc-internal.h"
 

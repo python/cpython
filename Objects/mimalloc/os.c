@@ -95,7 +95,7 @@ size_t _mi_os_page_size() {
 }
 
 // if large OS pages are supported (2 or 4MiB), then return the size, otherwise return the small page size (4KiB)
-size_t _mi_os_large_page_size() {
+size_t _mi_os_large_page_size(void) {
   return (large_os_page_size != 0 ? large_os_page_size : _mi_os_page_size());
 }
 

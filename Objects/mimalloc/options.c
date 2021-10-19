@@ -22,7 +22,7 @@ terms of the MIT license. A copy of the license can be found in the file
 static uintptr_t mi_max_error_count   = 16; // stop outputting errors after this
 static uintptr_t mi_max_warning_count = 16; // stop outputting warnings after this
 
-static void mi_add_stderr_output();
+static void mi_add_stderr_output(void);
 
 int mi_version(void) mi_attr_noexcept {
   return MI_MALLOC_VERSION;
