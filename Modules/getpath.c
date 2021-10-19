@@ -363,6 +363,11 @@ normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
                 buf_next -= 2;  // "./"
                 assert(*(buf_next - 1) == SEP);
             }
+            else if (dots == 0) {
+                // Turn "//" into "/".
+                buf_next--;
+                assert(*(buf_next - 1) == SEP);
+            }
             dots = 0;
         }
         else if (dots >= 0) {
