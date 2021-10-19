@@ -338,8 +338,8 @@ normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
     int dots = -1;
     wchar_t *buf_next = buf;
     // The resulting filename will never be longer than orig.
-    for (const wchar_t *unused = orig; *unused != L'\0'; unused++) {
-        wchar_t c = *unused;
+    for (const wchar_t *remainder = orig; *remainder != L'\0'; remainder++) {
+        wchar_t c = *remainder;
         buf_next[0] = c;
         buf_next++;
         if (c == SEP) {
