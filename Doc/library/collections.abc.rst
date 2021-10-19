@@ -24,6 +24,9 @@ This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
 example, whether it is hashable or whether it is a mapping.
 
+.. versionadded:: 3.9
+   These abstract classes now support ``[]``. See :ref:`types-genericalias`
+   and :pep:`585`.
 
 .. _collections-abstract-base-classes:
 
