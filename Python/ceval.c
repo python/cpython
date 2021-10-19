@@ -4809,7 +4809,10 @@ check_eval_breaker:
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
 
             Py_ssize_t len_i = PyObject_Length(TOP());
-            PyObject *res = (len_i >= 0) ? PyLong_FromSsize_t(len_i) : NULL;
+            if (len_i < 0) {
+                goto error;
+            }
+            PyObject *res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
@@ -4836,7 +4839,10 @@ check_eval_breaker:
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
 
             int retval = PyObject_IsInstance(SECOND(), TOP());
-            PyObject *res = (retval >= 0) ? PyBool_FromLong(retval) : NULL;
+            if (retval < 0) {
+                goto error;
+            }
+            PyObject *res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
