@@ -2437,7 +2437,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
 
-    def test_staticmethod__type_ann_register(self):
+    def test_staticmethod_type_ann_register(self):
         class A:
             @functools.singledispatchmethod
             @staticmethod
