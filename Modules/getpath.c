@@ -324,13 +324,12 @@ absolutize(wchar_t **path_p)
 
 /* Remove navigation elements such as "." and "..".
 
-   This is essentially a C implementation of posixpath.normpath(). */
+   This is mostly a C implementation of posixpath.normpath(). */
 static PyStatus
 normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
 {
     assert(orig && *orig != L'\0');
-    // We disallow trailing dots to keep this function simpler.
-    assert(orig[wcslen(orig)-1] != L'.');
+    assert(*orig == SEP);  // an absolute path
     if (wcslen(orig) + 1 >= buf_len) {
         return PATHLEN_ERR();
     }
@@ -345,15 +344,17 @@ normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
         if (c == SEP) {
             assert(dots <= 2);
             if (dots == 2) {
-                buf_next -= 3;  // "../"
-                assert(buf_next != buf);
-                // Turn "/x/y/../z" into "/x/z".  We cap it off at the root,
-                // so "/../spam" becomes "/spam".
-                if (buf_next - 1 != buf) {
-                    buf_next--;
-                    assert(*buf_next == SEP);
+                // Turn "/x/y/../z" into "/x/z".
+                buf_next -= 4;  // "/../"
+                assert(*buf_next == SEP);
+                // We cap it off at the root, so "/../spam" becomes "/spam".
+                if (buf_next == buf) {
+                    buf_next++;
+                }
+                else {
                     // Move to the previous SEP in the buffer.
                     while (*(buf_next - 1) != SEP) {
+                        assert(buf_next != buf);
                         buf_next--;
                     }
                 }
@@ -376,6 +377,24 @@ normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
             }
             else {
                 dots = -1;
+            }
+        }
+    }
+    if (dots >= 0) {
+        // Strip any trailing dots and trailing slash.
+        buf_next -= dots + 1;  // "/" or "/." or "/.."
+        assert(*buf_next == SEP);
+        if (buf_next == buf) {
+            // Leave the single slash for root.
+            buf_next++;
+        }
+        else {
+            if (dots == 2) {
+                // Move to the previous SEP in the buffer.
+                do {
+                    assert(buf_next != buf);
+                    buf_next--;
+                } while (*(buf_next) != SEP);
             }
         }
     }
