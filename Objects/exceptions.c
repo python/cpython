@@ -720,6 +720,10 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         /* Do nothing - we don't interfere with subclasses */
     }
 
+    if (!cls) {
+        /* Don't crash during interpreter shutdown */
+        cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
+    }
     PyBaseExceptionGroupObject *self =
         _PyBaseExceptionGroupObject_cast(BaseException_new(cls, args, kwds));
     if (!self) {
@@ -3350,12 +3354,18 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 }
 
 void
+_PyExc_ClearExceptionGroupType(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = &interp->exc_state;
+    Py_CLEAR(state->PyExc_ExceptionGroup);
+}
+
+void
 _PyExc_Fini(PyInterpreterState *interp)
 {
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
-    Py_CLEAR(state->PyExc_ExceptionGroup);
 }
 
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
