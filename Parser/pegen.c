@@ -729,7 +729,7 @@ _PyPegen_fill_token(Parser *p)
 {
     const char *start;
     const char *end;
-    int type = PyTokenizer_Get(p->tok, &start, &end);
+    int type = _PyTokenizer_Get(p->tok, &start, &end);
 
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
@@ -746,7 +746,7 @@ _PyPegen_fill_token(Parser *p)
             PyErr_NoMemory();
             return -1;
         }
-        type = PyTokenizer_Get(p->tok, &start, &end);
+        type = _PyTokenizer_Get(p->tok, &start, &end);
     }
 
     // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
@@ -1306,7 +1306,7 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
     for (;;) {
         const char *start;
         const char *end;
-        switch (PyTokenizer_Get(p->tok, &start, &end)) {
+        switch (_PyTokenizer_Get(p->tok, &start, &end)) {
             case ERRORTOKEN:
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
@@ -1342,13 +1342,16 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            return NULL;
+        }
         Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
             // Prioritize tokenizer errors to custom syntax errors raised
             // on the second phase only if the errors come from the parser.
-            if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            if (p->tok->done == E_DONE && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;
@@ -1408,7 +1411,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              const char *enc, const char *ps1, const char *ps2,
                              PyCompilerFlags *flags, int *errcode, PyArena *arena)
 {
-    struct tok_state *tok = PyTokenizer_FromFile(fp, enc, ps1, ps2);
+    struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             raise_tokenizer_init_error(filename_ob);
@@ -1438,7 +1441,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     _PyPegen_Parser_Free(p);
 
 error:
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 
@@ -1450,9 +1453,9 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
 
     struct tok_state *tok;
     if (flags == NULL || flags->cf_flags & PyCF_IGNORE_COOKIE) {
-        tok = PyTokenizer_FromUTF8(str, exec_input);
+        tok = _PyTokenizer_FromUTF8(str, exec_input);
     } else {
-        tok = PyTokenizer_FromString(str, exec_input);
+        tok = _PyTokenizer_FromString(str, exec_input);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
@@ -1480,7 +1483,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     _PyPegen_Parser_Free(p);
 
 error:
-    PyTokenizer_Free(tok);
+    _PyTokenizer_Free(tok);
     return result;
 }
 

@@ -34,7 +34,7 @@ PyAPI_FUNC(int) PyOS_CheckStack(void);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYTHONRUN_H
-#  include  "cpython/pythonrun.h"
+#  include "cpython/pythonrun.h"
 #  undef Py_CPYTHON_PYTHONRUN_H
 #endif
 

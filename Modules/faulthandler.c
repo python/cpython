@@ -3,10 +3,13 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
-#include <signal.h>
+
+#include "frameobject.h"
+
 #include <object.h>
-#include <frameobject.h>
 #include <signal.h>
+#include <signal.h>
+#include <stdlib.h>               // abort()
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
 #  include <pthread.h>
 #endif

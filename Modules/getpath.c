@@ -6,8 +6,9 @@
 #include "pycore_pathconfig.h"
 #include "osdefs.h"               // DELIM
 
-#include <sys/types.h>
+#include <stdlib.h>               // getenv()
 #include <string.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
@@ -1457,7 +1458,7 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     /* If a pyvenv.cfg configure file is found,
-       argv0_path is overriden with its 'home' variable. */
+       argv0_path is overridden with its 'home' variable. */
     status = calculate_read_pyenv(calculate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

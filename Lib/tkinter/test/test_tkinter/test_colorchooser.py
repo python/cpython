@@ -1,6 +1,6 @@
 import unittest
 import tkinter
-from test.support import requires, run_unittest, swap_attr
+from test.support import requires, swap_attr
 from tkinter.test.support import AbstractDefaultRootTest, AbstractTkTest
 from tkinter import colorchooser
 from tkinter.colorchooser import askcolor
@@ -64,7 +64,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
             self.assertRaises(RuntimeError, askcolor)
 
 
-tests_gui = (ChooserTest, DefaultRootTest,)
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()

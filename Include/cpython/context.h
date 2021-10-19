@@ -1,11 +1,9 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_CONTEXT_H
 #define Py_CONTEXT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef Py_LIMITED_API
-
 
 PyAPI_DATA(PyTypeObject) PyContext_Type;
 typedef struct _pycontextobject PyContext;
@@ -73,9 +71,8 @@ PyAPI_FUNC(int) PyContextVar_Reset(PyObject *var, PyObject *token);
 PyAPI_FUNC(PyObject *) _PyContext_NewHamtForTests(void);
 
 
-#endif /* !Py_LIMITED_API */
-
 #ifdef __cplusplus
 }
 #endif
 #endif /* !Py_CONTEXT_H */
+#endif /* !Py_LIMITED_API */

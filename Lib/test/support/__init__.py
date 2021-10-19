@@ -1167,11 +1167,24 @@ def run_doctest(module, verbosity=None, optionflags=0):
 #=======================================================================
 # Support for saving and restoring the imported modules.
 
+def flush_std_streams():
+    if sys.stdout is not None:
+        sys.stdout.flush()
+    if sys.stderr is not None:
+        sys.stderr.flush()
+
+
 def print_warning(msg):
-    # bpo-39983: Print into sys.__stderr__ to display the warning even
-    # when sys.stderr is captured temporarily by a test
+    # bpo-45410: Explicitly flush stdout to keep logs in order
+    flush_std_streams()
+    stream = print_warning.orig_stderr
     for line in msg.splitlines():
-        print(f"Warning -- {line}", file=sys.__stderr__, flush=True)
+        print(f"Warning -- {line}", file=stream)
+    stream.flush()
+
+# bpo-39983: Store the original sys.stderr at Python startup to be able to
+# log warnings even if sys.stderr is captured temporarily by a test.
+print_warning.orig_stderr = sys.stderr
 
 
 # Flag used by saved_test_environment of test.libregrtest.save_env,
