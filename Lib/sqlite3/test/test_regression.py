@@ -26,9 +26,10 @@ import unittest
 import sqlite3 as sqlite
 import weakref
 import functools
-from test import support
 
 from .test_dbapi import managed_connect
+from test import support
+from unittest.mock import patch
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
@@ -489,27 +490,34 @@ class RegressionTests(unittest.TestCase):
 
 class ConverterProgrammingErrorTestCase(unittest.TestCase):
     def setUp(self):
-        self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_COLNAMES)
+        self.con = sqlite.connect(":memory:",
+                                  detect_types=sqlite.PARSE_COLNAMES)
         self.cur = self.con.cursor()
         self.cur.execute("create table test(x foo)")
-        self.cur.executemany("insert into test(x) values (?)", [("foo",), ("bar",)])
-
-        sqlite.converters["CURSOR_INIT"] = lambda x: self.cur.__init__(self.con)
-        sqlite.converters["CURSOR_CLOSE"] = lambda x: self.cur.close()
-        sqlite.converters["CURSOR_ITER"] = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
+        self.cur.executemany("insert into test(x) values (?)",
+                             [("foo",), ("bar",)])
 
     def tearDown(self):
-        del sqlite.converters["CURSOR_INIT"]
-        del sqlite.converters["CURSOR_CLOSE"]
-        del sqlite.converters["CURSOR_ITER"]
         self.cur.close()
         self.con.close()
 
-    def test_recursive_cursor_usage(self):
-        for converter in "CURSOR_INIT", "CURSOR_CLOSE", "CURSOR_ITER":
-            with self.subTest(converter=converter):
-                self.cur.execute(f'select x as "x [{converter}]", x from test')
-                self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
+    def test_recursive_cursor_init(self):
+        conv = lambda x: self.cur.__init__(self.con)
+        with patch.dict(sqlite.converters, {"INIT": conv}):
+            self.cur.execute(f'select x as "x [INIT]", x from test')
+            self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
+
+    def test_recursive_cursor_close(self):
+        conv = lambda x: self.cur.close()
+        with patch.dict(sqlite.converters, {"CLOSE": conv}):
+            self.cur.execute(f'select x as "x [CLOSE]", x from test')
+            self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
+
+    def test_recursive_cursor_iter(self):
+        conv = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
+        with patch.dict(sqlite.converters, {"ITER": conv}):
+            self.cur.execute(f'select x as "x [ITER]", x from test')
+            self.assertRaises(sqlite.ProgrammingError, self.cur.fetchall)
 
 
 if __name__ == "__main__":
