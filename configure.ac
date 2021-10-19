@@ -3919,9 +3919,9 @@ AC_ARG_WITH(mimalloc,
 
 if test "$with_mimalloc" != no; then
   AC_MSG_RESULT(yes)
-  # disable pymalloc and freelists with mimalloc
+  # disable pymalloc with mimalloc
   with_pymalloc="no"
-  with_freelists="no"
+  # with_freelists="no"
   # AC_CHECK_HEADERS([mimalloc.h], [], [AC_MSG_ERROR([--with-mimalloc requires mimalloc.h])]  )
   # AC_SEARCH_LIBS([mi_malloc], [mimalloc], [], [AC_MSG_ERROR([--with-mimalloc requires libmimalloc])]  )
   AC_DEFINE(WITH_MIMALLOC, 1, Define Python uses mimalloc memory allocator.)
