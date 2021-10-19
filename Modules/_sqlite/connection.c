@@ -79,7 +79,6 @@ static const char * const begin_statements[] = {
     NULL
 };
 
-static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
@@ -107,6 +106,21 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
+static const char *
+get_begin_statement(const char *level, Py_ssize_t sz)
+{
+    assert(level != NULL);
+    for (int i = 0; begin_statements[i] != NULL; i++) {
+        const char *candidate = begin_statements[i] + 6;
+        if (strlen(candidate) == (size_t)sz) {
+            if (sqlite3_stricmp(level, candidate) == 0) {
+                return begin_statements[i];
+            }
+        }
+    }
+    return NULL;
+}
+
 /*[python input]
 class FSConverter_converter(CConverter):
     type = "const char *"
@@ -124,7 +138,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     database: FSConverter
     timeout: double = 5.0
     detect_types: int = 0
-    isolation_level: object = NULL
+    isolation_level: str(accept={str, NoneType}) = ""
     check_same_thread: bool(accept={int}) = True
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements: int = 128
@@ -134,10 +148,10 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self,
                               const char *database, double timeout,
-                              int detect_types, PyObject *isolation_level,
+                              int detect_types, const char *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri)
-/*[clinic end generated code: output=bc39e55eb0b68783 input=f8d1f7efc0d84104]*/
+/*[clinic end generated code: output=d8c37afc46d318b0 input=adfb29ac461f9e61]*/
 {
     int rc;
 
@@ -147,8 +161,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 
     pysqlite_state *state = pysqlite_get_state_by_type(Py_TYPE(self));
     self->state = state;
-
-    self->begin_statement = NULL;
 
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
@@ -170,19 +182,17 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         return -1;
     }
 
-    if (!isolation_level) {
-        isolation_level = PyUnicode_FromString("");
-        if (!isolation_level) {
+    if (isolation_level) {
+        size_t sz = strlen(isolation_level);
+        const char *stmt = get_begin_statement(isolation_level, sz);
+        if (stmt == NULL) {
             return -1;
         }
-    } else {
-        Py_INCREF(isolation_level);
+        self->begin_statement = stmt;
     }
-    if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
-        Py_DECREF(isolation_level);
-        return -1;
+    else {
+        self->begin_statement = NULL;
     }
-    Py_DECREF(isolation_level);
 
     self->statement_cache = new_statement_cache(self, cached_statements);
     if (self->statement_cache == NULL) {
@@ -1313,21 +1323,6 @@ static PyObject* pysqlite_connection_get_in_transaction(pysqlite_Connection* sel
     Py_RETURN_FALSE;
 }
 
-static const char *
-get_begin_statement(const char *level, Py_ssize_t sz)
-{
-    assert(level != NULL);
-    for (int i = 0; begin_statements[i] != NULL; i++) {
-        const char *candidate = begin_statements[i] + 6;
-        if (strlen(candidate) == (size_t)sz) {
-            if (sqlite3_stricmp(level, candidate) == 0) {
-                return begin_statements[i];
-            }
-        }
-    }
-    return NULL;
-}
-
 static int
 pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored))
 {
@@ -1336,19 +1331,13 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         return -1;
     }
     if (isolation_level == Py_None) {
-        /* We might get called during connection init, so we cannot use
-         * pysqlite_connection_commit() here. */
-        if (self->db && !sqlite3_get_autocommit(self->db)) {
-            int rc;
-            Py_BEGIN_ALLOW_THREADS
-            rc = sqlite3_exec(self->db, "COMMIT", NULL, NULL, NULL);
-            Py_END_ALLOW_THREADS
-            if (rc != SQLITE_OK) {
-                return _pysqlite_seterror(self->state, self->db);
-            }
-        }
-
+        // Execute a COMMIT to re-enable autocommit mode
+        PyObject *res = pysqlite_connection_commit_impl(self);
+        Py_DECREF(res);
         self->begin_statement = NULL;
+        if (res == NULL) {
+            return -1;
+        }
     }
     else if (PyUnicode_Check(isolation_level)) {
         Py_ssize_t sz;
