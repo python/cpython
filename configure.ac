@@ -3606,9 +3606,11 @@ PY_MIMALLOC=0
 AC_MSG_CHECKING(for --with-mimalloc)
 AC_ARG_WITH(mimalloc,
   AS_HELP_STRING([--with-mimalloc],
-                 [build with mimalloc memory allocator (default is no)]),
+                 [build with mimalloc memory allocator (default is yes)]),
+  [],
+  [with_mimalloc="yes"]
 [
-if test "$withval" = no
+if test "$with_mimalloc" = no
 then
   AC_MSG_RESULT(no);
 else

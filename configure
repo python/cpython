@@ -1590,7 +1590,8 @@ Optional Packages:
                           value is a colon separated string with the backend
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
-  --with-mimalloc         build with mimalloc memory allocator (default is no)
+  --with-mimalloc         build with mimalloc memory allocator (default is
+                          yes)
   --with-pymalloc         enable specialized mallocs (default is yes)
   --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
@@ -11719,7 +11720,10 @@ $as_echo_n "checking for --with-mimalloc... " >&6; }
 # Check whether --with-mimalloc was given.
 if test "${with_mimalloc+set}" = set; then :
   withval=$with_mimalloc;
-if test "$withval" = no
+else
+  with_mimalloc="yes"
+
+if test "$with_mimalloc" = no
 then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; };
@@ -11734,9 +11738,6 @@ $as_echo "yes" >&6; }
 $as_echo "#define PY_MIMALLOC 1" >>confdefs.h
 
 fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
 fi
 
 
