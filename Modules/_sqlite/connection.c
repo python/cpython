@@ -1313,6 +1313,21 @@ static PyObject* pysqlite_connection_get_in_transaction(pysqlite_Connection* sel
     Py_RETURN_FALSE;
 }
 
+static const char *
+get_begin_statement(const char *level, Py_ssize_t sz)
+{
+    assert(level != NULL);
+    for (int i = 0; begin_statements[i] != NULL; i++) {
+        const char *candidate = begin_statements[i] + 6;
+        if (strlen(candidate) == (size_t)sz) {
+            if (sqlite3_stricmp(level, candidate) == 0) {
+                return begin_statements[i];
+            }
+        }
+    }
+    return NULL;
+}
+
 static int
 pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored))
 {
@@ -1334,36 +1349,28 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         }
 
         self->begin_statement = NULL;
-    } else {
-        const char * const *candidate;
-        PyObject *uppercase_level;
-        _Py_IDENTIFIER(upper);
-
-        if (!PyUnicode_Check(isolation_level)) {
-            PyErr_Format(PyExc_TypeError,
-                         "isolation_level must be a string or None, not %.100s",
-                         Py_TYPE(isolation_level)->tp_name);
+    }
+    else if (PyUnicode_Check(isolation_level)) {
+        Py_ssize_t sz;
+        const char *cstr_level = PyUnicode_AsUTF8AndSize(isolation_level, &sz);
+        if (cstr_level == NULL) {
             return -1;
         }
-
-        uppercase_level = _PyObject_CallMethodIdOneArg(
-                        (PyObject *)&PyUnicode_Type, &PyId_upper,
-                        isolation_level);
-        if (!uppercase_level) {
-            return -1;
-        }
-        for (candidate = begin_statements; *candidate; candidate++) {
-            if (_PyUnicode_EqualToASCIIString(uppercase_level, *candidate + 6))
-                break;
-        }
-        Py_DECREF(uppercase_level);
-        if (!*candidate) {
+        const char *stmt = get_begin_statement(cstr_level, sz);
+        if (stmt == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "invalid value for isolation_level");
             return -1;
         }
-        self->begin_statement = *candidate;
+        self->begin_statement = stmt;
     }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "isolation_level must be a string or None, not %.100s",
+                     Py_TYPE(isolation_level)->tp_name);
+        return -1;
+    }
+
 
     return 0;
 }
