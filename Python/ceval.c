@@ -4807,6 +4807,8 @@ check_eval_breaker:
 
             PyObject *callable = SECOND();
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
 
             Py_ssize_t len_i = PyObject_Length(TOP());
             if (len_i < 0) {
@@ -4819,8 +4821,6 @@ check_eval_breaker:
             Py_DECREF(POP());
             Py_DECREF(callable);
             SET_TOP(res);
-            record_cache_hit(cache0);
-            STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
                 goto error;
             }
@@ -4837,6 +4837,8 @@ check_eval_breaker:
 
             PyObject *callable = THIRD();
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
 
             int retval = PyObject_IsInstance(SECOND(), TOP());
             if (retval < 0) {
@@ -4849,8 +4851,6 @@ check_eval_breaker:
             Py_DECREF(POP());
             Py_DECREF(POP());
             Py_DECREF(callable);
-            SET_TOP(res);
-            record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
             if (res == NULL) {
                 goto error;
