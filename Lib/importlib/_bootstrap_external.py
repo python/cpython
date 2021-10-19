@@ -1327,6 +1327,12 @@ class _NamespaceLoader:
         return NamespaceReader(self._path)
 
 
+# This class is actually exposed publicly in a namespace package's __loader__
+# attribute, so it should be available through a non-private name.
+# https://bugs.python.org/issue35673
+NamespaceLoader = _NamespaceLoader
+
+
 # Finders #####################################################################
 
 class PathFinder:

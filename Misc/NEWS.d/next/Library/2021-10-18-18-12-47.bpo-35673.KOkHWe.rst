@@ -1,0 +1,3 @@
+Improve the introspectability of the ``__loader__`` attribute for namespace
+packages.  :class:`importlib.machinery.NamespaceLoader` is now public, and
+implements the :class:`importlib.abc.InspectLoader` interface.
