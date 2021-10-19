@@ -2195,25 +2195,32 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
 
+    /* See whether fast compares of the first elements settle it. */
+    k = ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0], ms);
+    if (k) /* error, or v < w */
+        return k;
+    k = ms->tuple_elem_compare(wt->ob_item[0], vt->ob_item[0], ms);
+    if (k < 0) /* error */
+        return -1;
+    if (k > 0) /* w < v */
+        return 0;
+
+    /* first elements are equal */
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
-
-    for (i = 0; i < vlen && i < wlen; i++) {
+    for (i = 1; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
         if (k < 0)
             return -1;
-        if (!k)
-            break;
+        if (!k) {
+            return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
+                                            Py_LT);
+        }
     }
+    /* all equal until we fell off the end */
+    return vlen < wlen;
 
-    if (i >= vlen || i >= wlen)
-        return vlen < wlen;
-
-    if (i == 0)
-        return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
-    else
-        return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
-}
+ }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
  * Returns Py_None on success, NULL on error.  Even in case of error, the
