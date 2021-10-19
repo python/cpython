@@ -1555,6 +1555,9 @@
 /* Define to build the readline module against Editline. */
 #undef WITH_EDITLINE
 
+/* Define if you want to compile in object freelists optimization */
+#undef WITH_FREELISTS
+
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
 
