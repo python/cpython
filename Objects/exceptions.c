@@ -635,7 +635,6 @@ ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
  *    ExceptionGroup extends BaseExceptionGroup and Exception
  */
 
-PyObject *PyExc_ExceptionGroup;
 
 static inline PyBaseExceptionGroupObject*
 _PyBaseExceptionGroupObject_cast(PyObject *exc)
@@ -647,6 +646,9 @@ _PyBaseExceptionGroupObject_cast(PyObject *exc)
 static PyObject *
 BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    struct _Py_exc_state *state = get_exc_state();
+    PyObject *PyExc_ExceptionGroup = state->PyExc_ExceptionGroup;
+
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
 
@@ -1067,16 +1069,20 @@ ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
  */
 static PyObject*
 create_exception_group_class(void) {
+    struct _Py_exc_state *state = get_exc_state();
+
     PyObject *bases = PyTuple_Pack(
         2, PyExc_BaseExceptionGroup, PyExc_Exception);
     if (bases == NULL) {
         return NULL;
     }
 
-    PyExc_ExceptionGroup = PyErr_NewException(
+    assert(!state->PyExc_ExceptionGroup);
+    state->PyExc_ExceptionGroup = PyErr_NewException(
         "builtins.ExceptionGroup", bases, NULL);
+
     Py_DECREF(bases);
-    return PyExc_ExceptionGroup;
+    return state->PyExc_ExceptionGroup;
 }
 
 /*
@@ -3256,7 +3262,8 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
         return _PyStatus_ERR("exceptions bootstrapping error.");
     }
 
-    if (!create_exception_group_class()) {
+    PyObject *PyExc_ExceptionGroup = create_exception_group_class();
+    if (!PyExc_ExceptionGroup) {
         return _PyStatus_ERR("exceptions bootstrapping error.");
     }
 
@@ -3348,6 +3355,7 @@ _PyExc_Fini(PyInterpreterState *interp)
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
+    Py_CLEAR(state->PyExc_ExceptionGroup);
 }
 
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
