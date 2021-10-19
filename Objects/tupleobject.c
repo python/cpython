@@ -66,7 +66,8 @@ tuple_alloc(Py_ssize_t size)
         return NULL;
     }
 
-#if PyTuple_MAXSAVESIZE > 0
+// Check for max save size > 1. Empty tuple singleton is special case.
+#if PyTuple_MAXSAVESIZE > 1
     struct _Py_tuple_state *state = get_tuple_state();
 #ifdef Py_DEBUG
     // tuple_alloc() must not be called after _PyTuple_Fini()

@@ -825,7 +825,9 @@ class SysModuleTest(unittest.TestCase):
         from test.support.script_helper import assert_python_ok
         args = ['-c', 'import sys; sys._debugmallocstats()']
         ret, out, err = assert_python_ok(*args)
-        self.assertIn(b"free PyDictObjects", err)
+        if sysconfig.get_config_var("WITH_FREELISTS"):
+            self.assertIn(b"free PyDictObjects", err)
+        self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)

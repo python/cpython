@@ -1,0 +1,2 @@
+The internal freelists for frame, float, list, dict, async generators, and
+context objects can now be disabled.
