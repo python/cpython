@@ -56,9 +56,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pystrhex.h"
+#include "pycore_long.h"          // _PyLong_DigitValue
+#include "pycore_strhex.h"        // _Py_strhex_bytes_with_sep()
 #ifdef USE_ZLIB_CRC32
-#include "zlib.h"
+#  include "zlib.h"
 #endif
 
 typedef struct binascii_state {

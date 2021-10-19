@@ -101,6 +101,8 @@ extern uint64_t _pydict_global_version;
 
 #define DICT_NEXT_VERSION() (++_pydict_global_version)
 
+PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+
 #ifdef __cplusplus
 }
 #endif

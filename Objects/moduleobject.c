@@ -2,6 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -866,7 +867,7 @@ module_dir(PyObject *self, PyObject *args)
         if (PyDict_Check(dict)) {
             PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
             if (dirfunc) {
-                result = _PyObject_CallNoArg(dirfunc);
+                result = _PyObject_CallNoArgs(dirfunc);
             }
             else if (!PyErr_Occurred()) {
                 result = PyDict_Keys(dict);

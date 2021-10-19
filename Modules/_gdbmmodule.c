@@ -5,11 +5,12 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "gdbm.h"
+
+#include <fcntl.h>
+#include <stdlib.h>               // free()
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "gdbmerrno.h"

@@ -29,9 +29,10 @@ MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 if sys.platform != "win32":
     TOOL = os.path.join(ROOT_DIR, 'Programs', '_freeze_module')
     if not os.path.isfile(TOOL):
-        # When building out of the source tree, get the tool from the current
-        # directory
-        TOOL = os.path.join('Programs', '_freeze_module')
+        # When building out of the source tree, get the tool from directory
+        # of the Python executable
+        TOOL = os.path.dirname(sys.executable)
+        TOOL = os.path.join(TOOL, 'Programs', '_freeze_module')
         TOOL = os.path.abspath(TOOL)
         if not os.path.isfile(TOOL):
             sys.exit("ERROR: missing _freeze_module")

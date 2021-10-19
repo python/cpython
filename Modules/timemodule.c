@@ -1,33 +1,29 @@
 /* Time module */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_namespace.h"     // _PyNamespace_New()
 
 #include <ctype.h>
 
 #ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
+#  include <sys/times.h>
 #endif
-
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
-
 #if defined(HAVE_SYS_RESOURCE_H)
-#include <sys/resource.h>
+#  include <sys/resource.h>
 #endif
-
 #ifdef QUICKWIN
-#include <io.h>
+# include <io.h>
 #endif
-
 #if defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
 #endif
-
 #if defined(_AIX)
 #   include <sys/thread.h>
 #endif
-
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #  include <i86.h>
 #else
@@ -38,17 +34,17 @@
 #endif /* !__WATCOMC__ || __QNX__ */
 
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 #ifdef _MSC_VER
-#define _Py_timezone _timezone
-#define _Py_daylight _daylight
-#define _Py_tzname _tzname
+#  define _Py_timezone _timezone
+#  define _Py_daylight _daylight
+#  define _Py_tzname _tzname
 #else
-#define _Py_timezone timezone
-#define _Py_daylight daylight
-#define _Py_tzname tzname
+#  define _Py_timezone timezone
+#  define _Py_daylight daylight
+#  define _Py_tzname tzname
 #endif
 
 #if defined(__APPLE__ ) && defined(__has_builtin)
@@ -60,7 +56,9 @@
 #  define HAVE_CLOCK_GETTIME_RUNTIME 1
 #endif
 
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
+
 
 /* Forward declarations */
 static int pysleep(_PyTime_t timeout);

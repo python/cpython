@@ -1,0 +1,2 @@
+Improve error message of :class:`csv.Dialect` when initializing.
+Patch by Vajrasky Kok and Dong-hee Na.

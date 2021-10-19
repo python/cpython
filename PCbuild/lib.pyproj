@@ -1424,7 +1424,6 @@
     <Compile Include="tkinter\messagebox.py" />
     <Compile Include="tkinter\scrolledtext.py" />
     <Compile Include="tkinter\simpledialog.py" />
-    <Compile Include="tkinter\test\runtktests.py" />
     <Compile Include="tkinter\test\support.py" />
     <Compile Include="tkinter\test\test_tkinter\test_font.py" />
     <Compile Include="tkinter\test\test_tkinter\test_geometry_managers.py" />
@@ -1436,7 +1435,6 @@
     <Compile Include="tkinter\test\test_tkinter\test_widgets.py" />
     <Compile Include="tkinter\test\test_tkinter\__init__.py" />
     <Compile Include="tkinter\test\test_ttk\test_extensions.py" />
-    <Compile Include="tkinter\test\test_ttk\test_functions.py" />
     <Compile Include="tkinter\test\test_ttk\test_style.py" />
     <Compile Include="tkinter\test\test_ttk\test_widgets.py" />
     <Compile Include="tkinter\test\test_ttk\__init__.py" />

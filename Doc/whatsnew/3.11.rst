@@ -175,6 +175,11 @@ Other CPython Implementation Changes
   support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
+* ``siphash13`` is added as a new internal hashing algorithms. It's has similar security
+  properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
+  and some other types now use it as default algorithm for ``hash()``. :pep:`552`
+  hash-based pyc files now use ``siphash13``, too.
+  (Contributed by Inada Naoki in :issue:`29410`.)
 
 New Modules
 ===========
@@ -252,7 +257,7 @@ threading
   the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
   than using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected
   by system clock changes.
-  (Contributed by Livius and Victor Stinner in :issue:`41710`.)
+  (Contributed by Victor Stinner in :issue:`41710`.)
 
 time
 ----
@@ -261,12 +266,12 @@ time
   ``nanosleep()`` function, if available, which has a resolution of 1 nanosecond
   (10\ :sup:`-9` seconds), rather than using ``select()`` which has a resolution
   of 1 microsecond (10\ :sup:`-6` seconds).
-  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
 * On Windows, :func:`time.sleep` now uses a waitable timer which has a
   resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously, it had
   a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Livius and Victor Stinner in :issue:`21302`.)
+  (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
 unicodedata
 -----------
@@ -457,6 +462,13 @@ Build Changes
 * CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
+* libpython is no longer linked against libcrypt.
+  (Contributed by Mike Gilbert in :issue:`45433`.)
+
+* Building Python now requires a C99 ``<math.h>`` header file providing
+  the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
+  ``isinf()``, ``isnan()``, ``round()``.
+  (Contributed by Victor Stinner in :issue:`45440`.)
 
 C API Changes
 =============
@@ -469,6 +481,11 @@ New Features
 
 * Add a new :c:func:`PyType_GetQualName` function to get type's qualified name.
   (Contributed by Hai Shi in :issue:`42035`.)
+
+* Add new :c:func:`PyThreadState_EnterTracing` and
+  :c:func:`PyThreadState_LeaveTracing` functions to the limited C API to
+  suspend and resume tracing and profiling.
+  (Contributed by Victor Stinner in :issue:`43760`.)
 
 Porting to Python 3.11
 ----------------------
@@ -552,15 +569,22 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
+* ``<Python.h>`` no longer includes the header files ``<stdlib.h>``,
+  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>`` when the ``Py_LIMITED_API``
+  macro is set to ``0x030b0000`` (Python 3.11) or higher. C extensions should
+  explicitly include the header files after ``#include <Python.h>``.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
+* The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
+  ``funcobject.h``, ``genobject.h`` and ``longintrepr.h`` have been moved to
+  the ``Include/cpython`` directory. Moreover, the ``eval.h`` header file was
+  removed. These files must not be included directly, as they are already
+  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  been included directly, consider including ``Python.h`` instead.
+  (Contributed by Victor Stinner in :issue:`35134`.)
+
 Deprecated
 ----------
-
-Removed
--------
-
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
-  removed.
-  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * Deprecate the following functions to configure the Python initialization:
 
@@ -577,3 +601,48 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Remove the following math macros using the ``errno`` variable:
+
+  * ``Py_ADJUST_ERANGE1()``
+  * ``Py_ADJUST_ERANGE2()``
+  * ``Py_OVERFLOWED()``
+  * ``Py_SET_ERANGE_IF_OVERFLOW()``
+  * ``Py_SET_ERRNO_ON_MATH_ERROR()``
+
+  (Contributed by Victor Stinner in :issue:`45412`.)
+
+* Remove ``Py_UNICODE_COPY()`` and ``Py_UNICODE_FILL()`` macros, deprecated
+  since Python 3.3. Use ``PyUnicode_CopyCharacters()`` or ``memcpy()``
+  (``wchar_t*`` string), and ``PyUnicode_Fill()`` functions instead.
+  (Contributed by Victor Stinner in :issue:`41123`.)
+
+* Remove the ``pystrhex.h`` header file. It only contains private functions.
+  C extensions should only include the main ``<Python.h>`` header file.
+  (Contributed by Victor Stinner in :issue:`45434`.)
+
+* Remove the ``Py_FORCE_DOUBLE()`` macro. It was used by the
+  ``Py_IS_INFINITY()`` macro.
+  (Contributed by Victor Stinner in :issue:`45440`.)
+
+* Remove two functions from the limited C API:
+
+  * :c:func:`PyMarshal_WriteLongToFile`
+  * :c:func:`PyMarshal_WriteObjectToFile`
+
+  The :pep:`384` excludes functions expecting ``FILE*`` from the stable ABI.
+
+  Remove also the ``Py_MARSHAL_VERSION`` macro from the limited C API.
+  (Contributed by Victor Stinner in :issue:`45474`.)
+
+* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  limited C API.
+  (Contributed by Victor Stinner in :issue:`35134`.)

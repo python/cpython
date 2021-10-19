@@ -256,6 +256,7 @@ pysqlite_do_all_statements(pysqlite_Connection *self)
 do {                                \
     if (ctx) {                      \
         Py_VISIT(ctx->callable);    \
+        Py_VISIT(ctx->module);      \
     }                               \
 } while (0)
 
@@ -280,6 +281,7 @@ clear_callback_context(callback_context *ctx)
 {
     if (ctx != NULL) {
         Py_CLEAR(ctx->callable);
+        Py_CLEAR(ctx->module);
     }
 }
 
@@ -667,7 +669,7 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
 }
 
 static void
-_pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
+func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
     PyGILState_STATE threadstate = PyGILState_Ensure();
 
@@ -710,7 +712,7 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     if (*aggregate_instance == NULL) {
         callback_context *ctx = (callback_context *)sqlite3_user_data(context);
         assert(ctx != NULL);
-        *aggregate_instance = _PyObject_CallNoArg(ctx->callable);
+        *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
         if (!*aggregate_instance) {
             set_sqlite_error(context,
                     "user-defined aggregate's '__init__' method raised error");
@@ -822,13 +824,21 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
     Py_SETREF(self->cursors, new_list);
 }
 
+/* Allocate a UDF/callback context structure. In order to ensure that the state
+ * pointer always outlives the callback context, we make sure it owns a
+ * reference to the module itself. create_callback_context() is always called
+ * from connection methods, so we use the defining class to fetch the module
+ * pointer.
+ */
 static callback_context *
-create_callback_context(pysqlite_state *state, PyObject *callable)
+create_callback_context(PyTypeObject *cls, PyObject *callable)
 {
     callback_context *ctx = PyMem_Malloc(sizeof(callback_context));
     if (ctx != NULL) {
+        PyObject *module = PyType_GetModule(cls);
         ctx->callable = Py_NewRef(callable);
-        ctx->state = state;
+        ctx->module = Py_NewRef(module);
+        ctx->state = pysqlite_get_state(module);
     }
     return ctx;
 }
@@ -838,6 +848,7 @@ free_callback_context(callback_context *ctx)
 {
     assert(ctx != NULL);
     Py_XDECREF(ctx->callable);
+    Py_XDECREF(ctx->module);
     PyMem_Free(ctx);
 }
 
@@ -867,6 +878,8 @@ destructor_callback(void *ctx)
 /*[clinic input]
 _sqlite3.Connection.create_function as pysqlite_connection_create_function
 
+    cls: defining_class
+    /
     name: str
     narg: int
     func: object
@@ -878,9 +891,10 @@ Creates a new function. Non-standard.
 
 static PyObject *
 pysqlite_connection_create_function_impl(pysqlite_Connection *self,
-                                         const char *name, int narg,
-                                         PyObject *func, int deterministic)
-/*[clinic end generated code: output=07d1877dd98c0308 input=f2edcf073e815beb]*/
+                                         PyTypeObject *cls, const char *name,
+                                         int narg, PyObject *func,
+                                         int deterministic)
+/*[clinic end generated code: output=8a811529287ad240 input=f0f99754bfeafd8d]*/
 {
     int rc;
     int flags = SQLITE_UTF8;
@@ -903,12 +917,12 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         flags |= SQLITE_DETERMINISTIC;
 #endif
     }
-    callback_context *ctx = create_callback_context(self->state, func);
+    callback_context *ctx = create_callback_context(cls, func);
     if (ctx == NULL) {
         return NULL;
     }
     rc = sqlite3_create_function_v2(self->db, name, narg, flags, ctx,
-                                    _pysqlite_func_callback,
+                                    func_callback,
                                     NULL,
                                     NULL,
                                     &destructor_callback);  // will decref func
@@ -924,6 +938,8 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
 
+    cls: defining_class
+    /
     name: str
     n_arg: int
     aggregate_class: object
@@ -933,9 +949,10 @@ Creates a new aggregate. Non-standard.
 
 static PyObject *
 pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
+                                          PyTypeObject *cls,
                                           const char *name, int n_arg,
                                           PyObject *aggregate_class)
-/*[clinic end generated code: output=fbb2f858cfa4d8db input=c2e13bbf234500a5]*/
+/*[clinic end generated code: output=1b02d0f0aec7ff96 input=bd527067e6c2e33f]*/
 {
     int rc;
 
@@ -943,8 +960,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    callback_context *ctx = create_callback_context(self->state,
-                                                    aggregate_class);
+    callback_context *ctx = create_callback_context(cls, aggregate_class);
     if (ctx == NULL) {
         return NULL;
     }
@@ -1008,7 +1024,7 @@ progress_callback(void *ctx)
 
     assert(ctx != NULL);
     PyObject *callable = ((callback_context *)ctx)->callable;
-    ret = _PyObject_CallNoArg(callable);
+    ret = PyObject_CallNoArgs(callable);
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;
@@ -1101,6 +1117,8 @@ exit:
 /*[clinic input]
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
+    cls: defining_class
+    /
     authorizer_callback as callable: object
 
 Sets authorizer callback. Non-standard.
@@ -1108,8 +1126,9 @@ Sets authorizer callback. Non-standard.
 
 static PyObject *
 pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
+                                        PyTypeObject *cls,
                                         PyObject *callable)
-/*[clinic end generated code: output=c193601e9e8a5116 input=ec104f130b82050b]*/
+/*[clinic end generated code: output=75fa60114fc971c3 input=9f3e90d3d642c4a0]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1121,7 +1140,7 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
         set_callback_context(&self->authorizer_ctx, NULL);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state, callable);
+        callback_context *ctx = create_callback_context(cls, callable);
         if (ctx == NULL) {
             return NULL;
         }
@@ -1140,6 +1159,8 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
 
+    cls: defining_class
+    /
     progress_handler as callable: object
     n: int
 
@@ -1148,8 +1169,9 @@ Sets progress handler callback. Non-standard.
 
 static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
+                                              PyTypeObject *cls,
                                               PyObject *callable, int n)
-/*[clinic end generated code: output=ba14008a483d7a53 input=3cf56d045f130a84]*/
+/*[clinic end generated code: output=0739957fd8034a50 input=83e8dcbb4ce183f7]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1161,7 +1183,7 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
         set_callback_context(&self->progress_ctx, NULL);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state, callable);
+        callback_context *ctx = create_callback_context(cls, callable);
         if (ctx == NULL) {
             return NULL;
         }
@@ -1174,6 +1196,8 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
 
+    cls: defining_class
+    /
     trace_callback as callable: object
 
 Sets a trace callback called for each SQL statement (passed as unicode).
@@ -1183,8 +1207,9 @@ Non-standard.
 
 static PyObject *
 pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
+                                            PyTypeObject *cls,
                                             PyObject *callable)
-/*[clinic end generated code: output=c9fd551e359165d3 input=d76eabbb633057bc]*/
+/*[clinic end generated code: output=d91048c03bfcee05 input=96f03acec3ec8044]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1206,7 +1231,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
         set_callback_context(&self->trace_ctx, NULL);
     }
     else {
-        callback_context *ctx = create_callback_context(self->state, callable);
+        callback_context *ctx = create_callback_context(cls, callable);
         if (ctx == NULL) {
             return NULL;
         }
@@ -1527,10 +1552,8 @@ error:
 /* ------------------------- COLLATION CODE ------------------------ */
 
 static int
-pysqlite_collation_callback(
-        void* context,
-        int text1_length, const void* text1_data,
-        int text2_length, const void* text2_data)
+collation_callback(void *context, int text1_length, const void *text1_data,
+                   int text2_length, const void *text2_data)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
@@ -1770,6 +1793,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.create_collation as pysqlite_connection_create_collation
 
+    cls: defining_class
     name: str
     callback as callable: object
     /
@@ -1779,9 +1803,10 @@ Creates a collation function. Non-standard.
 
 static PyObject *
 pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
+                                          PyTypeObject *cls,
                                           const char *name,
                                           PyObject *callable)
-/*[clinic end generated code: output=a4ceaff957fdef9a input=301647aab0f2fb1d]*/
+/*[clinic end generated code: output=32d339e97869c378 input=fee2c8e5708602ad]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1799,12 +1824,12 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
             PyErr_SetString(PyExc_TypeError, "parameter must be callable");
             return NULL;
         }
-        ctx = create_callback_context(self->state, callable);
+        ctx = create_callback_context(cls, callable);
         if (ctx == NULL) {
             return NULL;
         }
         rc = sqlite3_create_collation_v2(self->db, name, flags, ctx,
-                                         &pysqlite_collation_callback,
+                                         &collation_callback,
                                          &destructor_callback);
     }
 
