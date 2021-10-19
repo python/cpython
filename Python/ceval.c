@@ -2242,6 +2242,7 @@ check_eval_breaker:
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
 
+            record_hit_inline(next_instr, oparg);
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
@@ -2266,6 +2267,7 @@ check_eval_breaker:
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
 
+            record_hit_inline(next_instr, oparg);
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
@@ -2280,6 +2282,7 @@ check_eval_breaker:
         TARGET(BINARY_SUBSCR_DICT) {
             PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
+            record_hit_inline(next_instr, oparg);
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *sub = TOP();
             PyObject *res = PyDict_GetItemWithError(dict, sub);
