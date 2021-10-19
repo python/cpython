@@ -21,7 +21,7 @@ class PathTests(unittest.TestCase):
             if not os.path.isabs(filename):
                 continue
             with self.subTest(filename):
-                result = _testcapi.test_normalize_path(filename)
+                result = _testcapi.normalize_path(filename)
                 self.assertEqual(result, expected)
 
 

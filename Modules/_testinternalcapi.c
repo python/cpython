@@ -369,7 +369,7 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject *
-test_normalize_path(PyObject *self, PyObject *filename)
+normalize_path(PyObject *self, PyObject *filename)
 {
 //    if (!PyUnicode_Check(filename)) {
 //        PyErr_SetString(PyExc_TypeError, "argument must be a string");
@@ -404,7 +404,7 @@ static PyMethodDef TestMethods[] = {
     {"set_config", test_set_config, METH_O},
     {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
-    {"test_normalize_path", test_normalize_path, METH_O, NULL},
+    {"normalize_path", normalize_path, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
