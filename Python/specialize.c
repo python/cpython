@@ -1236,7 +1236,7 @@ success:
     return 0;
 }
 
-
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
 static int
 builtin_call_fail_kind(int ml_flags)
 {
@@ -1258,6 +1258,7 @@ builtin_call_fail_kind(int ml_flags)
             return SPEC_FAIL_BAD_CALL_FLAGS;
     }
 }
+#endif
 
 static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
