@@ -658,6 +658,7 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+PY_MIMALLOC
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -11710,6 +11711,7 @@ fi
 $as_echo "$with_doc_strings" >&6; }
 
 # --with-mimalloc
+
 PY_MIMALLOC=0
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
 $as_echo_n "checking for --with-mimalloc... " >&6; }
@@ -11730,80 +11732,6 @@ $as_echo "yes" >&6; }
   with_freelists="no"
 
 $as_echo "#define PY_MIMALLOC 1" >>confdefs.h
-
-  for ac_header in mimalloc.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "mimalloc.h" "ac_cv_header_mimalloc_h" "$ac_includes_default"
-if test "x$ac_cv_header_mimalloc_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_MIMALLOC_H 1
-_ACEOF
-
-else
-  as_fn_error $? "--with-mimalloc requires mimalloc.h" "$LINENO" 5
-
-fi
-
-done
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing mi_malloc" >&5
-$as_echo_n "checking for library containing mi_malloc... " >&6; }
-if ${ac_cv_search_mi_malloc+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char mi_malloc ();
-int
-main ()
-{
-return mi_malloc ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' mimalloc; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_mi_malloc=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_mi_malloc+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_mi_malloc+:} false; then :
-
-else
-  ac_cv_search_mi_malloc=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_mi_malloc" >&5
-$as_echo "$ac_cv_search_mi_malloc" >&6; }
-ac_res=$ac_cv_search_mi_malloc
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-  as_fn_error $? "--with-mimalloc requires libmimalloc" "$LINENO" 5
-
-fi
 
 fi
 else

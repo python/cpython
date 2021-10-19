@@ -694,9 +694,6 @@
 /* Define to 1 if you have the `memrchr' function. */
 #undef HAVE_MEMRCHR
 
-/* Define to 1 if you have the <mimalloc.h> header file. */
-#undef HAVE_MIMALLOC_H
-
 /* Define to 1 if you have the `mkdirat' function. */
 #undef HAVE_MKDIRAT
 
