@@ -1,0 +1,2 @@
+Added :func:`telnetlib.set_fill_rawq_callback` to process incoming socket
+bytes before telnetlib processes. Incoming compressed data can be decompress with this callback.
