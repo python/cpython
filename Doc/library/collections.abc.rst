@@ -104,6 +104,8 @@ example, knowing that a class supplies ``__getitem__``, ``__len__``, and
 ``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
 a :class:`Mapping`.
 
+.. versionadded:: 3.9
+   These abstract classes now support ``[]``. See :pep:`585`.
 
 .. _collections-abstract-base-classes:
 
