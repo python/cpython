@@ -827,7 +827,8 @@ class SysModuleTest(unittest.TestCase):
         ret, out, err = assert_python_ok(*args)
         if sysconfig.get_config_var("WITH_FREELISTS"):
             self.assertIn(b"free PyDictObjects", err)
-        self.assertIn(b'Small block threshold', err)
+        if sysconfig.get_config_var("WITH_PYMALLOC"):
+            self.assertIn(b'Small block threshold', err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
