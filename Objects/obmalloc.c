@@ -1341,7 +1341,7 @@ _Py_GetAllocatedBlocks(void)
 
 #define MAP_TOP_BITS INTERIOR_BITS
 #define MAP_TOP_LENGTH (1 << MAP_TOP_BITS)
-#define MAP_TOP_MASK (MAP_BOT_LENGTH - 1)
+#define MAP_TOP_MASK (MAP_TOP_LENGTH - 1)
 
 #define MAP_MID_BITS INTERIOR_BITS
 #define MAP_MID_LENGTH (1 << MAP_MID_BITS)
