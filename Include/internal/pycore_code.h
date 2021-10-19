@@ -276,7 +276,7 @@ saturating_zero(void)
 static inline uint8_t
 saturating_start(void)
 {
-    return 32;
+    return 64;
 }
 
 // static inline void
