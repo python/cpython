@@ -633,8 +633,6 @@ data PyExc_EnvironmentError
     added 3.2
 data PyExc_Exception
     added 3.2
-data PyExc_ExceptionGroup
-    added 3.11
 data PyExc_FloatingPointError
     added 3.2
 data PyExc_FutureWarning
