@@ -323,7 +323,7 @@ absolutize(wchar_t **path_p)
 
 
 /* Remove navigation elements such as "." and "..". */
-// This is similar to canonicalize() is PC/getpathp.c.
+// This is similar to canonicalize() in PC/getpathp.c.
 static PyStatus
 normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
 {
