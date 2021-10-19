@@ -267,6 +267,7 @@ saturating_zero(void)
     return 255;
 }
 
+
 /* Starting value for saturating counter.
  * Technically this should be 1, but that is likely to
  * cause a bit of thrashing when we optimize then get an immediate miss.
@@ -275,22 +276,24 @@ saturating_zero(void)
 static inline uint8_t
 saturating_start(void)
 {
-    return saturating_zero()<<3;
+    return 32;
 }
 
-static inline void
-record_cache_hit(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_increment(entry->counter);
-}
+// static inline void
+// record_cache_hit(_PyAdaptiveEntry *entry) {
+//     entry->counter = saturating_increment(entry->counter);
+// }
+
+#define record_cache_hit(e) ((void)0)
 
 static inline void
 record_cache_miss(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_decrement(entry->counter);
+    entry->counter--;
 }
 
 static inline int
 too_many_cache_misses(_PyAdaptiveEntry *entry) {
-    return entry->counter == saturating_zero();
+    return entry->counter == 0;
 }
 
 #define ADAPTIVE_CACHE_BACKOFF 64

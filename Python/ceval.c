@@ -1452,11 +1452,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
-static inline void
-record_hit_inline(_Py_CODEUNIT *next_instr, int oparg)
-{
-    UPDATE_PREV_INSTR_OPARG(next_instr, saturating_increment(oparg));
-}
+// static inline void
+// record_hit_inline(_Py_CODEUNIT *next_instr, int oparg)
+// {
+//     UPDATE_PREV_INSTR_OPARG(next_instr, saturating_increment(oparg));
+// }
+
+#define record_hit_inline(n, o) ((void)0)
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
@@ -5115,10 +5117,10 @@ opname ## _miss: \
 opname ## _miss: \
     { \
         STAT_INC(opname, miss); \
-        uint8_t oparg = saturating_decrement(_Py_OPARG(next_instr[-1])); \
+        uint8_t oparg = _Py_OPARG(next_instr[-1])-1; \
         UPDATE_PREV_INSTR_OPARG(next_instr, oparg); \
         assert(_Py_OPARG(next_instr[-1]) == oparg); \
-        if (oparg == saturating_zero()) /* too many cache misses */ { \
+        if (oparg == 0) /* too many cache misses */ { \
             oparg = ADAPTIVE_CACHE_BACKOFF; \
             next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, oparg); \
             STAT_INC(opname, deopt); \
