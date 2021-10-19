@@ -1295,10 +1295,8 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
         return NULL;
     }
     if (self->begin_statement != NULL) {
-        assert(strlen(self->begin_statement) >= 6);
-        const char *stmt = self->begin_statement + 6;
-        assert(stmt != NULL);
-        return PyUnicode_FromString(stmt);
+        // We return what's left of the statement after "BEGIN "
+        return PyUnicode_FromString(self->begin_statement + 6);
     }
     Py_RETURN_NONE;
 }
@@ -1330,14 +1328,15 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
-    if (isolation_level == Py_None) {
+    if (Py_IsNone(isolation_level)) {
+        self->begin_statement = NULL;
+
         // Execute a COMMIT to re-enable autocommit mode
         PyObject *res = pysqlite_connection_commit_impl(self);
-        Py_DECREF(res);
-        self->begin_statement = NULL;
         if (res == NULL) {
             return -1;
         }
+        Py_DECREF(res);
     }
     else if (PyUnicode_Check(isolation_level)) {
         Py_ssize_t sz;
@@ -1355,12 +1354,10 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "isolation_level must be a string or None, not %.100s",
-                     Py_TYPE(isolation_level)->tp_name);
+                     "isolation_level must be str or None, not %s",
+                     PyType_GetName(Py_TYPE(isolation_level)));
         return -1;
     }
-
-
     return 0;
 }
 
