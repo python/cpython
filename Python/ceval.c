@@ -4660,6 +4660,7 @@ check_eval_breaker:
 
         TARGET(CALL_FUNCTION) {
             PREDICTED(CALL_FUNCTION);
+            STAT_INC(CALL_FUNCTION, unquickened);
             PyObject *function;
             nargs = oparg;
             kwnames = NULL;
@@ -4714,6 +4715,151 @@ check_eval_breaker:
                 goto error;
             }
             CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_ADAPTIVE) {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                next_instr--;
+                int nargs = cache->adaptive.original_oparg;
+                if (_Py_Specialize_CallFunction(
+                    PEEK(nargs + 1), next_instr, nargs, cache, BUILTINS()) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(CALL_FUNCTION, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(CALL_FUNCTION);
+            }
+        }
+
+        TARGET(CALL_FUNCTION_BUILTIN_O) {
+            assert(cframe.use_tracing == 0);
+            /* Builtin METH_O functions */
+
+            PyObject *callable = SECOND();
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL_FUNCTION);
+            _PyAdaptiveEntry *cache0 = &GET_CACHE()[0].adaptive;
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            PyObject *arg = POP();
+            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            Py_DECREF(arg);
+            Py_DECREF(callable);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_BUILTIN_FAST) {
+            assert(cframe.use_tracing == 0);
+            /* Builtin METH_FASTCALL functions, without keywords */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            int nargs = cache0->original_oparg;
+            PyObject **pfunc = &PEEK(nargs + 1);
+            PyObject *callable = *pfunc;
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
+                CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            /* res = func(self, args, nargs) */
+            PyObject *res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(callable),
+                &PEEK(nargs),
+                nargs);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            while (stack_pointer > pfunc) {
+                PyObject *x = POP();
+                Py_DECREF(x);
+            }
+            PUSH(res);
+            if (res == NULL) {
+                /* Not deopting because this doesn't mean our optimization was
+                   wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
+                   'invalid'). In those cases an exception is set, so we must
+                   handle it.
+                */
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_LEN) {
+            assert(cframe.use_tracing == 0);
+            /* len(o) */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            assert(cache0->original_oparg == 1);
+
+            PyObject *callable = SECOND();
+            DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+
+            Py_ssize_t len_i = PyObject_Length(TOP());
+            if (len_i < 0) {
+                goto error;
+            }
+            PyObject *res = PyLong_FromSsize_t(len_i);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            Py_DECREF(POP());
+            Py_DECREF(callable);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(CALL_FUNCTION_ISINSTANCE) {
+            assert(cframe.use_tracing == 0);
+            /* isinstance(o, o2) */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            assert(cache0->original_oparg == 2);
+
+            PyObject *callable = THIRD();
+            DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+
+            int retval = PyObject_IsInstance(SECOND(), TOP());
+            if (retval < 0) {
+                goto error;
+            }
+            PyObject *res = PyBool_FromLong(retval);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            Py_DECREF(POP());
+            Py_DECREF(POP());
+            Py_DECREF(callable);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -4985,6 +5131,7 @@ MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(STORE_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
+MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
