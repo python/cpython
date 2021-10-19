@@ -584,9 +584,23 @@ calculate_set_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     if (!calculate->prefix_found) {
         return _PyStatus_OK();
     }
+    PyStatus status;
+    wchar_t *prefix = calculate->prefix;
+    if (!_Py_isabs(prefix)) {
+        prefix = _PyMem_RawWcsdup(prefix);
+        if (prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+        status = absolutize(&prefix);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
     wchar_t buf[MAXPATHLEN + 1];
-    PyStatus status = normalize(calculate->prefix,
-                                buf, Py_ARRAY_LENGTH(buf));
+    status = normalize(prefix, buf, Py_ARRAY_LENGTH(buf));
+    if (prefix != calculate->prefix) {
+        PyMem_RawFree(prefix);
+    }
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
