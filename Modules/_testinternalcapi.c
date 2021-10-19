@@ -371,10 +371,6 @@ test_edit_cost(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 normalize_path(PyObject *self, PyObject *filename)
 {
-//    if (!PyUnicode_Check(filename)) {
-//        PyErr_SetString(PyExc_TypeError, "argument must be a string");
-//        return NULL;
-//    }
     Py_ssize_t size = -1;
     wchar_t *encoded = PyUnicode_AsWideCharString(filename, &size);
     if (encoded == NULL) {
