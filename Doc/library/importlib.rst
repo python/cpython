@@ -859,10 +859,11 @@ ABC hierarchy::
 .. class:: TraversableResources
 
     An abstract base class for resource readers capable of serving
-    the ``files`` interface. Subclasses ResourceReader and provides
-    concrete implementations of the ResourceReader's abstract
-    methods. Therefore, any loader supplying TraversableReader
-    also supplies ResourceReader.
+    the :meth:`importlib.resources.files` interface. Subclasses
+    :class:`importlib.abc.ResourceReader` and provides
+    concrete implementations of the :class:`importlib.abc.ResourceReader`'s
+    abstract methods. Therefore, any loader supplying
+    :class:`importlib.abc.TraversableReader` also supplies ResourceReader.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.
