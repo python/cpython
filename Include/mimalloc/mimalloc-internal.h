@@ -53,7 +53,7 @@ static inline uintptr_t _mi_random_shuffle(uintptr_t x);
 extern mi_decl_cache_align mi_stats_t       _mi_stats_main;
 extern mi_decl_cache_align const mi_page_t  _mi_page_empty;
 bool       _mi_is_main_thread(void);
-bool       _mi_preloading();  // true while the C runtime is not ready
+bool       _mi_preloading(void);  // true while the C runtime is not ready
 
 // os.c
 size_t     _mi_os_page_size(void);

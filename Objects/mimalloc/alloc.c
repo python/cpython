@@ -4,6 +4,10 @@ This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE   // for realpath() on Linux
+#endif
+
 #include "mimalloc.h"
 #include "mimalloc-internal.h"
 #include "mimalloc-atomic.h"
@@ -747,7 +751,7 @@ mi_decl_restrict char* mi_heap_realpath(mi_heap_t* heap, const char* fname, char
 }
 #else
 #include <unistd.h>  // pathconf
-static size_t mi_path_max() {
+static size_t mi_path_max(void) {
   static size_t path_max = 0;
   if (path_max <= 0) {
     long m = pathconf("/",_PC_PATH_MAX);
@@ -807,13 +811,13 @@ static bool mi_try_new_handler(bool nothrow) {
   }
 }
 #else
-typedef void (*std_new_handler_t)();
+typedef void (*std_new_handler_t)(void);
 
 #if (defined(__GNUC__) || defined(__clang__))
-std_new_handler_t __attribute((weak)) _ZSt15get_new_handlerv() {
+std_new_handler_t __attribute((weak)) _ZSt15get_new_handlerv(void) {
   return NULL;
 }
-static std_new_handler_t mi_get_new_handler() {
+static std_new_handler_t mi_get_new_handler(void) {
   return _ZSt15get_new_handlerv();
 }
 #else
