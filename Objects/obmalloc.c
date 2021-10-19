@@ -1306,11 +1306,16 @@ _Py_GetAllocatedBlocks(void)
 /* number of bits in a pointer */
 #define POINTER_BITS 64
 
-/* Current 64-bit processors are limited to 48-bit physical addresses.  For
- * now, the top 17 bits of addresses will all be equal to bit 2**47.  If that
- * changes in the future, this must be adjusted upwards.
+/* Most current 64-bit processors are limited to 48-bit physical addresses. If
+ * the kernel never gives user-space a virtual memory address outside a certain
+ * range then ADDRESS_BITS can be safely set to something smaller than
+ * POINTER_BITS. If set smaller, the code assumes that the high bits of virtual
+ * addresses can be masked as zero when indexing into the radix tree. That
+ * reduces the amount of virtual memory used by the top and middle layers of
+ * the radix tree. Using POINTER_BITS is the safest setting and seems to have
+ * pretty minor overhead.
  */
-#define ADDRESS_BITS 48
+#define ADDRESS_BITS POINTER_BITS
 
 /* use the top and mid layers of the radix tree */
 #define USE_INTERIOR_NODES
