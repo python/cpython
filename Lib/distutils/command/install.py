@@ -3,7 +3,6 @@
 Implements the Distutils 'install' command."""
 
 import sys
-import _sysconfig
 import sysconfig
 import os
 import re
@@ -42,7 +41,7 @@ for key in SCHEME_KEYS:
             ("unix_prefix", "posix_prefix"), ("unix_home", "posix_home"),
             ("nt", "nt")):
         sys_key = key
-        sys_scheme = _sysconfig._INSTALL_SCHEMES[sys_scheme_name]
+        sys_scheme = sysconfig._INSTALL_SCHEMES[sys_scheme_name]
         if key == "headers" and key not in sys_scheme:
             # On POSIX-y platforms, Python will:
             # - Build from .h files in 'headers' (only there when

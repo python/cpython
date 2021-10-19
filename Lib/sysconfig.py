@@ -5,8 +5,8 @@ import sys
 from _sysconfig import (
     _get_paths, _getuserbase, _safe_realpath,
     get_default_scheme, get_preferred_scheme, is_python_build,
-    _HAS_USER_BASE, _INSTALL_SCHEMES, _PROJECT_BASE,
-    _PYTHON_BUILD, _PY_VERSION_SHORT, _PY_VERSION_SHORT_NO_DOT,
+    _HAS_USER_BASE, _ALL_INSTALL_SCHEMES, _USER_BASE_SCHEME_NAMES,
+    _PROJECT_BASE, _PYTHON_BUILD, _PY_VERSION_SHORT, _PY_VERSION_SHORT_NO_DOT,
     _SCHEME_CONFIG_VARS, _SCHEME_KEYS, _SYS_HOME,
 )
 
@@ -30,6 +30,26 @@ __all__ = [
 _ALWAYS_STR = {
     'MACOSX_DEPLOYMENT_TARGET',
 }
+
+_INSTALL_SCHEMES = {
+    key: value
+    for key, value in _ALL_INSTALL_SCHEMES.items()
+    if key not in _USER_BASE_SCHEME_NAMES
+}
+
+
+def _load_vendor_schemes():
+    global _INSTALL_SCHEMES
+    try:
+        import _vendor.config
+
+        _INSTALL_SCHEMES = _INSTALL_SCHEMES | _vendor.config.EXTRA_INSTALL_SCHEMES
+    except (ModuleNotFoundError, AttributeError):
+        pass
+
+
+_load_vendor_schemes()
+
 
 _CONFIG_VARS = None
 
