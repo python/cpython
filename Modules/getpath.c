@@ -322,87 +322,6 @@ absolutize(wchar_t **path_p)
 }
 
 
-/* Remove navigation elements such as "." and "..".
-
-   This is mostly a C implementation of posixpath.normpath(). */
-static PyStatus
-normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
-{
-    assert(orig && *orig != L'\0');
-    assert(*orig == SEP);  // an absolute path
-    if (wcslen(orig) + 1 >= buf_len) {
-        return PATHLEN_ERR();
-    }
-
-    int dots = -1;
-    wchar_t *buf_next = buf;
-    // The resulting filename will never be longer than orig.
-    for (const wchar_t *remainder = orig; *remainder != L'\0'; remainder++) {
-        wchar_t c = *remainder;
-        buf_next[0] = c;
-        buf_next++;
-        if (c == SEP) {
-            assert(dots <= 2);
-            if (dots == 2) {
-                // Turn "/x/y/../z" into "/x/z".
-                buf_next -= 4;  // "/../"
-                assert(*buf_next == SEP);
-                // We cap it off at the root, so "/../spam" becomes "/spam".
-                if (buf_next == buf) {
-                    buf_next++;
-                }
-                else {
-                    // Move to the previous SEP in the buffer.
-                    while (*(buf_next - 1) != SEP) {
-                        assert(buf_next != buf);
-                        buf_next--;
-                    }
-                }
-            }
-            else if (dots == 1) {
-                // Turn "/./" into "/".
-                buf_next -= 2;  // "./"
-                assert(*(buf_next - 1) == SEP);
-            }
-            else if (dots == 0) {
-                // Turn "//" into "/".
-                buf_next--;
-                assert(*(buf_next - 1) == SEP);
-            }
-            dots = 0;
-        }
-        else if (dots >= 0) {
-            if (c == L'.' && dots < 2) {
-                dots++;
-            }
-            else {
-                dots = -1;
-            }
-        }
-    }
-    if (dots >= 0) {
-        // Strip any trailing dots and trailing slash.
-        buf_next -= dots + 1;  // "/" or "/." or "/.."
-        assert(*buf_next == SEP);
-        if (buf_next == buf) {
-            // Leave the single slash for root.
-            buf_next++;
-        }
-        else {
-            if (dots == 2) {
-                // Move to the previous SEP in the buffer.
-                do {
-                    assert(buf_next != buf);
-                    buf_next--;
-                } while (*(buf_next) != SEP);
-            }
-        }
-    }
-    *buf_next = L'\0';
-    return _PyStatus_OK();
-}
-
-
 /* Is module -- check for .pyc too */
 static PyStatus
 ismodule(const wchar_t *path, int *result)
@@ -621,12 +540,12 @@ calculate_set_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         }
     }
     wchar_t buf[MAXPATHLEN + 1];
-    status = normalize(prefix, buf, Py_ARRAY_LENGTH(buf));
+    int res = _Py_normalize_path(prefix, buf, Py_ARRAY_LENGTH(buf));
     if (prefix != calculate->prefix) {
         PyMem_RawFree(prefix);
     }
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (res < 0) {
+        return PATHLEN_ERR();
     }
     pathconfig->stdlib_dir = _PyMem_RawWcsdup(buf);
     if (pathconfig->stdlib_dir == NULL) {
