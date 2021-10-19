@@ -322,8 +322,9 @@ absolutize(wchar_t **path_p)
 }
 
 
-/* Remove navigation elements such as "." and "..". */
-// This is similar to canonicalize() in PC/getpathp.c.
+/* Remove navigation elements such as "." and "..".
+
+   This is essentially a C implementation of posixpath.normpath(). */
 static PyStatus
 normalize(const wchar_t *orig, wchar_t *buf, const size_t buf_len)
 {
