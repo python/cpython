@@ -267,4 +267,6 @@ so it may be used in proprietary projects.  There are interfaces to some GNU
 code but these are entirely optional.
 
 All trademarks referenced herein are property of their respective holders.
+
+
 ![](https://visitor-badge.glitch.me/badge?page_id=python.python)
