@@ -4851,7 +4851,7 @@ check_eval_breaker:
             Py_DECREF(POP());
             Py_DECREF(POP());
             Py_DECREF(callable);
-            STAT_INC(CALL_FUNCTION, hit);
+            SET_TOP(res);
             if (res == NULL) {
                 goto error;
             }
