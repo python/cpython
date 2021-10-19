@@ -88,7 +88,7 @@ class FunctionCall:
         if self.arguments:
             parts.append(f"({', '.join(map(str, self.arguments))})")
         if self.force_true:
-            parts.append(", 1")
+            parts.append(", !p->error_indicator")
         if self.assigned_variable:
             if self.assigned_variable_type:
                 parts = [
