@@ -17,6 +17,8 @@ typedef struct {
     uint8_t original_oparg;
     uint8_t counter;
     uint16_t index;
+    uint16_t left_version;
+    uint16_t right_version;
 } _PyAdaptiveEntry;
 
 
@@ -35,6 +37,10 @@ typedef struct {
     PyObject *obj;
 } _PyObjectCache;
 
+typedef struct {
+    binaryfunc function;
+} _PyFuncPtrCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -51,6 +57,7 @@ typedef union {
     _PyAttrCache attr;
     _PyLoadGlobalCache load_global;
     _PyObjectCache obj;
+    _PyFuncPtrCache func_ptr;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -307,7 +314,7 @@ int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
-int _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
 
 #define PRINT_SPECIALIZATION_STATS 0

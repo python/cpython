@@ -243,7 +243,7 @@ static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
-    [BINARY_ADD] = 0,
+    [BINARY_ADD] = 2,  /* _PyAdaptiveEntry, _PyFunctionPointerCache */
     [BINARY_MULTIPLY] = 0,
     [BINARY_SUBSCR] = 0,
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
@@ -1154,8 +1154,9 @@ success:
 }
 
 int
-_Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
+_Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
     PyTypeObject *left_type = Py_TYPE(left);
     if (left_type != Py_TYPE(right)) {
         SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_DIFFERENT_TYPES);
@@ -1164,21 +1165,32 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
     if (left_type == &PyUnicode_Type) {
         int next_opcode = _Py_OPCODE(instr[1]);
         if (next_opcode == STORE_FAST) {
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, _Py_OPARG(*instr));
         }
         else {
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, _Py_OPARG(*instr));
         }
         goto success;
     }
     else if (left_type == &PyLong_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, _Py_OPARG(*instr));
         goto success;
     }
     else if (left_type == &PyFloat_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, _Py_OPARG(*instr));
         goto success;
 
+    }
+    else if (left_type->tp_as_number && left_type->tp_as_number->nb_add) {
+        if (left_type->tp_version_tag > 0xffff) {
+            SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OUT_OF_RANGE);
+            goto fail;
+        }
+        cache0->left_version = cache0->right_version = left_type->tp_version_tag;
+        _PyFuncPtrCache *cache1 = &cache[-1].func_ptr;
+        cache1->function = left_type->tp_as_number->nb_add;
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_CACHED, _Py_OPARG(*instr));
+        goto success;
     }
     else {
         SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_OTHER);
@@ -1186,10 +1198,11 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
 fail:
     STAT_INC(BINARY_ADD, specialization_failure);
     assert(!PyErr_Occurred());
-    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    cache_backoff(cache0);
     return 0;
 success:
     STAT_INC(BINARY_ADD, specialization_success);
+    cache0->counter = saturating_start();
     assert(!PyErr_Occurred());
     return 0;
 }

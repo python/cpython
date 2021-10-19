@@ -221,6 +221,7 @@ del def_op, name_op, jrel_op, jabs_op
 
 _specialized_instructions = [
     "BINARY_ADD_ADAPTIVE",
+    "BINARY_ADD_CACHED",
     "BINARY_ADD_INT",
     "BINARY_ADD_FLOAT",
     "BINARY_ADD_UNICODE",
