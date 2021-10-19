@@ -308,9 +308,9 @@ CPython bytecode changes
 Deprecated
 ==========
 
-* The :mod:`lib2to3` package is now deprecated and may not be able to parse
-  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
-  (Contributed by Victor Stinner in :issue:`40360`.)
+* The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
+  be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
+  CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
