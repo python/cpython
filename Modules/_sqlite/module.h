@@ -63,22 +63,28 @@ typedef struct {
 extern pysqlite_state pysqlite_global_state;
 
 static inline pysqlite_state *
-pysqlite_get_state(PyObject *Py_UNUSED(module))
+pysqlite_get_state(PyObject *module)
 {
-    return &pysqlite_global_state;  // Replace with PyModule_GetState
+    pysqlite_state *state = (pysqlite_state *)PyModule_GetState(module);
+    assert(state != NULL);
+    return state;
 }
 
 static inline pysqlite_state *
-pysqlite_get_state_by_cls(PyTypeObject *Py_UNUSED(cls))
+pysqlite_get_state_by_cls(PyTypeObject *cls)
 {
-    return &pysqlite_global_state;  // Replace with PyType_GetModuleState
+    pysqlite_state *state = (pysqlite_state *)PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
 }
 
+struct PyModuleDef _sqlite3module;
 static inline pysqlite_state *
-pysqlite_get_state_by_type(PyTypeObject *Py_UNUSED(tp))
+pysqlite_get_state_by_type(PyTypeObject *tp)
 {
-    // Replace with _PyType_GetModuleByDef & PyModule_GetState
-    return &pysqlite_global_state;
+    PyObject *module = _PyType_GetModuleByDef(tp, &_sqlite3module);
+    assert(module != NULL);
+    return pysqlite_get_state(module);
 }
 
 extern const char *pysqlite_error_name(int rc);

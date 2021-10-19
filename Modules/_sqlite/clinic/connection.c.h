@@ -150,15 +150,26 @@ PyDoc_STRVAR(pysqlite_connection_close__doc__,
 "Closes the connection.");
 
 #define PYSQLITE_CONNECTION_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)pysqlite_connection_close, METH_NOARGS, pysqlite_connection_close__doc__},
+    {"close", (PyCFunction)(void(*)(void))pysqlite_connection_close, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_close__doc__},
 
 static PyObject *
-pysqlite_connection_close_impl(pysqlite_Connection *self);
+pysqlite_connection_close_impl(pysqlite_Connection *self, PyTypeObject *cls);
 
 static PyObject *
-pysqlite_connection_close(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored))
+pysqlite_connection_close(pysqlite_Connection *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return pysqlite_connection_close_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":close", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = pysqlite_connection_close_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_connection_commit__doc__,
@@ -757,4 +768,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=7567e5d716309258 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2cd6449f4a8f9a2a input=a9049054013a1b77]*/

@@ -24,7 +24,7 @@
 #include "row.h"
 #include "cursor.h"
 
-#define clinic_state() (pysqlite_get_state(NULL))
+#define clinic_state() (pysqlite_get_state_by_type(type))
 #include "clinic/row.c.h"
 #undef clinic_state
 
