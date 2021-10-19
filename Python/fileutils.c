@@ -2195,6 +2195,8 @@ _Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
     }
 
     int dots = -1;
+    int check_leading = 1;
+    const wchar_t *buf_start = buf;
     wchar_t *buf_next = buf;
     // The resulting filename will never be longer than path.
     for (const wchar_t *remainder = path; *remainder != L'\0'; remainder++) {
@@ -2208,13 +2210,13 @@ _Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
                 buf_next -= 4;  // "/../"
                 assert(*buf_next == SEP);
                 // We cap it off at the root, so "/../spam" becomes "/spam".
-                if (buf_next == buf) {
+                if (buf_next == buf_start) {
                     buf_next++;
                 }
                 else {
                     // Move to the previous SEP in the buffer.
                     while (*(buf_next - 1) != SEP) {
-                        assert(buf_next != buf);
+                        assert(buf_next != buf_start);
                         buf_next--;
                     }
                 }
@@ -2228,6 +2230,14 @@ _Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
                 // Turn "//" into "/".
                 buf_next--;
                 assert(*(buf_next - 1) == SEP);
+                if (check_leading) {
+                    if (buf_next - 1 == buf && *(remainder + 1) != SEP) {
+                        // Leave a leading "//" alone, unless "///...".
+                        buf_next++;
+                        buf_start++;
+                    }
+                    check_leading = 0;
+                }
             }
             dots = 0;
         }
@@ -2244,15 +2254,15 @@ _Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
         // Strip any trailing dots and trailing slash.
         buf_next -= dots + 1;  // "/" or "/." or "/.."
         assert(*buf_next == SEP);
-        if (buf_next == buf) {
-            // Leave the single slash for root.
+        if (buf_next == buf_start) {
+            // Leave the leading slash for root.
             buf_next++;
         }
         else {
             if (dots == 2) {
                 // Move to the previous SEP in the buffer.
                 do {
-                    assert(buf_next != buf);
+                    assert(buf_next != buf_start);
                     buf_next--;
                 } while (*(buf_next) != SEP);
             }
