@@ -2243,14 +2243,12 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
     size_t size = sizeof(PyGC_Head) + basicsize;
 
     PyGC_Head *g;
-    if (use_calloc) {
-        g = (PyGC_Head *)PyObject_Calloc(1, size);
-    }
-    else {
-        g = (PyGC_Head *)PyObject_Malloc(size);
-    }
+    g = _PyFreelist_Malloc(size);
     if (g == NULL) {
         return _PyErr_NoMemory(tstate);
+    }
+    if (use_calloc) {
+        memset((void*)g, 0, size);
     }
     assert(((uintptr_t)g & 3) == 0);  // g must be aligned 4bytes boundary
 
@@ -2322,8 +2320,11 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
         return (PyVarObject *)PyErr_NoMemory();
     }
 
+    size_t size = sizeof(PyGC_Head) + basicsize;
+    // upsize for freelist
+    size = (size + _PY_FREELIST_ALIGNMENT - 1) & ~(_PY_FREELIST_ALIGNMENT - 1);
     PyGC_Head *g = AS_GC(op);
-    g = (PyGC_Head *)PyObject_Realloc(g,  sizeof(PyGC_Head) + basicsize);
+    g = (PyGC_Head *)PyObject_Realloc(g,  size);
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
@@ -2343,6 +2344,36 @@ PyObject_GC_Del(void *op)
         gcstate->generations[0].count--;
     }
     PyObject_Free(g);
+}
+
+void
+_PyObject_GC_Recycle(void *op, PyTypeObject *tp)
+{
+    PyGC_Head *g = AS_GC(op);
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        gc_list_remove(g);
+    }
+    GCState *gcstate = get_gc_state();
+    if (gcstate->generations[0].count > 0) {
+        gcstate->generations[0].count--;
+    }
+    size_t size = sizeof(PyGC_Head) + _PyObject_SIZE(tp);
+    _PyFreelist_Free(g, size);
+}
+
+void
+_PyObject_GC_RecycleVar(void *op, PyTypeObject *tp, Py_ssize_t nitems)
+{
+    PyGC_Head *g = AS_GC(op);
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        gc_list_remove(g);
+    }
+    GCState *gcstate = get_gc_state();
+    if (gcstate->generations[0].count > 0) {
+        gcstate->generations[0].count--;
+    }
+    size_t size = sizeof(PyGC_Head) + _PyObject_VAR_SIZE(tp, nitems);
+    _PyFreelist_Free(g, size);
 }
 
 int

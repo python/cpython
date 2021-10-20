@@ -98,3 +98,16 @@ PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 #define PyType_SUPPORTS_WEAKREFS(t) ((t)->tp_weaklistoffset > 0)
 
 PyAPI_FUNC(PyObject **) PyObject_GET_WEAKREFS_LISTPTR(PyObject *op);
+
+// Freelist
+
+#if SIZEOF_VOID_P > 4
+#define _PY_FREELIST_ALIGNMENT       (16)
+#else
+#define _PY_FREELIST_ALIGNMENT        (8)
+#endif
+
+void* _PyFreelist_Malloc(size_t size);
+void _PyFreelist_Free(void *ptr, size_t size);
+void _PyObject_GC_Recycle(void *, PyTypeObject *tp);
+void _PyObject_GC_RecycleVar(void *, PyTypeObject *tp, Py_ssize_t nitems);

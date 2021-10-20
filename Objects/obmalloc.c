@@ -29,6 +29,7 @@ static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *p);
 
 static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
+static void _PyFreelist_DebugMallocStats(FILE *out);
 
 #if defined(__has_feature)  /* Clang */
 #  if __has_feature(address_sanitizer) /* is ASAN enabled? */
@@ -3079,7 +3080,102 @@ _PyObject_DebugMallocStats(FILE *out)
 #endif
 #endif
 
+    _PyFreelist_DebugMallocStats(out);
     return 1;
 }
 
 #endif /* #ifdef WITH_PYMALLOC */
+
+// Freelist support. See Include/cpython/objimpl.h
+
+#define _PY_FREELIST_MAXSIZECLASS (256/_PY_FREELIST_ALIGNMENT)
+#define _PY_FREELIST_MAXLENGTH    (1000)
+#define _PY_FREELIST_STAT 1
+
+typedef struct {
+    void *ptr;
+    size_t nfree;
+#if _PY_FREELIST_STAT
+    size_t reused;
+    size_t allocated;
+#endif
+} _Py_freelist_slot;
+
+static _Py_freelist_slot _Py_global_freelist[_PY_FREELIST_MAXSIZECLASS];
+
+void*
+_PyFreelist_Malloc(size_t size)
+{
+    assert(size > 0);
+    size_t sc = (size-1) / _PY_FREELIST_ALIGNMENT;
+    if (sc < _PY_FREELIST_MAXSIZECLASS) {
+        _Py_freelist_slot *slot = &_Py_global_freelist[sc];
+        if (slot->nfree > 0) {
+            void *ret = slot->ptr;
+            slot->ptr = *((void**)ret);
+            slot->nfree--;
+#if _PY_FREELIST_STAT
+            slot->reused++;
+#endif
+            return ret;
+        }
+#if _PY_FREELIST_STAT
+        slot->allocated++;
+#endif
+        size = (sc+1) * _PY_FREELIST_ALIGNMENT;
+    }
+    return PyObject_Malloc(size);
+}
+
+void
+_PyFreelist_Free(void *ptr, size_t size)
+{
+    assert(size > 0);
+    size_t sc = (size-1) / _PY_FREELIST_ALIGNMENT;
+    if (sc < _PY_FREELIST_MAXSIZECLASS) {
+        _Py_freelist_slot *slot = &_Py_global_freelist[sc];
+        if (slot->nfree < _PY_FREELIST_MAXLENGTH) {
+            *((void**)ptr) = slot->ptr;
+            slot->ptr = ptr;
+            slot->nfree++;
+            return;
+        }
+    }
+    PyObject_Free(ptr);
+}
+
+static void
+_PyFreelist_DebugMallocStats(FILE *out)
+{
+    char buf[128];
+
+#if _PY_FREELIST_STAT
+    fputs("\nFreelist stats:\n\n"
+          "size  num free  total bytes    reused     alloc\n"
+          "----  --------  -----------  --------  --------\n",
+          out);
+
+    for (int i = 0; i < _PY_FREELIST_MAXSIZECLASS; i++) {
+        int n = (int)_Py_global_freelist[i].nfree;
+        int s = (i + 1) * _PY_FREELIST_ALIGNMENT;
+        PyOS_snprintf(buf, sizeof(buf), "%4d  %8d  %11d  %8ld  %8ld\n",
+                      s, n, s * n,
+                      _Py_global_freelist[i].reused,
+                      _Py_global_freelist[i].allocated);
+        fputs(buf, out);
+    }
+#else
+    fputs("\nFreelist stats:\n\n"
+          "size  num free  total bytes\n"
+          "----  --------  -----------\n",
+          out);
+
+    for (int i = 0; i < _PY_FREELIST_MAXSIZECLASS; i++) {
+        int n = (int)_Py_global_freelist[i].nfree;
+        int s = (i + 1) * _PY_FREELIST_ALIGNMENT;
+        PyOS_snprintf(buf, sizeof(buf), "%4d  %8d  %11d\n",
+                      s, n, s * n);
+        fputs(buf, out);
+    }
+#endif
+}
