@@ -722,7 +722,9 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     if (!cls) {
-        /* Don't crash during interpreter shutdown */
+        /* Don't crash during interpreter shutdown
+         * (PyExc_ExceptionGroup may have been cleared)
+         */
         cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
     }
     PyBaseExceptionGroupObject *self =
@@ -854,12 +856,14 @@ typedef enum {
     EXCEPTION_GROUP_MATCH_BY_TYPE = 0,
     /* A PyFunction returning True for matching exceptions */
     EXCEPTION_GROUP_MATCH_BY_PREDICATE = 1,
-    /* An instance or container thereof, checked with equality */
+    /* An instance or container thereof, checked with equality
+     * This matcher type is only used internally by the
+     * interpreter, it is not exposed to python code */
     EXCEPTION_GROUP_MATCH_INSTANCES = 2
 } _exceptiongroup_split_matcher_type;
 
 static int
-_get_matcher_type(PyObject *value,
+get_matcher_type(PyObject *value,
                   _exceptiongroup_split_matcher_type *type)
 {
     /* the python API supports only BY_TYPE and BY_PREDICATE */
@@ -885,9 +889,12 @@ exceptiongroup_split_check_match(PyObject *exc,
 {
     switch (matcher_type) {
     case EXCEPTION_GROUP_MATCH_BY_TYPE: {
+        assert(PyExceptionClass_Check(matcher_value) ||
+               PyTuple_CheckExact(matcher_value));
         return PyErr_GivenExceptionMatches(exc, matcher_value);
     }
     case EXCEPTION_GROUP_MATCH_BY_PREDICATE: {
+        assert(PyFunction_Check(matcher_value));
         PyObject *exc_matches = PyObject_CallOneArg(matcher_value, exc);
         if (exc_matches == NULL) {
             return -1;
@@ -1015,7 +1022,7 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
     }
 
     _exceptiongroup_split_matcher_type matcher_type;
-    if (_get_matcher_type(matcher_value, &matcher_type) == -1) {
+    if (get_matcher_type(matcher_value, &matcher_type) == -1) {
         return NULL;
     }
     return exceptiongroup_split_recursive(
@@ -1031,7 +1038,7 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
     }
 
     _exceptiongroup_split_matcher_type matcher_type;
-    if (_get_matcher_type(matcher_value, &matcher_type) == -1) {
+    if (get_matcher_type(matcher_value, &matcher_type) == -1) {
         return NULL;
     }
     PyObject *ret = exceptiongroup_split_recursive(
