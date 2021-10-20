@@ -1,0 +1,2 @@
+Specialize simple calls to Python functions (no * or *args, no closure,
+etc.)
