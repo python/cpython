@@ -1,0 +1,6 @@
+Cases of sorting using tuples as keys may be significantly faster
+in some cases. This is worth mentioning because, if the tuple
+elements don't define a total ordering, the order of the result
+may differ from earlier releases. It's generally true that the
+result of sorting simply isn't well-defined in the absence of a
+total ordering on list elements.
