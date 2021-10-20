@@ -3370,17 +3370,55 @@ class AbstractPickleModuleTests:
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
 
-    def test_load_read_exception(self):
-        class F:
-            @property
-            def read(self):
-                1/0
-            def readinto(self):
-                1/0
-            def readline(self):
-                1/0
+    def test_bad_file(self):
+        # bpo-38384: Crash in _pickle if the read attribute raises error.
+        def raises_oserror(self, *args, **kwargs):
+            raise OSError
+        @property
+        def bad_property(self):
+            1/0
 
-        self.assertRaises(ZeroDivisionError, pickle.load, F())
+        # File without read
+        class F:
+            readline = raises_oserror
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File without readline
+        class F:
+            read = raises_oserror
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File with bad read
+        class F:
+            read = bad_property
+            readline = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad readline
+        class F:
+            readline = bad_property
+            read = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad peek
+        class F:
+            peek = bad_property
+            read = raises_oserror
+            readline = raises_oserror
+        try:
+            self.Unpickler(F())
+        except ZeroDivisionError:
+            pass
+
+        # File with bad readinto
+        class F:
+            readinto = bad_property
+            read = raises_oserror
+            readline = raises_oserror
+        try:
+            self.Unpickler(F())
+        except ZeroDivisionError:
+            pass
 
     def check_dumps_loads_oob_buffers(self, dumps, loads):
         # No need to do the full gamut of tests here, just enough to
