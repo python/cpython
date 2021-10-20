@@ -1280,21 +1280,30 @@ _Py_GetAllocatedBlocks(void)
 
 #if WITH_PYMALLOC_RADIX_TREE
 /*==========================================================================*/
-/* radix tree for tracking arena usage
+/* radix tree for tracking arena usage.  If enabled, used to implement
+   address_in_range().
 
-   bit allocation for keys
+   memory address bit allocation for keys
 
-   64-bit pointers and 2^20 arena size:
+   64-bit pointers, ADDRESS_BITS = POINTER_BITS and 2^20 arena size:
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     14 -> MAP_BOT_BITS
+     20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, ADDRESS_BITS = 48, and 2^20 arena size:
      16 -> ignored (POINTER_BITS - ADDRESS_BITS)
-     10 -> MAP_TOP
-     10 -> MAP_MID
-      8 -> MAP_BOT
+     10 -> MAP_TOP_BITS
+     10 -> MAP_MID_BITS
+      8 -> MAP_BOT_BITS
      20 -> ideal aligned arena
    ----
      64
 
    32-bit pointers and 2^18 arena size:
-     14 -> MAP_BOT
+     14 -> MAP_BOT_BITS
      18 -> ideal aligned arena
    ----
      32
