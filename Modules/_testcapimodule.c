@@ -24,6 +24,9 @@
 #include <float.h>
 #include <signal.h>
 
+#include <ffi.h>  /* required by ctypes.h */
+#include "_ctypes/ctypes.h"  /* To test metaclass inheritance */
+
 #ifdef MS_WINDOWS
 #  include <winsock2.h>         /* struct timeval */
 #endif
@@ -1173,48 +1176,13 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-/*
- * Small helper to import abc.ABC and ctypes.Array for testing.  Both
- * are (incompatible) MetaClass instances.  If Array is NULL it is not filled.
- */
-static int
-import_abc_and_array(PyObject **ABC, PyObject **Array)
-{
-    PyObject *abc_mod = PyImport_ImportModule("abc");
-    if (abc_mod == NULL) {
-        return -1;
-    }
-    *ABC = PyObject_GetAttrString(abc_mod, "ABC");
-    Py_DECREF(abc_mod);
-    if (*ABC == NULL) {
-        return -1;
-    }
-    if (Array == NULL) {
-        return 0;
-    }
-
-    PyObject *ctypes_mod = PyImport_ImportModule("ctypes");
-    if (ctypes_mod == NULL) {
-        Py_CLEAR(*ABC);
-        return -1;
-    }
-    *Array = PyObject_GetAttrString(ctypes_mod, "Array");
-    Py_DECREF(ctypes_mod);
-    if (*Array == NULL) {
-        Py_CLEAR(*ABC);
-        return -1;
-    }
-    return 0;
-}
-
-
 static PyType_Slot MinimalType_slots[] = {
     {0, 0},
 };
 
 static PyType_Spec MinimalType_spec = {
     "_testcapi.MinimalSpecType",
-    0,
+    sizeof(CDataObject),
     0,
     Py_TPFLAGS_DEFAULT,
     MinimalType_slots
@@ -1224,31 +1192,22 @@ static PyType_Spec MinimalType_spec = {
 static PyObject *
 test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    /* Get two (incompatible) MetaTypes */
-    PyObject *ABC;
-    if (import_abc_and_array(&ABC, NULL) < 0) {
+    PyObject *bases = PyTuple_Pack(1, PyCArray_Type);
+    if (bases == NULL) {
         return NULL;
     }
 
-    PyObject *bases = PyTuple_Pack(1, ABC);
-    if (bases == NULL) {
-        Py_DECREF(ABC);
-        return NULL;
-    }
     PyObject *new = PyType_FromSpecWithBases(&MinimalType_spec, bases);
     Py_DECREF(bases);
     if (new == NULL) {
-        Py_DECREF(ABC);
         return NULL;
     }
-    if (Py_TYPE(new) != Py_TYPE(ABC)) {
+    if (Py_TYPE(new) != Py_TYPE(&PyCArray_Type)) {
         PyErr_SetString(PyExc_AssertionError,
                 "MetaType appears not correctly inherited from ABC!");
-        Py_DECREF(ABC);
         Py_DECREF(new);
         return NULL;
     }
-    Py_DECREF(ABC);
     Py_DECREF(new);
     Py_RETURN_NONE;
 }
@@ -1257,19 +1216,11 @@ test_from_spec_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored)
 static PyObject *
 test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    /* Get two (incompatible) MetaTypes */
-    PyObject *ABC, *Array;
-
-    if (import_abc_and_array(&ABC, &Array) < 0) {
-        return NULL;
-    }
-
-    PyObject *bases = PyTuple_Pack(2, ABC, Array);
-    Py_DECREF(ABC);
-    Py_DECREF(Array);
+    PyObject *bases = PyTuple_Pack(2, PyCArray_Type, PyCFuncPtr_Type);
     if (bases == NULL) {
         return NULL;
     }
+
     /*
      * The following should raise a TypeError due to a MetaClass conflict.
      */
@@ -1286,7 +1237,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
 
         PyErr_Fetch(&type, &value, &traceback);
         Py_DECREF(type);
-        Py_XDECREF(traceback);
+        Py_DECREF(traceback);
 
         meta_error_string = PyUnicode_FromString("metaclass conflict:");
         if (meta_error_string == NULL) {

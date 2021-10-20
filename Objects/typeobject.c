@@ -3360,7 +3360,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    PyHeapTypeObject *res;
+    PyHeapTypeObject *res = NULL;
     PyObject *modname;
     PyTypeObject *type, *base;
     int r;
@@ -3401,7 +3401,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     if (spec->name == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Type spec does not define the name field.");
-        return NULL;
+        goto fail;
     }
 
     /* Adjust for empty tuple bases */
@@ -3418,11 +3418,11 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         if (!bases) {
             bases = PyTuple_Pack(1, base);
             if (!bases)
-                return NULL;
+                goto fail;
         }
         else if (!PyTuple_Check(bases)) {
             PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
-            return NULL;
+            goto fail;
         }
         else {
             Py_INCREF(bases);
@@ -3431,22 +3431,21 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     else if (!PyTuple_Check(bases)) {
         bases = PyTuple_Pack(1, bases);
         if (!bases)
-            return NULL;
+            goto fail;
     }
     else {
         Py_INCREF(bases);
     }
 
-    /* NOTE: Missing API to replace `&PyType_Type` below, see bpo-15870 */
     PyTypeObject *metatype = _PyType_CalculateMetaclass(&PyType_Type, bases);
     if (metatype == NULL) {
         Py_DECREF(bases);
-        return NULL;
+        goto fail;
     }
     res = (PyHeapTypeObject*)metatype->tp_alloc(metatype, nmembers);
     if (res == NULL) {
         Py_DECREF(bases);
-        return NULL;
+        goto fail;
     }
     res_start = (char*)res;
 
@@ -3614,7 +3613,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     return (PyObject*)res;
 
  fail:
-    Py_DECREF(res);
+    Py_XDECREF(res);
     return NULL;
 }
 
