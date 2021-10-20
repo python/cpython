@@ -4182,27 +4182,39 @@ compiler_compare(struct compiler *c, expr_ty e)
         ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, 0));
     }
     else {
+        expr_ty comparator;
+        Py_ssize_t cleanups = 0;
         basicblock *cleanup = compiler_new_block(c);
-        if (cleanup == NULL)
-            return 0;
-        for (i = 0; i < n; i++) {
-            VISIT(c, expr,
-                (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-            ADDOP(c, DUP_TOP);
-            ADDOP(c, ROT_THREE);
-            ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
-            ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
-            NEXT_BLOCK(c);
-        }
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
-        ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
-        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
-        compiler_use_next_block(c, cleanup);
-        ADDOP(c, ROT_TWO);
-        ADDOP(c, POP_TOP);
+        if (cleanup == NULL)
+            return 0;
+        for (i = 0; i < n; i++) {
+            VISIT(c, expr, comparator = asdl_seq_GET(e->v.Compare.comparators, i));
+            if (comparator->kind != Constant_kind && comparator->kind != Name_kind) {
+                ADDOP(c, DUP_TOP);
+                ADDOP(c, ROT_THREE);
+            }
+            ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
+            if (comparator->kind == Constant_kind || comparator->kind == Name_kind) {
+                ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+                NEXT_BLOCK(c);
+                VISIT(c, expr, comparator);
+            } else {
+                ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
+                NEXT_BLOCK(c);
+                cleanups++;
+            }
+        }
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+        ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
+        if (cleanups) {
+            ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
+            compiler_use_next_block(c, cleanup);
+            ADDOP(c, ROT_TWO);
+            ADDOP(c, POP_TOP);
+        }
         compiler_use_next_block(c, end);
     }
     return 1;
