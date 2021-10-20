@@ -17949,6 +17949,66 @@ esac
 $as_echo "$OPENSSL_RPATH" >&6; }
 
 
+# check if OpenSSL libraries work as expected
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required APIs... " >&6; }
+save_LIBS="$LIBS"
+save_CFLAGS="$CFLAGS"
+save_LDFLAGS="$LDFLAGS"
+LIBS="$LIBS $OPENSSL_LIBS"
+CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
+LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#error "OpenSSL >= 1.1.1 is required"
+#endif
+
+static void keylog_cb(const SSL *ssl, const char *line) {}
+
+int
+main ()
+{
+
+/* SSL APIs */
+SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+SSL_CTX_set_keylog_callback(ctx, keylog_cb);
+SSL *ssl = SSL_new(ctx);
+X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
+SSL_free(ssl);
+SSL_CTX_free(ctx);
+
+/* hashlib APIs */
+OBJ_nid2sn(NID_md5);
+OBJ_nid2sn(NID_sha1);
+OBJ_nid2sn(NID_sha3_512);
+OBJ_nid2sn(NID_blake2b512);
+EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS="$save_LIBS"
+CFLAGS="$save_CFLAGS"
+LDFLAGS="$save_LDFLAGS"
+
 # ssl module default cipher suite string
 
 
