@@ -69,8 +69,8 @@
 #endif
 
 /* Start extern declarations */
-extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
-extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
+extern PyObject *_Py_get__frozen_importlib_toplevel(void);
+extern PyObject *_Py_get__frozen_importlib_external_toplevel(void);
 extern PyObject *_Py_get_zipimport_toplevel(void);
 extern PyObject *_Py_get_abc_toplevel(void);
 extern PyObject *_Py_get_codecs_toplevel(void);
@@ -78,13 +78,23 @@ extern PyObject *_Py_get_io_toplevel(void);
 extern PyObject *_Py_get__collections_abc_toplevel(void);
 extern PyObject *_Py_get__sitebuiltins_toplevel(void);
 extern PyObject *_Py_get_genericpath_toplevel(void);
+extern PyObject *_Py_get_ntpath_toplevel(void);
 extern PyObject *_Py_get_posixpath_toplevel(void);
+extern PyObject *_Py_get_os_path_toplevel(void);
 extern PyObject *_Py_get_os_toplevel(void);
 extern PyObject *_Py_get_site_toplevel(void);
 extern PyObject *_Py_get_stat_toplevel(void);
-extern PyObject *_Py_get_hello_toplevel(void);
-extern PyObject *_Py_get_hello_toplevel(void);
-extern PyObject *_Py_get_hello_toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___hello_alias___toplevel(void);
+extern PyObject *_Py_get___phello_alias___toplevel(void);
+extern PyObject *_Py_get___phello_alias___spam_toplevel(void);
+extern PyObject *_Py_get___phello___toplevel(void);
+extern PyObject *_Py_get___phello_____init___toplevel(void);
+extern PyObject *_Py_get___phello___ham_toplevel(void);
+extern PyObject *_Py_get___phello___ham___init___toplevel(void);
+extern PyObject *_Py_get___phello___ham_eggs_toplevel(void);
+extern PyObject *_Py_get___phello___spam_toplevel(void);
+extern PyObject *_Py_get___hello_only___toplevel(void);
 /* End extern declarations */
 
 /* Note that a negative size indicates a package. */

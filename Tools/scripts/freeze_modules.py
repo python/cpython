@@ -542,7 +542,7 @@ def regen_frozen(modules):
         # Also add a extern declaration for the corresponding
         # codegen-generated function.
         externlines.append(
-            "extern PyObject *_Py_get_%s_toplevel(void);" % name)
+            "extern PyObject *_Py_get_%s_toplevel(void);" % mod.name.replace(".", "_"))
 
         symbol = mod.symbol
         pkg = '-' if mod.ispkg else ''
@@ -613,27 +613,18 @@ def regen_makefile(modules):
     deepfreezefiles = []
     rules = ['']
     deepfreezerules = ['']
-    for frozenid in frozenids:
-        pyfile, frozenfile = frozen[frozenid]
-        header = os.path.relpath(frozenfile, ROOT_DIR)
-        relfile = header.replace('\\', '/')
-        frozenfiles.append(f'\t\t$(srcdir)/{relfile} \\')
 
-        _pyfile = os.path.relpath(pyfile, ROOT_DIR)
+    # TODO: Merge the two loops
+    for src in _iter_sources(modules):
+        header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
+        relfile = header.replace('\\', '/')
+        _pyfile = relpath_for_posix_display(src.pyfile, ROOT_DIR)
 
         # TODO: This is a bit hackish
         xfile = relfile.replace("/frozen_modules/", "/deepfreeze/")
-        cfile = xfile.replace(".h", ".c")
-        ofile = xfile.replace(".h", ".o")
+        cfile = xfile[:-2] + ".c"
+        ofile = xfile[:-2] + ".o"
         deepfreezefiles.append(f"\t\t{ofile} \\")
-
-        # Add a rule to generate the frozen header file.
-        rules.append(f'{header}: $(srcdir)/Programs/_freeze_module $(srcdir)/{_pyfile}')
-        rules.append(f'\t@echo "Freezing {header} from {_pyfile}"')
-        rules.append(f'\t@$(srcdir)/Programs/_freeze_module {frozenid} \\')
-        rules.append(f'\t\t$(srcdir)/{_pyfile} \\')
-        rules.append(f'\t\t$(srcdir)/{header}')
-        rules.append('')
 
         # Also add a deepfreeze rule.
         deepfreezerules.append(f'{cfile}: {_pyfile} Tools/scripts/deepfreeze.py $(BOOTSTRAP)')
@@ -641,7 +632,7 @@ def regen_makefile(modules):
         deepfreezerules.append(f"\t@$(BOOTSTRAP) \\")
         deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
         deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} \\")
-        deepfreezerules.append(f"\t\t-m {frozenid} \\")
+        deepfreezerules.append(f"\t\t-m {src.frozenid} \\")
         deepfreezerules.append(f"\t\t-o $(srcdir)/{cfile}")
         deepfreezerules.append('')
 
