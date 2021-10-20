@@ -1451,7 +1451,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
      * PyObject_New() so we are able to allocate space for the object and
      * it's data buffer.
      */
-    obj = (PyObject *) PyObject_Malloc(struct_size + (size + 1) * char_size);
+    obj = (PyObject *) _PyFreelist_Malloc(struct_size + (size + 1) * char_size);
     if (obj == NULL) {
         return PyErr_NoMemory();
     }
