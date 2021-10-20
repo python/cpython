@@ -3370,7 +3370,7 @@ class AbstractPickleModuleTests:
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
 
-    def test_bad_file(self):
+    def test_unpickler_bad_file(self):
         # bpo-38384: Crash in _pickle if the read attribute raises error.
         def raises_oserror(self, *args, **kwargs):
             raise OSError
@@ -3419,6 +3419,19 @@ class AbstractPickleModuleTests:
             self.Unpickler(F())
         except ZeroDivisionError:
             pass
+
+    def test_pickler_bad_file(self):
+        # File without write
+        class F:
+            pass
+        self.assertRaises(TypeError, self.Pickler, F())
+
+        # File with bad write
+        class F:
+            @property
+            def write(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.Pickler, F())
 
     def check_dumps_loads_oob_buffers(self, dumps, loads):
         # No need to do the full gamut of tests here, just enough to
