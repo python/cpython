@@ -4720,9 +4720,9 @@ check_eval_breaker:
 
         TARGET(CALL_FUNCTION_ADAPTIVE) {
             SpecializedCacheEntry *cache = GET_CACHE();
+            nargs = cache->adaptive.original_oparg;
             if (cache->adaptive.counter == 0) {
                 next_instr--;
-                int nargs = cache->adaptive.original_oparg;
                 if (_Py_Specialize_CallFunction(
                     PEEK(nargs + 1), next_instr, nargs, cache, BUILTINS()) < 0) {
                     goto error;
@@ -4732,9 +4732,48 @@ check_eval_breaker:
             else {
                 STAT_INC(CALL_FUNCTION, deferred);
                 cache->adaptive.counter--;
-                oparg = cache->adaptive.original_oparg;
-                JUMP_TO_INSTRUCTION(CALL_FUNCTION);
+                oparg = nargs;
+                kwnames = NULL;
+                postcall_shrink = 1;
+                goto call_function;
             }
+        }
+
+        TARGET(CALL_FUNCTION_PY_SIMPLE) {
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            int argcount = cache0->original_oparg;
+            _PyCallCache *cache1 = &caches[-1].call;
+            PyObject *callable = PEEK(argcount+1);
+            DEOPT_IF(!PyFunction_Check(callable), CALL_FUNCTION);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            DEOPT_IF(func->func_version != cache1->func_version, CALL_FUNCTION);
+            /* PEP 523 */
+            DEOPT_IF(tstate->interp->eval_frame != NULL, CALL_FUNCTION);
+            STAT_INC(CALL_FUNCTION, hit);
+            record_cache_hit(cache0);
+            InterpreterFrame *new_frame = _PyThreadState_PushFrame(
+                tstate, PyFunction_AS_FRAME_CONSTRUCTOR(func), NULL);
+            if (new_frame == NULL) {
+                goto error;
+            }
+            STACK_SHRINK(argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = stack_pointer[i];
+            }
+            int deflen = cache1->defaults_len;
+            for (int i = 0; i < deflen; i++) {
+                PyObject *def = PyTuple_GET_ITEM(func->func_defaults, cache1->defaults_start+i);
+                Py_INCREF(def);
+                new_frame->localsplus[argcount+i] = def;
+            }
+            STACK_SHRINK(1);
+            Py_DECREF(func);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->previous = tstate->frame;
+            new_frame->depth = frame->depth + 1;
+            tstate->frame = frame = new_frame;
+            goto start_frame;
         }
 
         TARGET(CALL_FUNCTION_BUILTIN_O) {
