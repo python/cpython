@@ -1023,8 +1023,8 @@ exceptiongroup_split_recursive(PyObject *exc,
     }
     retval = 0;
 done:
-    Py_CLEAR(match_list);
-    Py_CLEAR(rest_list);
+    Py_DECREF(match_list);
+    Py_DECREF(rest_list);
     return retval;
 }
 
