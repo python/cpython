@@ -414,7 +414,14 @@ _Py_Quicken(PyCodeObject *code) {
 
 static inline int
 initial_counter_value(void) {
-    /* Choose a prime number ~50 */
+    /* Starting value for the counter.
+     * This value needs to be not too low, otherwise
+     * it would cause excessive de-optimization.
+     * Neither should it be too high, or that would delay
+     * de-optimization excessively when it is needed.
+     * A value around 50 seems to work, and we choose a
+     * prime number to avoid artifacts.
+     */
     return 53;
 }
 
