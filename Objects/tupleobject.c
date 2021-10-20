@@ -66,35 +66,12 @@ tuple_alloc(Py_ssize_t size)
         return NULL;
     }
 
-#if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = get_tuple_state();
-#ifdef Py_DEBUG
-    // tuple_alloc() must not be called after _PyTuple_Fini()
-    assert(state->numfree[0] != -1);
-#endif
-    if (size < PyTuple_MAXSAVESIZE && (op = state->free_list[size]) != NULL) {
-        assert(size != 0);
-        state->free_list[size] = (PyTupleObject *) op->ob_item[0];
-        state->numfree[size]--;
-        /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
-#ifdef Py_TRACE_REFS
-        Py_SET_SIZE(op, size);
-        Py_SET_TYPE(op, &PyTuple_Type);
-#endif
-        _Py_NewReference((PyObject *)op);
+    /* Check for overflow */
+    if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        return (PyTupleObject *)PyErr_NoMemory();
     }
-    else
-#endif
-    {
-        /* Check for overflow */
-        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                    sizeof(PyObject *))) / sizeof(PyObject *)) {
-            return (PyTupleObject *)PyErr_NoMemory();
-        }
-        op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
-        if (op == NULL)
-            return NULL;
-    }
+    op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
     return op;
 }
 
@@ -271,22 +248,7 @@ tupledealloc(PyTupleObject *op)
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
-#if PyTuple_MAXSAVESIZE > 0
-        struct _Py_tuple_state *state = get_tuple_state();
-#ifdef Py_DEBUG
-        // tupledealloc() must not be called after _PyTuple_Fini()
-        assert(state->numfree[0] != -1);
-#endif
-        if (len < PyTuple_MAXSAVESIZE
-            && state->numfree[len] < PyTuple_MAXFREELIST
-            && Py_IS_TYPE(op, &PyTuple_Type))
-        {
-            op->ob_item[0] = (PyObject *) state->free_list[len];
-            state->numfree[len]++;
-            state->free_list[len] = op;
-            goto done; /* return */
-        }
-#endif
+        _PyObject_GC_RecycleVar(op, &PyTuple_Type, len);
     }
 #if defined(Py_DEBUG) && PyTuple_MAXSAVESIZE > 0
     else {
@@ -297,13 +259,10 @@ tupledealloc(PyTupleObject *op)
         if (op == state->free_list[0] && state->numfree[0] != 0) {
             _Py_FatalRefcountError("deallocating the empty tuple singleton");
         }
+        Py_TYPE(op)->tp_free((PyObject *)op);
     }
 #endif
-    Py_TYPE(op)->tp_free((PyObject *)op);
 
-#if PyTuple_MAXSAVESIZE > 0
-done:
-#endif
     Py_TRASHCAN_END
 }
 
