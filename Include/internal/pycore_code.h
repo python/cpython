@@ -253,53 +253,6 @@ PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
 
-
-/* Cache hits and misses */
-
-static inline uint8_t
-saturating_increment(uint8_t c)
-{
-    return c<<1;
-}
-
-static inline uint8_t
-saturating_decrement(uint8_t c)
-{
-    return (c>>1) + 128;
-}
-
-static inline uint8_t
-saturating_zero(void)
-{
-    return 255;
-}
-
-/* Starting value for saturating counter.
- * Technically this should be 1, but that is likely to
- * cause a bit of thrashing when we optimize then get an immediate miss.
- * We want to give the counter a change to stabilize, so we start at 3.
- */
-static inline uint8_t
-saturating_start(void)
-{
-    return saturating_zero()<<3;
-}
-
-static inline void
-record_cache_hit(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_increment(entry->counter);
-}
-
-static inline void
-record_cache_miss(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_decrement(entry->counter);
-}
-
-static inline int
-too_many_cache_misses(_PyAdaptiveEntry *entry) {
-    return entry->counter == saturating_zero();
-}
-
 #define ADAPTIVE_CACHE_BACKOFF 64
 
 static inline void

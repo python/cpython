@@ -412,6 +412,18 @@ _Py_Quicken(PyCodeObject *code) {
     return 0;
 }
 
+static inline int
+initial_counter_value(void) {
+    /* Starting value for the counter.
+     * This value needs to be not too low, otherwise
+     * it would cause excessive de-optimization.
+     * Neither should it be too high, or that would delay
+     * de-optimization excessively when it is needed.
+     * A value around 50 seems to work, and we choose a
+     * prime number to avoid artifacts.
+     */
+    return 53;
+}
 
 /* Common */
 
@@ -770,7 +782,7 @@ fail:
 success:
     STAT_INC(LOAD_ATTR, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 }
 
@@ -852,7 +864,7 @@ fail:
 success:
     STAT_INC(STORE_ATTR, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 }
 
@@ -1010,7 +1022,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
 success:
     STAT_INC(LOAD_METHOD, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 fail:
     STAT_INC(LOAD_METHOD, specialization_failure);
@@ -1086,7 +1098,7 @@ fail:
 success:
     STAT_INC(LOAD_GLOBAL, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 }
 
@@ -1137,7 +1149,7 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, initial_counter_value());
             goto success;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
@@ -1146,7 +1158,7 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, initial_counter_value());
             goto success;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
@@ -1154,7 +1166,7 @@ _Py_Specialize_BinarySubscr(
         goto fail;
     }
     if (container_type == &PyDict_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, initial_counter_value());
         goto success;
     }
     SPECIALIZATION_FAIL(BINARY_SUBSCR,
@@ -1182,19 +1194,19 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
     if (left_type == &PyUnicode_Type) {
         int next_opcode = _Py_OPCODE(instr[1]);
         if (next_opcode == STORE_FAST) {
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, initial_counter_value());
         }
         else {
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, initial_counter_value());
         }
         goto success;
     }
     else if (left_type == &PyLong_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, initial_counter_value());
         goto success;
     }
     else if (left_type == &PyFloat_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, initial_counter_value());
         goto success;
 
     }
@@ -1220,11 +1232,11 @@ _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *ins
         goto fail;
     }
     if (PyLong_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, initial_counter_value());
         goto success;
     }
     else if (PyFloat_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, initial_counter_value());
         goto success;
     }
     else {
@@ -1432,7 +1444,7 @@ _Py_Specialize_CallFunction(
     else {
         STAT_INC(CALL_FUNCTION, specialization_success);
         assert(!PyErr_Occurred());
-        cache0->counter = saturating_start();
+        cache0->counter = initial_counter_value();
     }
     return 0;
 }
