@@ -11730,7 +11730,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
 
-# Check for Python-specific malloc support
+# Check whether objects such as float, tuple and dict are using
+# freelists to optimization memory allocation.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
 $as_echo_n "checking for --with-freelists... " >&6; }
 

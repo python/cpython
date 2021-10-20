@@ -3616,7 +3616,8 @@ then
 fi
 AC_MSG_RESULT($with_pymalloc)
 
-# Check for Python-specific malloc support
+# Check whether objects such as float, tuple and dict are using
+# freelists to optimization memory allocation.
 AC_MSG_CHECKING(for --with-freelists)
 AC_ARG_WITH(freelists,
             AS_HELP_STRING([--with-freelists], [enable object freelists (default is yes)]))
