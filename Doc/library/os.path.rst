@@ -470,12 +470,16 @@ the :mod:`glob` module.)
    On Windows, splits a pathname into drive/UNC sharepoint and relative path.
 
    If the path contains a drive letter, drive will contain everything
-   up to and including the colon.
-   e.g. ``splitdrive("c:/dir")`` returns ``("c:", "/dir")``
+   up to and including the colon::
+
+      >>> splitdrive("c:/dir")
+      ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator.
-   e.g. ``splitdrive("//host/computer/dir")`` returns ``("//host/computer", "/dir")``
+   and share, up to but not including the fourth separator::
+
+      >>> splitdrive("//host/computer/dir")
+      ("//host/computer", "/dir")
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -484,9 +488,24 @@ the :mod:`glob` module.)
 .. function:: splitext(path)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
-   path``, and *ext* is empty or begins with a period and contains at most one
-   period. Leading periods on the basename are  ignored; ``splitext('.cshrc')``
-   returns  ``('.cshrc', '')``.
+   path``, and the extension, *ext*, is empty or begins with a period and contains at
+   most one period.
+
+   If the path contains no extension, *ext* will be ``''``::
+
+      >>> splitext('bar')
+      ('bar', '')
+
+   If the path contains an extension, then *ext* will be set to this extension,
+   including the leading period. Note that previous periods will be ignored::
+
+      >>> splitext('foo.bar.exe')
+      ('foo.bar', '.exe')
+
+   Leading periods on the basename are ignored::
+
+      >>> splitext('.cshrc')
+      ('.cshrc', '')
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

@@ -1,0 +1,2 @@
+Add protocol description to the :class:`importlib.abc.Traversable`
+documentation.

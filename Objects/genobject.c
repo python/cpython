@@ -1,14 +1,15 @@
 /* Generator object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
-#include "pycore_object.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"
-#include "pycore_frame.h"
+#include "pycore_frame.h"         // InterpreterFrame
+#include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
-#include "opcode.h"
+#include "opcode.h"               // YIELD_FROM
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
@@ -190,8 +191,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
-    frame->stack[frame->stackdepth] = result;
-    frame->stackdepth++;
+    _PyFrame_StackPush(frame, result);
 
     frame->previous = tstate->frame;
 
@@ -320,7 +320,7 @@ gen_close_iter(PyObject *yf)
             PyErr_WriteUnraisable(yf);
         }
         if (meth) {
-            retval = _PyObject_CallNoArg(meth);
+            retval = _PyObject_CallNoArgs(meth);
             Py_DECREF(meth);
             if (retval == NULL)
                 return -1;
@@ -350,8 +350,7 @@ _PyGen_yf(PyGenObject *gen)
 
         if (code[(frame->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
-        assert(frame->stackdepth > 0);
-        yf = frame->stack[frame->stackdepth-1];
+        yf = _PyFrame_StackPeek(frame);
         Py_INCREF(yf);
     }
 
@@ -469,9 +468,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (!ret) {
             PyObject *val;
             /* Pop subiterator from stack */
-            assert(gen->gi_xframe->stackdepth > 0);
-            gen->gi_xframe->stackdepth--;
-            ret = gen->gi_xframe->stack[gen->gi_xframe->stackdepth];
+            ret = _PyFrame_StackPop(gen->gi_xframe);
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
@@ -1288,7 +1285,7 @@ compute_cr_origin(int origin_depth)
         PyCodeObject *code = frame->f_code;
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*2),
+                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
@@ -1503,7 +1500,7 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };

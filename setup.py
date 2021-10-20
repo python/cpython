@@ -571,6 +571,9 @@ class PyBuildExt(build_ext):
                 print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
 
+        if os.environ.get("PYTHONSTRICTEXTENSIONBUILD") and (self.failed or self.failed_on_import):
+            raise RuntimeError("Failed to build some stdlib modules")
+
     def build_extension(self, ext):
 
         if ext.name == '_ctypes':
@@ -798,6 +801,18 @@ class PyBuildExt(build_ext):
             if env_val:
                 parser = argparse.ArgumentParser()
                 parser.add_argument(arg_name, dest="dirs", action="append")
+
+                # To prevent argparse from raising an exception about any
+                # options in env_val that it mistakes for known option, we
+                # strip out all double dashes and any dashes followed by a
+                # character that is not for the option we are dealing with.
+                #
+                # Please note that order of the regex is important!  We must
+                # strip out double-dashes first so that we don't end up with
+                # substituting "--Long" to "-Long" and thus lead to "ong" being
+                # used for a library directory.
+                env_val = re.sub(r'(^|\s+)-(-|(?!%s))' % arg_name[1],
+                                 ' ', env_val)
                 options, _ = parser.parse_known_args(env_val.split())
                 if options.dirs:
                     for directory in reversed(options.dirs):
@@ -939,7 +954,8 @@ class PyBuildExt(build_ext):
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # profiler (_lsprof is for cProfile.py)
-        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
+        self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
                            depends=['unicodedata_db.h', 'unicodename_db.h'],
@@ -996,7 +1012,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -1034,11 +1051,12 @@ class PyBuildExt(build_ext):
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
 
-        # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
+        # Test loading multiple modules from one compiled file (https://bugs.python.org/issue16421)
         self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
 
         # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+        self.add(Extension('_testmultiphase', ['_testmultiphase.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Fuzz tests.
         self.add(Extension('_xxtestfuzz',
@@ -1237,7 +1255,7 @@ class PyBuildExt(build_ext):
         # similar functionality (but slower of course) implemented in Python.
 
         # Sleepycat^WOracle Berkeley DB interface.
-        #  http://www.oracle.com/database/berkeley-db/db/index.html
+        #  https://www.oracle.com/database/technologies/related/berkeleydb.html
         #
         # This requires the Sleepycat^WOracle DB code. The supported versions
         # are set below.  Visit the URL above to download
@@ -1279,7 +1297,7 @@ class PyBuildExt(build_ext):
             '/usr/include/db3',
             '/usr/local/include/db3',
             '/opt/sfw/include/db3',
-            # Fink defaults (http://fink.sourceforge.net/)
+            # Fink defaults (https://www.finkproject.org/)
             '/sw/include/db4',
             '/sw/include/db3',
         ]
@@ -1291,7 +1309,7 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/usr/local/include/db4%d' % x)
             db_inc_paths.append('/pkg/db-4.%d/include' % x)
             db_inc_paths.append('/opt/db-4.%d/include' % x)
-            # MacPorts default (http://www.macports.org/)
+            # MacPorts default (https://www.macports.org/)
             db_inc_paths.append('/opt/local/include/db4%d' % x)
         # 3.x minor number specific paths
         for x in gen_db_minor_ver_nums(3):
@@ -1602,6 +1620,8 @@ class PyBuildExt(build_ext):
             # if --enable-loadable-sqlite-extensions configure option is used.
             if '--enable-loadable-sqlite-extensions' not in sysconfig.get_config_var("CONFIG_ARGS"):
                 sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))
+            elif MACOS and sqlite_incdir == os.path.join(MACOS_SDK_ROOT, "usr/include"):
+                raise DistutilsError("System version of SQLite does not support loadable extensions")
 
             if MACOS:
                 # In every directory on the search path search for a dynamic
@@ -1702,12 +1722,12 @@ class PyBuildExt(build_ext):
 
         # Helper module for various ascii-encoders.  Uses zlib for an optimized
         # crc32 if we have it.  Otherwise binascii uses its own.
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         if have_zlib:
-            extra_compile_args = ['-DUSE_ZLIB_CRC32']
+            extra_compile_args.append('-DUSE_ZLIB_CRC32')
             libraries = ['z']
             extra_link_args = zlib_extra_link_args
         else:
-            extra_compile_args = []
             libraries = []
             extra_link_args = []
         self.add(Extension('binascii', ['binascii.c'],
@@ -1762,7 +1782,9 @@ class PyBuildExt(build_ext):
                 ('XML_POOR_ENTROPY', '1'),
             ]
             extra_compile_args = []
-            expat_lib = []
+            # bpo-44394: libexpat uses isnan() of math.h and needs linkage
+            # against the libm
+            expat_lib = ['m']
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
                              'expat/xmltok.c']
@@ -2302,7 +2324,7 @@ class PyBuildExt(build_ext):
 
     def detect_decimal(self):
         # Stefan Krah's _decimal module
-        extra_compile_args = []
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
@@ -2397,12 +2419,12 @@ class PyBuildExt(build_ext):
         # Workarounds for toolchain bugs:
         if sysconfig.get_config_var('HAVE_IPA_PURE_CONST_BUG'):
             # Some versions of gcc miscompile inline asm:
-            # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-            # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
+            # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
+            # https://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
             extra_compile_args.append('-fno-ipa-pure-const')
         if sysconfig.get_config_var('HAVE_GLIBC_MEMMOVE_BUG'):
             # _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-            # http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
+            # https://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
             undef_macros.append('_FORTIFY_SOURCE')
 
         # Uncomment for extra functionality:
@@ -2460,6 +2482,7 @@ class PyBuildExt(build_ext):
             library_dirs=openssl_libdirs,
             libraries=openssl_libs,
             runtime_library_dirs=runtime_library_dirs,
+            extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
         )
 
         # This static linking is NOT OFFICIALLY SUPPORTED.
@@ -2521,27 +2544,29 @@ class PyBuildExt(build_ext):
         if "sha256" in configured:
             self.add(Extension(
                 '_sha256', ['sha256module.c'],
+                depends=['hashlib.h'],
                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                depends=['hashlib.h']
             ))
 
         if "sha512" in configured:
             self.add(Extension(
                 '_sha512', ['sha512module.c'],
+                depends=['hashlib.h'],
                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                depends=['hashlib.h']
             ))
 
         if "md5" in configured:
             self.add(Extension(
                 '_md5', ['md5module.c'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
         if "sha1" in configured:
             self.add(Extension(
                 '_sha1', ['sha1module.c'],
-                depends=['hashlib.h']
+                depends=['hashlib.h'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
         if "blake2" in configured:
@@ -2556,7 +2581,8 @@ class PyBuildExt(build_ext):
                     '_blake2/blake2b_impl.c',
                     '_blake2/blake2s_impl.c'
                 ],
-                depends=blake2_deps
+                depends=blake2_deps,
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
         if "sha3" in configured:
@@ -2567,7 +2593,8 @@ class PyBuildExt(build_ext):
             self.add(Extension(
                 '_sha3',
                 ['_sha3/sha3module.c'],
-                depends=sha3_deps
+                depends=sha3_deps,
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
             ))
 
     def detect_nis(self):
@@ -2707,7 +2734,7 @@ def main():
     setup(# PyPI Metadata (PEP 301)
           name = "Python",
           version = sys.version.split()[0],
-          url = "http://www.python.org/%d.%d" % sys.version_info[:2],
+          url = "https://www.python.org/%d.%d" % sys.version_info[:2],
           maintainer = "Guido van Rossum and the Python community",
           maintainer_email = "python-dev@python.org",
           description = "A high-level object-oriented programming language",
