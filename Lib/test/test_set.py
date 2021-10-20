@@ -671,6 +671,7 @@ class TestSetSubclass(TestSet):
         self.assertIs(type(u), subclass_with_new)
         self.assertEqual(set(u), {1, 2})
         self.assertIsNone(u.newarg)
+        # disallow kwargs in __new__ only (https://bugs.python.org/issue43413#msg402000)
         with self.assertRaises(TypeError):
             subclass_with_new([1, 2], newarg=3)
 
