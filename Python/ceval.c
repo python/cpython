@@ -13,7 +13,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
-#include "pycore_code.h"          // saturating_increment()
+#include "pycore_code.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -1452,13 +1452,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define UPDATE_PREV_INSTR_OPARG(instr, oparg) ((uint8_t*)(instr))[-1] = (oparg)
 
-// static inline void
-// record_hit_inline(_Py_CODEUNIT *next_instr, int oparg)
-// {
-//     UPDATE_PREV_INSTR_OPARG(next_instr, saturating_increment(oparg));
-// }
-
-#define record_hit_inline(n, o) ((void)0)
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
@@ -1482,7 +1475,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
     res = ep->me_value; \
     DEOPT_IF(res == NULL, LOAD_##attr_or_method); \
     STAT_INC(LOAD_##attr_or_method, hit); \
-    record_cache_hit(cache0); \
     Py_INCREF(res);
 
 static int
@@ -1978,7 +1970,6 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_MULTIPLY);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_MULTIPLY);
             STAT_INC(BINARY_MULTIPLY, hit);
-            record_hit_inline(next_instr, oparg);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(prod);
             Py_DECREF(right);
@@ -1996,7 +1987,6 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_MULTIPLY);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_MULTIPLY);
             STAT_INC(BINARY_MULTIPLY, hit);
-            record_hit_inline(next_instr, oparg);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *prod = PyFloat_FromDouble(dprod);
@@ -2105,7 +2095,6 @@ check_eval_breaker:
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_ADD);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
@@ -2134,7 +2123,6 @@ check_eval_breaker:
             PyObject *var = GETLOCAL(next_oparg);
             DEOPT_IF(var != left, BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             GETLOCAL(next_oparg) = NULL;
             Py_DECREF(left);
             STACK_SHRINK(1);
@@ -2152,7 +2140,6 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_ADD);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
@@ -2172,7 +2159,6 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_ADD);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_ADD);
             STAT_INC(BINARY_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
             Py_DECREF(right);
@@ -2243,8 +2229,6 @@ check_eval_breaker:
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
-
-            record_hit_inline(next_instr, oparg);
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
@@ -2268,8 +2252,6 @@ check_eval_breaker:
             assert(((PyLongObject *)_PyLong_GetZero())->ob_digit[0] == 0);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
-
-            record_hit_inline(next_instr, oparg);
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
@@ -2284,7 +2266,6 @@ check_eval_breaker:
         TARGET(BINARY_SUBSCR_DICT) {
             PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
-            record_hit_inline(next_instr, oparg);
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *sub = TOP();
             PyObject *res = PyDict_GetItemWithError(dict, sub);
@@ -3260,7 +3241,6 @@ check_eval_breaker:
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            record_cache_hit(cache0);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
@@ -3281,7 +3261,6 @@ check_eval_breaker:
             PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache0->index;
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_GLOBAL);
-            record_cache_hit(cache0);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
             PUSH(res);
@@ -3704,7 +3683,6 @@ check_eval_breaker:
             res = values->values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -3744,7 +3722,6 @@ check_eval_breaker:
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -3765,7 +3742,6 @@ check_eval_breaker:
             res = *(PyObject **)addr;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
@@ -3807,7 +3783,6 @@ check_eval_breaker:
             PyDictValues *values = *(PyDictValues **)(((char *)owner) + tp->tp_inline_values_offset);
             DEOPT_IF(values == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
-            record_cache_hit(cache0);
             int index = cache0->index;
             STACK_SHRINK(1);
             PyObject *value = POP();
@@ -3845,7 +3820,6 @@ check_eval_breaker:
             PyObject *old_value = ep->me_value;
             DEOPT_IF(old_value == NULL, STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
-            record_cache_hit(cache0);
             STACK_SHRINK(1);
             PyObject *value = POP();
             ep->me_value = value;
@@ -3871,7 +3845,6 @@ check_eval_breaker:
             DEOPT_IF(tp->tp_version_tag != cache1->tp_version, STORE_ATTR);
             char *addr = (char *)owner + cache0->index;
             STAT_INC(STORE_ATTR, hit);
-            record_cache_hit(cache0);
             STACK_SHRINK(1);
             PyObject *value = POP();
             PyObject *old_value = *(PyObject **)addr;
@@ -4529,7 +4502,6 @@ check_eval_breaker:
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
 
@@ -4540,7 +4512,6 @@ check_eval_breaker:
             DEOPT_IF(dict != NULL, LOAD_METHOD);
             DEOPT_IF(((PyHeapTypeObject *)self_cls)->ht_cached_keys->dk_version != cache1->dk_version_or_hint, LOAD_METHOD);
             STAT_INC(LOAD_METHOD, hit);
-            record_cache_hit(cache0);
             PyObject *res = cache2->obj;
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
@@ -4554,13 +4525,11 @@ check_eval_breaker:
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
             DEOPT_IF(self_cls->tp_version_tag != cache1->tp_version, LOAD_METHOD);
             assert(self_cls->tp_dictoffset == 0);
             STAT_INC(LOAD_METHOD, hit);
-            record_cache_hit(cache0);
             PyObject *res = cache2->obj;
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
@@ -4586,7 +4555,6 @@ check_eval_breaker:
             /* LOAD_METHOD, for class methods */
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
             _PyAttrCache *cache1 = &caches[-1].attr;
             _PyObjectCache *cache2 = &caches[-2].obj;
 
@@ -4597,7 +4565,6 @@ check_eval_breaker:
             assert(cache1->tp_version != 0);
 
             STAT_INC(LOAD_METHOD, hit);
-            record_cache_hit(cache0);
             PyObject *res = cache2->obj;
             assert(res != NULL);
             Py_INCREF(res);
@@ -4746,8 +4713,6 @@ check_eval_breaker:
             PyObject *callable = SECOND();
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL_FUNCTION);
-            _PyAdaptiveEntry *cache0 = &GET_CACHE()[0].adaptive;
-            record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
@@ -4776,7 +4741,6 @@ check_eval_breaker:
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL_FUNCTION);
-            record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
@@ -4808,13 +4772,11 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             /* len(o) */
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            assert(caches[0].adaptive.original_oparg == 1);
             _PyObjectCache *cache1 = &caches[-1].obj;
-            assert(cache0->original_oparg == 1);
 
             PyObject *callable = SECOND();
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
-            record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
 
             Py_ssize_t len_i = PyObject_Length(TOP());
@@ -4838,13 +4800,11 @@ check_eval_breaker:
             assert(cframe.use_tracing == 0);
             /* isinstance(o, o2) */
             SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            assert(caches[0].adaptive.original_oparg == 2);
             _PyObjectCache *cache1 = &caches[-1].obj;
-            assert(cache0->original_oparg == 2);
 
             PyObject *callable = THIRD();
             DEOPT_IF(callable != cache1->obj, CALL_FUNCTION);
-            record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
 
             int retval = PyObject_IsInstance(SECOND(), TOP());
@@ -5102,8 +5062,8 @@ opname ## _miss: \
     { \
         STAT_INC(opname, miss); \
         _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive; \
-        record_cache_miss(cache); \
-        if (too_many_cache_misses(cache)) { \
+        cache->counter--; \
+        if (cache->counter == 0) { \
             next_instr[-1] = _Py_MAKECODEUNIT(opname ## _ADAPTIVE, _Py_OPARG(next_instr[-1])); \
             STAT_INC(opname, deopt); \
             cache_backoff(cache); \
