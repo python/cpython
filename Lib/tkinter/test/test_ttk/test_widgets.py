@@ -971,7 +971,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         tabs = self.nb.tabs()
 
         curr = self.nb.index('current')
-        # verify that the tab gets read at its previous position
+        # verify that the tab gets re-added at its previous position
         child2_index = self.nb.index(self.child2)
         self.nb.hide(self.child2)
         self.nb.add(self.child2)
