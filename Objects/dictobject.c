@@ -638,26 +638,18 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
 {
     PyDictObject *mp;
     assert(keys != NULL);
-    struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
+    struct _Py_dict_state *state = get_dict_state();
     // new_dict() must not be called after _PyDict_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree) {
-        mp = state->free_list[--state->numfree];
-        assert (mp != NULL);
-        assert (Py_IS_TYPE(mp, &PyDict_Type));
-        _Py_NewReference((PyObject *)mp);
-    }
-    else {
-        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
-        if (mp == NULL) {
-            dictkeys_decref(keys);
-            if (free_values_on_failure) {
-                free_values(values);
-            }
-            return NULL;
+    mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
+    if (mp == NULL) {
+        dictkeys_decref(keys);
+        if (free_values_on_failure) {
+            free_values(values);
         }
+        return NULL;
     }
     mp->ma_keys = keys;
     mp->ma_values = values;
@@ -1987,13 +1979,13 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
-    struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
+    struct _Py_dict_state *state = get_dict_state();
     // new_dict() must not be called after _PyDict_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
-        state->free_list[state->numfree++] = mp;
+    if (Py_IS_TYPE(mp, &PyDict_Type)) {
+        _PyObject_GC_Recycle(mp, &PyDict_Type);
     }
     else {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
