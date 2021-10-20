@@ -3218,7 +3218,7 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
 /* Calculate C(n, k) for n in the 63-bit range. */
 static PyObject *
-comb_small(unsigned long long n, unsigned long long k)
+perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
 {
     static const unsigned long long fast_comb_limits[] = {
 #if SIZEOF_LONG_LONG >= 8
@@ -3231,6 +3231,15 @@ comb_small(unsigned long long n, unsigned long long k)
         49, 42, 37, 34, 33, 31, 31, 30,  // 8-15
 #endif
     };
+    static const unsigned long long fast_perm_limits[] = {
+#if SIZEOF_LONG_LONG >= 8
+        0, ULLONG_MAX, 4294967296ULL, 2642246, 65537, 7133, 1627, 568,  // 0-7
+        259, 142, 88, 61, 45, 36, 30,  // 8-14
+#elif SIZEOF_LONG_LONG >= 4
+        0, ULLONG_MAX, 65536, 1626, 257, 86, 42, 26,  // 0-7
+        19,  // 8
+#endif
+    };
 
     if (k == 0) {
         return PyLong_FromLong(1);
@@ -3238,13 +3247,24 @@ comb_small(unsigned long long n, unsigned long long k)
 
     /* For small enough n and k the result fits in the 64-bit range and can
      * be calculated without allocating intermediate PyLong objects. */
-    if (k < Py_ARRAY_LENGTH(fast_comb_limits)
-        && n <= fast_comb_limits[k])
+    if (iscomb
+        ? (k < Py_ARRAY_LENGTH(fast_comb_limits)
+           && n <= fast_comb_limits[k])
+        : (k < Py_ARRAY_LENGTH(fast_perm_limits)
+            && n <= fast_perm_limits[k]))
     {
         unsigned long long result = n;
-        for (unsigned long long i = 1; i < k;) {
-            result *= --n;
-            result /= ++i;
+        if (iscomb) {
+            for (unsigned long long i = 1; i < k;) {
+                result *= --n;
+                result /= ++i;
+            }
+        }
+        else {
+            for (unsigned long long i = 1; i < k;) {
+                result *= --n;
+                ++i;
+            }
         }
         return PyLong_FromUnsignedLongLong(result);
     }
@@ -3253,18 +3273,18 @@ comb_small(unsigned long long n, unsigned long long k)
     /* C(n, k) = C(n, j) * C(n-j, k-j) // C(k, j) */
     unsigned long long j = k / 2;
     PyObject *a, *b;
-    a = comb_small(n, j);
+    a = perm_comb_small(n, j, iscomb);
     if (a == NULL) {
         return NULL;
     }
-    b = comb_small(n - j, k - j);
+    b = perm_comb_small(n - j, k - j, iscomb);
     if (b == NULL) {
         goto error;
     }
     Py_SETREF(a, PyNumber_Multiply(a, b));
     Py_DECREF(b);
-    if (a != NULL) {
-        b = comb_small(k, j);
+    if (iscomb && a != NULL) {
+        b = perm_comb_small(k, j, 1);
         if (b == NULL) {
             goto error;
         }
@@ -3318,7 +3338,7 @@ perm_comb(PyObject *n, unsigned long long k, int iscomb)
     Py_SETREF(a, PyNumber_Multiply(a, b));
     Py_DECREF(b);
     if (iscomb && a != NULL) {
-        b = comb_small(k, j);
+        b = perm_comb_small(k, j, 1);
         if (b == NULL) {
             goto error;
         }
@@ -3357,7 +3377,7 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
 {
     PyObject *result = NULL;
     int overflow, cmp;
-    long long ki;
+    long long ki, ni;
 
     if (k == Py_None) {
         return math_factorial(module, n);
@@ -3403,7 +3423,16 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(ki >= 0);
 
-    result = perm_comb(n, (unsigned long long)ki, 0);
+    ni = PyLong_AsLongLongAndOverflow(n, &overflow);
+    assert(overflow >= 0 && !PyErr_Occurred());
+    if (!overflow && ki > 1) {
+        assert(ni >= 0);
+        result = perm_comb_small((unsigned long long)ni,
+                                 (unsigned long long)ki, 0);
+    }
+    else {
+        result = perm_comb(n, (unsigned long long)ki, 0);
+    }
 
 done:
     Py_DECREF(n);
@@ -3480,8 +3509,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         assert(ki >= 0);
         ki = Py_MIN(ki, ni - ki);
         if (ki > 1) {
-            result = comb_small((unsigned long long)ni,
-                                (unsigned long long)ki);
+            result = perm_comb_small((unsigned long long)ni,
+                                     (unsigned long long)ki, 1);
             goto done;
         }
         /* For k == 1 just return the original n in perm_comb(). */
