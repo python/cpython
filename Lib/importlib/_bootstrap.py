@@ -495,9 +495,6 @@ ProxyModule = None
 def _setup_proxy():
     global ProxyModule
     class ProxyModule(type(sys)):
-        def __repr__(self):
-            return f'Verbose {self.__name__}'
-
         def __setattr__(self, name, value):
             if (spec := object.__getattribute__(self, '__spec__')) is None:
                 object.__setattr__(self, name, value)
