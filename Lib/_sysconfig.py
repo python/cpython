@@ -189,25 +189,25 @@ def __getattr__(name):
             if os.name == 'nt':
                 value = _fix_pcbuild(value)
         case '_SRCDIR':
-            if os.name == 'posix' and not _MODULE._PYTHON_BUILD:
-                # srcdir is not meaningful since the installation is
-                # spread about the filesystem.  We choose the
-                # directory containing the Makefile since we know it
-                # exists.
-                value = os.path.dirname(get_makefile_filename())
-            else:
-                if 'srcdir' in _MODULE._BUILD_TIME_VARS:
-                    value = _MODULE._BUILD_TIME_VARS['srcdir']
-                else:
-                    value = _MODULE._PROJECT_BASE
-
-                if os.name == 'posix' and _MODULE._PYTHON_BUILD:
+            if os.name == 'posix':
+                if _MODULE._PYTHON_BUILD:
                     # If srcdir is a relative path (typically '.' or '..')
                     # then it should be interpreted relative to the directory
                     # containing Makefile.
+                    if 'srcdir' in _MODULE._BUILD_TIME_VARS:
+                        value = _MODULE._BUILD_TIME_VARS['srcdir']
+                    else:
+                        value = _MODULE._PROJECT_BASE
                     base = os.path.dirname(get_makefile_filename())
                     value = os.path.join(base, value)
-
+                else:
+                    # srcdir is not meaningful since the installation is
+                    # spread about the filesystem.  We choose the
+                    # directory containing the Makefile since we know it
+                    # exists.
+                    value = os.path.dirname(get_makefile_filename())
+            else:
+                value = _MODULE._PROJECT_BASE
             value = _safe_realpath(value)
         case '_SYS_HOME':
             value = getattr(sys, '_home', None)
