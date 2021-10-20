@@ -144,22 +144,14 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-    struct _Py_list_state *state = get_list_state();
-    PyListObject *op;
 #ifdef Py_DEBUG
+    struct _Py_list_state *state = get_list_state();
     // PyList_New() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree) {
-        state->numfree--;
-        op = state->free_list[state->numfree];
-        _Py_NewReference((PyObject *)op);
-    }
-    else {
-        op = PyObject_GC_New(PyListObject, &PyList_Type);
-        if (op == NULL) {
-            return NULL;
-        }
+    PyListObject *op = PyObject_GC_New(PyListObject, &PyList_Type);
+    if (op == NULL) {
+        return NULL;
     }
     if (size <= 0) {
         op->ob_item = NULL;
@@ -344,8 +336,8 @@ list_dealloc(PyListObject *op)
         }
         PyMem_Free(op->ob_item);
     }
-    struct _Py_list_state *state = get_list_state();
 #ifdef Py_DEBUG
+    struct _Py_list_state *state = get_list_state();
     // list_dealloc() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
 #endif
