@@ -184,7 +184,7 @@ def __getattr__(name):
 
                 if (os.name == 'nt' and
                     value.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-                    value = _safe_realpath(os.path.join(_PROJECT_BASE, os.path.pardir, os.path.pardir))
+                    value = _safe_realpath(os.path.join(value, os.path.pardir, os.path.pardir))
 
             if os.name == 'nt':
                 value = _fix_pcbuild(value)
