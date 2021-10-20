@@ -2903,6 +2903,12 @@ class ForwardRefTests(BaseTestCase):
         self.assertNotEqual(gth(Loop, globals())['attr'], Final[int])
         self.assertNotEqual(gth(Loop, globals())['attr'], Final)
 
+    def test_or(self):
+        X = ForwardRef('X')
+        # __or__/__ror__ itself
+        self.assertEqual(X | "x", Union[X, "x"])
+        self.assertEqual("x" | X, Union["x", X])
+
 
 class OverloadTests(BaseTestCase):
 

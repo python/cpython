@@ -1173,6 +1173,26 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.9
 
 
+.. c:function:: void PyThreadState_EnterTracing(PyThreadState *tstate)
+
+   Suspend tracing and profiling in the Python thread state *tstate*.
+
+   Resume them using the :c:func:`PyThreadState_LeaveTracing` function.
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: void PyThreadState_LeaveTracing(PyThreadState *tstate)
+
+   Resume tracing and profiling in the Python thread state *tstate* suspended
+   by the :c:func:`PyThreadState_EnterTracing` function.
+
+   See also :c:func:`PyEval_SetTrace` and :c:func:`PyEval_SetProfile`
+   functions.
+
+   .. versionadded:: 3.11
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -1623,6 +1643,8 @@ Python-level trace functions in previous versions.
    profile function is called for all monitored events except :const:`PyTrace_LINE`
    :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
 
+   See also the :func:`sys.setprofile` function.
+
    The caller must hold the :term:`GIL`.
 
 
@@ -1634,6 +1656,8 @@ Python-level trace functions in previous versions.
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
    will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
    :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+
+   See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
 

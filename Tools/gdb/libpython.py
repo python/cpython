@@ -445,10 +445,11 @@ def _write_instance_repr(out, visited, name, pyop_attrdict, address):
     out.write(name)
 
     # Write dictionary of instance attributes:
-    if isinstance(pyop_attrdict, PyDictObjectPtr):
+    if isinstance(pyop_attrdict, (PyKeysValuesPair, PyDictObjectPtr)):
         out.write('(')
         first = True
-        for pyop_arg, pyop_val in pyop_attrdict.iteritems():
+        items = pyop_attrdict.iteritems()
+        for pyop_arg, pyop_val in items:
             if not first:
                 out.write(', ')
             first = False
@@ -520,6 +521,25 @@ class HeapTypeObjectPtr(PyObjectPtr):
         # Not found, or some kind of error:
         return None
 
+    def get_keys_values(self):
+        typeobj = self.type()
+        values_offset = int_from_int(typeobj.field('tp_inline_values_offset'))
+        if values_offset == 0:
+            return None
+        charptr = self._gdbval.cast(_type_char_ptr()) + values_offset
+        PyDictValuesPtrPtr = gdb.lookup_type("PyDictValues").pointer().pointer()
+        valuesptr = charptr.cast(PyDictValuesPtrPtr)
+        values = valuesptr.dereference()
+        if long(values) == 0:
+            return None
+        values = values['values']
+        return PyKeysValuesPair(self.get_cached_keys(), values)
+
+    def get_cached_keys(self):
+        typeobj = self.type()
+        HeapTypePtr = gdb.lookup_type("PyHeapTypeObject").pointer()
+        return typeobj._gdbval.cast(HeapTypePtr)['ht_cached_keys']
+
     def proxyval(self, visited):
         '''
         Support for classes.
@@ -533,7 +553,10 @@ class HeapTypeObjectPtr(PyObjectPtr):
         visited.add(self.as_address())
 
         pyop_attr_dict = self.get_attr_dict()
-        if pyop_attr_dict:
+        keys_values = self.get_keys_values()
+        if keys_values:
+            attr_dict = keys_values.proxyval(visited)
+        elif pyop_attr_dict:
             attr_dict = pyop_attr_dict.proxyval(visited)
         else:
             attr_dict = {}
@@ -549,9 +572,11 @@ class HeapTypeObjectPtr(PyObjectPtr):
             return
         visited.add(self.as_address())
 
-        pyop_attrdict = self.get_attr_dict()
+        pyop_attrs = self.get_keys_values()
+        if not pyop_attrs:
+            pyop_attrs = self.get_attr_dict()
         _write_instance_repr(out, visited,
-                             self.safe_tp_name(), pyop_attrdict, self.as_address())
+                             self.safe_tp_name(), pyop_attrs, self.as_address())
 
 class ProxyException(Exception):
     def __init__(self, tp_name, args):
@@ -673,6 +698,32 @@ class PyCodeObjectPtr(PyObjectPtr):
         assert False, "Unreachable"
 
 
+def items_from_keys_and_values(keys, values):
+    entries, nentries = PyDictObjectPtr._get_entries(keys)
+    for i in safe_range(nentries):
+        ep = entries[i]
+        pyop_value = PyObjectPtr.from_pyobject_ptr(values[i])
+        if not pyop_value.is_null():
+            pyop_key = PyObjectPtr.from_pyobject_ptr(ep['me_key'])
+            yield (pyop_key, pyop_value)
+
+class PyKeysValuesPair:
+
+    def __init__(self, keys, values):
+        self.keys = keys
+        self.values = values
+
+    def iteritems(self):
+        return items_from_keys_and_values(self.keys, self.values)
+
+    def proxyval(self, visited):
+        result = {}
+        for pyop_key, pyop_value in self.iteritems():
+            proxy_key = pyop_key.proxyval(visited)
+            proxy_value = pyop_value.proxyval(visited)
+            result[proxy_key] = proxy_value
+        return result
+
 class PyDictObjectPtr(PyObjectPtr):
     """
     Class wrapping a gdb.Value that's a PyDictObject* i.e. a dict instance
@@ -690,13 +741,14 @@ class PyDictObjectPtr(PyObjectPtr):
         has_values = long(values)
         if has_values:
             values = values['values']
+        if has_values:
+            for item in items_from_keys_and_values(keys, values):
+                yield item
+            return
         entries, nentries = self._get_entries(keys)
         for i in safe_range(nentries):
             ep = entries[i]
-            if has_values:
-                pyop_value = PyObjectPtr.from_pyobject_ptr(values[i])
-            else:
-                pyop_value = PyObjectPtr.from_pyobject_ptr(ep['me_value'])
+            pyop_value = PyObjectPtr.from_pyobject_ptr(ep['me_value'])
             if not pyop_value.is_null():
                 pyop_key = PyObjectPtr.from_pyobject_ptr(ep['me_key'])
                 yield (pyop_key, pyop_value)
@@ -732,7 +784,8 @@ class PyDictObjectPtr(PyObjectPtr):
             pyop_value.write_repr(out, visited)
         out.write('}')
 
-    def _get_entries(self, keys):
+    @staticmethod
+    def _get_entries(keys):
         dk_nentries = int(keys['dk_nentries'])
         dk_size = 1<<int(keys['dk_log2_size'])
         try:
@@ -1958,7 +2011,7 @@ def move_in_stack(move_up):
         print('Unable to find an older python frame')
     else:
         print('Unable to find a newer python frame')
-    
+
 
 class PyUp(gdb.Command):
     'Select and print all python stack frame in the same eval loop starting from the one that called this one (if any)'

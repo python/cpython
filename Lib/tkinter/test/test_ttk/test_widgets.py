@@ -4,7 +4,7 @@ from tkinter import ttk, TclError
 from test.support import requires, gc_collect
 import sys
 
-from tkinter.test.test_ttk.test_functions import MockTclObj
+from test.test_ttk_textonly import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
@@ -169,10 +169,13 @@ class AbstractLabelTest(AbstractWidgetTest):
                 errmsg='image "spam" doesn\'t exist')
 
     def test_configure_compound(self):
+        options = 'none text image center top bottom left right'.split()
+        errmsg = (
+            'bad compound "{}": must be'
+            f' {", ".join(options[:-1])}, or {options[-1]}'
+            )
         widget = self.create()
-        self.checkEnumParam(widget, 'compound',
-                'none', 'text', 'image', 'center',
-                'top', 'bottom', 'left', 'right')
+        self.checkEnumParam(widget, 'compound', *options, errmsg=errmsg)
 
     def test_configure_state(self):
         widget = self.create()

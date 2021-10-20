@@ -18,28 +18,31 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "datetime.h"
-#include "marshal.h"
+#include "frameobject.h"          // PyFrame_Check()
+#include "datetime.h"             // PyDateTimeAPI
+#include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
-#include <float.h>
+#include <float.h>                // FLT_MAX
 #include <signal.h>
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>         /* struct timeval */
+#  include <winsock2.h>           // struct timeval
 #endif
 
 #ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>           /* For W_STOPCODE */
+#include <sys/wait.h>             // W_STOPCODE
 #endif
 
 #ifdef Py_BUILD_CORE
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+
+// Forward declarations
 static struct PyModuleDef _testcapimodule;
 static PyType_Spec HeapTypeNameType_Spec;
-
 static PyObject *TestError;     /* set to exception object in init */
+
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
 
@@ -1167,8 +1170,8 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "int") == 0);
     Py_DECREF(tp_qualname);
 
-    tp_qualname = PyType_GetQualName(&_PyNamespace_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "SimpleNamespace") == 0);
+    tp_qualname = PyType_GetQualName(&PyODict_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "OrderedDict") == 0);
     Py_DECREF(tp_qualname);
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
@@ -2866,7 +2869,7 @@ _make_call(void *callable)
     PyObject *rc;
     int success;
     PyGILState_STATE s = PyGILState_Ensure();
-    rc = _PyObject_CallNoArg((PyObject *)callable);
+    rc = PyObject_CallNoArgs((PyObject *)callable);
     success = (rc != NULL);
     Py_XDECREF(rc);
     PyGILState_Release(s);
@@ -2937,7 +2940,7 @@ static int _pending_callback(void *arg)
 {
     /* we assume the argument is callable object to which we own a reference */
     PyObject *callable = (PyObject *)arg;
-    PyObject *r = _PyObject_CallNoArg(callable);
+    PyObject *r = PyObject_CallNoArgs(callable);
     Py_DECREF(callable);
     Py_XDECREF(r);
     return r != NULL ? 0 : -1;
@@ -3729,7 +3732,7 @@ slot_tp_del(PyObject *self)
     /* Execute __del__ method, if any. */
     del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
     if (del != NULL) {
-        res = _PyObject_CallNoArg(del);
+        res = PyObject_CallNoArgs(del);
         if (res == NULL)
             PyErr_WriteUnraisable(del);
         else
@@ -4358,7 +4361,7 @@ temporary_c_thread(void *data)
     /* Allocate a Python thread state for this thread */
     state = PyGILState_Ensure();
 
-    res = _PyObject_CallNoArg(test_c_thread->callback);
+    res = PyObject_CallNoArgs(test_c_thread->callback);
     Py_CLEAR(test_c_thread->callback);
 
     if (res == NULL) {
@@ -4893,7 +4896,7 @@ check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 #ifdef _Py_ADDRESS_SANITIZER
     Py_RETURN_NONE;
 #else
-    PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (op == NULL) {
         return NULL;
     }
@@ -5271,7 +5274,7 @@ bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         return NULL;
     }
 
-    PyObject *res = _PyObject_CallNoArg(cls);
+    PyObject *res = PyObject_CallNoArgs(cls);
     if (res == NULL) {
         return NULL;
     }
@@ -5674,6 +5677,57 @@ type_get_version(PyObject *self, PyObject *type)
 }
 
 
+// Test PyThreadState C API
+static PyObject *
+test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // PyThreadState_Get()
+    PyThreadState *tstate = PyThreadState_Get();
+    assert(tstate != NULL);
+
+    // PyThreadState_GET()
+    PyThreadState *tstate2 = PyThreadState_Get();
+    assert(tstate2 == tstate);
+
+    // private _PyThreadState_UncheckedGet()
+    PyThreadState *tstate3 = _PyThreadState_UncheckedGet();
+    assert(tstate3 == tstate);
+
+    // PyThreadState_EnterTracing(), PyThreadState_LeaveTracing()
+    PyThreadState_EnterTracing(tstate);
+    PyThreadState_LeaveTracing(tstate);
+
+    // PyThreadState_GetDict(): no tstate argument
+    PyObject *dict = PyThreadState_GetDict();
+    // PyThreadState_GetDict() API can return NULL if PyDict_New() fails,
+    // but it should not occur in practice.
+    assert(dict != NULL);
+    assert(PyDict_Check(dict));
+    // dict is a borrowed reference
+
+    // private _PyThreadState_GetDict()
+    PyObject *dict2 = _PyThreadState_GetDict(tstate);
+    assert(dict2 == dict);
+    // dict2 is a borrowed reference
+
+    // PyThreadState_GetInterpreter()
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+    assert(interp != NULL);
+
+    // PyThreadState_GetFrame()
+    PyFrameObject*frame = PyThreadState_GetFrame(tstate);
+    assert(frame != NULL);
+    assert(PyFrame_Check(frame));
+    Py_DECREF(frame);
+
+    // PyThreadState_GetID()
+    uint64_t id = PyThreadState_GetID(tstate);
+    assert(id >= 1);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
@@ -5957,6 +6011,7 @@ static PyMethodDef TestMethods[] = {
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

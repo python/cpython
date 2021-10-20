@@ -1,10 +1,14 @@
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
 #include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_floatobject.h"   // _PyFloat_Pack8()
 
 #include <ffi.h>
-#ifdef MS_WIN32
-#include <windows.h>
-#endif
 #include "ctypes.h"
 
 
@@ -61,7 +65,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
+    self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);

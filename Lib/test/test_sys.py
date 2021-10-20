@@ -1409,7 +1409,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
+        fmt = 'P2nPI13Pl4Pn9Pn12PIPP'
         s = vsize(fmt)
         check(int, s)
         # class
@@ -1422,15 +1422,15 @@ class SizeofTest(unittest.TestCase):
                   '5P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + 5*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 32 + 21*calcsize("n2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
+        check(newstyleclass().__dict__, size('nQ2P') + 15*self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + 10*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 32 + 21*calcsize("n2P"))
         # dict with shared keys
-        check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
+        check(newstyleclass().__dict__, size('nQ2P') + 13*self.P)
         # unicode
         # each tuple contains a string and its expected character size
         # don't put any static strings here, as they may contain

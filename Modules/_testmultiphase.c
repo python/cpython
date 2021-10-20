@@ -3,6 +3,7 @@
  */
 
 #include "Python.h"
+#include "pycore_namespace.h"     // _PyNamespace_New()
 
 /* State for testing module state access from methods */
 

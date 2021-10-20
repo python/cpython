@@ -1,4 +1,5 @@
 /* Cell object interface */
+
 #ifndef Py_LIMITED_API
 #ifndef Py_CELLOBJECT_H
 #define Py_CELLOBJECT_H
@@ -8,7 +9,8 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *ob_ref;       /* Content of the cell or NULL when empty */
+    /* Content of the cell or NULL when empty */
+    PyObject *ob_ref;
 } PyCellObject;
 
 PyAPI_DATA(PyTypeObject) PyCell_Type;

@@ -1,0 +1,3 @@
+Fixed :func:`email.utils.parsedate_tz` crashing with
+:exc:`UnboundLocalError` on certain invalid input instead of returning
+``None``. Patch by Ben Hoyt.
