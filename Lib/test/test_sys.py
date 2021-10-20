@@ -826,15 +826,17 @@ class SysModuleTest(unittest.TestCase):
         args = ['-c', 'import sys; sys._debugmallocstats()']
         ret, out, err = assert_python_ok(*args)
 
-        # output of sys._debugmallocstats() depends on configure flags
-        with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
-        with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
-        if with_freelists:
-            self.assertIn(b"free PyDictObjects", err)
-        if with_pymalloc:
-            self.assertIn(b'Small block threshold', err)
-        if not with_freelists and not with_pymalloc:
-            self.assertFalse(err)
+        # Output of sys._debugmallocstats() depends on configure flags.
+        # The sysconfig vars are not available on Windows.
+        if sys.platform != "win32":
+            with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
+            with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
+            if with_freelists:
+                self.assertIn(b"free PyDictObjects", err)
+            if with_pymalloc:
+                self.assertIn(b'Small block threshold', err)
+            if not with_freelists and not with_pymalloc:
+                self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
