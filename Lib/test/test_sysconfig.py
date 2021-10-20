@@ -16,7 +16,7 @@ import _sysconfig
 import sysconfig
 from _sysconfig import _get_preferred_schemes_default, _expand_vars
 from sysconfig import (get_paths, get_platform, get_config_vars,
-                       get_path, get_path_names, _INSTALL_SCHEMES,
+                       get_path, get_path_names, _INSTALL_SCHEMES, _SCHEME_KEYS,
                        get_default_scheme, get_scheme_names, get_config_var,
                        get_preferred_scheme, _main)
 import _osx_support
@@ -112,7 +112,7 @@ class TestSysConfig(unittest.TestCase):
     def test_get_path(self):
         config_vars = get_config_vars()
         for scheme in _INSTALL_SCHEMES:
-            for name in _INSTALL_SCHEMES[scheme]:
+            for name in _SCHEME_KEYS:
                 expected = _INSTALL_SCHEMES[scheme][name].format(**config_vars)
                 self.assertEqual(
                     os.path.normpath(get_path(name, scheme)),
@@ -124,9 +124,7 @@ class TestSysConfig(unittest.TestCase):
 
     @with_test_vendor_config()
     def test_get_preferred_schemes_vendor(self):
-        # force re-load of vendor schemes with the patched sys.modules
         _sysconfig._get_preferred_schemes = None
-        _sysconfig._load_vendor_schemes()
 
         self.assertEqual(get_preferred_scheme('prefix'), 'some_vendor')
 
@@ -280,20 +278,17 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ['nt', 'posix_home', 'posix_prefix']
+        wanted = {'nt', 'posix_home', 'posix_prefix'}
         if HAS_USER_BASE:
-            wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
-        self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
+            wanted |= {'nt_user', 'osx_framework_user', 'posix_user'}
+        self.assertEqual(set(get_scheme_names()), wanted)
 
     @with_test_vendor_config()
     def test_get_scheme_names_vendor(self):
-        # force re-load of vendor schemes with the patched sys.modules
-        _sysconfig._load_vendor_schemes()
-
-        wanted = ['nt', 'posix_home', 'posix_prefix', 'some_vendor']
+        wanted = {'nt', 'posix_home', 'posix_prefix', 'some_vendor'}
         if HAS_USER_BASE:
-            wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
-        self.assertEqual(sysconfig.get_scheme_names(), tuple(sorted(wanted)))
+            wanted |= {'nt_user', 'osx_framework_user', 'posix_user'}
+        self.assertEqual(set(sysconfig.get_scheme_names()), wanted)
 
     @skip_unless_symlink
     def test_symlink(self): # Issue 7880

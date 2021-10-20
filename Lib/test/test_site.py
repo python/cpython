@@ -313,9 +313,8 @@ class HelperFunctionsTests(unittest.TestCase):
 
     @with_test_vendor_config()
     def test_getsitepackages_vendor(self):
-        # force re-load of vendor schemes with the patched sys.modules
+        # force re-load of vendor schemes
         site._VENDOR_SCHEMES = None
-        _sysconfig._load_vendor_schemes()
 
         site.PREFIXES = ['xoxo']
         dirs = site.getsitepackages()

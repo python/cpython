@@ -2108,6 +2108,7 @@ def with_test_vendor_config():
         import _vendor
 
         _vendor.config = test.vendor_config
+        sysconfig._reload_schemes()
 
         yield
 
@@ -2115,3 +2116,4 @@ def with_test_vendor_config():
             _vendor.config = old_config
         else:
             delattr(_vendor, 'config')
+        sysconfig._reload_schemes()

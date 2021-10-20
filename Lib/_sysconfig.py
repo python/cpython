@@ -31,7 +31,7 @@ if os.name == 'nt':
 
 # constants
 
-_ALL_INSTALL_SCHEMES = {
+_BASE_INSTALL_SCHEMES = {
     'posix_prefix': {
         'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
         'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
@@ -64,7 +64,8 @@ _ALL_INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    # userbase schemes
+    }
+_USER_INSTALL_SCHEMES = {
     # NOTE: When modifying "purelib" scheme, update site._get_path() too.
     'nt_user': {
         'stdlib': '{userbase}/Python{py_version_nodot_plat}',
@@ -95,8 +96,6 @@ _ALL_INSTALL_SCHEMES = {
         },
     }
 
-_USER_BASE_SCHEME_NAMES = ('nt_user', 'posix_user', 'osx_framework_user')
-
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
@@ -107,7 +106,6 @@ _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
-
 
 _CHEAP_SCHEME_CONFIG_VARS = {
     'prefix': _PREFIX,
@@ -167,6 +165,9 @@ def is_python_build(check_home=False):
 
 def __getattr__(name):
     match name:
+        case '_BUILD_TIME_VARS':
+            _sysconfigdata = __import__(_get_sysconfigdata_name(), globals(), locals(), ['build_time_vars'], 0)
+            value = _sysconfigdata.build_time_vars
         case '_HAS_USER_BASE':
             value = (_getuserbase() is not None)
         case '_PROJECT_BASE':
@@ -183,10 +184,31 @@ def __getattr__(name):
 
                 if (os.name == 'nt' and
                     value.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-                    value = _safe_realpath(os.path.join(value, os.path.pardir, os.path.pardir))
+                    value = _safe_realpath(os.path.join(_PROJECT_BASE, os.path.pardir, os.path.pardir))
 
             if os.name == 'nt':
                 value = _fix_pcbuild(value)
+        case '_SRCDIR':
+            if os.name == 'posix' and not _MODULE._PYTHON_BUILD:
+                # srcdir is not meaningful since the installation is
+                # spread about the filesystem.  We choose the
+                # directory containing the Makefile since we know it
+                # exists.
+                value = os.path.dirname(get_makefile_filename())
+            else:
+                if 'srcdir' in _MODULE._BUILD_TIME_VARS:
+                    value = _MODULE._BUILD_TIME_VARS['srcdir']
+                else:
+                    value = _MODULE._PROJECT_BASE
+
+                if os.name == 'posix' and _MODULE._PYTHON_BUILD:
+                    # If srcdir is a relative path (typically '.' or '..')
+                    # then it should be interpreted relative to the directory
+                    # containing Makefile.
+                    base = os.path.dirname(get_makefile_filename())
+                    value = os.path.join(base, value)
+
+            value = _safe_realpath(value)
         case '_SYS_HOME':
             value = getattr(sys, '_home', None)
             if os.name == 'nt':
@@ -208,23 +230,22 @@ def __getattr__(name):
 def _get_raw_scheme_paths(scheme):
     # lazy loading of install schemes -- only run the code paths we need to
 
-    # check our schemes
-    if scheme in _ALL_INSTALL_SCHEMES:
-        if scheme in _USER_BASE_SCHEME_NAMES and not _MODULE._HAS_USER_BASE:
-            raise KeyError(repr(scheme))
-
+    # check base schemes
+    if scheme in _BASE_INSTALL_SCHEMES:
         if scheme in ('posix_prefix', 'posix_home') and _MODULE._PYTHON_BUILD:
             # On POSIX-y platforms, Python will:
             # - Build from .h files in 'headers' (which is only added to the
             #   scheme when building CPython)
             # - Install .h files to 'include'
-            scheme = _ALL_INSTALL_SCHEMES[scheme]
+            scheme = _BASE_INSTALL_SCHEMES[scheme]
             scheme['headers'] = scheme['include']
             scheme['include'] = '{srcdir}/Include'
             scheme['platinclude'] = '{projectbase}/.'
             return scheme
+        return _BASE_INSTALL_SCHEMES[scheme]
 
-        return _ALL_INSTALL_SCHEMES[scheme]
+    if scheme in _USER_INSTALL_SCHEMES and _MODULE._HAS_USER_BASE:
+        return _USER_INSTALL_SCHEMES[scheme]
 
     # check vendor schemes
     try:
@@ -234,6 +255,28 @@ def _get_raw_scheme_paths(scheme):
     except (ModuleNotFoundError, AttributeError):
         pass
     return vendor_schemes[scheme]
+
+
+def _get_sysconfigdata_name():
+    multiarch = getattr(sys.implementation, '_multiarch', '')
+    return os.environ.get(
+        '_PYTHON_SYSCONFIGDATA_NAME',
+        f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
+    )
+
+
+def get_makefile_filename():
+    """Return the path of the Makefile."""
+    if _MODULE._PYTHON_BUILD:
+        return os.path.join(_MODULE._SYS_HOME or _MODULE._PROJECT_BASE, "Makefile")
+    if hasattr(sys, 'abiflags'):
+        config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
+    else:
+        config_dir_name = 'config'
+    if hasattr(sys.implementation, '_multiarch'):
+        config_dir_name += f'-{sys.implementation._multiarch}'
+    stdlib = _get_paths(get_default_scheme())['stdlib']
+    return os.path.join(stdlib, config_dir_name, 'Makefile')
 
 
 def _subst_vars(s, local_vars):
@@ -256,9 +299,11 @@ def _expand_vars(scheme, vars):
         if os.name in ('posix', 'nt'):
             value = os.path.expanduser(value)
 
-        # this is an expensive and uncommon config var, let's only load it if we need to
+        # these are an expensive and uncommon config vars, let's only load them if we need to
         if '{projectbase}' in value:
             vars['projectbase'] = _MODULE._PROJECT_BASE
+        if '{srcdir}' in value:
+            vars['srcdir'] = _MODULE._SRCDIR
 
         res[key] = os.path.normpath(_subst_vars(value, vars))
     return res
@@ -296,8 +341,8 @@ def get_preferred_scheme(key):
 
     scheme = _get_preferred_schemes()[key]
 
-    # check out schemes
-    if scheme in _ALL_INSTALL_SCHEMES:
+    # check our schemes
+    if scheme in _BASE_INSTALL_SCHEMES or scheme in _USER_INSTALL_SCHEMES:
         return scheme
 
     # check vendor schemes

@@ -7,11 +7,11 @@ This module is split into _sysconfig, with the bits that are required at startup
 import os
 import sys
 from _sysconfig import (
-    _get_paths, _getuserbase, _safe_realpath,
-    get_default_scheme, get_preferred_scheme, is_python_build,
-    _HAS_USER_BASE, _ALL_INSTALL_SCHEMES, _USER_BASE_SCHEME_NAMES,
-    _PROJECT_BASE, _PYTHON_BUILD, _PY_VERSION_SHORT, _PY_VERSION_SHORT_NO_DOT,
-    _SCHEME_CONFIG_VARS, _SCHEME_KEYS, _SYS_HOME,
+    _get_paths, _getuserbase, _get_sysconfigdata_name, _safe_realpath,
+    get_default_scheme, get_preferred_scheme, get_makefile_filename,
+    is_python_build, _HAS_USER_BASE, _BASE_INSTALL_SCHEMES,
+    _USER_INSTALL_SCHEMES, _PROJECT_BASE, _PYTHON_BUILD, _PY_VERSION_SHORT,
+    _PY_VERSION_SHORT_NO_DOT, _SCHEME_CONFIG_VARS, _SCHEME_KEYS, _SYS_HOME,
 )
 
 __all__ = [
@@ -35,24 +35,28 @@ _ALWAYS_STR = {
     'MACOSX_DEPLOYMENT_TARGET',
 }
 
-_INSTALL_SCHEMES = {
-    key: value
-    for key, value in _ALL_INSTALL_SCHEMES.items()
-    if key not in _USER_BASE_SCHEME_NAMES
-}
+_INSTALL_SCHEMES = None
 
 
-def _load_vendor_schemes():
+def _reload_schemes():
     global _INSTALL_SCHEMES
+
+    # our schemes
+    _INSTALL_SCHEMES = _BASE_INSTALL_SCHEMES.copy()
+    if _HAS_USER_BASE:
+        _INSTALL_SCHEMES |= _USER_INSTALL_SCHEMES
+
+    # vendor schemes
     try:
         import _vendor.config
 
-        _INSTALL_SCHEMES = _INSTALL_SCHEMES | _vendor.config.EXTRA_INSTALL_SCHEMES
+        # make sure we do not let the vendor install schemes override ours
+        _INSTALL_SCHEMES = _vendor.config.EXTRA_INSTALL_SCHEMES | _INSTALL_SCHEMES
     except (ModuleNotFoundError, AttributeError):
         pass
 
 
-_load_vendor_schemes()
+_reload_schemes()
 
 
 _CONFIG_VARS = None
@@ -190,27 +194,6 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
     # save the results in the global dictionary
     vars.update(done)
     return vars
-
-
-def get_makefile_filename():
-    """Return the path of the Makefile."""
-    if _PYTHON_BUILD:
-        return os.path.join(_SYS_HOME or _PROJECT_BASE, "Makefile")
-    if hasattr(sys, 'abiflags'):
-        config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
-    else:
-        config_dir_name = 'config'
-    if hasattr(sys.implementation, '_multiarch'):
-        config_dir_name += f'-{sys.implementation._multiarch}'
-    return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
-
-
-def _get_sysconfigdata_name():
-    multiarch = getattr(sys.implementation, '_multiarch', '')
-    return os.environ.get(
-        '_PYTHON_SYSCONFIGDATA_NAME',
-        f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
-    )
 
 
 def _generate_posix_vars():
