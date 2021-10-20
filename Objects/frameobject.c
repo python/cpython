@@ -643,14 +643,7 @@ frame_dealloc(PyFrameObject *f)
     // frame_dealloc() must not be called after _PyFrame_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < PyFrame_MAXFREELIST) {
-        ++state->numfree;
-        f->f_back = state->free_list;
-        state->free_list = f;
-    }
-    else {
-        PyObject_GC_Del(f);
-    }
+    _PyObject_GC_Recycle((void*)f, &PyFrame_Type);
 
     Py_XDECREF(co);
     Py_TRASHCAN_END;
@@ -801,31 +794,16 @@ static inline PyFrameObject*
 frame_alloc(InterpreterFrame *frame, int owns)
 {
     PyFrameObject *f;
-    struct _Py_frame_state *state = get_frame_state();
-    if (state->free_list == NULL)
-    {
-        f = PyObject_GC_New(PyFrameObject, &PyFrame_Type);
-        if (f == NULL) {
-            if (owns) {
-                Py_XDECREF(frame->f_code);
-                Py_XDECREF(frame->f_builtins);
-                Py_XDECREF(frame->f_globals);
-                Py_XDECREF(frame->f_locals);
-                PyMem_Free(frame);
-            }
-            return NULL;
+    f = PyObject_GC_New(PyFrameObject, &PyFrame_Type);
+    if (f == NULL) {
+        if (owns) {
+            Py_XDECREF(frame->f_code);
+            Py_XDECREF(frame->f_builtins);
+            Py_XDECREF(frame->f_globals);
+            Py_XDECREF(frame->f_locals);
+            PyMem_Free(frame);
         }
-    }
-    else {
-#ifdef Py_DEBUG
-        // frame_alloc() must not be called after _PyFrame_Fini()
-        assert(state->numfree != -1);
-#endif
-        assert(state->numfree > 0);
-        --state->numfree;
-        f = state->free_list;
-        state->free_list = state->free_list->f_back;
-        _Py_NewReference((PyObject *)f);
+        return NULL;
     }
     f->f_frame = frame;
     f->f_own_locals_memory = owns;
@@ -1069,6 +1047,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 void
 _PyFrame_ClearFreeList(PyInterpreterState *interp)
 {
+    // TODO: Remove frame freelist
     struct _Py_frame_state *state = &interp->frame;
     while (state->free_list != NULL) {
         PyFrameObject *f = state->free_list;
