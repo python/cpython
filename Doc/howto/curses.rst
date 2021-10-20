@@ -55,7 +55,7 @@ everything, though.
 
 The Windows version of Python doesn't include the :mod:`curses`
 module.  A ported version called `UniCurses
-<https://pypi.org/project/UniCurses>`_ is available.
+<https://pypi.org/project/Uni-Curses/>`_ is available.
 
 
 The Python curses module
