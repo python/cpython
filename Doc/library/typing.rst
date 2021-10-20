@@ -975,16 +975,16 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       For example::
 
-         def is_str_list(val: List[object]) -> TypeGuard[List[str]]:
+         def is_str_list(val: list[object]) -> TypeGuard[list[str]]:
              '''Determines whether all objects in the list are strings'''
              return all(isinstance(x, str) for x in val)
 
-         def func1(val: List[object]):
+         def func1(val: list[object]):
              if is_str_list(val):
-                 # Type of ``val`` is narrowed to ``List[str]``.
+                 # Type of ``val`` is narrowed to ``list[str]``.
                  print(" ".join(val))
              else:
-                 # Type of ``val`` remains as ``List[object]``.
+                 # Type of ``val`` remains as ``list[object]``.
                  print("Not a list of strings!")
 
    If ``is_str_list`` is a class or instance method, then the type in
@@ -999,8 +999,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
       wider form. The main reason is to allow for things like
-      narrowing ``List[object]`` to ``List[str]`` even though the latter
-      is not a subtype of the former, since ``List`` is invariant.
+      narrowing ``list[object]`` to ``list[str]`` even though the latter
+      is not a subtype of the former, since ``list`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
    ``TypeGuard`` also works with type variables.  For more information, see
@@ -1507,8 +1507,8 @@ Other concrete types
    :func:`open`.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.io`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.io`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
 .. class:: Pattern
            Match
@@ -1521,8 +1521,8 @@ Other concrete types
    ``Match[bytes]``.
 
    .. deprecated-removed:: 3.8 3.12
-      These types are also in the ``typing.re`` namespace, which was
-      never supported by type checkers and will be removed.
+      The ``typing.re`` namespace is deprecated and will be removed.
+      These types should be directly imported from ``typing`` instead.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
@@ -2065,8 +2065,8 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``list["SomeClass"]`` is implicitly transformed into
+   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
    .. note::

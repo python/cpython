@@ -880,7 +880,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_11_consts_3_consts = {
@@ -890,11 +890,10 @@ toplevel_consts_11_consts_3_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_11_consts_3_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -1251,7 +1250,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_11_consts_4_consts = {
@@ -1261,12 +1260,11 @@ toplevel_consts_11_consts_4_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_11_consts_4_consts_0._ascii.ob_base,
             Py_False,
-            Py_None,
         },
     },
 };
@@ -1743,7 +1741,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[5];
+            PyObject *ob_item[4];
         }_object;
     }
 toplevel_consts_12_consts = {
@@ -1753,14 +1751,13 @@ toplevel_consts_12_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 5,
+            .ob_size = 4,
         },
         .ob_item = {
             & toplevel_consts_12_consts_0._ascii.ob_base,
             & toplevel_consts_12_consts_1.ob_base.ob_base,
             & toplevel_consts_12_consts_2.ob_base.ob_base,
             & toplevel_consts_12_consts_3._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -2009,7 +2006,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_13_consts = {
@@ -2019,13 +2016,12 @@ toplevel_consts_13_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_13_consts_0._ascii.ob_base,
             & toplevel_consts_12_consts_2.ob_base.ob_base,
             & toplevel_consts_12_consts_3._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -2251,7 +2247,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_14_consts = {
@@ -2261,13 +2257,12 @@ toplevel_consts_14_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_14_consts_0._ascii.ob_base,
             & toplevel_consts_14_consts_1.ob_base.ob_base,
             & toplevel_consts_12_consts_3._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -2612,7 +2607,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[7];
+            PyObject *ob_item[6];
         }_object;
     }
 toplevel_consts_15_consts = {
@@ -2622,7 +2617,7 @@ toplevel_consts_15_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 7,
+            .ob_size = 6,
         },
         .ob_item = {
             & toplevel_consts_15_consts_0._ascii.ob_base,
@@ -2631,7 +2626,6 @@ toplevel_consts_15_consts = {
             & toplevel_consts_2.ob_base.ob_base,
             & toplevel_consts_8_consts_0._ascii.ob_base,
             & toplevel_consts_15_consts_5.ob_base,
-            Py_None,
         },
     },
 };
@@ -3257,7 +3251,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_16_consts = {
@@ -3267,12 +3261,11 @@ toplevel_consts_16_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_15_consts_0._ascii.ob_base,
             & toplevel_consts_16_consts_1.ob_base,
-            Py_None,
         },
     },
 };
@@ -3966,7 +3959,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_18_consts = {
@@ -3976,11 +3969,10 @@ toplevel_consts_18_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_18_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -4178,7 +4170,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_19_consts = {
@@ -4188,13 +4180,12 @@ toplevel_consts_19_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_19_consts_0._ascii.ob_base,
             Py_False,
             & toplevel_consts_19_consts_2.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -4534,7 +4525,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_20_consts = {
@@ -4544,12 +4535,11 @@ toplevel_consts_20_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_20_consts_0._ascii.ob_base,
             & toplevel_consts_20_consts_1.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -4724,7 +4714,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_21_consts = {
@@ -4734,12 +4724,11 @@ toplevel_consts_21_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_21_consts_0._ascii.ob_base,
             & toplevel_consts_21_consts_1.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -4962,7 +4951,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[8];
+            PyObject *ob_item[7];
         }_object;
     }
 toplevel_consts_22_consts = {
@@ -4972,7 +4961,7 @@ toplevel_consts_22_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 8,
+            .ob_size = 7,
         },
         .ob_item = {
             & toplevel_consts_22_consts_0._ascii.ob_base,
@@ -4982,7 +4971,6 @@ toplevel_consts_22_consts = {
             & toplevel_consts_4._ascii.ob_base,
             & toplevel_consts_6_consts_0.ob_base.ob_base,
             & toplevel_consts_22_consts_6._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -5187,7 +5175,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_23_consts = {
@@ -5197,11 +5185,10 @@ toplevel_consts_23_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_22_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -5904,7 +5891,7 @@ toplevel_consts_26 = {
         },
         .ob_size = 1,
     },
-    .ob_digit = { 3460 },
+    .ob_digit = { 3461 },
 };
 static
     struct {
@@ -7041,7 +7028,7 @@ static struct PyCodeObject toplevel_consts_36 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 1,
     .co_stacksize = 5,
-    .co_firstlineno = 391,
+    .co_firstlineno = 392,
     .co_code = & toplevel_consts_36_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_36_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_36_localspluskinds.ob_base.ob_base,
@@ -7721,7 +7708,7 @@ static struct PyCodeObject toplevel_consts_37 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 462,
+    .co_firstlineno = 463,
     .co_code = & toplevel_consts_37_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_37_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_37_localspluskinds.ob_base.ob_base,
@@ -8128,7 +8115,7 @@ static struct PyCodeObject toplevel_consts_38 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 9,
-    .co_firstlineno = 502,
+    .co_firstlineno = 503,
     .co_code = & toplevel_consts_38_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_38_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -8340,7 +8327,7 @@ static struct PyCodeObject toplevel_consts_39 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 521,
+    .co_firstlineno = 522,
     .co_code = & toplevel_consts_39_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_39_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -8418,7 +8405,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_40_consts = {
@@ -8428,13 +8415,12 @@ toplevel_consts_40_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_40_consts_0._ascii.ob_base,
             & toplevel_consts_24.ob_base.ob_base,
             & toplevel_consts_40_consts_2.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -8590,7 +8576,7 @@ static struct PyCodeObject toplevel_consts_40 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 533,
+    .co_firstlineno = 534,
     .co_code = & toplevel_consts_40_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_40_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -9111,7 +9097,7 @@ static struct PyCodeObject toplevel_consts_41_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 553,
+    .co_firstlineno = 554,
     .co_code = & toplevel_consts_41_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_41_consts_2_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_41_consts_2_localspluskinds.ob_base.ob_base,
@@ -9597,7 +9583,7 @@ static struct PyCodeObject toplevel_consts_41_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 7,
-    .co_firstlineno = 566,
+    .co_firstlineno = 567,
     .co_code = & toplevel_consts_41_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_41_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -9816,7 +9802,7 @@ static struct PyCodeObject toplevel_consts_41 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 545,
+    .co_firstlineno = 546,
     .co_code = & toplevel_consts_41_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_41_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_41_localspluskinds.ob_base.ob_base,
@@ -10218,7 +10204,7 @@ static struct PyCodeObject toplevel_consts_42 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 576,
+    .co_firstlineno = 577,
     .co_code = & toplevel_consts_42_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_42_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -10739,7 +10725,7 @@ static struct PyCodeObject toplevel_consts_43 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 596,
+    .co_firstlineno = 597,
     .co_code = & toplevel_consts_43_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_43_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_25_localspluskinds.ob_base.ob_base,
@@ -11047,7 +11033,7 @@ static struct PyCodeObject toplevel_consts_44 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 629,
+    .co_firstlineno = 630,
     .co_code = & toplevel_consts_44_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_44_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_25_localspluskinds.ob_base.ob_base,
@@ -11327,7 +11313,7 @@ static struct PyCodeObject toplevel_consts_45 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 657,
+    .co_firstlineno = 658,
     .co_code = & toplevel_consts_45_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_45_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -11777,7 +11763,7 @@ static struct PyCodeObject toplevel_consts_46 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 681,
+    .co_firstlineno = 682,
     .co_code = & toplevel_consts_46_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_46_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -11840,7 +11826,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_47_consts = {
@@ -11850,12 +11836,11 @@ toplevel_consts_47_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_47_consts_0._ascii.ob_base,
             & toplevel_consts_2.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -12070,7 +12055,7 @@ static struct PyCodeObject toplevel_consts_47 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 694,
+    .co_firstlineno = 695,
     .co_code = & toplevel_consts_47_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_47_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -12133,7 +12118,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_49_consts = {
@@ -12143,13 +12128,12 @@ toplevel_consts_49_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_49_consts_0._ascii.ob_base,
             & toplevel_consts_6_consts_0.ob_base.ob_base,
             & toplevel_consts_43_consts_8.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -12300,7 +12284,7 @@ static struct PyCodeObject toplevel_consts_49 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 704,
+    .co_firstlineno = 705,
     .co_code = & toplevel_consts_49_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_49_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -12728,7 +12712,7 @@ static struct PyCodeObject toplevel_consts_50 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 6,
-    .co_firstlineno = 715,
+    .co_firstlineno = 716,
     .co_code = & toplevel_consts_50_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_50_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -12807,7 +12791,7 @@ toplevel_consts_52_code = {
         .ob_size = 316,
     },
     .ob_shash = -1,
-    .ob_sval = "\x7c\x01\x64\x01\x75\x00\x72\x1e\x64\x02\x7d\x01\x74\x00\x7c\x02\x64\x03\x83\x02\x72\x1d\x09\x00\x7c\x02\xa0\x01\x7c\x00\xa1\x01\x7d\x01\x6e\x29\x23\x00\x04\x00\x74\x02\x79\x1b\x01\x00\x01\x00\x01\x00\x59\x00\x6e\x20\x77\x00\x25\x00\x6e\x1d\x74\x03\x6a\x04\x7c\x01\x83\x01\x7d\x01\x74\x05\x7c\x01\x83\x01\x73\x3b\x09\x00\x74\x06\x74\x03\x6a\x07\x83\x00\x7c\x01\x83\x02\x7d\x01\x6e\x0b\x23\x00\x04\x00\x74\x08\x79\x39\x01\x00\x01\x00\x01\x00\x59\x00\x6e\x02\x77\x00\x25\x00\x74\x09\xa0\x0a\x7c\x00\x7c\x02\x7c\x01\x64\x04\xa6\x03\x7d\x04\x64\x05\x7c\x04\x5f\x0b\x7c\x02\x64\x01\x75\x00\x72\x65\x74\x0c\x83\x00\x44\x00\x5d\x15\x5c\x02\x7d\x05\x7d\x06\x7c\x01\xa0\x0d\x74\x0e\x7c\x06\x83\x01\xa1\x01\x72\x62\x7c\x05\x7c\x00\x7c\x01\x83\x02\x7d\x02\x7c\x02\x7c\x04\x5f\x0f\x01\x00\x71\x65\x71\x4d\x64\x01\x53\x00\x7c\x03\x74\x10\x75\x00\x72\x86\x74\x00\x7c\x02\x64\x06\x83\x02\x72\x85\x09\x00\x7c\x02\xa0\x11\x7c\x00\xa1\x01\x7d\x07\x6e\x0b\x23\x00\x04\x00\x74\x02\x79\x7e\x01\x00\x01\x00\x01\x00\x59\x00\x6e\x0b\x77\x00\x25\x00\x7c\x07\x72\x85\x67\x00\x7c\x04\x5f\x12\x6e\x03\x7c\x03\x7c\x04\x5f\x12\x7c\x04\x6a\x12\x67\x00\x6b\x02\x72\x9c\x7c\x01\x72\x9c\x74\x13\x7c\x01\x83\x01\x64\x07\x19\x00\x7d\x08\x7c\x04\x6a\x12\xa0\x14\x7c\x08\xa1\x01\x01\x00\x7c\x04\x53\x00",
+    .ob_sval = "\x7c\x01\x64\x01\x75\x00\x72\x1e\x64\x02\x7d\x01\x74\x00\x7c\x02\x64\x03\x83\x02\x72\x1d\x09\x00\x7c\x02\xa0\x01\x7c\x00\xa1\x01\x7d\x01\x6e\x29\x23\x00\x04\x00\x74\x02\x79\x1b\x01\x00\x01\x00\x01\x00\x59\x00\x6e\x20\x77\x00\x25\x00\x6e\x1d\x74\x03\x6a\x04\x7c\x01\x83\x01\x7d\x01\x74\x05\x7c\x01\x83\x01\x73\x3b\x09\x00\x74\x06\x74\x03\x6a\x07\x83\x00\x7c\x01\x83\x02\x7d\x01\x6e\x0b\x23\x00\x04\x00\x74\x08\x79\x39\x01\x00\x01\x00\x01\x00\x59\x00\x6e\x02\x77\x00\x25\x00\x74\x09\xa0\x0a\x7c\x00\x7c\x02\x7c\x01\x64\x04\xa6\x03\x7d\x04\x64\x05\x7c\x04\x5f\x0b\x7c\x02\x64\x01\x75\x00\x72\x65\x74\x0c\x83\x00\x44\x00\x5d\x15\x5c\x02\x7d\x05\x7d\x06\x7c\x01\xa0\x0d\x74\x0e\x7c\x06\x83\x01\xa1\x01\x72\x62\x7c\x05\x7c\x00\x7c\x01\x83\x02\x7d\x02\x7c\x02\x7c\x04\x5f\x0f\x01\x00\x6e\x03\x71\x4d\x64\x01\x53\x00\x7c\x03\x74\x10\x75\x00\x72\x86\x74\x00\x7c\x02\x64\x06\x83\x02\x72\x85\x09\x00\x7c\x02\xa0\x11\x7c\x00\xa1\x01\x7d\x07\x6e\x0b\x23\x00\x04\x00\x74\x02\x79\x7e\x01\x00\x01\x00\x01\x00\x59\x00\x6e\x0b\x77\x00\x25\x00\x7c\x07\x72\x85\x67\x00\x7c\x04\x5f\x12\x6e\x03\x7c\x03\x7c\x04\x5f\x12\x7c\x04\x6a\x12\x67\x00\x6b\x02\x72\x9c\x7c\x01\x72\x9c\x74\x13\x7c\x01\x83\x01\x64\x07\x19\x00\x7d\x08\x7c\x04\x6a\x12\xa0\x14\x7c\x08\xa1\x01\x01\x00\x7c\x04\x53\x00",
 };
 static
     struct {
@@ -13362,7 +13346,7 @@ static struct PyCodeObject toplevel_consts_52 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 2,
     .co_stacksize = 8,
-    .co_firstlineno = 732,
+    .co_firstlineno = 733,
     .co_code = & toplevel_consts_52_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_52_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_52_localspluskinds.ob_base.ob_base,
@@ -13766,7 +13750,7 @@ static struct PyCodeObject toplevel_consts_53_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 817,
+    .co_firstlineno = 818,
     .co_code = & toplevel_consts_53_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_11_consts_3_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -14278,7 +14262,7 @@ static struct PyCodeObject toplevel_consts_53_consts_6 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 9,
-    .co_firstlineno = 824,
+    .co_firstlineno = 825,
     .co_code = & toplevel_consts_53_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_53_consts_6_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_25_localspluskinds.ob_base.ob_base,
@@ -14583,7 +14567,7 @@ static struct PyCodeObject toplevel_consts_53_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 839,
+    .co_firstlineno = 840,
     .co_code = & toplevel_consts_53_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_53_consts_8_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_53_consts_8_localspluskinds.ob_base.ob_base,
@@ -14848,7 +14832,7 @@ static struct PyCodeObject toplevel_consts_53_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 855,
+    .co_firstlineno = 856,
     .co_code = & toplevel_consts_53_consts_9_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_53_consts_9_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -15079,7 +15063,7 @@ toplevel_consts_53_endlinetable = {
         .ob_size = 84,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xd5\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x2d\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xd3\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x31\x02\xfe\x02\x05\x02\xfe\x0c\x03\x02\x02\x08\x05\x02\x02\x08\x0d\x02\x02\x02\x01\x08\x0d\x02\x02\x02\x01\x0c\x0d",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xd4\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x2e\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xd2\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x32\x02\xfe\x02\x05\x02\xfe\x0c\x03\x02\x02\x08\x05\x02\x02\x08\x0d\x02\x02\x02\x01\x08\x0d\x02\x02\x02\x01\x0c\x0d",
 };
 static
     struct {
@@ -15113,7 +15097,7 @@ static struct PyCodeObject toplevel_consts_53 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 805,
+    .co_firstlineno = 806,
     .co_code = & toplevel_consts_53_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -15259,7 +15243,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[7];
+            PyObject *ob_item[6];
         }_object;
     }
 toplevel_consts_55_consts_2_consts = {
@@ -15269,7 +15253,7 @@ toplevel_consts_55_consts_2_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 7,
+            .ob_size = 6,
         },
         .ob_item = {
             & toplevel_consts_55_consts_2_consts_0._ascii.ob_base,
@@ -15278,7 +15262,6 @@ toplevel_consts_55_consts_2_consts = {
             & toplevel_consts_2.ob_base.ob_base,
             & toplevel_consts_14_consts_1.ob_base.ob_base,
             & toplevel_consts_55_consts_2_consts_5._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -15448,7 +15431,7 @@ static struct PyCodeObject toplevel_consts_55_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 877,
+    .co_firstlineno = 878,
     .co_code = & toplevel_consts_55_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -15645,7 +15628,7 @@ static struct PyCodeObject toplevel_consts_55_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 885,
+    .co_firstlineno = 886,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -16000,7 +15983,7 @@ static struct PyCodeObject toplevel_consts_55_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 888,
+    .co_firstlineno = 889,
     .co_code = & toplevel_consts_55_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -16063,7 +16046,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_55_consts_5_consts = {
@@ -16073,11 +16056,10 @@ toplevel_consts_55_consts_5_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_55_consts_5_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -16242,7 +16224,7 @@ static struct PyCodeObject toplevel_consts_55_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 896,
+    .co_firstlineno = 897,
     .co_code = & toplevel_consts_55_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -16350,7 +16332,7 @@ toplevel_consts_55_endlinetable = {
         .ob_size = 62,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\x92\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x71\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\x8f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x79\x06\x03\x06\x08\x0a\x05",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\x91\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x72\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\x8e\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x7a\x06\x03\x06\x08\x0a\x05",
 };
 static
     struct {
@@ -16384,7 +16366,7 @@ static struct PyCodeObject toplevel_consts_55 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 872,
+    .co_firstlineno = 873,
     .co_code = & toplevel_consts_55_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -16486,7 +16468,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_57_consts_1_consts = {
@@ -16496,11 +16478,10 @@ toplevel_consts_57_consts_1_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_57_consts_1_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -16642,7 +16623,7 @@ static struct PyCodeObject toplevel_consts_57_consts_1 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 904,
+    .co_firstlineno = 905,
     .co_code = & toplevel_consts_57_consts_1_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_1_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -16705,7 +16686,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_57_consts_2_consts = {
@@ -16715,12 +16696,11 @@ toplevel_consts_57_consts_2_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_57_consts_2_consts_0._ascii.ob_base,
             & toplevel_consts_47_varnames_1._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -16839,7 +16819,7 @@ static struct PyCodeObject toplevel_consts_57_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 912,
+    .co_firstlineno = 913,
     .co_code = & toplevel_consts_57_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_1_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -16902,7 +16882,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_57_consts_3_consts = {
@@ -16912,11 +16892,10 @@ toplevel_consts_57_consts_3_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_57_consts_3_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -17104,7 +17083,7 @@ static struct PyCodeObject toplevel_consts_57_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 926,
+    .co_firstlineno = 927,
     .co_code = & toplevel_consts_57_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -17229,7 +17208,7 @@ static struct PyCodeObject toplevel_consts_57_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 936,
+    .co_firstlineno = 937,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -17557,7 +17536,7 @@ static struct PyCodeObject toplevel_consts_57_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 943,
+    .co_firstlineno = 944,
     .co_code = & toplevel_consts_57_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -17709,7 +17688,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[5];
+            PyObject *ob_item[4];
         }_object;
     }
 toplevel_consts_57_consts_8_consts = {
@@ -17719,14 +17698,13 @@ toplevel_consts_57_consts_8_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 5,
+            .ob_size = 4,
         },
         .ob_item = {
             & toplevel_consts_57_consts_8_consts_0._ascii.ob_base,
             & toplevel_consts_55_consts_4_names_6._ascii.ob_base,
             Py_True,
             & toplevel_consts_57_consts_8_consts_3._object.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -17911,7 +17889,7 @@ static struct PyCodeObject toplevel_consts_57_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 1,
     .co_stacksize = 9,
-    .co_firstlineno = 953,
+    .co_firstlineno = 954,
     .co_code = & toplevel_consts_57_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_8_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -18544,7 +18522,7 @@ static struct PyCodeObject toplevel_consts_57_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 9,
-    .co_firstlineno = 961,
+    .co_firstlineno = 962,
     .co_code = & toplevel_consts_57_consts_9_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_57_consts_9_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_57_consts_9_localspluskinds.ob_base.ob_base,
@@ -18658,7 +18636,7 @@ toplevel_consts_57_endlinetable = {
         .ob_size = 46,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xf3\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x15\x06\x0e\x06\x0a\x06\x06\x06\x0b\x02\x02\x0a\x06\x0a\x54",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xf2\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x16\x06\x0e\x06\x0a\x06\x06\x06\x0b\x02\x02\x0a\x06\x0a\x54",
 };
 static
     struct {
@@ -18692,7 +18670,7 @@ static struct PyCodeObject toplevel_consts_57 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 902,
+    .co_firstlineno = 903,
     .co_code = & toplevel_consts_57_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -18929,7 +18907,7 @@ static struct PyCodeObject toplevel_consts_59_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1051,
+    .co_firstlineno = 1052,
     .co_code = & toplevel_consts_59_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -19165,7 +19143,7 @@ static struct PyCodeObject toplevel_consts_59_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1057,
+    .co_firstlineno = 1058,
     .co_code = & toplevel_consts_59_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -19362,7 +19340,7 @@ static struct PyCodeObject toplevel_consts_59_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1061,
+    .co_firstlineno = 1062,
     .co_code = & toplevel_consts_59_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -19425,7 +19403,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_59_consts_5_consts = {
@@ -19435,11 +19413,10 @@ toplevel_consts_59_consts_5_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_59_consts_5_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -19606,7 +19583,7 @@ static struct PyCodeObject toplevel_consts_59_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1064,
+    .co_firstlineno = 1065,
     .co_code = & toplevel_consts_59_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_5_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_17_consts_1_localspluskinds.ob_base.ob_base,
@@ -19669,7 +19646,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_59_consts_6_consts = {
@@ -19679,11 +19656,10 @@ toplevel_consts_59_consts_6_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_59_consts_6_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -19758,7 +19734,7 @@ static struct PyCodeObject toplevel_consts_59_consts_6 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1076,
+    .co_firstlineno = 1077,
     .co_code = & toplevel_consts_59_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -20086,7 +20062,7 @@ static struct PyCodeObject toplevel_consts_59_consts_7 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 9,
-    .co_firstlineno = 1081,
+    .co_firstlineno = 1082,
     .co_code = & toplevel_consts_59_consts_7_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_7_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -20352,7 +20328,7 @@ static struct PyCodeObject toplevel_consts_59_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1090,
+    .co_firstlineno = 1091,
     .co_code = & toplevel_consts_59_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_8_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -20489,7 +20465,7 @@ toplevel_consts_59_endlinetable = {
         .ob_size = 92,
     },
     .ob_shash = -1,
-    .ob_sval = "\x02\x80\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xe2\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x21\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xdf\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x27\x06\x04\x06\x03\x02\x02\x0c\x0a\x02\x02\x08\x03\x06\x09\x02\x02\x10\x03",
+    .ob_sval = "\x02\x80\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xe1\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x22\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xde\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x28\x06\x04\x06\x03\x02\x02\x0c\x0a\x02\x02\x08\x03\x06\x09\x02\x02\x10\x03",
 };
 static
     struct {
@@ -20540,7 +20516,7 @@ static struct PyCodeObject toplevel_consts_59 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1046,
+    .co_firstlineno = 1047,
     .co_code = & toplevel_consts_59_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_5_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_59_localspluskinds.ob_base.ob_base,
@@ -20687,7 +20663,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_61_consts_2_consts = {
@@ -20697,12 +20673,11 @@ toplevel_consts_61_consts_2_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_61_consts_2_consts_0._ascii.ob_base,
             & toplevel_consts_61_consts_2_consts_1._object.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -20869,7 +20844,7 @@ static struct PyCodeObject toplevel_consts_61_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1100,
+    .co_firstlineno = 1101,
     .co_code = & toplevel_consts_61_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_61_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -21092,7 +21067,7 @@ static struct PyCodeObject toplevel_consts_61_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 6,
-    .co_firstlineno = 1105,
+    .co_firstlineno = 1106,
     .co_code = & toplevel_consts_61_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_61_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -21475,7 +21450,7 @@ static struct PyCodeObject toplevel_consts_61_consts_6 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 1,
     .co_stacksize = 9,
-    .co_firstlineno = 1110,
+    .co_firstlineno = 1111,
     .co_code = & toplevel_consts_61_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_61_consts_6_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_52_localspluskinds.ob_base.ob_base,
@@ -21583,7 +21558,7 @@ toplevel_consts_61_endlinetable = {
         .ob_size = 78,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xb0\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x52\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xae\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x57\x06\x05\x02\x02\x0e\x1c",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xaf\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x53\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xad\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x58\x06\x05\x02\x02\x0e\x1c",
 };
 static
     struct {
@@ -21617,7 +21592,7 @@ static struct PyCodeObject toplevel_consts_61 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1096,
+    .co_firstlineno = 1097,
     .co_code = & toplevel_consts_61_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -21902,7 +21877,7 @@ static struct PyCodeObject toplevel_consts_63_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 1145,
+    .co_firstlineno = 1146,
     .co_code = & toplevel_consts_63_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_63_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_15_localspluskinds.ob_base.ob_base,
@@ -22020,7 +21995,7 @@ static struct PyCodeObject toplevel_consts_63_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1161,
+    .co_firstlineno = 1162,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -22113,7 +22088,7 @@ static
     struct {
         PyObject_VAR_HEAD
         Py_hash_t ob_shash;
-        char ob_sval[77];
+        char ob_sval[81];
     }
 toplevel_consts_63_endlinetable = {
     .ob_base = {
@@ -22121,10 +22096,10 @@ toplevel_consts_63_endlinetable = {
             .ob_refcnt = 999999999,
             .ob_type = &PyBytes_Type,
         },
-        .ob_size = 76,
+        .ob_size = 80,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\x83\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x7f\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\x81\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x10\x0a\x04",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\x82\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x01\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xff\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x11\x0a\x04",
 };
 static
     struct {
@@ -22158,7 +22133,7 @@ static struct PyCodeObject toplevel_consts_63 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1141,
+    .co_firstlineno = 1142,
     .co_code = & toplevel_consts_63_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -22328,7 +22303,7 @@ static struct PyCodeObject toplevel_consts_65_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1174,
+    .co_firstlineno = 1175,
     .co_code = & toplevel_consts_65_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_65_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -22384,7 +22359,7 @@ static struct PyCodeObject toplevel_consts_65_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1178,
+    .co_firstlineno = 1179,
     .co_code = & toplevel_consts_59_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -22440,7 +22415,7 @@ static struct PyCodeObject toplevel_consts_65_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1182,
+    .co_firstlineno = 1183,
     .co_code = & toplevel_consts_59_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -22525,7 +22500,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_65_consts_5_consts = {
@@ -22535,12 +22510,11 @@ toplevel_consts_65_consts_5_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_65_consts_5_consts_0._ascii.ob_base,
             & toplevel_consts_65_consts_5_consts_1._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -22706,7 +22680,7 @@ static struct PyCodeObject toplevel_consts_65_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 1185,
+    .co_firstlineno = 1186,
     .co_code = & toplevel_consts_65_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_65_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -22971,7 +22945,7 @@ static struct PyCodeObject toplevel_consts_65_consts_6 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 1193,
+    .co_firstlineno = 1194,
     .co_code = & toplevel_consts_65_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_65_consts_6_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -23270,7 +23244,7 @@ static struct PyCodeObject toplevel_consts_65_consts_7_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1202,
+    .co_firstlineno = 1203,
     .co_code = & toplevel_consts_65_consts_7_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_65_consts_7_consts_2_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_17_consts_1_localspluskinds.ob_base.ob_base,
@@ -23294,7 +23268,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_65_consts_7_consts = {
@@ -23304,13 +23278,12 @@ toplevel_consts_65_consts_7_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_65_consts_7_consts_0._ascii.ob_base,
             & toplevel_consts_6_consts_0.ob_base.ob_base,
             & toplevel_consts_65_consts_7_consts_2.ob_base,
-            Py_None,
         },
     },
 };
@@ -23490,7 +23463,7 @@ static struct PyCodeObject toplevel_consts_65_consts_7 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1199,
+    .co_firstlineno = 1200,
     .co_code = & toplevel_consts_65_consts_7_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_65_consts_7_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_65_consts_7_localspluskinds.ob_base.ob_base,
@@ -23591,7 +23564,7 @@ static struct PyCodeObject toplevel_consts_65_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1205,
+    .co_firstlineno = 1206,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -23692,7 +23665,7 @@ static struct PyCodeObject toplevel_consts_65_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1209,
+    .co_firstlineno = 1210,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -23748,7 +23721,7 @@ static struct PyCodeObject toplevel_consts_65_consts_10 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1213,
+    .co_firstlineno = 1214,
     .co_code = & toplevel_consts_59_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -23867,7 +23840,7 @@ toplevel_consts_65_endlinetable = {
         .ob_size = 98,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xe9\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x1d\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xe3\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x21\x06\x04\x06\x03\x06\x08\x06\x06\x06\x06\x06\x04\x06\x04\x02\x02\x0c\x03",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xe8\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x1e\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xe2\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x22\x06\x04\x06\x03\x06\x08\x06\x06\x06\x06\x06\x04\x06\x04\x02\x02\x0c\x03",
 };
 static
     struct {
@@ -23901,7 +23874,7 @@ static struct PyCodeObject toplevel_consts_65 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1166,
+    .co_firstlineno = 1167,
     .co_code = & toplevel_consts_65_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -24253,7 +24226,7 @@ static struct PyCodeObject toplevel_consts_67_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1226,
+    .co_firstlineno = 1227,
     .co_code = & toplevel_consts_67_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -24361,7 +24334,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[6];
+            PyObject *ob_item[5];
         }_object;
     }
 toplevel_consts_67_consts_3_consts = {
@@ -24371,7 +24344,7 @@ toplevel_consts_67_consts_3_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 6,
+            .ob_size = 5,
         },
         .ob_item = {
             & toplevel_consts_67_consts_3_consts_0._ascii.ob_base,
@@ -24379,7 +24352,6 @@ toplevel_consts_67_consts_3_consts = {
             & toplevel_consts_7._ascii.ob_base,
             & toplevel_consts_67_consts_3_consts_3._object.ob_base.ob_base,
             & toplevel_consts_67_consts_3_consts_4._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -24585,7 +24557,7 @@ static struct PyCodeObject toplevel_consts_67_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1232,
+    .co_firstlineno = 1233,
     .co_code = & toplevel_consts_67_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -24807,7 +24779,7 @@ static struct PyCodeObject toplevel_consts_67_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1242,
+    .co_firstlineno = 1243,
     .co_code = & toplevel_consts_67_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -25028,7 +25000,7 @@ static struct PyCodeObject toplevel_consts_67_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1246,
+    .co_firstlineno = 1247,
     .co_code = & toplevel_consts_67_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -25202,7 +25174,7 @@ static struct PyCodeObject toplevel_consts_67_consts_6 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1259,
+    .co_firstlineno = 1260,
     .co_code = & toplevel_consts_67_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -25381,7 +25353,7 @@ static struct PyCodeObject toplevel_consts_67_consts_7 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1262,
+    .co_firstlineno = 1263,
     .co_code = & toplevel_consts_67_consts_7_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_7_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -25556,7 +25528,7 @@ static struct PyCodeObject toplevel_consts_67_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1265,
+    .co_firstlineno = 1266,
     .co_code = & toplevel_consts_67_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_8_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -25674,7 +25646,7 @@ static struct PyCodeObject toplevel_consts_67_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1268,
+    .co_firstlineno = 1269,
     .co_code = & toplevel_consts_67_consts_6_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -25854,7 +25826,7 @@ static struct PyCodeObject toplevel_consts_67_consts_10 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1271,
+    .co_firstlineno = 1272,
     .co_code = & toplevel_consts_67_consts_10_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -26011,7 +25983,7 @@ static struct PyCodeObject toplevel_consts_67_consts_11 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1274,
+    .co_firstlineno = 1275,
     .co_code = & toplevel_consts_67_consts_11_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_11_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -26141,7 +26113,7 @@ static struct PyCodeObject toplevel_consts_67_consts_12 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1277,
+    .co_firstlineno = 1278,
     .co_code = & toplevel_consts_67_consts_12_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_11_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -26263,7 +26235,7 @@ toplevel_consts_67_endlinetable = {
         .ob_size = 100,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xb4\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x51\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xaf\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x57\x06\x0a\x06\x04\x06\x0d\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x0a\x03",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xb3\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x52\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xae\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x58\x06\x0a\x06\x04\x06\x0d\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x0a\x03",
 };
 static
     struct {
@@ -26297,7 +26269,7 @@ static struct PyCodeObject toplevel_consts_67 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1219,
+    .co_firstlineno = 1220,
     .co_code = & toplevel_consts_67_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -26466,7 +26438,7 @@ static struct PyCodeObject toplevel_consts_69_consts_1 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1283,
+    .co_firstlineno = 1284,
     .co_code = & toplevel_consts_69_consts_1_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_67_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -26573,7 +26545,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_69_consts_2_consts = {
@@ -26583,13 +26555,12 @@ toplevel_consts_69_consts_2_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_69_consts_2_consts_0._ascii.ob_base,
             & toplevel_consts_69_consts_2_consts_1._ascii.ob_base,
             & toplevel_consts_69_consts_2_consts_2._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -26751,7 +26722,7 @@ static struct PyCodeObject toplevel_consts_69_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1286,
+    .co_firstlineno = 1287,
     .co_code = & toplevel_consts_69_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_69_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -26847,7 +26818,7 @@ static struct PyCodeObject toplevel_consts_69_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1297,
+    .co_firstlineno = 1298,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -26943,7 +26914,7 @@ static struct PyCodeObject toplevel_consts_69_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1300,
+    .co_firstlineno = 1301,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -27126,7 +27097,7 @@ static struct PyCodeObject toplevel_consts_69_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 6,
-    .co_firstlineno = 1303,
+    .co_firstlineno = 1304,
     .co_code = & toplevel_consts_69_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -27182,7 +27153,7 @@ static struct PyCodeObject toplevel_consts_69_consts_6 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1306,
+    .co_firstlineno = 1307,
     .co_code = & toplevel_consts_11_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -27272,7 +27243,7 @@ static struct PyCodeObject toplevel_consts_69_consts_7 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1309,
+    .co_firstlineno = 1310,
     .co_code = & toplevel_consts_69_consts_7_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_65_consts_6_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -27357,7 +27328,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_69_consts_8_consts = {
@@ -27367,12 +27338,11 @@ toplevel_consts_69_consts_8_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_69_consts_8_consts_0._ascii.ob_base,
             & toplevel_consts_69_consts_8_consts_1._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -27489,7 +27459,7 @@ static struct PyCodeObject toplevel_consts_69_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1312,
+    .co_firstlineno = 1313,
     .co_code = & toplevel_consts_69_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_55_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -27712,7 +27682,7 @@ static struct PyCodeObject toplevel_consts_69_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1324,
+    .co_firstlineno = 1325,
     .co_code = & toplevel_consts_69_consts_9_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_69_consts_9_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -27829,7 +27799,7 @@ toplevel_consts_69_endlinetable = {
         .ob_size = 62,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xf4\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x0e\x02\x02\x08\x09\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x0c\x0a\x04",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xf3\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x0f\x02\x02\x08\x09\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x0c\x0a\x04",
 };
 static
     struct {
@@ -27863,7 +27833,7 @@ static struct PyCodeObject toplevel_consts_69 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1282,
+    .co_firstlineno = 1283,
     .co_code = & toplevel_consts_69_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -28254,7 +28224,7 @@ static struct PyCodeObject toplevel_consts_71_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1335,
+    .co_firstlineno = 1336,
     .co_code = & toplevel_consts_71_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_2_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -28579,7 +28549,7 @@ static struct PyCodeObject toplevel_consts_71_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 9,
-    .co_firstlineno = 1345,
+    .co_firstlineno = 1346,
     .co_code = & toplevel_consts_71_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_3_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -28884,7 +28854,7 @@ static struct PyCodeObject toplevel_consts_71_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 1358,
+    .co_firstlineno = 1359,
     .co_code = & toplevel_consts_71_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -29198,7 +29168,7 @@ static struct PyCodeObject toplevel_consts_71_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1380,
+    .co_firstlineno = 1381,
     .co_code = & toplevel_consts_71_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_71_consts_5_localspluskinds.ob_base.ob_base,
@@ -29543,7 +29513,7 @@ static struct PyCodeObject toplevel_consts_71_consts_7 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 1401,
+    .co_firstlineno = 1402,
     .co_code = & toplevel_consts_71_consts_7_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_7_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_52_localspluskinds.ob_base.ob_base,
@@ -29767,7 +29737,7 @@ static struct PyCodeObject toplevel_consts_71_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 1433,
+    .co_firstlineno = 1434,
     .co_code = & toplevel_consts_71_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_8_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_25_localspluskinds.ob_base.ob_base,
@@ -29959,7 +29929,7 @@ static struct PyCodeObject toplevel_consts_71_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1457,
+    .co_firstlineno = 1458,
     .co_code = & toplevel_consts_71_consts_9_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_53_consts_9_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_45_localspluskinds.ob_base.ob_base,
@@ -30066,7 +30036,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_71_consts_10_consts = {
@@ -30076,13 +30046,12 @@ toplevel_consts_71_consts_10_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_71_consts_10_consts_0._ascii.ob_base,
             & toplevel_consts_2.ob_base.ob_base,
             & toplevel_consts_71_consts_10_consts_2._object.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -30249,7 +30218,7 @@ static struct PyCodeObject toplevel_consts_71_consts_10 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1473,
+    .co_firstlineno = 1474,
     .co_code = & toplevel_consts_71_consts_10_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_71_consts_10_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -30369,7 +30338,7 @@ toplevel_consts_71_endlinetable = {
         .ob_size = 124,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xc3\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x3f\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xc1\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x41\x08\x08\x02\x02\x08\x0b\x02\x02\x08\x14\x02\x02\x08\x13\x02\x02\x02\x01\x08\x1d\x02\x02\x02\x01\x08\x15\x02\x02\x02\x01\x08\x0d\x02\x02\x0c\x0b",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xc2\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x40\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\xc0\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x42\x08\x08\x02\x02\x08\x0b\x02\x02\x08\x14\x02\x02\x08\x13\x02\x02\x02\x01\x08\x1d\x02\x02\x02\x01\x08\x15\x02\x02\x02\x01\x08\x0d\x02\x02\x0c\x0b",
 };
 static
     struct {
@@ -30403,7 +30372,7 @@ static struct PyCodeObject toplevel_consts_71 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1331,
+    .co_firstlineno = 1332,
     .co_code = & toplevel_consts_71_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -30656,7 +30625,7 @@ static struct PyCodeObject toplevel_consts_73_consts_2_consts_1 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1502,
+    .co_firstlineno = 1503,
     .co_code = & toplevel_consts_73_consts_2_consts_1_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_2_consts_1_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_17_consts_1_localspluskinds.ob_base.ob_base,
@@ -31045,7 +31014,7 @@ static struct PyCodeObject toplevel_consts_73_consts_2 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 5,
-    .co_firstlineno = 1496,
+    .co_firstlineno = 1497,
     .co_code = & toplevel_consts_73_consts_2_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_2_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_73_consts_2_localspluskinds.ob_base.ob_base,
@@ -31203,7 +31172,7 @@ static struct PyCodeObject toplevel_consts_73_consts_3 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1512,
+    .co_firstlineno = 1513,
     .co_code = & toplevel_consts_73_consts_3_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -31446,7 +31415,7 @@ static struct PyCodeObject toplevel_consts_73_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1518,
+    .co_firstlineno = 1519,
     .co_code = & toplevel_consts_73_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -31665,7 +31634,7 @@ static struct PyCodeObject toplevel_consts_73_consts_5 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 6,
-    .co_firstlineno = 1533,
+    .co_firstlineno = 1534,
     .co_code = & toplevel_consts_73_consts_5_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_5_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_71_consts_5_localspluskinds.ob_base.ob_base,
@@ -32219,7 +32188,7 @@ static struct PyCodeObject toplevel_consts_73_consts_7 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 9,
-    .co_firstlineno = 1538,
+    .co_firstlineno = 1539,
     .co_code = & toplevel_consts_73_consts_7_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_7_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_73_consts_7_localspluskinds.ob_base.ob_base,
@@ -32432,7 +32401,7 @@ static struct PyCodeObject toplevel_consts_73_consts_8_consts_4 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1618,
+    .co_firstlineno = 1619,
     .co_code = & toplevel_consts_73_consts_8_consts_4_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_8_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -32806,7 +32775,7 @@ static struct PyCodeObject toplevel_consts_73_consts_8 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 10,
-    .co_firstlineno = 1589,
+    .co_firstlineno = 1590,
     .co_code = & toplevel_consts_73_consts_8_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_8_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_52_localspluskinds.ob_base.ob_base,
@@ -32930,7 +32899,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[4];
+            PyObject *ob_item[3];
         }_object;
     }
 toplevel_consts_73_consts_9_consts_1_consts = {
@@ -32940,13 +32909,12 @@ toplevel_consts_73_consts_9_consts_1_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 4,
+            .ob_size = 3,
         },
         .ob_item = {
             & toplevel_consts_73_consts_9_consts_1_consts_0._ascii.ob_base,
             & toplevel_consts_73_consts_9_consts_1_consts_1._ascii.ob_base,
             & toplevel_consts_17_consts_1_freevars._object.ob_base.ob_base,
-            Py_None,
         },
     },
 };
@@ -33147,7 +33115,7 @@ static struct PyCodeObject toplevel_consts_73_consts_9_consts_1 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1630,
+    .co_firstlineno = 1631,
     .co_code = & toplevel_consts_73_consts_9_consts_1_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_9_consts_1_localsplusnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_73_consts_9_consts_1_localspluskinds.ob_base.ob_base,
@@ -33171,7 +33139,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[3];
+            PyObject *ob_item[2];
         }_object;
     }
 toplevel_consts_73_consts_9_consts = {
@@ -33181,12 +33149,11 @@ toplevel_consts_73_consts_9_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 3,
+            .ob_size = 2,
         },
         .ob_item = {
             & toplevel_consts_73_consts_9_consts_0._ascii.ob_base,
             & toplevel_consts_73_consts_9_consts_1.ob_base,
-            Py_None,
         },
     },
 };
@@ -33341,7 +33308,7 @@ static struct PyCodeObject toplevel_consts_73_consts_9 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1620,
+    .co_firstlineno = 1621,
     .co_code = & toplevel_consts_73_consts_9_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_73_consts_9_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_73_consts_9_localspluskinds.ob_base.ob_base,
@@ -33482,7 +33449,7 @@ static struct PyCodeObject toplevel_consts_73_consts_10 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1638,
+    .co_firstlineno = 1639,
     .co_code = & toplevel_consts_67_consts_10_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_59_consts_4_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -33602,7 +33569,7 @@ toplevel_consts_73_endlinetable = {
         .ob_size = 116,
     },
     .ob_shash = -1,
-    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xa6\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x61\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\x9f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x71\x06\x04\x04\x02\x06\x0f\x06\x05\x02\x02\x06\x31\x06\x1f\x02\x02\x08\x10\x0a\x03",
+    .ob_sval = "\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x08\xa5\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x02\x62\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x00\x81\x02\x9e\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x00\x7f\x06\x72\x06\x04\x04\x02\x06\x0f\x06\x05\x02\x02\x06\x31\x06\x1f\x02\x02\x08\x10\x0a\x03",
 };
 static
     struct {
@@ -33636,7 +33603,7 @@ static struct PyCodeObject toplevel_consts_73 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 2,
-    .co_firstlineno = 1487,
+    .co_firstlineno = 1488,
     .co_code = & toplevel_consts_73_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_6_freevars._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_exceptiontable.ob_base.ob_base,
@@ -34056,7 +34023,7 @@ static struct PyCodeObject toplevel_consts_75 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 8,
-    .co_firstlineno = 1644,
+    .co_firstlineno = 1645,
     .co_code = & toplevel_consts_75_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_75_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_25_localspluskinds.ob_base.ob_base,
@@ -34119,7 +34086,7 @@ static
         PyGC_Head _gc_head;
         struct {
             PyObject_VAR_HEAD
-            PyObject *ob_item[2];
+            PyObject *ob_item[1];
         }_object;
     }
 toplevel_consts_76_consts = {
@@ -34129,11 +34096,10 @@ toplevel_consts_76_consts = {
                 .ob_refcnt = 999999999,
                 .ob_type = &PyTuple_Type,
             },
-            .ob_size = 2,
+            .ob_size = 1,
         },
         .ob_item = {
             & toplevel_consts_76_consts_0._ascii.ob_base,
-            Py_None,
         },
     },
 };
@@ -34326,7 +34292,7 @@ static struct PyCodeObject toplevel_consts_76 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 3,
-    .co_firstlineno = 1667,
+    .co_firstlineno = 1668,
     .co_code = & toplevel_consts_76_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_76_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_19_localspluskinds.ob_base.ob_base,
@@ -34499,7 +34465,7 @@ static struct PyCodeObject toplevel_consts_77 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 1,
-    .co_firstlineno = 1678,
+    .co_firstlineno = 1679,
     .co_code = & toplevel_consts_77_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_77_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_12_localspluskinds.ob_base.ob_base,
@@ -34749,7 +34715,7 @@ static struct PyCodeObject toplevel_consts_78 = {
     .co_posonlyargcount = 0,
     .co_kwonlyargcount = 0,
     .co_stacksize = 4,
-    .co_firstlineno = 1683,
+    .co_firstlineno = 1684,
     .co_code = & toplevel_consts_78_code.ob_base.ob_base,
     .co_localsplusnames = & toplevel_consts_78_varnames._object.ob_base.ob_base,
     .co_localspluskinds = & toplevel_consts_6_localspluskinds.ob_base.ob_base,
@@ -35327,7 +35293,7 @@ toplevel_linetable = {
         .ob_size = 180,
     },
     .ob_shash = -1,
-    .ob_sval = "\x04\x00\x04\x16\x08\x03\x08\x01\x08\x01\x08\x01\x08\x01\x0a\x03\x04\x01\x08\x01\x0a\x01\x08\x02\x04\x03\x0a\x01\x06\x02\x14\x02\x08\x01\x08\x01\x0a\x01\x0c\x01\x04\x04\x04\x01\x02\x01\x02\x01\x04\xff\x06\x04\x06\x10\x06\x03\x06\x05\x06\x05\x04\x06\x08\x01\x06\x1e\x06\x06\x06\x08\x06\x0a\x06\x09\x06\x05\x04\x07\x08\x01\x06\x08\x08\x05\x0a\x16\x00\x7f\x10\x29\x0c\x01\x04\x02\x04\x01\x06\x02\x04\x01\x0a\x01\x08\x02\x06\x02\x08\x02\x0e\x02\x06\x47\x06\x28\x06\x13\x06\x0c\x06\x0c\x06\x1f\x06\x14\x06\x21\x06\x1c\x08\x18\x08\x0d\x08\x0a\x06\x0b\x06\x0e\x04\x03\x02\x01\x0a\xff\x0c\x49\x0c\x43\x0e\x1e\x00\x7f\x0c\x11\x10\x32\x10\x2d\x10\x19\x0c\x35\x0c\x3f\x0c\x31\x00\x7f\x0c\x1d\x00\x7f\x08\x1e\x06\x17\x06\x0b\x0a\x05",
+    .ob_sval = "\x04\x00\x04\x16\x08\x03\x08\x01\x08\x01\x08\x01\x08\x01\x0a\x03\x04\x01\x08\x01\x0a\x01\x08\x02\x04\x03\x0a\x01\x06\x02\x14\x02\x08\x01\x08\x01\x0a\x01\x0c\x01\x04\x04\x04\x01\x02\x01\x02\x01\x04\xff\x06\x04\x06\x10\x06\x03\x06\x05\x06\x05\x04\x06\x08\x01\x06\x1e\x06\x06\x06\x08\x06\x0a\x06\x09\x06\x05\x04\x07\x08\x01\x06\x08\x08\x05\x0a\x16\x00\x7f\x10\x2a\x0c\x01\x04\x02\x04\x01\x06\x02\x04\x01\x0a\x01\x08\x02\x06\x02\x08\x02\x0e\x02\x06\x47\x06\x28\x06\x13\x06\x0c\x06\x0c\x06\x1f\x06\x14\x06\x21\x06\x1c\x08\x18\x08\x0d\x08\x0a\x06\x0b\x06\x0e\x04\x03\x02\x01\x0a\xff\x0c\x49\x0c\x43\x0e\x1e\x00\x7f\x0c\x11\x10\x32\x10\x2d\x10\x19\x0c\x35\x0c\x3f\x0c\x31\x00\x7f\x0c\x1d\x00\x7f\x08\x1e\x06\x17\x06\x0b\x0a\x05",
 };
 static
     struct {
@@ -35344,7 +35310,7 @@ toplevel_endlinetable = {
         .ob_size = 220,
     },
     .ob_shash = -1,
-    .ob_sval = "\x04\x07\x04\x0f\x08\x03\x08\x01\x08\x01\x08\x01\x08\x01\x0a\x03\x02\x01\x02\x04\x08\xfd\x0a\x01\x08\x02\x02\x03\x02\x03\x0a\xfe\x06\x02\x14\x02\x08\x01\x08\x01\x0a\x01\x0c\x01\x04\x04\x04\x01\x02\x01\x04\x01\x02\xff\x06\x12\x06\x02\x06\x05\x06\x06\x06\x05\x02\x03\x02\x22\x08\xfa\x06\x06\x06\x08\x06\x0a\x06\x09\x06\x05\x06\x07\x02\x03\x02\x0b\x08\xfb\x06\x05\x02\x03\x06\x13\x0a\x03\x00\x7f\x10\x29\x0c\x01\x04\x02\x04\x01\x06\x02\x02\x01\x0c\x01\x08\x02\x06\x02\x08\x02\x04\x02\x0a\x44\x06\x28\x06\x13\x06\x0c\x06\x0c\x06\x1f\x06\x14\x06\x21\x06\x1c\x06\x18\x02\x03\x06\x0a\x02\x03\x06\x07\x02\x03\x06\x08\x06\x0c\x06\x05\x04\x03\x02\x01\x0a\x43\x0c\x45\x0c\x1e\x00\x7f\x08\x11\x00\x81\x02\xf2\x00\x7f\x04\x0e\x0c\x32\x08\x2d\x04\xd6\x04\x2a\x08\x19\x04\xea\x04\x16\x08\x35\x04\xce\x04\x32\x0c\x3e\x0c\x30\x00\x7f\x0c\x1f\x00\x7f\x0c\x1c\x02\x05\x06\x14\x06\x0b\x06\x05\x0a\x08",
+    .ob_sval = "\x04\x07\x04\x0f\x08\x03\x08\x01\x08\x01\x08\x01\x08\x01\x0a\x03\x02\x01\x02\x04\x08\xfd\x0a\x01\x08\x02\x02\x03\x02\x03\x0a\xfe\x06\x02\x14\x02\x08\x01\x08\x01\x0a\x01\x0c\x01\x04\x04\x04\x01\x02\x01\x04\x01\x02\xff\x06\x12\x06\x02\x06\x05\x06\x06\x06\x05\x02\x03\x02\x22\x08\xfa\x06\x06\x06\x08\x06\x0a\x06\x09\x06\x05\x06\x07\x02\x03\x02\x0b\x08\xfb\x06\x05\x02\x03\x06\x13\x0a\x03\x00\x7f\x10\x2a\x0c\x01\x04\x02\x04\x01\x06\x02\x02\x01\x0c\x01\x08\x02\x06\x02\x08\x02\x04\x02\x0a\x44\x06\x28\x06\x13\x06\x0c\x06\x0c\x06\x1f\x06\x14\x06\x21\x06\x1c\x06\x18\x02\x03\x06\x0a\x02\x03\x06\x07\x02\x03\x06\x08\x06\x0c\x06\x05\x04\x03\x02\x01\x0a\x43\x0c\x45\x0c\x1e\x00\x7f\x08\x11\x00\x81\x02\xf2\x00\x7f\x04\x0e\x0c\x32\x08\x2d\x04\xd6\x04\x2a\x08\x19\x04\xea\x04\x16\x08\x35\x04\xce\x04\x32\x0c\x3e\x0c\x30\x00\x7f\x0c\x1f\x00\x7f\x0c\x1c\x02\x05\x06\x14\x06\x0b\x06\x05\x0a\x08",
 };
 static
     struct {

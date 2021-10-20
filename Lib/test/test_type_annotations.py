@@ -71,7 +71,7 @@ class TypeAnnotationTests(unittest.TestCase):
 
             @__annotations__.deleter
             def __annotations__(self):
-                if hasattr(self, 'my_annotations') and self.my_annotations == None:
+                if getattr(self, 'my_annotations', False) is None:
                     raise AttributeError('__annotations__')
                 self.my_annotations = None
 

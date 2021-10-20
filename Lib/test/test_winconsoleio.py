@@ -92,9 +92,11 @@ class WindowsConsoleIOTests(unittest.TestCase):
         f.close()
         f.close()
 
-        f = open('C:/con', 'rb', buffering=0)
-        self.assertIsInstance(f, ConIO)
-        f.close()
+        # bpo-45354: Windows 11 changed MS-DOS device name handling
+        if sys.getwindowsversion()[:3] < (10, 0, 22000):
+            f = open('C:/con', 'rb', buffering=0)
+            self.assertIsInstance(f, ConIO)
+            f.close()
 
     @unittest.skipIf(sys.getwindowsversion()[:2] <= (6, 1),
         "test does not work on Windows 7 and earlier")
@@ -114,7 +116,8 @@ class WindowsConsoleIOTests(unittest.TestCase):
         conout_path = os.path.join(temp_path, 'CONOUT$')
 
         with open(conout_path, 'wb', buffering=0) as f:
-            if sys.getwindowsversion()[:2] > (6, 1):
+            # bpo-45354: Windows 11 changed MS-DOS device name handling
+            if (6, 1) < sys.getwindowsversion()[:3] < (10, 0, 22000):
                 self.assertIsInstance(f, ConIO)
             else:
                 self.assertNotIsInstance(f, ConIO)

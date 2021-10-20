@@ -530,8 +530,8 @@ PyCArg_repr(PyCArgObject *self)
         }
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
-   Shouldn't they be replaced by the functionality of c_string
-   and c_wstring ?
+   Shouldn't they be replaced by the functionality of create_string_buffer()
+   and c_wstring() ?
 */
     case 'z':
     case 'Z':
@@ -834,7 +834,7 @@ static int _call_function_pointer(int flags,
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
 #   endif
 
-    /* Even on Apple-arm64 the calling convention for variadic functions conincides
+    /* Even on Apple-arm64 the calling convention for variadic functions coincides
      * with the standard calling convention in the case that the function called
      * only with its fixed arguments.   Thus, we do not need a special flag to be
      * set on variadic functions.   We treat a function as variadic if it is called

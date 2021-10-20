@@ -16,6 +16,7 @@
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 
 #if defined(__APPLE__)
 #include <mach-o/loader.h>
@@ -472,7 +473,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 int
 _PyInterpreterState_SetConfig(const PyConfig *src_config)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     int res = -1;
 
     PyConfig config;
@@ -1078,7 +1079,7 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    // Compute the path configuration
+    // Initialize the import-related configuration.
     status = _PyConfig_InitImportConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -2802,6 +2803,16 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     fflush(stream);
 
     fatal_error(fd, 0, NULL, NULL, -1);
+}
+
+
+void _Py_NO_RETURN
+_Py_FatalRefcountErrorFunc(const char *func, const char *msg)
+{
+    _Py_FatalErrorFormat(func,
+                         "%s: bug likely caused by a refcount error "
+                         "in a C extension",
+                         msg);
 }
 
 
