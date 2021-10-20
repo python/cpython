@@ -187,6 +187,10 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
+|           | co_qualname       | fully-qualified name with |
+|           |                   | which this code object    |
+|           |                   | was defined               |
++-----------+-------------------+---------------------------+
 |           | co_names          | tuple of names of local   |
 |           |                   | variables                 |
 +-----------+-------------------+---------------------------+
@@ -1449,10 +1453,6 @@ the following flags:
 
    The flag is set when the code object is a generator function, i.e.
    a generator object is returned when the code object is executed.
-
-.. data:: CO_NOFREE
-
-   The flag is set if there are no free or cell variables.
 
 .. data:: CO_COROUTINE
 

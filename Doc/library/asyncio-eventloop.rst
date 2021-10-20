@@ -55,7 +55,7 @@ an event loop:
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if there is no running event loop.
-      If future Python releases this function will be an alias of
+      In future Python releases, this function will be an alias of
       :func:`get_running_loop`.
 
 .. function:: set_event_loop(loop)
@@ -215,6 +215,10 @@ Scheduling callbacks
 
    A thread-safe variant of :meth:`call_soon`.  Must be used to
    schedule callbacks *from another thread*.
+
+   Raises :exc:`RuntimeError` if called on a loop that's been closed.
+   This can happen on a secondary thread when the main application is
+   shutting down.
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
@@ -489,23 +493,8 @@ Opening network connections
 .. coroutinemethod:: loop.create_datagram_endpoint(protocol_factory, \
                         local_addr=None, remote_addr=None, *, \
                         family=0, proto=0, flags=0, \
-                        reuse_address=None, reuse_port=None, \
+                        reuse_port=None, \
                         allow_broadcast=None, sock=None)
-
-   .. note::
-      The parameter *reuse_address* is no longer supported, as using
-      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
-      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
-
-      When multiple processes with differing UIDs assign sockets to an
-      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
-      become randomly distributed among the sockets.
-
-      For supported platforms, *reuse_port* can be used as a replacement for
-      similar functionality. With *reuse_port*,
-      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
-      prevents processes with differing UIDs from assigning sockets to the same
-      socket address.
 
    Create a datagram connection.
 
@@ -553,15 +542,30 @@ Opening network connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
    .. versionchanged:: 3.4.4
-      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
+      The *family*, *proto*, *flags*, *reuse_address*, *reuse_port*,
       *allow_broadcast*, and *sock* parameters were added.
 
    .. versionchanged:: 3.8.1
-      The *reuse_address* parameter is no longer supported due to security
-      concerns.
+      The *reuse_address* parameter is no longer supported, as using
+      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
+
+      When multiple processes with differing UIDs assign sockets to an
+      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
 
    .. versionchanged:: 3.8
       Added support for Windows.
+
+   .. versionchanged:: 3.11
+      The *reuse_address* parameter, disabled since Python 3.9.0, 3.8.1,
+      3.7.6 and 3.6.10, has been entirely removed.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
                         path=None, *, ssl=None, sock=None, \
@@ -1132,16 +1136,12 @@ Executing code in thread or process pools
 .. method:: loop.set_default_executor(executor)
 
    Set *executor* as the default executor used by :meth:`run_in_executor`.
-   *executor* should be an instance of
+   *executor* must be an instance of
    :class:`~concurrent.futures.ThreadPoolExecutor`.
 
-   .. deprecated:: 3.8
-      Using an executor that is not an instance of
-      :class:`~concurrent.futures.ThreadPoolExecutor` is deprecated and
-      will trigger an error in Python 3.9.
-
-   *executor* must be an instance of
-   :class:`concurrent.futures.ThreadPoolExecutor`.
+   .. versionchanged:: 3.11
+      *executor* must be an instance of
+      :class:`~concurrent.futures.ThreadPoolExecutor`.
 
 
 Error Handling API
@@ -1440,7 +1440,7 @@ Do not instantiate the class directly.
       Start accepting connections.
 
       This method is idempotent, so it can be called when
-      the server is already being serving.
+      the server is already serving.
 
       The *start_serving* keyword-only parameter to
       :meth:`loop.create_server` and

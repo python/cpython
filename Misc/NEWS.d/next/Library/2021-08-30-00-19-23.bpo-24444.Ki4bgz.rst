@@ -1,0 +1,2 @@
+Fixed an error raised in :mod:`argparse` help display when help for an
+option is set to 1+ blank spaces or when *choices* arg is an empty container.

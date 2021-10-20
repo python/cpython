@@ -1,10 +1,10 @@
 import unittest
 import tkinter
 from tkinter import ttk, TclError
-from test.support import requires
+from test.support import requires, gc_collect
 import sys
 
-from tkinter.test.test_ttk.test_functions import MockTclObj
+from test.test_ttk_textonly import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
@@ -169,10 +169,13 @@ class AbstractLabelTest(AbstractWidgetTest):
                 errmsg='image "spam" doesn\'t exist')
 
     def test_configure_compound(self):
+        options = 'none text image center top bottom left right'.split()
+        errmsg = (
+            'bad compound "{}": must be'
+            f' {", ".join(options[:-1])}, or {options[-1]}'
+            )
         widget = self.create()
-        self.checkEnumParam(widget, 'compound',
-                'none', 'text', 'image', 'center',
-                'top', 'bottom', 'left', 'right')
+        self.checkEnumParam(widget, 'compound', *options, errmsg=errmsg)
 
     def test_configure_state(self):
         widget = self.create()
@@ -839,6 +842,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(conv(self.scale.get()), var.get())
         self.assertEqual(conv(self.scale.get()), max + 5)
         del var
+        gc_collect()  # For PyPy or other GCs.
 
         # the same happens with the value option
         self.scale['value'] = max + 10
@@ -967,7 +971,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         tabs = self.nb.tabs()
 
         curr = self.nb.index('current')
-        # verify that the tab gets readded at its previous position
+        # verify that the tab gets read at its previous position
         child2_index = self.nb.index(self.child2)
         self.nb.hide(self.child2)
         self.nb.add(self.child2)

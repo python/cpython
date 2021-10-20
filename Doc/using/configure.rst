@@ -171,14 +171,17 @@ recommended for best performance.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --with-lto
+.. cmdoption:: --with-lto=[full|thin|no|yes]
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
-   The C compiler Clang requires ``llvm-ar`` for LTO, as well as an LTO-aware
-   linker (``ld.gold`` or ``lld``).
+   The C compiler Clang requires ``llvm-ar`` for LTO (``ar`` on macOS), as well
+   as an LTO-aware linker (``ld.gold`` or ``lld``).
 
    .. versionadded:: 3.6
+
+   .. versionadded:: 3.11
+      To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
 
 .. cmdoption:: --with-computed-gotos
 
@@ -227,7 +230,7 @@ Effects of a debug build:
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.
 * Define ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros.
-* Add runtime checks: code surroundeded by ``#ifdef Py_DEBUG`` and ``#endif``.
+* Add runtime checks: code surrounded by ``#ifdef Py_DEBUG`` and ``#endif``.
   Enable ``assert(...)`` and ``_PyObject_ASSERT(...)`` assertions: don't set
   the ``NDEBUG`` macro (see also the :option:`--with-assertions` configure
   option). Main runtime checks:
@@ -413,14 +416,18 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash24]
+.. cmdoption:: --with-hash-algorithm=[fnv|siphash13|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
-   * ``siphash24`` (default).
-   * ``fnv``;
+   * ``siphash13`` (default);
+   * ``siphash24``;
+   * ``fnv``.
 
    .. versionadded:: 3.4
+
+   .. versionadded:: 3.11
+      ``siphash13`` is added and it is the new default.
 
 .. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
@@ -550,7 +557,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensins are built as dynamic libraires, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 

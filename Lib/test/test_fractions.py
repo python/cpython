@@ -173,6 +173,12 @@ class FractionTest(unittest.TestCase):
         self.assertEqual((-12300, 1), _components(F("-1.23e4")))
         self.assertEqual((0, 1), _components(F(" .0e+0\t")))
         self.assertEqual((0, 1), _components(F("-0.000e0")))
+        self.assertEqual((123, 1), _components(F("1_2_3")))
+        self.assertEqual((41, 107), _components(F("1_2_3/3_2_1")))
+        self.assertEqual((6283, 2000), _components(F("3.14_15")))
+        self.assertEqual((6283, 2*10**13), _components(F("3.14_15e-1_0")))
+        self.assertEqual((101, 100), _components(F("1.01")))
+        self.assertEqual((101, 100), _components(F("1.0_1")))
 
         self.assertRaisesMessage(
             ZeroDivisionError, "Fraction(3, 0)",
@@ -210,6 +216,62 @@ class FractionTest(unittest.TestCase):
             # Allow 3. and .3, but not .
             ValueError, "Invalid literal for Fraction: '.'",
             F, ".")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '_'",
+            F, "_")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '_1'",
+            F, "_1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1__2'",
+            F, "1__2")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '/_'",
+            F, "/_")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1_/'",
+            F, "1_/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '_1/'",
+            F, "_1/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1__2/'",
+            F, "1__2/")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/_'",
+            F, "1/_")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/_1'",
+            F, "1/_1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/1__2'",
+            F, "1/1__2")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1._111'",
+            F, "1._111")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1__1'",
+            F, "1.1__1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1e+_1'",
+            F, "1.1e+_1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
+            F, "1.1e+1__1")
+        # Test catastrophic backtracking.
+        val = "9"*50 + "_"
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '" + val + "'",
+            F, val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/" + val + "'",
+            F, "1/" + val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1." + val + "'",
+            F, "1." + val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1+e" + val + "'",
+            F, "1.1+e" + val)
 
     def testImmutable(self):
         r = F(7, 3)
