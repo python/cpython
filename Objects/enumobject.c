@@ -1,6 +1,9 @@
 /* enumerate object */
 
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 #include "clinic/enumobject.c.h"
 
@@ -115,14 +118,14 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_One);
+    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;
     }
     en->en_longindex = stepped_up;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -130,6 +133,11 @@ enum_next_long(enumobject *en, PyObject* next_item)
         PyTuple_SET_ITEM(result, 1, next_item);
         Py_DECREF(old_index);
         Py_DECREF(old_item);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
         return result;
     }
     result = PyTuple_New(2);
@@ -167,7 +175,7 @@ enum_next(enumobject *en)
     }
     en->en_index++;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -175,6 +183,11 @@ enum_next(enumobject *en)
         PyTuple_SET_ITEM(result, 1, next_item);
         Py_DECREF(old_index);
         Py_DECREF(old_item);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
         return result;
     }
     result = PyTuple_New(2);
@@ -201,6 +214,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
     {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {"__class_getitem__",    Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -284,7 +299,7 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
         return NULL;
     }
     if (reversed_meth != NULL) {
-        PyObject *res = _PyObject_CallNoArg(reversed_meth);
+        PyObject *res = _PyObject_CallNoArgs(reversed_meth);
         Py_DECREF(reversed_meth);
         return res;
     }
@@ -310,6 +325,24 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     Py_INCREF(seq);
     ro->seq = seq;
     return (PyObject *)ro;
+}
+
+static PyObject *
+reversed_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+
+    if (!_PyArg_NoKwnames("reversed", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("reversed", nargs, 1, 1)) {
+        return NULL;
+    }
+
+    return reversed_new_impl((PyTypeObject *)type, args[0]);
 }
 
 static void
@@ -443,4 +476,5 @@ PyTypeObject PyReversed_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     reversed_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)reversed_vectorcall,
 };

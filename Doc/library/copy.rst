@@ -27,7 +27,7 @@ Interface summary:
    Return a deep copy of *x*.
 
 
-.. exception:: error
+.. exception:: Error
 
    Raised for module specific errors.
 
@@ -86,6 +86,7 @@ The latter is called to implement the deep copy operation; it is passed one
 argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation needs
 to make a deep copy of a component, it should call the :func:`deepcopy` function
 with the component as first argument and the memo dictionary as second argument.
+The memo dictionary should be treated as an opaque object.
 
 
 .. seealso::

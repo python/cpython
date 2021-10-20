@@ -443,7 +443,7 @@ class StructureTestCase(unittest.TestCase):
 
         s = Test(1, 2, 3)
         # Test the StructUnionType_paramfunc() code path which copies the
-        # structure: if the stucture is larger than sizeof(void*).
+        # structure: if the structure is larger than sizeof(void*).
         self.assertGreater(sizeof(s), sizeof(c_void_p))
 
         dll = CDLL(_ctypes_test.__file__)
@@ -451,7 +451,7 @@ class StructureTestCase(unittest.TestCase):
         func.argtypes = (Test,)
         func.restype = None
         func(s)
-        # bpo-37140: Passing the structure by refrence must not call
+        # bpo-37140: Passing the structure by reference must not call
         # its finalizer!
         self.assertEqual(finalizer_calls, [])
         self.assertEqual(s.first, 1)
@@ -576,6 +576,7 @@ class StructureTestCase(unittest.TestCase):
             self.assertEqual(f2, [0x4567, 0x0123, 0xcdef, 0x89ab,
                                   0x3210, 0x7654, 0xba98, 0xfedc])
 
+    @unittest.skipIf(True, 'Test disabled for now - see bpo-16575/bpo-16576')
     def test_union_by_value(self):
         # See bpo-16575
 
@@ -656,7 +657,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(test5.nested.an_int, 0)
         self.assertEqual(test5.another_int, 0)
 
-    #@unittest.skipIf('s390' in MACHINE, 'Test causes segfault on S390')
+    @unittest.skipIf(True, 'Test disabled for now - see bpo-16575/bpo-16576')
     def test_bitfield_by_value(self):
         # See bpo-16576
 

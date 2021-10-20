@@ -8,7 +8,7 @@
 # regression test, the filterwarnings() call has been added to
 # regrtest.py.
 
-from test.support import run_unittest, check_syntax_error
+from test.support import check_syntax_error
 import unittest
 import sys
 # testing import *
@@ -473,15 +473,27 @@ class GrammarTests(unittest.TestCase):
         test_inner()
 
     def testReturn(self):
-        # 'return' [testlist]
+        # 'return' [testlist_star_expr]
         def g1(): return
         def g2(): return 1
+        return_list = [2, 3]
+        def g3(): return 1, *return_list
         g1()
         x = g2()
+        x3 = g3()
         check_syntax_error(self, "class foo:return 1")
 
     def testYield(self):
+        # 'yield' [yield_arg]
+        def g1(): yield 1
+        yield_list = [2, 3]
+        def g2(): yield 1, *yield_list
+        def g3(): yield from iter(yield_list)
+        x1 = g1()
+        x2 = g2()
+        x3 = g3()
         check_syntax_error(self, "class foo:yield 1")
+        check_syntax_error(self, "def g4(): yield from *a")
 
     def testRaise(self):
         # 'raise' test [',' test]
@@ -702,7 +714,7 @@ class GrammarTests(unittest.TestCase):
         s = a[-5:]
         s = a[:-1]
         s = a[-4:-3]
-        # A rough test of SF bug 1333982.  http://python.org/sf/1333982
+        # A rough test of SF bug 1333982.  https://python.org/sf/1333982
         # The testing here is fairly incomplete.
         # Test cases should include: commas with 1 and 2 colons
         d = {}
@@ -940,8 +952,5 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual((6 < 4 if 0 else 2), 2)
 
 
-def test_main():
-    run_unittest(TokenTests, GrammarTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

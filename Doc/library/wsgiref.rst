@@ -151,8 +151,7 @@ also provides these miscellaneous utilities:
 .. class:: FileWrapper(filelike, blksize=8192)
 
    A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
-   support both :meth:`__getitem__` and :meth:`__iter__` iteration styles, for
-   compatibility with Python 2.1 and Jython. As the object is iterated over, the
+   are :term:`iterable`\ s. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
    object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
    returns an empty bytestring, iteration is ended and is not resumable.
@@ -173,8 +172,8 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
-   .. deprecated:: 3.8
-      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
+   .. versionchanged:: 3.11
+      Support for :meth:`__getitem__` method has been removed.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -480,8 +479,8 @@ input, output, and error streams.
    rarely used and is not guaranteed by WSGI. On IIS<7, though, the
    setting can only be made on a vhost level, affecting all other script
    mappings, many of which break when exposed to the ``PATH_TRANSLATED`` bug.
-   For this reason IIS<7 is almost never deployed with the fix. (Even IIS7
-   rarely uses it because there is still no UI for it.)
+   For this reason IIS<7 is almost never deployed with the fix (Even IIS7
+   rarely uses it because there is still no UI for it.).
 
    There is no way for CGI code to tell whether the option was set, so a
    separate handler class is provided.  It is used in the same way as

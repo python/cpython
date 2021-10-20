@@ -3,9 +3,10 @@ import os
 import shutil
 import subprocess
 import sys
-import sysconfig
 import unittest
 import test.support
+from test.support import import_helper
+from test.support import os_helper
 from ctypes.util import find_library
 
 libc_name = None
@@ -92,7 +93,7 @@ class LoaderTest(unittest.TestCase):
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
         # to accept this address.
 
-        # These are tests for http://www.python.org/sf/1703286
+        # These are tests for https://www.python.org/sf/1703286
         handle = LoadLibrary("advapi32")
         FreeLibrary(handle)
 
@@ -118,14 +119,14 @@ class LoaderTest(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_dll_with_flags(self):
-        _sqlite3 = test.support.import_module("_sqlite3")
+        _sqlite3 = import_helper.import_module("_sqlite3")
         src = _sqlite3.__file__
         if src.lower().endswith("_d.pyd"):
             ext = "_d.dll"
         else:
             ext = ".dll"
 
-        with test.support.temp_dir() as tmp:
+        with os_helper.temp_dir() as tmp:
             # We copy two files and load _sqlite3.dll (formerly .pyd),
             # which has a dependency on sqlite3.dll. Then we test
             # loading it in subprocesses to avoid it starting in memory
@@ -159,7 +160,8 @@ class LoaderTest(unittest.TestCase):
             should_pass("WinDLL('./_sqlite3.dll')")
 
             # Insecure load flags should succeed
-            should_pass("WinDLL('_sqlite3.dll', winmode=0)")
+            # Clear the DLL directory to avoid safe search settings propagating
+            should_pass("windll.kernel32.SetDllDirectoryW(None); WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
             should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +

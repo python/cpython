@@ -8,9 +8,19 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the PEP425 tag of the
+   build system. */
+#undef AIX_BUILDDATE
+
 /* Define for AIX if your compiler is a genuine IBM xlC/xlC_r and you want
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
+
+/* The normal alignment of `long', in bytes. */
+#undef ALIGNOF_LONG
+
+/* The normal alignment of `size_t', in bytes. */
+#undef ALIGNOF_SIZE_T
 
 /* Alternative SOABI used in debug build to load C extensions built in release
    mode */
@@ -33,6 +43,9 @@
 
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
+
+/* Better isolate subinterpreters, experimental build mode. */
+#undef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 
 /* Define to 1 if your system stores words within floats with the most
    significant word first */
@@ -108,7 +121,7 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
-/* Has builtin atomics */
+/* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
 /* Define to 1 if you have the 'chflags' function. */
@@ -129,8 +142,14 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define to 1 if you have the `clock_nanosleep' function. */
+#undef HAVE_CLOCK_NANOSLEEP
+
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
+
+/* Define to 1 if you have the `close_range' function. */
+#undef HAVE_CLOSE_RANGE
 
 /* Define if the C compiler supports computed gotos. */
 #undef HAVE_COMPUTED_GOTOS
@@ -140,9 +159,6 @@
 
 /* Define to 1 if you have the <conio.h> header file. */
 #undef HAVE_CONIO_H
-
-/* Define to 1 if you have the `copysign' function. */
-#undef HAVE_COPYSIGN
 
 /* Define to 1 if you have the `copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
@@ -194,18 +210,6 @@
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
-
-/* Define to 1 if you have the declaration of `isfinite', and to 0 if you
-   don't. */
-#undef HAVE_DECL_ISFINITE
-
-/* Define to 1 if you have the declaration of `isinf', and to 0 if you don't.
-   */
-#undef HAVE_DECL_ISINF
-
-/* Define to 1 if you have the declaration of `isnan', and to 0 if you don't.
-   */
-#undef HAVE_DECL_ISNAN
 
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -277,6 +281,9 @@
 /* Define to 1 if you have the `dup3' function. */
 #undef HAVE_DUP3
 
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
@@ -297,6 +304,9 @@
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
+
+/* Define if you have the 'eventfd' function. */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
@@ -525,9 +535,6 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
-/* Define to 1 if you have the `hypot' function. */
-#undef HAVE_HYPOT
-
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
@@ -594,7 +601,7 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define if you have the readline library (-lreadline). */
+/* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
 
 /* Define to 1 if you have the `resolv' library (-lresolv). */
@@ -618,11 +625,17 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define to 1 if you have the <linux/can/j1939.h> header file. */
+#undef HAVE_LINUX_CAN_J1939_H
+
 /* Define if compiling using Linux 3.6 or later. */
 #undef HAVE_LINUX_CAN_RAW_FD_FRAMES
 
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
+
+/* Define if compiling using Linux 4.1 or later. */
+#undef HAVE_LINUX_CAN_RAW_JOIN_FILTERS
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
@@ -705,6 +718,9 @@
 /* Define to 1 if you have the `mremap' function. */
 #undef HAVE_MREMAP
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
@@ -719,6 +735,10 @@
 
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
+
+/* Define if the internal form of wchar_t in non-Unicode locales is not
+   Unicode. */
+#undef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
@@ -798,9 +818,6 @@
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
 
-/* Define to 1 if you have the `putenv' function. */
-#undef HAVE_PUTENV
-
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
@@ -849,9 +866,6 @@
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
 
-/* Define to 1 if you have the `round' function. */
-#undef HAVE_ROUND
-
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN
 
@@ -872,6 +886,9 @@
 
 /* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
+
+/* Define to 1 if you have the `sem_clockwait' function. */
+#undef HAVE_SEM_CLOCKWAIT
 
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
@@ -999,6 +1016,9 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -1023,9 +1043,6 @@
 
 /* Has stdatomic.h with atomic_int and atomic_uintptr_t */
 #undef HAVE_STD_ATOMIC
-
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
 
 /* Define to 1 if you have the `strftime' function. */
 #undef HAVE_STRFTIME
@@ -1105,6 +1122,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H
@@ -1259,9 +1279,6 @@
 /* Define to 1 if you have the `unlinkat' function. */
 #undef HAVE_UNLINKAT
 
-/* Define to 1 if you have the `unsetenv' function. */
-#undef HAVE_UNSETENV
-
 /* Define if you have a useable wchar_t type defined in wchar.h; useable means
    wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h). */
@@ -1293,6 +1310,9 @@
 
 /* Define to 1 if you have the <uuid/uuid.h> header file. */
 #undef HAVE_UUID_UUID_H
+
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
@@ -1327,9 +1347,6 @@
 
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
-
-/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
-#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
@@ -1378,6 +1395,9 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* enabled builtin hash modules */
+#undef PY_BUILTIN_HASHLIB_HASHES
+
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
 
@@ -1398,7 +1418,7 @@
 #undef Py_ENABLE_SHARED
 
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
-   externally defined: 0 */
+   SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
 /* Define if you want to enable tracing references for debugging purpose */
@@ -1477,6 +1497,9 @@
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
 
+/* Custom thread stack size depending on chosen sanitizer runtimes. */
+#undef THREAD_STACK_SIZE
+
 /* Library needed by timemodule.c: librt may be needed for clock_gettime() */
 #undef TIMEMODULE_LIB
 
@@ -1514,6 +1537,10 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
+/* Define if you want build the _decimal module using a coroutine-local rather
+   than a thread-local context */
+#undef WITH_DECIMAL_CONTEXTVAR
+
 /* Define if you want documentation strings in extension modules */
 #undef WITH_DOC_STRINGS
 
@@ -1524,6 +1551,9 @@
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
    Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
+
+/* Define to build the readline module against Editline. */
+#undef WITH_EDITLINE
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL

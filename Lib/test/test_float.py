@@ -64,6 +64,9 @@ class GeneralFloatCases(unittest.TestCase):
         # See bpo-34087
         self.assertRaises(ValueError, float, '\u3053\u3093\u306b\u3061\u306f')
 
+    def test_noargs(self):
+        self.assertEqual(float(), 0.0)
+
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
             if not any(ch in lit for ch in 'jJxXoObB'):
@@ -242,6 +245,33 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
 
+    def test_keywords_in_subclass(self):
+        class subclass(float):
+            pass
+        u = subclass(2.5)
+        self.assertIs(type(u), subclass)
+        self.assertEqual(float(u), 2.5)
+        with self.assertRaises(TypeError):
+            subclass(x=0)
+
+        class subclass_with_init(float):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(float):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new(2.5, newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(float(u), 2.5)
+        self.assertEqual(u.newarg, 3)
+
     def test_is_integer(self):
         self.assertFalse((1.1).is_integer())
         self.assertTrue((1.).is_integer())
@@ -311,6 +341,34 @@ class GeneralFloatCases(unittest.TestCase):
         # the only difference from assertEqual is that this test
         # distinguishes -0.0 and 0.0.
         self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
+
+    def test_float_floor(self):
+        self.assertIsInstance(float(0.5).__floor__(), int)
+        self.assertEqual(float(0.5).__floor__(), 0)
+        self.assertEqual(float(1.0).__floor__(), 1)
+        self.assertEqual(float(1.5).__floor__(), 1)
+        self.assertEqual(float(-0.5).__floor__(), -1)
+        self.assertEqual(float(-1.0).__floor__(), -1)
+        self.assertEqual(float(-1.5).__floor__(), -2)
+        self.assertEqual(float(1.23e167).__floor__(), 1.23e167)
+        self.assertEqual(float(-1.23e167).__floor__(), -1.23e167)
+        self.assertRaises(ValueError, float("nan").__floor__)
+        self.assertRaises(OverflowError, float("inf").__floor__)
+        self.assertRaises(OverflowError, float("-inf").__floor__)
+
+    def test_float_ceil(self):
+        self.assertIsInstance(float(0.5).__ceil__(), int)
+        self.assertEqual(float(0.5).__ceil__(), 1)
+        self.assertEqual(float(1.0).__ceil__(), 1)
+        self.assertEqual(float(1.5).__ceil__(), 2)
+        self.assertEqual(float(-0.5).__ceil__(), 0)
+        self.assertEqual(float(-1.0).__ceil__(), -1)
+        self.assertEqual(float(-1.5).__ceil__(), -1)
+        self.assertEqual(float(1.23e167).__ceil__(), 1.23e167)
+        self.assertEqual(float(-1.23e167).__ceil__(), -1.23e167)
+        self.assertRaises(ValueError, float("nan").__ceil__)
+        self.assertRaises(OverflowError, float("inf").__ceil__)
+        self.assertRaises(OverflowError, float("-inf").__ceil__)
 
     @support.requires_IEEE_754
     def test_float_mod(self):
@@ -533,6 +591,25 @@ class GeneralFloatCases(unittest.TestCase):
             #self.assertTrue(0.0 < pow_op(2.0, -1047) < 1e-315)
             #self.assertTrue(0.0 > pow_op(-2.0, -1047) > -1e-315)
 
+    def test_hash(self):
+        for x in range(-30, 30):
+            self.assertEqual(hash(float(x)), hash(x))
+        self.assertEqual(hash(float(sys.float_info.max)),
+                         hash(int(sys.float_info.max)))
+        self.assertEqual(hash(float('inf')), sys.hash_info.inf)
+        self.assertEqual(hash(float('-inf')), -sys.hash_info.inf)
+
+    def test_hash_nan(self):
+        value = float('nan')
+        self.assertEqual(hash(value), object.__hash__(value))
+        class H:
+            def __hash__(self):
+                return 42
+        class F(float, H):
+            pass
+        value = F('nan')
+        self.assertEqual(hash(value), object.__hash__(value))
+
 
 @requires_setformat
 class FormatFunctionsTestCase(unittest.TestCase):
@@ -698,7 +775,7 @@ class FormatTestCase(unittest.TestCase):
 
     @support.requires_IEEE_754
     def test_format_testfile(self):
-        with open(format_testfile) as testfile:
+        with open(format_testfile, encoding="utf-8") as testfile:
             for line in testfile:
                 if line.startswith('--'):
                     continue
@@ -738,7 +815,7 @@ class FormatTestCase(unittest.TestCase):
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
         with open(os.path.join(os.path.split(__file__)[0],
-                  'floating_points.txt')) as floats_file:
+                  'floating_points.txt'), encoding="utf-8") as floats_file:
             for line in floats_file:
                 line = line.strip()
                 if not line or line.startswith('#'):
@@ -1134,10 +1211,10 @@ class HexFloatTestCase(unittest.TestCase):
 
 
     def test_from_hex(self):
-        MIN = self.MIN;
-        MAX = self.MAX;
-        TINY = self.TINY;
-        EPS = self.EPS;
+        MIN = self.MIN
+        MAX = self.MAX
+        TINY = self.TINY
+        EPS = self.EPS
 
         # two spellings of infinity, with optional signs; case-insensitive
         self.identical(fromHex('inf'), INF)
@@ -1417,6 +1494,20 @@ class HexFloatTestCase(unittest.TestCase):
         self.identical(fromHex('0x1.0000000000001ep0'), 1.0+2*EPS)
         self.identical(fromHex('0X1.0000000000001fp0'), 1.0+2*EPS)
         self.identical(fromHex('0x1.00000000000020p0'), 1.0+2*EPS)
+
+        # Regression test for a corner-case bug reported in b.p.o. 44954
+        self.identical(fromHex('0x.8p-1074'), 0.0)
+        self.identical(fromHex('0x.80p-1074'), 0.0)
+        self.identical(fromHex('0x.81p-1074'), TINY)
+        self.identical(fromHex('0x8p-1078'), 0.0)
+        self.identical(fromHex('0x8.0p-1078'), 0.0)
+        self.identical(fromHex('0x8.1p-1078'), TINY)
+        self.identical(fromHex('0x80p-1082'), 0.0)
+        self.identical(fromHex('0x81p-1082'), TINY)
+        self.identical(fromHex('.8p-1074'), 0.0)
+        self.identical(fromHex('8p-1078'), 0.0)
+        self.identical(fromHex('-.8p-1074'), -0.0)
+        self.identical(fromHex('+8p-1078'), 0.0)
 
     def test_roundtrip(self):
         def roundtrip(x):

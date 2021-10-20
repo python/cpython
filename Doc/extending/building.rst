@@ -162,6 +162,5 @@ If the source distribution has been built successfully, maintainers can also
 create binary distributions. Depending on the platform, one of the following
 commands can be used to do so. ::
 
-   python setup.py bdist_wininst
    python setup.py bdist_rpm
    python setup.py bdist_dumb

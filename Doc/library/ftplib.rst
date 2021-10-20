@@ -17,7 +17,9 @@ This module defines the class :class:`FTP` and a few related items. The
 this to write Python programs that perform a variety of automated FTP jobs, such
 as mirroring other FTP servers.  It is also used by the module
 :mod:`urllib.request` to handle URLs that use FTP.  For more information on FTP
-(File Transfer Protocol), see Internet :rfc:`959`.
+(File Transfer Protocol), see internet :rfc:`959`.
+
+The default encoding is UTF-8, following :rfc:`2640`.
 
 Here's a sample session using the :mod:`ftplib` module::
 
@@ -26,6 +28,7 @@ Here's a sample session using the :mod:`ftplib` module::
    >>> ftp.login()                     # user anonymous, passwd anonymous@
    '230 Login successful.'
    >>> ftp.cwd('debian')               # change into "debian" directory
+   '250 Directory successfully changed.'
    >>> ftp.retrlines('LIST')           # list directory contents
    -rw-rw-r--    1 1176     1176         1063 Jun 15 10:18 README
    ...
@@ -37,11 +40,12 @@ Here's a sample session using the :mod:`ftplib` module::
    >>>     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
+   '221 Goodbye.'
 
 
 The module defines the following items:
 
-.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, source_address=None)
+.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, source_address=None, *, encoding='utf-8')
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
@@ -50,7 +54,8 @@ The module defines the following items:
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if is not specified, the global default timeout setting
    will be used). *source_address* is a 2-tuple ``(host, port)`` for the socket
-   to bind to as its source address before connecting.
+   to bind to as its source address before connecting. The *encoding* parameter
+   specifies the encoding for directories and filenames.
 
    The :class:`FTP` class supports the :keyword:`with` statement, e.g.:
 
@@ -72,8 +77,13 @@ The module defines the following items:
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
+      The *encoding* parameter was added, and the default was changed from
+      Latin-1 to UTF-8 to follow :rfc:`2640`.
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None, *, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -104,6 +114,12 @@ The module defines the following items:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
+      The *encoding* parameter was added, and the default was changed from
+      Latin-1 to UTF-8 to follow :rfc:`2640`.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 
@@ -252,9 +268,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.retrlines(cmd, callback=None)
 
-   Retrieve a file or directory listing in ASCII transfer mode.  *cmd* should be
-   an appropriate ``RETR`` command (see :meth:`retrbinary`) or a command such as
-   ``LIST`` or ``NLST`` (usually just the string ``'LIST'``).
+   Retrieve a file or directory listing in the encoding specified by the
+   *encoding* parameter at initialization.
+   *cmd* should be an appropriate ``RETR`` command (see :meth:`retrbinary`) or
+   a command such as ``LIST`` or ``NLST`` (usually just the string ``'LIST'``).
    ``LIST`` retrieves a list of files and information about those files.
    ``NLST`` retrieves a list of file names.
    The *callback* function is called for each line with a string argument
@@ -284,7 +301,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.storlines(cmd, fp, callback=None)
 
-   Store a file in ASCII transfer mode.  *cmd* should be an appropriate
+   Store a file in line mode.  *cmd* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
    :term:`file object` *fp* (opened in binary mode) using its :meth:`~io.IOBase.readline`
    method to provide the data to be stored.  *callback* is an optional single
@@ -302,10 +319,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    If optional *rest* is given, a ``REST`` command is sent to the server, passing
    *rest* as an argument.  *rest* is usually a byte offset into the requested file,
    telling the server to restart sending the file's bytes at the requested offset,
-   skipping over the initial bytes.  Note however that :rfc:`959` requires only that
-   *rest* be a string containing characters in the printable range from ASCII code
-   33 to ASCII code 126.  The :meth:`transfercmd` method, therefore, converts
-   *rest* to a string, but no check is performed on the string's contents.  If the
+   skipping over the initial bytes.  Note however that the :meth:`transfercmd`
+   method converts *rest* to a string with the *encoding* parameter specified
+   at initialization, but no check is performed on the string's contents.  If the
    server does not recognize the ``REST`` command, an :exc:`error_reply` exception
    will be raised.  If this happens, simply call :meth:`transfercmd` without a
    *rest* argument.

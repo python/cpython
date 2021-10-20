@@ -28,8 +28,8 @@ from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
 
-from tkinter import Toplevel, Frame, Text, Menu
-from tkinter.ttk import Menubutton, Scrollbar
+from tkinter import Toplevel, Text, Menu
+from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 from tkinter import font as tkfont
 
 from idlelib.config import idleConf
@@ -212,7 +212,9 @@ class HelpFrame(Frame):
     def __init__(self, parent, filename):
         Frame.__init__(self, parent)
         self.text = text = HelpText(self, filename)
-        self['background'] = text['background']
+        self.style = Style(parent)
+        self['style'] = 'helpframe.TFrame'
+        self.style.configure('helpframe.TFrame', background=text['background'])
         self.toc = toc = self.toc_menu(text)
         self.scroll = scroll = Scrollbar(self, command=text.yview)
         text['yscrollcommand'] = scroll.set

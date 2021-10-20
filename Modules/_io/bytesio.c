@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"       /* for offsetof() */
+#include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -176,7 +176,7 @@ resize_buffer(bytesio *self, size_t size)
    object. Returns the number of bytes written, or -1 on error.
    Inlining is disabled because it's significantly decreases performance
    of writelines() in PGO build. */
-_Py_NO_INLINE static Py_ssize_t
+Py_NO_INLINE static Py_ssize_t
 write_bytes(bytesio *self, PyObject *b)
 {
     if (check_closed(self)) {
@@ -393,7 +393,7 @@ _io_BytesIO_tell_impl(bytesio *self)
 static PyObject *
 read_bytes(bytesio *self, Py_ssize_t size)
 {
-    char *output;
+    const char *output;
 
     assert(self->buf != NULL);
     assert(size <= self->string_size);
@@ -502,7 +502,7 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
 {
     Py_ssize_t maxsize, size, n;
     PyObject *result, *line;
-    char *output;
+    const char *output;
 
     CHECK_CLOSED(self);
 

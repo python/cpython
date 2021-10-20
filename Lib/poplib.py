@@ -107,6 +107,8 @@ class POP3:
         self.welcome = self._getresp()
 
     def _create_socket(self, timeout):
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         return socket.create_connection((self.host, self.port), timeout)
 
     def _putline(self, line):

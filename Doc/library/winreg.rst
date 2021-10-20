@@ -53,6 +53,8 @@ This module offers the following functions:
    The return value is the handle of the opened key. If the function fails, an
    :exc:`OSError` exception is raised.
 
+   .. audit-event:: winreg.ConnectRegistry computer_name,key winreg.ConnectRegistry
+
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
@@ -74,6 +76,10 @@ This module offers the following functions:
 
    The return value is the handle of the opened key. If the function fails, an
    :exc:`OSError` exception is raised.
+
+   .. audit-event:: winreg.CreateKey key,sub_key,access winreg.CreateKey
+
+   .. audit-event:: winreg.OpenKey/result key winreg.CreateKey
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
@@ -103,6 +109,10 @@ This module offers the following functions:
    The return value is the handle of the opened key. If the function fails, an
    :exc:`OSError` exception is raised.
 
+   .. audit-event:: winreg.CreateKey key,sub_key,access winreg.CreateKeyEx
+
+   .. audit-event:: winreg.OpenKey/result key winreg.CreateKeyEx
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
@@ -123,6 +133,8 @@ This module offers the following functions:
 
    If the method succeeds, the entire key, including all of its values, is removed.
    If the method fails, an :exc:`OSError` exception is raised.
+
+   .. audit-event:: winreg.DeleteKey key,sub_key,access winreg.DeleteKey
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
@@ -158,6 +170,8 @@ This module offers the following functions:
 
    On unsupported Windows versions, :exc:`NotImplementedError` is raised.
 
+   .. audit-event:: winreg.DeleteKey key,sub_key,access winreg.DeleteKeyEx
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
@@ -173,6 +187,8 @@ This module offers the following functions:
 
    *value* is a string that identifies the value to remove.
 
+   .. audit-event:: winreg.DeleteValue key,value winreg.DeleteValue
+
 
 .. function:: EnumKey(key, index)
 
@@ -186,6 +202,8 @@ This module offers the following functions:
    The function retrieves the name of one subkey each time it is called.  It is
    typically called repeatedly until an :exc:`OSError` exception is
    raised, indicating, no more values are available.
+
+   .. audit-event:: winreg.EnumKey key,index winreg.EnumKey
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
@@ -220,6 +238,8 @@ This module offers the following functions:
    |       | :meth:`SetValueEx`)                        |
    +-------+--------------------------------------------+
 
+   .. audit-event:: winreg.EnumValue key,index winreg.EnumValue
+
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
@@ -234,6 +254,8 @@ This module offers the following functions:
 
       >>> ExpandEnvironmentStrings('%windir%')
       'C:\\Windows'
+
+   .. audit-event:: winreg.ExpandEnvironmentStrings str winreg.ExpandEnvironmentStrings
 
 
 .. function:: FlushKey(key)
@@ -279,6 +301,8 @@ This module offers the following functions:
    If *key* is a handle returned by :func:`ConnectRegistry`, then the path
    specified in *file_name* is relative to the remote computer.
 
+   .. audit-event:: winreg.LoadKey key,sub_key,file_name winreg.LoadKey
+
 
 .. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
               OpenKeyEx(key, sub_key, reserved=0, access=KEY_READ)
@@ -299,6 +323,10 @@ This module offers the following functions:
    The result is a new handle to the specified key.
 
    If the function fails, :exc:`OSError` is raised.
+
+   .. audit-event:: winreg.OpenKey key,sub_key,access winreg.OpenKey
+
+   .. audit-event:: winreg.OpenKey/result key winreg.OpenKey
 
    .. versionchanged:: 3.2
       Allow the use of named arguments.
@@ -330,6 +358,8 @@ This module offers the following functions:
    |       | nanoseconds since Jan 1, 1601.              |
    +-------+---------------------------------------------+
 
+   .. audit-event:: winreg.QueryInfoKey key winreg.QueryInfoKey
+
 
 .. function:: QueryValue(key, sub_key)
 
@@ -346,6 +376,8 @@ This module offers the following functions:
    retrieves the data for a key's first value that has a ``NULL`` name. But the
    underlying API call doesn't return the type, so always use
    :func:`QueryValueEx` if possible.
+
+   .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValue
 
 
 .. function:: QueryValueEx(key, value_name)
@@ -370,6 +402,8 @@ This module offers the following functions:
    |       | :meth:`SetValueEx`)                     |
    +-------+-----------------------------------------+
 
+   .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValueEx
+
 
 .. function:: SaveKey(key, file_name)
 
@@ -392,6 +426,8 @@ This module offers the following functions:
    for more details.
 
    This function passes ``NULL`` for *security_attributes* to the API.
+
+   .. audit-event:: winreg.SaveKey key,file_name winreg.SaveKey
 
 
 .. function:: SetValue(key, sub_key, type, value)
@@ -418,6 +454,8 @@ This module offers the following functions:
 
    The key identified by the *key* parameter must have been opened with
    :const:`KEY_SET_VALUE` access.
+
+   .. audit-event:: winreg.SetValue key,sub_key,type,value winreg.SetValue
 
 
 .. function:: SetValueEx(key, value_name, reserved, type, value)
@@ -447,6 +485,8 @@ This module offers the following functions:
    bytes) should be stored as files with the filenames stored in the configuration
    registry.  This helps the registry perform efficiently.
 
+   .. audit-event:: winreg.SetValue key,sub_key,type,value winreg.SetValueEx
+
 
 .. function:: DisableReflectionKey(key)
 
@@ -463,6 +503,8 @@ This module offers the following functions:
    effect.  Disabling reflection for a key does not affect reflection of any
    subkeys.
 
+   .. audit-event:: winreg.DisableReflectionKey key winreg.DisableReflectionKey
+
 
 .. function:: EnableReflectionKey(key)
 
@@ -476,6 +518,8 @@ This module offers the following functions:
 
    Restoring reflection for a key does not affect reflection of any subkeys.
 
+   .. audit-event:: winreg.EnableReflectionKey key winreg.EnableReflectionKey
+
 
 .. function:: QueryReflectionKey(key)
 
@@ -488,6 +532,8 @@ This module offers the following functions:
 
    Will generally raise :exc:`NotImplementedError` if executed on a 32-bit
    operating system.
+
+   .. audit-event:: winreg.QueryReflectionKey key winreg.QueryReflectionKey
 
 
 .. _constants:
@@ -741,8 +787,11 @@ integer handle, and also disconnect the Windows handle from the handle object.
    handle is not closed.  You would call this function when you need the
    underlying Win32 handle to exist beyond the lifetime of the handle object.
 
+   .. audit-event:: winreg.PyHKEY.Detach key winreg.PyHKEY.Detach
+
+
 .. method:: PyHKEY.__enter__()
-            PyHKEY.__exit__(\*exc_info)
+            PyHKEY.__exit__(*exc_info)
 
    The HKEY object implements :meth:`~object.__enter__` and
    :meth:`~object.__exit__` and thus supports the context protocol for the

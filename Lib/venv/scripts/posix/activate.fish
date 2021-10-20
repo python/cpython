@@ -1,7 +1,7 @@
-# This file must be used with ". bin/activate.fish" *from fish* (http://fishshell.org);
-# you cannot run it directly.
+# This file must be used with "source <venv>/bin/activate.fish" *from fish*
+# (https://fishshell.com/); you cannot run it directly.
 
-function deactivate  -d "Exit virtualenv and return to normal shell environment"
+function deactivate  -d "Exit virtual environment and return to normal shell environment"
     # reset old environment variables
     if test -n "$_OLD_VIRTUAL_PATH"
         set -gx PATH $_OLD_VIRTUAL_PATH
@@ -20,6 +20,7 @@ function deactivate  -d "Exit virtualenv and return to normal shell environment"
     end
 
     set -e VIRTUAL_ENV
+    set -e VIRTUAL_ENV_PROMPT
     if test "$argv[1]" != "nondestructive"
         # Self-destruct!
         functions -e deactivate
@@ -61,4 +62,5 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     end
 
     set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"
+    set -gx VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 end

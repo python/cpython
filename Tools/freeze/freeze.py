@@ -93,6 +93,7 @@ import modulefinder
 import getopt
 import os
 import sys
+import sysconfig
 
 
 # Import the freeze-private modules
@@ -226,7 +227,7 @@ def main():
         extensions_c = 'frozen_extensions.c'
     if ishome:
         print("(Using Python source directory)")
-        binlib = exec_prefix
+        configdir = exec_prefix
         incldir = os.path.join(prefix, 'Include')
         config_h_dir = exec_prefix
         config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
@@ -235,22 +236,21 @@ def main():
         if win:
             frozendllmain_c = os.path.join(exec_prefix, 'Pc\\frozen_dllmain.c')
     else:
-        binlib = os.path.join(exec_prefix,
-                              'lib', 'python%s' % version,
-                              'config-%s' % flagged_version)
+        configdir = sysconfig.get_config_var('LIBPL')
         incldir = os.path.join(prefix, 'include', 'python%s' % flagged_version)
         config_h_dir = os.path.join(exec_prefix, 'include',
                                     'python%s' % flagged_version)
-        config_c_in = os.path.join(binlib, 'config.c.in')
-        frozenmain_c = os.path.join(binlib, 'frozenmain.c')
-        makefile_in = os.path.join(binlib, 'Makefile')
-        frozendllmain_c = os.path.join(binlib, 'frozen_dllmain.c')
+        config_c_in = os.path.join(configdir, 'config.c.in')
+        frozenmain_c = os.path.join(configdir, 'frozenmain.c')
+        makefile_in = os.path.join(configdir, 'Makefile')
+        frozendllmain_c = os.path.join(configdir, 'frozen_dllmain.c')
+    libdir = sysconfig.get_config_var('LIBDIR')
     supp_sources = []
     defines = []
     includes = ['-I' + incldir, '-I' + config_h_dir]
 
     # sanity check of directories and files
-    check_dirs = [prefix, exec_prefix, binlib, incldir]
+    check_dirs = [prefix, exec_prefix, configdir, incldir]
     if not win:
         # These are not directories on Windows.
         check_dirs = check_dirs + extensions
@@ -457,7 +457,7 @@ def main():
 
     cflags = ['$(OPT)']
     cppflags = defines + includes
-    libs = [os.path.join(binlib, '$(LDLIBRARY)')]
+    libs = [os.path.join(libdir, '$(LDLIBRARY)')]
 
     somevars = {}
     if os.path.exists(makefile_in):

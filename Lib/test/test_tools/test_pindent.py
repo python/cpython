@@ -6,6 +6,7 @@ import unittest
 import subprocess
 import textwrap
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 from test.test_tools import scriptsdir, skip_if_missing
@@ -34,11 +35,11 @@ class PindentTests(unittest.TestCase):
 
     def test_selftest(self):
         self.maxDiff = None
-        with support.temp_dir() as directory:
+        with os_helper.temp_dir() as directory:
             data_path = os.path.join(directory, '_test.py')
-            with open(self.script) as f:
+            with open(self.script, encoding='utf-8') as f:
                 closed = f.read()
-            with open(data_path, 'w') as f:
+            with open(data_path, 'w', encoding='utf-8') as f:
                 f.write(closed)
 
             rc, out, err = assert_python_ok(self.script, '-d', data_path)
@@ -46,9 +47,9 @@ class PindentTests(unittest.TestCase):
             self.assertEqual(err, b'')
             backup = data_path + '~'
             self.assertTrue(os.path.exists(backup))
-            with open(backup) as f:
+            with open(backup, encoding='utf-8') as f:
                 self.assertEqual(f.read(), closed)
-            with open(data_path) as f:
+            with open(data_path, encoding='utf-8') as f:
                 clean = f.read()
             compile(clean, '_test.py', 'exec')
             self.assertEqual(self.pindent(clean, '-c'), closed)
@@ -57,20 +58,20 @@ class PindentTests(unittest.TestCase):
             rc, out, err = assert_python_ok(self.script, '-c', data_path)
             self.assertEqual(out, b'')
             self.assertEqual(err, b'')
-            with open(backup) as f:
+            with open(backup, encoding='utf-8') as f:
                 self.assertEqual(f.read(), clean)
-            with open(data_path) as f:
+            with open(data_path, encoding='utf-8') as f:
                 self.assertEqual(f.read(), closed)
 
             broken = self.lstriplines(closed)
-            with open(data_path, 'w') as f:
+            with open(data_path, 'w', encoding='utf-8') as f:
                 f.write(broken)
             rc, out, err = assert_python_ok(self.script, '-r', data_path)
             self.assertEqual(out, b'')
             self.assertEqual(err, b'')
-            with open(backup) as f:
+            with open(backup, encoding='utf-8') as f:
                 self.assertEqual(f.read(), broken)
-            with open(data_path) as f:
+            with open(data_path, encoding='utf-8') as f:
                 indented = f.read()
             compile(indented, '_test.py', 'exec')
             self.assertEqual(self.pindent(broken, '-r'), indented)

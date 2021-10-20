@@ -1,12 +1,14 @@
 """Unit tests for contextlib.py, and other context managers."""
 
 import io
+import os
 import sys
 import tempfile
 import threading
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
+from test.support import os_helper
 import weakref
 
 
@@ -125,19 +127,22 @@ class ContextManagerTestCase(unittest.TestCase):
         self.assertEqual(state, [1, 42, 999])
 
     def test_contextmanager_except_stopiter(self):
-        stop_exc = StopIteration('spam')
         @contextmanager
         def woohoo():
             yield
-        try:
-            with self.assertWarnsRegex(DeprecationWarning,
-                                       "StopIteration"):
-                with woohoo():
-                    raise stop_exc
-        except Exception as ex:
-            self.assertIs(ex, stop_exc)
-        else:
-            self.fail('StopIteration was suppressed')
+
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        for stop_exc in (StopIteration('spam'), StopIterationSubclass('spam')):
+            with self.subTest(type=type(stop_exc)):
+                try:
+                    with woohoo():
+                        raise stop_exc
+                except Exception as ex:
+                    self.assertIs(ex, stop_exc)
+                else:
+                    self.fail(f'{stop_exc} was suppressed')
 
     def test_contextmanager_except_pep479(self):
         code = """\
@@ -227,6 +232,8 @@ def woohoo():
         def woohoo(a, b):
             a = weakref.ref(a)
             b = weakref.ref(b)
+            # Allow test to work with a non-refcounted GC
+            support.gc_collect()
             self.assertIsNone(a())
             self.assertIsNone(b())
             yield
@@ -315,19 +322,19 @@ class FileContextTestCase(unittest.TestCase):
         tfn = tempfile.mktemp()
         try:
             f = None
-            with open(tfn, "w") as f:
+            with open(tfn, "w", encoding="utf-8") as f:
                 self.assertFalse(f.closed)
                 f.write("Booh\n")
             self.assertTrue(f.closed)
             f = None
             with self.assertRaises(ZeroDivisionError):
-                with open(tfn, "r") as f:
+                with open(tfn, "r", encoding="utf-8") as f:
                     self.assertFalse(f.closed)
                     self.assertEqual(f.read(), "Booh\n")
                     1 / 0
             self.assertTrue(f.closed)
         finally:
-            support.unlink(tfn)
+            os_helper.unlink(tfn)
 
 class LockContextTestCase(unittest.TestCase):
 
@@ -490,7 +497,7 @@ class TestContextDecorator(unittest.TestCase):
             def __exit__(self, *exc):
                 pass
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
             with mycontext():
                 pass
 
@@ -502,7 +509,7 @@ class TestContextDecorator(unittest.TestCase):
             def __uxit__(self, *exc):
                 pass
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(TypeError, 'the context manager.*__exit__'):
             with mycontext():
                 pass
 
@@ -660,6 +667,25 @@ class TestBaseExitStack:
             result.append(2)
         self.assertEqual(result, [1, 2, 3, 4])
 
+    def test_enter_context_errors(self):
+        class LacksEnterAndExit:
+            pass
+        class LacksEnter:
+            def __exit__(self, *exc_info):
+                pass
+        class LacksExit:
+            def __enter__(self):
+                pass
+
+        with self.exit_stack() as stack:
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksEnterAndExit())
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksEnter())
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksExit())
+            self.assertFalse(stack._exit_callbacks)
+
     def test_close(self):
         result = []
         with self.exit_stack() as stack:
@@ -774,6 +800,40 @@ class TestBaseExitStack:
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
 
+    def test_exit_exception_explicit_none_context(self):
+        # Ensure ExitStack chaining matches actual nested `with` statements
+        # regarding explicit __context__ = None.
+
+        class MyException(Exception):
+            pass
+
+        @contextmanager
+        def my_cm():
+            try:
+                yield
+            except BaseException:
+                exc = MyException()
+                try:
+                    raise exc
+                finally:
+                    exc.__context__ = None
+
+        @contextmanager
+        def my_cm_with_exit_stack():
+            with self.exit_stack() as stack:
+                stack.enter_context(my_cm())
+                yield stack
+
+        for cm in (my_cm, my_cm_with_exit_stack):
+            with self.subTest():
+                try:
+                    with cm():
+                        raise IndexError()
+                except MyException as exc:
+                    self.assertIsNone(exc.__context__)
+                else:
+                    self.fail("Expected IndexError, but no exception was raised")
+
     def test_exit_exception_non_suppressing(self):
         # http://bugs.python.org/issue19092
         def raise_exc(exc):
@@ -885,9 +945,11 @@ class TestBaseExitStack:
     def test_instance_bypass(self):
         class Example(object): pass
         cm = Example()
+        cm.__enter__ = object()
         cm.__exit__ = object()
         stack = self.exit_stack()
-        self.assertRaises(AttributeError, stack.enter_context, cm)
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            stack.enter_context(cm)
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1][1], cm)
 
@@ -1052,6 +1114,48 @@ class TestSuppress(unittest.TestCase):
             outer_continued = True
             1/0
         self.assertTrue(outer_continued)
+
+
+class TestChdir(unittest.TestCase):
+    def test_simple(self):
+        old_cwd = os.getcwd()
+        target = os.path.join(os.path.dirname(__file__), 'data')
+        self.assertNotEqual(old_cwd, target)
+
+        with chdir(target):
+            self.assertEqual(os.getcwd(), target)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_reentrant(self):
+        old_cwd = os.getcwd()
+        target1 = os.path.join(os.path.dirname(__file__), 'data')
+        target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
+        self.assertNotIn(old_cwd, (target1, target2))
+        chdir1, chdir2 = chdir(target1), chdir(target2)
+
+        with chdir1:
+            self.assertEqual(os.getcwd(), target1)
+            with chdir2:
+                self.assertEqual(os.getcwd(), target2)
+                with chdir1:
+                    self.assertEqual(os.getcwd(), target1)
+                self.assertEqual(os.getcwd(), target2)
+            self.assertEqual(os.getcwd(), target1)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    def test_exception(self):
+        old_cwd = os.getcwd()
+        target = os.path.join(os.path.dirname(__file__), 'data')
+        self.assertNotEqual(old_cwd, target)
+
+        try:
+            with chdir(target):
+                self.assertEqual(os.getcwd(), target)
+                raise RuntimeError("boom")
+        except RuntimeError as re:
+            self.assertEqual(str(re), "boom")
+        self.assertEqual(os.getcwd(), old_cwd)
+
 
 if __name__ == "__main__":
     unittest.main()

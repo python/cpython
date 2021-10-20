@@ -2,7 +2,8 @@
 
 import sys
 import unittest
-from test.support import run_unittest, TESTFN, unlink, cpython_only
+from test.support import cpython_only
+from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
 import pickle
 import collections.abc
@@ -75,6 +76,10 @@ class NoIterClass:
     def __getitem__(self, i):
         return i
     __iter__ = None
+
+class BadIterableClass:
+    def __iter__(self):
+        raise ZeroDivisionError
 
 # Main test suite
 
@@ -332,13 +337,13 @@ class TestCase(unittest.TestCase):
 
     # Test a file
     def test_iter_file(self):
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(5):
                 f.write("%d\n" % i)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.check_for_loop(f, ["0\n", "1\n", "2\n", "3\n", "4\n"], pickle=False)
             self.check_for_loop(f, [], pickle=False)
@@ -361,13 +366,13 @@ class TestCase(unittest.TestCase):
         self.assertRaises(TypeError, list, list)
         self.assertRaises(TypeError, list, 42)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(5):
                 f.write("%d\n" % i)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(list(f), ["0\n", "1\n", "2\n", "3\n", "4\n"])
             f.seek(0, 0)
@@ -394,13 +399,13 @@ class TestCase(unittest.TestCase):
         self.assertRaises(TypeError, tuple, list)
         self.assertRaises(TypeError, tuple, 42)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(5):
                 f.write("%d\n" % i)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(tuple(f), ("0\n", "1\n", "2\n", "3\n", "4\n"))
             f.seek(0, 0)
@@ -471,14 +476,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(max(d.values()), 3)
         self.assertEqual(min(iter(d.values())), 1)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("medium line\n")
             f.write("xtra large line\n")
             f.write("itty-bitty line\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(min(f), "itty-bitty line\n")
             f.seek(0, 0)
@@ -504,13 +509,13 @@ class TestCase(unittest.TestCase):
                      i < len(d) and dkeys[i] or None)
                     for i in range(3)]
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(10):
                 f.write("xy" * i + "\n") # line i has len 2*i+1
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(list(map(len, f)), list(range(1, 21, 2)))
         finally:
@@ -551,12 +556,12 @@ class TestCase(unittest.TestCase):
                 self.i = i+1
                 return i
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "bbb\n" "cc\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(list(zip(IntsFrom(0), f, IntsFrom(-100))),
                              [(0, "a\n", -100),
@@ -619,13 +624,13 @@ class TestCase(unittest.TestCase):
                     return "fooled you!"
                 return next(self.it)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" + "b\n" + "c\n")
         finally:
             f.close()
 
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         # Nasty:  string.join(s) can't know whether unicode.join() is needed
         # until it's seen all of s's elements.  But in this case, f's
         # iterator cannot be restarted.  So what we're testing here is
@@ -658,6 +663,7 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
+        self.assertRaises(ZeroDivisionError, lambda: 3 in BadIterableClass())
 
         d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
         for k in d:
@@ -670,12 +676,12 @@ class TestCase(unittest.TestCase):
             self.assertIn((k, v), d.items())
             self.assertNotIn((v, k), d.items())
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "b\n" "c\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             for chunk in "abc":
                 f.seek(0, 0)
@@ -707,12 +713,12 @@ class TestCase(unittest.TestCase):
         self.assertEqual(countOf(d.values(), 2j), 1)
         self.assertEqual(countOf(d.values(), 1j), 0)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "b\n" "c\n" "b\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             for letter, count in ("a", 1), ("b", 2), ("c", 1), ("d", 0):
                 f.seek(0, 0)
@@ -740,13 +746,14 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, indexOf, 42, 1)
         self.assertRaises(TypeError, indexOf, indexOf, indexOf)
+        self.assertRaises(ZeroDivisionError, indexOf, BadIterableClass(), 1)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "b\n" "c\n" "d\n" "e\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             fiter = iter(f)
             self.assertEqual(indexOf(fiter, "b\n"), 1)
@@ -767,7 +774,7 @@ class TestCase(unittest.TestCase):
 
     # Test iterators with file.writelines().
     def test_writelines(self):
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
 
         try:
             self.assertRaises(TypeError, f.writelines, None)
@@ -806,7 +813,7 @@ class TestCase(unittest.TestCase):
             f.writelines(Whatever(6, 6+2000))
             f.close()
 
-            f = open(TESTFN)
+            f = open(TESTFN, encoding="utf-8")
             expected = [str(i) + "\n" for i in range(1, 2006)]
             self.assertEqual(list(f), expected)
 
@@ -850,14 +857,14 @@ class TestCase(unittest.TestCase):
         a, b, c = {1: 42, 2: 42, 3: 42}.values()
         self.assertEqual((a, b, c), (42, 42, 42))
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         lines = ("a\n", "bb\n", "ccc\n")
         try:
             for line in lines:
                 f.write(line)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             a, b, c = f
             self.assertEqual((a, b, c), lines)
@@ -1027,11 +1034,8 @@ class TestCase(unittest.TestCase):
     def test_error_iter(self):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
-
-
-def test_main():
-    run_unittest(TestCase)
+        self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -6,6 +6,7 @@ module with arguments identifying each test.
 """
 
 import contextlib
+import os
 import sys
 
 
@@ -42,28 +43,6 @@ class TestHook:
         self.seen.append((event, args))
         if event in self.raise_on_events:
             raise self.exc_type("saw event " + event)
-
-
-class TestFinalizeHook:
-    """Used in the test_finalize_hooks function to ensure that hooks
-    are correctly cleaned up, that they are notified about the cleanup,
-    and are unable to prevent it.
-    """
-
-    def __init__(self):
-        print("Created", id(self), file=sys.stdout, flush=True)
-
-    def __call__(self, event, args):
-        # Avoid recursion when we call id() below
-        if event == "builtins.id":
-            return
-
-        print(event, id(self), file=sys.stdout, flush=True)
-
-        if event == "cpython._PySys_ClearAuditHooks":
-            raise RuntimeError("Should be ignored")
-        elif event == "cpython.PyInterpreterState_Clear":
-            raise RuntimeError("Should be ignored")
 
 
 # Simple helpers, since we are not in unittest here
@@ -128,8 +107,30 @@ def test_block_add_hook_baseexception():
                 pass
 
 
-def test_finalize_hooks():
-    sys.addaudithook(TestFinalizeHook())
+def test_marshal():
+    import marshal
+    o = ("a", "b", "c", 1, 2, 3)
+    payload = marshal.dumps(o)
+
+    with TestHook() as hook:
+        assertEqual(o, marshal.loads(marshal.dumps(o)))
+
+        try:
+            with open("test-marshal.bin", "wb") as f:
+                marshal.dump(o, f)
+            with open("test-marshal.bin", "rb") as f:
+                assertEqual(o, marshal.load(f))
+        finally:
+            os.unlink("test-marshal.bin")
+
+    actual = [(a[0], a[1]) for e, a in hook.seen if e == "marshal.dumps"]
+    assertSequenceEqual(actual, [(o, marshal.version)] * 2)
+
+    actual = [a[0] for e, a in hook.seen if e == "marshal.loads"]
+    assertSequenceEqual(actual, [payload])
+
+    actual = [e for e, a in hook.seen if e == "marshal.load"]
+    assertSequenceEqual(actual, ["marshal.load"])
 
 
 def test_pickle():
@@ -263,14 +264,154 @@ def test_cantrace():
 
 def test_mmap():
     import mmap
+
     with TestHook() as hook:
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
 
 
+def test_excepthook():
+    def excepthook(exc_type, exc_value, exc_tb):
+        if exc_type is not RuntimeError:
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+    def hook(event, args):
+        if event == "sys.excepthook":
+            if not isinstance(args[2], args[1]):
+                raise TypeError(f"Expected isinstance({args[2]!r}, " f"{args[1]!r})")
+            if args[0] != excepthook:
+                raise ValueError(f"Expected {args[0]} == {excepthook}")
+            print(event, repr(args[2]))
+
+    sys.addaudithook(hook)
+    sys.excepthook = excepthook
+    raise RuntimeError("fatal-error")
+
+
+def test_unraisablehook():
+    from _testcapi import write_unraisable_exc
+
+    def unraisablehook(hookargs):
+        pass
+
+    def hook(event, args):
+        if event == "sys.unraisablehook":
+            if args[0] != unraisablehook:
+                raise ValueError(f"Expected {args[0]} == {unraisablehook}")
+            print(event, repr(args[1].exc_value), args[1].err_msg)
+
+    sys.addaudithook(hook)
+    sys.unraisablehook = unraisablehook
+    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+
+
+def test_winreg():
+    from winreg import OpenKey, EnumKey, CloseKey, HKEY_LOCAL_MACHINE
+
+    def hook(event, args):
+        if not event.startswith("winreg."):
+            return
+        print(event, *args)
+
+    sys.addaudithook(hook)
+
+    k = OpenKey(HKEY_LOCAL_MACHINE, "Software")
+    EnumKey(k, 0)
+    try:
+        EnumKey(k, 10000)
+    except OSError:
+        pass
+    else:
+        raise RuntimeError("Expected EnumKey(HKLM, 10000) to fail")
+
+    kv = k.Detach()
+    CloseKey(kv)
+
+
+def test_socket():
+    import socket
+
+    def hook(event, args):
+        if event.startswith("socket."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+
+    socket.gethostname()
+
+    # Don't care if this fails, we just want the audit message
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        # Don't care if this fails, we just want the audit message
+        sock.bind(('127.0.0.1', 8080))
+    except Exception:
+        pass
+    finally:
+        sock.close()
+
+
+def test_gc():
+    import gc
+
+    def hook(event, args):
+        if event.startswith("gc."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+
+    gc.get_objects(generation=1)
+
+    x = object()
+    y = [x]
+
+    gc.get_referrers(x)
+    gc.get_referents(y)
+
+
+def test_http_client():
+    import http.client
+
+    def hook(event, args):
+        if event.startswith("http.client."):
+            print(event, *args[1:])
+
+    sys.addaudithook(hook)
+
+    conn = http.client.HTTPConnection('www.python.org')
+    try:
+        conn.request('GET', '/')
+    except OSError:
+        print('http.client.send', '[cannot send]')
+    finally:
+        conn.close()
+
+
+def test_sqlite3():
+    import sqlite3
+
+    def hook(event, *args):
+        if event.startswith("sqlite3."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    cx1 = sqlite3.connect(":memory:")
+    cx2 = sqlite3.Connection(":memory:")
+
+    # Configured without --enable-loadable-sqlite-extensions
+    if hasattr(sqlite3.Connection, "enable_load_extension"):
+        cx1.enable_load_extension(False)
+        try:
+            cx1.load_extension("test")
+        except sqlite3.OperationalError:
+            pass
+        else:
+            raise RuntimeError("Expected sqlite3.load_extension to fail")
+
+
 if __name__ == "__main__":
-    from test.libregrtest.setup import suppress_msvcrt_asserts
-    suppress_msvcrt_asserts(False)
+    from test.support import suppress_msvcrt_asserts
+
+    suppress_msvcrt_asserts()
 
     test = sys.argv[1]
     globals()[test]()

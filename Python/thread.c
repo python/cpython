@@ -6,7 +6,7 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyInterpreterState_GET()
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -22,8 +22,6 @@
 #endif
 
 #include <stdlib.h>
-
-#include "pythread.h"
 
 #ifndef _POSIX_THREADS
 
@@ -77,6 +75,25 @@ PyThread_init_thread(void)
     PyThread__init_thread();
 }
 
+void
+_PyThread_debug_deprecation(void)
+{
+#ifdef Py_DEBUG
+    if (thread_debug) {
+        // Flush previous dprintf() logs
+        fflush(stdout);
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "The threading debug (PYTHONTHREADDEBUG environment "
+                         "variable) is deprecated and will be removed "
+                         "in Python 3.12",
+                         0))
+        {
+            _PyErr_WriteUnraisableMsg("at Python startup", NULL);
+        }
+    }
+#endif
+}
+
 #if defined(_POSIX_THREADS)
 #   define PYTHREAD_NAME "pthread"
 #   include "thread_pthread.h"
@@ -92,7 +109,7 @@ PyThread_init_thread(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return _PyInterpreterState_Get()->pythread_stacksize;
+    return _PyInterpreterState_GET()->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro

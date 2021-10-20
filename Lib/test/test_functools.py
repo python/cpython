@@ -13,15 +13,23 @@ import time
 import typing
 import unittest
 import unittest.mock
+import os
+import weakref
+import gc
 from weakref import proxy
 import contextlib
 
+from test.support import import_helper
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
+
 import functools
 
-py_functools = support.import_fresh_module('functools', blocked=['_functools'])
-c_functools = support.import_fresh_module('functools', fresh=['_functools'])
+py_functools = import_helper.import_fresh_module('functools',
+                                                 blocked=['_functools'])
+c_functools = import_helper.import_fresh_module('functools')
 
-decimal = support.import_fresh_module('decimal', fresh=['_decimal'])
+decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -159,6 +167,7 @@ class TestPartial:
         p = proxy(f)
         self.assertEqual(f.func, p.func)
         f = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, 'func')
 
     def test_with_bound_and_unbound_methods(self):
@@ -940,6 +949,13 @@ class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
     if c_functools:
         cmp_to_key = c_functools.cmp_to_key
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        support.check_disallow_instantiation(
+            self, type(c_functools.cmp_to_key(None))
+        )
+
 
 class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):
     cmp_to_key = staticmethod(py_functools.cmp_to_key)
@@ -1148,6 +1164,34 @@ class TestTotalOrdering(unittest.TestCase):
                     method_copy = pickle.loads(pickle.dumps(method, proto))
                     self.assertIs(method_copy, method)
 
+
+    def test_total_ordering_for_metaclasses_issue_44605(self):
+
+        @functools.total_ordering
+        class SortableMeta(type):
+            def __new__(cls, name, bases, ns):
+                return super().__new__(cls, name, bases, ns)
+
+            def __lt__(self, other):
+                if not isinstance(other, SortableMeta):
+                    pass
+                return self.__name__ < other.__name__
+
+            def __eq__(self, other):
+                if not isinstance(other, SortableMeta):
+                    pass
+                return self.__name__ == other.__name__
+
+        class B(metaclass=SortableMeta):
+            pass
+
+        class A(metaclass=SortableMeta):
+            pass
+
+        self.assertTrue(A < B)
+        self.assertFalse(A > B)
+
+
 @functools.total_ordering
 class Orderable_LT:
     def __init__(self, value):
@@ -1156,6 +1200,25 @@ class Orderable_LT:
         return self.value < other.value
     def __eq__(self, other):
         return self.value == other.value
+
+
+class TestCache:
+    # This tests that the pass-through is working as designed.
+    # The underlying functionality is tested in TestLRU.
+
+    def test_cache(self):
+        @self.module.cache
+        def fib(n):
+            if n < 2:
+                return n
+            return fib(n-1) + fib(n-2)
+        self.assertEqual([fib(n) for n in range(16)],
+            [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610])
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16))
+        fib.cache_clear()
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
 
 
 class TestLRU:
@@ -1505,7 +1568,7 @@ class TestLRU:
             # create n threads in order to fill cache
             threads = [threading.Thread(target=full, args=[k])
                        for k in range(n)]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 start.set()
 
             hits, misses, maxsize, currsize = f.cache_info()
@@ -1523,7 +1586,7 @@ class TestLRU:
             threads += [threading.Thread(target=full, args=[k])
                         for k in range(n)]
             start.clear()
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 start.set()
         finally:
             sys.setswitchinterval(orig_si)
@@ -1545,7 +1608,7 @@ class TestLRU:
                 self.assertEqual(f(i), 3 * i)
                 stop.wait(10)
         threads = [threading.Thread(target=test) for k in range(n)]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             for i in range(m):
                 start.wait(10)
                 stop.reset()
@@ -1565,7 +1628,7 @@ class TestLRU:
                 self.assertEqual(f(x), 3 * x, i)
         threads = [threading.Thread(target=test, args=(i, v))
                    for i, v in enumerate([1, 2, 2, 3, 2])]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
 
     def test_need_for_rlock(self):
@@ -1665,6 +1728,35 @@ class TestLRU:
         def f():
             return 1
         self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
+
+    def test_lru_cache_weakrefable(self):
+        @self.module.lru_cache
+        def test_function(x):
+            return x
+
+        class A:
+            @self.module.lru_cache
+            def test_method(self, x):
+                return (self, x)
+
+            @staticmethod
+            @self.module.lru_cache
+            def test_staticmethod(x):
+                return (self, x)
+
+        refs = [weakref.ref(test_function),
+                weakref.ref(A.test_method),
+                weakref.ref(A.test_staticmethod)]
+
+        for ref in refs:
+            self.assertIsNotNone(ref())
+
+        del A
+        del test_function
+        gc.collect()
+
+        for ref in refs:
+            self.assertIsNone(ref())
 
 
 @py_functools.lru_cache()
@@ -2345,6 +2437,48 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(a.t(''), "str")
         self.assertEqual(a.t(0.0), "base")
 
+    def test_staticmethod_type_ann_register(self):
+        class A:
+            @functools.singledispatchmethod
+            @staticmethod
+            def t(arg):
+                return arg
+            @t.register
+            @staticmethod
+            def _(arg: int):
+                return isinstance(arg, int)
+            @t.register
+            @staticmethod
+            def _(arg: str):
+                return isinstance(arg, str)
+        a = A()
+
+        self.assertTrue(A.t(0))
+        self.assertTrue(A.t(''))
+        self.assertEqual(A.t(0.0), 0.0)
+
+    def test_classmethod_type_ann_register(self):
+        class A:
+            def __init__(self, arg):
+                self.arg = arg
+
+            @functools.singledispatchmethod
+            @classmethod
+            def t(cls, arg):
+                return cls("base")
+            @t.register
+            @classmethod
+            def _(cls, arg: int):
+                return cls("int")
+            @t.register
+            @classmethod
+            def _(cls, arg: str):
+                return cls("str")
+
+        self.assertEqual(A.t(0).arg, "int")
+        self.assertEqual(A.t('').arg, "str")
+        self.assertEqual(A.t(0.0).arg, "base")
+
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
         msg_suffix = (
@@ -2470,7 +2604,7 @@ class TestCachedProperty(unittest.TestCase):
                 threading.Thread(target=lambda: item.cost)
                 for k in range(num_threads)
             ]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 go.set()
         finally:
             sys.setswitchinterval(orig_si)

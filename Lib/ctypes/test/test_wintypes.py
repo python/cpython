@@ -1,12 +1,13 @@
-import sys
 import unittest
 
-from ctypes import *
+# also work on POSIX
 
-@unittest.skipUnless(sys.platform.startswith('win'), 'Windows-only test')
+from ctypes import *
+from ctypes import wintypes
+
+
 class WinTypesTest(unittest.TestCase):
     def test_variant_bool(self):
-        from ctypes import wintypes
         # reads 16-bits from memory, anything non-zero is True
         for true_value in (1, 32767, 32768, 65535, 65537):
             true = POINTER(c_int16)(c_int16(true_value))
@@ -36,6 +37,7 @@ class WinTypesTest(unittest.TestCase):
         self.assertIs(vb.value, True)
         vb.value = []
         self.assertIs(vb.value, False)
+
 
 if __name__ == "__main__":
     unittest.main()

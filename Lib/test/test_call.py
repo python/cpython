@@ -1,4 +1,3 @@
-import datetime
 import unittest
 from test.support import cpython_only
 try:
@@ -9,6 +8,7 @@ import struct
 import collections
 import itertools
 import gc
+import contextlib
 
 
 class FunctionCalls(unittest.TestCase):
@@ -39,7 +39,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
     def test_varargs3(self):
-        msg = r"^from_bytes\(\) takes exactly 2 positional arguments \(3 given\)"
+        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
@@ -129,7 +129,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                min, 0, default=1, key=2, foo=3)
 
     def test_varargs17_kw(self):
-        msg = r"^print\(\) takes at most 4 keyword arguments \(5 given\)$"
+        msg = r"'foo' is an invalid keyword argument for print\(\)$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
 
@@ -468,7 +468,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
     def test_vectorcall_dict(self):
-        # Test _PyObject_FastCallDict()
+        # Test PyObject_VectorcallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -487,7 +487,7 @@ class FastCallTests(unittest.TestCase):
                 self.check_result(result, expected)
 
     def test_vectorcall(self):
-        # Test _PyObject_Vectorcall()
+        # Test PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -563,7 +563,7 @@ class TestPEP590(unittest.TestCase):
         self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
 
-        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        # Mutable heap types should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
@@ -574,7 +574,7 @@ class TestPEP590(unittest.TestCase):
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
         self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
 
-        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        # Mutable heap types should not inherit Py_TPFLAGS_HAVE_VECTORCALL
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
@@ -594,7 +594,7 @@ class TestPEP590(unittest.TestCase):
         # 1. vectorcall using PyVectorcall_Call()
         #   (only for objects that support vectorcall directly)
         # 2. normal call
-        # 3. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyObject_Vectorcall()
         # 4. call as bound method
         # 5. call using functools.partial
 
@@ -664,6 +664,53 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
+
+
+class A:
+    def method_two_args(self, x, y):
+        pass
+
+    @staticmethod
+    def static_no_args():
+        pass
+
+    @staticmethod
+    def positional_only(arg, /):
+        pass
+
+@cpython_only
+class TestErrorMessagesUseQualifiedName(unittest.TestCase):
+
+    @contextlib.contextmanager
+    def check_raises_type_error(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertEqual(str(cm.exception), message)
+
+    def test_missing_arguments(self):
+        msg = "A.method_two_args() missing 1 required positional argument: 'y'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x")
+
+    def test_too_many_positional(self):
+        msg = "A.static_no_args() takes 0 positional arguments but 1 was given"
+        with self.check_raises_type_error(msg):
+            A.static_no_args("oops it's an arg")
+
+    def test_positional_only_passed_as_keyword(self):
+        msg = "A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
+        with self.check_raises_type_error(msg):
+            A.positional_only(arg="x")
+
+    def test_unexpected_keyword(self):
+        msg = "A.method_two_args() got an unexpected keyword argument 'bad'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args(bad="x")
+
+    def test_multiple_values(self):
+        msg = "A.method_two_args() got multiple values for argument 'x'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x", "y", x="oops")
 
 
 if __name__ == "__main__":

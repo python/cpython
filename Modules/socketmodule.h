@@ -8,9 +8,7 @@
 #   include <sys/socket.h>
 # endif
 # include <netinet/in.h>
-# if !defined(__CYGWIN__)
-#  include <netinet/tcp.h>
-# endif
+# include <netinet/tcp.h>
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
@@ -142,6 +140,10 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_BCM_H
 #include <linux/can/bcm.h>
+#endif
+
+#ifdef HAVE_LINUX_CAN_J1939_H
+#include <linux/can/j1939.h>
 #endif
 
 #ifdef HAVE_SYS_SYS_DOMAIN_H
@@ -338,7 +340,8 @@ typedef struct {
 
 */
 
-/* C API for usage by other Python modules */
+/* C API for usage by other Python modules.
+ * Always add new things to the end for binary compatibility. */
 typedef struct {
     PyTypeObject *Sock_Type;
     PyObject *error;

@@ -1,2 +1,0 @@
-Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
-``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
