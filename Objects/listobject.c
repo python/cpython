@@ -349,8 +349,8 @@ list_dealloc(PyListObject *op)
     // list_dealloc() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
-        state->free_list[state->numfree++] = op;
+    if (PyList_CheckExact(op)) {
+        _PyObject_GC_Recycle(op, &PyList_Type);
     }
     else {
         Py_TYPE(op)->tp_free((PyObject *)op);
