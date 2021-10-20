@@ -357,7 +357,7 @@ Functions and classes provided:
 
    Non parallel-safe context manager to change the current working directory.
    As this changes a global state, the working directory, it is not suitable
-   for use in most threaded or aync contexts. It is also not suitable for most
+   for use in most threaded or async contexts. It is also not suitable for most
    non-linear code execution, like generators, where the program execution is
    temporarily relinquished -- unless explicitely desired, you should not yield
    when this context manager is active.
