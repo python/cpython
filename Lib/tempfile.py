@@ -88,6 +88,10 @@ def _infer_return_type(*args):
     for arg in args:
         if arg is None:
             continue
+
+        if isinstance(arg, _os.PathLike):
+            arg = _os.fspath(arg)
+
         if isinstance(arg, bytes):
             if return_type is str:
                 raise TypeError("Can't mix bytes and non-bytes in "
