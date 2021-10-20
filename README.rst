@@ -74,7 +74,7 @@ section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
-to macOS framework and universal builds.  Refer to `Mac/README.rst
+to the macOS framework and universal builds.  Refer to `Mac/README.rst
 <https://github.com/python/cpython/blob/main/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
@@ -116,7 +116,7 @@ profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
 workload.  This is necessary in order to profile the interpreter's execution.
-Note also that any output, both stdout and stderr, that may appear at this step
+Note also that any output, both stdout, and stderr, that may appear at this step
 is suppressed.
 
 The final step is to build the actual interpreter, using the information
@@ -138,7 +138,7 @@ What's New
 
 We have a comprehensive overview of the changes in the `What's New in Python
 3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
-detailed change log, read `Misc/NEWS
+detailed changelog, read `Misc/NEWS
 <https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/main>`_.
@@ -165,7 +165,7 @@ For information about building Python's documentation, refer to `Doc/README.rst
 Converting From Python 2.x to 3.x
 ---------------------------------
 
-Significant backward incompatible changes were made for the release of Python
+Significant backward-incompatible changes were made for the release of Python
 3.0, which may cause programs written for Python 2 to fail when run with Python
 3.  For more information about porting your code from Python 2 to Python 3, see
 the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
