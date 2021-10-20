@@ -2116,8 +2116,6 @@ function PyObject_GetAIter
     added 3.10
 data PyExc_EncodingWarning
     added 3.10
-data PyStructSequence_UnnamedField
-    added 3.10
 
 # Support for Stable ABI in debug builds
 
@@ -2150,6 +2148,8 @@ function PyGC_IsEnabled
 function PyType_GetName
     added 3.11
 function PyType_GetQualName
+    added 3.11
+data PyStructSequence_UnnamedField
     added 3.11
 
 # (Detailed comments aren't really needed for further entries: from here on
