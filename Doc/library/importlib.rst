@@ -1394,6 +1394,24 @@ find and load modules.
       .. versionadded:: 3.4
 
 
+.. class:: NamespaceLoader(name, path, path_finder):
+
+   A concrete implementation of :class:`importlib.abc.InspectLoader` for
+   namespace packages.  This is an alias for a private class and is only made
+   public for introspecting the ``__loader__`` attribute on namespace
+   packages::
+
+       >>> from importlib.machinery import NamespaceLoader
+       >>> import my_namespace
+       >>> isinstance(my_namespace.__loader__, NamespaceLoader)
+       True
+       >>> import importlib.abc
+       >>> isinstance(my_namespace.__loader__, importlib.abc.Loader)
+       True
+
+   .. versionadded:: 3.11
+
+
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
    A specification for a module's import-system-related state.  This is
