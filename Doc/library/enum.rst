@@ -1204,7 +1204,7 @@ all named flags and all named combinations of flags that are in the value::
     >>> Color(7)      # not named combination
     <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
 
- .. note::
+.. note::
 
    In 3.11 unnamed combinations of flags will only produce the canonical flag
    members (aka single-value flags).  So ``Color(7)`` would produce something
