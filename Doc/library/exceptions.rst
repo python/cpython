@@ -84,7 +84,7 @@ attribute, as well as due to possible memory layout incompatibilities.
    Most built-in exceptions are implemented in C for efficiency, see:
    :source:`Objects/exceptions.c`.  Some have custom memory layouts
    which makes it impossible to create a subclass that inherits from
-   multiple exception types.  Memory layout of a type is an implementation
+   multiple exception types. The memory layout of a type is an implementation
    detail and might change between Python versions, leading to new
    conflicts in the future.  Therefore, it's recommended to avoid
    subclassing multiple exception types altogether.
