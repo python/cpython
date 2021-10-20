@@ -404,21 +404,20 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 /*[clinic input]
 _sqlite3.Connection.close as pysqlite_connection_close
 
-    cls: defining_class
-
 Closes the connection.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_close_impl(pysqlite_Connection *self, PyTypeObject *cls)
-/*[clinic end generated code: output=981f0a726752b78a input=16141a7506e49f33]*/
+pysqlite_connection_close_impl(pysqlite_Connection *self)
+/*[clinic end generated code: output=a546a0da212c9b97 input=3d58064bbffaa3d3]*/
 {
     if (!pysqlite_check_thread(self)) {
         return NULL;
     }
 
     if (!self->initialized) {
-        pysqlite_state *state = pysqlite_get_state_by_cls(cls);
+        PyTypeObject *tp = Py_TYPE(self);
+        pysqlite_state *state = pysqlite_get_state_by_type(tp);
         PyErr_SetString(state->ProgrammingError,
                         "Base Connection.__init__ not called.");
         return NULL;
