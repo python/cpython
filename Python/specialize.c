@@ -237,8 +237,8 @@ static uint8_t adaptive_opcodes[256] = {
     [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_MULTIPLY] = BINARY_MULTIPLY_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
-    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
+    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
@@ -249,8 +249,8 @@ static uint8_t cache_requirements[256] = {
     [BINARY_ADD] = 0,
     [BINARY_MULTIPLY] = 0,
     [BINARY_SUBSCR] = 0,
+    [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
-    [CALL_FUNCTION] = 2 /* _PyAdaptiveEntry and _PyCallCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -462,13 +462,18 @@ _Py_Quicken(PyCodeObject *code) {
 #define SPEC_FAIL_DIFFERENT_TYPES 12
 
 /* Calls */
-#define SPEC_FAIL_BUILTIN_FUNCTION 7
-#define SPEC_FAIL_CLASS 8
-#define SPEC_FAIL_GENERATOR 9
-#define SPEC_FAIL_COMPLEX_PARAMETERS 10
-#define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 10
-#define SPEC_FAIL_CO_NOT_OPTIMIZED 11
+#define SPEC_FAIL_GENERATOR 7
+#define SPEC_FAIL_COMPLEX_PARAMETERS 8
+#define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
+#define SPEC_FAIL_CO_NOT_OPTIMIZED 10
+/* SPEC_FAIL_METHOD  defined as 11 above */
 #define SPEC_FAIL_FREE_VARS 12
+#define SPEC_FAIL_PYCFUNCTION 13
+#define SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS 14
+#define SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS 15
+#define SPEC_FAIL_PYCFUNCTION_NOARGS 16
+#define SPEC_FAIL_BAD_CALL_FLAGS 17
+#define SPEC_FAIL_CLASS 18
 
 
 static int
@@ -1237,15 +1242,6 @@ success:
 }
 
 static int
-specialize_c_call(
-    PyObject *callable, _Py_CODEUNIT *instr,
-    int nargs, SpecializedCacheEntry *cache)
-{
-    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_BUILTIN_FUNCTION);
-    return -1;
-}
-
-static int
 specialize_class_call(
     PyObject *callable, _Py_CODEUNIT *instr,
     int nargs, SpecializedCacheEntry *cache)
@@ -1308,15 +1304,114 @@ specialize_py_call(
     return 0;
 }
 
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+builtin_call_fail_kind(int ml_flags)
+{
+    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+        METH_KEYWORDS | METH_METHOD)) {
+        case METH_VARARGS:
+            return SPEC_FAIL_PYCFUNCTION;
+        case METH_VARARGS | METH_KEYWORDS:
+            return SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS;
+        case METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS;
+        case METH_NOARGS:
+            return SPEC_FAIL_PYCFUNCTION_NOARGS;
+        /* This case should never happen with PyCFunctionObject -- only
+            PyMethodObject. See zlib.compressobj()'s methods for an example.
+        */
+        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+        default:
+            return SPEC_FAIL_BAD_CALL_FLAGS;
+    }
+}
+#endif
 
+static int
+specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
+    SpecializedCacheEntry *cache, PyObject *builtins)
+{
+    _PyObjectCache *cache1 = &cache[-1].obj;
+    if (PyCFunction_GET_FUNCTION(callable) == NULL) {
+        return 1;
+    }
+    switch (PyCFunction_GET_FLAGS(callable) &
+        (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+        METH_KEYWORDS | METH_METHOD)) {
+        case METH_O: {
+            if (nargs != 1) {
+                SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_RANGE);
+                return 1;
+            }
+            /* len(o) */
+            PyObject *builtin_len = PyDict_GetItemString(builtins, "len");
+            if (callable == builtin_len) {
+                cache1->obj = builtin_len;  // borrowed
+                *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_LEN,
+                    _Py_OPARG(*instr));
+                return 0;
+            }
+            *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_O,
+                _Py_OPARG(*instr));
+            return 0;
+        }
+        case METH_FASTCALL: {
+            if (nargs == 2) {
+                /* isinstance(o1, o2) */
+                PyObject *builtin_isinstance = PyDict_GetItemString(
+                    builtins, "isinstance");
+                if (callable == builtin_isinstance) {
+                    cache1->obj = builtin_isinstance;  // borrowed
+                    *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_ISINSTANCE,
+                        _Py_OPARG(*instr));
+                    return 0;
+                }
+            }
+            *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_FAST,
+                _Py_OPARG(*instr));
+            return 0;
+        }
+        default:
+            SPECIALIZATION_FAIL(CALL_FUNCTION,
+                builtin_call_fail_kind(PyCFunction_GET_FLAGS(callable)));
+            return 1;
+    }
+}
+
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+call_fail_kind(PyObject *callable)
+{
+    if (PyInstanceMethod_Check(callable)) {
+        return SPEC_FAIL_METHOD;
+    }
+    else if (PyMethod_Check(callable)) {
+        return SPEC_FAIL_METHOD;
+    }
+    // builtin method
+    else if (PyCMethod_Check(callable)) {
+        return SPEC_FAIL_METHOD;
+    }
+    else if (PyType_Check(callable)) {
+        return  SPEC_FAIL_CLASS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
+/* TODO:
+    - Specialize calling classes.
+*/
 int
 _Py_Specialize_CallFunction(
     PyObject *callable, _Py_CODEUNIT *instr,
-    int nargs, SpecializedCacheEntry *cache)
+    int nargs, SpecializedCacheEntry *cache,
+    PyObject *builtins)
 {
     int fail;
     if (PyCFunction_CheckExact(callable)) {
-        fail = specialize_c_call(callable, instr, nargs, cache);
+        fail = specialize_c_call(callable, instr, nargs, cache, builtins);
     }
     else if (PyFunction_Check(callable)) {
         fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, cache);
@@ -1325,7 +1420,7 @@ _Py_Specialize_CallFunction(
         fail = specialize_class_call(callable, instr, nargs, cache);
     }
     else {
-        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OTHER);
+        SPECIALIZATION_FAIL(CALL_FUNCTION, call_fail_kind(callable));
         fail = -1;
     }
     _PyAdaptiveEntry *cache0 = &cache->adaptive;

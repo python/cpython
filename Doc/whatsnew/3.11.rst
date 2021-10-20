@@ -308,9 +308,9 @@ CPython bytecode changes
 Deprecated
 ==========
 
-* The :mod:`lib2to3` package is now deprecated and may not be able to parse
-  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
-  (Contributed by Victor Stinner in :issue:`40360`.)
+* The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
+  be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
+  CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -564,18 +564,10 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
-* The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
-  extensions using ``<stdlib.h>`` must now include it explicitly.
-  The system ``<stdlib.h>`` header provides functions like:
-  ``malloc()``/``free()``, ``getenv()``, ``strtol()``, ``abs()``, ``strtol()``,
-  ``exit()`` and ``abort()``.
-  (Contributed by Victor Stinner in :issue:`45434`.)
-
-* The ``<Python.h>`` header file no longer includes ``<stdio.h>`` if the
-  ``Py_LIMITED_API`` macro is defined. Functions expecting ``FILE*`` are
-  excluded from the limited C API (:pep:`384`). C extensions using
-  ``<stdio.h>`` must now include it explicitly.  The system ``<stdio.h>``
-  header provides functions like ``printf()`` and ``fopen()``.
+* ``<Python.h>`` no longer includes the header files ``<stdlib.h>``,
+  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>`` when the ``Py_LIMITED_API``
+  macro is set to ``0x030b0000`` (Python 3.11) or higher. C extensions should
+  explicitly include the header files after ``#include <Python.h>``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
 * The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
@@ -644,3 +636,8 @@ Removed
 
   Remove also the ``Py_MARSHAL_VERSION`` macro from the limited C API.
   (Contributed by Victor Stinner in :issue:`45474`.)
+
+* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  limited C API.
+  (Contributed by Victor Stinner in :issue:`35134`.)
