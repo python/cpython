@@ -1257,7 +1257,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case ROT_N:
             return 0;
-        case PUSH_PEEK:
+        case COPY:
             return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -6258,7 +6258,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         ADDOP_I(c, DICT_UPDATE, 2);         // [copy, keys]
         ADDOP_I(c, UNPACK_SEQUENCE, size);  // [copy, keys...]
         while (size) {
-            ADDOP_I(c, PUSH_PEEK, size--);  // [copy, keys..., copy]
+            ADDOP_I(c, COPY, 1 + size--);   // [copy, keys..., copy]
             ADDOP(c, ROT_TWO);              // [copy, keys..., copy, key]
             ADDOP(c, DELETE_SUBSCR);        // [copy, keys...]
         }

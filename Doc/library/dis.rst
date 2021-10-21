@@ -1298,7 +1298,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: PUSH_PEEK (i)
+.. opcode:: COPY (i)
 
    Push the *i*-th item to the top of the stack. The item is not removed from its
    original location.
