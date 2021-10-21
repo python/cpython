@@ -3341,25 +3341,6 @@ class GetTypeHintTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     get_type_hints(func)
 
-    def test_forward_ref_and_final(self):
-        # https://bugs.python.org/issue45166
-        hints = get_type_hints(ann_module5)
-        self.assertEqual(hints, {'name': Final[str]})
-
-        hints = get_type_hints(ann_module5.MyClass)
-        self.assertEqual(hints, {'value': Final})
-
-    def test_top_level_class_var(self):
-        # https://bugs.python.org/issue45166
-        # https://bugs.python.org/issue45283
-        for obj in [ann_module6, ann_module7]:
-            with self.subTest(obj=obj):
-                with self.assertRaisesRegex(
-                    TypeError,
-                    r'typing.ClassVar\[int\] is not valid as type argument',
-                ):
-                    get_type_hints(obj)
-
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -3422,6 +3403,25 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
                          (Concatenate[int, P], int))
         self.assertEqual(get_args(list | str), (list, str))
+
+    def test_forward_ref_and_final(self):
+        # https://bugs.python.org/issue45166
+        hints = get_type_hints(ann_module5)
+        self.assertEqual(hints, {'name': Final[str]})
+
+        hints = get_type_hints(ann_module5.MyClass)
+        self.assertEqual(hints, {'value': Final})
+
+    def test_top_level_class_var(self):
+        # https://bugs.python.org/issue45166
+        # https://bugs.python.org/issue45283
+        for obj in [ann_module6, ann_module7]:
+            with self.subTest(obj=obj):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    r'typing.ClassVar\[int\] is not valid as type argument',
+                ):
+                    get_type_hints(obj)
 
 
 class CollectionsAbcTests(BaseTestCase):

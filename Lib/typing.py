@@ -170,11 +170,12 @@ def _type_check(arg, msg, is_argument=True, module=None, *, is_class=False):
             invalid_generic_forms += (Final,)
 
     arg = _type_convert(arg, module=module)
-    if (
-        (isinstance(arg, _GenericAlias) and
-            arg.__origin__ in invalid_generic_forms) or
-        (is_argument and arg == Final)  # Raw `Final` is not `_GenericAlias`
-    ):
+    is_invalid_generic = (
+        isinstance(arg, _GenericAlias)
+        and arg.__origin__ in invalid_generic_forms
+    )
+    is_invalid_bare_final = is_argument and arg is Final
+    if is_invalid_generic or is_invalid_bare_final:
         raise TypeError(f"{arg} is not valid as type argument")
     if arg in (Any, NoReturn, Final):
         return arg
@@ -1784,7 +1785,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     if getattr(obj, '__no_type_check__', None):
         return {}
 
-    error_msg = "get_type_hint() got invalid type annotation."
+    error_msg = "get_type_hints() got invalid type annotation."
 
     # Classes require a special treatment.
     if isinstance(obj, type):

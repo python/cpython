@@ -1,2 +1,2 @@
-Runs ``_type_check()`` on all ``get_type_hints()`` calls. This catches cases
+Run ``_type_check()`` on all ``get_type_hints()`` calls. This catches cases
 when any invalid annotations are used.
