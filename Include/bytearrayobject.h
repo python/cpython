@@ -6,8 +6,6 @@
 extern "C" {
 #endif
 
-#include <stdarg.h>
-
 /* Type PyByteArrayObject represents a mutable array of bytes.
  * The Python API is that of a sequence;
  * the bytes are mapped to ints in [0, 256).
@@ -36,7 +34,7 @@ PyAPI_FUNC(int) PyByteArray_Resize(PyObject *, Py_ssize_t);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_BYTEARRAYOBJECT_H
-#  include  "cpython/bytearrayobject.h"
+#  include "cpython/bytearrayobject.h"
 #  undef Py_CPYTHON_BYTEARRAYOBJECT_H
 #endif
 

@@ -136,19 +136,42 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
-#define BINARY_SUBSCR_ADAPTIVE    7
-#define BINARY_SUBSCR_LIST_INT    8
-#define BINARY_SUBSCR_TUPLE_INT  13
-#define BINARY_SUBSCR_DICT       14
-#define JUMP_ABSOLUTE_QUICK      18
-#define LOAD_ATTR_ADAPTIVE       21
-#define LOAD_ATTR_SPLIT_KEYS     34
-#define LOAD_ATTR_WITH_HINT      36
-#define LOAD_ATTR_SLOT           38
-#define LOAD_ATTR_MODULE         39
-#define LOAD_GLOBAL_ADAPTIVE     40
-#define LOAD_GLOBAL_MODULE       41
-#define LOAD_GLOBAL_BUILTIN      42
+#define BINARY_ADD_ADAPTIVE       7
+#define BINARY_ADD_INT            8
+#define BINARY_ADD_FLOAT         13
+#define BINARY_ADD_UNICODE       14
+#define BINARY_ADD_UNICODE_INPLACE_FAST  18
+#define BINARY_MULTIPLY_ADAPTIVE  21
+#define BINARY_MULTIPLY_INT      34
+#define BINARY_MULTIPLY_FLOAT    36
+#define BINARY_SUBSCR_ADAPTIVE   38
+#define BINARY_SUBSCR_LIST_INT   39
+#define BINARY_SUBSCR_TUPLE_INT  40
+#define BINARY_SUBSCR_DICT       41
+#define JUMP_ABSOLUTE_QUICK      42
+#define LOAD_ATTR_ADAPTIVE       43
+#define LOAD_ATTR_INSTANCE_VALUE  44
+#define LOAD_ATTR_WITH_HINT      45
+#define LOAD_ATTR_SLOT           46
+#define LOAD_ATTR_MODULE         47
+#define LOAD_GLOBAL_ADAPTIVE     48
+#define LOAD_GLOBAL_MODULE       58
+#define LOAD_GLOBAL_BUILTIN      80
+#define LOAD_METHOD_ADAPTIVE     81
+#define LOAD_METHOD_CACHED       87
+#define LOAD_METHOD_CLASS        88
+#define LOAD_METHOD_MODULE      122
+#define LOAD_METHOD_NO_DICT     123
+#define STORE_ATTR_ADAPTIVE     127
+#define STORE_ATTR_INSTANCE_VALUE 128
+#define STORE_ATTR_SLOT         134
+#define STORE_ATTR_WITH_HINT    140
+#define LOAD_FAST__LOAD_FAST    143
+#define STORE_FAST__LOAD_FAST   149
+#define LOAD_FAST__LOAD_CONST   150
+#define LOAD_CONST__LOAD_FAST   151
+#define STORE_FAST__STORE_FAST  153
+#define DO_TRACING              255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
@@ -171,6 +194,10 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
 };
 #endif /* OPCODE_TABLES */
+
+#define HAS_CONST(op) (false\
+    || ((op) == 100) \
+    )
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 

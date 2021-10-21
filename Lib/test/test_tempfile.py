@@ -430,6 +430,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             self.do_create(dir=dir).write(b"blat")
             self.do_create(dir=pathlib.Path(dir)).write(b"blat")
         finally:
+            support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
     def test_file_mode(self):
@@ -880,6 +881,8 @@ class TestMktemp(BaseTestCase):
         extant = list(range(TEST_FILES))
         for i in extant:
             extant[i] = self.do_create(pre="aa")
+        del extant
+        support.gc_collect()  # For PyPy or other GCs.
 
 ##     def test_warning(self):
 ##         # mktemp issues a warning when used
@@ -1432,7 +1435,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             temp_dir.cleanup()
             self.assertFalse(
                 temp_path.exists(),
@@ -1491,7 +1494,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
 
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
@@ -1556,7 +1559,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(
                 temp_path.exists(),
                 sys.platform.startswith("win"),
-                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+                f"TemporaryDirectory {temp_path!s} existence state unexpected")
             err = err.decode('utf-8', 'backslashreplace')
             self.assertNotIn("Exception", err)
             self.assertNotIn("Error", err)

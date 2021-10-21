@@ -3,6 +3,7 @@
 from test.support import run_with_locale, cpython_only
 import collections.abc
 from collections import namedtuple
+import copy
 import gc
 import inspect
 import pickle
@@ -776,66 +777,51 @@ class UnionTests(unittest.TestCase):
         self.assertEqual((list[T] | list[S])[int, int], list[int])
 
     def test_union_parameter_substitution(self):
-        def eq(actual, expected):
+        def eq(actual, expected, typed=True):
             self.assertEqual(actual, expected)
-            self.assertIs(type(actual), type(expected))
+            if typed:
+                self.assertIs(type(actual), type(expected))
 
         T = typing.TypeVar('T')
         S = typing.TypeVar('S')
         NT = typing.NewType('NT', str)
         x = int | T | bytes
 
-        eq(x[str], int | str | bytes)
-        eq(x[list[int]], int | list[int] | bytes)
+        eq(x[str], int | str | bytes, typed=False)
+        eq(x[list[int]], int | list[int] | bytes, typed=False)
         eq(x[typing.List], int | typing.List | bytes)
         eq(x[typing.List[int]], int | typing.List[int] | bytes)
         eq(x[typing.Hashable], int | typing.Hashable | bytes)
         eq(x[collections.abc.Hashable],
-           int | collections.abc.Hashable | bytes)
+           int | collections.abc.Hashable | bytes, typed=False)
         eq(x[typing.Callable[[int], str]],
            int | typing.Callable[[int], str] | bytes)
         eq(x[collections.abc.Callable[[int], str]],
-           int | collections.abc.Callable[[int], str] | bytes)
+           int | collections.abc.Callable[[int], str] | bytes, typed=False)
         eq(x[typing.Tuple[int, str]], int | typing.Tuple[int, str] | bytes)
         eq(x[typing.Literal['none']], int | typing.Literal['none'] | bytes)
-        eq(x[str | list], int | str | list | bytes)
+        eq(x[str | list], int | str | list | bytes, typed=False)
         eq(x[typing.Union[str, list]], typing.Union[int, str, list, bytes])
-        eq(x[str | int], int | str | bytes)
+        eq(x[str | int], int | str | bytes, typed=False)
         eq(x[typing.Union[str, int]], typing.Union[int, str, bytes])
         eq(x[NT], int | NT | bytes)
         eq(x[S], int | S | bytes)
 
     def test_union_pickle(self):
-        alias = list[T] | int
-        s = pickle.dumps(alias)
-        loaded = pickle.loads(s)
-        self.assertEqual(alias, loaded)
-        self.assertEqual(alias.__args__, loaded.__args__)
-        self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        orig = list[T] | int
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(orig, proto)
+            loaded = pickle.loads(s)
+            self.assertEqual(loaded, orig)
+            self.assertEqual(loaded.__args__, orig.__args__)
+            self.assertEqual(loaded.__parameters__, orig.__parameters__)
 
-    def test_union_from_args(self):
-        with self.assertRaisesRegex(
-                TypeError,
-                r"^Each union argument must be a type, got 1$",
-        ):
-            types.Union._from_args((1,))
-
-        with self.assertRaisesRegex(
-                TypeError,
-                r"Union._from_args\(\) argument 'args' must be tuple, not int$",
-        ):
-            types.Union._from_args(1)
-
-        with self.assertRaisesRegex(ValueError, r"args must be not empty"):
-            types.Union._from_args(())
-
-        alias = types.Union._from_args((int, str, T))
-
-        self.assertEqual(alias.__args__, (int, str, T))
-        self.assertEqual(alias.__parameters__, (T,))
-
-        result = types.Union._from_args((int,))
-        self.assertIs(int, result)
+    def test_union_copy(self):
+        orig = list[T] | int
+        for copied in (copy.copy(orig), copy.deepcopy(orig)):
+            self.assertEqual(copied, orig)
+            self.assertEqual(copied.__args__, orig.__args__)
+            self.assertEqual(copied.__parameters__, orig.__parameters__)
 
     def test_union_parameter_substitution_errors(self):
         T = typing.TypeVar("T")
@@ -894,7 +880,6 @@ class UnionTests(unittest.TestCase):
         assert repr(int | None) == "int | None"
         assert repr(int | type(None)) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
-        assert repr(int | typing.TypeVar('T')) == "int | ~T"
 
     def test_or_type_operator_with_genericalias(self):
         a = list[int]
@@ -939,9 +924,9 @@ class UnionTests(unittest.TestCase):
         TypeVar = BadMeta('TypeVar', (), {})
         _SpecialForm = BadMeta('_SpecialForm', (), {})
         # Crashes in Issue44483
-        with self.assertRaises(ZeroDivisionError):
+        with self.assertRaises((TypeError, ZeroDivisionError)):
             str | TypeVar()
-        with self.assertRaises(ZeroDivisionError):
+        with self.assertRaises((TypeError, ZeroDivisionError)):
             str | _SpecialForm()
 
     @cpython_only

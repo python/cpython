@@ -395,7 +395,7 @@ def iscode(object):
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
-        co_names            tuple of names of local variables
+        co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
         co_stacksize        virtual machine stack space required
         co_varnames         tuple of names of arguments and local variables"""
@@ -781,6 +781,8 @@ def getfile(object):
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
+            if object.__module__ == '__main__':
+                raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__

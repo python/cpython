@@ -20,7 +20,7 @@ strings up in components (addressing scheme, network location, path etc.), to
 combine the components back into a URL string, and to convert a "relative URL"
 to an absolute URL given a "base URL."
 
-The module has been designed to match the Internet RFC on Relative Uniform
+The module has been designed to match the internet RFC on Relative Uniform
 Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
 ``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
 ``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``, ``sftp``,

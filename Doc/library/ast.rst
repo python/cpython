@@ -1266,7 +1266,7 @@ Pattern matching
    the pattern matches the subject.
 
    ``body`` contains a list of nodes to execute if the pattern matches and
-   the result of evaluating the guard expression is truthy.
+   the result of evaluating the guard expression is true.
 
    .. doctest::
 
@@ -1621,7 +1621,7 @@ Function and class definitions
    A function definition.
 
    * ``name`` is a raw string of the function name.
-   * ``args`` is a :class:`arguments` node.
+   * ``args`` is an :class:`arguments` node.
    * ``body`` is the list of nodes inside the function.
    * ``decorator_list`` is the list of decorators to be applied, stored outermost
      first (i.e. the first in the list will be applied last).
@@ -1795,7 +1795,7 @@ Function and class definitions
    * ``bases`` is a list of nodes for explicitly specified base classes.
    * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
-     <http://www.python.org/dev/peps/pep-3115/>`_.
+     <https://www.python.org/dev/peps/pep-3115/>`_.
    * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
      starargs will be expanded to join the list of base classes, and kwargs will
      be passed to the metaclass.
@@ -1916,6 +1916,19 @@ and classes for traversing abstract syntax trees:
    ``feature_version=(3, 4)`` will allow the use of ``async`` and
    ``await`` as variable names.  The lowest supported version is
    ``(3, 4)``; the highest is ``sys.version_info[0:2]``.
+
+   If source contains a null character ('\0'), :exc:`ValueError` is raised.
+
+    .. warning::
+      Note that successfully parsing source code into an AST object doesn't
+      guarantee that the source code provided is valid Python code that can
+      be executed as the compilation step can raise further :exc:`SyntaxError`
+      exceptions. For instance, the source ``return 42`` generates a valid
+      AST node for a return statement, but it cannot be compiled alone (it needs
+      to be inside a function node).
+
+      In particular, :func:`ast.parse` won't do any scoping checks, which the
+      compilation step does.
 
    .. warning::
       It is possible to crash the Python interpreter with a

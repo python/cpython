@@ -20,7 +20,7 @@ Both the regular Netscape cookie protocol and the protocol defined by
 :rfc:`2965` are handled.  RFC 2965 handling is switched off by default.
 :rfc:`2109` cookies are parsed as Netscape cookies and subsequently treated
 either as Netscape or RFC 2965 cookies according to the 'policy' in effect.
-Note that the great majority of cookies on the Internet are Netscape cookies.
+Note that the great majority of cookies on the internet are Netscape cookies.
 :mod:`http.cookiejar` attempts to follow the de-facto Netscape cookie protocol (which
 differs substantially from that set out in the original Netscape specification),
 including taking note of the ``max-age`` and ``port`` cookie-attributes
@@ -122,7 +122,7 @@ The following classes are provided:
       :mod:`http.cookiejar` and :mod:`http.cookies` modules do not depend on each
       other.
 
-   https://curl.haxx.se/rfc/cookie_spec.html
+   https://curl.se/rfc/cookie_spec.html
       The specification of the original Netscape cookie protocol.  Though this is
       still the dominant protocol, the 'Netscape cookie protocol' implemented by all
       the major browsers (and :mod:`http.cookiejar`) only bears a passing resemblance to

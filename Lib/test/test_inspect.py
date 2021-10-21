@@ -24,7 +24,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath
 from test.support.os_helper import TESTFN
@@ -584,6 +584,17 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
+
+class TestGetsourceInteractive(unittest.TestCase):
+    def test_getclasses_interactive(self):
+        # bpo-44648: simulate a REPL session;
+        # there is no `__file__` in the __main__ module
+        code = "import sys, inspect; \
+                assert not hasattr(sys.modules['__main__'], '__file__'); \
+                A = type('A', (), {}); \
+                inspect.getsource(A)"
+        _, _, stderr = assert_python_failure("-c", code, __isolated=True)
+        self.assertIn(b'OSError: source code not available', stderr)
 
 class TestGettingSourceOfToplevelFrames(GetSourceBase):
     fodderModule = mod
@@ -4332,18 +4343,5 @@ def foo():
             self.assertInspectEqual(path, module)
 
 
-def test_main():
-    run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
-        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
-        TestGetcallargsFunctions, TestGetcallargsMethods,
-        TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
-        TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
-        TestBoundArguments, TestSignaturePrivateHelpers,
-        TestSignatureDefinitions, TestIsDataDescriptor,
-        TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

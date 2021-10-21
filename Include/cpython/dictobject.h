@@ -3,6 +3,7 @@
 #endif
 
 typedef struct _dictkeysobject PyDictKeysObject;
+typedef struct _dictvalues PyDictValues;
 
 /* The ma_values pointer is NULL for a combined table
  * or points to an array of PyObject* for a split table
@@ -22,9 +23,9 @@ typedef struct {
     /* If ma_values is NULL, the table is "combined": keys and values
        are stored in ma_keys.
 
-       If ma_values is not NULL, the table is splitted:
+       If ma_values is not NULL, the table is split:
        keys are stored in ma_keys and values are stored in ma_values */
-    PyObject **ma_values;
+    PyDictValues *ma_values;
 } PyDictObject;
 
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
@@ -85,4 +86,6 @@ PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
  * Returns the version number, or zero if it was not possible to get a version number. */
-uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictObject *dict);
+uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
+
+Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);

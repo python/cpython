@@ -471,9 +471,11 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                                localsplusnames, localspluskinds);
     }
     // If any cells were args then nlocalsplus will have shrunk.
-    // We don't bother resizing localspluskinds.
-    if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0) {
-        goto error;
+    if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
+        if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
+                || _PyBytes_Resize(&localspluskinds, nlocalsplus) < 0) {
+            goto error;
+        }
     }
 
     struct _PyCodeConstructor con = {
@@ -654,15 +656,13 @@ _PyCode_Addr2Offset(PyCodeObject* co, int addrq)
     if (co->co_columntable == Py_None || addrq < 0) {
         return -1;
     }
-    if (addrq % 2 == 1) {
-        --addrq;
-    }
-    if (addrq >= PyBytes_GET_SIZE(co->co_columntable)) {
+    addrq /= sizeof(_Py_CODEUNIT);
+    if (addrq*2 >= PyBytes_GET_SIZE(co->co_columntable)) {
         return -1;
     }
 
     unsigned char* bytes = (unsigned char*)PyBytes_AS_STRING(co->co_columntable);
-    return bytes[addrq] - 1;
+    return bytes[addrq*2] - 1;
 }
 
 int
@@ -671,15 +671,13 @@ _PyCode_Addr2EndOffset(PyCodeObject* co, int addrq)
     if (co->co_columntable == Py_None || addrq < 0) {
         return -1;
     }
-    if (addrq % 2 == 0) {
-        ++addrq;
-    }
-    if (addrq >= PyBytes_GET_SIZE(co->co_columntable)) {
+    addrq /= sizeof(_Py_CODEUNIT);
+    if (addrq*2+1 >= PyBytes_GET_SIZE(co->co_columntable)) {
         return -1;
     }
 
     unsigned char* bytes = (unsigned char*)PyBytes_AS_STRING(co->co_columntable);
-    return bytes[addrq] - 1;
+    return bytes[addrq*2+1] - 1;
 }
 
 void

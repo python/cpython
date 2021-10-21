@@ -5,13 +5,16 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
+#include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
 #include <float.h>
+#include <stdlib.h>               // strtol()
 
 /*[clinic input]
 class float "PyObject *" "&PyFloat_Type"
@@ -809,7 +812,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
      */
     errno = 0;
     ix = pow(iv, iw);
-    Py_ADJUST_ERANGE1(ix);
+    _Py_ADJUST_ERANGE1(ix);
     if (negate_result)
         ix = -ix;
 
@@ -1463,8 +1466,8 @@ float_fromhex(PyTypeObject *type, PyObject *string)
        bits lsb, lsb-2, lsb-3, lsb-4, ... is 1. */
     if ((digit & half_eps) != 0) {
         round_up = 0;
-        if ((digit & (3*half_eps-1)) != 0 ||
-            (half_eps == 8 && (HEX_DIGIT(key_digit+1) & 1) != 0))
+        if ((digit & (3*half_eps-1)) != 0 || (half_eps == 8 &&
+                key_digit+1 < ndigits && (HEX_DIGIT(key_digit+1) & 1) != 0))
             round_up = 1;
         else
             for (i = key_digit-1; i >= 0; i--)
@@ -2350,7 +2353,7 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
             flo = 0;
             ++fhi;
             if (fhi >> 28) {
-                /* And it also progagated out of the next 28 bits. */
+                /* And it also propagated out of the next 28 bits. */
                 fhi = 0;
                 ++e;
                 if (e >= 2047)

@@ -309,6 +309,53 @@ PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
 
+/* === Old Buffer API ============================================ */
+
+/* FIXME:  usage of these should all be replaced in Python itself
+   but for backwards compatibility we will implement them.
+   Their usage without a corresponding "unlock" mechanism
+   may create issues (but they would already be there). */
+
+/* Takes an arbitrary object which must support the (character, single segment)
+   buffer interface and returns a pointer to a read-only memory location
+   usable as character based input for subsequent processing.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
+                                      const char **buffer,
+                                      Py_ssize_t *buffer_len);
+
+/* Checks whether an arbitrary object supports the (character, single segment)
+   buffer interface.
+
+   Returns 1 on success, 0 on failure. */
+Py_DEPRECATED(3.0) PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
+
+/* Same as PyObject_AsCharBuffer() except that this API expects (readable,
+   single segment) buffer interface and returns a pointer to a read-only memory
+   location which can contain arbitrary data.
+
+   0 is returned on success.  buffer and buffer_len are only set in case no
+   error occurs.  Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
+                                      const void **buffer,
+                                      Py_ssize_t *buffer_len);
+
+/* Takes an arbitrary object which must support the (writable, single segment)
+   buffer interface and returns a pointer to a writable memory location in
+   buffer of size 'buffer_len'.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
+                                       void **buffer,
+                                       Py_ssize_t *buffer_len);
+
+
 /* === New Buffer API ============================================ */
 
 /* Takes an arbitrary object and returns the result of calling
@@ -327,7 +374,7 @@ PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 /* Takes an AsyncIterable object and returns an AsyncIterator for it.
    This is typically a new iterator but if the argument is an AsyncIterator,
    this returns itself. */
-PyAPI_FUNC(PyObject *) PyObject_GetAiter(PyObject *);
+PyAPI_FUNC(PyObject *) PyObject_GetAIter(PyObject *);
 
 /* Returns non-zero if the object 'obj' provides iterator protocols, and 0 otherwise.
 
@@ -337,7 +384,7 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
 /* Returns non-zero if the object 'obj' provides AsyncIterator protocols, and 0 otherwise.
 
    This function always succeeds. */
-PyAPI_FUNC(int) PyAiter_Check(PyObject *);
+PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
@@ -816,7 +863,7 @@ PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ABSTRACTOBJECT_H
-#  include  "cpython/abstract.h"
+#  include "cpython/abstract.h"
 #  undef Py_CPYTHON_ABSTRACTOBJECT_H
 #endif
 
