@@ -481,6 +481,11 @@ Build Changes
   ``isinf()``, ``isnan()``, ``round()``.
   (Contributed by Victor Stinner in :issue:`45440`.)
 
+* Freelists for object structs can now be disabled. A new :program:`configure`
+  option :option:`!--without-freelists` can be used to disable all freelists
+  except empty tuple singleton.
+  (Contributed by Christian Heimes in :issue:`45522`)
+
 C API Changes
 =============
 
