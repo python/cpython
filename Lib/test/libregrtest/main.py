@@ -661,6 +661,7 @@ class Regrtest:
             sys.exit(0)
 
         test_cwd = self.create_temp_dir()
+        self.adjust_resource_limits()
 
         try:
             # Run the tests in a context manager that temporarily changes the CWD
