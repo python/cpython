@@ -1,0 +1,1 @@
+:func:`shutil.copytree`: Add a ``copy_stat`` boolean option that controls whether permissions will be copied as well from the source directory.

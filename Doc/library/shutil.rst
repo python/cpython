@@ -226,8 +226,8 @@ Directory and files operations
 
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
-              copy_function=copy2, ignore_dangling_symlinks=False, \
-              dirs_exist_ok=False)
+              copy_stat=True, copy_function=copy2, \
+              ignore_dangling_symlinks=False, dirs_exist_ok=False)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory. *dirs_exist_ok* dictates
@@ -235,7 +235,10 @@ Directory and files operations
    already exists.
 
    Permissions and times of directories are copied with :func:`copystat`,
-   individual files are copied using :func:`~shutil.copy2`.
+   unless *copy_stat* is `False`. Individual files are copied using
+   :func:`~shutil.copy2` by default. Using `copy_stat=False` along with
+   `copy_function=shutil.copyfile` is useful when you wish to not use the
+   source permissions at all.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
