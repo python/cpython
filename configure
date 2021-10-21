@@ -817,6 +817,8 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+MIMALLOC_HEADERS
+MIMALLOC_OBJS
 WITH_MIMALLOC
 GDBM_LIBS
 GDBM_CFLAGS
@@ -13402,6 +13404,10 @@ $as_echo "yes" >&6; }
 $as_echo "#define WITH_MIMALLOC 1" >>confdefs.h
 
   WITH_MIMALLOC=1
+
+  MIMALLOC_OBJS='$(MIMALLOC_OBJS)'
+
+  MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
