@@ -45,6 +45,8 @@ Typical usage:
 """
 
 import os
+import platform
+import random
 import sys
 
 from enum import Enum, _simple_enum
@@ -713,7 +715,7 @@ def uuid3(namespace, name):
 
 def uuid4():
     """Generate a random UUID."""
-    return UUID(bytes=os.urandom(16), version=4)
+    return UUID(int=random.getrandbits(128), version=4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
