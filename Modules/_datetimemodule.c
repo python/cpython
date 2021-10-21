@@ -680,6 +680,11 @@ set_date_fields(PyDateTime_Date *self, int y, int m, int d)
  * String parsing utilities and helper functions
  */
 
+static const unsigned char *
+is_digit(const char c) {
+    return ((unsigned int)(c - '0')) < 10;
+}
+
 static const char *
 parse_digits(const char *ptr, int *var, size_t num_digits)
 {
@@ -740,7 +745,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     const char *p = tstr;
     const char *p_end = tstr_end;
     int *vals[3] = {hour, minute, second};
-    unsigned char has_separator = 2;
+    unsigned char has_separator = 1;
 
     // Parse [HH[:?MM[:?SS]]]
     for (size_t i = 0; i < 3; ++i) {
@@ -750,36 +755,50 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         }
 
         char c = *(p++);
+        if (i == 0) {
+            has_separator = (c == ':');
+        }
+
         if (p >= p_end) {
             return c != '\0';
         }
-        else if (has_separator == 2 || (has_separator && c == ':')) {
-            if (has_separator == 2) {
-                has_separator = (c == ':');
-            }
+        else if (has_separator && (c == ':')) {
             continue;
         }
-        else if (c == '.') {
+        else if (c == '.' || c == ',') {
             break;
-        }
-        else {
+        } else if (!has_separator) {
+            --p;
+        } else {
             return -4;  // Malformed time separator
         }
     }
 
-    // Parse .fff[fff]
+    // Parse fractional components
     size_t len_remains = p_end - p;
-    if (!(len_remains == 6 || len_remains == 3)) {
-        return -3;
+    size_t to_parse = len_remains;
+    if (len_remains >= 6) {
+        to_parse = 6;
     }
 
-    p = parse_digits(p, microsecond, len_remains);
+    p = parse_digits(p, microsecond, to_parse);
     if (NULL == p) {
         return -3;
     }
 
-    if (len_remains == 3) {
-        *microsecond *= 1000;
+    static int correction[5] = {
+        100000, 10000, 1000, 100, 10
+    };
+
+    if (to_parse < 6) {
+        *microsecond *= correction[to_parse-1];
+    }
+
+    for (size_t i = 0; i < len_remains - 6; ++i) {
+        if (!is_digit(*p)) {
+            break;
+        }
+        p++;
     }
 
     // Return 1 if it's not the end of the string
@@ -805,7 +824,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
 
     const char *tzinfo_pos = p;
     do {
-        if (*tzinfo_pos == '+' || *tzinfo_pos == '-') {
+        if (*tzinfo_pos == 'Z' || *tzinfo_pos == '+' || *tzinfo_pos == '-') {
             break;
         }
     } while (++tzinfo_pos < p_end);
@@ -827,14 +846,16 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
         }
     }
 
-    // Parse time zone component
-    // Valid formats are:
-    //    - +HH:MM           (len  6)
-    //    - +HH:MM:SS        (len  9)
-    //    - +HH:MM:SS.ffffff (len 16)
-    size_t tzlen = p_end - tzinfo_pos;
-    if (!(tzlen == 6 || tzlen == 9 || tzlen == 16)) {
-        return -5;
+    // Special case UTC / Zulu time.
+    if (*tzinfo_pos == 'Z') {
+        *tzoffset = 0;
+        *tzmicrosecond = 0;
+
+        if (*(tzinfo_pos + 1) != '\0') {
+            return -6;
+        } else {
+            return 1;
+        }
     }
 
     int tzsign = (*tzinfo_pos == '-') ? -1 : 1;
@@ -846,7 +867,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
     *tzmicrosecond *= tzsign;
 
-    return rv ? -5 : 1;
+    return rv ? -7 : 1;
 }
 
 /* ---------------------------------------------------------------------------
