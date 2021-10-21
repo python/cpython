@@ -1208,6 +1208,13 @@ struct s_MergeState {
      * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
      * we can assume more, and use one of the special-case compares. */
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
+
+    /* Used by unsafe_tuple_compare to record whether the very first tuple
+     * elements resolved the last comparison attempt. If so, next time a
+     * method that may avoid PyObject_RichCompareBool() entirely is tried.
+     * 0 for false, 1 for true.
+     */
+    int first_tuple_items_resolved_it;
 };
 
 /* binarysort is the best method for sorting small arrays: it does
@@ -2183,7 +2190,7 @@ static int
 unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
     PyTupleObject *vt, *wt;
-    Py_ssize_t i, vlen, wlen;
+    Py_ssize_t i, vlen, wlen, firsti;
     int k;
 
     /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
@@ -2194,27 +2201,42 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
+    firsti = 0;
+    if (ms->first_tuple_items_resolved_it) {
+        /* See whether fast compares of the first elements settle it. */
+        k = ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0], ms);
+        if (k) /* error, or v < w */
+            return k;
+        k = ms->tuple_elem_compare(wt->ob_item[0], vt->ob_item[0], ms);
+        if (k < 0) /* error */
+            return -1;
+        if (k > 0) /* w < v */
+            return 0;
+        /* We have
+         *     not (v[0] < w[0]) and not (w[0] < v[0])
+         * which implies, for a total order, that the first elements are
+         * equal. So skip them in the loop.
+         */
+        firsti = 1;
+        ms->first_tuple_items_resolved_it = 0;
+    }
 
-    /* See whether fast compares of the first elements settle it. */
-    k = ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0], ms);
-    if (k) /* error, or v < w */
-        return k;
-    k = ms->tuple_elem_compare(wt->ob_item[0], vt->ob_item[0], ms);
-    if (k < 0) /* error */
-        return -1;
-    if (k > 0) /* w < v */
-        return 0;
-
-    /* first elements are equal */
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
-    for (i = 1; i < vlen && i < wlen; i++) {
+    for (i = firsti; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
         if (k < 0)
             return -1;
-        if (!k) {
-            return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
-                                            Py_LT);
+        if (!k) { /* not equal */
+            if (!i) {
+                ms->first_tuple_items_resolved_it = 1;
+                return ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0],
+                                              ms);
+            }
+            else {
+                return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
+                                                Py_LT);
+            }
         }
     }
     /* all equal until we fell off the end */
@@ -2403,6 +2425,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             }
 
             ms.key_compare = unsafe_tuple_compare;
+            ms.first_tuple_items_resolved_it = 1; /* be optimistic */
         }
     }
     /* End of pre-sort check: ms is now set properly! */
