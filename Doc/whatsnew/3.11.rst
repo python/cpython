@@ -482,6 +482,11 @@ New Features
   suspend and resume tracing and profiling.
   (Contributed by Victor Stinner in :issue:`43760`.)
 
+* Add new :c:func:`PyThreadState_SetProfile` and
+  :c:func:`PyThreadState_SetTrace` functions to set the profile and the trace
+  function of a Python thread state.
+  (Contributed by Victor Stinner in :issue:`39947`.)
+
 Porting to Python 3.11
 ----------------------
 

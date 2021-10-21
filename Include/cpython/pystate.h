@@ -192,6 +192,14 @@ PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
 // function is set, otherwise disable them.
 PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
+PyAPI_FUNC(int) PyThreadState_SetProfile(PyThreadState *tstate,
+    Py_tracefunc func,
+    PyObject *arg);
+
+PyAPI_FUNC(int) PyThreadState_SetTrace(PyThreadState *tstate,
+    Py_tracefunc func,
+    PyObject *arg);
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread

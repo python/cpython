@@ -980,7 +980,7 @@ profile_trampoline(PyObject *self, PyFrameObject *frame,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = call_trampoline(tstate, self, frame, what, arg);
     if (result == NULL) {
-        _PyEval_SetProfile(tstate, NULL, NULL);
+        PyThreadState_SetProfile(tstate, NULL, NULL);
         return -1;
     }
 
@@ -1006,7 +1006,7 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = call_trampoline(tstate, callback, frame, what, arg);
     if (result == NULL) {
-        _PyEval_SetTrace(tstate, NULL, NULL);
+        PyThreadState_SetTrace(tstate, NULL, NULL);
         Py_CLEAR(frame->f_trace);
         return -1;
     }
@@ -1029,12 +1029,12 @@ sys_settrace(PyObject *self, PyObject *args)
 
     PyThreadState *tstate = _PyThreadState_GET();
     if (args == Py_None) {
-        if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
+        if (PyThreadState_SetTrace(tstate, NULL, NULL) < 0) {
             return NULL;
         }
     }
     else {
-        if (_PyEval_SetTrace(tstate, trace_trampoline, args) < 0) {
+        if (PyThreadState_SetTrace(tstate, trace_trampoline, args) < 0) {
             return NULL;
         }
     }
@@ -1078,12 +1078,12 @@ sys_setprofile(PyObject *self, PyObject *args)
 
     PyThreadState *tstate = _PyThreadState_GET();
     if (args == Py_None) {
-        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+        if (PyThreadState_SetProfile(tstate, NULL, NULL) < 0) {
             return NULL;
         }
     }
     else {
-        if (_PyEval_SetProfile(tstate, profile_trampoline, args) < 0) {
+        if (PyThreadState_SetProfile(tstate, profile_trampoline, args) < 0) {
             return NULL;
         }
     }

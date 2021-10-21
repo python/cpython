@@ -1,0 +1,3 @@
+Add new :c:func:`PyThreadState_SetProfile` and
+:c:func:`PyThreadState_SetTrace` functions to set the profile and the trace
+function of a Python thread state. Patch by Victor Stinner.

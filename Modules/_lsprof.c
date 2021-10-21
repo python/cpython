@@ -674,7 +674,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyEval_SetProfile(tstate, profiler_callback, (PyObject*)self) < 0) {
+    if (PyThreadState_SetProfile(tstate, profiler_callback, (PyObject*)self) < 0) {
         return NULL;
     }
 
@@ -708,7 +708,7 @@ static PyObject*
 profiler_disable(ProfilerObject *self, PyObject* noarg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+    if (PyThreadState_SetProfile(tstate, NULL, NULL) < 0) {
         return NULL;
     }
     self->flags &= ~POF_ENABLED;
@@ -745,7 +745,7 @@ profiler_dealloc(ProfilerObject *op)
 {
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
-        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+        if (PyThreadState_SetProfile(tstate, NULL, NULL) < 0) {
             PyErr_WriteUnraisable((PyObject *)op);
         }
     }

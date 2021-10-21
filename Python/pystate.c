@@ -608,6 +608,17 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
+
+#ifndef NDEBUG
+int
+_PyThreadState_CheckConsistency(PyThreadState *tstate)
+{
+    assert(!_PyMem_IsPtrFreed(tstate));
+    assert(!_PyMem_IsPtrFreed(tstate->interp));
+    return 1;
+}
+#endif
+
 /* Minimum size of data stack chunk */
 #define DATA_STACK_CHUNK_SIZE (16*1024)
 
@@ -1141,8 +1152,7 @@ PyThreadState_GetFrame(PyThreadState *tstate)
     if (frame == NULL) {
         PyErr_Clear();
     }
-    Py_XINCREF(frame);
-    return frame;
+    return (PyFrameObject*)Py_XNewRef(frame);
 }
 
 
@@ -2109,6 +2119,68 @@ _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
     }
 }
 
+
+int
+PyThreadState_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(_PyThreadState_CheckConsistency(tstate));
+    // The caller must hold the GIL
+    assert(PyGILState_Check());
+
+    // Call _PySys_Audit() in the context of the current thread state,
+    // even if tstate is not the current thread state.
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
+        return -1;
+    }
+
+    PyObject *profileobj = tstate->c_profileobj;
+
+    tstate->c_profilefunc = NULL;
+    tstate->c_profileobj = NULL;
+    // Must make sure that tracing is not ignored if 'profileobj' is freed
+    _PyThreadState_ResumeTracing(tstate);
+    Py_XDECREF(profileobj);
+
+    tstate->c_profileobj = Py_XNewRef(arg);
+    tstate->c_profilefunc = func;
+
+    // Flag that tracing or profiling is turned on
+    _PyThreadState_ResumeTracing(tstate);
+    return 0;
+}
+
+
+int
+PyThreadState_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(_PyThreadState_CheckConsistency(tstate));
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call _PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
+        return -1;
+    }
+
+    PyObject *traceobj = tstate->c_traceobj;
+
+    tstate->c_tracefunc = NULL;
+    tstate->c_traceobj = NULL;
+    /* Must make sure that profiling is not ignored if 'traceobj' is freed */
+    _PyThreadState_ResumeTracing(tstate);
+    Py_XDECREF(traceobj);
+
+    tstate->c_traceobj = Py_XNewRef(arg);
+    tstate->c_tracefunc = func;
+
+    /* Flag that tracing or profiling is turned on */
+    _PyThreadState_ResumeTracing(tstate);
+
+    return 0;
+}
 
 #ifdef __cplusplus
 }

@@ -123,20 +123,6 @@ static long dxp[256];
 #endif
 #endif
 
-#ifndef NDEBUG
-/* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
-   PyEval_RestoreThread(). Detect if tstate memory was freed. It can happen
-   when a thread continues to run after Python finalization, especially
-   daemon threads. */
-static int
-is_tstate_valid(PyThreadState *tstate)
-{
-    assert(!_PyMem_IsPtrFreed(tstate));
-    assert(!_PyMem_IsPtrFreed(tstate->interp));
-    return 1;
-}
-#endif
-
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
@@ -403,7 +389,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
@@ -623,7 +609,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(PyThreadState *tstate)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -691,7 +677,7 @@ void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
 
@@ -716,7 +702,7 @@ Py_MakePendingCalls(void)
     assert(PyGILState_Check());
 
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
@@ -5841,7 +5827,7 @@ make_coro_frame(PyThreadState *tstate,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *kwnames)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
@@ -6381,84 +6367,23 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     return result;
 }
 
-int
-_PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
-{
-    assert(is_tstate_valid(tstate));
-    /* The caller must hold the GIL */
-    assert(PyGILState_Check());
-
-    /* Call _PySys_Audit() in the context of the current thread state,
-       even if tstate is not the current thread state. */
-    PyThreadState *current_tstate = _PyThreadState_GET();
-    if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
-        return -1;
-    }
-
-    PyObject *profileobj = tstate->c_profileobj;
-
-    tstate->c_profilefunc = NULL;
-    tstate->c_profileobj = NULL;
-    /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    _PyThreadState_ResumeTracing(tstate);
-    Py_XDECREF(profileobj);
-
-    Py_XINCREF(arg);
-    tstate->c_profileobj = arg;
-    tstate->c_profilefunc = func;
-
-    /* Flag that tracing or profiling is turned on */
-    _PyThreadState_ResumeTracing(tstate);
-    return 0;
-}
 
 void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyEval_SetProfile(tstate, func, arg) < 0) {
+    if (PyThreadState_SetProfile(tstate, func, arg) < 0) {
         /* Log _PySys_Audit() error */
         _PyErr_WriteUnraisableMsg("in PyEval_SetProfile", NULL);
     }
 }
 
-int
-_PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
-{
-    assert(is_tstate_valid(tstate));
-    /* The caller must hold the GIL */
-    assert(PyGILState_Check());
-
-    /* Call _PySys_Audit() in the context of the current thread state,
-       even if tstate is not the current thread state. */
-    PyThreadState *current_tstate = _PyThreadState_GET();
-    if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
-        return -1;
-    }
-
-    PyObject *traceobj = tstate->c_traceobj;
-
-    tstate->c_tracefunc = NULL;
-    tstate->c_traceobj = NULL;
-    /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    _PyThreadState_ResumeTracing(tstate);
-    Py_XDECREF(traceobj);
-
-    Py_XINCREF(arg);
-    tstate->c_traceobj = arg;
-    tstate->c_tracefunc = func;
-
-    /* Flag that tracing or profiling is turned on */
-    _PyThreadState_ResumeTracing(tstate);
-
-    return 0;
-}
 
 void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyEval_SetTrace(tstate, func, arg) < 0) {
+    if (PyThreadState_SetTrace(tstate, func, arg) < 0) {
         /* Log _PySys_Audit() error */
         _PyErr_WriteUnraisableMsg("in PyEval_SetTrace", NULL);
     }

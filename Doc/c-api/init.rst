@@ -1187,8 +1187,68 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Resume tracing and profiling in the Python thread state *tstate* suspended
    by the :c:func:`PyThreadState_EnterTracing` function.
 
-   See also :c:func:`PyEval_SetTrace` and :c:func:`PyEval_SetProfile`
-   functions.
+   See also :c:func:`PyThreadState_SetTrace` and
+   :c:func:`PyThreadState_SetProfile` functions.
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: int PyThreadState_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+
+   Set the profile function of *tstate*.
+
+   The *arg* parameter is passed to the function as its first parameter, and
+   may be any Python object, or ``NULL``.
+
+   If the profile function needs to maintain state, using a different value for
+   *arg* for each thread provides a convenient and thread-safe place to store
+   it.
+
+   The profile function is called for all monitored events except
+   :const:`PyTrace_LINE` :const:`PyTrace_OPCODE` and
+   :const:`PyTrace_EXCEPTION`.
+
+   Calling ``PyThreadState_SetProfile(tstate, NULL, NULL)`` removes the profile
+   function.
+
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   The caller must hold the :term:`GIL`. *func* and *arg* can be *NULL*.
+
+   See also functions:
+
+   * :func:`sys.setprofile`
+   * :c:func:`PyEval_SetProfile`
+   * :c:func:`PyThreadState_EnterTracing`
+   * :c:func:`PyThreadState_SetTrace`
+
+   .. versionadded:: 3.11
+
+
+.. c:function:: void PyThreadState_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+
+   Set the tracing function of *tstate*.
+
+   This is similar to :c:func:`PyThreadState_SetProfile`, except the tracing function
+   does receive line-number events and per-opcode events, but does not receive
+   any event related to C function objects being called. Any trace function
+   registered using :c:func:`PyThreadState_SetTrace` will not receive
+   :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
+   :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+
+   Calling ``PyThreadState_SetTrace(tstate, NULL, NULL)`` removes the trace
+   function.
+
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   The caller must hold the :term:`GIL`. *func* and *arg* can be *NULL*.
+
+   See also functions:
+
+   * :func:`sys.settrace`
+   * :c:func:`PyEval_SetTrace`
+   * :c:func:`PyThreadState_EnterTracing`
+   * :c:func:`PyThreadState_SetProfile`
 
    .. versionadded:: 3.11
 
@@ -1545,7 +1605,7 @@ Python-level trace functions in previous versions.
 
 .. c:type:: int (*Py_tracefunc)(PyObject *obj, PyFrameObject *frame, int what, PyObject *arg)
 
-   The type of the trace function registered using :c:func:`PyEval_SetProfile` and
+   The type of the trace function registered using :c:func:`PyThreadState_SetProfile` and
    :c:func:`PyEval_SetTrace`. The first parameter is the object passed to the
    registration function as *obj*, *frame* is the frame object to which the event
    pertains, *what* is one of the constants :const:`PyTrace_CALL`,
@@ -1636,28 +1696,20 @@ Python-level trace functions in previous versions.
 
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)
 
-   Set the profiler function to *func*.  The *obj* parameter is passed to the
-   function as its first parameter, and may be any Python object, or ``NULL``.  If
-   the profile function needs to maintain state, using a different value for *obj*
-   for each thread provides a convenient and thread-safe place to store it.  The
-   profile function is called for all monitored events except :const:`PyTrace_LINE`
-   :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
+   Set the trace function of the current thread using the
+   :c:func:`PyThreadState_SetProfile` function.
 
-   See also the :func:`sys.setprofile` function.
+   On error, log the unraisable exception with :data:`sys.unraisablehook`.
 
    The caller must hold the :term:`GIL`.
 
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
 
-   Set the tracing function to *func*.  This is similar to
-   :c:func:`PyEval_SetProfile`, except the tracing function does receive line-number
-   events and per-opcode events, but does not receive any event related to C function
-   objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
-   will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
-   :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+   Set the trace function of the current thread using the
+   :c:func:`PyThreadState_SetTrace` function.
 
-   See also the :func:`sys.settrace` function.
+   On error, log the unraisable exception with :data:`sys.unraisablehook`.
 
    The caller must hold the :term:`GIL`.
 

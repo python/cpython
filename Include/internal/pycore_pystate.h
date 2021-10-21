@@ -147,6 +147,16 @@ _PyThreadState_ResumeTracing(PyThreadState *tstate)
     tstate->cframe->use_tracing = (use_tracing ? 255 : 0);
 }
 
+#ifndef NDEBUG
+// Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
+// PyEval_RestoreThread(). Detect if tstate memory was freed. It can happen
+// when a thread continues to run after Python finalization, especially
+// daemon threads.
+//
+// Usage: assert(_PyThreadState_CheckConsistency(tstate));
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
 
 /* Other */
 
