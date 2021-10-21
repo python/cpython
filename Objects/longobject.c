@@ -7,6 +7,7 @@
 #include "pycore_interp.h"        // _PY_NSMALLPOSINTS
 #include "pycore_long.h"          // __PyLong_GetSmallInt_internal()
 #include "pycore_object.h"        // _PyObject_InitVar()
+#include "pycore_pymem.h"           // Free lists
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 
 #include <ctype.h>
@@ -170,11 +171,9 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
-    /* We could use a freelist here */
-    PyLongObject *v = PyObject_Malloc(sizeof(PyLongObject));
+    PyLongObject *v = (PyLongObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
     if (v == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+        return PyErr_NoMemory();
     }
     Py_ssize_t sign = x < 0 ? -1: 1;
     digit abs_x = x < 0 ? -x : x;
@@ -5743,12 +5742,24 @@ static PyNumberMethods long_as_number = {
     long_long,                  /* nb_index */
 };
 
+static void
+int_dealloc(PyLongObject *op)
+{
+    if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
+        _PyFreeList_Free(&_Py_small_object_freelist, op);
+    }
+    else {
+        Py_TYPE(op)->tp_free((PyObject *)op);
+    }
+}
+
+
 PyTypeObject PyLong_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "int",                                      /* tp_name */
     offsetof(PyLongObject, ob_digit),           /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    (destructor)int_dealloc,                    /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */

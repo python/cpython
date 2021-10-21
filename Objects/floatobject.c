@@ -10,6 +10,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE1()
+#include "pycore_pymem.h"           // Free lists
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
@@ -126,21 +127,9 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    struct _Py_float_state *state = get_float_state();
-    PyFloatObject *op = state->free_list;
-    if (op != NULL) {
-#ifdef Py_DEBUG
-        // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
-        assert(state->numfree != -1);
-#endif
-        state->free_list = (PyFloatObject *) Py_TYPE(op);
-        state->numfree--;
-    }
-    else {
-        op = PyObject_Malloc(sizeof(PyFloatObject));
-        if (!op) {
-            return PyErr_NoMemory();
-        }
+    PyFloatObject *op = (PyFloatObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
+    if (op == NULL) {
+        return PyErr_NoMemory();
     }
     _PyObject_Init((PyObject*)op, &PyFloat_Type);
     op->ob_fval = fval;
@@ -234,18 +223,7 @@ static void
 float_dealloc(PyFloatObject *op)
 {
     if (PyFloat_CheckExact(op)) {
-        struct _Py_float_state *state = get_float_state();
-#ifdef Py_DEBUG
-        // float_dealloc() must not be called after _PyFloat_Fini()
-        assert(state->numfree != -1);
-#endif
-        if (state->numfree >= PyFloat_MAXFREELIST)  {
-            PyObject_Free(op);
-            return;
-        }
-        state->numfree++;
-        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
-        state->free_list = op;
+        _PyFreeList_Free(&_Py_small_object_freelist, op);
     }
     else {
         Py_TYPE(op)->tp_free((PyObject *)op);
