@@ -218,6 +218,11 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertTrue(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
+    def test_completion_kwds(self):
+        self.assertIn('and', ac.completion_kwds)
+        self.assertIn('case', ac.completion_kwds)
+        self.assertNotIn('None', ac.completion_kwds)
+
     def test_fetch_completions(self):
         # Test that fetch_completions returns 2 lists:
         # For attribute completion, a large list containing all variables, and

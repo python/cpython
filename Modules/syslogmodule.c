@@ -183,7 +183,7 @@ syslog_syslog(PyObject * self, PyObject * args)
         PyObject *openargs;
 
         /* Continue even if PyTuple_New fails, because openlog(3) is optional.
-         * So, we can still do loggin in the unlikely event things are so hosed
+         * So, we can still do logging in the unlikely event things are so hosed
          * that we can't do this tuple.
          */
         if ((openargs = PyTuple_New(0))) {

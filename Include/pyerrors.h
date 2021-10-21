@@ -314,7 +314,7 @@ PyAPI_FUNC(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_l
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ERRORS_H
-#  include  "cpython/pyerrors.h"
+#  include "cpython/pyerrors.h"
 #  undef Py_CPYTHON_ERRORS_H
 #endif
 

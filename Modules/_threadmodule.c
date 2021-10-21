@@ -1219,7 +1219,7 @@ where the corresponding signal handler will be executed.\n\
 If *signum* is omitted, SIGINT is assumed.\n\
 A subthread can use this function to interrupt the main thread.\n\
 \n\
-Note: the default signal hander for SIGINT raises ``KeyboardInterrupt``."
+Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
 
 static lockobject *newlockobject(PyObject *module);
@@ -1319,7 +1319,7 @@ static PyObject *
 thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *wr;
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     lockobject *lock;
 
     if (tstate->on_delete_data != NULL) {

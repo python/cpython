@@ -180,9 +180,9 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_LIMIT_VARIABLE_NUMBER",
             "SQLITE_LIMIT_TRIGGER_DEPTH",
         ]
-        if sqlite.version_info >= (3, 7, 17):
+        if sqlite.sqlite_version_info >= (3, 7, 17):
             consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
-        if sqlite.version_info >= (3, 8, 3):
+        if sqlite.sqlite_version_info >= (3, 8, 3):
             consts.append("SQLITE_RECURSIVE")
         if sqlite.sqlite_version_info >= (3, 8, 7):
             consts.append("SQLITE_LIMIT_WORKER_THREADS")
@@ -652,7 +652,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row, None)
 
     def test_array_size(self):
-        # must default ot 1
+        # must default to 1
         self.assertEqual(self.cu.arraysize, 1)
 
         # now set to 2

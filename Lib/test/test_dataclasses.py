@@ -1907,7 +1907,7 @@ class TestCase(unittest.TestCase):
         # Check MRO resolution.
         self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
-    def test_dataclassses_pickleable(self):
+    def test_dataclasses_pickleable(self):
         global P, Q, R
         @dataclass
         class P:
@@ -3695,7 +3695,7 @@ class TestKeywordArgs(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             B(3, 4, 5)
 
-        # Explicitely make a field that follows KW_ONLY be non-keyword-only.
+        # Explicitly make a field that follows KW_ONLY be non-keyword-only.
         @dataclass
         class C:
             a: int

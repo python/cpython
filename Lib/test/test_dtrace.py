@@ -34,7 +34,7 @@ def normalize_trace_output(output):
         return "\n".join(result)
     except (IndexError, ValueError):
         raise AssertionError(
-            "tracer produced unparseable output:\n{}".format(output)
+            "tracer produced unparsable output:\n{}".format(output)
         )
 
 
