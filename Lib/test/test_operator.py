@@ -45,16 +45,16 @@ class BadIterable:
 
 
 class OperatorTestCase:
-    def test_all_exported_names(self):
+    def test___all__(self):
         operator = self.module
         actual_all = set(operator.__all__)
         computed_all = set()
-        for k in vars(operator):
-            if k.startswith('__'):
+        for name in vars(operator):
+            if name.startswith('__'):
                 continue
-            value = getattr(operator, k)
+            value = getattr(operator, name)
             if value.__module__ in ('operator', '_operator'):
-                computed_all.add(k)
+                computed_all.add(name)
         self.assertSetEqual(computed_all, actual_all)
 
     def test_lt(self):
