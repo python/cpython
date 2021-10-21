@@ -2185,7 +2185,24 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
  * using the same pre-sort check as we use for ms->key_compare,
  * but run on the list [x[0] for x in L]. This allows us to optimize compares
  * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is
- * that most tuple compares don't involve x[1:]. */
+ * that most tuple compares don't involve x[1:].
+ * However, that may not be right. When it is right, we can win by calling the
+ * relatively cheap ms->tuple_elem_compare on the first pair of elements, to
+ * see whether v[0] < w[0] or w[0] < v[0]. If either are so, we're done.
+ * Else we proceed as in the tuple compare, comparing the remaining pairs via
+ * the probably more expensive PyObject_RichCompareBool(..., Py_EQ) until (if
+ * ever) that says "no, not equal!". Then, if we're still on the first pair,
+ * ms->tuple_elem_compare can resolve it, else PyObject_RichCompareBool(...,
+ * Py_LT) finishes the job.
+ * In any case, ms->first_tuple_items_resolved_it keeps track of whether the
+ * most recent tuple comparison was resolved by the first pair. If so, the
+ * next attempt starts by trying the cheap tests on the first pair again, else
+ * PyObject_RichCompareBool(..., Py_EQ) is used from the start.
+ * There are cases where PyObject_RichCompareBool(..., Py_EQ) is much cheaper!
+ * For example, that can return "almost immediately" if passed the same
+ * object twice (it special-cases object identity for Py_EQ), which can,
+ * potentially, be unboundedly faster than ms->tuple_elem_compare.
+ */
 static int
 unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
