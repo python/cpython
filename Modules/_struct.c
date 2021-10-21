@@ -6,6 +6,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_floatobject.h"   // _PyFloat_Unpack2()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <ctype.h>
@@ -1475,7 +1476,6 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         if (format == NULL)
             return -1;
     }
-    /* XXX support buffer interface, too */
     else {
         Py_INCREF(format);
     }

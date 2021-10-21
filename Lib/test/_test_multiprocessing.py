@@ -3773,12 +3773,19 @@ class _TestSharedMemory(BaseTestCase):
         local_sms.buf[:len(binary_data)] = binary_data
         local_sms.close()
 
+    def _new_shm_name(self, prefix):
+        # Add a PID to the name of a POSIX shared memory object to allow
+        # running multiprocessing tests (test_multiprocessing_fork,
+        # test_multiprocessing_spawn, etc) in parallel.
+        return prefix + str(os.getpid())
+
     def test_shared_memory_basics(self):
-        sms = shared_memory.SharedMemory('test01_tsmb', create=True, size=512)
+        name_tsmb = self._new_shm_name('test01_tsmb')
+        sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
         self.addCleanup(sms.unlink)
 
         # Verify attributes are readable.
-        self.assertEqual(sms.name, 'test01_tsmb')
+        self.assertEqual(sms.name, name_tsmb)
         self.assertGreaterEqual(sms.size, 512)
         self.assertGreaterEqual(len(sms.buf), sms.size)
 
@@ -3786,24 +3793,17 @@ class _TestSharedMemory(BaseTestCase):
         self.assertIn(sms.name, str(sms))
         self.assertIn(str(sms.size), str(sms))
 
-        # Test pickling
-        sms.buf[0:6] = b'pickle'
-        pickled_sms = pickle.dumps(sms)
-        sms2 = pickle.loads(pickled_sms)
-        self.assertEqual(sms.name, sms2.name)
-        self.assertEqual(bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'pickle')
-
         # Modify contents of shared memory segment through memoryview.
         sms.buf[0] = 42
         self.assertEqual(sms.buf[0], 42)
 
         # Attach to existing shared memory segment.
-        also_sms = shared_memory.SharedMemory('test01_tsmb')
+        also_sms = shared_memory.SharedMemory(name_tsmb)
         self.assertEqual(also_sms.buf[0], 42)
         also_sms.close()
 
         # Attach to existing shared memory segment but specify a new size.
-        same_sms = shared_memory.SharedMemory('test01_tsmb', size=20*sms.size)
+        same_sms = shared_memory.SharedMemory(name_tsmb, size=20*sms.size)
         self.assertLess(same_sms.size, 20*sms.size)  # Size was ignored.
         same_sms.close()
 
@@ -3821,7 +3821,7 @@ class _TestSharedMemory(BaseTestCase):
             'multiprocessing.shared_memory._make_filename') as mock_make_filename:
 
             NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
-            names = ['test01_fn', 'test02_fn']
+            names = [self._new_shm_name('test01_fn'), self._new_shm_name('test02_fn')]
             # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
             # because some POSIX compliant systems require name to start with /
             names = [NAME_PREFIX + name for name in names]
@@ -3843,17 +3843,17 @@ class _TestSharedMemory(BaseTestCase):
             # manages unlinking on its own and unlink() does nothing).
             # True release of shared memory segment does not necessarily
             # happen until process exits, depending on the OS platform.
+            name_dblunlink = self._new_shm_name('test01_dblunlink')
+            sms_uno = shared_memory.SharedMemory(
+                name_dblunlink,
+                create=True,
+                size=5000
+            )
             with self.assertRaises(FileNotFoundError):
-                sms_uno = shared_memory.SharedMemory(
-                    'test01_dblunlink',
-                    create=True,
-                    size=5000
-                )
-
                 try:
                     self.assertGreaterEqual(sms_uno.size, 5000)
 
-                    sms_duo = shared_memory.SharedMemory('test01_dblunlink')
+                    sms_duo = shared_memory.SharedMemory(name_dblunlink)
                     sms_duo.unlink()  # First shm_unlink() call.
                     sms_duo.close()
                     sms_uno.close()
@@ -3865,7 +3865,7 @@ class _TestSharedMemory(BaseTestCase):
             # Attempting to create a new shared memory segment with a
             # name that is already in use triggers an exception.
             there_can_only_be_one_sms = shared_memory.SharedMemory(
-                'test01_tsmb',
+                name_tsmb,
                 create=True,
                 size=512
             )
@@ -3879,7 +3879,7 @@ class _TestSharedMemory(BaseTestCase):
             # case of MacOS/darwin, requesting a smaller size is disallowed.
             class OptionalAttachSharedMemory(shared_memory.SharedMemory):
                 _flags = os.O_CREAT | os.O_RDWR
-            ok_if_exists_sms = OptionalAttachSharedMemory('test01_tsmb')
+            ok_if_exists_sms = OptionalAttachSharedMemory(name_tsmb)
             self.assertEqual(ok_if_exists_sms.size, sms.size)
             ok_if_exists_sms.close()
 
@@ -3891,6 +3891,29 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    def test_shared_memory_recreate(self):
+        # Test if shared memory segment is created properly,
+        # when _make_filename returns an existing shared memory segment name
+        with unittest.mock.patch(
+            'multiprocessing.shared_memory._make_filename') as mock_make_filename:
+
+            NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
+            names = ['test01_fn', 'test02_fn']
+            # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
+            # because some POSIX compliant systems require name to start with /
+            names = [NAME_PREFIX + name for name in names]
+
+            mock_make_filename.side_effect = names
+            shm1 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm1.unlink)
+            self.assertEqual(shm1._name, names[0])
+
+            mock_make_filename.side_effect = names
+            shm2 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm2.unlink)
+            self.assertEqual(shm2._name, names[1])
+
+    def test_invalid_shared_memory_cration(self):
         # Test creating a shared memory segment with negative size
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True, size=-1)
@@ -3902,6 +3925,47 @@ class _TestSharedMemory(BaseTestCase):
         # Test creating a shared memory segment without size argument
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True)
+
+    def test_shared_memory_pickle_unpickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                sms = shared_memory.SharedMemory(create=True, size=512)
+                self.addCleanup(sms.unlink)
+                sms.buf[0:6] = b'pickle'
+
+                # Test pickling
+                pickled_sms = pickle.dumps(sms, protocol=proto)
+
+                # Test unpickling
+                sms2 = pickle.loads(pickled_sms)
+                self.assertIsInstance(sms2, shared_memory.SharedMemory)
+                self.assertEqual(sms.name, sms2.name)
+                self.assertEqual(bytes(sms.buf[0:6]), b'pickle')
+                self.assertEqual(bytes(sms2.buf[0:6]), b'pickle')
+
+                # Test that unpickled version is still the same SharedMemory
+                sms.buf[0:6] = b'newval'
+                self.assertEqual(bytes(sms.buf[0:6]), b'newval')
+                self.assertEqual(bytes(sms2.buf[0:6]), b'newval')
+
+                sms2.buf[0:6] = b'oldval'
+                self.assertEqual(bytes(sms.buf[0:6]), b'oldval')
+                self.assertEqual(bytes(sms2.buf[0:6]), b'oldval')
+
+    def test_shared_memory_pickle_unpickle_dead_object(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                sms = shared_memory.SharedMemory(create=True, size=512)
+                sms.buf[0:6] = b'pickle'
+                pickled_sms = pickle.dumps(sms, protocol=proto)
+
+                # Now, we are going to kill the original object.
+                # So, unpickled one won't be able to attach to it.
+                sms.close()
+                sms.unlink()
+
+                with self.assertRaises(FileNotFoundError):
+                    pickle.loads(pickled_sms)
 
     def test_shared_memory_across_processes(self):
         # bpo-40135: don't define shared memory block's name in case of
@@ -4084,10 +4148,11 @@ class _TestSharedMemory(BaseTestCase):
             self.assertEqual(sl.count(b'adios'), 0)
 
         # Exercise creating a duplicate.
-        sl_copy = shared_memory.ShareableList(sl, name='test03_duplicate')
+        name_duplicate = self._new_shm_name('test03_duplicate')
+        sl_copy = shared_memory.ShareableList(sl, name=name_duplicate)
         try:
             self.assertNotEqual(sl.shm.name, sl_copy.shm.name)
-            self.assertEqual('test03_duplicate', sl_copy.shm.name)
+            self.assertEqual(name_duplicate, sl_copy.shm.name)
             self.assertEqual(list(sl), list(sl_copy))
             self.assertEqual(sl.format, sl_copy.format)
             sl_copy[-1] = 77
@@ -4119,29 +4184,45 @@ class _TestSharedMemory(BaseTestCase):
             empty_sl.shm.unlink()
 
     def test_shared_memory_ShareableList_pickling(self):
-        sl = shared_memory.ShareableList(range(10))
-        self.addCleanup(sl.shm.unlink)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                sl = shared_memory.ShareableList(range(10))
+                self.addCleanup(sl.shm.unlink)
 
-        serialized_sl = pickle.dumps(sl)
-        deserialized_sl = pickle.loads(serialized_sl)
-        self.assertTrue(
-            isinstance(deserialized_sl, shared_memory.ShareableList)
-        )
-        self.assertTrue(deserialized_sl[-1], 9)
-        self.assertFalse(sl is deserialized_sl)
-        deserialized_sl[4] = "changed"
-        self.assertEqual(sl[4], "changed")
+                serialized_sl = pickle.dumps(sl, protocol=proto)
+                deserialized_sl = pickle.loads(serialized_sl)
+                self.assertIsInstance(
+                    deserialized_sl, shared_memory.ShareableList)
+                self.assertEqual(deserialized_sl[-1], 9)
+                self.assertIsNot(sl, deserialized_sl)
 
-        # Verify data is not being put into the pickled representation.
-        name = 'a' * len(sl.shm.name)
-        larger_sl = shared_memory.ShareableList(range(400))
-        self.addCleanup(larger_sl.shm.unlink)
-        serialized_larger_sl = pickle.dumps(larger_sl)
-        self.assertTrue(len(serialized_sl) == len(serialized_larger_sl))
-        larger_sl.shm.close()
+                deserialized_sl[4] = "changed"
+                self.assertEqual(sl[4], "changed")
+                sl[3] = "newvalue"
+                self.assertEqual(deserialized_sl[3], "newvalue")
 
-        deserialized_sl.shm.close()
-        sl.shm.close()
+                larger_sl = shared_memory.ShareableList(range(400))
+                self.addCleanup(larger_sl.shm.unlink)
+                serialized_larger_sl = pickle.dumps(larger_sl, protocol=proto)
+                self.assertEqual(len(serialized_sl), len(serialized_larger_sl))
+                larger_sl.shm.close()
+
+                deserialized_sl.shm.close()
+                sl.shm.close()
+
+    def test_shared_memory_ShareableList_pickling_dead_object(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                sl = shared_memory.ShareableList(range(10))
+                serialized_sl = pickle.dumps(sl, protocol=proto)
+
+                # Now, we are going to kill the original object.
+                # So, unpickled one won't be able to attach to it.
+                sl.shm.close()
+                sl.shm.unlink()
+
+                with self.assertRaises(FileNotFoundError):
+                    pickle.loads(serialized_sl)
 
     def test_shared_memory_cleaned_after_process_termination(self):
         cmd = '''if 1:
@@ -4194,7 +4275,7 @@ class _TestSharedMemory(BaseTestCase):
                     "shared_memory objects to clean up at shutdown", err)
 
 #
-#
+# Test to verify that `Finalize` works.
 #
 
 class _TestFinalize(BaseTestCase):
