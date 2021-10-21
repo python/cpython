@@ -179,7 +179,7 @@ time timemodule.c
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
-#pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
+#pyexpat -I$(srcdir)/Modules/expat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
 #unicodedata  unicodedata.c
 
 # Modules with some UNIX dependencies -- on by default:
@@ -199,21 +199,22 @@ time timemodule.c
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-#_crypt _cryptmodule.c -lcrypt	# crypt(3); breaks many builds.
-#nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc	# Sun yellow pages -- not everywhere
+#_crypt _cryptmodule.c $(CRYPT_CFLAGS) $(CRYPT_LIBS)	# crypt(3); breaks many builds.
+#nis nismodule.c $(NIS_CFLAGS) $(NIS_LIBS)	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
 # Modules that require external libraries.
 
-#_bz2 _bz2module.c -lbz2
-#_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+#_bz2 _bz2module.c $(BZ2_CFLAGS) $(BZ2_LIBS)
+#_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c $(FFI_CFLAGS) $(FFI_LIBS) -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
 # _dbm _dbmmodule.c 	# -lndbm # dbm(3)
 #_gdbm _gdbmmodule.c -lgdbm
-#_lzma _lzmamodule.c -llzma
-#_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
-#_uuid _uuidmodule.c -luuid
-#zlib  zlibmodule.c -lz
+#_lzma _lzmamodule.c $(LZMA_CFLAGS) $(LZMA_LIBS)
+#_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c $(SQLITE3_CFLAGS) $(SQLITE3_LIBS)
+#_uuid _uuidmodule.c $(UUID_CFLAGS) $(UUID_LIBS)
+#zlib  zlibmodule.c $(ZLIB_CFLAGS) $(ZLIB_LIBS)
+
 
 # GNU readline.  Unlike previous Python incarnations, GNU readline is
 # now incorporated in an optional module, configured in the Setup file
@@ -223,7 +224,8 @@ time timemodule.c
 # it, depending on your system -- see the GNU readline instructions.
 # It's okay for this to be a shared library, too.
 
-#readline readline.c -lreadline -ltermcap
+# readline readline.c -lreadline -ltermcap
+#readline readline.c $(READLINE_CFLAGS) $(READLINE_LIBS)
 
 # To dynamically link OpenSSL:
 #_ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) $(OPENSSL_LIBS)
@@ -281,10 +283,10 @@ time timemodule.c
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
 
-#_curses -lcurses -lcursesw -ltermcap _cursesmodule.c
+#_curses _cursesmodule.c $(NCURSESW_CFLAGS) $(NCURSESW_LIBS) $(CURSES_CFLAGS) $(CURSES_LIBS)
 
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
-#_curses_panel -lpanel -lncurses _curses_panel.c
+#_curses_panel _curses_panel.c $(CURSES_PANEL_CFLAGS) $(CURSES_PANEL_LIBS)
 
 # macOS specific modules
 # _scproxy _scproxy.c -framework SystemConfiguration -framework CoreFoundation

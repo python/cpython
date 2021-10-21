@@ -3231,6 +3231,8 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
+AM_CONDITIONAL([HAVE_TCLTK], [test -n "$TCLTK_LIBS"])
+
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
@@ -3248,6 +3250,12 @@ else
   done
 fi])
 AC_MSG_RESULT($with_dbmliborder)
+
+# TODO
+AM_CONDITIONAL([HAVE_DBM], [false])
+
+AC_CHECK_LIB(gdbm, gdbm_open, [have_gdbm=yes], [have_gdbm=no])
+AM_CONDITIONAL([HAVE_GDBM], [test $have_gdbm = yes])
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -5054,8 +5062,9 @@ if test "$with_readline" != no; then
     fi
   done
 
-  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
-  #AC_SUBST([READLINE_LIBS])
+  AC_SUBST([READLINE_LIBS])
+  AC_SUBST([READLINE_CFLAGS], [""])
+
   if test $py_cv_lib_readline = no; then
     AC_MSG_RESULT([none])
   else
@@ -5063,6 +5072,7 @@ if test "$with_readline" != no; then
     AC_DEFINE(HAVE_LIBREADLINE, 1,
       [Define to build the readline module.])
   fi
+  AM_CONDITIONAL([HAVE_READLINE], [test $py_cv_lib_readline != no])
 fi
 
 if test "$py_cv_lib_readline" = yes; then
@@ -5882,6 +5892,53 @@ AC_CHECK_FUNCS([shm_open shm_unlink])
 LIBS="$save_LIBS"
 ac_includes_default="$save_includes_default"
 
+# PKG_WITH_MODULES_OPTIONAL(
+#   VARIABLE-PREFIX, MODULES, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND],
+#   [DESCRIPTION], [DEFAULT])
+#
+# Like PKG_HAVE_DEFINE_WITH_MODULES() with optional module
+# triggers AM_CONDITIONAL, AC_DEFINE, and exports as make var
+# does not fail on error
+AC_DEFUN([PKG_WITH_MODULES_OPTIONAL],
+[
+PKG_WITH_MODULES([$1], [$2], [$3], [m4_default([$4], [:])], [$5], [$6])
+AM_CONDITIONAL([HAVE_][$1],
+               [test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"])
+AS_IF([test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"],
+        [AC_DEFINE([HAVE_][$1], 1, [Enable ]m4_tolower([$1])[ support])])
+])
+
+# detect dependencies for modules
+# libraries without pkg-config .pc files:
+#   gdbm/ndbm, libmpdec (decmimal)
+
+# readline or editline are detected manually
+#PKG_WITH_MODULES_OPTIONAL([READLINE], [readline], [], [
+#  # fall back to libedit
+#  PKG_WITH_MODULES_OPTIONAL([READLINE], [libedit])
+#])
+
+# define either ncursesw or curses
+PKG_WITH_MODULES([NCURSESW], [ncursesw], [
+  AM_CONDITIONAL(HAVE_CURSES, [true])
+], [
+  PKG_WITH_MODULES_OPTIONAL([CURSES], [ncurses])
+])
+PKG_WITH_MODULES_OPTIONAL([CURSES_PANEL], [panel])
+PKG_WITH_MODULES_OPTIONAL([SQLITE3], [sqlite3])
+PKG_WITH_MODULES_OPTIONAL([ZLIB], [zlib])
+PKG_WITH_MODULES_OPTIONAL([BZ2], [bzip2])
+PKG_WITH_MODULES_OPTIONAL([LZMA], [liblzma])
+PKG_WITH_MODULES_OPTIONAL([EXPAT], [expat])
+PKG_WITH_MODULES_OPTIONAL([UUID], [uuid])
+PKG_WITH_MODULES_OPTIONAL([FFI], [libffi])
+PKG_WITH_MODULES_OPTIONAL([NIS], [libnsl libtirpc])
+PKG_WITH_MODULES_OPTIONAL([CRYPT], [libcrypt])
+# detected manually
+# PKG_WITH_MODULES_OPTIONAL([TK], [tcl tk])
+
+AM_CONDITIONAL([HAVE_SCPROXY], [test "$ac_sys_system" = "Darwin"])
+
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
@@ -5945,8 +6002,10 @@ OBJ_nid2sn(NID_sha3_512);
 OBJ_nid2sn(NID_blake2b512);
 EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 ]])],
-  [AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+  [have_working_openssl=yes],
+  [have_working_openssl=no])
+AC_MSG_RESULT($have_working_openssl)
+AM_CONDITIONAL([HAVE_OPENSSL], [test $have_working_openssl = yes])
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
@@ -6070,7 +6129,6 @@ else
     AC_MSG_RESULT(no)
 fi
 AC_SUBST(TEST_MODULES)
-
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)

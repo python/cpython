@@ -124,6 +124,9 @@
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
+/* Enable bz2 support */
+#undef HAVE_BZ2
+
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 
@@ -163,6 +166,9 @@
 /* Define to 1 if you have the `copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
+/* Enable crypt support */
+#undef HAVE_CRYPT
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
@@ -174,6 +180,9 @@
 
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
+
+/* Enable curses support */
+#undef HAVE_CURSES
 
 /* Define if you have the 'filter' function. */
 #undef HAVE_CURSES_FILTER
@@ -192,6 +201,9 @@
 
 /* Define if you have the 'is_term_resized' function. */
 #undef HAVE_CURSES_IS_TERM_RESIZED
+
+/* Enable curses_panel support */
+#undef HAVE_CURSES_PANEL
 
 /* Define if you have the 'resizeterm' function. */
 #undef HAVE_CURSES_RESIZETERM
@@ -311,6 +323,9 @@
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
+/* Enable expat support */
+#undef HAVE_EXPAT
+
 /* Define to 1 if you have the `explicit_bzero' function. */
 #undef HAVE_EXPLICIT_BZERO
 
@@ -352,6 +367,9 @@
 
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
+
+/* Enable ffi support */
+#undef HAVE_FFI
 
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
@@ -667,6 +685,9 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Enable lzma support */
+#undef HAVE_LZMA
+
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
 
@@ -726,6 +747,9 @@
 
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
+
+/* Enable nis support */
+#undef HAVE_NIS
 
 /* Define if the internal form of wchar_t in non-Unicode locales is not
    Unicode. */
@@ -1010,6 +1034,9 @@
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
 
+/* Enable sqlite3 support */
+#undef HAVE_SQLITE3
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -1284,6 +1311,9 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
+/* Enable uuid support */
+#undef HAVE_UUID
+
 /* Define if uuid_create() exists. */
 #undef HAVE_UUID_CREATE
 
@@ -1335,6 +1365,9 @@
 
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
+
+/* Enable zlib support */
+#undef HAVE_ZLIB
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY

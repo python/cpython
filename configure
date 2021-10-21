@@ -626,13 +626,67 @@ ac_subst_vars='LTLIBOBJS
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
+HAVE_OPENSSL_FALSE
+HAVE_OPENSSL_TRUE
 OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
+HAVE_SCPROXY_FALSE
+HAVE_SCPROXY_TRUE
+HAVE_CRYPT_FALSE
+HAVE_CRYPT_TRUE
+CRYPT_LIBS
+CRYPT_CFLAGS
+HAVE_NIS_FALSE
+HAVE_NIS_TRUE
+NIS_LIBS
+NIS_CFLAGS
+HAVE_FFI_FALSE
+HAVE_FFI_TRUE
+FFI_LIBS
+FFI_CFLAGS
+HAVE_UUID_FALSE
+HAVE_UUID_TRUE
+UUID_LIBS
+UUID_CFLAGS
+HAVE_EXPAT_FALSE
+HAVE_EXPAT_TRUE
+EXPAT_LIBS
+EXPAT_CFLAGS
+HAVE_LZMA_FALSE
+HAVE_LZMA_TRUE
+LZMA_LIBS
+LZMA_CFLAGS
+HAVE_BZ2_FALSE
+HAVE_BZ2_TRUE
+BZ2_LIBS
+BZ2_CFLAGS
+HAVE_ZLIB_FALSE
+HAVE_ZLIB_TRUE
+ZLIB_LIBS
+ZLIB_CFLAGS
+HAVE_SQLITE3_FALSE
+HAVE_SQLITE3_TRUE
+SQLITE3_LIBS
+SQLITE3_CFLAGS
+HAVE_CURSES_PANEL_FALSE
+HAVE_CURSES_PANEL_TRUE
+CURSES_PANEL_LIBS
+CURSES_PANEL_CFLAGS
+NCURSESW_LIBS
+NCURSESW_CFLAGS
+CURSES_LIBS
+CURSES_CFLAGS
+HAVE_CURSES_FALSE
+HAVE_CURSES_TRUE
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
+HAVE_READLINE_FALSE
+HAVE_READLINE_TRUE
+READLINE_CFLAGS
+READLINE_LIBS
 WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
@@ -658,6 +712,12 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+HAVE_GDBM_FALSE
+HAVE_GDBM_TRUE
+HAVE_DBM_FALSE
+HAVE_DBM_TRUE
+HAVE_TCLTK_FALSE
+HAVE_TCLTK_TRUE
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -858,6 +918,18 @@ with_wheel_pkg_dir
 with_readline
 with_computed_gotos
 with_ensurepip
+with_ncursesw
+with_curses
+with_curses_panel
+with_sqlite3
+with_zlib
+with_bz2
+with_lzma
+with_expat
+with_uuid
+with_ffi
+with_nis
+with_crypt
 with_openssl
 with_openssl_rpath
 with_ssl_default_suites
@@ -879,7 +951,31 @@ CPP
 PROFILE_TASK
 PKG_CONFIG
 PKG_CONFIG_PATH
-PKG_CONFIG_LIBDIR'
+PKG_CONFIG_LIBDIR
+CURSES_CFLAGS
+CURSES_LIBS
+NCURSESW_CFLAGS
+NCURSESW_LIBS
+CURSES_PANEL_CFLAGS
+CURSES_PANEL_LIBS
+SQLITE3_CFLAGS
+SQLITE3_LIBS
+ZLIB_CFLAGS
+ZLIB_LIBS
+BZ2_CFLAGS
+BZ2_LIBS
+LZMA_CFLAGS
+LZMA_LIBS
+EXPAT_CFLAGS
+EXPAT_LIBS
+UUID_CFLAGS
+UUID_LIBS
+FFI_CFLAGS
+FFI_LIBS
+NIS_CFLAGS
+NIS_LIBS
+CRYPT_CFLAGS
+CRYPT_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1611,6 +1707,17 @@ Optional Packages:
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
+  --with-ncursesw         build with ncursesw support [default=auto]
+  --with-curses_panel     build with curses_panel support [default=auto]
+  --with-sqlite3          build with sqlite3 support [default=auto]
+  --with-zlib             build with zlib support [default=auto]
+  --with-bz2              build with bz2 support [default=auto]
+  --with-lzma             build with lzma support [default=auto]
+  --with-expat            build with expat support [default=auto]
+  --with-uuid             build with uuid support [default=auto]
+  --with-ffi              build with ffi support [default=auto]
+  --with-nis              build with nis support [default=auto]
+  --with-crypt            build with crypt support [default=auto]
   --with-openssl=DIR      root of the OpenSSL directory
   --with-openssl-rpath=[DIR|auto|no]
                           Set runtime library directory (rpath) for OpenSSL
@@ -1650,6 +1757,36 @@ Some influential environment variables:
               directories to add to pkg-config's search path
   PKG_CONFIG_LIBDIR
               path overriding pkg-config's built-in search path
+  NCURSESW_CFLAGS
+              C compiler flags for NCURSESW, overriding pkg-config
+  NCURSESW_LIBS
+              linker flags for NCURSESW, overriding pkg-config
+  CURSES_PANEL_CFLAGS
+              C compiler flags for CURSES_PANEL, overriding pkg-config
+  CURSES_PANEL_LIBS
+              linker flags for CURSES_PANEL, overriding pkg-config
+  SQLITE3_CFLAGS
+              C compiler flags for SQLITE3, overriding pkg-config
+  SQLITE3_LIBS
+              linker flags for SQLITE3, overriding pkg-config
+  ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
+  ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
+  BZ2_CFLAGS  C compiler flags for BZ2, overriding pkg-config
+  BZ2_LIBS    linker flags for BZ2, overriding pkg-config
+  LZMA_CFLAGS C compiler flags for LZMA, overriding pkg-config
+  LZMA_LIBS   linker flags for LZMA, overriding pkg-config
+  EXPAT_CFLAGS
+              C compiler flags for EXPAT, overriding pkg-config
+  EXPAT_LIBS  linker flags for EXPAT, overriding pkg-config
+  UUID_CFLAGS C compiler flags for UUID, overriding pkg-config
+  UUID_LIBS   linker flags for UUID, overriding pkg-config
+  FFI_CFLAGS  C compiler flags for FFI, overriding pkg-config
+  FFI_LIBS    linker flags for FFI, overriding pkg-config
+  NIS_CFLAGS  C compiler flags for NIS, overriding pkg-config
+  NIS_LIBS    linker flags for NIS, overriding pkg-config
+  CRYPT_CFLAGS
+              C compiler flags for CRYPT, overriding pkg-config
+  CRYPT_LIBS  linker flags for CRYPT, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -10916,6 +11053,15 @@ else
   TCLTK_LIBS="$with_tcltk_libs"
 fi
 
+ if test -n "$TCLTK_LIBS"; then
+  HAVE_TCLTK_TRUE=
+  HAVE_TCLTK_FALSE='#'
+else
+  HAVE_TCLTK_TRUE='#'
+  HAVE_TCLTK_FALSE=
+fi
+
+
 # Check for --with-dbmliborder
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-dbmliborder" >&5
 $as_echo_n "checking for --with-dbmliborder... " >&6; }
@@ -10938,6 +11084,67 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_dbmliborder" >&5
 $as_echo "$with_dbmliborder" >&6; }
+
+# TODO
+ if false; then
+  HAVE_DBM_TRUE=
+  HAVE_DBM_FALSE='#'
+else
+  HAVE_DBM_TRUE='#'
+  HAVE_DBM_FALSE=
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gdbm_open in -lgdbm" >&5
+$as_echo_n "checking for gdbm_open in -lgdbm... " >&6; }
+if ${ac_cv_lib_gdbm_gdbm_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgdbm  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gdbm_open ();
+int
+main ()
+{
+return gdbm_open ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gdbm_gdbm_open=yes
+else
+  ac_cv_lib_gdbm_gdbm_open=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gdbm_gdbm_open" >&5
+$as_echo "$ac_cv_lib_gdbm_gdbm_open" >&6; }
+if test "x$ac_cv_lib_gdbm_gdbm_open" = xyes; then :
+  have_gdbm=yes
+else
+  have_gdbm=no
+fi
+
+ if test $have_gdbm = yes; then
+  HAVE_GDBM_TRUE=
+  HAVE_GDBM_FALSE='#'
+else
+  HAVE_GDBM_TRUE='#'
+  HAVE_GDBM_FALSE=
+fi
+
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -15993,8 +16200,10 @@ rm -f core conftest.err conftest.$ac_objext \
     fi
   done
 
-  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
-  #AC_SUBST([READLINE_LIBS])
+
+  READLINE_CFLAGS=""
+
+
   if test $py_cv_lib_readline = no; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
 $as_echo "none" >&6; }
@@ -16005,6 +16214,14 @@ $as_echo "$READLINE_LIBS" >&6; }
 $as_echo "#define HAVE_LIBREADLINE 1" >>confdefs.h
 
   fi
+   if test $py_cv_lib_readline != no; then
+  HAVE_READLINE_TRUE=
+  HAVE_READLINE_FALSE='#'
+else
+  HAVE_READLINE_TRUE='#'
+  HAVE_READLINE_FALSE=
+fi
+
 fi
 
 if test "$py_cv_lib_readline" = yes; then
@@ -17732,6 +17949,2930 @@ done
 LIBS="$save_LIBS"
 ac_includes_default="$save_includes_default"
 
+# PKG_WITH_MODULES_OPTIONAL(
+#   VARIABLE-PREFIX, MODULES, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND],
+#   [DESCRIPTION], [DEFAULT])
+#
+# Like PKG_HAVE_DEFINE_WITH_MODULES() with optional module
+# triggers AM_CONDITIONAL, AC_DEFINE, and exports as make var
+# does not fail on error
+
+
+# detect dependencies for modules
+# libraries without pkg-config .pc files:
+#   gdbm/ndbm, libmpdec (decmimal)
+
+# readline or editline are detected manually
+#PKG_WITH_MODULES_OPTIONAL([READLINE], [readline], [], [
+#  # fall back to libedit
+#  PKG_WITH_MODULES_OPTIONAL([READLINE], [libedit])
+#])
+
+# define either ncursesw or curses
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-ncursesw was given.
+if test "${with_ncursesw+set}" = set; then :
+  withval=$with_ncursesw;
+else
+  with_ncursesw=auto
+fi
+
+
+case $with_ncursesw in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for NCURSESW" >&5
+$as_echo_n "checking for NCURSESW... " >&6; }
+
+if test -n "$NCURSESW_CFLAGS"; then
+    pkg_cv_NCURSESW_CFLAGS="$NCURSESW_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncursesw") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NCURSESW_CFLAGS=`$PKG_CONFIG --cflags "ncursesw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$NCURSESW_LIBS"; then
+    pkg_cv_NCURSESW_LIBS="$NCURSESW_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncursesw") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NCURSESW_LIBS=`$PKG_CONFIG --libs "ncursesw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        NCURSESW_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncursesw" 2>&1`
+        else
+	        NCURSESW_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncursesw" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$NCURSESW_PKG_ERRORS" >&5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  --with-curses           build with curses support [default=auto]
+# Check whether --with-curses was given.
+if test "${with_curses+set}" = set; then :
+  withval=$with_curses;
+else
+  with_curses=auto
+fi
+
+
+case $with_curses in #(
+  yes) :
+      CURSES_CFLAGS
+              C compiler flags for CURSES, overriding pkg-config
+  CURSES_LIBS linker flags for CURSES, overriding pkg-config
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	with_curses=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_curses=no
+ :
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_curses=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_curses" = "yes"; then
+  HAVE_CURSES_TRUE=
+  HAVE_CURSES_FALSE='#'
+else
+  HAVE_CURSES_TRUE='#'
+  HAVE_CURSES_FALSE=
+fi
+
+if test "$with_curses" = "yes"; then :
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+fi
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  --with-curses           build with curses support [default=auto]
+# Check whether --with-curses was given.
+if test "${with_curses+set}" = set; then :
+  withval=$with_curses;
+else
+  with_curses=auto
+fi
+
+
+case $with_curses in #(
+  yes) :
+      CURSES_CFLAGS
+              C compiler flags for CURSES, overriding pkg-config
+  CURSES_LIBS linker flags for CURSES, overriding pkg-config
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	with_curses=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_curses=no
+ :
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_curses=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_curses" = "yes"; then
+  HAVE_CURSES_TRUE=
+  HAVE_CURSES_FALSE='#'
+else
+  HAVE_CURSES_TRUE='#'
+  HAVE_CURSES_FALSE=
+fi
+
+if test "$with_curses" = "yes"; then :
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+fi
+
+
+else
+	NCURSESW_CFLAGS=$pkg_cv_NCURSESW_CFLAGS
+	NCURSESW_LIBS=$pkg_cv_NCURSESW_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	 if true; then
+  HAVE_CURSES_TRUE=
+  HAVE_CURSES_FALSE='#'
+else
+  HAVE_CURSES_TRUE='#'
+  HAVE_CURSES_FALSE=
+fi
+
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for NCURSESW" >&5
+$as_echo_n "checking for NCURSESW... " >&6; }
+
+if test -n "$NCURSESW_CFLAGS"; then
+    pkg_cv_NCURSESW_CFLAGS="$NCURSESW_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncursesw") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NCURSESW_CFLAGS=`$PKG_CONFIG --cflags "ncursesw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$NCURSESW_LIBS"; then
+    pkg_cv_NCURSESW_LIBS="$NCURSESW_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncursesw\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncursesw") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NCURSESW_LIBS=`$PKG_CONFIG --libs "ncursesw" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        NCURSESW_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncursesw" 2>&1`
+        else
+	        NCURSESW_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncursesw" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$NCURSESW_PKG_ERRORS" >&5
+
+	with_ncursesw=no
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-curses was given.
+if test "${with_curses+set}" = set; then :
+  withval=$with_curses;
+else
+  with_curses=auto
+fi
+
+
+case $with_curses in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	with_curses=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_curses=no
+ :
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_curses=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_curses" = "yes"; then
+  HAVE_CURSES_TRUE=
+  HAVE_CURSES_FALSE='#'
+else
+  HAVE_CURSES_TRUE='#'
+  HAVE_CURSES_FALSE=
+fi
+
+if test "$with_curses" = "yes"; then :
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+fi
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_ncursesw=no
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-curses was given.
+if test "${with_curses+set}" = set; then :
+  withval=$with_curses;
+else
+  with_curses=auto
+fi
+
+
+case $with_curses in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
+$as_echo_n "checking for CURSES... " >&6; }
+
+if test -n "$CURSES_CFLAGS"; then
+    pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_CFLAGS=`$PKG_CONFIG --cflags "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_LIBS"; then
+    pkg_cv_CURSES_LIBS="$CURSES_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ncurses\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ncurses") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_LIBS=`$PKG_CONFIG --libs "ncurses" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ncurses" 2>&1`
+        else
+	        CURSES_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ncurses" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PKG_ERRORS" >&5
+
+	with_curses=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_curses=no
+ :
+else
+	CURSES_CFLAGS=$pkg_cv_CURSES_CFLAGS
+	CURSES_LIBS=$pkg_cv_CURSES_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_curses=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_curses" = "yes"; then
+  HAVE_CURSES_TRUE=
+  HAVE_CURSES_FALSE='#'
+else
+  HAVE_CURSES_TRUE='#'
+  HAVE_CURSES_FALSE=
+fi
+
+if test "$with_curses" = "yes"; then :
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+fi
+
+
+else
+	NCURSESW_CFLAGS=$pkg_cv_NCURSESW_CFLAGS
+	NCURSESW_LIBS=$pkg_cv_NCURSESW_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_ncursesw=yes
+
+   if true; then
+  HAVE_CURSES_TRUE=
+  HAVE_CURSES_FALSE='#'
+else
+  HAVE_CURSES_TRUE='#'
+  HAVE_CURSES_FALSE=
+fi
+
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-curses_panel was given.
+if test "${with_curses_panel+set}" = set; then :
+  withval=$with_curses_panel;
+else
+  with_curses_panel=auto
+fi
+
+
+case $with_curses_panel in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES_PANEL" >&5
+$as_echo_n "checking for CURSES_PANEL... " >&6; }
+
+if test -n "$CURSES_PANEL_CFLAGS"; then
+    pkg_cv_CURSES_PANEL_CFLAGS="$CURSES_PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panel") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_PANEL_LIBS"; then
+    pkg_cv_CURSES_PANEL_LIBS="$CURSES_PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panel") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_PANEL_LIBS=`$PKG_CONFIG --libs "panel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panel" 2>&1`
+        else
+	        CURSES_PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panel" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PANEL_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	CURSES_PANEL_CFLAGS=$pkg_cv_CURSES_PANEL_CFLAGS
+	CURSES_PANEL_LIBS=$pkg_cv_CURSES_PANEL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CURSES_PANEL" >&5
+$as_echo_n "checking for CURSES_PANEL... " >&6; }
+
+if test -n "$CURSES_PANEL_CFLAGS"; then
+    pkg_cv_CURSES_PANEL_CFLAGS="$CURSES_PANEL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panel") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_PANEL_CFLAGS=`$PKG_CONFIG --cflags "panel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CURSES_PANEL_LIBS"; then
+    pkg_cv_CURSES_PANEL_LIBS="$CURSES_PANEL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"panel\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "panel") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CURSES_PANEL_LIBS=`$PKG_CONFIG --libs "panel" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CURSES_PANEL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "panel" 2>&1`
+        else
+	        CURSES_PANEL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "panel" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CURSES_PANEL_PKG_ERRORS" >&5
+
+	with_curses_panel=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_curses_panel=no
+ :
+else
+	CURSES_PANEL_CFLAGS=$pkg_cv_CURSES_PANEL_CFLAGS
+	CURSES_PANEL_LIBS=$pkg_cv_CURSES_PANEL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_curses_panel=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_curses_panel" = "yes"; then
+  HAVE_CURSES_PANEL_TRUE=
+  HAVE_CURSES_PANEL_FALSE='#'
+else
+  HAVE_CURSES_PANEL_TRUE='#'
+  HAVE_CURSES_PANEL_FALSE=
+fi
+
+if test "$with_curses_panel" = "yes"; then :
+
+$as_echo "#define HAVE_CURSES_PANEL 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-sqlite3 was given.
+if test "${with_sqlite3+set}" = set; then :
+  withval=$with_sqlite3;
+else
+  with_sqlite3=auto
+fi
+
+
+case $with_sqlite3 in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SQLITE3" >&5
+$as_echo_n "checking for SQLITE3... " >&6; }
+
+if test -n "$SQLITE3_CFLAGS"; then
+    pkg_cv_SQLITE3_CFLAGS="$SQLITE3_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SQLITE3_CFLAGS=`$PKG_CONFIG --cflags "sqlite3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$SQLITE3_LIBS"; then
+    pkg_cv_SQLITE3_LIBS="$SQLITE3_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SQLITE3_LIBS=`$PKG_CONFIG --libs "sqlite3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SQLITE3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sqlite3" 2>&1`
+        else
+	        SQLITE3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sqlite3" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SQLITE3_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	SQLITE3_CFLAGS=$pkg_cv_SQLITE3_CFLAGS
+	SQLITE3_LIBS=$pkg_cv_SQLITE3_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SQLITE3" >&5
+$as_echo_n "checking for SQLITE3... " >&6; }
+
+if test -n "$SQLITE3_CFLAGS"; then
+    pkg_cv_SQLITE3_CFLAGS="$SQLITE3_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SQLITE3_CFLAGS=`$PKG_CONFIG --cflags "sqlite3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$SQLITE3_LIBS"; then
+    pkg_cv_SQLITE3_LIBS="$SQLITE3_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sqlite3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sqlite3") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SQLITE3_LIBS=`$PKG_CONFIG --libs "sqlite3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SQLITE3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sqlite3" 2>&1`
+        else
+	        SQLITE3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sqlite3" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SQLITE3_PKG_ERRORS" >&5
+
+	with_sqlite3=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_sqlite3=no
+ :
+else
+	SQLITE3_CFLAGS=$pkg_cv_SQLITE3_CFLAGS
+	SQLITE3_LIBS=$pkg_cv_SQLITE3_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_sqlite3=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_sqlite3" = "yes"; then
+  HAVE_SQLITE3_TRUE=
+  HAVE_SQLITE3_FALSE='#'
+else
+  HAVE_SQLITE3_TRUE='#'
+  HAVE_SQLITE3_FALSE=
+fi
+
+if test "$with_sqlite3" = "yes"; then :
+
+$as_echo "#define HAVE_SQLITE3 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-zlib was given.
+if test "${with_zlib+set}" = set; then :
+  withval=$with_zlib;
+else
+  with_zlib=auto
+fi
+
+
+case $with_zlib in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
+$as_echo_n "checking for ZLIB... " >&6; }
+
+if test -n "$ZLIB_CFLAGS"; then
+    pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$ZLIB_LIBS"; then
+    pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib" 2>&1`
+        else
+	        ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$ZLIB_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
+	ZLIB_LIBS=$pkg_cv_ZLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
+$as_echo_n "checking for ZLIB... " >&6; }
+
+if test -n "$ZLIB_CFLAGS"; then
+    pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$ZLIB_LIBS"; then
+    pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib" 2>&1`
+        else
+	        ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$ZLIB_PKG_ERRORS" >&5
+
+	with_zlib=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_zlib=no
+ :
+else
+	ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
+	ZLIB_LIBS=$pkg_cv_ZLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_zlib=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_zlib" = "yes"; then
+  HAVE_ZLIB_TRUE=
+  HAVE_ZLIB_FALSE='#'
+else
+  HAVE_ZLIB_TRUE='#'
+  HAVE_ZLIB_FALSE=
+fi
+
+if test "$with_zlib" = "yes"; then :
+
+$as_echo "#define HAVE_ZLIB 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-bz2 was given.
+if test "${with_bz2+set}" = set; then :
+  withval=$with_bz2;
+else
+  with_bz2=auto
+fi
+
+
+case $with_bz2 in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2" >&5
+$as_echo_n "checking for BZ2... " >&6; }
+
+if test -n "$BZ2_CFLAGS"; then
+    pkg_cv_BZ2_CFLAGS="$BZ2_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_BZ2_CFLAGS=`$PKG_CONFIG --cflags "bzip2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$BZ2_LIBS"; then
+    pkg_cv_BZ2_LIBS="$BZ2_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_BZ2_LIBS=`$PKG_CONFIG --libs "bzip2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        BZ2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "bzip2" 2>&1`
+        else
+	        BZ2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "bzip2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$BZ2_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	BZ2_CFLAGS=$pkg_cv_BZ2_CFLAGS
+	BZ2_LIBS=$pkg_cv_BZ2_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2" >&5
+$as_echo_n "checking for BZ2... " >&6; }
+
+if test -n "$BZ2_CFLAGS"; then
+    pkg_cv_BZ2_CFLAGS="$BZ2_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_BZ2_CFLAGS=`$PKG_CONFIG --cflags "bzip2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$BZ2_LIBS"; then
+    pkg_cv_BZ2_LIBS="$BZ2_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"bzip2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "bzip2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_BZ2_LIBS=`$PKG_CONFIG --libs "bzip2" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        BZ2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "bzip2" 2>&1`
+        else
+	        BZ2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "bzip2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$BZ2_PKG_ERRORS" >&5
+
+	with_bz2=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_bz2=no
+ :
+else
+	BZ2_CFLAGS=$pkg_cv_BZ2_CFLAGS
+	BZ2_LIBS=$pkg_cv_BZ2_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_bz2=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_bz2" = "yes"; then
+  HAVE_BZ2_TRUE=
+  HAVE_BZ2_FALSE='#'
+else
+  HAVE_BZ2_TRUE='#'
+  HAVE_BZ2_FALSE=
+fi
+
+if test "$with_bz2" = "yes"; then :
+
+$as_echo "#define HAVE_BZ2 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-lzma was given.
+if test "${with_lzma+set}" = set; then :
+  withval=$with_lzma;
+else
+  with_lzma=auto
+fi
+
+
+case $with_lzma in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LZMA" >&5
+$as_echo_n "checking for LZMA... " >&6; }
+
+if test -n "$LZMA_CFLAGS"; then
+    pkg_cv_LZMA_CFLAGS="$LZMA_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"liblzma\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "liblzma") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LZMA_CFLAGS=`$PKG_CONFIG --cflags "liblzma" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LZMA_LIBS"; then
+    pkg_cv_LZMA_LIBS="$LZMA_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"liblzma\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "liblzma") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LZMA_LIBS=`$PKG_CONFIG --libs "liblzma" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LZMA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "liblzma" 2>&1`
+        else
+	        LZMA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "liblzma" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LZMA_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	LZMA_CFLAGS=$pkg_cv_LZMA_CFLAGS
+	LZMA_LIBS=$pkg_cv_LZMA_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LZMA" >&5
+$as_echo_n "checking for LZMA... " >&6; }
+
+if test -n "$LZMA_CFLAGS"; then
+    pkg_cv_LZMA_CFLAGS="$LZMA_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"liblzma\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "liblzma") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LZMA_CFLAGS=`$PKG_CONFIG --cflags "liblzma" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LZMA_LIBS"; then
+    pkg_cv_LZMA_LIBS="$LZMA_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"liblzma\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "liblzma") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LZMA_LIBS=`$PKG_CONFIG --libs "liblzma" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LZMA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "liblzma" 2>&1`
+        else
+	        LZMA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "liblzma" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LZMA_PKG_ERRORS" >&5
+
+	with_lzma=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_lzma=no
+ :
+else
+	LZMA_CFLAGS=$pkg_cv_LZMA_CFLAGS
+	LZMA_LIBS=$pkg_cv_LZMA_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_lzma=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_lzma" = "yes"; then
+  HAVE_LZMA_TRUE=
+  HAVE_LZMA_FALSE='#'
+else
+  HAVE_LZMA_TRUE='#'
+  HAVE_LZMA_FALSE=
+fi
+
+if test "$with_lzma" = "yes"; then :
+
+$as_echo "#define HAVE_LZMA 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-expat was given.
+if test "${with_expat+set}" = set; then :
+  withval=$with_expat;
+else
+  with_expat=auto
+fi
+
+
+case $with_expat in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPAT" >&5
+$as_echo_n "checking for EXPAT... " >&6; }
+
+if test -n "$EXPAT_CFLAGS"; then
+    pkg_cv_EXPAT_CFLAGS="$EXPAT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"expat\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "expat") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_EXPAT_CFLAGS=`$PKG_CONFIG --cflags "expat" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$EXPAT_LIBS"; then
+    pkg_cv_EXPAT_LIBS="$EXPAT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"expat\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "expat") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_EXPAT_LIBS=`$PKG_CONFIG --libs "expat" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        EXPAT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "expat" 2>&1`
+        else
+	        EXPAT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "expat" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$EXPAT_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	EXPAT_CFLAGS=$pkg_cv_EXPAT_CFLAGS
+	EXPAT_LIBS=$pkg_cv_EXPAT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPAT" >&5
+$as_echo_n "checking for EXPAT... " >&6; }
+
+if test -n "$EXPAT_CFLAGS"; then
+    pkg_cv_EXPAT_CFLAGS="$EXPAT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"expat\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "expat") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_EXPAT_CFLAGS=`$PKG_CONFIG --cflags "expat" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$EXPAT_LIBS"; then
+    pkg_cv_EXPAT_LIBS="$EXPAT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"expat\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "expat") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_EXPAT_LIBS=`$PKG_CONFIG --libs "expat" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        EXPAT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "expat" 2>&1`
+        else
+	        EXPAT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "expat" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$EXPAT_PKG_ERRORS" >&5
+
+	with_expat=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_expat=no
+ :
+else
+	EXPAT_CFLAGS=$pkg_cv_EXPAT_CFLAGS
+	EXPAT_LIBS=$pkg_cv_EXPAT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_expat=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_expat" = "yes"; then
+  HAVE_EXPAT_TRUE=
+  HAVE_EXPAT_FALSE='#'
+else
+  HAVE_EXPAT_TRUE='#'
+  HAVE_EXPAT_FALSE=
+fi
+
+if test "$with_expat" = "yes"; then :
+
+$as_echo "#define HAVE_EXPAT 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-uuid was given.
+if test "${with_uuid+set}" = set; then :
+  withval=$with_uuid;
+else
+  with_uuid=auto
+fi
+
+
+case $with_uuid in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for UUID" >&5
+$as_echo_n "checking for UUID... " >&6; }
+
+if test -n "$UUID_CFLAGS"; then
+    pkg_cv_UUID_CFLAGS="$UUID_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_UUID_CFLAGS=`$PKG_CONFIG --cflags "uuid" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$UUID_LIBS"; then
+    pkg_cv_UUID_LIBS="$UUID_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_UUID_LIBS=`$PKG_CONFIG --libs "uuid" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        UUID_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "uuid" 2>&1`
+        else
+	        UUID_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "uuid" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$UUID_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	UUID_CFLAGS=$pkg_cv_UUID_CFLAGS
+	UUID_LIBS=$pkg_cv_UUID_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for UUID" >&5
+$as_echo_n "checking for UUID... " >&6; }
+
+if test -n "$UUID_CFLAGS"; then
+    pkg_cv_UUID_CFLAGS="$UUID_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_UUID_CFLAGS=`$PKG_CONFIG --cflags "uuid" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$UUID_LIBS"; then
+    pkg_cv_UUID_LIBS="$UUID_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"uuid\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "uuid") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_UUID_LIBS=`$PKG_CONFIG --libs "uuid" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        UUID_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "uuid" 2>&1`
+        else
+	        UUID_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "uuid" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$UUID_PKG_ERRORS" >&5
+
+	with_uuid=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_uuid=no
+ :
+else
+	UUID_CFLAGS=$pkg_cv_UUID_CFLAGS
+	UUID_LIBS=$pkg_cv_UUID_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_uuid=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_uuid" = "yes"; then
+  HAVE_UUID_TRUE=
+  HAVE_UUID_FALSE='#'
+else
+  HAVE_UUID_TRUE='#'
+  HAVE_UUID_FALSE=
+fi
+
+if test "$with_uuid" = "yes"; then :
+
+$as_echo "#define HAVE_UUID 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-ffi was given.
+if test "${with_ffi+set}" = set; then :
+  withval=$with_ffi;
+else
+  with_ffi=auto
+fi
+
+
+case $with_ffi in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for FFI" >&5
+$as_echo_n "checking for FFI... " >&6; }
+
+if test -n "$FFI_CFLAGS"; then
+    pkg_cv_FFI_CFLAGS="$FFI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$FFI_LIBS"; then
+    pkg_cv_FFI_LIBS="$FFI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        FFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libffi" 2>&1`
+        else
+	        FFI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libffi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$FFI_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	FFI_CFLAGS=$pkg_cv_FFI_CFLAGS
+	FFI_LIBS=$pkg_cv_FFI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for FFI" >&5
+$as_echo_n "checking for FFI... " >&6; }
+
+if test -n "$FFI_CFLAGS"; then
+    pkg_cv_FFI_CFLAGS="$FFI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$FFI_LIBS"; then
+    pkg_cv_FFI_LIBS="$FFI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        FFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libffi" 2>&1`
+        else
+	        FFI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libffi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$FFI_PKG_ERRORS" >&5
+
+	with_ffi=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_ffi=no
+ :
+else
+	FFI_CFLAGS=$pkg_cv_FFI_CFLAGS
+	FFI_LIBS=$pkg_cv_FFI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_ffi=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_ffi" = "yes"; then
+  HAVE_FFI_TRUE=
+  HAVE_FFI_FALSE='#'
+else
+  HAVE_FFI_TRUE='#'
+  HAVE_FFI_FALSE=
+fi
+
+if test "$with_ffi" = "yes"; then :
+
+$as_echo "#define HAVE_FFI 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-nis was given.
+if test "${with_nis+set}" = set; then :
+  withval=$with_nis;
+else
+  with_nis=auto
+fi
+
+
+case $with_nis in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for NIS" >&5
+$as_echo_n "checking for NIS... " >&6; }
+
+if test -n "$NIS_CFLAGS"; then
+    pkg_cv_NIS_CFLAGS="$NIS_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl libtirpc\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl libtirpc") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NIS_CFLAGS=`$PKG_CONFIG --cflags "libnsl libtirpc" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$NIS_LIBS"; then
+    pkg_cv_NIS_LIBS="$NIS_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl libtirpc\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl libtirpc") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NIS_LIBS=`$PKG_CONFIG --libs "libnsl libtirpc" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        NIS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libnsl libtirpc" 2>&1`
+        else
+	        NIS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libnsl libtirpc" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$NIS_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	NIS_CFLAGS=$pkg_cv_NIS_CFLAGS
+	NIS_LIBS=$pkg_cv_NIS_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for NIS" >&5
+$as_echo_n "checking for NIS... " >&6; }
+
+if test -n "$NIS_CFLAGS"; then
+    pkg_cv_NIS_CFLAGS="$NIS_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl libtirpc\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl libtirpc") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NIS_CFLAGS=`$PKG_CONFIG --cflags "libnsl libtirpc" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$NIS_LIBS"; then
+    pkg_cv_NIS_LIBS="$NIS_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libnsl libtirpc\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libnsl libtirpc") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_NIS_LIBS=`$PKG_CONFIG --libs "libnsl libtirpc" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        NIS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libnsl libtirpc" 2>&1`
+        else
+	        NIS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libnsl libtirpc" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$NIS_PKG_ERRORS" >&5
+
+	with_nis=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_nis=no
+ :
+else
+	NIS_CFLAGS=$pkg_cv_NIS_CFLAGS
+	NIS_LIBS=$pkg_cv_NIS_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_nis=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_nis" = "yes"; then
+  HAVE_NIS_TRUE=
+  HAVE_NIS_FALSE='#'
+else
+  HAVE_NIS_TRUE='#'
+  HAVE_NIS_FALSE=
+fi
+
+if test "$with_nis" = "yes"; then :
+
+$as_echo "#define HAVE_NIS 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-crypt was given.
+if test "${with_crypt+set}" = set; then :
+  withval=$with_crypt;
+else
+  with_crypt=auto
+fi
+
+
+case $with_crypt in #(
+  yes) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CRYPT" >&5
+$as_echo_n "checking for CRYPT... " >&6; }
+
+if test -n "$CRYPT_CFLAGS"; then
+    pkg_cv_CRYPT_CFLAGS="$CRYPT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libcrypt\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libcrypt") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CRYPT_CFLAGS=`$PKG_CONFIG --cflags "libcrypt" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CRYPT_LIBS"; then
+    pkg_cv_CRYPT_LIBS="$CRYPT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libcrypt\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libcrypt") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CRYPT_LIBS=`$PKG_CONFIG --libs "libcrypt" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CRYPT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libcrypt" 2>&1`
+        else
+	        CRYPT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libcrypt" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CRYPT_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	CRYPT_CFLAGS=$pkg_cv_CRYPT_CFLAGS
+	CRYPT_LIBS=$pkg_cv_CRYPT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi ;; #(
+  auto) :
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CRYPT" >&5
+$as_echo_n "checking for CRYPT... " >&6; }
+
+if test -n "$CRYPT_CFLAGS"; then
+    pkg_cv_CRYPT_CFLAGS="$CRYPT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libcrypt\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libcrypt") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CRYPT_CFLAGS=`$PKG_CONFIG --cflags "libcrypt" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$CRYPT_LIBS"; then
+    pkg_cv_CRYPT_LIBS="$CRYPT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libcrypt\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libcrypt") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CRYPT_LIBS=`$PKG_CONFIG --libs "libcrypt" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CRYPT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libcrypt" 2>&1`
+        else
+	        CRYPT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libcrypt" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CRYPT_PKG_ERRORS" >&5
+
+	with_crypt=no
+ :
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	with_crypt=no
+ :
+else
+	CRYPT_CFLAGS=$pkg_cv_CRYPT_CFLAGS
+	CRYPT_LIBS=$pkg_cv_CRYPT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	with_crypt=yes
+
+fi ;; #(
+  *) :
+     ;;
+esac
+
+
+
+
+
+
+ if test "$with_crypt" = "yes"; then
+  HAVE_CRYPT_TRUE=
+  HAVE_CRYPT_FALSE='#'
+else
+  HAVE_CRYPT_TRUE='#'
+  HAVE_CRYPT_FALSE=
+fi
+
+if test "$with_crypt" = "yes"; then :
+
+$as_echo "#define HAVE_CRYPT 1" >>confdefs.h
+
+fi
+
+# detected manually
+# PKG_WITH_MODULES_OPTIONAL([TK], [tcl tk])
+
+ if test "$ac_sys_system" = "Darwin"; then
+  HAVE_SCPROXY_TRUE=
+  HAVE_SCPROXY_FALSE='#'
+else
+  HAVE_SCPROXY_TRUE='#'
+  HAVE_SCPROXY_FALSE=
+fi
+
+
 # Check for usable OpenSSL
 
     found=false
@@ -18015,14 +21156,22 @@ EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  have_working_openssl=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  have_working_openssl=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_working_openssl" >&5
+$as_echo "$have_working_openssl" >&6; }
+ if test $have_working_openssl = yes; then
+  HAVE_OPENSSL_TRUE=
+  HAVE_OPENSSL_FALSE='#'
+else
+  HAVE_OPENSSL_TRUE='#'
+  HAVE_OPENSSL_FALSE=
+fi
+
 LIBS="$save_LIBS"
 CFLAGS="$save_CFLAGS"
 LDFLAGS="$save_LDFLAGS"
@@ -18184,7 +21333,6 @@ $as_echo "no" >&6; }
 fi
 
 
-
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
 
@@ -18299,7 +21447,91 @@ LIBOBJS=$ac_libobjs
 LTLIBOBJS=$ac_ltlibobjs
 
 
+if test -z "${HAVE_TCLTK_TRUE}" && test -z "${HAVE_TCLTK_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_TCLTK\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_DBM_TRUE}" && test -z "${HAVE_DBM_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_DBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_GDBM_TRUE}" && test -z "${HAVE_GDBM_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_GDBM\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
+if test -z "${HAVE_READLINE_TRUE}" && test -z "${HAVE_READLINE_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_READLINE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CURSES_TRUE}" && test -z "${HAVE_CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CURSES_TRUE}" && test -z "${HAVE_CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CURSES_TRUE}" && test -z "${HAVE_CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CURSES_TRUE}" && test -z "${HAVE_CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CURSES_TRUE}" && test -z "${HAVE_CURSES_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CURSES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CURSES_PANEL_TRUE}" && test -z "${HAVE_CURSES_PANEL_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CURSES_PANEL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_SQLITE3_TRUE}" && test -z "${HAVE_SQLITE3_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_SQLITE3\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_ZLIB_TRUE}" && test -z "${HAVE_ZLIB_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_BZ2_TRUE}" && test -z "${HAVE_BZ2_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_BZ2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_LZMA_TRUE}" && test -z "${HAVE_LZMA_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_LZMA\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_EXPAT_TRUE}" && test -z "${HAVE_EXPAT_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_EXPAT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_UUID_TRUE}" && test -z "${HAVE_UUID_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_UUID\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_FFI_TRUE}" && test -z "${HAVE_FFI_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_FFI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_NIS_TRUE}" && test -z "${HAVE_NIS_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_NIS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_CRYPT_TRUE}" && test -z "${HAVE_CRYPT_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_CRYPT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_SCPROXY_TRUE}" && test -z "${HAVE_SCPROXY_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_SCPROXY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_OPENSSL_TRUE}" && test -z "${HAVE_OPENSSL_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_OPENSSL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
