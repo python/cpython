@@ -255,8 +255,8 @@ static bool os_random_buf(void* buf, size_t buf_len) {
 #include <time.h>
 #endif
 
-uintptr_t _os_random_weak(uintptr_t extra_seed) {
-  uintptr_t x = (uintptr_t)&_os_random_weak ^ extra_seed; // ASLR makes the address random
+uintptr_t _mi_os_random_weak(uintptr_t extra_seed) {
+  uintptr_t x = (uintptr_t)&_mi_os_random_weak ^ extra_seed; // ASLR makes the address random
   
   #if defined(_WIN32)
     LARGE_INTEGER pcount;
@@ -285,7 +285,7 @@ void _mi_random_init(mi_random_ctx_t* ctx) {
     // if we fail to get random data from the OS, we fall back to a
     // weak random source based on the current time
     _mi_warning_message("unable to use secure randomness\n");
-    uintptr_t x = _os_random_weak(0);
+    uintptr_t x = _mi_os_random_weak(0);
     for (size_t i = 0; i < 8; i++) {  // key is eight 32-bit words.
       x = _mi_random_shuffle(x);
       ((uint32_t*)key)[i] = (uint32_t)x;
