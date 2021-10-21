@@ -1,1 +1,1 @@
-Add ``call`` to ``operator.__all__``. Patch by Kreusada.
+Add :func:`operator.call` to ``operator.__all__``. Patch by Kreusada.
