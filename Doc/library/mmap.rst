@@ -317,9 +317,9 @@ ACCESS_* Constants
 ++++++++++++++++++
 
 .. data:: ACCESS_READ
-	  ACCESS_WRITE
-	  ACCESS_COPY
-	  ACCESS_DEFAULT
+          ACCESS_WRITE
+          ACCESS_COPY
+          ACCESS_DEFAULT
 
    These access types can be passed to :meth:`mmap.mmap`.
 
@@ -387,9 +387,9 @@ PROT_* Constants
 ++++++++++++++++
 
 .. data:: PROT_READ
-	  PROT_WRITE
-	  PROT_EXEC
+          PROT_WRITE
+          PROT_EXEC
 
-   These memory-protection options may be passed to :meth:`mmap.mmap` on Unix systems.
+   These memory-protection options can be passed to :meth:`mmap.mmap` on Unix systems.
 
    Availability: Unix.
