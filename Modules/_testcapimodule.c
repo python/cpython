@@ -1267,7 +1267,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (obj == NULL) {
         goto finally;
     }
-    assert (strcmp(PyUnicode_AsUTF8(obj), "<test>") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(obj), "<test>") == 0);
     Py_CLEAR(obj);
 
     result = Py_NewRef(Py_None);

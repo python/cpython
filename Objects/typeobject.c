@@ -3462,15 +3462,14 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     * because tp_name is public API and may be set independently
     * of any such flag.
     * So, we use a separate buffer, _ht_tpname, that's always
-    * deallocated withthe type (if it's non-NULL).
+    * deallocated with the type (if it's non-NULL).
     */
     Py_ssize_t name_buf_len = strlen(spec->name) + 1;
     res->_ht_tpname = PyMem_Malloc(name_buf_len);
     if (res->_ht_tpname == NULL) {
         goto fail;
     }
-    memcpy(res->_ht_tpname, spec->name, name_buf_len);
-    type->tp_name = res->_ht_tpname;
+    type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
 
     res->ht_module = Py_XNewRef(module);
 
