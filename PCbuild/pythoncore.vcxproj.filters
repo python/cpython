@@ -387,10 +387,19 @@
     <ClInclude Include="..\Include\cpython\longintrepr.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\longobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\odictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\unicodeobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\warnings.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\weakrefobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\methodobject.h">
