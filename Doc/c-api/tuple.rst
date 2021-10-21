@@ -123,6 +123,9 @@ type.
 
    Create and return a new struct sequence type from the *desc*.
    This function is similar to :c:func:`PyStructSequence_NewType`.
+   The *module* argument is associated with the new type and can be retrieved
+   with :c:func:`PyType_GetModule`. It must be a module object or ``NULL``.
+   The *tp_flags* argument is used to set :c:member:`PyTypeObject.tp_flags`.
 
    .. versionadded:: 3.11
 

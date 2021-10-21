@@ -570,13 +570,12 @@ PyStructSequence_FromModuleAndDesc(PyObject *module,
     spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     spec.slots = slots;
 
-    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec,
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &spec,
         (PyObject *)&PyTuple_Type);
     PyMem_Free(members);
     if (type == NULL) {
         return NULL;
     }
-    ((PyHeapTypeObject *)type)->ht_module = Py_XNewRef(module);
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
