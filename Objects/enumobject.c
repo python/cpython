@@ -83,8 +83,8 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
 
 // TODO: Use AC when bpo-43447 is supported
 static PyObject *
-enum_vectorcall(PyObject *type, PyObject *const *args,
-                size_t nargsf, PyObject *kwnames)
+enumerate_vectorcall(PyObject *type, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
     PyTypeObject *tp = (PyTypeObject *)type;
@@ -300,7 +300,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)enum_vectorcall
+    .tp_vectorcall = (vectorcallfunc)enumerate_vectorcall
 };
 
 /* Reversed Object ***************************************************************/
