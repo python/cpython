@@ -296,7 +296,7 @@ time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c
 #xx xxmodule.c
 #xxlimited xxlimited.c
 #xxlimited_35 xxlimited_35.c
-#xxsubtype xxsubtype.c
+xxsubtype xxsubtype.c  # Required for the test suite to pass!
 
 # Testing
 
