@@ -286,6 +286,12 @@ def gen_ctypes_test(manifest, args, outfile):
         include_abi_only=True,
         ifdef=set())
     for item in items:
+        if item.name in (
+                # Some symbols aren't exported on all platforms.
+                # This is a bug: https://bugs.python.org/issue44133
+                'PyModule_Create2', 'PyModule_FromDefAndSpec2',
+            ):
+            continue
         write(f'    "{item.name}",')
     write(")")
 
