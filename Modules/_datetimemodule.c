@@ -703,7 +703,7 @@ parse_isoformat_date(const char *dtstr, int *year, int *month, int *day)
      *  Return codes:
      *       0:  Success
      *      -1:  Failed to parse date component
-     *      -2:  Failed to parse dateseparator
+     *      -2:  Inconsistent date separator usage
      */
     const char *p = dtstr;
     p = parse_digits(p, year, 4);
@@ -711,8 +711,9 @@ parse_isoformat_date(const char *dtstr, int *year, int *month, int *day)
         return -1;
     }
 
-    if (*(p++) != '-') {
-        return -2;
+    const unsigned char uses_separator = (*p == '-');
+    if (uses_separator) {
+        ++p;
     }
 
     p = parse_digits(p, month, 2);
@@ -720,15 +721,15 @@ parse_isoformat_date(const char *dtstr, int *year, int *month, int *day)
         return -1;
     }
 
-    if (*(p++) != '-') {
-        return -2;
+    if (uses_separator) {
+        if (*(p++) != '-') {
+            return -2;
+        }
     }
-
     p = parse_digits(p, day, 2);
     if (p == NULL) {
         return -1;
     }
-
     return 0;
 }
 
@@ -739,8 +740,9 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     const char *p = tstr;
     const char *p_end = tstr_end;
     int *vals[3] = {hour, minute, second};
+    unsigned char has_separator = 2;
 
-    // Parse [HH[:MM[:SS]]]
+    // Parse [HH[:?MM[:?SS]]]
     for (size_t i = 0; i < 3; ++i) {
         p = parse_digits(p, vals[i], 2);
         if (NULL == p) {
@@ -751,7 +753,10 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         if (p >= p_end) {
             return c != '\0';
         }
-        else if (c == ':') {
+        else if (has_separator == 2 || (has_separator && c == ':')) {
+            if (has_separator == 2) {
+                has_separator = (c == ':');
+            }
             continue;
         }
         else if (c == '.') {
@@ -5182,7 +5187,7 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-_sanitize_isoformat_str(PyObject *dtstr)
+_sanitize_isoformat_str(PyObject *dtstr, Py_ssize_t len, Py_ssize_t separator_location)
 {
     // `fromisoformat` allows surrogate characters in exactly one position,
     // the separator; to allow datetime_fromisoformat to make the simplifying
@@ -5190,13 +5195,8 @@ _sanitize_isoformat_str(PyObject *dtstr)
     // replaces any surrogate character separators with `T`.
     //
     // The result of this, if not NULL, returns a new reference
-    Py_ssize_t len = PyUnicode_GetLength(dtstr);
-    if (len < 0) {
-        return NULL;
-    }
-
-    if (len <= 10 ||
-        !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, 10))) {
+    if (len <= separator_location ||
+        !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, separator_location))) {
         Py_INCREF(dtstr);
         return dtstr;
     }
@@ -5206,12 +5206,106 @@ _sanitize_isoformat_str(PyObject *dtstr)
         return NULL;
     }
 
-    if (PyUnicode_WriteChar(str_out, 10, (Py_UCS4)'T')) {
+    if (PyUnicode_WriteChar(str_out, separator_location, (Py_UCS4)'T')) {
         Py_DECREF(str_out);
         return NULL;
     }
 
     return str_out;
+}
+
+#define MODE_STANDARD 0
+#define MODE_ISOCALENDAR 1
+#define MODE_AMBIGUOUS 2
+
+static Py_ssize_t
+_find_isoformat_separator(PyObject *dtstr, Py_ssize_t len, unsigned char* mode) {
+    // The valid date formats can all be distinguished by characters 4 and 5
+    // and further narrowed down by character
+    // which tells us where to look for the separator character.
+    // Format    |  As-rendered |   Position
+    // ---------------------------------------
+    // %Y-%m-%d  |  YYYY-MM-DD  |    10
+    // %Y%m%d    |  YYYYMMDD    |     8
+    // %Y-W%V    |  YYYY-Www    |     8
+    // %YW%V     |  YYYYWww     |     7
+    // %Y-W%V-%u |  YYYY-Www-d  |    10
+    // %YW%V%u   |  YYYYWwwd    |     8
+    //
+    // Note that because we allow *any* character for the separator, in the
+    // case where character 4 is W, it's not straightforward to determine where
+    // the separator is — in the case of YYYY-Www-d, you have actual ambiguity,
+    // e.g. 2020-W01-0000 could be YYYY-Www-D0HH or YYYY-Www-HHMM, when the
+    // separator character is a number in the former case or a hyphen in the
+    // latter case.
+    //
+    // The case of YYYYWww can be distinguished from YYYYWwwd by tracking ahead
+    // to either the end of the string or the first non-numeric character —
+    // since the time components all come in pairs YYYYWww#HH can be
+    // distinguished from YYYYWwwd#HH by the fact that there will always be an
+    // odd number of digits before the first non-digit character in the former
+    // case.
+    static const Py_UCS4 date_separator = '-';
+    static const Py_UCS4 week_indicator = 'W';
+
+    const Py_UCS4 char_4 = PyUnicode_READ_CHAR(dtstr, 4);
+
+    *mode = MODE_STANDARD;
+    if (char_4 == date_separator) {
+        if (PyUnicode_READ_CHAR(dtstr, 5) == week_indicator) {
+            *mode = MODE_ISOCALENDAR;
+            if (len < 8) {
+                return -1;
+            }
+
+            // YYYY-Www-D (10) or YYYY-Www-HH (8)
+            if (len > 8 && PyUnicode_READ_CHAR(dtstr, 8) == date_separator) {
+                if (len == 9) { return -1; }
+                if (len > 10 && Py_UNICODE_ISDIGIT(PyUnicode_READ_CHAR(dtstr, 10))) {
+                    // This is as far as we'll try to go to resolve the
+                    // ambiguity for the moment — if we have YYYY-Www-##, the
+                    // separator is either a hyphen at 8 or a number at 10.
+                    //
+                    // We'll assume it's a hyphen at 8 because it's way more
+                    // likely that someone will use a hyphen as a separator
+                    // than a number, but at this point it's really best effort
+                    // because this is an extension of the spec anyway.
+                    *mode = *mode | MODE_AMBIGUOUS;
+                    return 8;
+                }
+
+                return 10;
+            } else {
+                // YYYY-Www (8)
+                return 8;
+            }
+        } else {
+            // YYYY-MM-DD (10)
+            return 10;
+        }
+    } else {
+        if (char_4 == week_indicator) {
+            *mode = MODE_ISOCALENDAR;
+            // YYYYWww (7) or YYYYWwwd (8)
+            ssize_t idx = 7;
+            for (; idx < len; ++idx) {
+                // Keep going until we run out of digits.
+                if (!Py_UNICODE_ISDIGIT(PyUnicode_READ_CHAR(dtstr, idx))) {
+                    break;
+                }
+            }
+
+            if (len == 7 || idx % 2 == 0) {
+                // If the index of the last number is even, it's YYYYWwwd
+                return 7;
+            } else {
+                return 8;
+            }
+        } else {
+            // YYYYMMDD (8)
+            return 8;
+        }
+    }
 }
 
 static PyObject *
@@ -5225,12 +5319,25 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         return NULL;
     }
 
-    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr);
+    unsigned char mode;
+    Py_ssize_t len = PyUnicode_GetLength(dtstr);
+    if (len < 7) {  // All valid ISO8601 strings are at least 7 characters long
+        goto error;
+    }
+
+    const Py_ssize_t separator_location = _find_isoformat_separator(
+            dtstr, len, &mode);
+
+    // We only need to sanitize this string if the separator is a surrogate
+    // character. In the situation where the separator location is ambiguous,
+    // we don't have to sanitize it anything because that can only happen when
+    // the separator is either '-' or a number. This should mostly be a noop
+    // but it makes the reference counting easier if we still sanitize.
+    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr, len, separator_location);
     if (dtstr_clean == NULL) {
         goto error;
     }
 
-    Py_ssize_t len;
     const char *dt_ptr = PyUnicode_AsUTF8AndSize(dtstr_clean, &len);
 
     if (dt_ptr == NULL) {
@@ -5252,21 +5359,22 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     // date has a fixed length of 10
     int rv = parse_isoformat_date(p, &year, &month, &day);
 
-    if (!rv && len > 10) {
+    if (!rv && len > separator_location) {
         // In UTF-8, the length of multi-byte characters is encoded in the MSB
-        if ((p[10] & 0x80) == 0) {
-            p += 11;
+        p += separator_location;
+        if ((p[0] & 0x80) == 0) {
+            p += 1;
         }
         else {
-            switch (p[10] & 0xf0) {
+            switch (p[0] & 0xf0) {
                 case 0xe0:
-                    p += 13;
+                    p += 3;
                     break;
                 case 0xf0:
-                    p += 14;
+                    p += 4;
                     break;
                 default:
-                    p += 12;
+                    p += 2;
                     break;
             }
         }
