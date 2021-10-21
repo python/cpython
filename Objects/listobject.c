@@ -2237,6 +2237,10 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
         firsti = 1;
         ms->first_tuple_items_resolved_it = 0;
     }
+    /* Now first_tuple_items_resolved_it was 0 on entry, or was forced to 0
+     * at the end of the `if` block just above.
+     */
+    assert(! ms->first_tuple_items_resolved_it);
 
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
@@ -2245,14 +2249,14 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
         if (k < 0)
             return -1;
         if (!k) { /* not equal */
-            if (!i) {
+            if (i) {
+                return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
+                                                Py_LT);
+            }
+            else {
                 ms->first_tuple_items_resolved_it = 1;
                 return ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0],
                                               ms);
-            }
-            else {
-                return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
-                                                Py_LT);
             }
         }
     }
