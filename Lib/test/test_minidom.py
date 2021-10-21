@@ -5,6 +5,7 @@ import pickle
 import io
 from test import support
 import unittest
+from xml.etree import ElementTree
 
 import xml.dom.minidom
 
@@ -1662,6 +1663,15 @@ class MinidomTest(unittest.TestCase):
         self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
+
+    def testQuoteEscape(self):
+        text = ElementTree.Element('text')
+        text.text = 'f&oo"b<a>r'
+        xml_string = ElementTree.tostring(text)
+        xml_tree = parseString(xml_string)
+        output = xml_tree.toprettyxml(indent='  ')
+        self.assertEqual(output.splitlines()[1], xml_string.decode('utf8'))
+
 
 if __name__ == "__main__":
     unittest.main()
