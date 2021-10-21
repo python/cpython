@@ -8372,6 +8372,11 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     fold_rotations(inst - oparg + 1, oparg);
                 }
                 break;
+            case COPY:
+                if (oparg == 1) {
+                    inst->i_opcode = DUP_TOP;
+                }
+                break;
             default:
                 /* All HAS_CONST opcodes should be handled with LOAD_CONST */
                 assert (!HAS_CONST(inst->i_opcode));
