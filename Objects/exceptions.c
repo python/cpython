@@ -1024,7 +1024,7 @@ exceptiongroup_split_recursive(PyObject *exc,
     retval = 0;
 done:
     Py_DECREF(match_list);
-    Py_DECREF(rest_list);
+    Py_XDECREF(rest_list);
     return retval;
 }
 
