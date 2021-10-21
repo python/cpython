@@ -2209,7 +2209,6 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_SUBTRACT);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_SUBTRACT);
             STAT_INC(BINARY_SUBTRACT, hit);
-            record_hit_inline(next_instr, oparg);
             PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sub);
             Py_DECREF(right);
@@ -2227,7 +2226,6 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_SUBTRACT);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_SUBTRACT);
             STAT_INC(BINARY_SUBTRACT, hit);
-            record_hit_inline(next_instr, oparg);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
             PyObject *sub = PyFloat_FromDouble(dsub);
             SET_SECOND(sub);

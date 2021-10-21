@@ -1265,11 +1265,11 @@ _Py_Specialize_BinarySubtract(PyObject *left, PyObject *right, _Py_CODEUNIT *ins
         goto fail;
     }
     if (PyLong_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_INT, initial_counter_value());
         goto success;
     }
     else if (PyFloat_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_FLOAT, initial_counter_value());
         goto success;
     }
     else {
