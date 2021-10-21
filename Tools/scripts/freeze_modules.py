@@ -540,21 +540,16 @@ def regen_frozen(modules):
         lastsection = mod.section
 
         # Also add a extern declaration for the corresponding
-        # codegen-generated function.
-        externlines.append(
-            "extern PyObject *_Py_get_%s_toplevel(void);" % mod.name.replace(".", "_"))
+        # deepfreeze-generated function.
+        orig_name = mod.source.id
+        get_code_name = "_Py_get_%s_toplevel" % orig_name.replace(".", "_")
+        externlines.append("extern PyObject *%s(void);" % get_code_name)
 
         symbol = mod.symbol
         pkg = '-' if mod.ispkg else ''
-        line = ('{"%s", %s, %s(int)sizeof(%s)},'
-                ) % (mod.name, symbol, pkg, symbol)
-        # TODO: Consider not folding lines
-        if len(line) < 80:
-            deflines.append(line)
-        else:
-            line1, _, line2 = line.rpartition(' ')
-            deflines.append(line1)
-            deflines.append(indent + line2)
+        line = ('{"%s", %s, %s(int)sizeof(%s), %s},'
+                ) % (mod.name, symbol, pkg, symbol, get_code_name)
+        deflines.append(line)
 
         if mod.isalias:
             if not mod.orig:
@@ -749,7 +744,6 @@ def freeze_module(modname, pyfile=None, destdir=MODULES_DIR):
 
 def _freeze_module(frozenid, pyfile, frozenfile, tmpsuffix):
     tmpfile = f'{frozenfile}.{int(time.time())}'
-    print(tmpfile)
 
     argv = [TOOL, frozenid, pyfile, tmpfile]
     print('#', '  '.join(os.path.relpath(a) for a in argv), flush=True)

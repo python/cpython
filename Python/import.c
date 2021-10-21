@@ -1181,6 +1181,7 @@ set_frozen_error(frozen_status status, PyObject *modname)
 struct frozen_info {
     PyObject *nameobj;
     const char *data;
+    PyObject *(*get_code)(void);
     Py_ssize_t size;
     bool is_package;
     bool is_alias;
@@ -1224,6 +1225,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (info != NULL) {
         info->nameobj = nameobj;  // borrowed
         info->data = (const char *)p->code;
+        info->get_code = p->get_code;
         info->size = p->size < 0 ? -(p->size) : p->size;
         info->is_package = p->size < 0 ? true : false;
         info->origname = name;
@@ -1244,6 +1246,11 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
 static PyObject *
 unmarshal_frozen_code(struct frozen_info *info)
 {
+    if (info->get_code) {
+        PyObject *code = info->get_code();
+        assert(code != NULL);
+        return code;
+    }
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
         set_frozen_error(FROZEN_INVALID, info->nameobj);

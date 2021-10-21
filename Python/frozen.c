@@ -69,8 +69,8 @@
 #endif
 
 /* Start extern declarations */
-extern PyObject *_Py_get__frozen_importlib_toplevel(void);
-extern PyObject *_Py_get__frozen_importlib_external_toplevel(void);
+extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
+extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
 extern PyObject *_Py_get_zipimport_toplevel(void);
 extern PyObject *_Py_get_abc_toplevel(void);
 extern PyObject *_Py_get_codecs_toplevel(void);
@@ -80,65 +80,59 @@ extern PyObject *_Py_get__sitebuiltins_toplevel(void);
 extern PyObject *_Py_get_genericpath_toplevel(void);
 extern PyObject *_Py_get_ntpath_toplevel(void);
 extern PyObject *_Py_get_posixpath_toplevel(void);
-extern PyObject *_Py_get_os_path_toplevel(void);
+extern PyObject *_Py_get_posixpath_toplevel(void);
 extern PyObject *_Py_get_os_toplevel(void);
 extern PyObject *_Py_get_site_toplevel(void);
 extern PyObject *_Py_get_stat_toplevel(void);
 extern PyObject *_Py_get___hello___toplevel(void);
-extern PyObject *_Py_get___hello_alias___toplevel(void);
-extern PyObject *_Py_get___phello_alias___toplevel(void);
-extern PyObject *_Py_get___phello_alias___spam_toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
+extern PyObject *_Py_get___hello___toplevel(void);
 extern PyObject *_Py_get___phello___toplevel(void);
-extern PyObject *_Py_get___phello_____init___toplevel(void);
+extern PyObject *_Py_get___phello___toplevel(void);
 extern PyObject *_Py_get___phello___ham_toplevel(void);
-extern PyObject *_Py_get___phello___ham___init___toplevel(void);
+extern PyObject *_Py_get___phello___ham_toplevel(void);
 extern PyObject *_Py_get___phello___ham_eggs_toplevel(void);
 extern PyObject *_Py_get___phello___spam_toplevel(void);
-extern PyObject *_Py_get___hello_only___toplevel(void);
+extern PyObject *_Py_get_frozen_only_toplevel(void);
 /* End extern declarations */
 
 /* Note that a negative size indicates a package. */
 
 static const struct _frozen _PyImport_FrozenModules[] = {
     /* import system */
-    {"_frozen_importlib", _Py_M__importlib__bootstrap,
-        (int)sizeof(_Py_M__importlib__bootstrap)},
-    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
-        (int)sizeof(_Py_M__importlib__bootstrap_external)},
-    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
+    {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), _Py_get_importlib__bootstrap_toplevel},
+    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), _Py_get_importlib__bootstrap_external_toplevel},
+    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), _Py_get_zipimport_toplevel},
 
     /* stdlib - startup, without site (python -S) */
-    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc)},
-    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs)},
-    {"io", _Py_M__io, (int)sizeof(_Py_M__io)},
+    {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), _Py_get_abc_toplevel},
+    {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), _Py_get_codecs_toplevel},
+    {"io", _Py_M__io, (int)sizeof(_Py_M__io), _Py_get_io_toplevel},
 
     /* stdlib - startup, with site */
-    {"_collections_abc", _Py_M___collections_abc,
-        (int)sizeof(_Py_M___collections_abc)},
-    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
-    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath)},
-    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath)},
-    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
-    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},
-    {"os", _Py_M__os, (int)sizeof(_Py_M__os)},
-    {"site", _Py_M__site, (int)sizeof(_Py_M__site)},
-    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat)},
+    {"_collections_abc", _Py_M___collections_abc, (int)sizeof(_Py_M___collections_abc), _Py_get__collections_abc_toplevel},
+    {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins), _Py_get__sitebuiltins_toplevel},
+    {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath), _Py_get_genericpath_toplevel},
+    {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath), _Py_get_ntpath_toplevel},
+    {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), _Py_get_posixpath_toplevel},
+    {"os.path", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath), _Py_get_posixpath_toplevel},
+    {"os", _Py_M__os, (int)sizeof(_Py_M__os), _Py_get_os_toplevel},
+    {"site", _Py_M__site, (int)sizeof(_Py_M__site), _Py_get_site_toplevel},
+    {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), _Py_get_stat_toplevel},
 
     /* Test module */
-    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {"__phello_alias__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__)},
-    {"__phello_alias__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__)},
-    {"__phello__", _Py_M____phello__, -(int)sizeof(_Py_M____phello__)},
-    {"__phello__.__init__", _Py_M____phello__, (int)sizeof(_Py_M____phello__)},
-    {"__phello__.ham", _Py_M____phello___ham, -(int)sizeof(_Py_M____phello___ham)},
-    {"__phello__.ham.__init__", _Py_M____phello___ham,
-        (int)sizeof(_Py_M____phello___ham)},
-    {"__phello__.ham.eggs", _Py_M____phello___ham_eggs,
-        (int)sizeof(_Py_M____phello___ham_eggs)},
-    {"__phello__.spam", _Py_M____phello___spam,
-        (int)sizeof(_Py_M____phello___spam)},
-    {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only)},
+    {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
+    {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
+    {"__phello_alias__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
+    {"__phello_alias__.spam", _Py_M____hello__, (int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
+    {"__phello__", _Py_M____phello__, -(int)sizeof(_Py_M____phello__), _Py_get___phello___toplevel},
+    {"__phello__.__init__", _Py_M____phello__, (int)sizeof(_Py_M____phello__), _Py_get___phello___toplevel},
+    {"__phello__.ham", _Py_M____phello___ham, -(int)sizeof(_Py_M____phello___ham), _Py_get___phello___ham_toplevel},
+    {"__phello__.ham.__init__", _Py_M____phello___ham, (int)sizeof(_Py_M____phello___ham), _Py_get___phello___ham_toplevel},
+    {"__phello__.ham.eggs", _Py_M____phello___ham_eggs, (int)sizeof(_Py_M____phello___ham_eggs), _Py_get___phello___ham_eggs_toplevel},
+    {"__phello__.spam", _Py_M____phello___spam, (int)sizeof(_Py_M____phello___spam), _Py_get___phello___spam_toplevel},
+    {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only), _Py_get_frozen_only_toplevel},
     {0, 0, 0} /* modules sentinel */
 };
 
