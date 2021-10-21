@@ -1886,7 +1886,7 @@ static PyObject *
 sys__debugmallocstats_impl(PyObject *module)
 /*[clinic end generated code: output=ec3565f8c7cee46a input=33c0c9c416f98424]*/
 {
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
     if (_PyObject_DebugMallocStats(stderr)) {
         fputc('\n', stderr);
     }

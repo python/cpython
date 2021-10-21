@@ -56,7 +56,7 @@
 PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 
 /* Macros */
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif
 

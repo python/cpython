@@ -2939,6 +2939,22 @@ _PyDebugAllocatorStats(FILE *out,
     (void)printone(out, buf2, num_blocks * sizeof_block);
 }
 
+#ifdef WITH_MIMALLOC
+
+static void
+mimalloc_output(const char *msg, void *arg) {
+    fprintf((FILE *)arg, msg);
+}
+
+int
+_PyObject_DebugMallocStats(FILE *out) {
+    fprintf(out, "mimalloc (version: %i)\n", mi_version());
+    mi_stats_print_out(mimalloc_output, (void *)out);
+    fputc('\n', out);
+    return 0;
+}
+#endif
+
 
 #ifdef WITH_PYMALLOC
 
