@@ -11,6 +11,9 @@ ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
     ALLOWED_PREFIXES += ('__Py',)
 
+# Mimalloc symbols are only exported in archive
+MIMALLOC_PREFIXES = ('mi_', '_mi_', '_ZSt15get_new_handlerv')
+
 IGNORED_EXTENSION = "_ctypes_test"
 # Ignore constructor and destructor functions
 IGNORED_SYMBOLS = {'_init', '_fini'}
@@ -58,6 +61,7 @@ def get_smelly_symbols(stdout):
     smelly_symbols = []
     python_symbols = []
     local_symbols = []
+    mimalloc_symbols = []
 
     for line in stdout.splitlines():
         # Split line '0000000000001b80 D PyTextIOWrapper_Type'
@@ -76,6 +80,10 @@ def get_smelly_symbols(stdout):
             python_symbols.append(result)
             continue
 
+        if symbol.startswith(MIMALLOC_PREFIXES):
+            mimalloc_symbols.append(result)
+            continue
+
         if is_local_symbol_type(symtype):
             local_symbols.append(result)
         elif symbol in IGNORED_SYMBOLS:
@@ -85,12 +93,16 @@ def get_smelly_symbols(stdout):
 
     if local_symbols:
         print(f"Ignore {len(local_symbols)} local symbols")
-    return smelly_symbols, python_symbols
+    return smelly_symbols, python_symbols, mimalloc_symbols
 
 
 def check_library(library, dynamic=False):
     nm_output = get_exported_symbols(library, dynamic)
-    smelly_symbols, python_symbols = get_smelly_symbols(nm_output)
+    smelly_symbols, python_symbols, mimalloc_symbols = get_smelly_symbols(nm_output)
+
+    if dynamic:
+        # dynamic library must not export mimalloc symbols
+        smelly_symbols.extend(mimalloc_symbols)
 
     if not smelly_symbols:
         print(f"OK: no smelly symbol found ({len(python_symbols)} Python symbols)")
