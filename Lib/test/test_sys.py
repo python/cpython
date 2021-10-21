@@ -1419,7 +1419,7 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '5P')
+                  '6P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
         check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 32 + 21*calcsize("n2P"))
