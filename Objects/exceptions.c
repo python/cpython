@@ -957,22 +957,21 @@ exceptiongroup_split_recursive(PyObject *exc,
 
     /* Partial match */
 
-    int retval = -1;
-
     PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
-    PyObject *match_list = NULL;
-    PyObject *rest_list = NULL;
-
     assert(PyTuple_CheckExact(eg->excs));
     Py_ssize_t num_excs = PyTuple_Size(eg->excs);
     if (num_excs < 0) {
-        goto done;
+        return -1;
     }
     assert(num_excs > 0); /* checked in constructor, and excs is read-only */
-    match_list = PyList_New(0);
+
+    int retval = -1;
+    PyObject *match_list = PyList_New(0);
     if (!match_list) {
-        goto done;
+        return -1;
     }
+
+    PyObject *rest_list = NULL;
     if (construct_rest) {
         rest_list = PyList_New(0);
         if (!rest_list) {
@@ -986,8 +985,8 @@ exceptiongroup_split_recursive(PyObject *exc,
         if (exceptiongroup_split_recursive(
                 e, matcher_type, matcher_value,
                 construct_rest, &rec_result) == -1) {
-            Py_XDECREF(rec_result.match);
-            Py_XDECREF(rec_result.rest);
+            assert(!rec_result.match);
+            assert(!rec_result.rest);
             goto done;
         }
         if (rec_result.match) {
@@ -1025,6 +1024,10 @@ exceptiongroup_split_recursive(PyObject *exc,
 done:
     Py_DECREF(match_list);
     Py_XDECREF(rest_list);
+    if (retval == -1) {
+        Py_CLEAR(result->match);
+        Py_CLEAR(result->rest);
+    }
     return retval;
 }
 
@@ -1041,18 +1044,18 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyObject *result = NULL;
     _exceptiongroup_split_result split_result;
     bool construct_rest = true;
     if (exceptiongroup_split_recursive(
             self, matcher_type, matcher_value,
-            construct_rest, &split_result) != -1) {
+            construct_rest, &split_result) == -1) {
+        return NULL;
+    }
 
-        result = PyTuple_Pack(
+    PyObject *result = PyTuple_Pack(
             2,
             split_result.match ? split_result.match : Py_None,
             split_result.rest ? split_result.rest : Py_None);
-    }
 
     Py_XDECREF(split_result.match);
     Py_XDECREF(split_result.rest);
@@ -1072,16 +1075,16 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyObject *result = NULL;
     _exceptiongroup_split_result split_result;
     bool construct_rest = false;
     if (exceptiongroup_split_recursive(
             self, matcher_type, matcher_value,
-            construct_rest, &split_result) != -1) {
-
-        result = Py_NewRef(
-            split_result.match ? split_result.match : Py_None);
+            construct_rest, &split_result) == -1) {
+        return NULL;
     }
+
+    PyObject *result = Py_NewRef(
+            split_result.match ? split_result.match : Py_None);
 
     Py_XDECREF(split_result.match);
     assert(!split_result.rest);
