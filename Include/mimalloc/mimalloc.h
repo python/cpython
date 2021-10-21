@@ -85,6 +85,12 @@ terms of the MIT license. A copy of the license can be found in the file
   #define mi_attr_alloc_align(p)
 #endif
 
+#if defined(MIMALLOC_VENDOR)
+  // hide symbols when vendoring mimalloc
+  #undef mi_decl_export
+  #define mi_decl_export mi_decl_restrict
+#endif
+
 // ------------------------------------------------------
 // Includes
 // ------------------------------------------------------

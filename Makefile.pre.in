@@ -2357,7 +2357,7 @@ Python/dtoa.o: Python/dtoa.c
 	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
 
 Objects/mimalloc/%.o: Objects/mimalloc/%.c
-	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Include/mimalloc -o $@ $<
+	$(CC) -c $(PY_CORE_CFLAGS) -DMIMALLOC_VENDOR=1 -I$(srcdir)/Include/mimalloc -o $@ $<
 
 Objects/obmalloc.o: Objects/obmalloc.c
 	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Include/mimalloc -o $@ $<
