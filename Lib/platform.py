@@ -187,11 +187,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         executable = sys.executable
 
     V = _comparable_version
-    if hasattr(os.path, 'realpath'):
-        # Python 2.2 introduced os.path.realpath(); it is used
-        # here to work around problems with Cygwin not being
-        # able to open symlinks for reading
-        executable = os.path.realpath(executable)
+    # We use os.path.realpath()
+    # here to work around problems with Cygwin not being
+    # able to open symlinks for reading
+    executable = os.path.realpath(executable)
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
@@ -1262,7 +1261,7 @@ _os_release_cache = None
 
 def _parse_os_release(lines):
     # These fields are mandatory fields with well-known defaults
-    # in pratice all Linux distributions override NAME, ID, and PRETTY_NAME.
+    # in practice all Linux distributions override NAME, ID, and PRETTY_NAME.
     info = {
         "NAME": "Linux",
         "ID": "linux",

@@ -293,12 +293,13 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: argval
 
-      resolved arg value (if known), otherwise same as arg
+      resolved arg value (if any), otherwise ``None``
 
 
    .. data:: argrepr
 
-      human readable description of operation argument
+      human readable description of operation argument (if any),
+      otherwise an empty string.
 
 
    .. data:: offset
@@ -724,7 +725,7 @@ iterations of the loop.
     of the stack and sets the ``f_lasti`` attribute of the frame with that value.
     Then pops the next exception from the stack uses it to restore the current exception.
     Finally it re-raises the originally popped exception.
-    Used in excpetion handler cleanup.
+    Used in exception handler cleanup.
 
     .. versionadded:: 3.11
 

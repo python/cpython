@@ -136,32 +136,48 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
-#define BINARY_SUBSCR_ADAPTIVE    7
-#define BINARY_SUBSCR_LIST_INT    8
-#define BINARY_SUBSCR_TUPLE_INT  13
-#define BINARY_SUBSCR_DICT       14
-#define JUMP_ABSOLUTE_QUICK      18
-#define LOAD_ATTR_ADAPTIVE       21
-#define LOAD_ATTR_SPLIT_KEYS     36
-#define LOAD_ATTR_WITH_HINT      38
-#define LOAD_ATTR_SLOT           39
-#define LOAD_ATTR_MODULE         40
-#define LOAD_GLOBAL_ADAPTIVE     41
-#define LOAD_GLOBAL_MODULE       42
-#define LOAD_GLOBAL_BUILTIN      43
-#define LOAD_METHOD_ADAPTIVE     44
-#define LOAD_METHOD_CACHED       45
-#define LOAD_METHOD_CLASS        46
-#define LOAD_METHOD_MODULE       47
-#define STORE_ATTR_ADAPTIVE      48
-#define STORE_ATTR_SPLIT_KEYS    58
-#define STORE_ATTR_SLOT          80
-#define STORE_ATTR_WITH_HINT     81
-#define LOAD_FAST__LOAD_FAST     87
-#define STORE_FAST__LOAD_FAST    88
-#define LOAD_FAST__LOAD_CONST   120
-#define LOAD_CONST__LOAD_FAST   122
-#define STORE_FAST__STORE_FAST  123
+#define BINARY_ADD_ADAPTIVE       7
+#define BINARY_ADD_INT            8
+#define BINARY_ADD_FLOAT         13
+#define BINARY_ADD_UNICODE       14
+#define BINARY_ADD_UNICODE_INPLACE_FAST  18
+#define BINARY_MULTIPLY_ADAPTIVE  21
+#define BINARY_MULTIPLY_INT      36
+#define BINARY_MULTIPLY_FLOAT    38
+#define BINARY_SUBSCR_ADAPTIVE   39
+#define BINARY_SUBSCR_LIST_INT   40
+#define BINARY_SUBSCR_TUPLE_INT  41
+#define BINARY_SUBSCR_DICT       42
+#define CALL_FUNCTION_ADAPTIVE   43
+#define CALL_FUNCTION_BUILTIN_O  44
+#define CALL_FUNCTION_BUILTIN_FAST  45
+#define CALL_FUNCTION_LEN        46
+#define CALL_FUNCTION_ISINSTANCE  47
+#define CALL_FUNCTION_PY_SIMPLE  48
+#define JUMP_ABSOLUTE_QUICK      58
+#define LOAD_ATTR_ADAPTIVE       80
+#define LOAD_ATTR_INSTANCE_VALUE  81
+#define LOAD_ATTR_WITH_HINT      87
+#define LOAD_ATTR_SLOT           88
+#define LOAD_ATTR_MODULE        120
+#define LOAD_GLOBAL_ADAPTIVE    122
+#define LOAD_GLOBAL_MODULE      123
+#define LOAD_GLOBAL_BUILTIN     127
+#define LOAD_METHOD_ADAPTIVE    128
+#define LOAD_METHOD_CACHED      134
+#define LOAD_METHOD_CLASS       140
+#define LOAD_METHOD_MODULE      143
+#define LOAD_METHOD_NO_DICT     149
+#define STORE_ATTR_ADAPTIVE     150
+#define STORE_ATTR_INSTANCE_VALUE 151
+#define STORE_ATTR_SLOT         153
+#define STORE_ATTR_WITH_HINT    154
+#define LOAD_FAST__LOAD_FAST    158
+#define STORE_FAST__LOAD_FAST   159
+#define LOAD_FAST__LOAD_CONST   167
+#define LOAD_CONST__LOAD_FAST   168
+#define STORE_FAST__STORE_FAST  169
+#define DO_TRACING              255
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
@@ -184,6 +200,10 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
 };
 #endif /* OPCODE_TABLES */
+
+#define HAS_CONST(op) (false\
+    || ((op) == 100) \
+    )
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 

@@ -22,7 +22,7 @@ There are two kinds of configuration:
 * The :ref:`Isolated Configuration <init-isolated-conf>` can be used to embed
   Python into an application. It isolates Python from the system. For example,
   environments variables are ignored, the LC_CTYPE locale is left unchanged and
-  no signal handler is registred.
+  no signal handler is registered.
 
 The :c:func:`Py_RunMain` function can be used to write a customized Python
 program.
@@ -706,7 +706,7 @@ PyConfig
       * Otherwise, use the :term:`locale encoding`:
         ``nl_langinfo(CODESET)`` result.
 
-      At Python statup, the encoding name is normalized to the Python codec
+      At Python startup, the encoding name is normalized to the Python codec
       name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.

@@ -916,9 +916,9 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect, or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects or a :ref:`types-union`, in which case every entry in *classinfo*
-   will be checked. In any other
-   case, a :exc:`TypeError` exception is raised.
+   objects or a :ref:`types-union`, in which case return ``True`` if *class* is a
+   subclass of any entry in *classinfo*.  In any other case, a :exc:`TypeError`
+   exception is raised.
 
    .. versionchanged:: 3.10
       *classinfo* can be a :ref:`types-union`.
@@ -1156,12 +1156,6 @@ are always available.  They are listed here in alphabetical order.
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
 
-   There is an additional mode character permitted, ``'U'``, which no longer
-   has any effect, and is considered deprecated. It previously enabled
-   :term:`universal newlines` in text mode, which became the default behavior
-   in Python 3.0. Refer to the documentation of the
-   :ref:`newline <open-newline-parameter>` parameter for further details.
-
    .. note::
 
       Python doesn't depend on the underlying operating system's notion of text
@@ -1304,8 +1298,7 @@ are always available.  They are listed here in alphabetical order.
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
 
-   .. versionchanged::
-      3.3
+   .. versionchanged:: 3.3
 
          * The *opener* parameter was added.
          * The ``'x'`` mode was added.
@@ -1313,29 +1306,25 @@ are always available.  They are listed here in alphabetical order.
          * :exc:`FileExistsError` is now raised if the file opened in exclusive
            creation mode (``'x'``) already exists.
 
-   .. versionchanged::
-      3.4
+   .. versionchanged:: 3.4
 
          * The file is now non-inheritable.
 
-   .. deprecated-removed:: 3.4 3.10
-
-      The ``'U'`` mode.
-
-   .. versionchanged::
-      3.5
+   .. versionchanged:: 3.5
 
          * If the system call is interrupted and the signal handler does not raise an
            exception, the function now retries the system call instead of raising an
            :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
          * The ``'namereplace'`` error handler was added.
 
-   .. versionchanged::
-      3.6
+   .. versionchanged:: 3.6
 
          * Support added to accept objects implementing :class:`os.PathLike`.
          * On Windows, opening a console buffer may return a subclass of
            :class:`io.RawIOBase` other than :class:`io.FileIO`.
+
+   .. versionchanged:: 3.11
+      The ``'U'`` mode has been removed.
 
 .. function:: ord(c)
 
@@ -1356,10 +1345,10 @@ are always available.  They are listed here in alphabetical order.
    coercion rules for binary arithmetic operators apply.  For :class:`int`
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
-   converted to float and a float result is delivered.  For example, ``10**2``
-   returns ``100``, but ``10**-2`` returns ``0.01``.  For a negative base of
+   converted to float and a float result is delivered.  For example, ``pow(10, 2)``
+   returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
-   result is delivered.  For example, ``(-9)**0.5`` returns a value close
+   result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
    to ``3j``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
@@ -1605,6 +1594,15 @@ are always available.  They are listed here in alphabetical order.
    stable if it guarantees not to change the relative order of elements that
    compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
+
+   The sort algorithm uses only ``<`` comparisons between items.  While
+   defining an :meth:`~object.__lt__` method will suffice for sorting,
+   :PEP:`8` recommends that all six :ref:`rich comparisons
+   <comparisons>` be implemented.  This will help avoid bugs when using
+   the same data with other ordering tools such as :func:`max` that rely
+   on a different underlying method.  Implementing all six comparisons
+   also helps avoid confusion for mixed type comparisons which can call
+   reflected the :meth:`~object.__gt__` method.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
