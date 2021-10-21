@@ -633,6 +633,24 @@ class Regrtest:
                 print("Remove file: %s" % name)
                 os_helper.unlink(name)
 
+    def adjust_resource_limits(self):
+        try:
+            import resource
+            from resource import RLIMIT_NOFILE, RLIM_INFINITY
+        except ImportError:
+            return
+        fd_limit, max_fds = resource.getrlimit(RLIMIT_NOFILE)
+        if fd_limit < 2000 and fd_limit < max_fds:
+            # On macOS the default fd limit is sometimes too low (256) for our
+            # test suite to succeed.  Raise it to something more reasonable.
+            new_fd_limit = min(2000, max_fds)
+            try:
+                resource.setrlimit(RLIMIT_NOFILE, (new_fd_limit, max_fds))
+                print(f"Raised RLIMIT_NOFILE to {new_fd_limit}.")
+            except (ValueError, OSError) as err:
+                print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
+                      f"{new_fd_limit}: {err}".)
+
     def main(self, tests=None, **kwargs):
         self.parse_args(kwargs)
 
