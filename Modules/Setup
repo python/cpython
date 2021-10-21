@@ -171,8 +171,7 @@ _symtable symtablemodule.c
 #math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
 #_struct -DPy_BUILD_CORE_MODULE _struct.c	# binary structure packing/unpacking
-#_weakref _weakref.c	# basic weak reference support
-#_testcapi _testcapimodule.c    # Python C API test module
+#_testcapi _testcapimodule.c    # Python C API test module; CANNOT be statically compiled!
 #_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
 #_random _randommodule.c -DPy_BUILD_CORE_MODULE	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
@@ -185,6 +184,9 @@ _symtable symtablemodule.c
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 #_statistics _statisticsmodule.c # statistics accelerator
 #_typing _typingmodule.c # typing accelerator
+#_lsprof _lsprof.c rotatingtree.c # cProfile accelerators
+#_opcode _opcode.c
+#_queue _queuemodule.c -DPy_BUILD_CORE_MODULE
 
 #unicodedata unicodedata.c -DPy_BUILD_CORE_BUILTIN   # static Unicode character database
 
@@ -197,6 +199,7 @@ _symtable symtablemodule.c
 #spwd spwdmodule.c		# spwd(3)
 #grp grpmodule.c		# grp(3)
 #select selectmodule.c	# select(2); not on ancient System V
+#ossaudiodev ossaudiodev.c
 
 # Memory-mapped files (also works on Win32).
 #mmap mmapmodule.c
@@ -271,6 +274,10 @@ _symtable symtablemodule.c
 
 # _blake module
 #_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c -DPy_BUILD_CORE_BUILTIN
+
+# Compression
+#_bz2 _bz2module.c -lbz2
+#_lzma _lzmamodule.c -llzma
 
 # The _tkinter module.
 #
@@ -372,6 +379,17 @@ _symtable symtablemodule.c
 
 # Another example -- the 'xxsubtype' module shows C-level subtyping in action
 xxsubtype xxsubtype.c
+
+# Limited API examples
+#xxlimited xxlimited.c
+#xxlimited_35 xxlimited_35.c
+
+# For testing
+#_xxsubinterpreters _xxsubinterpretersmodule.c
+#_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
+#_testbuffer _testbuffer.c
+#_testimportmultiple _testimportmultiple.c
+#_testmultiphase _testmultiphase.c
 
 # Uncommenting the following line tells makesetup that all following modules
 # are not built (see above for more detail).
