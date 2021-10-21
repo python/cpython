@@ -100,7 +100,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/mimalloc
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -2355,6 +2355,12 @@ config.status:	$(srcdir)/configure
 # https://bugs.llvm.org//show_bug.cgi?id=31928
 Python/dtoa.o: Python/dtoa.c
 	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
+
+Objects/mimalloc/%.o: Objects/mimalloc/%.c
+	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Include/mimalloc -o $@ $<
+
+Objects/obmalloc.o: Objects/obmalloc.c
+	$(CC) -c $(PY_CORE_CFLAGS) -I$(srcdir)/Include/mimalloc -o $@ $<
 
 # Run reindent on the library
 reindent:
