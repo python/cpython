@@ -3286,7 +3286,7 @@ class GetTypeHintTests(BaseTestCase):
         with self.assertRaisesRegex(
             TypeError,
             re.escape(
-                'get_type_hint() got invalid type annotation. Got (1, 2).',
+                'get_type_hints() got invalid type annotation. Got (1, 2).',
             ),
         ):
             get_type_hints(InvalidTupleAnnotation)
