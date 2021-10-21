@@ -360,11 +360,13 @@ class ConnectionTests(unittest.TestCase):
         finally:  # restore saved limit
             self.cx.setlimit(category, saved_limit)
 
-    def test_connection_set_bad_limit(self):
-        self.assertRaisesRegex(
-            sqlite.ProgrammingError, "'category' is out of bounds",
-            self.cx.setlimit, 1111, 0
-        )
+    def test_connection_bad_limit_category(self):
+        msg = "'category' is out of bounds"
+        cat = 1111
+        self.assertRaisesRegex(sqlite.ProgrammingError, msg,
+                               self.cx.getlimit, cat)
+        self.assertRaisesRegex(sqlite.ProgrammingError, msg,
+                               self.cx.setlimit, cat, 0)
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
