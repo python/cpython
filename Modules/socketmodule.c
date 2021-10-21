@@ -45,7 +45,7 @@ Module interface:
 - socket.if_nameindex() -> list of tuples (if_index, if_name)
 - socket.if_nametoindex(name) -> corresponding interface index
 - socket.if_indextoname(index) -> corresponding interface name
-- an Internet socket address is a pair (hostname, port)
+- an internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
 - where a hostname is returned, the dd.dd.dd.dd notation is used
@@ -151,9 +151,6 @@ getblocking() -- return True if socket is blocking, False if non-blocking\n\
 setsockopt(level, optname, value[, optlen]) -- set socket options\n\
 settimeout(None | float) -- set or clear the timeout\n\
 shutdown(how) -- shut down traffic in one or both directions\n\
-if_nameindex() -- return all network interface indices and names\n\
-if_nametoindex(name) -- return the corresponding interface index\n\
-if_indextoname(index) -- return the corresponding interface name\n\
 \n\
  [*] not available on all platforms!");
 
@@ -761,7 +758,7 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     Py_END_ALLOW_THREADS;
 #else
     if (interval >= 0) {
-        _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
+        _PyTime_AsTimeval_clamp(interval, &tv, _PyTime_ROUND_CEILING);
         tvp = &tv;
     }
     else
@@ -843,18 +840,20 @@ sock_call_ex(PySocketSockObject *s,
 
                 if (deadline_initialized) {
                     /* recompute the timeout */
-                    interval = deadline - _PyTime_GetMonotonicClock();
+                    interval = _PyDeadline_Get(deadline);
                 }
                 else {
                     deadline_initialized = 1;
-                    deadline = _PyTime_GetMonotonicClock() + timeout;
+                    deadline = _PyDeadline_Init(timeout);
                     interval = timeout;
                 }
 
-                if (interval >= 0)
+                if (interval >= 0) {
                     res = internal_select(s, writing, interval, connect);
-                else
+                }
+                else {
                     res = 1;
+                }
             }
             else {
                 res = internal_select(s, writing, timeout, connect);
@@ -930,7 +929,7 @@ sock_call_ex(PySocketSockObject *s,
                reading, but the data then discarded by the OS because of a
                wrong checksum.
 
-               Loop on select() to recheck for socket readyness. */
+               Loop on select() to recheck for socket readiness. */
             continue;
         }
 
@@ -1516,10 +1515,10 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #ifdef CAN_J1939
           case CAN_J1939:
           {
-              return Py_BuildValue("O&KkB", PyUnicode_DecodeFSDefault,
+              return Py_BuildValue("O&KIB", PyUnicode_DecodeFSDefault,
                                           ifname,
-                                          a->can_addr.j1939.name,
-                                          a->can_addr.j1939.pgn,
+                                          (unsigned long long)a->can_addr.j1939.name,
+                                          (unsigned int)a->can_addr.j1939.pgn,
                                           a->can_addr.j1939.addr);
           }
 #endif /* CAN_J1939 */
@@ -2210,13 +2209,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             PyObject *interfaceName;
             struct ifreq ifr;
             Py_ssize_t len;
-            uint64_t j1939_name;
-            uint32_t j1939_pgn;
+            unsigned long long j1939_name; /* at least 64 bits */
+            unsigned int j1939_pgn; /* at least 32 bits */
             uint8_t j1939_addr;
 
             struct sockaddr_can *addr = &addrbuf->can;
 
-            if (!PyArg_ParseTuple(args, "O&KkB", PyUnicode_FSConverter,
+            if (!PyArg_ParseTuple(args, "O&KIB", PyUnicode_FSConverter,
                                               &interfaceName,
                                               &j1939_name,
                                               &j1939_pgn,
@@ -2244,8 +2243,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
             addr->can_family = AF_CAN;
             addr->can_ifindex = ifr.ifr_ifindex;
-            addr->can_addr.j1939.name = j1939_name;
-            addr->can_addr.j1939.pgn = j1939_pgn;
+            addr->can_addr.j1939.name = (uint64_t)j1939_name;
+            addr->can_addr.j1939.pgn = (uint32_t)j1939_pgn;
             addr->can_addr.j1939.addr = j1939_addr;
 
             *len_ret = sizeof(*addr);
@@ -4179,7 +4178,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     Py_buffer pbuf;
     struct sock_send ctx;
     int has_timeout = (s->sock_timeout > 0);
-    _PyTime_t interval = s->sock_timeout;
+    _PyTime_t timeout = s->sock_timeout;
     _PyTime_t deadline = 0;
     int deadline_initialized = 0;
     PyObject *res = NULL;
@@ -4198,14 +4197,14 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         if (has_timeout) {
             if (deadline_initialized) {
                 /* recompute the timeout */
-                interval = deadline - _PyTime_GetMonotonicClock();
+                timeout = _PyDeadline_Get(deadline);
             }
             else {
                 deadline_initialized = 1;
-                deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
+                deadline = _PyDeadline_Init(timeout);
             }
 
-            if (interval <= 0) {
+            if (timeout <= 0) {
                 PyErr_SetString(PyExc_TimeoutError, "timed out");
                 goto done;
             }
@@ -4214,7 +4213,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         ctx.buf = buf;
         ctx.len = len;
         ctx.flags = flags;
-        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, NULL, interval) < 0)
+        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, NULL, timeout) < 0)
             goto done;
         n = ctx.result;
         assert(n >= 0);
@@ -8024,6 +8023,9 @@ PyInit__socket(void)
 #ifdef  IP_RECVRETOPTS
     PyModule_AddIntMacro(m, IP_RECVRETOPTS);
 #endif
+#ifdef  IP_RECVTOS
+    PyModule_AddIntMacro(m, IP_RECVTOS);
+#endif
 #ifdef  IP_RECVDSTADDR
     PyModule_AddIntMacro(m, IP_RECVDSTADDR);
 #endif
@@ -8155,6 +8157,10 @@ PyInit__socket(void)
 #endif
 #ifdef  TCP_KEEPIDLE
     PyModule_AddIntMacro(m, TCP_KEEPIDLE);
+#endif
+    /* TCP_KEEPALIVE is OSX's TCP_KEEPIDLE equivalent */
+#if defined(__APPLE__) && defined(TCP_KEEPALIVE)
+    PyModule_AddIntMacro(m, TCP_KEEPALIVE);
 #endif
 #ifdef  TCP_KEEPINTVL
     PyModule_AddIntMacro(m, TCP_KEEPINTVL);

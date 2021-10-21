@@ -79,6 +79,7 @@ class BasicTestCase(CfgParserTestCaseClass):
              'Spacey Bar',
              'Spacey Bar From The Beginning',
              'Types',
+             'This One Has A ] In It',
              ]
 
         if self.allow_no_value:
@@ -130,6 +131,7 @@ class BasicTestCase(CfgParserTestCaseClass):
         eq(cf.get('Types', 'float'), "0.44")
         eq(cf.getboolean('Types', 'boolean'), False)
         eq(cf.get('Types', '123'), 'strange but acceptable')
+        eq(cf.get('This One Has A ] In It', 'forks'), 'spoons')
         if self.allow_no_value:
             eq(cf.get('NoValue', 'option-without-value'), None)
 
@@ -320,6 +322,8 @@ int {0[1]} 42
 float {0[0]} 0.44
 boolean {0[0]} NO
 123 {0[1]} strange but acceptable
+[This One Has A ] In It]
+  forks {0[0]} spoons
 """.format(self.delimiters, self.comment_prefixes)
         if self.allow_no_value:
             config_string += (
@@ -393,6 +397,9 @@ boolean {0[0]} NO
                 "float": 0.44,
                 "boolean": False,
                 123: "strange but acceptable",
+            },
+            "This One Has A ] In It": {
+                "forks": "spoons"
             },
         }
         if self.allow_no_value:
@@ -1605,13 +1612,6 @@ class CoverageOneHundredTestCase(unittest.TestCase):
                                             "and `source'. Use `source'.")
         error = configparser.ParsingError(filename='source')
         self.assertEqual(error.source, 'source')
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            self.assertEqual(error.filename, 'source')
-            error.filename = 'filename'
-            self.assertEqual(error.source, 'filename')
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
 
     def test_interpolation_validation(self):
         parser = configparser.ConfigParser()
@@ -1629,27 +1629,6 @@ class CoverageOneHundredTestCase(unittest.TestCase):
             parser['section']['invalid_reference']
         self.assertEqual(str(cm.exception), "bad interpolation variable "
                                             "reference '%(()'")
-
-    def test_readfp_deprecation(self):
-        sio = io.StringIO("""
-        [section]
-        option = value
-        """)
-        parser = configparser.ConfigParser()
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            parser.readfp(sio, filename='StringIO')
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
-        self.assertEqual(len(parser), 2)
-        self.assertEqual(parser['section']['option'], 'value')
-
-    def test_safeconfigparser_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            parser = configparser.SafeConfigParser()
-        for warning in w:
-            self.assertTrue(warning.category is DeprecationWarning)
 
     def test_sectionproxy_repr(self):
         parser = configparser.ConfigParser()

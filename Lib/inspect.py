@@ -47,7 +47,6 @@ import sys
 import tokenize
 import token
 import types
-import warnings
 import functools
 import builtins
 from operator import attrgetter
@@ -395,7 +394,7 @@ def iscode(object):
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
-        co_names            tuple of names of local variables
+        co_names            tuple of names other than arguments and function locals
         co_nlocals          number of local variables
         co_stacksize        virtual machine stack space required
         co_varnames         tuple of names of arguments and local variables"""
@@ -781,6 +780,8 @@ def getfile(object):
             module = sys.modules.get(object.__module__)
             if getattr(module, '__file__', None):
                 return module.__file__
+            if object.__module__ == '__main__':
+                raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
         object = object.__func__
@@ -1212,37 +1213,6 @@ def getargs(co):
         varkw = co.co_varnames[nargs]
     return Arguments(args + kwonlyargs, varargs, varkw)
 
-ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
-
-def getargspec(func):
-    """Get the names and default values of a function's parameters.
-
-    A tuple of four things is returned: (args, varargs, keywords, defaults).
-    'args' is a list of the argument names, including keyword-only argument names.
-    'varargs' and 'keywords' are the names of the * and ** parameters or None.
-    'defaults' is an n-tuple of the default values of the last n parameters.
-
-    This function is deprecated, as it does not support annotations or
-    keyword-only parameters and will raise ValueError if either is present
-    on the supplied callable.
-
-    For a more structured introspection API, use inspect.signature() instead.
-
-    Alternatively, use getfullargspec() for an API with a similar namedtuple
-    based interface, but full support for annotations and keyword-only
-    parameters.
-
-    Deprecated since Python 3.5, use `inspect.getfullargspec()`.
-    """
-    warnings.warn("inspect.getargspec() is deprecated since Python 3.0, "
-                  "use inspect.signature() or inspect.getfullargspec()",
-                  DeprecationWarning, stacklevel=2)
-    args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-        getfullargspec(func)
-    if kwonlyargs or ann:
-        raise ValueError("Function has keyword-only parameters or annotations"
-                         ", use inspect.signature() API which can support them")
-    return ArgSpec(args, varargs, varkw, defaults)
 
 FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
@@ -1367,63 +1337,6 @@ def formatannotationrelativeto(object):
         return formatannotation(annotation, module)
     return _formatannotation
 
-def formatargspec(args, varargs=None, varkw=None, defaults=None,
-                  kwonlyargs=(), kwonlydefaults={}, annotations={},
-                  formatarg=str,
-                  formatvarargs=lambda name: '*' + name,
-                  formatvarkw=lambda name: '**' + name,
-                  formatvalue=lambda value: '=' + repr(value),
-                  formatreturns=lambda text: ' -> ' + text,
-                  formatannotation=formatannotation):
-    """Format an argument spec from the values returned by getfullargspec.
-
-    The first seven arguments are (args, varargs, varkw, defaults,
-    kwonlyargs, kwonlydefaults, annotations).  The other five arguments
-    are the corresponding optional formatting functions that are called to
-    turn names and values into strings.  The last argument is an optional
-    function to format the sequence of arguments.
-
-    Deprecated since Python 3.5: use the `signature` function and `Signature`
-    objects.
-    """
-
-    from warnings import warn
-
-    warn("`formatargspec` is deprecated since Python 3.5. Use `signature` and "
-         "the `Signature` object directly",
-         DeprecationWarning,
-         stacklevel=2)
-
-    def formatargandannotation(arg):
-        result = formatarg(arg)
-        if arg in annotations:
-            result += ': ' + formatannotation(annotations[arg])
-        return result
-    specs = []
-    if defaults:
-        firstdefault = len(args) - len(defaults)
-    for i, arg in enumerate(args):
-        spec = formatargandannotation(arg)
-        if defaults and i >= firstdefault:
-            spec = spec + formatvalue(defaults[i - firstdefault])
-        specs.append(spec)
-    if varargs is not None:
-        specs.append(formatvarargs(formatargandannotation(varargs)))
-    else:
-        if kwonlyargs:
-            specs.append('*')
-    if kwonlyargs:
-        for kwonlyarg in kwonlyargs:
-            spec = formatargandannotation(kwonlyarg)
-            if kwonlydefaults and kwonlyarg in kwonlydefaults:
-                spec += formatvalue(kwonlydefaults[kwonlyarg])
-            specs.append(spec)
-    if varkw is not None:
-        specs.append(formatvarkw(formatargandannotation(varkw)))
-    result = '(' + ', '.join(specs) + ')'
-    if 'return' in annotations:
-        result += formatreturns(formatannotation(annotations['return']))
-    return result
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
@@ -2096,10 +2009,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
-    # Lazy import ast because it's relatively heavy and
-    # it's not used for other than this function.
-    import ast
-
     Parameter = cls._parameter_cls
 
     clean_signature, self_parameter, last_positional_only = \
@@ -2448,15 +2357,23 @@ def _signature_from_callable(obj, *,
         if call is not None:
             sig = _get_signature_of(call)
         else:
-            # Now we check if the 'obj' class has a '__new__' method
+            factory_method = None
             new = _signature_get_user_defined_method(obj, '__new__')
-            if new is not None:
-                sig = _get_signature_of(new)
-            else:
-                # Finally, we should have at least __init__ implemented
-                init = _signature_get_user_defined_method(obj, '__init__')
-                if init is not None:
-                    sig = _get_signature_of(init)
+            init = _signature_get_user_defined_method(obj, '__init__')
+            # Now we check if the 'obj' class has an own '__new__' method
+            if '__new__' in obj.__dict__:
+                factory_method = new
+            # or an own '__init__' method
+            elif '__init__' in obj.__dict__:
+                factory_method = init
+            # If not, we take inherited '__new__' or '__init__', if present
+            elif new is not None:
+                factory_method = new
+            elif init is not None:
+                factory_method = init
+
+            if factory_method is not None:
+                sig = _get_signature_of(factory_method)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
@@ -2925,30 +2842,6 @@ class Signature:
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation
-
-    @classmethod
-    def from_function(cls, func):
-        """Constructs Signature for the given python function.
-
-        Deprecated since Python 3.5, use `Signature.from_callable()`.
-        """
-
-        warnings.warn("inspect.Signature.from_function() is deprecated since "
-                      "Python 3.5, use Signature.from_callable()",
-                      DeprecationWarning, stacklevel=2)
-        return _signature_from_function(cls, func)
-
-    @classmethod
-    def from_builtin(cls, func):
-        """Constructs Signature for the given builtin function.
-
-        Deprecated since Python 3.5, use `Signature.from_callable()`.
-        """
-
-        warnings.warn("inspect.Signature.from_builtin() is deprecated since "
-                      "Python 3.5, use Signature.from_callable()",
-                      DeprecationWarning, stacklevel=2)
-        return _signature_from_builtin(cls, func)
 
     @classmethod
     def from_callable(cls, obj, *,

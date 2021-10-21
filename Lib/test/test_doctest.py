@@ -668,7 +668,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 816 < len(tests) < 836 # approximate number of objects with docstrings
+    >>> 820 < len(tests) < 840 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -2808,10 +2808,12 @@ out of the binary module.
 
 try:
     os.fsencode("foo-bär@baz.py")
+    supports_unicode = True
 except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
-    pass
-else:
+    supports_unicode = False
+
+if supports_unicode and not support.has_no_debug_ranges():
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
@@ -2833,8 +2835,10 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
+            ^^^^^^^^^^^^^^^^^^^^^^
         Exception: clé
     TestResults(failed=1, attempted=1)
     """
@@ -3110,20 +3114,11 @@ def test_no_trailing_whitespace_stripping():
     patches that contain trailing whitespace. More info on Issue 24746.
     """
 
-######################################################################
-## Main
-######################################################################
 
-def test_main():
-    # Check the doctest cases in doctest itself:
-    ret = support.run_doctest(doctest, verbosity=True)
-
-    # Check the doctest cases defined here:
-    from test import test_doctest
-    support.run_doctest(test_doctest, verbosity=True)
-
-    # Run unittests
-    support.run_unittest(__name__)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(doctest))
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 def test_coverage(coverdir):
@@ -3136,8 +3131,9 @@ def test_coverage(coverdir):
     r.write_results(show_missing=True, summary=True,
                     coverdir=coverdir)
 
+
 if __name__ == '__main__':
     if '-c' in sys.argv:
         test_coverage('/tmp/doctest.cover')
     else:
-        test_main()
+        unittest.main()

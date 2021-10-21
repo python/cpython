@@ -221,7 +221,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         length = self._pending_data_length
         self._pending_data_length = -1
         if length > -1:
-            # Call the protocol methode after calling _loop_reading(),
+            # Call the protocol method after calling _loop_reading(),
             # since the protocol can decide to pause reading again.
             self._loop.call_soon(self._data_received, self._data[:length], length)
 

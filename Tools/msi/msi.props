@@ -28,7 +28,7 @@
         that intend to bundle Python should rebuild these modules with their
         own URI to avoid conflicting with the official releases.
         
-        The official releases use "http://www.python.org/$(ArchName)"
+        The official releases use "https://www.python.org/$(ArchName)"
         
         This is not the same as the DownloadUrl property used in the bundle
         projects.

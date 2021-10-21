@@ -12,6 +12,7 @@ from .abc import ResourceReader, Traversable
 from ._adapters import wrap_spec
 
 Package = Union[types.ModuleType, str]
+Resource = Union[str, os.PathLike]
 
 
 def files(package):
@@ -31,7 +32,7 @@ def normalize_path(path):
     str_path = str(path)
     parent, file_name = os.path.split(str_path)
     if parent:
-        raise ValueError('{!r} must be only a file name'.format(path))
+        raise ValueError(f'{path!r} must be only a file name')
     return file_name
 
 
@@ -65,7 +66,7 @@ def get_package(package):
     """
     resolved = resolve(package)
     if wrap_spec(resolved).submodule_search_locations is None:
-        raise TypeError('{!r} is not a package'.format(package))
+        raise TypeError(f'{package!r} is not a package')
     return resolved
 
 
@@ -86,8 +87,10 @@ def _tempfile(reader, suffix=''):
     # properly.
     fd, raw_path = tempfile.mkstemp(suffix=suffix)
     try:
-        os.write(fd, reader())
-        os.close(fd)
+        try:
+            os.write(fd, reader())
+        finally:
+            os.close(fd)
         del reader
         yield pathlib.Path(raw_path)
     finally:

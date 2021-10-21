@@ -1,0 +1,1 @@
+:c:var:`PyStructSequence_UnnamedField` is added to the Stable ABI.

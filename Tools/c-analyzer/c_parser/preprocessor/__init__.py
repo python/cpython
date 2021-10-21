@@ -19,7 +19,7 @@ from . import (
 logger = logging.getLogger(__name__)
 
 
-# Supprted "source":
+# Supported "source":
 #  * filename (string)
 #  * lines (iterable)
 #  * text (string)
@@ -91,7 +91,7 @@ def get_preprocessor(*,
             macros = list(_resolve_file_values(filename, file_macros))
         if file_incldirs:
             incldirs = [v for v, in _resolve_file_values(filename, file_incldirs)]
-    
+
         def preprocess(**kwargs):
             if file_macros and 'macros' not in kwargs:
                 kwargs['macros'] = macros
@@ -156,7 +156,7 @@ def handling_errors(ignore_exc=None, *, log_err=None):
 # tools
 
 _COMPILERS = {
-    # matching disutils.ccompiler.compiler_class:
+    # matching distutils.ccompiler.compiler_class:
     'unix': _gcc.preprocess,
     'msvc': None,
     'cygwin': None,

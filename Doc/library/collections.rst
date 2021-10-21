@@ -707,9 +707,9 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
 :class:`defaultdict` objects
 ----------------------------
 
-.. class:: defaultdict([default_factory[, ...]])
+.. class:: defaultdict(default_factory=None, /, [...])
 
-    Returns a new dictionary-like object.  :class:`defaultdict` is a subclass of the
+    Return a new dictionary-like object.  :class:`defaultdict` is a subclass of the
     built-in :class:`dict` class.  It overrides one method and adds one writable
     instance variable.  The remaining functionality is the same as for the
     :class:`dict` class and is not documented here.
@@ -1171,28 +1171,101 @@ original insertion position is changed and moved to the end::
             self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
-variants of :func:`functools.lru_cache`::
+variants of :func:`functools.lru_cache`:
 
-    class LRU(OrderedDict):
-        'Limit size, evicting the least recently looked-up key when full'
+.. testcode::
 
-        def __init__(self, maxsize=128, /, *args, **kwds):
+    from time import time
+
+    class TimeBoundedLRU:
+        "LRU Cache that invalidates and refreshes old entries."
+
+        def __init__(self, func, maxsize=128, maxage=30):
+            self.cache = OrderedDict()      # { args : (timestamp, result)}
+            self.func = func
             self.maxsize = maxsize
-            super().__init__(*args, **kwds)
+            self.maxage = maxage
 
-        def __getitem__(self, key):
-            value = super().__getitem__(key)
-            self.move_to_end(key)
-            return value
+        def __call__(self, *args):
+            if args in self.cache:
+                self.cache.move_to_end(args)
+                timestamp, result = self.cache[args]
+                if time() - timestamp <= self.maxage:
+                    return result
+            result = self.func(*args)
+            self.cache[args] = time(), result
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(0)
+            return result
 
-        def __setitem__(self, key, value):
-            if key in self:
-                self.move_to_end(key)
-            super().__setitem__(key, value)
-            if len(self) > self.maxsize:
-                oldest = next(iter(self))
-                del self[oldest]
 
+.. testcode::
+
+    class MultiHitLRUCache:
+        """ LRU cache that defers caching a result until
+            it has been requested multiple times.
+
+            To avoid flushing the LRU cache with one-time requests,
+            we don't cache until a request has been made more than once.
+
+        """
+
+        def __init__(self, func, maxsize=128, maxrequests=4096, cache_after=1):
+            self.requests = OrderedDict()   # { uncached_key : request_count }
+            self.cache = OrderedDict()      # { cached_key : function_result }
+            self.func = func
+            self.maxrequests = maxrequests  # max number of uncached requests
+            self.maxsize = maxsize          # max number of stored return values
+            self.cache_after = cache_after
+
+        def __call__(self, *args):
+            if args in self.cache:
+                self.cache.move_to_end(args)
+                return self.cache[args]
+            result = self.func(*args)
+            self.requests[args] = self.requests.get(args, 0) + 1
+            if self.requests[args] <= self.cache_after:
+                self.requests.move_to_end(args)
+                if len(self.requests) > self.maxrequests:
+                    self.requests.popitem(0)
+            else:
+                self.requests.pop(args, None)
+                self.cache[args] = result
+                if len(self.cache) > self.maxsize:
+                    self.cache.popitem(0)
+            return result
+
+.. doctest::
+    :hide:
+
+    >>> def square(x):
+    ...     return x * x
+    ...
+    >>> f = MultiHitLRUCache(square, maxsize=4, maxrequests=6)
+    >>> list(map(f, range(10)))  # First requests, don't cache
+    [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+    >>> f(4)  # Cache the second request
+    16
+    >>> f(6)  # Cache the second request
+    36
+    >>> f(2)  # The first request aged out, so don't cache
+    4
+    >>> f(6)  # Cache hit
+    36
+    >>> f(4)  # Cache hit and move to front
+    16
+    >>> list(f.cache.values())
+    [36, 16]
+    >>> set(f.requests).isdisjoint(f.cache)
+    True
+    >>> list(map(f, [9, 8, 7]))   # Cache these second requests
+    [81, 64, 49]
+    >>> list(map(f, [7, 9]))  # Cache hits
+    [49, 81]
+    >>> list(f.cache.values())
+    [16, 64, 49, 81]
+    >>> set(f.requests).isdisjoint(f.cache)
+    True
 
 :class:`UserDict` objects
 -------------------------
@@ -1209,7 +1282,7 @@ attribute.
     regular dictionary, which is accessible via the :attr:`data` attribute of
     :class:`UserDict` instances.  If *initialdata* is provided, :attr:`data` is
     initialized with its contents; note that a reference to *initialdata* will not
-    be kept, allowing it be used for other purposes.
+    be kept, allowing it to be used for other purposes.
 
     In addition to supporting the methods and operations of mappings,
     :class:`UserDict` instances provide the following attribute:

@@ -1,4 +1,5 @@
 from collections import deque
+import doctest
 import unittest
 from test import support, seq_tests
 import gc
@@ -129,7 +130,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(d.count(None), 16)
 
     def test_comparisons(self):
-        d = deque('xabc'); d.popleft()
+        d = deque('xabc')
+        d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:
             self.assertEqual(d==e, type(d)==type(e) and list(d)==list(e))
             self.assertEqual(d!=e, not(type(d)==type(e) and list(d)==list(e)))
@@ -529,8 +531,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(repr(d)[-20:], '7, 198, 199, [...]])')
 
     def test_init(self):
-        self.assertRaises(TypeError, deque, 'abc', 2, 3);
-        self.assertRaises(TypeError, deque, 1);
+        self.assertRaises(TypeError, deque, 'abc', 2, 3)
+        self.assertRaises(TypeError, deque, 1)
 
     def test_hash(self):
         self.assertRaises(TypeError, hash, deque('abc'))
@@ -869,6 +871,7 @@ class TestSubclass(unittest.TestCase):
         p = weakref.proxy(d)
         self.assertEqual(str(p), str(d))
         d = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, str, p)
 
     def test_strange_subclass(self):
@@ -1031,31 +1034,10 @@ h
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main(verbose=None):
-    import sys
-    test_classes = (
-        TestBasic,
-        TestVariousIteratorArgs,
-        TestSubclass,
-        TestSubclassWithKwargs,
-        TestSequence,
-    )
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctests
-    from test import test_deque
-    support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

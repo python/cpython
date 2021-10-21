@@ -3304,3 +3304,223 @@ test_preprocessor_guarded_else(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF
 #endif /* !defined(TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF) */
 /*[clinic end generated code: output=3804bb18d454038c input=3fc80c9989d2f2e1]*/
+
+/*[clinic input]
+test_vararg_and_posonly
+
+
+    a: object
+    *args: object
+    /
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_vararg_and_posonly__doc__,
+"test_vararg_and_posonly($module, a, /, *args)\n"
+"--\n"
+"\n");
+
+#define TEST_VARARG_AND_POSONLY_METHODDEF    \
+    {"test_vararg_and_posonly", (PyCFunction)(void(*)(void))test_vararg_and_posonly, METH_FASTCALL, test_vararg_and_posonly__doc__},
+
+static PyObject *
+test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("test_vararg_and_posonly", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = PyTuple_New(nargs - 1);
+    for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, args[1 + i]);
+    }
+    return_value = test_vararg_and_posonly_impl(module, a, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+static PyObject *
+test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=ada613d2d87c9341 input=08dc2bf7afbf1613]*/
+
+/*[clinic input]
+test_vararg
+
+
+    a: object
+    *args: object
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_vararg__doc__,
+"test_vararg($module, /, a, *args)\n"
+"--\n"
+"\n");
+
+#define TEST_VARARG_METHODDEF    \
+    {"test_vararg", (PyCFunction)(void(*)(void))test_vararg, METH_FASTCALL|METH_KEYWORDS, test_vararg__doc__},
+
+static PyObject *
+test_vararg_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = args[1];
+    return_value = test_vararg_impl(module, a, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+static PyObject *
+test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=f721025731c3bfe8 input=81d33815ad1bae6e]*/
+
+/*[clinic input]
+test_vararg_with_default
+
+
+    a: object
+    *args: object
+    b: bool = False
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_vararg_with_default__doc__,
+"test_vararg_with_default($module, /, a, *args, b=False)\n"
+"--\n"
+"\n");
+
+#define TEST_VARARG_WITH_DEFAULT_METHODDEF    \
+    {"test_vararg_with_default", (PyCFunction)(void(*)(void))test_vararg_with_default, METH_FASTCALL|METH_KEYWORDS, test_vararg_with_default__doc__},
+
+static PyObject *
+test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
+                              int b);
+
+static PyObject *
+test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg_with_default", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+    int b = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    b = PyObject_IsTrue(args[2]);
+    if (b < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = test_vararg_with_default_impl(module, a, __clinic_args, b);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+static PyObject *
+test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
+                              int b)
+/*[clinic end generated code: output=63b34d3241c52fda input=6e110b54acd9b22d]*/
+
+/*[clinic input]
+test_vararg_with_only_defaults
+
+
+    *args: object
+    b: bool = False
+    c: object = ' '
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_vararg_with_only_defaults__doc__,
+"test_vararg_with_only_defaults($module, /, *args, b=False, c=\' \')\n"
+"--\n"
+"\n");
+
+#define TEST_VARARG_WITH_ONLY_DEFAULTS_METHODDEF    \
+    {"test_vararg_with_only_defaults", (PyCFunction)(void(*)(void))test_vararg_with_only_defaults, METH_FASTCALL|METH_KEYWORDS, test_vararg_with_only_defaults__doc__},
+
+static PyObject *
+test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
+                                    PyObject *c);
+
+static PyObject *
+test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"b", "c", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "test_vararg_with_only_defaults", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *__clinic_args = NULL;
+    int b = 0;
+    PyObject *c = " ";
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        b = PyObject_IsTrue(args[1]);
+        if (b < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    c = args[2];
+skip_optional_kwonly:
+    return_value = test_vararg_with_only_defaults_impl(module, __clinic_args, b, c);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+static PyObject *
+test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
+                                    PyObject *c)
+/*[clinic end generated code: output=dc29ce6ebc2ec10c input=fa56a709a035666e]*/

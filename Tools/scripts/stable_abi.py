@@ -34,7 +34,6 @@ EXCLUDED_HEADERS = {
     "datetime.h",
     "dtoa.h",
     "frameobject.h",
-    "funcobject.h",
     "genobject.h",
     "longintrepr.h",
     "parsetok.h",
@@ -67,7 +66,7 @@ class Manifest:
     def add(self, item):
         if item.name in self.contents:
             # We assume that stable ABI items do not share names,
-            # even if they're diferent kinds (e.g. function vs. macro).
+            # even if they're different kinds (e.g. function vs. macro).
             raise ValueError(f'duplicate ABI item {item.name}')
         self.contents[item.name] = item
 
@@ -327,7 +326,7 @@ def do_unixy_check(manifest, args):
     present_macros = gcc_get_limited_api_macros(['Include/Python.h'])
     feature_defines = manifest.feature_defines & present_macros
 
-    # Check that we have all neded macros
+    # Check that we have all needed macros
     expected_macros = set(
         item.name for item in manifest.select({'macro'})
     )
@@ -444,7 +443,7 @@ def binutils_check_library(manifest, library, expected_symbols, dynamic):
 def gcc_get_limited_api_macros(headers):
     """Get all limited API macros from headers.
 
-    Runs the preprocesor over all the header files in "Include" setting
+    Runs the preprocessor over all the header files in "Include" setting
     "-DPy_LIMITED_API" to the correct value for the running version of the
     interpreter and extracting all macro definitions (via adding -dM to the
     compiler arguments).
@@ -481,7 +480,7 @@ def gcc_get_limited_api_macros(headers):
 def gcc_get_limited_api_definitions(headers):
     """Get all limited API definitions from headers.
 
-    Run the preprocesor over all the header files in "Include" setting
+    Run the preprocessor over all the header files in "Include" setting
     "-DPy_LIMITED_API" to the correct value for the running version of the
     interpreter.
 
@@ -524,6 +523,16 @@ def gcc_get_limited_api_definitions(headers):
     )
     return stable_data | stable_exported_data | stable_functions
 
+def check_private_names(manifest):
+    """Ensure limited API doesn't contain private names
+
+    Names prefixed by an underscore are private by definition.
+    """
+    for name, item in manifest.contents.items():
+        if name.startswith('_') and not item.abi_only:
+            raise ValueError(
+                f'`{name}` is private (underscore-prefixed) and should be '
+                + 'removed from the stable ABI list or or marked `abi_only`')
 
 def main():
     parser = argparse.ArgumentParser(
@@ -588,6 +597,8 @@ def main():
 
     with args.file.open() as file:
         manifest = parse_manifest(file)
+
+    check_private_names(manifest)
 
     # Remember results of all actions (as booleans).
     # At the end we'll check that at least one action was run,

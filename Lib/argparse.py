@@ -526,12 +526,13 @@ class HelpFormatter(object):
         parts = [action_header]
 
         # if there was help for the action, add lines of help text
-        if action.help:
+        if action.help and action.help.strip():
             help_text = self._expand_help(action)
-            help_lines = self._split_lines(help_text, help_width)
-            parts.append('%*s%s\n' % (indent_first, '', help_lines[0]))
-            for line in help_lines[1:]:
-                parts.append('%*s%s\n' % (help_position, '', line))
+            if help_text:
+                help_lines = self._split_lines(help_text, help_width)
+                parts.append('%*s%s\n' % (indent_first, '', help_lines[0]))
+                for line in help_lines[1:]:
+                    parts.append('%*s%s\n' % (help_position, '', line))
 
         # or add a newline if the description doesn't end with one
         elif not action_header.endswith('\n'):
@@ -727,6 +728,8 @@ def _get_action_name(argument):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
+    elif argument.choices:
+        return '{' + ','.join(argument.choices) + '}'
     else:
         return None
 
@@ -853,6 +856,7 @@ class Action(_AttributeHolder):
     def __call__(self, parser, namespace, values, option_string=None):
         raise NotImplementedError(_('.__call__() not defined'))
 
+
 class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
@@ -873,7 +877,7 @@ class BooleanOptionalAction(Action):
                 _option_strings.append(option_string)
 
         if help is not None and default is not None:
-            help += f" (default: {default})"
+            help += " (default: %(default)s)"
 
         super().__init__(
             option_strings=_option_strings,
@@ -934,7 +938,7 @@ class _StoreConstAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const,
+                 const=None,
                  default=None,
                  required=False,
                  help=None,
@@ -1029,7 +1033,7 @@ class _AppendConstAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const,
+                 const=None,
                  default=None,
                  required=False,
                  help=None,
@@ -1206,7 +1210,8 @@ class _SubParsersAction(Action):
         # namespace for the relevant parts.
         subnamespace, arg_strings = parser.parse_known_args(arg_strings, None)
         for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+            if not hasattr(namespace, key):
+                setattr(namespace, key, value)
 
         if arg_strings:
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
@@ -1840,11 +1845,6 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     if action.default is not SUPPRESS:
                         setattr(namespace, action.dest, action.default)
 
-        # add any parser defaults that aren't present
-        for dest in self._defaults:
-            if not hasattr(namespace, dest):
-                setattr(namespace, dest, self._defaults[dest])
-
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
             try:
@@ -1854,6 +1854,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 self.error(str(err))
         else:
             namespace, args = self._parse_known_args(args, namespace)
+
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
 
         if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
             args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))

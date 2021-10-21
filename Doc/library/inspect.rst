@@ -187,6 +187,10 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
+|           | co_qualname       | fully-qualified name with |
+|           |                   | which this code object    |
+|           |                   | was defined               |
++-----------+-------------------+---------------------------+
 |           | co_names          | tuple of names of local   |
 |           |                   | variables                 |
 +-----------+-------------------+---------------------------+
@@ -931,26 +935,6 @@ Classes and functions
    times.
 
 
-.. function:: getargspec(func)
-
-   Get the names and default values of a Python function's parameters. A
-   :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
-   returned. *args* is a list of the parameter names. *varargs* and *keywords*
-   are the names of the ``*`` and ``**`` parameters or ``None``. *defaults* is a
-   tuple of default argument values or ``None`` if there are no default
-   arguments; if this tuple has *n* elements, they correspond to the last
-   *n* elements listed in *args*.
-
-   .. deprecated:: 3.0
-      Use :func:`getfullargspec` for an updated API that is usually a drop-in
-      replacement, but also correctly handles function annotations and
-      keyword-only parameters.
-
-      Alternatively, use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      more structured introspection API for callables.
-
-
 .. function:: getfullargspec(func)
 
    Get the names and default values of a Python function's parameters.  A
@@ -1009,33 +993,6 @@ Classes and functions
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
-
-
-.. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
-
-   Format a pretty argument spec from the values returned by
-   :func:`getfullargspec`.
-
-   The first seven arguments are (``args``, ``varargs``, ``varkw``,
-   ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``).
-
-   The other six arguments are functions that are called to turn argument names,
-   ``*`` argument name, ``**`` argument name, default values, return annotation
-   and individual annotations into strings, respectively.
-
-   For example:
-
-   >>> from inspect import formatargspec, getfullargspec
-   >>> def f(a: int, b: float):
-   ...     pass
-   ...
-   >>> formatargspec(*getfullargspec(f))
-   '(a: int, b: float)'
-
-   .. deprecated:: 3.5
-      Use :func:`signature` and
-      :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.
 
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
@@ -1449,10 +1406,6 @@ the following flags:
 
    The flag is set when the code object is a generator function, i.e.
    a generator object is returned when the code object is executed.
-
-.. data:: CO_NOFREE
-
-   The flag is set if there are no free or cell variables.
 
 .. data:: CO_COROUTINE
 
