@@ -313,8 +313,17 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertRaises(RecursionError, issubclass, int, X())
         self.assertRaises(RecursionError, isinstance, 1, X())
 
+    def test_infinite_recursion_via_bases_tuple(self):
+        """Regression test for bpo-30570."""
+        class Failure(object):
+            def __getattr__(self, attr):
+                return (self, None)
+
+        with self.assertRaises(RecursionError):
+            issubclass(Failure(), int)
+
     def test_infinite_cycle_in_bases(self):
-        # bpo-30570
+        """Regression test for bpo-30570."""
         class X:
             @property
             def __bases__(self):
@@ -322,7 +331,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertRaises(RecursionError, issubclass, X(), int)
 
     def test_infinitely_many_bases(self):
-        # bpo-30570
+        """Regression test for bpo-30570."""
         class X:
             def __getattr__(self, attr):
                 self.assertEqual(attr, "__bases__")
