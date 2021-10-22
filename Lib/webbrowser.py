@@ -471,10 +471,6 @@ def register_X_browsers():
     if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
 
-    # The default GNOME browser before 2008
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gnome-open"):
-        register("gnome-open", None, BackgroundBrowser("gnome-open"))
-
     # The default KDE browser
     if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
