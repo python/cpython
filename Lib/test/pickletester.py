@@ -2425,15 +2425,16 @@ class AbstractPickleTests:
         # Test that attribute names of pickled objects are interned when
         # unpickling.
         for proto in protocols:
-            x = C()
-            x.foo = 42
-            x.bar = "hello"
-            s = self.dumps(x, proto)
-            y = self.loads(s)
-            x_keys = sorted(x.__dict__)
-            y_keys = sorted(y.__dict__)
-            for x_key, y_key in zip(x_keys, y_keys):
-                self.assertIs(x_key, y_key)
+            with self.subTest(proto=proto):
+                x = C()
+                x.foo = 42
+                x.bar = "hello"
+                s = self.dumps(x, proto)
+                y = self.loads(s)
+                x_keys = sorted(x.__dict__)
+                y_keys = sorted(y.__dict__)
+                for x_key, y_key in zip(x_keys, y_keys):
+                    self.assertIs(x_key, y_key)
 
     def test_pickle_to_2x(self):
         # Pickle non-trivial data with protocol 2, expecting that it yields
