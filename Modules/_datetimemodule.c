@@ -5258,16 +5258,42 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-_sanitize_isoformat_str(PyObject *dtstr, Py_ssize_t len, Py_ssize_t separator_location)
+_sanitize_isoformat_str(PyObject *dtstr)
 {
+    Py_ssize_t len = PyUnicode_GetLength(dtstr);
+    if (len < 7) {  // All valid ISO8601 strings are at least 7 characters long
+        return NULL;
+    }
+
     // `fromisoformat` allows surrogate characters in exactly one position,
     // the separator; to allow datetime_fromisoformat to make the simplifying
     // assumption that all valid strings can be encoded in UTF-8, this function
     // replaces any surrogate character separators with `T`.
     //
     // The result of this, if not NULL, returns a new reference
-    if (len <= separator_location ||
-        !Py_UNICODE_IS_SURROGATE(PyUnicode_READ_CHAR(dtstr, separator_location))) {
+    const void* const unicode_data = PyUnicode_DATA(dtstr);
+    const unsigned int kind = PyUnicode_KIND(dtstr);
+
+    // Depending on the format of the string, the separator can only ever be
+    // in positions 7, 8 or 10. We'll check each of these for a surrogate and
+    // if we find one, replace it with `T`. If there is more than one surrogate,
+    // we don't have to bother sanitizing it, because the function will later
+    // fail when we try to convert the function into unicode characters.
+    static const size_t potential_separators[3] = {7, 8, 10};
+    size_t surrogate_separator = 0;
+    for(size_t idx = 0; idx < 3; ++idx) {
+        size_t pos = potential_separators[idx];
+        if (pos > (size_t)len) {
+            break;
+        }
+
+        if(Py_UNICODE_IS_SURROGATE(PyUnicode_READ(kind, unicode_data, pos))) {
+            surrogate_separator = pos;
+            break;
+        }
+    }
+
+    if (surrogate_separator == 0) {
         Py_INCREF(dtstr);
         return dtstr;
     }
@@ -5277,7 +5303,7 @@ _sanitize_isoformat_str(PyObject *dtstr, Py_ssize_t len, Py_ssize_t separator_lo
         return NULL;
     }
 
-    if (PyUnicode_WriteChar(str_out, separator_location, (Py_UCS4)'T')) {
+    if (PyUnicode_WriteChar(str_out, surrogate_separator, (Py_UCS4)'T')) {
         Py_DECREF(str_out);
         return NULL;
     }
@@ -5290,7 +5316,7 @@ _sanitize_isoformat_str(PyObject *dtstr, Py_ssize_t len, Py_ssize_t separator_lo
 #define MODE_AMBIGUOUS 2
 
 static Py_ssize_t
-_find_isoformat_separator(PyObject *dtstr, Py_ssize_t len, unsigned char* mode) {
+_find_isoformat_separator(const char *dtstr, Py_ssize_t len, unsigned char* mode) {
     // The valid date formats can all be distinguished by characters 4 and 5
     // and further narrowed down by character
     // which tells us where to look for the separator character.
@@ -5302,6 +5328,8 @@ _find_isoformat_separator(PyObject *dtstr, Py_ssize_t len, unsigned char* mode) 
     // %YW%V     |  YYYYWww     |     7
     // %Y-W%V-%u |  YYYY-Www-d  |    10
     // %YW%V%u   |  YYYYWwwd    |     8
+    // %Y-%j     |  YYYY-DDD    |     8
+    // %Y%j      |  YYYYDDD     |     7
     //
     // Note that because we allow *any* character for the separator, in the
     // case where character 4 is W, it's not straightforward to determine where
@@ -5316,23 +5344,23 @@ _find_isoformat_separator(PyObject *dtstr, Py_ssize_t len, unsigned char* mode) 
     // distinguished from YYYYWwwd#HH by the fact that there will always be an
     // odd number of digits before the first non-digit character in the former
     // case.
-    static const Py_UCS4 date_separator = '-';
-    static const Py_UCS4 week_indicator = 'W';
+    static const char date_separator = '-';
+    static const char week_indicator = 'W';
 
-    const Py_UCS4 char_4 = PyUnicode_READ_CHAR(dtstr, 4);
+    assert(len > 7);
 
     *mode = MODE_STANDARD;
-    if (char_4 == date_separator) {
-        if (PyUnicode_READ_CHAR(dtstr, 5) == week_indicator) {
+    if (dtstr[4] == date_separator) {
+        if (dtstr[5] == week_indicator) {
             *mode = MODE_ISOCALENDAR;
             if (len < 8) {
                 return -1;
             }
 
             // YYYY-Www-D (10) or YYYY-Www-HH (8)
-            if (len > 8 && PyUnicode_READ_CHAR(dtstr, 8) == date_separator) {
+            if (len > 8 && dtstr[8] == date_separator) {
                 if (len == 9) { return -1; }
-                if (len > 10 && Py_UNICODE_ISDIGIT(PyUnicode_READ_CHAR(dtstr, 10))) {
+                if (len > 10 && is_digit(dtstr[10])) {
                     // This is as far as we'll try to go to resolve the
                     // ambiguity for the moment — if we have YYYY-Www-##, the
                     // separator is either a hyphen at 8 or a number at 10.
@@ -5355,13 +5383,13 @@ _find_isoformat_separator(PyObject *dtstr, Py_ssize_t len, unsigned char* mode) 
             return 10;
         }
     } else {
-        if (char_4 == week_indicator) {
+        if (dtstr[4] == week_indicator) {
             *mode = MODE_ISOCALENDAR;
             // YYYYWww (7) or YYYYWwwd (8)
             ssize_t idx = 7;
             for (; idx < len; ++idx) {
                 // Keep going until we run out of digits.
-                if (!Py_UNICODE_ISDIGIT(PyUnicode_READ_CHAR(dtstr, idx))) {
+                if (!is_digit(dtstr[idx])) {
                     break;
                 }
             }
@@ -5394,26 +5422,17 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         return NULL;
     }
 
-    PyObject *dtstr_clean = NULL;
-    unsigned char mode;
-    Py_ssize_t len = PyUnicode_GetLength(dtstr);
-    if (len < 7) {  // All valid ISO8601 strings are at least 7 characters long
-        goto error;
-    }
-
-    const Py_ssize_t separator_location = _find_isoformat_separator(
-            dtstr, len, &mode);
-
     // We only need to sanitize this string if the separator is a surrogate
     // character. In the situation where the separator location is ambiguous,
     // we don't have to sanitize it anything because that can only happen when
     // the separator is either '-' or a number. This should mostly be a noop
     // but it makes the reference counting easier if we still sanitize.
-    dtstr_clean = _sanitize_isoformat_str(dtstr, len, separator_location);
+    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr);
     if (dtstr_clean == NULL) {
         goto error;
     }
 
+    Py_ssize_t len;
     const char *dt_ptr = PyUnicode_AsUTF8AndSize(dtstr_clean, &len);
 
     if (dt_ptr == NULL) {
@@ -5425,6 +5444,11 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
             goto error;
         }
     }
+
+    unsigned char mode;
+    const Py_ssize_t separator_location = _find_isoformat_separator(
+            dt_ptr, len, &mode);
+
 
     const char *p = dt_ptr;
 
