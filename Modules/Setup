@@ -172,7 +172,7 @@ time timemodule.c
 #audioop audioop.c
 #binascii binascii.c
 #cmath cmathmodule.c _math.c  # -lm
-#math mathmodule.c _math.c  # -lm
+#math mathmodule.c # _math.c  # -lm  # Only one of cmath/math needs to compile _math.c
 #pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
 #unicodedata  unicodedata.c
 
@@ -183,7 +183,7 @@ time timemodule.c
 #_socket socketmodule.c  # socket(2)
 #fcntl fcntlmodule.c  # fcntl(2) and ioctl(2)
 #grp grpmodule.c  # grp(3)
-#mmap mmapmodule.c  # Also works on win32.
+#mmap mmapmodule.c  # Also works on win32
 #ossaudiodev ossaudiodev.c
 #select selectmodule.c  # select(2); not on ancient System V
 #spwd spwdmodule.c  # spwd(3)
@@ -192,7 +192,7 @@ time timemodule.c
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-#_crypt _cryptmodule.c # -lcrypt	# crypt(3); breaks many builds.
+#_crypt _cryptmodule.c # -lcrypt	# crypt(3); breaks many builds
 #nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
