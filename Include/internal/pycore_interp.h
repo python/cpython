@@ -205,6 +205,8 @@ struct _Py_exc_state {
     PyObject *errnomap;
     PyBaseExceptionObject *memerrors_freelist;
     int memerrors_numfree;
+    // The ExceptionGroup type
+    PyObject *PyExc_ExceptionGroup;
 };
 
 
