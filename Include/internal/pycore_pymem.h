@@ -144,48 +144,6 @@ _PyFreeList_Free(_PyFreeList *list, void *ptr) {
     _PyFreeList_FreeToFull(list, ptr);
 }
 
-/*
- * -- Main tunable settings section --
- */
-
-/*
- * Alignment of addresses returned to the user. 8-bytes alignment works
- * on most current architectures (with 32-bit or 64-bit address buses).
- * The alignment value is also used for grouping small requests in size
- * classes spaced ALIGNMENT bytes apart.
- *
- * You shouldn't change this unless you know what you are doing.
- */
-
-#if SIZEOF_VOID_P > 4
-#define ALIGNMENT              16               /* must be 2^N */
-#define ALIGNMENT_SHIFT         4
-#else
-#define ALIGNMENT               8               /* must be 2^N */
-#define ALIGNMENT_SHIFT         3
-#endif
-
-/* Return the number of bytes in size class I, as a uint. */
-#define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
-
-/*
- * Max size threshold below which malloc requests are considered to be
- * small enough in order to use preallocated memory pools. You can tune
- * this value according to your application behaviour and memory needs.
- *
- * Note: a size threshold of 512 guarantees that newly created dictionaries
- * will be allocated from preallocated memory pools on 64-bit.
- *
- * The following invariants must hold:
- *      1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 512
- *      2) SMALL_REQUEST_THRESHOLD is evenly divisible by ALIGNMENT
- *
- * Although not required, for better performance and space efficiency,
- * it is recommended that SMALL_REQUEST_THRESHOLD is set to a power of 2.
- */
-#define SMALL_REQUEST_THRESHOLD 512
-#define NB_SMALL_SIZE_CLASSES   (SMALL_REQUEST_THRESHOLD / ALIGNMENT)
-
 #if WITH_FREELISTS
 extern _PyFreeList _Py_small_object_freelist;
 #endif

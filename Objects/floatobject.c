@@ -24,21 +24,6 @@ class float "PyObject *" "&PyFloat_Type"
 
 #include "clinic/floatobject.c.h"
 
-#ifndef PyFloat_MAXFREELIST
-#  define PyFloat_MAXFREELIST   100
-#endif
-
-
-#if PyFloat_MAXFREELIST > 0
-static struct _Py_float_state *
-get_float_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->float_state;
-}
-#endif
-
-
 double
 PyFloat_GetMax(void)
 {
@@ -228,7 +213,7 @@ PyFloat_FromString(PyObject *v)
 static void
 float_dealloc(PyFloatObject *op)
 {
-#if PyFloat_MAXFREELIST > 0
+#if WITH_FREELISTS
     if (PyFloat_CheckExact(op)) {
         _PyFreeList_Free(&_Py_small_object_freelist, op);
     }
@@ -2040,22 +2025,6 @@ void
 _PyFloat_Fini(PyInterpreterState *interp)
 {
     _PyFloat_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyFloat_MAXFREELIST > 0
-    struct _Py_float_state *state = &interp->float_state;
-    state->numfree = -1;
-#endif
-}
-
-/* Print summary info about the state of the optimized allocator */
-void
-_PyFloat_DebugMallocStats(FILE *out)
-{
-#if PyFloat_MAXFREELIST > 0
-    struct _Py_float_state *state = get_float_state();
-    _PyDebugAllocatorStats(out,
-                           "free PyFloatObject",
-                           state->numfree, sizeof(PyFloatObject));
-#endif
 }
 
 

@@ -5749,10 +5749,13 @@ static PyNumberMethods long_as_number = {
 static void
 int_dealloc(PyLongObject *op)
 {
+#if WITH_FREELISTS
     if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
         _PyFreeList_Free(&_Py_small_object_freelist, op);
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
 }
