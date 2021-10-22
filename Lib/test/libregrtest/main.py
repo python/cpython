@@ -633,26 +633,6 @@ class Regrtest:
                 print("Remove file: %s" % name)
                 os_helper.unlink(name)
 
-    def adjust_resource_limits(self):
-        try:
-            import resource
-            from resource import RLIMIT_NOFILE, RLIM_INFINITY
-        except ImportError:
-            return
-        fd_limit, max_fds = resource.getrlimit(RLIMIT_NOFILE)
-        # On macOS the default fd limit is sometimes too low (256) for our
-        # test suite to succeed.  Raise it to something more reasonable.
-        # 1024 is a common Linux default.
-        desired_fds = 1024
-        if fd_limit < desired_fds and fd_limit < max_fds:
-            new_fd_limit = min(desired_fds, max_fds)
-            try:
-                resource.setrlimit(RLIMIT_NOFILE, (new_fd_limit, max_fds))
-                print(f"Raised RLIMIT_NOFILE: {fd_limit} -> {new_fd_limit}")
-            except (ValueError, OSError) as err:
-                print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
-                      f"{new_fd_limit}: {err}.")
-
     def main(self, tests=None, **kwargs):
         self.parse_args(kwargs)
 
@@ -663,7 +643,6 @@ class Regrtest:
             sys.exit(0)
 
         test_cwd = self.create_temp_dir()
-        self.adjust_resource_limits()
 
         try:
             # Run the tests in a context manager that temporarily changes the CWD
