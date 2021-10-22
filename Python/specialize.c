@@ -9,6 +9,11 @@
 
 #include <stdlib.h> // rand()
 
+// Forward declarations
+static int specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr,
+    PyObject *name, _PyAttrCache *cache1, _PyObjectCache *cache2, int oparg,
+    int oparg_class);
+
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
  */
@@ -243,7 +248,7 @@ static uint8_t adaptive_opcodes[256] = {
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
+    [LOAD_ATTR] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache*/
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
     [LOAD_METHOD] = 3, /* _PyAdaptiveEntry, _PyAttrCache and _PyObjectCache */
     [BINARY_ADD] = 0,
@@ -693,8 +698,11 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyAttrCache *cache1 = &cache[-1].attr;
+    _PyObjectCache *cache2 = &cache[-2].obj;
+
+    int err;
     if (PyModule_CheckExact(owner)) {
-        int err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
+        err = specialize_module_load_attr(owner, instr, name, cache0, cache1,
             LOAD_ATTR, LOAD_ATTR_MODULE);
         if (err) {
             goto fail;
@@ -706,6 +714,14 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         if (PyType_Ready(type) < 0) {
             return -1;
         }
+    }
+    if (PyType_Check(owner)) {
+        err = specialize_class_load_method(owner, instr, name, cache1, cache2,
+            LOAD_ATTR, LOAD_ATTR_CLASS);
+        if (err) {
+            goto fail;
+        }
+        goto success;
     }
     PyObject *descr;
     DesciptorClassification kind = analyze_descriptor(type, name, &descr, 0);
@@ -764,7 +780,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         case ABSENT:
             break;
     }
-    int err = specialize_dict_access(
+    err = specialize_dict_access(
         owner, instr, type, kind, name, cache0, cache1,
         LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT
     );
@@ -907,7 +923,8 @@ load_method_fail_kind(DesciptorClassification kind)
 
 static int
 specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-                           _PyAttrCache *cache1, _PyObjectCache *cache2)
+                           _PyAttrCache *cache1, _PyObjectCache *cache2, int oparg,
+                           int oparg_class)
 {
 
     PyObject *descr = NULL;
@@ -918,10 +935,10 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
         case NON_DESCRIPTOR:
             cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
             cache2->obj = descr;
-            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(oparg_class, _Py_OPARG(*instr));
             return 0;
         default:
-            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            SPECIALIZATION_FAIL(oparg, load_method_fail_kind(kind));
             return -1;
     }
 }
@@ -951,7 +968,8 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
     }
     if (PyType_Check(owner)) {
-        int err = specialize_class_load_method(owner, instr, name, cache1, cache2);
+        int err = specialize_class_load_method(owner, instr, name, cache1, cache2,
+            LOAD_METHOD, LOAD_METHOD_CLASS);
         if (err) {
             goto fail;
         }

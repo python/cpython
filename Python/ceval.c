@@ -1477,6 +1477,21 @@ eval_frame_handle_pending(PyThreadState *tstate)
     STAT_INC(LOAD_##attr_or_method, hit); \
     Py_INCREF(res);
 
+// shared by LOAD_ATTR_CLASS and LOAD_METHOD_CLASS
+#define LOAD_CLASS_ATTR_OR_METHOD(attr_or_method) \
+    SpecializedCacheEntry *caches = GET_CACHE(); \
+    _PyAttrCache *cache1 = &caches[-1].attr; \
+    _PyObjectCache *cache2 = &caches[-2].obj; \
+    DEOPT_IF(!PyType_Check(cls), LOAD_##attr_or_method); \
+    DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version, \
+        LOAD_##attr_or_method); \
+    assert(cache1->tp_version != 0); \
+    STAT_INC(LOAD_##attr_or_method, hit); \
+    PyObject *res = cache2->obj; \
+    assert(res != NULL); \
+    Py_INCREF(res); \
+
+
 static int
 trace_function_entry(PyThreadState *tstate, InterpreterFrame *frame)
 {
@@ -3748,6 +3763,15 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(LOAD_ATTR_CLASS) {
+            assert(cframe.use_tracing == 0);
+            PyObject *cls = TOP();
+            LOAD_CLASS_ATTR_OR_METHOD(ATTR);
+            SET_TOP(res);
+            Py_DECREF(cls);
+            DISPATCH();
+        }
+
         TARGET(STORE_ATTR_ADAPTIVE) {
             assert(cframe.use_tracing == 0);
             SpecializedCacheEntry *cache = GET_CACHE();
@@ -4554,20 +4578,8 @@ check_eval_breaker:
         TARGET(LOAD_METHOD_CLASS) {
             /* LOAD_METHOD, for class methods */
             assert(cframe.use_tracing == 0);
-            SpecializedCacheEntry *caches = GET_CACHE();
-            _PyAttrCache *cache1 = &caches[-1].attr;
-            _PyObjectCache *cache2 = &caches[-2].obj;
-
             PyObject *cls = TOP();
-            DEOPT_IF(!PyType_Check(cls), LOAD_METHOD);
-            DEOPT_IF(((PyTypeObject *)cls)->tp_version_tag != cache1->tp_version,
-                LOAD_METHOD);
-            assert(cache1->tp_version != 0);
-
-            STAT_INC(LOAD_METHOD, hit);
-            PyObject *res = cache2->obj;
-            assert(res != NULL);
-            Py_INCREF(res);
+            LOAD_CLASS_ATTR_OR_METHOD(METHOD);
             SET_TOP(NULL);
             Py_DECREF(cls);
             PUSH(res);
