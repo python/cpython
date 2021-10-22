@@ -3301,6 +3301,7 @@ class GetTypeHintTests(BaseTestCase):
             get_type_hints(ann_module6)
 
     def test_dataclass_from_another_module(self):
+        # see bpo-45524
         from test import dataclass_textanno
         from dataclasses import dataclass
 
