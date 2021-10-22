@@ -2207,7 +2207,7 @@ static int
 unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
     PyTupleObject *vt, *wt;
-    Py_ssize_t i, vlen, wlen, firsti;
+    Py_ssize_t i, vlen, wlen;
     int k;
 
     /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
@@ -2218,7 +2218,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
-    firsti = 0;
+    i = 0;
     if (ms->first_tuple_items_resolved_it) {
         /* See whether fast compares of the first elements settle it. */
         k = ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0], ms);
@@ -2234,7 +2234,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
          * which implies, for a total order, that the first elements are
          * equal. So skip them in the loop.
          */
-        firsti = 1;
+        i = 1;
         ms->first_tuple_items_resolved_it = 0;
     }
     /* Now first_tuple_items_resolved_it was 0 on entry, or was forced to 0
@@ -2244,7 +2244,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
-    for (i = firsti; i < vlen && i < wlen; i++) {
+    for (; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
         if (k < 0)
             return -1;
