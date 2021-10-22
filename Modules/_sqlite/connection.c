@@ -159,21 +159,24 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     Py_INCREF(&PyUnicode_Type);
     Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
+    self->db = NULL;
+    sqlite3 *db;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(database, &self->db,
+    rc = sqlite3_open_v2(database, &db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(state, self->db);
-        return -1;
+        goto error;
     }
+    self->db = db;
 
     if (!isolation_level) {
         isolation_level = PyUnicode_FromString("");
         if (!isolation_level) {
-            return -1;
+            goto error;
         }
     } else {
         Py_INCREF(isolation_level);
@@ -181,16 +184,16 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     Py_CLEAR(self->isolation_level);
     if (pysqlite_connection_set_isolation_level(self, isolation_level, NULL) != 0) {
         Py_DECREF(isolation_level);
-        return -1;
+        goto error;
     }
     Py_DECREF(isolation_level);
 
     self->statement_cache = new_statement_cache(self, cached_statements);
     if (self->statement_cache == NULL) {
-        return -1;
+        goto error;
     }
     if (PyErr_Occurred()) {
-        return -1;
+        goto error;
     }
 
     self->created_cursors = 0;
@@ -198,7 +201,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     /* Create list of weak references to cursors */
     self->cursors = PyList_New(0);
     if (self->cursors == NULL) {
-        return -1;
+        goto error;
     }
 
     self->detect_types = detect_types;
@@ -222,12 +225,16 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     self->NotSupportedError     = state->NotSupportedError;
 
     if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
-        return -1;
+        goto error;
     }
 
     self->initialized = 1;
-
     return 0;
+
+error:
+    self->initialized = 0;
+    self->db = 0;
+    return -1;
 }
 
 static void
