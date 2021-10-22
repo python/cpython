@@ -99,26 +99,26 @@ PYTHONPATH=$(COREPYTHONPATH)
 # cannot be built as shared!
 
 _collections _collectionsmodule.c
-_abc -DPy_BUILD_CORE_BUILTIN _abc.c
+_abc _abc.c
 _codecs _codecsmodule.c
-_functools -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _functoolsmodule.c
-_io -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
-_locale -DPy_BUILD_CORE_BUILTIN _localemodule.c  # -lintl
-_operator -DPy_BUILD_CORE_BUILTIN _operator.c
-_signal -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal signalmodule.c
-_sre -DPy_BUILD_CORE_BUILTIN _sre.c
+_functools _functoolsmodule.c
+_io -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
+_locale _localemodule.c  # -lintl
+_operator _operator.c
+_signal signalmodule.c
+_sre _sre.c
 _stat _stat.c
 _symtable symtablemodule.c  # setup.py can't track the .h file that _symtable depends on.
-_thread -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _threadmodule.c
+_thread _threadmodule.c
 _tracemalloc _tracemalloc.c  # See bpo-35053 as to why this is built in.
 _weakref _weakref.c
 atexit atexitmodule.c
 errno errnomodule.c
 faulthandler faulthandler.c
 itertools itertoolsmodule.c
-posix -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal posixmodule.c
+posix posixmodule.c
 pwd pwdmodule.c
-time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c
+time timemodule.c
 
 
 # ---
@@ -139,7 +139,7 @@ time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c
 
 #_asyncio _asynciomodule.c
 #_bisect _bisectmodule.c
-#_blake2 -DPy_BUILD_CORE_BUILTIN _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
+#_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 #_codecs_cn cjkcodecs/_codecs_cn.c
 #_codecs_hk cjkcodecs/_codecs_hk.c
 #_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
@@ -150,31 +150,31 @@ time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
 #_elementtree -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -I$(srcdir)/Modules/expat _elementtree.c
-#_heapq -DPy_BUILD_CORE_MODULE _heapqmodule.c
-#_json -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _json.c
+#_heapq _heapqmodule.c
+#_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
-#_md5 -DPy_BUILD_CORE_BUILTIN md5module.c
+#_md5 md5module.c
 #_multibytecodec cjkcodecs/multibytecodec.c
 #_opcode _opcode.c
-#_pickle -DPy_BUILD_CORE_MODULE _pickle.c
-#_posixsubprocess -DPy_BUILD_CORE_BUILTIN _posixsubprocess.c
-#_queue -DPy_BUILD_CORE_MODULE _queuemodule.c
-#_random -DPy_BUILD_CORE_MODULE _randommodule.c
-#_sha1 -DPy_BUILD_CORE_BUILTIN sha1module.c
-#_sha256 -DPy_BUILD_CORE_BUILTIN sha256module.c
-#_sha512 -DPy_BUILD_CORE_BUILTIN sha512module.c
-#_sha3 -DPy_BUILD_CORE_BUILTIN _sha3/sha3module.c
+#_pickle _pickle.c
+#_posixsubprocess _posixsubprocess.c
+#_queue _queuemodule.c
+#_random _randommodule.c
+#_sha1 sha1module.c
+#_sha256 sha256module.c
+#_sha512 sha512module.c
+#_sha3 _sha3/sha3module.c
 #_statistics _statisticsmodule.c
-#_struct -DPy_BUILD_CORE_MODULE _struct.c
+#_struct _struct.c
 #_typing _typingmodule.c
-#_zoneinfo -DPy_BUILD_CORE_MODULE _zoneinfo.c
-#array -DPy_BUILD_CORE_MODULE arraymodule.c
+#_zoneinfo _zoneinfo.c
+#array arraymodule.c
 #audioop audioop.c
-#binascii -DPy_BUILD_CORE_MODULE binascii.c
-#cmath -DPy_BUILD_CORE_MODULE cmathmodule.c _math.c  # -lm
-#math -DPy_BUILD_CORE_MODULE mathmodule.c _math.c  # -lm
+#binascii binascii.c
+#cmath cmathmodule.c _math.c  # -lm
+#math mathmodule.c _math.c  # -lm
 #pyexpat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY -DUSE_PYEXPAT_CAPI -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
-#unicodedata  -DPy_BUILD_CORE_BUILTIN unicodedata.c
+#unicodedata  unicodedata.c
 
 # Modules with some UNIX dependencies -- on by default:
 # (If you have a really backward UNIX, select and socket may not be
@@ -286,7 +286,7 @@ time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
 
-#_curses -DPy_BUILD_CORE_MODULE -lcurses -ltermcap _cursesmodule.c
+#_curses -lcurses -ltermcap _cursesmodule.c
 
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
 #_curses_panel -lpanel -lncurses _curses_panel.c
@@ -305,7 +305,7 @@ xxsubtype xxsubtype.c  # Required for the test suite to pass!
 #_testbuffer _testbuffer.c
 #_testcapi _testcapimodule.c  # CANNOT be statically compiled!
 #_testimportmultiple _testimportmultiple.c
-#_testinternalcapi -DPy_BUILD_CORE_MODULE -I$(srcdir)/Include/internal _testinternalcapi.c
+#_testinternalcapi _testinternalcapi.c
 #_testmultiphase _testmultiphase.c
 
 
