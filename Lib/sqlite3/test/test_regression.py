@@ -27,7 +27,7 @@ import sqlite3 as sqlite
 import weakref
 import functools
 from test import support
-
+from test.support.os_helper import temp_dir
 from .test_dbapi import managed_connect
 
 class RegressionTests(unittest.TestCase):
@@ -485,6 +485,19 @@ class RegressionTests(unittest.TestCase):
             con.create_function("step", 1, lambda x: steps.append((x,)))
             con.executescript("select step(t) from t")
             self.assertEqual(steps, values)
+
+    def test_connection_bad_reinit(self):
+        cx = sqlite.connect(":memory:")
+        with cx:
+            cx.execute("create table t(t)")
+        with temp_dir() as db:
+            self.assertRaisesRegex(sqlite.OperationalError,
+                                   "unable to open database file",
+                                   cx.__init__, db)
+            self.assertRaisesRegex(sqlite.ProgrammingError,
+                                   "Base Connection.__init__ not called",
+                                   cx.executemany, "insert into t values(?)",
+                                   ((v,) for v in range(3)))
 
 
 if __name__ == "__main__":
