@@ -160,9 +160,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
     self->db = NULL;
-    sqlite3 *db;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(database, &db,
+    rc = sqlite3_open_v2(database, &self->db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     Py_END_ALLOW_THREADS
@@ -171,7 +170,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
         _pysqlite_seterror(state, self->db);
         goto error;
     }
-    self->db = db;
 
     if (!isolation_level) {
         isolation_level = PyUnicode_FromString("");
