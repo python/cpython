@@ -307,6 +307,9 @@ class PosixPathTest(unittest.TestCase):
     NORMPATH_CASES = [
         ("", "."),
         ("/", "/"),
+        ("/.", "/"),
+        ("/./", "/"),
+        ("/.//.", "/"),
         ("/foo", "/foo"),
         ("/foo/bar", "/foo/bar"),
         ("//", "//"),
@@ -314,6 +317,8 @@ class PosixPathTest(unittest.TestCase):
         ("///foo/.//bar//", "/foo/bar"),
         ("///foo/.//bar//.//..//.//baz///", "/foo/baz"),
         ("///..//./foo/.//bar", "/foo/bar"),
+        (".", "."),
+        (".//.", "."),
         ("..", ".."),
         ("../", ".."),
         ("../foo", "../foo"),
@@ -323,11 +328,14 @@ class PosixPathTest(unittest.TestCase):
         ("/..", "/"),
         ("/..", "/"),
         ("/../", "/"),
+        ("/..//", "/"),
+        ("//..", "//"),
         ("/../foo", "/foo"),
         ("/../../foo", "/foo"),
         ("/../foo/../", "/"),
         ("/../foo/../bar", "/bar"),
         ("/../../foo/../bar/./baz/boom/..", "/bar/baz"),
+        ("/../../foo/../bar/./baz/boom/.", "/bar/baz/boom"),
     ]
 
     def test_normpath(self):
@@ -338,7 +346,7 @@ class PosixPathTest(unittest.TestCase):
 
             path = path.encode('utf-8')
             expected = expected.encode('utf-8')
-            with self.subTest(path):
+            with self.subTest(path, type=bytes):
                 result = posixpath.normpath(path)
                 self.assertEqual(result, expected)
 

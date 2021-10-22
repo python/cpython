@@ -2241,12 +2241,15 @@ _Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
             }
             dots = 0;
         }
-        else if (dots >= 0) {
-            if (c == L'.' && dots < 2) {
-                dots++;
-            }
-            else {
-                dots = -1;
+        else {
+            check_leading = 0;
+            if (dots >= 0) {
+                if (c == L'.' && dots < 2) {
+                    dots++;
+                }
+                else {
+                    dots = -1;
+                }
             }
         }
     }
