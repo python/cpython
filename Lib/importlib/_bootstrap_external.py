@@ -1279,8 +1279,10 @@ class _NamespacePath:
         self._path.append(item)
 
 
-# We use this exclusively in module_from_spec() for backward-compatibility.
-class _NamespaceLoader:
+# This class is actually exposed publicly in a namespace package's __loader__
+# attribute, so it should be available through a non-private name.
+# https://bugs.python.org/issue35673
+class NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
 
@@ -1291,7 +1293,7 @@ class _NamespaceLoader:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        _warnings.warn("_NamespaceLoader.module_repr() is deprecated and "
+        _warnings.warn("NamespaceLoader.module_repr() is deprecated and "
                        "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} (namespace)>'.format(module.__name__)
 
@@ -1325,6 +1327,10 @@ class _NamespaceLoader:
     def get_resource_reader(self, module):
         from importlib.readers import NamespaceReader
         return NamespaceReader(self._path)
+
+
+# We use this exclusively in module_from_spec() for backward-compatibility.
+_NamespaceLoader = NamespaceLoader
 
 
 # Finders #####################################################################
