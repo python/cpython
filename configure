@@ -15092,7 +15092,7 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-for ac_func in acosh asinh atanh erf erfc expm1 finite gamma
+for ac_func in acosh asinh atanh erf erfc expm1 finite gamma lgamma log1p log2 tgamma
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -15101,21 +15101,13 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
-fi
-done
-
-for ac_func in lgamma log1p log2 tgamma
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
+else
+  as_fn_error $? "Python requires C99 compatible libm" "$LINENO" 5
 
 fi
 done
 
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
