@@ -733,6 +733,70 @@ PyObject_Free(void *ptr)
 #  define LIKELY(value) (value)
 #endif
 
+#if WITH_FREELISTS
+
+#define SMALL_OBJECT_FREELIST_SIZE 256
+
+union _small_object {
+    PyFloatObject f;
+    PyLongObject l;
+};
+
+_PyFreeList _Py_small_object_freelist = {
+    NULL,
+    SMALL_OBJECT_FREELIST_SIZE,
+    sizeof(union _small_object),
+    SMALL_OBJECT_FREELIST_SIZE
+};
+
+void *
+_PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
+{
+    assert(list->ptr == NULL);
+    if (list->space < 4) {
+        return PyObject_Malloc(list->size);
+    }
+    uint32_t i = 0;
+    for (; i < list->space>>1; i++) {
+        void* ptr = PyObject_Malloc(list->size);
+        if (ptr == NULL) {
+            break;
+        }
+        *((void**)ptr) = list->ptr;
+        list->ptr = ptr;
+    }
+    if (i == 0) {
+        return NULL;
+    }
+    list->space -= (i-1);
+    void *result = list->ptr;
+    list->ptr = *((void **)result);
+    return result;
+}
+
+void
+_PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
+{
+    assert(list->space == 0);
+    if (list->ptr == NULL) {
+        PyObject_Free(ptr);
+        return;
+    }
+    int space = 0;
+    void *head = list->ptr;
+    while (head) {
+        void *next = *((void**)head);
+        PyObject_Free(head);
+        head = next;
+        space++;
+    }
+    list->ptr = ptr;
+    *((void **)ptr) = NULL;
+    list->space = space-1;
+}
+
+#endif
+
 #ifdef WITH_PYMALLOC
 
 #ifdef WITH_VALGRIND
@@ -1972,40 +2036,6 @@ pymalloc_alloc(void *ctx, size_t nbytes)
     return (void *)bp;
 }
 
-union _small_object {
-    PyFloatObject f;
-    PyLongObject l;
-};
-
-#if WITH_FREELISTS
-_PyFreeList _Py_small_object_freelist = { NULL, 256, sizeof(union _small_object), 256 };
-#endif
-
-void *
-_PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
-{
-    assert(list->ptr == NULL);
-    if (list->space < 4) {
-        return PyObject_Malloc(list->size);
-    }
-    uint32_t i = 0;
-    for (; i < list->space>>1; i++) {
-        void* ptr = PyObject_Malloc(list->size);
-        if (ptr == NULL) {
-            break;
-        }
-        *((void**)ptr) = list->ptr;
-        list->ptr = ptr;
-    }
-    if (i == 0) {
-        return NULL;
-    }
-    list->space -= (i-1);
-    void *result = list->ptr;
-    list->ptr = *((void **)result);
-    return result;
-}
-
 
 static void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
@@ -2300,27 +2330,6 @@ _PyObject_Free(void *ctx, void *p)
         PyMem_RawFree(p);
         raw_allocated_blocks--;
     }
-}
-
-void
-_PyFreeList_FreeToFull(_PyFreeList *list, void *ptr)
-{
-    assert(list->space == 0);
-    if (list->ptr == NULL) {
-        PyObject_Free(ptr);
-        return;
-    }
-    int space = 0;
-    void *head = list->ptr;
-    while (head) {
-        void *next = *((void**)head);
-        PyObject_Free(head);
-        head = next;
-        space++;
-    }
-    list->ptr = ptr;
-    *((void **)ptr) = NULL;
-    list->space = space-1;
 }
 
 /* pymalloc realloc.

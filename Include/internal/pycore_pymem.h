@@ -100,6 +100,7 @@ void *_PyObject_VirtualAlloc(size_t size);
 void _PyObject_VirtualFree(void *, size_t size);
 
 
+#if WITH_FREELISTS
 /* Free lists.
  *
  * Free lists have a pointer to their first entry and
@@ -116,8 +117,6 @@ typedef struct _freelist {
     uint16_t size;
     uint16_t capacity;
 } _PyFreeList;
-
-extern int _PyObject_BulkFree(void *ptr);
 
 extern void *_PyFreeList_HalfFillAndAllocate(_PyFreeList *list);
 extern void _PyFreeList_FreeToFull(_PyFreeList *list, void *ptr);
@@ -144,7 +143,6 @@ _PyFreeList_Free(_PyFreeList *list, void *ptr) {
     _PyFreeList_FreeToFull(list, ptr);
 }
 
-#if WITH_FREELISTS
 extern _PyFreeList _Py_small_object_freelist;
 #endif
 
