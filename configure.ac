@@ -3926,8 +3926,8 @@ if test "$with_mimalloc" != no; then
   # AC_SEARCH_LIBS([mi_malloc], [mimalloc], [], [AC_MSG_ERROR([--with-mimalloc requires libmimalloc])]  )
   AC_DEFINE(WITH_MIMALLOC, 1, Define Python uses mimalloc memory allocator.)
   AC_SUBST(WITH_MIMALLOC, 1)
-  AC_SUBST(MIMALLOC_OBJS, '$(MIMALLOC_OBJS)')
   AC_SUBST(MIMALLOC_HEADERS, '$(MIMALLOC_HEADERS)')
+  AC_SUBST(MIMALLOC_INCLUDES, '$(MIMALLOC_INCLUDES)')
 else
   AC_MSG_RESULT(no)
 fi

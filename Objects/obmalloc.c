@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 #ifdef WITH_MIMALLOC
-#include <mimalloc.h>
+#include "pycore_mimalloc.h"
+#include "mimalloc/static.c"
 #else
 #include <stdlib.h>               // malloc()
 #endif
