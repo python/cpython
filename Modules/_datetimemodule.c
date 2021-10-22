@@ -395,6 +395,39 @@ iso_week1_monday(int year)
     return week1_monday;
 }
 
+static int
+iso_to_ymd(const int iso_year, const int iso_week, const int iso_day,
+           int *year, int *month, int *day) {
+    if (iso_week <= 0 || iso_week >= 53) {
+        int out_of_range = 1;
+        if (iso_week == 53) {
+            // ISO years have 53 weeks in it on years starting with a Thursday
+            // and on leap years starting on Wednesday
+            int first_weekday = weekday(iso_year, 1, 1);
+            if (first_weekday == 3 || (first_weekday == 2 && is_leap(iso_year))) {
+                out_of_range = 0;
+            }
+        }
+
+        if (out_of_range) {
+            return -2;
+        }
+    }
+
+    if (iso_day <= 0 || iso_day >= 8) {
+        return -3;
+    }
+
+    // Convert (Y, W, D) to (Y, M, D) in-place
+    int day_1 = iso_week1_monday(iso_year);
+
+    int day_offset = (iso_week - 1)*7 + iso_day - 1;
+
+    ord_to_ymd(day_1 + day_offset, year, month, day);
+    return 0;
+}
+
+
 /* ---------------------------------------------------------------------------
  * Range checkers.
  */
@@ -680,7 +713,7 @@ set_date_fields(PyDateTime_Date *self, int y, int m, int d)
  * String parsing utilities and helper functions
  */
 
-static const unsigned char *
+static unsigned char
 is_digit(const char c) {
     return ((unsigned int)(c - '0')) < 10;
 }
@@ -701,7 +734,7 @@ parse_digits(const char *ptr, int *var, size_t num_digits)
 }
 
 static int
-parse_isoformat_date(const char *dtstr, int *year, int *month, int *day)
+parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month, int *day)
 {
     /* Parse the date components of the result of date.isoformat()
      *
@@ -719,6 +752,39 @@ parse_isoformat_date(const char *dtstr, int *year, int *month, int *day)
     const unsigned char uses_separator = (*p == '-');
     if (uses_separator) {
         ++p;
+    }
+
+    if(*p == 'W') {
+        // This is an isocalendar-style date string
+        p++;
+        int iso_week = 0;
+        int iso_day = 0;
+
+        p = parse_digits(p, &iso_week, 2);
+        if (NULL == p) {
+            return -3;
+        }
+
+        assert(p > dtstr);
+        if ((size_t)(p - dtstr) < len) {
+            if (uses_separator && *(p++) != '-') {
+                return -2;
+            }
+
+            p = parse_digits(p, &iso_day, 1);
+            if (NULL == p) {
+                return -4;
+            }
+        } else {
+            iso_day = 1;
+        }
+
+        int rv = iso_to_ymd(*year, iso_week, iso_day, year, month, day);
+        if (rv) {
+            return 3 - rv;
+        } else {
+            return 0;
+        }
     }
 
     p = parse_digits(p, month, 2);
@@ -3009,8 +3075,8 @@ date_fromisoformat(PyObject *cls, PyObject *dtstr)
     int year = 0, month = 0, day = 0;
 
     int rv;
-    if (len == 10) {
-        rv = parse_isoformat_date(dt_ptr, &year, &month, &day);
+    if (len == 7 || len == 8 || len == 10) {
+        rv = parse_isoformat_date(dt_ptr, len, &year, &month, &day);
     }
     else {
         rv = -1;
@@ -3053,36 +3119,20 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    if (week <= 0 || week >= 53) {
-        int out_of_range = 1;
-        if (week == 53) {
-            // ISO years have 53 weeks in it on years starting with a Thursday
-            // and on leap years starting on Wednesday
-            int first_weekday = weekday(year, 1, 1);
-            if (first_weekday == 3 || (first_weekday == 2 && is_leap(year))) {
-                out_of_range = 0;
-            }
-        }
+    int month;
+    Py_ssize_t rv = iso_to_ymd(year, week, day, &year, &month, &day);
 
-        if (out_of_range) {
-            PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
-            return NULL;
-        }
+
+    if (rv == -2) {
+        PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
+        return NULL;
     }
 
-    if (day <= 0 || day >= 8) {
+    if (rv == -3) {
         PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
                      day);
         return NULL;
     }
-
-    // Convert (Y, W, D) to (Y, M, D) in-place
-    int day_1 = iso_week1_monday(year);
-
-    int month = week;
-    int day_offset = (month - 1)*7 + day - 1;
-
-    ord_to_ymd(day_1 + day_offset, &year, &month, &day);
 
     return new_date_subclass_ex(year, month, day, cls);
 }
@@ -5316,7 +5366,11 @@ _find_isoformat_separator(PyObject *dtstr, Py_ssize_t len, unsigned char* mode) 
                 }
             }
 
-            if (len == 7 || idx % 2 == 0) {
+            if (idx < 9) {
+                return idx;
+            }
+
+            if (idx % 2 == 0) {
                 // If the index of the last number is even, it's YYYYWwwd
                 return 7;
             } else {
@@ -5340,6 +5394,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
         return NULL;
     }
 
+    PyObject *dtstr_clean = NULL;
     unsigned char mode;
     Py_ssize_t len = PyUnicode_GetLength(dtstr);
     if (len < 7) {  // All valid ISO8601 strings are at least 7 characters long
@@ -5354,7 +5409,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     // we don't have to sanitize it anything because that can only happen when
     // the separator is either '-' or a number. This should mostly be a noop
     // but it makes the reference counting easier if we still sanitize.
-    PyObject *dtstr_clean = _sanitize_isoformat_str(dtstr, len, separator_location);
+    dtstr_clean = _sanitize_isoformat_str(dtstr, len, separator_location);
     if (dtstr_clean == NULL) {
         goto error;
     }
@@ -5377,8 +5432,8 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int tzoffset = 0, tzusec = 0;
 
-    // date has a fixed length of 10
-    int rv = parse_isoformat_date(p, &year, &month, &day);
+    // date runs up to separator_location
+    int rv = parse_isoformat_date(p, separator_location, &year, &month, &day);
 
     if (!rv && len > separator_location) {
         // In UTF-8, the length of multi-byte characters is encoded in the MSB
