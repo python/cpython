@@ -149,7 +149,7 @@ time timemodule.c
 #_contextvars _contextvarsmodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
-#_elementtree -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -I$(srcdir)/Modules/expat _elementtree.c
+#_elementtree -I$(srcdir)/Modules/expat _elementtree.c
 #_heapq _heapqmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
@@ -173,7 +173,7 @@ time timemodule.c
 #binascii binascii.c
 #cmath cmathmodule.c _math.c  # -lm
 #math mathmodule.c _math.c  # -lm
-#pyexpat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY -DUSE_PYEXPAT_CAPI -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
+#pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
 #unicodedata  unicodedata.c
 
 # Modules with some UNIX dependencies -- on by default:
