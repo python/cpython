@@ -59,7 +59,10 @@ terms of the MIT license. A copy of the license can be found in the file
   #define mi_attr_alloc_align(p)
 #elif defined(__GNUC__)                 // includes clang and icc
   #define mi_cdecl                      // leads to warnings... __attribute__((cdecl))
-  #define mi_decl_export                __attribute__((visibility("default")))
+  #ifndef MI_EXPORT_VISIBILITY
+    #define MI_EXPORT_VISIBILITY "default"
+  #endif
+  #define mi_decl_export                __attribute__((visibility(MI_EXPORT_VISIBILITY)))
   #define mi_decl_restrict
   #define mi_attr_malloc                __attribute__((malloc))
   #if (defined(__clang_major__) && (__clang_major__ < 4)) || (__GNUC__ < 5)
@@ -83,12 +86,6 @@ terms of the MIT license. A copy of the license can be found in the file
   #define mi_attr_alloc_size(s)
   #define mi_attr_alloc_size2(s1,s2)
   #define mi_attr_alloc_align(p)
-#endif
-
-#if defined(MIMALLOC_VENDOR)
-  // hide symbols when vendoring mimalloc
-  #undef mi_decl_export
-  #define mi_decl_export mi_decl_restrict
 #endif
 
 // ------------------------------------------------------
