@@ -240,17 +240,20 @@ uint64_t _pydict_global_version = 0;
 #include "clinic/dictobject.c.h"
 
 
+#if PyDict_MAXFREELIST > 0
 static struct _Py_dict_state *
 get_dict_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->dict_state;
 }
+#endif
 
 
 void
 _PyDict_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = &interp->dict_state;
     while (state->numfree) {
         PyDictObject *op = state->free_list[--state->numfree];
@@ -260,6 +263,7 @@ _PyDict_ClearFreeList(PyInterpreterState *interp)
     while (state->keys_numfree) {
         PyObject_Free(state->keys_free_list[--state->keys_numfree]);
     }
+#endif
 }
 
 
@@ -267,7 +271,7 @@ void
 _PyDict_Fini(PyInterpreterState *interp)
 {
     _PyDict_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = &interp->dict_state;
     state->numfree = -1;
     state->keys_numfree = -1;
@@ -279,9 +283,11 @@ _PyDict_Fini(PyInterpreterState *interp)
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
+#endif
 }
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
@@ -570,6 +576,7 @@ new_keys_object(uint8_t log2_size)
         es = sizeof(Py_ssize_t);
     }
 
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_keys_object() must not be called after _PyDict_Fini()
@@ -579,6 +586,7 @@ new_keys_object(uint8_t log2_size)
         dk = state->keys_free_list[--state->keys_numfree];
     }
     else
+#endif
     {
         dk = PyObject_Malloc(sizeof(PyDictKeysObject)
                              + (es<<log2_size)
@@ -611,6 +619,7 @@ free_keys_object(PyDictKeysObject *keys)
         Py_XDECREF(entries[i].me_key);
         Py_XDECREF(entries[i].me_value);
     }
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // free_keys_object() must not be called after _PyDict_Fini()
@@ -620,6 +629,7 @@ free_keys_object(PyDictKeysObject *keys)
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
+#endif
     PyObject_Free(keys);
 }
 
@@ -638,6 +648,7 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
 {
     PyDictObject *mp;
     assert(keys != NULL);
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
@@ -649,7 +660,9 @@ new_dict(PyDictKeysObject *keys, PyDictValues *values, Py_ssize_t used, int free
         assert (Py_IS_TYPE(mp, &PyDict_Type));
         _Py_NewReference((PyObject *)mp);
     }
-    else {
+    else
+#endif
+    {
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
             dictkeys_decref(keys);
@@ -1259,6 +1272,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
 #ifdef Py_REF_DEBUG
         _Py_RefTotal--;
 #endif
+#if PyDict_MAXFREELIST > 0
         struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
         // dictresize() must not be called after _PyDict_Fini()
@@ -1269,7 +1283,9 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize)
         {
             state->keys_free_list[state->keys_numfree++] = oldkeys;
         }
-        else {
+        else
+#endif
+        {
             PyObject_Free(oldkeys);
         }
     }
@@ -1987,6 +2003,7 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
+#if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
@@ -1995,7 +2012,9 @@ dict_dealloc(PyDictObject *mp)
     if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
         state->free_list[state->numfree++] = mp;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
     Py_TRASHCAN_END

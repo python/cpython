@@ -1,0 +1,2 @@
+Ensure that ``socket.TCP_*`` constants are exposed on Cygwin 3.1.6 and
+greater.
