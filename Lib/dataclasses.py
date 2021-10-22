@@ -906,6 +906,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # we're iterating over them, see if any are frozen.
     any_frozen_base = False
     has_dataclass_bases = False
+    init_globals = dict(globals)
+
     for b in cls.__mro__[-1:0:-1]:
         # Only process classes that have been processed by our
         # decorator.  That is, they have a _FIELDS attribute.
@@ -916,6 +918,17 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                 fields[f.name] = f
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
+        if has_dataclass_bases:
+            # If dataclass has other dataclass as a base type,
+            # it might have existing `__init__` method.
+            # We need to change its `globals`, because otherwise
+            # we might end up with unsolvable annotations. For example:
+            # `def __init__(self, d: collections.OrderedDict) -> None:`
+            # We won't be able to resolve `collections.OrderedDict`
+            # with wrong `globals`, when placed in a different module. #45524
+            super_init = getattr(b, '__init__', None)
+            if super_init is not None:
+                init_globals.update(getattr(super_init, '__globals__', {}))
 
     # Annotations that are defined in this class (not in base
     # classes).  If __annotations__ isn't present, then this class
@@ -1020,18 +1033,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if init:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
-        init_globals = dict(globals)
-        if has_dataclass_bases:
-            # If dataclass has other dataclass as a base type,
-            # it might have existing `__init__` method.
-            # We need to change its `globals`, because otherwise
-            # we might end up with unsolvable annotations. For example:
-            # `def __init__(self, d: collections.OrderedDict) -> None:`
-            # won't be able to resolve `collections.OrderedDict`
-            # with wrong `globals`, when placed in different modules. #45524
-            super_init = getattr(cls, '__init__', None)
-            if super_init is not None:
-                init_globals = getattr(super_init, '__globals__', init_globals )
 
         _set_new_attribute(cls, '__init__',
                            _init_fn(all_init_fields,

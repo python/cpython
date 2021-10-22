@@ -3318,11 +3318,16 @@ class GetTypeHintTests(BaseTestCase):
             def __init__(self, foo: dataclass_textanno.Foo) -> None:
                 pass
 
+        @dataclass
+        class FutureInitChild(dataclass_textanno.WithFutureInit):
+            pass
+
         classes = [
             Default,
             WithInitFalse,
             CustomInit,
             dataclass_textanno.WithFutureInit,
+            FutureInitChild,
         ]
         for klass in classes:
             with self.subTest(klass=klass):
@@ -3334,6 +3339,58 @@ class GetTypeHintTests(BaseTestCase):
                 self.assertEqual(
                     get_type_hints(klass.__init__),
                     {'foo': dataclass_textanno.Foo, 'return': type(None)},
+                )
+
+    def test_dataclass_from_proxy_module(self):
+        # see bpo-45524
+        from test import dataclass_textanno, dataclass_textanno2
+        from dataclasses import dataclass
+
+        @dataclass
+        class Default(dataclass_textanno2.Child):
+            pass
+
+        @dataclass(init=False)
+        class WithInitFalse(dataclass_textanno2.Child):
+            pass
+
+        @dataclass(init=False)
+        class CustomInit(dataclass_textanno2.Child):
+            def __init__(
+                self,
+                foo: dataclass_textanno.Foo,
+                custom: dataclass_textanno2.Custom,
+            ) -> None:
+                pass
+
+        @dataclass
+        class FutureInitChild(dataclass_textanno2.WithFutureInit):
+            pass
+
+        classes = [
+            # Default,
+            # WithInitFalse,
+            # CustomInit,
+            # dataclass_textanno2.WithFutureInit,
+            FutureInitChild,
+        ]
+        for klass in classes:
+            with self.subTest(klass=klass):
+                self.assertEqual(
+                    get_type_hints(klass),
+                    {
+                        'foo': dataclass_textanno.Foo,
+                        'custom': dataclass_textanno2.Custom,
+                    },
+                )
+                self.assertEqual(get_type_hints(klass.__new__), {})
+                self.assertEqual(
+                    get_type_hints(klass.__init__),
+                    {
+                        'foo': dataclass_textanno.Foo,
+                        'custom': dataclass_textanno2.Custom,
+                        'return': type(None),
+                    },
                 )
 
 
