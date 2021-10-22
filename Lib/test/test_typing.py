@@ -3368,10 +3368,10 @@ class GetTypeHintTests(BaseTestCase):
             pass
 
         classes = [
-            # Default,
-            # WithInitFalse,
-            # CustomInit,
-            # dataclass_textanno2.WithFutureInit,
+            Default,
+            WithInitFalse,
+            CustomInit,
+            dataclass_textanno2.WithFutureInit,
             FutureInitChild,
         ]
         for klass in classes:
