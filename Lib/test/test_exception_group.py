@@ -337,6 +337,24 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
                     rest, ExceptionGroup, rest_template)
 
 
+class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
+    def make_deep_eg(self):
+        e = TypeError(1)
+        for i in range(2000):
+            e = ExceptionGroup('eg', [e])
+        return e
+
+    def test_deep_split(self):
+        e = self.make_deep_eg()
+        with self.assertRaises(RecursionError):
+            e.split(TypeError)
+
+    def test_deep_subgroup(self):
+        e = self.make_deep_eg()
+        with self.assertRaises(RecursionError):
+            e.subgroup(TypeError)
+
+
 def leaf_generator(exc, tbs=None):
     if tbs is None:
         tbs = []

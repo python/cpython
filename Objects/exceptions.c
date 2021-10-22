@@ -982,13 +982,18 @@ exceptiongroup_split_recursive(PyObject *exc,
     for (Py_ssize_t i = 0; i < num_excs; i++) {
         PyObject *e = PyTuple_GET_ITEM(eg->excs, i);
         _exceptiongroup_split_result rec_result;
+        if (Py_EnterRecursiveCall(" in exceptiongroup_split_recursive")) {
+            goto done;
+        }
         if (exceptiongroup_split_recursive(
                 e, matcher_type, matcher_value,
                 construct_rest, &rec_result) == -1) {
             assert(!rec_result.match);
             assert(!rec_result.rest);
+            Py_LeaveRecursiveCall();
             goto done;
         }
+        Py_LeaveRecursiveCall();
         if (rec_result.match) {
             assert(PyList_CheckExact(match_list));
             if (PyList_Append(match_list, rec_result.match) == -1) {
