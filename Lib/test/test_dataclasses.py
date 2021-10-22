@@ -2791,14 +2791,18 @@ class TestSlots(unittest.TestCase):
         # bpo-43999
         # bpo-45520
 
-        assert self.FrozenSlotsClass.__slots__ == ("foo", "bar")
+        self.assertEqual(self.FrozenSlotsClass.__slots__, ("foo", "bar"))
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
-                p = pickle.dumps(self.FrozenSlotsClass("a", 1), protocol=proto)
-                assert pickle.loads(p) == self.FrozenSlotsClass("a", 1)
+                obj = self.FrozenSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
 
-                p = pickle.dumps(self.FrozenWithoutSlotsClass("a", 1), protocol=proto)
-                assert pickle.loads(p) == self.FrozenWithoutSlotsClass("a", 1)
+                obj = self.FrozenWithoutSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
