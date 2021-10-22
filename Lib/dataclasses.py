@@ -1020,6 +1020,18 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if init:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
+        init_globals = globals
+        if has_dataclass_bases:
+            # If dataclass has other dataclass as a base type,
+            # it might have existing `__init__` method.
+            # We need to change its `globals`, because otherwise
+            # we might end up with unsolvable annotations. For example:
+            # `def __init__(self, d: collections.OrderedDict) -> None:`
+            # won't be able to resolve `collections.OrderedDict`
+            # with wrong `globals`, when placed in different modules. #45524
+            super_init = getattr(cls, '__init__', None)
+            if super_init is not None:
+                init_globals = getattr(super_init, '__globals__', globals)
 
         _set_new_attribute(cls, '__init__',
                            _init_fn(all_init_fields,
@@ -1032,8 +1044,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                     # if possible.
                                     '__dataclass_self__' if 'self' in fields
                                             else 'self',
-                                    globals,
                                     slots,
+                                    init_globals,
                           ))
 
     # Get the fields as a list, and include only real fields.  This is
