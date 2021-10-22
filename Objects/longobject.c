@@ -171,7 +171,11 @@ _PyLong_FromMedium(sdigit x)
 {
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
+#if WITH_FREELISTS
     PyLongObject *v = (PyLongObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
+#else
+    PyLongObject *v = (PyLongObject *)PyObject_Malloc(sizeof(PyLongObject));
+#endif
     if (v == NULL) {
         return PyErr_NoMemory();
     }

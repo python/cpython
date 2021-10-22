@@ -1043,11 +1043,13 @@ tok_nextc(struct tok_state *tok)
         else {
             rc = tok_underflow_file(tok);
         }
+#if defined(Py_DEBUG)
         if (Py_DebugFlag) {
             printf("line[%d] = ", tok->lineno);
             print_escape(stdout, tok->cur, tok->inp - tok->cur);
             printf("  tok->done = %d\n", tok->done);
         }
+#endif
         if (!rc) {
             tok->cur = tok->inp;
             return EOF;

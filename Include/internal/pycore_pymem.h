@@ -186,7 +186,9 @@ _PyFreeList_Free(_PyFreeList *list, void *ptr) {
 #define SMALL_REQUEST_THRESHOLD 512
 #define NB_SMALL_SIZE_CLASSES   (SMALL_REQUEST_THRESHOLD / ALIGNMENT)
 
+#if WITH_FREELISTS
 extern _PyFreeList _Py_small_object_freelist;
+#endif
 
 #ifdef __cplusplus
 }
