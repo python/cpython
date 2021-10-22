@@ -4,7 +4,7 @@
    character strings, and unsigned numbers */
 
 #ifndef Py_BUILD_CORE_BUILTIN
-  #define Py_BUILD_CORE_MODULE 1
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #define PY_SSIZE_T_CLEAN

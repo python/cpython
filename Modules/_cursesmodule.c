@@ -101,7 +101,7 @@ static const char PyCursesVersion[] = "2.2";
 /* Includes */
 
 #ifndef Py_BUILD_CORE_BUILTIN
-  #define Py_BUILD_CORE_MODULE 1
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #define PY_SSIZE_T_CLEAN
