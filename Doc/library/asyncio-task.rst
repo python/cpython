@@ -271,6 +271,11 @@ Creating Tasks
        task = asyncio.ensure_future(coro())
        ...
 
+   .. important::
+
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid execution.
+
    .. versionadded:: 3.7
 
    .. versionchanged:: 3.8
