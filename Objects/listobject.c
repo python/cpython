@@ -2225,10 +2225,10 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
         if (k) /* error, or v < w */
             return k;
         k = ms->tuple_elem_compare(wt->ob_item[0], vt->ob_item[0], ms);
-        if (k < 0) /* error */
-            return -1;
         if (k > 0) /* w < v */
             return 0;
+        if (k < 0) /* error */
+            return -1;
         /* We have
          *     not (v[0] < w[0]) and not (w[0] < v[0])
          * which implies, for a total order, that the first elements are
@@ -2246,8 +2246,6 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     wlen = Py_SIZE(wt);
     for (; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
-        if (k < 0)
-            return -1;
         if (!k) { /* not equal */
             if (i) {
                 return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
@@ -2259,6 +2257,8 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
                                               ms);
             }
         }
+        if (k < 0)
+            return -1;
     }
     /* all equal until we fell off the end */
     return vlen < wlen;
