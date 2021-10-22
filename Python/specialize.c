@@ -1239,19 +1239,19 @@ _Py_Specialize_InplaceAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
     if (left_type == &PyUnicode_Type) {
         int next_opcode = _Py_OPCODE(instr[1]);
         if (next_opcode == STORE_FAST) {
-            *instr = _Py_MAKECODEUNIT(INPLACE_ADD_UNICODE_FAST, saturating_start());
+            *instr = _Py_MAKECODEUNIT(INPLACE_ADD_UNICODE_FAST, initial_counter_value());
         }
         else {
-            *instr = _Py_MAKECODEUNIT(INPLACE_ADD_UNICODE, saturating_start());
+            *instr = _Py_MAKECODEUNIT(INPLACE_ADD_UNICODE, initial_counter_value());
         }
         goto success;
     }
     else if (left_type == &PyLong_Type) {
-        *instr = _Py_MAKECODEUNIT(INPLACE_ADD_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(INPLACE_ADD_INT, initial_counter_value());
         goto success;
     }
     else if (left_type == &PyFloat_Type) {
-        *instr = _Py_MAKECODEUNIT(INPLACE_ADD_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(INPLACE_ADD_FLOAT, initial_counter_value());
         goto success;
 
     }

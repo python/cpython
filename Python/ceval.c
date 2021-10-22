@@ -2472,7 +2472,6 @@ check_eval_breaker:
             DEOPT_IF(!PyLong_CheckExact(left), INPLACE_ADD);
             DEOPT_IF(!PyLong_CheckExact(right), INPLACE_ADD);
             STAT_INC(INPLACE_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             SET_SECOND(sum);
             Py_DECREF(left);
@@ -2490,7 +2489,6 @@ check_eval_breaker:
             DEOPT_IF(!PyFloat_CheckExact(left), INPLACE_ADD);
             DEOPT_IF(!PyFloat_CheckExact(right), INPLACE_ADD);
             STAT_INC(INPLACE_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             PyObject *sum = PyFloat_FromDouble(dsum);
@@ -2510,7 +2508,6 @@ check_eval_breaker:
             DEOPT_IF(!PyUnicode_CheckExact(left), INPLACE_ADD);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), INPLACE_ADD);
             STAT_INC(BINARY_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             PyObject *res = PyUnicode_Concat(left, right);
             STACK_SHRINK(1);
             SET_TOP(res);
@@ -2533,7 +2530,6 @@ check_eval_breaker:
             PyObject *var = GETLOCAL(next_oparg);
             DEOPT_IF(var != left, INPLACE_ADD);
             STAT_INC(INPLACE_ADD, hit);
-            record_hit_inline(next_instr, oparg);
             GETLOCAL(next_oparg) = NULL;
             Py_DECREF(left);
             STACK_SHRINK(1);
