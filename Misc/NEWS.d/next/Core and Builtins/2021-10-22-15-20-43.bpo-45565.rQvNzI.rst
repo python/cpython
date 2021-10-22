@@ -1,0 +1,2 @@
+Improve ``LOAD_METHOD_CLASS`` specialization by adding more specialized
+forms.
