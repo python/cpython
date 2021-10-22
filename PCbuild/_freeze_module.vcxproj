@@ -270,6 +270,11 @@
       <IntFile>$(IntDir)_sitebuiltins.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\_sitebuiltins.h</OutFile>
     </None>
+    <None Include="..\Lib\_sysconfig.py">
+      <ModName>_sysconfig</ModName>
+      <IntFile>$(IntDir)_sysconfig.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\_sysconfig.h</OutFile>
+    </None>
     <None Include="..\Lib\genericpath.py">
       <ModName>genericpath</ModName>
       <IntFile>$(IntDir)genericpath.g.h</IntFile>

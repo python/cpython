@@ -746,6 +746,7 @@ FROZEN_FILES_IN = \
 		Lib/io.py \
 		Lib/_collections_abc.py \
 		Lib/_sitebuiltins.py \
+		Lib/_sysconfig.py \
 		Lib/genericpath.py \
 		Lib/ntpath.py \
 		Lib/posixpath.py \
@@ -768,6 +769,7 @@ FROZEN_FILES_OUT = \
 		Python/frozen_modules/io.h \
 		Python/frozen_modules/_collections_abc.h \
 		Python/frozen_modules/_sitebuiltins.h \
+		Python/frozen_modules/_sysconfig.h \
 		Python/frozen_modules/genericpath.h \
 		Python/frozen_modules/ntpath.h \
 		Python/frozen_modules/posixpath.h \
@@ -812,6 +814,9 @@ Python/frozen_modules/_collections_abc.h: Programs/_freeze_module Lib/_collectio
 
 Python/frozen_modules/_sitebuiltins.h: Programs/_freeze_module Lib/_sitebuiltins.py
 	Programs/_freeze_module _sitebuiltins $(srcdir)/Lib/_sitebuiltins.py $(srcdir)/Python/frozen_modules/_sitebuiltins.h
+
+Python/frozen_modules/_sysconfig.h: Programs/_freeze_module Lib/_sysconfig.py
+	Programs/_freeze_module _sysconfig $(srcdir)/Lib/_sysconfig.py $(srcdir)/Python/frozen_modules/_sysconfig.h
 
 Python/frozen_modules/genericpath.h: Programs/_freeze_module Lib/genericpath.py
 	Programs/_freeze_module genericpath $(srcdir)/Lib/genericpath.py $(srcdir)/Python/frozen_modules/genericpath.h

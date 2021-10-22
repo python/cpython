@@ -40,6 +40,9 @@
     <None Include="..\Lib\_sitebuiltins.py">
       <Filter>Python Files</Filter>
     </None>
+    <None Include="..\Lib\_sysconfig.py">
+      <Filter>Python Files</Filter>
+    </None>
     <None Include="..\Lib\genericpath.py">
       <Filter>Python Files</Filter>
     </None>

@@ -47,6 +47,7 @@
 #include "frozen_modules/io.h"
 #include "frozen_modules/_collections_abc.h"
 #include "frozen_modules/_sitebuiltins.h"
+#include "frozen_modules/_sysconfig.h"
 #include "frozen_modules/genericpath.h"
 #include "frozen_modules/ntpath.h"
 #include "frozen_modules/posixpath.h"
@@ -80,6 +81,7 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"_collections_abc", _Py_M___collections_abc,
         (int)sizeof(_Py_M___collections_abc)},
     {"_sitebuiltins", _Py_M___sitebuiltins, (int)sizeof(_Py_M___sitebuiltins)},
+    {"_sysconfig", _Py_M___sysconfig, (int)sizeof(_Py_M___sysconfig)},
     {"genericpath", _Py_M__genericpath, (int)sizeof(_Py_M__genericpath)},
     {"ntpath", _Py_M__ntpath, (int)sizeof(_Py_M__ntpath)},
     {"posixpath", _Py_M__posixpath, (int)sizeof(_Py_M__posixpath)},

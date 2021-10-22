@@ -84,6 +84,7 @@ FROZEN = [
     ('stdlib - startup, with site', [
         '_collections_abc',
         '_sitebuiltins',
+        '_sysconfig',
         'genericpath',
         'ntpath',
         'posixpath',
