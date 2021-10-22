@@ -1,0 +1,3 @@
+Update the documentation to correctly reflect that iterators only need to
+define ``__next__`` and not ``__iter__``, ``__anext__`` and not
+``__anext__`` for asynchronous iterators.
