@@ -235,7 +235,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABC for classes that provide the :meth:`~iterator.__next__` method.  The ABC
    also provides an implementation of :meth:`~iterator.__iter__` for
-   convenience.See also the definition of :term:`iterator`.
+   convenience. See also the definition of :term:`iterator`.
 
 .. class:: Reversible
 
