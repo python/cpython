@@ -4,6 +4,7 @@ import os
 import sys
 import _collections_abc
 from collections import deque
+from errno import ENAMETOOLONG
 from functools import wraps
 from types import MethodType, GenericAlias
 
@@ -778,7 +779,7 @@ class chdir(AbstractContextManager):
         try:
             os.chdir(abs_return)
         except OSError as exc:
-            if exc.errno == 63: # File name too long
+            if exc.errno == ENAMETOOLONG:
                 try:
                     cwd = os.getcwd()
                     if os.path.commonpath([abs_return, cwd]):
