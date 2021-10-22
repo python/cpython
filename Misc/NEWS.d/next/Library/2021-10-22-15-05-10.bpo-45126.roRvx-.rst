@@ -1,0 +1,6 @@
+Prevent segfault if :class:`sqlite3.Connection` reinitialisation fails.
+
+.. warning::
+
+  :class:`sqlite3.Connection` is not adviced, as it may produce undesired
+  side-effects. Creating a new object is preferred to reinitialisation.
