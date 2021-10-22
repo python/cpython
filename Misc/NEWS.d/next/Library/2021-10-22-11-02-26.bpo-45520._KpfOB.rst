@@ -1,0 +1,3 @@
+Fix ``__getstate__`` and ``__setstate__`` methods for frozen
+``dataclasses``. It basically backports a part of 3.10's code to support
+``pickle`` and ``deepcopy``.

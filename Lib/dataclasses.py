@@ -977,6 +977,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                 raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
                                 f'in class {cls.__name__}')
 
+        # Need this for pickling frozen classes.
+        cls.__getstate__ = _dataclass_getstate
+        cls.__setstate__ = _dataclass_setstate
+
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),
                                bool(eq),
@@ -993,6 +997,21 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                        str(inspect.signature(cls)).replace(' -> None', ''))
 
     return cls
+
+
+# _dataclass_getstate and _dataclass_setstate are needed for pickling frozen
+# classes (maybe even with slots).
+# These could be slightly more performant if we generated
+# the code instead of iterating over fields.  But that can be a project for
+# another day, if performance becomes an issue.
+def _dataclass_getstate(self):
+    return [getattr(self, f.name) for f in fields(self)]
+
+
+def _dataclass_setstate(self, state):
+    for field, value in zip(fields(self), state):
+        # use setattr because dataclass may be frozen
+        object.__setattr__(self, field.name, value)
 
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,

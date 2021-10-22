@@ -2775,6 +2775,31 @@ class TestSlots(unittest.TestCase):
         # We can add a new field to the derived instance.
         d.z = 10
 
+    # Can't be local to test_frozen_pickle.
+    @dataclass(frozen=True)
+    class FrozenSlotsClass:
+        __slots__ = ('foo', 'bar')
+        foo: str
+        bar: int
+
+    @dataclass(frozen=True)
+    class FrozenWithoutSlotsClass:
+        foo: str
+        bar: int
+
+    def test_frozen_pickle(self):
+        # bpo-43999
+        # bpo-45520
+
+        assert self.FrozenSlotsClass.__slots__ == ("foo", "bar")
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                p = pickle.dumps(self.FrozenSlotsClass("a", 1), protocol=proto)
+                assert pickle.loads(p) == self.FrozenSlotsClass("a", 1)
+
+                p = pickle.dumps(self.FrozenWithoutSlotsClass("a", 1), protocol=proto)
+                assert pickle.loads(p) == self.FrozenWithoutSlotsClass("a", 1)
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
