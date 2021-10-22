@@ -1,0 +1,2 @@
+Raise :exc:`ImportError` in :c:func:`PyImport_ImportFrozenModuleObject` when
+the name object is invalid.

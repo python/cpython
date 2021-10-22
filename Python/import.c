@@ -1183,6 +1183,8 @@ set_frozen_error(frozen_status status, PyObject *modname)
     const char *err = NULL;
     switch (status) {
         case FROZEN_BAD_NAME:
+            err = "Invalid frozen object name (%R)";
+            break;
         case FROZEN_NOT_FOUND:
             err = "No such frozen object named %R";
             break;
@@ -1351,10 +1353,10 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
         return 0;
     }
-    else if (status == FROZEN_BAD_NAME) {
-        return 0;
-    }
     else if (status != FROZEN_OKAY) {
+        if (name == NULL) {
+            name = Py_None;
+        }
         set_frozen_error(status, name);
         return -1;
     }
