@@ -1,0 +1,1 @@
+Inline _math into _math.h to make static compilation easier.

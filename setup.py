@@ -904,18 +904,14 @@ class PyBuildExt(build_ext):
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
 
-        shared_math = 'Modules/_math.o'
-
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
-                           extra_objects=[shared_math],
-                           depends=['_math.h', shared_math],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
-                           extra_objects=[shared_math],
-                           depends=['_math.h', shared_math],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # time libraries: librt may be needed for clock_gettime()
