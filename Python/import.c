@@ -1142,7 +1142,8 @@ typedef enum {
     FROZEN_BAD_NAME,    // The given module name wasn't valid.
     FROZEN_NOT_FOUND,   // It wasn't in PyImport_FrozenModules.
     FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
-    FROZEN_EXCLUDED,    // The PyImport_FrozenModules entry has NULL "code".
+    FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
+                           (module is present but marked as unimportable, stops search). */
     FROZEN_INVALID,     // The PyImport_FrozenModules entry is bogus.
 } frozen_status;
 
