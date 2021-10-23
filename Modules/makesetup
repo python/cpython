@@ -111,9 +111,11 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	trap 'rm -f $rulesf' 0 1 2 3
 	echo "
 # Rules appended by makesetup
+\$(SHAREDMODS): pybuilddir.txt
 " >$rulesf
 	DEFS=
 	BUILT=
+	BUILT_SHARED=
 	DISABLED=
 	MODS=
 	SHAREDMODS=
@@ -244,9 +246,15 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		esac
 		for mod in $mods
 		do
-			file="$srcdir/$mod\$(EXT_SUFFIX)"
 			case $doconfig in
-			no)	SHAREDMODS="$SHAREDMODS $file";;
+			no)
+				file="\$(PYBUILDDIR)/$mod\$(EXT_SUFFIX)"
+				SHAREDMODS="$SHAREDMODS $file"
+				BUILT_SHARED="$BUILT_SHARED $mod"
+				;;
+			*)
+				file="\$(srcdir)/$mod\$(EXT_SUFFIX)"
+				;;
 			esac
 			rule="$file: $objs"
 			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o \$@"
@@ -256,7 +264,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 
 	case $SHAREDMODS in
 	'')	;;
-	*)	DEFS="SHAREDMODS=$SHAREDMODS$NL$DEFS";;
+	*)
+		DEFS="PYBUILDDIR=\$(file < pybuilddir.txt)$NL$DEFS"
+		DEFS="SHAREDMODS=$SHAREDMODS$NL$DEFS"
+		;;
 	esac
 
 	case $noobjects in
@@ -296,6 +307,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		str="# Generated automatically from $makepre by makesetup."
 		echo "$str" >>$sedf
 		echo "s%_MODBUILT_NAMES_%$BUILT%" >>$sedf
+		echo "s%_MODBUILT_SHARED_NAMES_%$BUILT_SHARED%" >>$sedf
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf

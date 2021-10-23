@@ -431,6 +431,7 @@ class PyBuildExt(build_ext):
         # built modules and the disabled modules as configured by the Setup
         # files.
         sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
+        sysconf_built_shared = sysconfig.get_config_var('MODBUILT_SHARED_NAMES').split()
         sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
 
         mods_built = []
@@ -449,6 +450,10 @@ class PyBuildExt(build_ext):
                                mods_configured]
             # Remove the shared libraries built by a previous build.
             for ext in mods_configured:
+                # don't remove shared extensions that have been
+                # declared in Modules/Setup and built by Makefile
+                if ext.name in sysconf_built_shared:
+                    continue
                 fullpath = self.get_ext_fullpath(ext.name)
                 if os.path.exists(fullpath):
                     os.unlink(fullpath)
