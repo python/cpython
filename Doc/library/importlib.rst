@@ -870,6 +870,11 @@ ABC hierarchy::
 
     .. versionadded:: 3.9
 
+    .. abstractmethod:: files()
+
+       Returns a :class:`importlib.abc.Traversable` object for the loaded
+       package.
+
 
 :mod:`importlib.resources` -- Resources
 ---------------------------------------
