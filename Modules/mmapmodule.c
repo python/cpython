@@ -32,6 +32,7 @@
 
 #ifdef MS_WINDOWS
 #include <windows.h>
+#include <winternl.h>
 static int
 my_getpagesize(void)
 {
@@ -374,16 +375,37 @@ is_writable(mmap_object *self)
 static int
 is_resizeable(mmap_object *self)
 {
+#ifdef MS_WINDOWS
+    /* a named file mapping that's open more than once can't be resized */
+    /* this check could be moved into is_resizeable */
+    if (self->tagname) {
+        typedef NTSTATUS NTAPI ntqo_f(HANDLE, OBJECT_INFORMATION_CLASS,
+            PVOID, ULONG, PULONG);
+        ntqo_f *pNtQueryObject = (ntqo_f *)GetProcAddress(
+            GetModuleHandleW(L"ntdll"), "NtQueryObject");
+        if (pNtQueryObject) {
+            PUBLIC_OBJECT_BASIC_INFORMATION info;
+            NTSTATUS status = pNtQueryObject(self->map_handle,
+                ObjectBasicInformation, &info, sizeof(info), NULL);
+            if (NT_SUCCESS(status) && info.HandleCount > 1) {
+                PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
+                return 0;
+            }
+        }
+    }
+#endif (MS_WINDOWS)
+
     if (self->exports > 0) {
         PyErr_SetString(PyExc_BufferError,
-                        "mmap can't resize with extant buffers exported.");
+            "mmap can't resize with extant buffers exported.");
         return 0;
     }
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
-                 "mmap can't resize a readonly or copy-on-write memory map.");
+        "mmap can't resize a readonly or copy-on-write memory map.");
     return 0;
+
 }
 
 

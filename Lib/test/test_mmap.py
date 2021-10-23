@@ -796,6 +796,26 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_resize_fails_if_named_section_held_elsewhere(self):
+        """If a named section is mapped more than once on Windows, neither
+        mapping can be resized
+        """
+        start_size = 2 * PAGESIZE
+        reduced_size = PAGESIZE
+        tagname = "TEST"
+
+        f = open(TESTFN, 'wb+')
+        try:
+            m1 = mmap.mmap(f.fileno(), start_size, tagname)
+            m2 = mmap.mmap(f.fileno(), start_size, tagname)
+            with self.assertRaises(OSError):
+                m1.resize(reduced_size)
+            m2.close()
+            m1.resize(reduced_size)
+            self.assertEqual(len(m1), reduced_size)
+        finally:
+            f.close()
 
 class LargeMmapTests(unittest.TestCase):
 
