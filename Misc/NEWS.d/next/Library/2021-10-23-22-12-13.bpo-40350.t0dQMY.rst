@@ -1,0 +1,1 @@
+Fix support for namespace packages in :mod:`modulefinder`.
