@@ -1239,6 +1239,7 @@ class _SubParsersAction(Action):
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
             getattr(namespace, _UNRECOGNIZED_ARGS_ATTR).extend(arg_strings)
 
+
 class _ExtendAction(_AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
@@ -1460,8 +1461,11 @@ class _ActionsContainer(object):
 
         return self._add_action(action)
 
-    def add_argument_group(self, *args, **kwargs):
-        group = _ArgumentGroup(self, *args, **kwargs)
+    def add_argument_group(self, title=None, description=None, **kwargs):
+        group = _ArgumentGroup(self,
+                               title=title,
+                               description=description,
+                               **kwargs)
         self._action_groups.append(group)
         return group
 
@@ -1762,8 +1766,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.exit_on_error = exit_on_error
 
         add_group = self.add_argument_group
-        self._positionals = add_group(_('positional arguments'))
-        self._optionals = add_group(_('options'))
+        self._positionals = add_group(title=_('positional arguments'))
+        self._optionals = add_group(title=_('options'))
         self._subparsers = None
 
         # register types
@@ -1817,7 +1821,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if 'title' in kwargs or 'description' in kwargs:
             title = _(kwargs.pop('title', 'subcommands'))
             description = _(kwargs.pop('description', None))
-            self._subparsers = self.add_argument_group(title, description)
+            self._subparsers = self.add_argument_group(
+                title=title,
+                description=description)
         else:
             self._subparsers = self._positionals
 
