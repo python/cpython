@@ -1144,7 +1144,8 @@ typedef enum {
     FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
     FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
                            (module is present but marked as unimportable, stops search). */
-    FROZEN_INVALID,     // The PyImport_FrozenModules entry is bogus.
+    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus.
+                           (eg. does not contain executable code) */
 } frozen_status;
 
 static inline void
@@ -1237,6 +1238,7 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         return FROZEN_EXCLUDED;
     }
     if (p->code[0] == '\0' || p->size == 0) {
+        /* Does not contain executable code. */
         return FROZEN_INVALID;
     }
     return FROZEN_OKAY;
@@ -1247,6 +1249,7 @@ unmarshal_frozen_code(struct frozen_info *info)
 {
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
+        /* Does not contain executable code. */
         set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }
@@ -2146,6 +2149,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
         info.nameobj = name;
     }
     if (info.size == 0) {
+        /* Does not contain executable code. */
         set_frozen_error(FROZEN_INVALID, name);
         return NULL;
     }
