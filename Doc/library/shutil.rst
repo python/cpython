@@ -657,6 +657,13 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   .. warning::
+
+      Never extract archives from untrusted sources without prior inspection.
+      It is possible that files are created outside of *path*, e.g. members
+      that have absolute filenames starting with ``"/"`` or filenames with two
+      dots ``".."``.
+
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. versionchanged:: 3.7

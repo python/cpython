@@ -1,0 +1,2 @@
+Copied security warning from ``tarfile.extractall()`` to
+``shutil.unpack_archive()``
