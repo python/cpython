@@ -110,6 +110,30 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.8
 
 
+.. decorator:: cached_method(func)
+               cached_method(maxsize=None, typed=False)
+
+   Cache a class method on a per-instance basis. The cached method will behave as if each
+   instance of the class had its own :func:`lru_cache`. By default, the cache size is
+   unbounded but the cache size can be limited in the same was as for `lru_cache`::
+
+       class Vector:
+           def __init__(self, coordinates):
+               self.coordinates = coordinates
+
+           @cached_method
+           def norm(self, p=2):
+               return sum(abs(c) ** p for c in self.coordinates) ** (1 / p)
+
+           @cached_method(maxsize=1)
+           def extend_zeros(self, n):
+               return Vector(self.coordinates + [0.0] * n)
+
+   In multi-threading contexts, the cached method may be called multiple times
+   concurrently with the same arguments.
+
+   .. versionadded:: 3.11
+
 .. function:: cmp_to_key(func)
 
    Transform an old-style comparison function to a :term:`key function`.  Used

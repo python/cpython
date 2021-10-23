@@ -1,0 +1,1 @@
+Add :func:`functools.cached_method` to cache methods.

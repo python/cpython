@@ -2692,5 +2692,171 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
 
 
+class CachedMethodWithDoc:
+    @py_functools.cached_method
+    def do(self, arg):
+        """Do the computation."""
+        return arg * 5
+
+
+class TestCachedMethod(unittest.TestCase):
+    def test_returns_cached_result_for_same_args(self):
+        class CachedCallCounter:
+            def __init__(self):
+                self.called = 0
+
+            @py_functools.cached_method
+            def compute(self, arg):
+                self.called += 1
+                return arg
+
+        obj = CachedCallCounter()
+
+        obj.compute(10)
+        self.assertEqual(obj.called, 1)
+
+        # Check that the same value is returned without the method being called again
+        self.assertEqual(obj.compute(10), 10)
+        self.assertEqual(obj.called, 1)
+
+        # Calling with different arguments triggers another method call
+        obj.compute(20)
+        self.assertEqual(obj.called, 2)
+
+    def test_lru_cache_arguments_can_be_set(self):
+        class RestrictedCachedCallCounter:
+            def __init__(self):
+                self.called = 0
+
+            @py_functools.cached_method(maxsize=1)
+            def compute(self, arg):
+                self.called += 1
+                return arg
+
+        obj = RestrictedCachedCallCounter()
+        obj.compute(1)
+        obj.compute(2)
+        obj.compute(1)
+        self.assertEqual(obj.called, 3)
+
+    def test_cached_attribute_name_differs_from_func_name(self):
+        class OptionallyCachedCallCounter:
+            def __init__(self):
+                self.called = 0
+
+            def compute(self, arg):
+                self.called += arg
+                return self.called
+
+            cached = py_functools.cached_method(compute)
+
+        obj = OptionallyCachedCallCounter()
+        self.assertEqual(obj.compute(1), 1)
+        self.assertEqual(obj.cached(1), 2)
+        self.assertEqual(obj.compute(1), 3)
+        self.assertEqual(obj.cached(1), 2)
+
+    def test_object_with_slots(self):
+        class WithSlots:
+            __slots__ = ("value",)
+
+            def __init__(self):
+                self.value = None
+
+            @py_functools.cached_method
+            def compute(self, arg):
+                self.value = arg
+                return arg
+
+        obj = WithSlots()
+        with self.assertRaisesRegex(
+                TypeError,
+                "No '__dict__' attribute on 'WithSlots' instance to cache 'compute' method.",
+        ):
+            obj.compute(1)
+
+    def test_immutable_dict(self):
+        class MyMeta(type):
+            @py_functools.cached_method
+            def heavy_computation(self, arg):
+                return arg + 1
+
+        class MyClass(metaclass=MyMeta):
+            pass
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'heavy_computation' method.",
+        ):
+            MyClass.heavy_computation(10)
+
+    def test_reuse_different_names(self):
+        """Disallow this case because decorated function a would not be cached."""
+        with self.assertRaises(RuntimeError) as ctx:
+            class ReusedCachedMethod:
+                @py_functools.cached_method
+                def a(self):
+                    pass
+
+                b = a
+
+        self.assertEqual(
+            str(ctx.exception.__context__),
+            str(TypeError("Cannot assign the same cached_method to two different names ('a' and 'b')."))
+        )
+
+    def test_reuse_same_name(self):
+        """Reusing a cached_property on different classes under the same name is OK."""
+        counter = 0
+
+        @py_functools.cached_method
+        def _increase(_self, by):
+            nonlocal counter
+            counter += by
+            return counter
+
+        class A:
+            increase = _increase
+
+        class B:
+            increase = _increase
+
+        a = A()
+        b = B()
+
+        self.assertEqual(a.increase(1), 1)
+        self.assertEqual(b.increase(2), 3)
+        self.assertEqual(a.increase(1), 1)
+
+        # Check that both instances have separate caches
+        self.assertEqual(a.increase(2), 5)
+        self.assertEqual(b.increase(1), 6)
+
+    def test_set_name_not_called(self):
+        cm = py_functools.cached_method(lambda s: None)
+        class Foo:
+            pass
+
+        Foo.cm = cm
+
+        with self.assertRaisesRegex(
+                TypeError,
+                "Cannot use cached_method instance without calling __set_name__ on it.",
+        ):
+            Foo().cm
+
+    def test_access_from_class(self):
+        self.assertIsInstance(CachedMethodWithDoc.do, py_functools.cached_method)
+
+    def test_cached_method_copies_metadata(self):
+        self.assertEqual(CachedMethodWithDoc.do.__name__, "do")
+        self.assertEqual(CachedMethodWithDoc.do.__doc__, "Do the computation.")
+
+    def test_cached_instace_method_copies_metadata(self):
+        obj = CachedMethodWithDoc()
+        self.assertEqual(obj.do.__name__, "do")
+        self.assertEqual(obj.do.__doc__, "Do the computation.")
+
+
 if __name__ == '__main__':
     unittest.main()
