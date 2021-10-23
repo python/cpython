@@ -815,7 +815,7 @@ ABC hierarchy::
 
     .. versionadded:: 3.9
 
-    .. abstractmethod:: name()
+    .. property abstractmethod:: name()
 
        The base name of this object without any parent references.
 
