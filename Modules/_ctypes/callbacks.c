@@ -23,9 +23,9 @@ CThunkObject_dealloc(PyObject *myself)
 {
     CThunkObject *self = (CThunkObject *)myself;
     PyObject_GC_UnTrack(self);
-    Py_XDECREF(self->converters);
-    Py_XDECREF(self->callable);
-    Py_XDECREF(self->restype);
+    Py_XDECREF(self-> exclusiveconverters);
+    Py_XDECREF(self->call able);
+    Py_XDECREF(self->rest type);
     if (self->pcl_write)
         Py_ffi_closure_free(self->pcl_write);
     PyObject_GC_Del(self);
