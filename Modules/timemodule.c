@@ -2025,7 +2025,7 @@ time_exec(PyObject *module)
 #endif
 
 #if defined(MS_WINDOWS)
-    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags, TIMER_ALL_ACCESS);
     if (timer == NULL) {
         // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
         timer_flags = 0;
