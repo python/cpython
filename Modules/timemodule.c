@@ -408,6 +408,13 @@ static PyStructSequence_Desc struct_time_type_desc = {
 static int initialized;
 static PyTypeObject StructTimeType;
 
+#if defined(MS_WINDOWS)
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
+static DWORD timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+#endif
 
 static PyObject *
 tmtotuple(struct tm *p
@@ -2017,6 +2024,16 @@ time_exec(PyObject *module)
         utc_string = tm.tm_zone;
 #endif
 
+#if defined(MS_WINDOWS)
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    if (timer == NULL) {
+        timer_flags = 0;
+    }
+    else {
+        CloseHandle(timer);
+    }
+#endif
+
     return 0;
 }
 
@@ -2130,9 +2147,6 @@ pysleep(_PyTime_t timeout)
     return 0;
 #else  // MS_WINDOWS
 
-#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
-  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
-#endif
     _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
                                                        _PyTime_ROUND_CEILING);
 
@@ -2154,14 +2168,11 @@ pysleep(_PyTime_t timeout)
     // SetWaitableTimer(): a negative due time indicates relative time
     relative_timeout.QuadPart = -timeout_100ns;
 
-    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags, TIMER_ALL_ACCESS);
     if (timer == NULL) {
-        timer = CreateWaitableTimerExW(NULL, NULL, 0, TIMER_ALL_ACCESS);
-        if (timer == NULL) {
-            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
-            PyErr_SetFromWindowsErr(0);
-            return -1;
-        }
+        // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
+        PyErr_SetFromWindowsErr(0);
+        return -1;
     }
 
     if (!SetWaitableTimerEx(timer, &relative_timeout,
