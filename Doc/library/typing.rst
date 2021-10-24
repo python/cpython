@@ -19,7 +19,7 @@
 
 This module provides runtime support for type hints as specified by
 :pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`,
-:pep:`612` and :pep:`613`.
+:pep:`593`, :pep:`612`, :pep:`613` and :pep:`647`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For

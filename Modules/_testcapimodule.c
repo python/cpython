@@ -18,28 +18,31 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "datetime.h"
-#include "marshal.h"
+#include "frameobject.h"          // PyFrame_Check()
+#include "datetime.h"             // PyDateTimeAPI
+#include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
-#include <float.h>
+#include <float.h>                // FLT_MAX
 #include <signal.h>
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>         /* struct timeval */
+#  include <winsock2.h>           // struct timeval
 #endif
 
 #ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>           /* For W_STOPCODE */
+#include <sys/wait.h>             // W_STOPCODE
 #endif
 
 #ifdef Py_BUILD_CORE
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+
+// Forward declarations
 static struct PyModuleDef _testcapimodule;
 static PyType_Spec HeapTypeNameType_Spec;
-
 static PyObject *TestError;     /* set to exception object in init */
+
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
 
@@ -1161,14 +1164,134 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 
 static PyObject *
+simple_str(PyObject *self) {
+    return PyUnicode_FromString("<test>");
+}
+
+
+static PyObject *
+test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Test that a heap type can be created from a spec that's later deleted
+    // (along with all its contents).
+    // All necessary data must be copied and held by the class
+    PyType_Spec *spec = NULL;
+    char *name = NULL;
+    char *doc = NULL;
+    PyType_Slot *slots = NULL;
+    PyObject *class = NULL;
+    PyObject *instance = NULL;
+    PyObject *obj = NULL;
+    PyObject *result = NULL;
+
+    /* create a spec (and all its contents) on the heap */
+
+    const char NAME[] = "testcapi._Test";
+    const char DOC[] = "a test class";
+
+    spec = PyMem_New(PyType_Spec, 1);
+    if (spec == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    name = PyMem_New(char, sizeof(NAME));
+    if (name == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    memcpy(name, NAME, sizeof(NAME));
+
+    doc = PyMem_New(char, sizeof(DOC));
+    if (name == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    memcpy(doc, DOC, sizeof(DOC));
+
+    spec->name = name;
+    spec->basicsize = sizeof(PyObject);
+    spec->itemsize = 0;
+    spec->flags = Py_TPFLAGS_DEFAULT;
+    slots = PyMem_New(PyType_Slot, 3);
+    if (slots == NULL) {
+        PyErr_NoMemory();
+        goto finally;
+    }
+    slots[0].slot = Py_tp_str;
+    slots[0].pfunc = simple_str;
+    slots[1].slot = Py_tp_doc;
+    slots[1].pfunc = doc;
+    slots[2].slot = 0;
+    slots[2].pfunc = NULL;
+    spec->slots = slots;
+
+    /* create the class */
+
+    class = PyType_FromSpec(spec);
+    if (class == NULL) {
+        goto finally;
+    }
+
+    /* deallocate the spec (and all contents) */
+
+    // (Explicitly ovewrite memory before freeing,
+    // so bugs show themselves even without the debug allocator's help.)
+    memset(spec, 0xdd, sizeof(PyType_Spec));
+    PyMem_Del(spec);
+    spec = NULL;
+    memset(name, 0xdd, sizeof(NAME));
+    PyMem_Del(name);
+    name = NULL;
+    memset(doc, 0xdd, sizeof(DOC));
+    PyMem_Del(doc);
+    doc = NULL;
+    memset(slots, 0xdd, 3 * sizeof(PyType_Slot));
+    PyMem_Del(slots);
+    slots = NULL;
+
+    /* check that everything works */
+
+    PyTypeObject *class_tp = (PyTypeObject *)class;
+    PyHeapTypeObject *class_ht = (PyHeapTypeObject *)class;
+    assert(strcmp(class_tp->tp_name, "testcapi._Test") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(class_ht->ht_name), "_Test") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(class_ht->ht_qualname), "_Test") == 0);
+    assert(strcmp(class_tp->tp_doc, "a test class") == 0);
+
+    // call and check __str__
+    instance = PyObject_CallNoArgs(class);
+    if (instance == NULL) {
+        goto finally;
+    }
+    obj = PyObject_Str(instance);
+    if (obj == NULL) {
+        goto finally;
+    }
+    assert(strcmp(PyUnicode_AsUTF8(obj), "<test>") == 0);
+    Py_CLEAR(obj);
+
+    result = Py_NewRef(Py_None);
+  finally:
+    PyMem_Del(spec);
+    PyMem_Del(name);
+    PyMem_Del(doc);
+    PyMem_Del(slots);
+    Py_XDECREF(class);
+    Py_XDECREF(instance);
+    Py_XDECREF(obj);
+    return result;
+}
+
+
+static PyObject *
 test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *tp_qualname = PyType_GetQualName(&PyLong_Type);
     assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "int") == 0);
     Py_DECREF(tp_qualname);
 
-    tp_qualname = PyType_GetQualName(&_PyNamespace_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "SimpleNamespace") == 0);
+    tp_qualname = PyType_GetQualName(&PyODict_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "OrderedDict") == 0);
     Py_DECREF(tp_qualname);
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
@@ -5674,6 +5797,57 @@ type_get_version(PyObject *self, PyObject *type)
 }
 
 
+// Test PyThreadState C API
+static PyObject *
+test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // PyThreadState_Get()
+    PyThreadState *tstate = PyThreadState_Get();
+    assert(tstate != NULL);
+
+    // PyThreadState_GET()
+    PyThreadState *tstate2 = PyThreadState_Get();
+    assert(tstate2 == tstate);
+
+    // private _PyThreadState_UncheckedGet()
+    PyThreadState *tstate3 = _PyThreadState_UncheckedGet();
+    assert(tstate3 == tstate);
+
+    // PyThreadState_EnterTracing(), PyThreadState_LeaveTracing()
+    PyThreadState_EnterTracing(tstate);
+    PyThreadState_LeaveTracing(tstate);
+
+    // PyThreadState_GetDict(): no tstate argument
+    PyObject *dict = PyThreadState_GetDict();
+    // PyThreadState_GetDict() API can return NULL if PyDict_New() fails,
+    // but it should not occur in practice.
+    assert(dict != NULL);
+    assert(PyDict_Check(dict));
+    // dict is a borrowed reference
+
+    // private _PyThreadState_GetDict()
+    PyObject *dict2 = _PyThreadState_GetDict(tstate);
+    assert(dict2 == dict);
+    // dict2 is a borrowed reference
+
+    // PyThreadState_GetInterpreter()
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+    assert(interp != NULL);
+
+    // PyThreadState_GetFrame()
+    PyFrameObject*frame = PyThreadState_GetFrame(tstate);
+    assert(frame != NULL);
+    assert(PyFrame_Check(frame));
+    Py_DECREF(frame);
+
+    // PyThreadState_GetID()
+    uint64_t id = PyThreadState_GetID(tstate);
+    assert(id >= 1);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
@@ -5750,6 +5924,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",   test_get_type_qualname,       METH_NOARGS},
+    {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
@@ -5957,6 +6132,7 @@ static PyMethodDef TestMethods[] = {
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

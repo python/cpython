@@ -53,14 +53,15 @@ def remove_python_envvars():
 class EmbeddingTestsMixin:
     def setUp(self):
         exename = "_testembed"
+        builddir = os.path.dirname(sys.executable)
         if MS_WINDOWS:
             ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
-            exepath = os.path.dirname(sys.executable)
+            exepath = builddir
         else:
-            exepath = os.path.join(support.REPO_ROOT, "Programs")
+            exepath = os.path.join(builddir, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if not os.path.exists(exe):
+        if exepath != support.REPO_ROOT or not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
@@ -434,7 +435,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pathconfig_warnings': 1,
         '_init_main': 1,
         '_isolated_interpreter': 0,
-        'use_frozen_modules': 0,
+        'use_frozen_modules': 1,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -1146,6 +1147,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
+            'use_frozen_modules': -1,
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
@@ -1169,6 +1171,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              # The current getpath.c doesn't determine the stdlib dir
              # in this case.
             'stdlib_dir': '',
+            'use_frozen_modules': -1,
             # overridden by PyConfig
             'program_name': 'conf_program_name',
             'base_executable': 'conf_executable',
@@ -1247,6 +1250,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"Unable to find home in {paths!r}")
 
         prefix = exec_prefix = home
+        if MS_WINDOWS:
+            stdlib = os.path.join(home, sys.platlibdir)
+        else:
+            version = f'{sys.version_info.major}.{sys.version_info.minor}'
+            stdlib = os.path.join(home, sys.platlibdir, f'python{version}')
         expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
@@ -1257,9 +1265,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': exec_prefix,
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
-            'stdlib_dir': home,
+            'stdlib_dir': stdlib,
         }
         self.default_program_name(config)
+        if not config['executable']:
+            config['use_frozen_modules'] = -1
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
@@ -1298,6 +1308,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 'stdlib_dir': None,
+                'use_frozen_modules': -1,
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1356,6 +1367,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'lib')
+                config['use_frozen_modules'] = 1
 
                 ver = sys.version_info
                 dll = f'python{ver.major}'
@@ -1368,6 +1380,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # The current getpath.c doesn't determine the stdlib dir
                 # in this case.
                 config['stdlib_dir'] = None
+                config['use_frozen_modules'] = -1
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,

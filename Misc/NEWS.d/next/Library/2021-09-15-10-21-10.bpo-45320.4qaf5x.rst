@@ -1,0 +1,15 @@
+Removed from the :mod:`inspect` module:
+
+* the ``getargspec`` function, deprecated since Python 3.0;
+    use :func:`inspect.signature` or :func:`inspect.getfullargspec` instead.
+
+* the ``formatargspec`` function, deprecated since Python 3.5;
+  use the :func:`inspect.signature` function and :class:`Signature` object
+  directly.
+
+* the undocumented ``Signature.from_callable`` and ``Signature.from_function``
+  functions, deprecated since Python 3.5; use the
+  :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
+  instead.
+
+Patch by Hugo van Kemenade.

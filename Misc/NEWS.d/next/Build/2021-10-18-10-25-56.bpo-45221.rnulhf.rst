@@ -1,0 +1,3 @@
+Fixed regression in handling of ``LDFLAGS`` and ``CPPFLAGS`` options
+where :meth:`argparse.parse_known_args` could interpret an option as
+one of the built-in command line argument, for example ``-h`` for help.

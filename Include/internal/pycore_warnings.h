@@ -19,6 +19,10 @@ struct _warnings_runtime_state {
 
 extern int _PyWarnings_InitState(PyInterpreterState *interp);
 
+PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
+
+extern void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
+
 #ifdef __cplusplus
 }
 #endif

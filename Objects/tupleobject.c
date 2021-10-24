@@ -66,7 +66,8 @@ tuple_alloc(Py_ssize_t size)
         return NULL;
     }
 
-#if PyTuple_MAXSAVESIZE > 0
+// Check for max save size > 1. Empty tuple singleton is special case.
+#if PyTuple_MAXSAVESIZE > 1
     struct _Py_tuple_state *state = get_tuple_state();
 #ifdef Py_DEBUG
     // tuple_alloc() must not be called after _PyTuple_Fini()
@@ -490,9 +491,11 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     if (n == 0) {
         return tuple_get_empty();
     }
-
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(src[i]);
+        }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;

@@ -1,0 +1,1 @@
+Specialize simple calls to Python functions (no starargs, keyowrd dict, or closure)

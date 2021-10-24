@@ -8,7 +8,6 @@
 #include "pycore_long.h"          // __PyLong_GetSmallInt_internal()
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
-#include "longintrepr.h"
 
 #include <ctype.h>
 #include <float.h>

@@ -20,6 +20,7 @@ Data members:
 #include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // InterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
@@ -255,8 +256,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         }
 
         /* Disallow tracing in hooks unless explicitly enabled */
-        ts->tracing++;
-        ts->cframe->use_tracing = 0;
+        PyThreadState_EnterTracing(ts);
         while ((hook = PyIter_Next(hooks)) != NULL) {
             _Py_IDENTIFIER(__cantrace__);
             PyObject *o;
@@ -269,14 +269,12 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
                 break;
             }
             if (canTrace) {
-                ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc) ? 255 : 0;
-                ts->tracing--;
+                PyThreadState_LeaveTracing(ts);
             }
             PyObject* args[2] = {eventName, eventArgs};
             o = _PyObject_FastCallTstate(ts, hook, args, 2);
             if (canTrace) {
-                ts->tracing++;
-                ts->cframe->use_tracing = 0;
+                PyThreadState_EnterTracing(ts);
             }
             if (!o) {
                 break;
@@ -284,8 +282,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
             Py_DECREF(o);
             Py_CLEAR(hook);
         }
-        ts->cframe->use_tracing = (ts->c_tracefunc || ts->c_profilefunc) ? 255 : 0;
-        ts->tracing--;
+        PyThreadState_LeaveTracing(ts);
         if (_PyErr_Occurred(ts)) {
             goto exit;
         }

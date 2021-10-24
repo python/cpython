@@ -10,7 +10,6 @@
 #include "pycore_unionobject.h"   // _PyUnion_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
-#include "longintrepr.h"
 
 
 
@@ -2558,14 +2557,22 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
             derived = PyTuple_GET_ITEM(bases, 0);
             continue;
         }
-        for (i = 0; i < n; i++) {
-            r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
-            if (r != 0)
-                break;
-        }
-        Py_DECREF(bases);
-        return r;
+        break;
     }
+    assert(n >= 2);
+    if (Py_EnterRecursiveCall(" in __issubclass__")) {
+        Py_DECREF(bases);
+        return -1;
+    }
+    for (i = 0; i < n; i++) {
+        r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
+        if (r != 0) {
+            break;
+        }
+    }
+    Py_LeaveRecursiveCall();
+    Py_DECREF(bases);
+    return r;
 }
 
 static int

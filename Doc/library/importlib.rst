@@ -815,19 +815,65 @@ ABC hierarchy::
 
     .. versionadded:: 3.9
 
+    .. abstractmethod:: name()
+
+       The base name of this object without any parent references.
+
+    .. abstractmethod:: iterdir()
+
+       Yield Traversable objects in self.
+
+    .. abstractmethod:: is_dir()
+
+       Return True if self is a directory.
+
+    .. abstractmethod:: is_file()
+
+       Return True if self is a file.
+
+    .. abstractmethod:: joinpath(child)
+
+       Return Traversable child in self.
+
+    .. abstractmethod:: __truediv__(child)
+
+       Return Traversable child in self.
+
+    .. abstractmethod:: open(mode='r', *args, **kwargs)
+
+       *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
+       suitable for reading (same as :attr:`pathlib.Path.open`).
+
+       When opening as text, accepts encoding parameters such as those
+       accepted by :attr:`io.TextIOWrapper`.
+
+    .. method:: read_bytes()
+
+       Read contents of self as bytes.
+
+    .. method:: read_text(encoding=None)
+
+       Read contents of self as text.
+
 
 .. class:: TraversableResources
 
     An abstract base class for resource readers capable of serving
-    the ``files`` interface. Subclasses ResourceReader and provides
-    concrete implementations of the ResourceReader's abstract
-    methods. Therefore, any loader supplying TraversableReader
-    also supplies ResourceReader.
+    the :meth:`importlib.resources.files` interface. Subclasses
+    :class:`importlib.abc.ResourceReader` and provides
+    concrete implementations of the :class:`importlib.abc.ResourceReader`'s
+    abstract methods. Therefore, any loader supplying
+    :class:`importlib.abc.TraversableReader` also supplies ResourceReader.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.
 
     .. versionadded:: 3.9
+
+    .. abstractmethod:: files()
+
+       Returns a :class:`importlib.abc.Traversable` object for the loaded
+       package.
 
 
 :mod:`importlib.resources` -- Resources
@@ -1351,6 +1397,24 @@ find and load modules.
       Returns :attr:`path`.
 
       .. versionadded:: 3.4
+
+
+.. class:: NamespaceLoader(name, path, path_finder):
+
+   A concrete implementation of :class:`importlib.abc.InspectLoader` for
+   namespace packages.  This is an alias for a private class and is only made
+   public for introspecting the ``__loader__`` attribute on namespace
+   packages::
+
+       >>> from importlib.machinery import NamespaceLoader
+       >>> import my_namespace
+       >>> isinstance(my_namespace.__loader__, NamespaceLoader)
+       True
+       >>> import importlib.abc
+       >>> isinstance(my_namespace.__loader__, importlib.abc.Loader)
+       True
+
+   .. versionadded:: 3.11
 
 
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
