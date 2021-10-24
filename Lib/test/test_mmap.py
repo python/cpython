@@ -5,6 +5,7 @@ import unittest
 import os
 import re
 import itertools
+import random
 import socket
 import sys
 import weakref
@@ -816,6 +817,22 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(len(m1), reduced_size)
         finally:
             f.close()
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_resize_when_mapped_to_pagefile(self):
+        """If the mmap is backed by the pagefile ensure a resize can happen
+        """
+        start_size = 6
+        increased_size = 2 * start_size
+        data = bytes(random.getrandbits(8) for _ in range(start_size))
+
+        m = mmap.mmap(-1, start_size)
+        m[:] = data
+        m.resize(increased_size)
+        self.assertEqual(len(m), increased_size)
+        self.assertEqual(m[:start_size], data)
+
+
 
 class LargeMmapTests(unittest.TestCase):
 

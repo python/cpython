@@ -526,50 +526,73 @@ mmap_resize_method(mmap_object *self,
 
     {
 #ifdef MS_WINDOWS
-        DWORD dwErrCode = 0;
-        DWORD off_hi, off_lo, newSizeLow, newSizeHigh;
-        /* First, unmap the file view */
-        UnmapViewOfFile(self->data);
-        self->data = NULL;
-        /* Close the mapping object */
+        DWORD error = 0;
+        char* old_data = self->data;
+        LARGE_INTEGER offset, max_size;
+        offset.QuadPart = self->offset;
+        max_size.QuadPart = new_size;
+        /* close the file mapping */
         CloseHandle(self->map_handle);
         self->map_handle = NULL;
-        /* Move to the desired EOF position */
-        newSizeHigh = (DWORD)((self->offset + new_size) >> 32);
-        newSizeLow = (DWORD)((self->offset + new_size) & 0xFFFFFFFF);
-        off_hi = (DWORD)(self->offset >> 32);
-        off_lo = (DWORD)(self->offset & 0xFFFFFFFF);
-        SetFilePointer(self->file_handle,
-                       newSizeLow, &newSizeHigh, FILE_BEGIN);
-        /* Change the size of the file */
-        SetEndOfFile(self->file_handle);
-        /* Create another mapping object and remap the file view */
+        /* if it's not the paging file, unmap the view and resize the file */
+        if (self->file_handle != INVALID_HANDLE_VALUE) {
+            if (!UnmapViewOfFile(self->data)) {
+                return PyErr_SetFromWindowsErr(GetLastError());
+            };
+            self->data = NULL;
+            /* resize the file */
+            if (!SetFilePointerEx(self->file_handle, max_size, NULL,
+                FILE_BEGIN) ||
+                !SetEndOfFile(self->file_handle)) {
+                /* resizing failed. try to remap the file */
+                error = GetLastError();
+                new_size = max_size.QuadPart = self->size;
+            }
+        }
+        /* create a new file mapping and map a new view */
+        /* FIXME: call CreateFileMappingW with wchar_t tagname */
         self->map_handle = CreateFileMapping(
             self->file_handle,
             NULL,
             PAGE_READWRITE,
-            0,
-            0,
+            max_size.HighPart,
+            max_size.LowPart,
             self->tagname);
-        if (self->map_handle != NULL) {
-            self->data = (char *) MapViewOfFile(self->map_handle,
-                                                FILE_MAP_WRITE,
-                                                off_hi,
-                                                off_lo,
-                                                new_size);
+        if (self->map_handle != NULL &&
+            GetLastError() != ERROR_ALREADY_EXISTS) {
+            self->data = MapViewOfFile(self->map_handle,
+                FILE_MAP_WRITE,
+                offset.HighPart,
+                offset.LowPart,
+                new_size);
             if (self->data != NULL) {
+                /* copy the old view if using the paging file */
+                if (self->file_handle == INVALID_HANDLE_VALUE) {
+                    memcpy(
+                        self->data, old_data,
+                        self->size < new_size ? self->size : new_size
+                    );
+                }
                 self->size = new_size;
-                Py_RETURN_NONE;
-            } else {
-                dwErrCode = GetLastError();
+            }
+            else {
+                error = GetLastError();
                 CloseHandle(self->map_handle);
                 self->map_handle = NULL;
             }
-        } else {
-            dwErrCode = GetLastError();
         }
-        PyErr_SetFromWindowsErr(dwErrCode);
-        return NULL;
+        else {
+            error = GetLastError();
+        }
+        /* unmap the old view if using the paging file */
+        if (self->file_handle == INVALID_HANDLE_VALUE) {
+            UnmapViewOfFile(old_data);
+        }
+        if (error) {
+            PyErr_SetFromWindowsErr(error);
+            return NULL;
+        }
+        Py_RETURN_NONE;
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
