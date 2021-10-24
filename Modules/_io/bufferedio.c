@@ -205,6 +205,7 @@ typedef struct {
     int detached;
     int readable;
     int writable;
+    int appending;
     char finalizing;
 
     /* True if this is a vanilla Buffered object (rather than a user derived
@@ -1207,6 +1208,37 @@ buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromOff_t(pos);
 }
 
+static PyObject *
+_buffered_seek_unlocked(buffered *self, Py_off_t target, int whence)
+{
+    PyObject *res = NULL;
+
+    if (self->writable) {
+        res = _bufferedwriter_flush_unlocked(self);
+        if (res == NULL) {
+            return res;
+        }
+        Py_CLEAR(res);
+    }
+
+    /* TODO: align on block boundary and read buffer if needed? */
+    if (whence == 1) {
+        target -= RAW_OFFSET(self);
+    }
+
+    Py_off_t n = _buffered_raw_seek(self, target, whence);
+    if (n == -1) {
+        return res;
+    }
+    self->raw_pos = -1;
+    res = PyLong_FromOff_t(n);
+    if (res != NULL && self->readable) {
+        _bufferedreader_reset_buf(self);
+    }
+
+    return res;
+}
+
 /*[clinic input]
 _io._Buffered.seek
     target as targetobj: object
@@ -1218,7 +1250,7 @@ static PyObject *
 _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 /*[clinic end generated code: output=7ae0e8dc46efdefb input=a9c4920bfcba6163]*/
 {
-    Py_off_t target, n;
+    Py_off_t target;
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
@@ -1279,25 +1311,8 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
         return NULL;
 
     /* Fallback: invoke raw seek() method and clear buffer */
-    if (self->writable) {
-        res = _bufferedwriter_flush_unlocked(self);
-        if (res == NULL)
-            goto end;
-        Py_CLEAR(res);
-    }
+    res = _buffered_seek_unlocked(self, target, whence);
 
-    /* TODO: align on block boundary and read buffer if needed? */
-    if (whence == 1)
-        target -= RAW_OFFSET(self);
-    n = _buffered_raw_seek(self, target, whence);
-    if (n == -1)
-        goto end;
-    self->raw_pos = -1;
-    res = PyLong_FromOff_t(n);
-    if (res != NULL && self->readable)
-        _bufferedreader_reset_buf(self);
-
-end:
     LEAVE_BUFFERED(self)
     return res;
 }
@@ -1770,6 +1785,30 @@ _bufferedwriter_reset_buf(buffered *self)
     self->write_end = -1;
 }
 
+static void
+_bufferedwriter_set_append(buffered *self)
+{
+    PyObject *mode = _PyObject_GetAttrId(self->raw, &PyId_mode);
+    if (mode != NULL && PyUnicode_Check(mode)) {
+        if (PyUnicode_FindChar(mode, 'a', 0,
+                               PyUnicode_GET_LENGTH(mode), 1) != -1) {
+            self->appending = 1;
+        }
+        else {
+            self->appending = 0;
+        }
+        Py_DECREF(mode);
+    }
+    else {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
+        /* Raw fileobj has no mode string so as far as we can know it has
+           normal write behavior */
+        self->appending = 0;
+    }
+}
+
 /*[clinic input]
 _io.BufferedWriter.__init__
     raw: object
@@ -1797,6 +1836,8 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     Py_XSETREF(self->raw, raw);
     self->readable = 0;
     self->writable = 1;
+
+    _bufferedwriter_set_append(self);
 
     self->buffer_size = buffer_size;
     if (_buffered_init(self) < 0)
@@ -1862,18 +1903,20 @@ static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
     Py_ssize_t written = 0;
-    Py_off_t n, rewind;
+    Py_off_t n;
 
     if (!VALID_WRITE_BUFFER(self) || self->write_pos == self->write_end)
         goto end;
-    /* First, rewind */
-    rewind = RAW_OFFSET(self) + (self->pos - self->write_pos);
-    if (rewind != 0) {
-        n = _buffered_raw_seek(self, -rewind, 1);
-        if (n < 0) {
-            goto error;
+    /* First, rewind unless raw file is in append mode */
+    if (!self->appending) {
+        Py_off_t rewind = RAW_OFFSET(self) + (self->pos - self->write_pos);
+        if (rewind != 0) {
+            n = _buffered_raw_seek(self, -rewind, 1);
+            if (n < 0) {
+                goto error;
+            }
+            self->raw_pos -= rewind;
         }
-        self->raw_pos -= rewind;
     }
     while (self->write_pos < self->write_end) {
         n = _bufferedwriter_raw_write(self,
@@ -1947,6 +1990,15 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
         self->pos = 0;
         self->raw_pos = 0;
     }
+
+    if (self->appending) {
+        res = _buffered_seek_unlocked(self, 0, SEEK_END);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_DECREF(res);
+    }
+
     avail = Py_SAFE_DOWNCAST(self->buffer_size - self->pos, Py_off_t, Py_ssize_t);
     if (buffer->len <= avail) {
         memcpy(self->buffer + self->pos, buffer->buf, buffer->len);
@@ -2311,6 +2363,8 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->buffer_size = buffer_size;
     self->readable = 1;
     self->writable = 1;
+
+    _bufferedwriter_set_append(self);
 
     if (_buffered_init(self) < 0)
         return -1;

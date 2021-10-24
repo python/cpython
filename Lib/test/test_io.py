@@ -2403,6 +2403,31 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'1b\n2def\n3\n')
 
+    def test_append_write(self):
+        # Uses a real FileIO so that append behavior is reproduced accurately
+        with self.FileIO(os_helper.TESTFN, 'wb') as f:
+            f.write(b'test test')
+
+        with self.FileIO(os_helper.TESTFN, 'ab+') as raw:
+            with self.tp(raw) as f:
+                self.assertEqual(f.tell(), 9)
+                f.write(b'A')
+                f.seek(0)
+                self.assertEqual(f.read(), b'test testA')
+                f.seek(0)
+                self.assertEqual(f.read(1), b't')
+                self.assertEqual(f.write(b'B'), 1)
+                f.seek(0)
+
+                # This read previously returned b'tBst testA' but that is
+                # incorrect if the underlying raw file is in append mode;
+                # see bpo-20082
+                self.assertEqual(f.read(), b'test testAB')
+                f.flush()
+                f.seek(0)
+                self.assertEqual(f.read(), b'test testAB')
+
+
     # You can't construct a BufferedRandom over a non-seekable stream.
     test_unseekable = None
 
