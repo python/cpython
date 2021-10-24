@@ -113,6 +113,15 @@ long_normalize(PyLongObject *v)
 #define MAX_LONG_DIGITS \
     ((PY_SSIZE_T_MAX - offsetof(PyLongObject, ob_digit))/sizeof(digit))
 
+union _small_object {
+    PyFloatObject f;
+    PyLongObject l;
+};
+
+/* Free list is shared between ints and floats as they take the same amount of memory (on most platforms)
+ */
+#define MAX_DIGITS_FOR_FREELIST ((sizeof(union _small_object) - offsetof(PyLongObject, ob_digit))/sizeof(digit))
+
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
@@ -122,16 +131,23 @@ _PyLong_New(Py_ssize_t size)
                         "too many digits in integer");
         return NULL;
     }
-    /* Fast operations for single digit integers (including zero)
-     * assume that there is always at least one digit present. */
-    Py_ssize_t ndigits = size ? size : 1;
-    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
-       sizeof(digit)*size.  Previous incarnations of this code used
-       sizeof(PyVarObject) instead of the offsetof, but this risks being
-       incorrect in the presence of padding between the PyVarObject header
-       and the digits. */
-    result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
-                             ndigits*sizeof(digit));
+#if WITH_FREELISTS
+    if (size <= MAX_DIGITS_FOR_FREELIST) {
+        result = (PyLongObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
+#else
+    if (size == 0) {
+        result = PyObject_Malloc(sizeof(PyLongObject));
+#endif
+    }
+    else {
+        /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+        sizeof(digit)*size.  Previous incarnations of this code used
+        sizeof(PyVarObject) instead of the offsetof, but this risks being
+        incorrect in the presence of padding between the PyVarObject header
+        and the digits. */
+        result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
+                                size*sizeof(digit));
+    }
     if (!result) {
         PyErr_NoMemory();
         return NULL;
