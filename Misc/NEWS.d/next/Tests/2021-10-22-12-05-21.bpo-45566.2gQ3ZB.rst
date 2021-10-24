@@ -1,1 +1,1 @@
-Fix ``test_frozen_pickle`` to check all ``pickle`` versions.
+Fix ``test_frozen_pickle`` in ``test_dataclasses`` to check all ``pickle`` versions.
