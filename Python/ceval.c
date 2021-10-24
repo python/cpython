@@ -2528,6 +2528,8 @@ check_eval_breaker:
         }
 
         TARGET(STORE_SUBSCR) {
+            PREDICTED(STORE_SUBSCR);
+            STAT_INC(STORE_SUBSCR, unquickened);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -2540,6 +2542,93 @@ check_eval_breaker:
             Py_DECREF(sub);
             if (err != 0)
                 goto error;
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_ADAPTIVE) {
+            if (oparg == 0) {
+                PyObject *sub = TOP();
+                PyObject *container = SECOND();
+                next_instr--;
+                if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(STORE_SUBSCR, deferred);
+                // oparg is the adaptive cache counter
+                UPDATE_PREV_INSTR_OPARG(next_instr, oparg - 1);
+                STAT_DEC(STORE_SUBSCR, unquickened);
+                JUMP_TO_INSTRUCTION(STORE_SUBSCR);
+            }
+        }
+
+        TARGET(STORE_SUBSCR_LIST_INT) {
+            PyObject *sub = TOP();
+            PyObject *list = SECOND();
+            PyObject *value = THIRD();
+            DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
+            DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
+
+            // Ensure nonnegative, zero-or-one-digit ints.
+            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            // Ensure index < len(list)
+            DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
+            STAT_INC(STORE_SUBSCR, hit);
+
+            PyObject *old_value = PyList_GET_ITEM(list, index);
+            PyList_SET_ITEM(list, index, value);
+            STACK_SHRINK(3);
+            assert(old_value != NULL);
+            Py_DECREF(old_value);
+            Py_DECREF(sub);
+            Py_DECREF(list);
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_DICT) {
+            PyObject *sub = TOP();
+            PyObject *dict = SECOND();
+            PyObject *value = THIRD();
+            DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
+            STACK_SHRINK(3);
+            STAT_INC(STORE_SUBSCR, hit);
+
+            /* This does not steal value. */
+            int err = PyDict_SetItem(dict, sub, value);
+            Py_DECREF(sub);
+            Py_DECREF(dict);
+            Py_DECREF(value);
+            if (err != 0) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_BYTEARRAY_INT) {
+            PyObject *sub = TOP();
+            PyObject *byte_array = SECOND();
+            PyObject *value = THIRD();
+            DEOPT_IF(!PyByteArray_CheckExact(byte_array), STORE_SUBSCR);
+            DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
+            DEOPT_IF(!PyLong_CheckExact(value), STORE_SUBSCR);
+            // Ensure nonnegative, zero-or-one-digit ints.
+            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
+            DEOPT_IF(((size_t)Py_SIZE(value)) > 1, STORE_SUBSCR);
+            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
+            Py_ssize_t byte_value = ((PyLongObject*)value)->ob_digit[0];
+            DEOPT_IF(index >= PyByteArray_GET_SIZE(byte_array), STORE_SUBSCR);
+            DEOPT_IF(((size_t)byte_value) > 0xff, STORE_SUBSCR);
+
+            STAT_INC(STORE_SUBSCR, hit);
+            unsigned char *buffer = PyByteArray_AS_STRING(byte_array);
+            buffer[index] = (unsigned char)byte_value;
+            Py_DECREF(sub);
+            Py_DECREF(byte_array);
+            Py_DECREF(value);
+            STACK_SHRINK(3);
             DISPATCH();
         }
 
@@ -5133,6 +5222,7 @@ MISS_WITH_CACHE(LOAD_GLOBAL)
 MISS_WITH_CACHE(LOAD_METHOD)
 MISS_WITH_CACHE(CALL_FUNCTION)
 MISS_WITH_OPARG_COUNTER(BINARY_SUBSCR)
+MISS_WITH_OPARG_COUNTER(STORE_SUBSCR)
 MISS_WITH_OPARG_COUNTER(BINARY_ADD)
 MISS_WITH_OPARG_COUNTER(BINARY_MULTIPLY)
 

@@ -127,6 +127,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_ADD, "binary_add");
     err += add_stat_dict(stats, BINARY_MULTIPLY, "binary_multiply");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
+    err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
     if (err < 0) {
@@ -179,14 +180,15 @@ _Py_PrintSpecializationStats(void)
 #else
     fprintf(out, "Specialization stats:\n");
 #endif
-    print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
-    print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
-    print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
-    print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
-    print_stats(out, &_specialization_stats[BINARY_MULTIPLY], "binary_multiply");
-    print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
-    print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
-    print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
+//    print_stats(out, &_specialization_stats[LOAD_ATTR], "load_attr");
+//    print_stats(out, &_specialization_stats[LOAD_GLOBAL], "load_global");
+//    print_stats(out, &_specialization_stats[LOAD_METHOD], "load_method");
+//    print_stats(out, &_specialization_stats[BINARY_ADD], "binary_add");
+//    print_stats(out, &_specialization_stats[BINARY_MULTIPLY], "binary_multiply");
+//    print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
+    print_stats(out, &_specialization_stats[STORE_SUBSCR], "store_subscr");
+//    print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
+//    print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     if (out != stderr) {
         fclose(out);
     }
@@ -237,6 +239,7 @@ static uint8_t adaptive_opcodes[256] = {
     [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_MULTIPLY] = BINARY_MULTIPLY_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
+    [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
     [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
@@ -249,6 +252,7 @@ static uint8_t cache_requirements[256] = {
     [BINARY_ADD] = 0,
     [BINARY_MULTIPLY] = 0,
     [BINARY_SUBSCR] = 0,
+    [STORE_SUBSCR] = 0,
     [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
@@ -1179,6 +1183,101 @@ fail:
     return 0;
 success:
     STAT_INC(BINARY_SUBSCR, specialization_success);
+    assert(!PyErr_Occurred());
+    return 0;
+}
+
+int
+_Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *container_type = Py_TYPE(container);
+#if 1
+    char *container_name = container_type->tp_name;
+    char *sub_name = Py_TYPE(sub)->tp_name;
+    int kind;
+    if (PyList_CheckExact(container)
+        && PyLong_CheckExact(sub)
+        && (Py_SIZE(sub) == 1 || Py_SIZE(sub) == 0))
+    {
+        kind = 1;
+    }
+    else if (PyDict_CheckExact(container)) {
+        if (PyUnicode_CheckExact(sub)) {
+            Py_hash_t h = ((PyASCIIObject *)(sub))->hash;
+            if (h != -1) {
+                kind = 2;
+            }
+            else {
+                kind = 3;
+            }
+            PyDictObject *cc = (PyDictObject *)container;
+            PyDictKeysObject *keys = cc->ma_keys;
+            if (keys->dk_kind == DICT_KEYS_UNICODE) {
+                kind += 10;
+            }
+        }
+        else {
+            kind = 4;
+        }
+    }
+    else {
+        kind = 0;
+    }
+    SPECIALIZATION_FAIL(STORE_SUBSCR, kind);
+    goto fail;
+#endif
+#if 0
+    if (container_type == &PyList_Type) {
+        if (PyLong_CheckExact(sub)) {
+            if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
+                && ((PyLongObject *)sub)->ob_digit[0] < PyList_GET_SIZE(container))
+            {
+                *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_LIST_INT, initial_counter_value());
+                goto success;
+            }
+            else {
+                SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+                goto fail;
+            }
+        }
+        else if (PySlice_Check(sub)) {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_LIST_SLICE);
+            goto fail;
+        }
+        else {
+            fprintf(stderr, "list[");PyObject_Print(Py_TYPE(sub), stderr, 0);fprintf(stderr, "]\n");
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+            goto fail;
+        }
+    }
+    else if (container_type == &PyDict_Type) {
+        *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT, initial_counter_value());
+        goto success;
+    }
+    else if (container_type == &PyByteArray_Type && PyLong_CheckExact(sub)) {
+        if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
+            && ((PyLongObject *)sub)->ob_digit[0] < PyByteArray_GET_SIZE(container))
+        {
+            *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_BYTEARRAY_INT, initial_counter_value());
+            goto success;
+        }
+        else {
+            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+            goto fail;
+        }
+    }
+    else {
+        SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
+        goto fail;
+    }
+#endif
+fail:
+    STAT_INC(STORE_SUBSCR, specialization_failure);
+    assert(!PyErr_Occurred());
+    *instr = _Py_MAKECODEUNIT(_Py_OPCODE(*instr), ADAPTIVE_CACHE_BACKOFF);
+    return 0;
+success:
+    STAT_INC(STORE_SUBSCR, specialization_success);
     assert(!PyErr_Occurred());
     return 0;
 }
