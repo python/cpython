@@ -1262,7 +1262,6 @@ class BaseExceptionReportingTests:
         expected = [
             ['  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])',
              '  | ExceptionGroup: eg',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- 1 ----------------'],
             ['    | ValueError: 1'],
@@ -1283,7 +1282,6 @@ class BaseExceptionReportingTests:
         expected = [
             ['  |     raise ExceptionGroup("eg1", [ValueError(1), TypeError(2)])',
              '  | ExceptionGroup: eg1',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- 1 ----------------'],
             ['    | ValueError: 1'],
@@ -1292,7 +1290,6 @@ class BaseExceptionReportingTests:
             [ context_message ],
             ['  |     raise ExceptionGroup("eg2", [ValueError(3), TypeError(4)])',
              '  | ExceptionGroup: eg2',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- 1 ----------------'],
             ['    | ValueError: 3'],
@@ -1313,7 +1310,6 @@ class BaseExceptionReportingTests:
         expected = [
             ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
              '  | ExceptionGroup: eg1',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- context.1 ----------------'],
             ['    | ValueError: 1'],
@@ -1322,7 +1318,6 @@ class BaseExceptionReportingTests:
             [ context_message ],
             ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
              '  | ExceptionGroup: eg2',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- 1 ----------------'],
             ['    | ValueError: 3'],
@@ -1342,7 +1337,6 @@ class BaseExceptionReportingTests:
         expected = [
             ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
              '  | ExceptionGroup: eg1',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- cause.1 ----------------'],
             ['    | ValueError: 1'],
@@ -1351,7 +1345,6 @@ class BaseExceptionReportingTests:
             [ cause_message ],
             ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
              '  | ExceptionGroup: eg2',
-             '  |  with 2 sub-exceptions:'
             ],
             ['-+---------------- 1 ----------------'],
             ['    | ValueError: 3'],
@@ -1378,13 +1371,11 @@ class BaseExceptionReportingTests:
         expected = [
             ['  |     raise EG("eg", [VE(1), exc, VE(4)])',
              '  | ExceptionGroup: eg',
-             '  |  with 3 sub-exceptions:'
             ],
             ['-+---------------- context.1 ----------------'],
             ['    | ValueError: 1'],
             ['+---------------- context.2 ----------------'],
             ['    | ExceptionGroup: nested',
-             '    |  with 2 sub-exceptions'
             ],
             ['-+---------------- context.2.1 ----------------'],
             ['      | TypeError: 2'],
@@ -2146,7 +2137,6 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'  |     raise ExceptionGroup("eg2", [exc3, exc4])',
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
                     f'  | ExceptionGroup: eg2',
-                    f'  |  with 2 sub-exceptions:',
                     f'  +-+---------------- 1 ----------------',
                     f'    | Traceback (most recent call last):',
                     f'    |   File "{__file__}", '
@@ -2154,7 +2144,6 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'    |     raise ExceptionGroup("eg1", [exc1, exc2])',
                     f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
                     f'    | ExceptionGroup: eg1',
-                    f'    |  with 2 sub-exceptions:',
                     f'    +-+---------------- 1.1 ----------------',
                     f'      | Traceback (most recent call last):',
                     f'      |   File '

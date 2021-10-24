@@ -907,10 +907,6 @@ class TracebackException:
                     yield from _ctx.emit(exc.stack.format())
                 yield from _ctx.emit(exc.format_exception_only())
                 n = len(exc.exceptions)
-                if n > 1:
-                    yield from _ctx.emit(f' with {n} sub-exceptions:\n')
-                else:
-                    yield from _ctx.emit(' with one sub-exception:\n')
                 _ctx.need_close = False
                 for i in range(n):
                     last_exc = (i == n-1)

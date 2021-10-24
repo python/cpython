@@ -1156,7 +1156,6 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
 
         /* TODO: add arg to limit number of exceptions printed? */
 
-        PyObject *line;
 
         if (ctx->exception_group_depth == 0) {
             ctx->exception_group_depth += 1;
@@ -1169,17 +1168,6 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
             PyObject *parent_label = ctx->parent_label;
             PyObject *f = ctx->file;
             if (num_excs > 0) {
-                if (num_excs == 1) {
-                    line = PyUnicode_FromFormat(
-                        " with one sub-exception:\n");
-                }
-                else {
-                    line = PyUnicode_FromFormat(
-                        " with %d sub-exceptions:\n", num_excs);
-                }
-                err |= WRITE_INDENTED_MARGIN(ctx, f);
-                err |= PyFile_WriteObject(line, f, Py_PRINT_RAW);
-                Py_XDECREF(line);
                 ctx->need_close = 0;
                 for (i = 0; i < num_excs; i++) {
                     int last_exc = i == num_excs - 1;
@@ -1196,7 +1184,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                         label = PyUnicode_FromFormat("%d", i + 1);
                     }
                     err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
-                    line = PyUnicode_FromFormat(
+                    PyObject *line = PyUnicode_FromFormat(
                         "%s+---------------- %U ----------------\n",
                         (i == 0) ? "+-" : "  ", label);
                     ctx->exception_group_depth += 1;
