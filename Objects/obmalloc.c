@@ -2944,7 +2944,7 @@ _PyDebugAllocatorStats(FILE *out,
 
 static void
 mimalloc_output(const char *msg, void *arg) {
-    fprintf((FILE *)arg, msg);
+    fputs(msg, (FILE *)arg);
 }
 
 int
