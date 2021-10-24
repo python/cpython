@@ -2027,6 +2027,7 @@ time_exec(PyObject *module)
 #if defined(MS_WINDOWS)
     HANDLE timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
     if (timer == NULL) {
+        // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
         timer_flags = 0;
     }
     else {
@@ -2146,7 +2147,6 @@ pysleep(_PyTime_t timeout)
 
     return 0;
 #else  // MS_WINDOWS
-
     _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
                                                        _PyTime_ROUND_CEILING);
 
@@ -2170,7 +2170,6 @@ pysleep(_PyTime_t timeout)
 
     HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags, TIMER_ALL_ACCESS);
     if (timer == NULL) {
-        // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
         PyErr_SetFromWindowsErr(0);
         return -1;
     }
