@@ -413,7 +413,7 @@ static PyTypeObject StructTimeType;
   #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
 #endif
 
-static DWORD timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+static DWORD timer_flags = 0x00000003;
 #endif
 
 static PyObject *
@@ -2025,13 +2025,19 @@ time_exec(PyObject *module)
 #endif
 
 #if defined(MS_WINDOWS)
-    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags, TIMER_ALL_ACCESS);
-    if (timer == NULL) {
-        // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
-        timer_flags = 0;
-    }
-    else {
-        CloseHandle(timer);
+    if (timer_flags == 0x00000003) {
+        DWORD test_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+        HANDLE timer = CreateWaitableTimerExW(NULL, NULL, test_flags,
+                                              TIMER_ALL_ACCESS);
+        if (timer == NULL) {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
+            timer_flags = 0;
+        }
+        else {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is supported.
+            timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
+            CloseHandle(timer);
+        }
     }
 #endif
 
@@ -2168,7 +2174,8 @@ pysleep(_PyTime_t timeout)
     // SetWaitableTimer(): a negative due time indicates relative time
     relative_timeout.QuadPart = -timeout_100ns;
 
-    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags, TIMER_ALL_ACCESS);
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, timer_flags,
+                                          TIMER_ALL_ACCESS);
     if (timer == NULL) {
         PyErr_SetFromWindowsErr(0);
         return -1;
