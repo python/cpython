@@ -413,7 +413,8 @@ static PyTypeObject StructTimeType;
   #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
 #endif
 
-static DWORD timer_flags = 0x00000003;
+#define UNKNOWN_WAITABLE_TIMER_RESOLUTION 0x000000ee
+static DWORD timer_flags = UNKNOWN_WAITABLE_TIMER_RESOLUTION;
 #endif
 
 static PyObject *
@@ -2025,7 +2026,7 @@ time_exec(PyObject *module)
 #endif
 
 #if defined(MS_WINDOWS)
-    if (timer_flags == 0x00000003) {
+    if (timer_flags == UNKNOWN_WAITABLE_TIMER_RESOLUTION) {
         DWORD test_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
         HANDLE timer = CreateWaitableTimerExW(NULL, NULL, test_flags,
                                               TIMER_ALL_ACCESS);
