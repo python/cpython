@@ -530,7 +530,7 @@ mmap_resize_method(mmap_object *self,
         char* old_data = self->data;
         LARGE_INTEGER offset, max_size;
         offset.QuadPart = self->offset;
-        max_size.QuadPart = new_size;
+        max_size.QuadPart = self->offset + new_size;
         /* close the file mapping */
         CloseHandle(self->map_handle);
         self->map_handle = NULL;
