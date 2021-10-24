@@ -2129,6 +2129,10 @@ pysleep(_PyTime_t timeout)
 
     return 0;
 #else  // MS_WINDOWS
+
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
     _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
                                                        _PyTime_ROUND_CEILING);
 
@@ -2150,20 +2154,21 @@ pysleep(_PyTime_t timeout)
     // SetWaitableTimer(): a negative due time indicates relative time
     relative_timeout.QuadPart = -timeout_100ns;
 
-    HANDLE timer = CreateWaitableTimerW(NULL, FALSE, NULL);
+    HANDLE timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
     if (timer == NULL) {
-        PyErr_SetFromWindowsErr(0);
-        return -1;
+        timer = CreateWaitableTimerExW(NULL, NULL, 0, TIMER_ALL_ACCESS);
+        if (timer == NULL) {
+            // CREATE_WAITABLE_TIMER_HIGH_RESOLUTION is not supported.
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
     }
 
-    if (!SetWaitableTimer(timer, &relative_timeout,
-                          // period: the timer is signaled once
-                          0,
-                          // no completion routine
-                          NULL, NULL,
-                          // Don't restore a system in suspended power
-                          // conservation mode when the timer is signaled.
-                          FALSE))
+    if (!SetWaitableTimerEx(timer, &relative_timeout,
+                            0, // no period; the timer is signaled once
+                            NULL, NULL, // no completion routine
+                            NULL,  // no wake context; do not resume from suspend
+                            0)) // no tolerable delay for timer coalescing
     {
         PyErr_SetFromWindowsErr(0);
         goto error;
