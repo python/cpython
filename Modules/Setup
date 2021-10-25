@@ -129,6 +129,9 @@ time timemodule.c
 # Python binary, or need to specify some odd set of compiler switches,
 # you can uncomment the appropriate lines below.
 
+# To enable all modules for testing, run
+# sed -n -E 's/^#([a-z_\*].*)$/\1/p' Modules/Setup > Modules/Setup.local
+
 # Uncommenting the following line tells makesetup that all following
 # modules are to be built as shared libraries (see above for more
 # detail; also note that *static* or *disabled* cancels this effect):
@@ -149,12 +152,15 @@ time timemodule.c
 #_contextvars _contextvarsmodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
+# UNIVERSAL: let mpdecimal.h detect settings
+#_decimal -DUNIVERSAL -I$(srcdir)/Modules/_decimal/libmpdec _decimal/_decimal.c _decimal/libmpdec/basearith.c _decimal/libmpdec/constants.c _decimal/libmpdec/context.c _decimal/libmpdec/convolute.c _decimal/libmpdec/crt.c _decimal/libmpdec/difradix2.c _decimal/libmpdec/fnt.c _decimal/libmpdec/fourstep.c _decimal/libmpdec/io.c _decimal/libmpdec/mpalloc.c _decimal/libmpdec/mpdecimal.c _decimal/libmpdec/numbertheory.c _decimal/libmpdec/sixstep.c _decimal/libmpdec/transpose.c
 #_elementtree -I$(srcdir)/Modules/expat _elementtree.c
 #_heapq _heapqmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
 #_md5 md5module.c
 #_multibytecodec cjkcodecs/multibytecodec.c
+#_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
 #_opcode _opcode.c
 #_pickle _pickle.c
 #_posixsubprocess _posixsubprocess.c
@@ -171,8 +177,8 @@ time timemodule.c
 #array arraymodule.c
 #audioop audioop.c
 #binascii binascii.c
-#cmath cmathmodule.c  # -lm
-#math mathmodule.c  # -lm
+#cmath cmathmodule.c
+#math mathmodule.c
 #pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
 #unicodedata  unicodedata.c
 
@@ -180,6 +186,7 @@ time timemodule.c
 # (If you have a really backward UNIX, select and socket may not be
 # supported...)
 
+#_posixshmem -I$(srcdir)/Modules/_multiprocessing _multiprocessing/posixshmem.c -lrt
 #_socket socketmodule.c  # socket(2)
 #fcntl fcntlmodule.c  # fcntl(2) and ioctl(2)
 #grp grpmodule.c  # grp(3)
@@ -192,18 +199,21 @@ time timemodule.c
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-#_crypt _cryptmodule.c # -lcrypt	# crypt(3); breaks many builds.
-#nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
+#_crypt _cryptmodule.c -lcrypt	# crypt(3); breaks many builds.
+#nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
 # Modules that require external libraries.
 
 #_bz2 _bz2module.c -lbz2
-#_dbm _dbmmodule.c 	# -lndbm # dbm(3)
-#_gdbm -I/usr/local/include -L/usr/local/lib -lgdbm _gdbmmodule.c
+#_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+# _dbm _dbmmodule.c 	# -lndbm # dbm(3)
+#_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
-#zlib -I$(prefix)/include -L$(exec_prefix)/lib -lz zlibmodule.c
+#_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -lsqlite3
+#_uuid _uuidmodule.c -luuid
+#zlib  zlibmodule.c -lz
 
 # GNU readline.  Unlike previous Python incarnations, GNU readline is
 # now incorporated in an optional module, configured in the Setup file
@@ -215,29 +225,16 @@ time timemodule.c
 
 #readline readline.c -lreadline -ltermcap
 
-# Set OpenSSL when not using the system copy found by ./configure.
-#OPENSSL=/path/to/openssl/directory
-
 # To dynamically link OpenSSL:
-#_ssl _ssl.c \
-#     -I$(OPENSSL)/include -L$(OPENSSL)/lib \
-#     -lssl -lcrypto \
-#     -DPy_BUILD_CORE_BUILTIN
-#_hashlib _hashopenssl.c \
-#     -I$(OPENSSL)/include -L$(OPENSSL)/lib \
-#     -lcrypto \
-#     -DPy_BUILD_CORE_BUILTIN
+#_ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) $(OPENSSL_LIBS)
+#_hashlib _hashopenssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) -lcrypto
 
 # To statically link OpenSSL:
-#_ssl _ssl.c \
-#     -I$(OPENSSL)/include -L$(OPENSSL)/lib \
+# _ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) \
 #     -l:libssl.a -Wl,--exclude-libs,libssl.a \
-#     -l:libcrypto.a -Wl,--exclude-libs,libcrypto.a \
-#     -DPy_BUILD_CORE_BUILTIN
-#_hashlib _hashopenssl.c \
-#     -I$(OPENSSL)/include -L$(OPENSSL)/lib \
-#     -l:libcrypto.a -Wl,--exclude-libs,libcrypto.a \
-#     -DPy_BUILD_CORE_BUILTIN
+#     -l:libcrypto.a -Wl,--exclude-libs,libcrypto.a
+# _hashlib _hashopenssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) \
+#     -l:libcrypto.a -Wl,--exclude-libs,libcrypto.a
 
 # The _tkinter module.
 #
@@ -251,7 +248,7 @@ time timemodule.c
 # every system.
 
 # *** Always uncomment this (leave the leading underscore in!):
-# _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT $(TCLTK_INCLUDES) $(TCLTK_LIBS) \
 # *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
 #	-L/usr/local/lib \
 # *** Uncomment and edit to reflect where your Tcl/Tk headers are:
@@ -269,8 +266,6 @@ time timemodule.c
 #	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
 # *** Uncomment and edit for TOGL extension only:
 #	-DWITH_TOGL togl.c \
-# *** Uncomment and edit to reflect your Tcl/Tk versions:
-#	-ltk8.2 -ltcl8.2 \
 # *** Uncomment and edit to reflect where your X11 libraries are:
 #	-L/usr/X11R6/lib \
 # *** Or uncomment this for Solaris:
@@ -286,10 +281,13 @@ time timemodule.c
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
 
-#_curses -lcurses -ltermcap _cursesmodule.c
+#_curses -lcurses -lcursesw -ltermcap _cursesmodule.c
 
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
 #_curses_panel -lpanel -lncurses _curses_panel.c
+
+# macOS specific modules
+# _scproxy _scproxy.c -framework SystemConfiguration -framework CoreFoundation
 
 # Examples
 
@@ -302,12 +300,14 @@ xxsubtype xxsubtype.c  # Required for the test suite to pass!
 
 #_xxsubinterpreters _xxsubinterpretersmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
+#_ctypes_test _ctypes/_ctypes_test.c
 #_testbuffer _testbuffer.c
-#_testcapi _testcapimodule.c  # CANNOT be statically compiled!
 #_testimportmultiple _testimportmultiple.c
 #_testinternalcapi _testinternalcapi.c
 #_testmultiphase _testmultiphase.c
 
+#*shared*
+#_testcapi _testcapimodule.c  # CANNOT be statically compiled!
 
 # ---
 # Uncommenting the following line tells makesetup that all following modules
@@ -315,5 +315,5 @@ xxsubtype xxsubtype.c  # Required for the test suite to pass!
 #
 #*disabled*
 #
-#_sqlite3 _tkinter _curses pyexpat
-#_codecs_jp _codecs_kr _codecs_tw unicodedata
+# _sqlite3 _tkinter _curses pyexpat
+# _codecs_jp _codecs_kr _codecs_tw unicodedata
