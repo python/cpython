@@ -35,6 +35,7 @@
 typedef struct _callback_context
 {
     PyObject *callable;
+    PyObject *module;
     pysqlite_state *state;
 } callback_context;
 

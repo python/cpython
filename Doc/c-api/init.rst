@@ -1177,7 +1177,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Suspend tracing and profiling in the Python thread state *tstate*.
 
-   Resume them using the:c:func:`PyThreadState_LeaveTracing` function.
+   Resume them using the :c:func:`PyThreadState_LeaveTracing` function.
 
    .. versionadded:: 3.11
 
@@ -1185,7 +1185,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyThreadState_LeaveTracing(PyThreadState *tstate)
 
    Resume tracing and profiling in the Python thread state *tstate* suspended
-   by the:c:func:`PyThreadState_EnterTracing` function.
+   by the :c:func:`PyThreadState_EnterTracing` function.
 
    See also :c:func:`PyEval_SetTrace` and :c:func:`PyEval_SetProfile`
    functions.

@@ -1,6 +1,10 @@
 /* Definitions of some C99 math library functions, for those platforms
    that don't implement these functions already. */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include <float.h>
 #include "_math.h"

@@ -1,0 +1,3 @@
+Add references to :mod:`zoneinfo` in the :mod:`datetime` documentation,
+mostly replacing outdated references to ``dateutil.tz``. Change by Paul
+Ganssle.
