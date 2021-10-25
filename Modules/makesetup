@@ -236,7 +236,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				cc="$cc \$(PY_BUILTIN_MODULE_CFLAGS)";;
 			esac
 			mods_upper=$(echo $mods | tr '[a-z]' '[A-Z]')
-			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS); $cc $cpps -c \$< -o \$@"
+			rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(PYTHON_HEADERS); $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
@@ -249,7 +249,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			no)	SHAREDMODS="$SHAREDMODS $file";;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o \$@"
+			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
