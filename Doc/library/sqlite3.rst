@@ -168,9 +168,9 @@ Module functions and constants
      >>> import sqlite3
      >>> con = sqlite3.connect(":memory:")
      >>> con.execute("""
-         select * from pragma_compile_options
-         where compile_options like 'THREADSAFE=%'
-     """).fetchall()
+             select * from pragma_compile_options
+             where compile_options like 'THREADSAFE=%'
+         """).fetchall()
 
    Note that the `SQLITE_THREADSAFE levels
    <https://sqlite.org/compile.html#threadsafe>`_ do not match the DB-API 2.0
