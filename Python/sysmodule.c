@@ -1896,6 +1896,68 @@ sys__debugmallocstats_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(malloc_info__doc__,
+"sys._malloc_info\n\
+\n\
+Memory allocator info as a named tuple.");
+
+static PyTypeObject MallocInfoType;
+
+static PyStructSequence_Field malloc_info_fields[] = {
+    {"implementation", "malloc implementation name"},
+    {"freelists", "with freelists"},
+    {"obmalloc", "with obmalloc"},
+    {0}
+};
+
+static PyStructSequence_Desc malloc_info_desc = {
+    "sys._malloc_info",     /* name */
+    malloc_info__doc__ ,    /* doc */
+    malloc_info_fields,     /* fields */
+    3
+};
+
+static PyObject *
+make_malloc_info(void)
+{
+    PyObject *malloc_info;
+    char *s;
+    PyObject *v;
+    int pos = 0;
+
+    malloc_info = PyStructSequence_New(&MallocInfoType);
+    if (malloc_info == NULL) {
+        return NULL;
+    }
+
+#if WITH_MIMALLOC
+    s = "mimalloc";
+#else
+    s = "malloc";
+#endif
+    PyStructSequence_SET_ITEM(malloc_info, pos++, PyUnicode_FromString(s));
+
+#if WITH_PYMALLOC
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
+
+#if WITH_FREELISTS
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
+
+    if (PyErr_Occurred()) {
+        Py_CLEAR(malloc_info);
+        return NULL;
+    }
+    return malloc_info;
+}
+
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
@@ -2835,6 +2897,16 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
+
+    /* malloc_info */
+    if (MallocInfoType.tp_name == NULL) {
+        if (_PyStructSequence_InitType(&MallocInfoType,
+                                       &malloc_info_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
+            goto type_init_failed;
+        }
+    }
+    SET_SYS("_malloc_info", make_malloc_info());
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {
