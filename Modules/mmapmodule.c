@@ -375,25 +375,6 @@ is_writable(mmap_object *self)
 static int
 is_resizeable(mmap_object *self)
 {
-#ifdef MS_WINDOWS
-    /* a named file mapping that's open more than once can't be resized */
-    if (self->tagname) {
-        typedef NTSTATUS NTAPI ntqo_f(HANDLE, OBJECT_INFORMATION_CLASS,
-            PVOID, ULONG, PULONG);
-        ntqo_f *pNtQueryObject = (ntqo_f *)GetProcAddress(
-            GetModuleHandleW(L"ntdll"), "NtQueryObject");
-        if (pNtQueryObject) {
-            PUBLIC_OBJECT_BASIC_INFORMATION info;
-            NTSTATUS status = pNtQueryObject(self->map_handle,
-                ObjectBasicInformation, &info, sizeof(info), NULL);
-            if (NT_SUCCESS(status) && info.HandleCount > 1) {
-                PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
-                return 0;
-            }
-        }
-    }
-#endif (MS_WINDOWS)
-
     if (self->exports > 0) {
         PyErr_SetString(PyExc_BufferError,
             "mmap can't resize with extant buffers exported.");
@@ -598,8 +579,13 @@ mmap_resize_method(mmap_object *self,
         else {
             error = GetLastError();
         }
-        /* unmap the old view if using the paging file */
-        if (self->file_handle == INVALID_HANDLE_VALUE) {
+        /* unmap the old view if using the paging file
+        Don't do this if we've encountered ERROR_ALREADY_EXISTS as this means
+        that creating a new named file mapping failed and the mapping handle
+        points to an existing mapping of the same name
+        */
+        if ((GetLastError() != ERROR_ALREADY_EXISTS) &&
+            (self->file_handle == INVALID_HANDLE_VALUE)) {
             if(!UnmapViewOfFile(old_data)) {
                 error = GetLastError();
             };
