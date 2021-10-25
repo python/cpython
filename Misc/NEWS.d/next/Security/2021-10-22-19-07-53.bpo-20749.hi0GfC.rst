@@ -1,2 +1,2 @@
-Copied security warning from ``tarfile.extractall()`` to
-``shutil.unpack_archive()``
+Copied security warning from :func:`tarfile.extractall()` to
+:func:`shutil.unpack_archive()`.
