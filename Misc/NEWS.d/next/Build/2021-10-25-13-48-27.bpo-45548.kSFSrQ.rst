@@ -1,0 +1,3 @@
+``Modules/Setup`` now puts shared extensions in the same directory as
+distutils. Before the change, ``makesetup`` created shared libraries in
+``Modules/`` directory, which is not on the import path.
