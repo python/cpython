@@ -104,7 +104,7 @@ void _PyObject_VirtualFree(void *, size_t size);
 /* Free lists.
  *
  * Free lists have a pointer to their first entry and
- * the amunt of space available allowing fast checks
+ * the amount of space available allowing fast checks
  * for emptiness and fullness.
  * When empty they are half filled and when full they are
  * completely emptied. This helps the underlying allocator
