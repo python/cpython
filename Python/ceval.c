@@ -2588,20 +2588,22 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(STORE_SUBSCR_DICT) {
+        TARGET(STORE_SUBSCR_DICT_UNICODE) {
             PyObject *sub = TOP();
             PyObject *dict = SECOND();
             PyObject *value = THIRD();
+            DEOPT_IF(!PyUnicode_CheckExact(sub), STORE_SUBSCR);
+            // Don't compute hashes here.
+            DEOPT_IF(((PyASCIIObject *)sub)->hash == -1, STORE_SUBSCR);
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
+            PyDictObject *mp = (PyDictObject *)dict;
+            DEOPT_IF(mp->ma_keys->dk_kind != DICT_KEYS_UNICODE, STORE_SUBSCR);
             STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
-
-            /* This does not steal value. */
-            int err = PyDict_SetItem(dict, sub, value);
-            Py_DECREF(sub);
-            Py_DECREF(dict);
-            Py_DECREF(value);
-            if (err != 0) {
+            // This steals sub and value.
+            int err = _PyDict_SetItem_StringWithKnownHash(mp, sub, value);
+            Py_DECREF(mp);
+            if (err) {
                 goto error;
             }
             DISPATCH();
@@ -2621,7 +2623,6 @@ check_eval_breaker:
             Py_ssize_t byte_value = ((PyLongObject*)value)->ob_digit[0];
             DEOPT_IF(index >= PyByteArray_GET_SIZE(byte_array), STORE_SUBSCR);
             DEOPT_IF(((size_t)byte_value) > 0xff, STORE_SUBSCR);
-
             STAT_INC(STORE_SUBSCR, hit);
             unsigned char *buffer = PyByteArray_AS_STRING(byte_array);
             buffer[index] = (unsigned char)byte_value;

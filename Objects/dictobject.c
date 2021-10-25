@@ -1562,6 +1562,63 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     return insertdict(mp, key, hash, value);
 }
 
+
+/* This steals arguments in all cases. */
+int
+_PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    assert(PyUnicode_CheckExact(key));
+    assert(value != NULL);
+    Py_hash_t hash = ((PyASCIIObject *)key)->hash;
+    assert(hash != -1);
+    PyDictKeysObject *dk = mp->ma_keys;
+    assert(dk->dk_kind == DICT_KEYS_UNICODE);
+
+    // Inline _Py_dict_lookup
+    Py_ssize_t ix = dictkeys_stringlookup(dk, key, hash);
+
+    // Inline the rest of insertdict -------------------------------
+    if (ix != DKIX_EMPTY) {
+        PyObject *old_value = DK_ENTRIES(dk)[ix].me_value;
+        assert(!_PyDict_HasSplitTable(mp));
+        assert(old_value != NULL);
+        DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
+        mp->ma_version_tag = DICT_NEXT_VERSION();
+        Py_DECREF(old_value);
+        ASSERT_CONSISTENT(mp);
+        Py_DECREF(key);
+        return 0;
+    }
+    else {
+        /* Insert into new slot. */
+        dk->dk_version = 0;
+        if (dk->dk_usable <= 0) {
+            /* Need to resize. */
+            if (insertion_resize(mp) < 0) {
+                    Py_DECREF(value);
+                    Py_DECREF(key);
+                    return -1;
+            }
+            dk = mp->ma_keys;
+        }
+        Py_ssize_t hashpos = find_empty_slot(dk, hash);
+        PyDictKeyEntry *ep = &DK_ENTRIES(dk)[dk->dk_nentries];
+        dictkeys_set_index(dk, hashpos, dk->dk_nentries);
+        ep->me_key = key;
+        ep->me_hash = hash;
+        assert(mp->ma_values == NULL);
+        ep->me_value = value;
+        mp->ma_used++;
+        mp->ma_version_tag = DICT_NEXT_VERSION();
+        dk->dk_usable--;
+        dk->dk_nentries++;
+        assert(dk->dk_usable >= 0);
+        ASSERT_CONSISTENT(mp);
+        return 0;
+    }
+}
+
+
 int
 _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
                          Py_hash_t hash)
