@@ -1254,7 +1254,6 @@ class BaseExceptionReportingTests:
             # at most one margin char per line
             self.assertLessEqual(line.count('|'), 1)
 
-    @cpython_only
     def test_exception_group_basic(self):
         def exc():
             raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
@@ -1271,7 +1270,6 @@ class BaseExceptionReportingTests:
 
         self.check_exception_group(exc, expected)
 
-    @cpython_only
     def test_exception_group_context(self):
         def exc():
             try:
@@ -1298,7 +1296,6 @@ class BaseExceptionReportingTests:
         ]
         self.check_exception_group(exc, expected)
 
-    @cpython_only
     def test_exception_group_context(self):
         def exc():
             EG = ExceptionGroup
@@ -1353,7 +1350,6 @@ class BaseExceptionReportingTests:
         ]
         self.check_exception_group(exc, expected)
 
-    @cpython_only
     def test_exception_group_nested(self):
         def exc():
             EG = ExceptionGroup
