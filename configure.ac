@@ -4692,8 +4692,12 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-AC_CHECK_FUNCS([acosh asinh atanh erf erfc expm1 finite gamma])
-AC_CHECK_FUNCS([lgamma log1p log2 tgamma])
+AC_CHECK_FUNCS(
+  [acosh asinh atanh erf erfc expm1 finite gamma lgamma log1p log2 tgamma],
+  [],
+  [AC_MSG_ERROR([Python requires C99 compatible libm])]
+)
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,

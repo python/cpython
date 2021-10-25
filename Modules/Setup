@@ -171,8 +171,8 @@ time timemodule.c
 #array arraymodule.c
 #audioop audioop.c
 #binascii binascii.c
-#cmath cmathmodule.c _math.c  # -lm
-#math mathmodule.c _math.c  # -lm
+#cmath cmathmodule.c  # -lm
+#math mathmodule.c  # -lm
 #pyexpat -I$(srcdir)/Modules/expat  expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c
 #unicodedata  unicodedata.c
 
