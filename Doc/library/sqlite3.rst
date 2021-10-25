@@ -161,7 +161,7 @@ Module functions and constants
 
    Integer constant required by the DB-API, stating the level of thread safety
    the :mod:`sqlite3` supports. Currently hard-coded to ``1``, meaning
-   _"Threads may share the module, but not connections."_ However, this may not
+   *"Threads may share the module, but not connections."* However, this may not
    always be true. You can check the underlying SQLite library's compile-time
    threaded mode using the following query::
 
