@@ -5513,6 +5513,11 @@ class CWhitebox(unittest.TestCase):
                      "AIX: default ulimit: test is flaky because of extreme over-allocation")
     @unittest.skipIf(MEMORY_SANITIZER or ADDRESS_SANITIZER, "sanitizer defaults to crashing "
                      "instead of returning NULL for malloc failure.")
+    @unittest.skipIf(
+        sys._malloc_info.implementation == "mimalloc" and
+        os.name == "posix" and os.uname().machine == "s390x",
+        reason="Test segfaults on s390x under mimalloc"
+    )
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due
