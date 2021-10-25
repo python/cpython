@@ -748,6 +748,14 @@ Cursor Objects
       The cursor will be unusable from this point forward; a :exc:`ProgrammingError`
       exception will be raised if any operation is attempted with the cursor.
 
+   .. method:: setinputsizes(sizes)
+
+      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+
+   .. method:: setoutputsize(size [, column])
+
+      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+
    .. attribute:: rowcount
 
       Although the :class:`Cursor` class of the :mod:`sqlite3` module implements this
