@@ -20413,6 +20413,11 @@ $as_echo "#define HAVE_STD_ATOMIC 1" >>confdefs.h
 
 fi
 
+if test "$ac_cv_header_stdatomic_h" != yes -a "$with_mimalloc" != no; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    as_fn_error $? "--with-mimalloc requires stdatomic.h on your platform" "$LINENO" 5
+fi
+
 # Check for GCC >= 4.7 and clang __atomic builtin functions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for builtin __atomic_load_n and __atomic_store_n functions" >&5
 $as_echo_n "checking for builtin __atomic_load_n and __atomic_store_n functions... " >&6; }

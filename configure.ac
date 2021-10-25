@@ -5960,6 +5960,11 @@ AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 ])
 
+if test "$ac_cv_header_stdatomic_h" != yes -a "$with_mimalloc" != no; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    AC_MSG_ERROR([--with-mimalloc requires stdatomic.h on your platform])
+fi
+
 # Check for GCC >= 4.7 and clang __atomic builtin functions
 AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
 AC_LINK_IFELSE(
