@@ -1,6 +1,6 @@
 /* log1p(x) = log(1+x).  The log1p function is designed to avoid the
    significant loss of precision that arises from direct evaluation when x is
-   small. Use the substitute from _math.c on all platforms: it includes
+   small. Use the substitute from _math.h on all platforms: it includes
    workarounds for buggy handling of zeros.
  */
 

@@ -61,7 +61,7 @@ raised for division by zero and mod by zero.
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dtoa.h"          // _Py_dg_infinity()
 #include "pycore_long.h"          // _PyLong_GetZero()
-/* For DBL_EPSILON in _math.c */
+/* For DBL_EPSILON in _math.h */
 #include <float.h>
 /* For _Py_log1p with workarounds for buggy handling of zeros. */
 #include "_math.h"
