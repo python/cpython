@@ -409,8 +409,11 @@ class PyBuildExt(build_ext):
                                      for filename in self.distribution.scripts]
 
         # Python header files
+        include_dir = escape(sysconfig.get_path('include'))
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
+        headers.extend(glob(os.path.join(include_dir, "*.h")))
+        headers.extend(glob(os.path.join(include_dir, "cpython", "*.h")))
+        headers.extend(glob(os.path.join(include_dir, "internal", "*.h")))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -2473,6 +2476,9 @@ class PyBuildExt(build_ext):
                 depends=[
                     'socketmodule.h',
                     '_ssl.h',
+                    '_ssl_data_111.h',
+                    '_ssl_data_300.h',
+                    '_ssl_data.h',
                     '_ssl/debughelpers.c',
                     '_ssl/misc.c',
                     '_ssl/cert.c',
