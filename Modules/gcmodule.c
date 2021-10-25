@@ -131,7 +131,7 @@ gc_decref(PyGC_Head *g)
 static GCState *
 get_gc_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     return &interp->gc;
 }
 

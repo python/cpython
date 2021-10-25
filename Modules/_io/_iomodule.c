@@ -10,7 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pystate.h"       // PyInterpreterState_Get()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -91,7 +91,7 @@ PyDoc_STRVAR(module_doc,
 "   I/O classes. open() uses the file's blksize (as obtained by os.stat) if\n"
 "   possible.\n"
     );
-
+
 
 /*
  * The main open() function
@@ -509,7 +509,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
 /*[clinic end generated code: output=91b2cfea6934cc0c input=bf70231213e2a7b4]*/
 {
     if (encoding == NULL || encoding == Py_None) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyInterpreterState *interp = PyInterpreterState_Get();
         if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
             if (PyErr_WarnEx(PyExc_EncodingWarning,
                              "'encoding' argument not specified", stacklevel)) {
@@ -542,7 +542,7 @@ _io_open_code_impl(PyObject *module, PyObject *path)
 {
     return PyFile_OpenCodeObject(path);
 }
-
+
 /*
  * Private helpers for the io module.
  */

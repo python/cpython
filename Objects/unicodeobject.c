@@ -232,7 +232,7 @@ static int unicode_is_singleton(PyObject *unicode);
 #endif
 
 
-static struct _Py_unicode_state*
+static inline struct _Py_unicode_state*
 get_unicode_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();

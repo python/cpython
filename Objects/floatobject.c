@@ -29,11 +29,10 @@ class float "PyObject *" "&PyFloat_Type"
 
 
 #if PyFloat_MAXFREELIST > 0
-static struct _Py_float_state *
+static inline struct _Py_float_state *
 get_float_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->float_state;
+    return &_PyInterpreterState_GET()->float_state;
 }
 #endif
 
@@ -1630,7 +1629,7 @@ float_new_impl(PyTypeObject *type, PyObject *x)
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
-            x = _PyLong_GetZero();
+            x = PY_ZERO();
         }
         return float_subtype_new(type, x); /* Wimp out */
     }

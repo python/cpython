@@ -9,7 +9,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY
 #include "pycore_interp.h"        // PyInterpreterState.atexit
-#include "pycore_pystate.h"       // _PyInterpreterState_GET
+#include "pycore_pystate.h"       // PyInterpreterState_Get
 
 /* ===================================================================== */
 /* Callback machinery. */
@@ -17,7 +17,7 @@
 static inline struct atexit_state*
 get_atexit_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     return &interp->atexit;
 }
 

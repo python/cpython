@@ -1655,8 +1655,8 @@ signal_module_exec(PyObject *m)
     }
 #endif
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (_Py_IsMainInterpreter(tstate->interp)) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (_Py_IsMainInterpreter(interp)) {
         if (signal_get_set_handlers(state, d) < 0) {
             return -1;
         }
@@ -2032,8 +2032,7 @@ _PySignal_AfterFork(void)
 int
 _PyOS_IsMainThread(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _Py_ThreadCanHandleSignals(interp);
+    return _Py_ThreadCanHandleSignals(PyInterpreterState_Get());
 }
 
 #ifdef MS_WINDOWS

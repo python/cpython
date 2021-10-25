@@ -703,7 +703,7 @@ functools_reduce(PyObject *self, PyObject *args)
             // bpo-42536: The GC may have untracked this args tuple. Since we're
             // recycling it, make sure it's tracked again:
             if (!_PyObject_GC_IS_TRACKED(args)) {
-                _PyObject_GC_TRACK(args);
+                PyObject_GC_Track(args);
             }
         }
     }

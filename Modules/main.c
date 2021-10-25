@@ -6,7 +6,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.sysdict
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pystate.h"       // PyInterpreterState_Get()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -534,7 +534,7 @@ pymain_repl(PyConfig *config, int *exitcode)
 static void
 pymain_run_python(int *exitcode)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     /* pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 

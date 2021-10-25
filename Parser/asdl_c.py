@@ -1484,7 +1484,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ast.h"
         #include "pycore_ast_state.h"       // struct ast_state
         #include "pycore_interp.h"          // _PyInterpreterState.ast
-        #include "pycore_pystate.h"         // _PyInterpreterState_GET()
+        #include "pystate.h"                // PyInterpreterState_Get()
         #include "structmember.h"
         #include <stddef.h>
 
@@ -1494,7 +1494,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         static struct ast_state*
         get_ast_state(void)
         {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyInterpreterState *interp = PyInterpreterState_Get();
             struct ast_state *state = &interp->ast;
             if (!init_types(state)) {
                 return NULL;

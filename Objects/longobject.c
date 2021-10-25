@@ -2608,7 +2608,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        PyObject *zero = _PyLong_GetZero();
+        PyObject *zero = PY_ZERO();
         Py_INCREF(zero);
         *pdiv = (PyLongObject*)zero;
         return 0;
@@ -5866,4 +5866,12 @@ _PyLong_Fini(PyInterpreterState *interp)
     for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         Py_CLEAR(interp->small_ints[i]);
     }
+}
+
+PyObject* _PyLong_GetZero(void) {
+    return PY_ZERO();
+}
+
+PyObject* _PyLong_GetOne(void) {
+    return PY_ONE();
 }

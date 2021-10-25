@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_tls.h"   /* PyRuntimeState */
 #include "pycore_runtime.h"   /* PyRuntimeState */
 
 
@@ -20,15 +21,8 @@ _Py_IsMainThread(void)
     return (thread == _PyRuntime.main_thread);
 }
 
-
-static inline int
-_Py_IsMainInterpreter(PyInterpreterState *interp)
-{
-    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
-       this function is used in performance critical code path (ceval) */
-    return (interp == _PyRuntime.interpreters.main);
-}
-
+extern int
+_Py_IsMainInterpreter(PyInterpreterState *interp);
 
 static inline const PyConfig *
 _Py_GetMainConfig(void)
@@ -40,6 +34,9 @@ _Py_GetMainConfig(void)
     return _PyInterpreterState_GetConfig(interp);
 }
 
+#ifdef _Py_THREAD_LOCAL
+extern _Py_THREAD_LOCAL PyInterpreterState *_py_current_interpreter;
+#endif
 
 /* Only handle signals on the main thread of the main interpreter. */
 static inline int
@@ -107,7 +104,6 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 #define _Py_EnsureTstateNotNULL(tstate) \
     _Py_EnsureFuncTstateNotNULL(__func__, tstate)
 
-
 /* Get the current interpreter state.
 
    The macro is unsafe: it does not check for error and it can return NULL.
@@ -116,14 +112,19 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 
    See also _PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
+#ifdef _Py_THREAD_LOCAL
+#define _PyInterpreterState_GET() _py_current_interpreter
+#else
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
-#ifdef Py_DEBUG
     _Py_EnsureTstateNotNULL(tstate);
-#endif
-    return tstate->interp;
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        Py_FatalError("no current interpreter");
+    }
+    return interp;
 }
-
+#endif
 
 // PyThreadState functions
 

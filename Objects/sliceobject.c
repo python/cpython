@@ -417,7 +417,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = _PyLong_GetZero();
+        lower = PY_ZERO();
         Py_INCREF(lower);
         upper = length;
         Py_INCREF(upper);

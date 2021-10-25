@@ -12,7 +12,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_object.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pystate.h"       // PyInterpreterState_Get()
 #include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
@@ -996,7 +996,7 @@ io_check_errors(PyObject *errors)
 {
     assert(errors != NULL && errors != Py_None);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
 #ifndef Py_DEBUG
     /* In release mode, only check in development mode (-X dev) */
     if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
@@ -1086,7 +1086,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->detached = 0;
 
     if (encoding == NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyInterpreterState *interp = PyInterpreterState_Get();
         if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
             if (PyErr_WarnEx(PyExc_EncodingWarning,
                              "'encoding' argument not specified", 1)) {

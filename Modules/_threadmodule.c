@@ -850,7 +850,7 @@ local_clear(localobject *self)
     Py_CLEAR(self->wr_callback);
     /* Remove all strong references to dummies from the thread states */
     if (self->key) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyInterpreterState *interp = PyInterpreterState_Get();
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         for(; tstate; tstate = PyThreadState_Next(tstate)) {
             if (tstate->dict == NULL) {
@@ -1139,7 +1139,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->config._isolated_interpreter) {
         PyErr_SetString(PyExc_RuntimeError,
                         "thread is not supported for isolated subinterpreters");
@@ -1150,7 +1150,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->interp = _PyInterpreterState_GET();
+    boot->interp = PyInterpreterState_Get();
     boot->tstate = _PyThreadState_Prealloc(boot->interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
@@ -1278,7 +1278,7 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     return PyLong_FromLong(interp->num_threads);
 }
 

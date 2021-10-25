@@ -26,13 +26,14 @@ static inline PyObject* __PyLong_GetSmallInt_internal(int value)
 
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
-static inline PyObject* _PyLong_GetZero(void)
-{ return __PyLong_GetSmallInt_internal(0); }
+PyAPI_FUNC(PyObject*) _PyLong_GetZero(void);
 
 // Return a borrowed reference to the one singleton.
 // The function cannot return NULL.
-static inline PyObject* _PyLong_GetOne(void)
-{ return __PyLong_GetSmallInt_internal(1); }
+PyAPI_FUNC(PyObject*) _PyLong_GetOne(void);
+
+#define PY_ZERO() ((PyObject *)_PyInterpreterState_GET()->small_ints[_PY_NSMALLNEGINTS])
+#define PY_ONE() ((PyObject *)_PyInterpreterState_GET()->small_ints[_PY_NSMALLNEGINTS+1])
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);

@@ -20,7 +20,7 @@ static PyMemberDef frame_memberlist[] = {
 };
 
 #if PyFrame_MAXFREELIST > 0
-static struct _Py_frame_state *
+static inline struct _Py_frame_state *
 get_frame_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();

@@ -464,9 +464,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 PyInterpreterState *
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_EnsureTstateNotNULL(tstate);
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
     }
@@ -1063,6 +1061,11 @@ _PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *new
 #endif
 
     _PyRuntimeGILState_SetThreadState(gilstate, newts);
+#ifdef _Py_THREAD_LOCAL
+    if (newts != NULL) {
+        _py_current_interpreter = newts->interp;
+    }
+#endif
     /* It should not be possible for more than one thread state
        to be used for a thread.  Check this the best we can in debug
        builds.
@@ -2107,6 +2110,18 @@ _PyThreadState_PopFrame(PyThreadState *tstate, InterpreterFrame * frame)
         assert(tstate->datastack_top >= base);
         tstate->datastack_top = base;
     }
+}
+
+#ifdef _Py_THREAD_LOCAL
+_Py_THREAD_LOCAL PyInterpreterState *_py_current_interpreter = NULL;
+#endif
+
+int
+_Py_IsMainInterpreter(PyInterpreterState *interp)
+{
+    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
+       this function is used in performance critical code path (ceval) */
+    return interp == _PyRuntime.interpreters.main;
 }
 
 
