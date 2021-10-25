@@ -201,6 +201,13 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
+/* For small object freelist */
+#define SMALL_OBJECT_FREELIST_SIZE 256
+union _small_object {
+    PyFloatObject f;
+    PyLongObject l;
+};
+
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
@@ -269,6 +276,13 @@ PyInterpreterState_New(void)
     interp->tstate_next_unique_id = 0;
 
     interp->audit_hooks = NULL;
+
+#if WITH_FREELISTS
+    interp->small_object_freelist.ptr = NULL;
+    interp->small_object_freelist.space = SMALL_OBJECT_FREELIST_SIZE;
+    interp->small_object_freelist.size = sizeof(union _small_object);
+    interp->small_object_freelist.capacity = SMALL_OBJECT_FREELIST_SIZE;
+#endif
 
     return interp;
 

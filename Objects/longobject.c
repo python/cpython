@@ -132,8 +132,9 @@ _PyLong_New(Py_ssize_t size)
         return NULL;
     }
 #if WITH_FREELISTS
-    if (size <= MAX_DIGITS_FOR_FREELIST) {
-        result = (PyLongObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
+    if (((size_t)size) <= MAX_DIGITS_FOR_FREELIST) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        result = (PyLongObject *)_PyFreeList_Alloc(&interp->small_object_freelist);
 #else
     if (size == 0) {
         result = PyObject_Malloc(sizeof(PyLongObject));
@@ -188,7 +189,8 @@ _PyLong_FromMedium(sdigit x)
     assert(!IS_SMALL_INT(x));
     assert(is_medium_int(x));
 #if WITH_FREELISTS
-    PyLongObject *v = (PyLongObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyLongObject *v = (PyLongObject *)_PyFreeList_Alloc(&interp->small_object_freelist);
 #else
     PyLongObject *v = (PyLongObject *)PyObject_Malloc(sizeof(PyLongObject));
 #endif
@@ -5767,7 +5769,8 @@ int_dealloc(PyLongObject *op)
 {
 #if WITH_FREELISTS
     if (PyLong_CheckExact(op) && IS_MEDIUM_VALUE(op)) {
-        _PyFreeList_Free(&_Py_small_object_freelist, op);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyFreeList_Free(&interp->small_object_freelist, op);
     }
     else
 #endif

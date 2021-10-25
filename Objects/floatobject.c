@@ -115,7 +115,8 @@ PyObject *
 PyFloat_FromDouble(double fval)
 {
 #if WITH_FREELISTS
-    PyFloatObject *op = (PyFloatObject *)_PyFreeList_Alloc(&_Py_small_object_freelist);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyFloatObject *op = (PyFloatObject *)_PyFreeList_Alloc(&interp->small_object_freelist);
 #else
     PyFloatObject *op = (PyFloatObject *)PyObject_Malloc(sizeof(PyFloatObject));
 #endif
@@ -215,7 +216,8 @@ float_dealloc(PyFloatObject *op)
 {
 #if WITH_FREELISTS
     if (PyFloat_CheckExact(op)) {
-        _PyFreeList_Free(&_Py_small_object_freelist, op);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyFreeList_Free(&interp->small_object_freelist, op);
     }
     else
 #endif
@@ -2008,16 +2010,8 @@ _PyFloat_InitTypes(void)
 void
 _PyFloat_ClearFreeList(PyInterpreterState *interp)
 {
-#if PyFloat_MAXFREELIST > 0
-    struct _Py_float_state *state = &interp->float_state;
-    PyFloatObject *f = state->free_list;
-    while (f != NULL) {
-        PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
-        PyObject_Free(f);
-        f = next;
-    }
-    state->free_list = NULL;
-    state->numfree = 0;
+#if WITH_FREELISTS
+    _PyFreeList_Clear(&interp->small_object_freelist);
 #endif
 }
 

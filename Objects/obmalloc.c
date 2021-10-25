@@ -735,20 +735,6 @@ PyObject_Free(void *ptr)
 
 #if WITH_FREELISTS
 
-#define SMALL_OBJECT_FREELIST_SIZE 256
-
-union _small_object {
-    PyFloatObject f;
-    PyLongObject l;
-};
-
-_PyFreeList _Py_small_object_freelist = {
-    NULL,
-    SMALL_OBJECT_FREELIST_SIZE,
-    sizeof(union _small_object),
-    SMALL_OBJECT_FREELIST_SIZE
-};
-
 void *
 _PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
 {
@@ -772,6 +758,21 @@ _PyFreeList_HalfFillAndAllocate(_PyFreeList *list)
     void *result = list->ptr;
     list->ptr = *((void **)result);
     return result;
+}
+
+void
+_PyFreeList_Clear(_PyFreeList *list)
+{
+    int space = 0;
+    void *head = list->ptr;
+    while (head) {
+        void *next = *((void**)head);
+        PyObject_Free(head);
+        head = next;
+        space++;
+    }
+    list->ptr = NULL;
+    list->space += space;
 }
 
 void

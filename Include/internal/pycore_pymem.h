@@ -143,7 +143,7 @@ _PyFreeList_Free(_PyFreeList *list, void *ptr) {
     _PyFreeList_FreeToFull(list, ptr);
 }
 
-extern _PyFreeList _Py_small_object_freelist;
+extern void _PyFreeList_Clear(_PyFreeList *list);
 #endif
 
 #ifdef __cplusplus
