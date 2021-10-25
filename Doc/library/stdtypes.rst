@@ -1924,8 +1924,7 @@ expression support in the :mod:`re` module).
 .. method:: str.removeprefix(prefix, /)
 
    If the string starts with the *prefix* string, return
-   ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
+   ``string[len(prefix):]``. Otherwise, return the original string::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -1938,8 +1937,7 @@ expression support in the :mod:`re` module).
 .. method:: str.removesuffix(suffix, /)
 
    If the string ends with the *suffix* string and that *suffix* is not empty,
-   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
+   return ``string[:-len(suffix)]``. Otherwise, return the original string::
 
       >>> 'MiscTests'.removesuffix('Tests')
       'Misc'
