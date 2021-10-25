@@ -920,7 +920,10 @@ class TracebackException:
                            f'+---------------- {label} ----------------\n')
                     _ctx.exception_group_depth += 1
                     _ctx.parent_label = label
-                    yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                    try:
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                    except RecursionError:
+                        pass
                     _ctx.parent_label = parent_label
                     if last_exc and _ctx.need_close:
                         yield (_ctx.get_indent() +

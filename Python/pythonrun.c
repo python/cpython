@@ -947,6 +947,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
             Py_DECREF(filename);
             if (line != NULL) {
                 err += WRITE_INDENTED_MARGIN(ctx, f);
+                PyErr_Clear();
                 PyFile_WriteObject(line, f, Py_PRINT_RAW);
                 Py_DECREF(line);
             }
@@ -997,6 +998,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
             if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
                 !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__))
             {
+                PyErr_Clear();
                 err += PyFile_WriteObject(modulename, f, Py_PRINT_RAW);
                 err += PyFile_WriteString(".", f);
             }
@@ -1010,6 +1012,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
                 err = PyFile_WriteString("<unknown>", f);
             }
             else {
+                PyErr_Clear();
                 err = PyFile_WriteObject(qualname, f, Py_PRINT_RAW);
                 Py_DECREF(qualname);
             }
@@ -1072,7 +1075,6 @@ static int
 print_chained(struct exception_print_context* ctx, PyObject *value,
               const char * message, const char *tag) {
     PyObject *f = ctx->file;
-    int err = 0;
     PyObject *parent_label = ctx->parent_label;
     PyObject *label = NULL;
     int need_close = ctx->need_close;
@@ -1084,16 +1086,25 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
     }
     ctx->parent_label = label;
 
-    print_exception_recursive(ctx, value);
-    err |= WRITE_INDENTED_MARGIN(ctx, f);
-    err |= PyFile_WriteString("\n", f);
-    err |= WRITE_INDENTED_MARGIN(ctx, f);
-    err |= PyFile_WriteString(message, f);
-    err |= WRITE_INDENTED_MARGIN(ctx, f);
-    err |= PyFile_WriteString("\n", f);
+    int err = Py_EnterRecursiveCall(" in print_chained");
+    if (!err) {
+        print_exception_recursive(ctx, value);
+        Py_LeaveRecursiveCall();
+
+        err |= WRITE_INDENTED_MARGIN(ctx, f);
+        err |= PyFile_WriteString("\n", f);
+        err |= WRITE_INDENTED_MARGIN(ctx, f);
+        err |= PyFile_WriteString(message, f);
+        err |= WRITE_INDENTED_MARGIN(ctx, f);
+        err |= PyFile_WriteString("\n", f);
+    }
+    else {
+        PyErr_Clear();
+    }
 
     ctx->need_close = need_close;
     ctx->parent_label = parent_label;
+
     Py_XDECREF(label);
     return err;
 }
@@ -1156,7 +1167,6 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
 
         /* TODO: add arg to limit number of exceptions printed? */
 
-
         if (ctx->exception_group_depth == 0) {
             ctx->exception_group_depth += 1;
         }
@@ -1190,12 +1200,21 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                 "%s+---------------- %U ----------------\n",
                 (i == 0) ? "+-" : "  ", label);
             ctx->exception_group_depth += 1;
+            PyErr_Clear();
             err |= PyFile_WriteObject(line, f, Py_PRINT_RAW);
             Py_XDECREF(line);
 
             ctx->parent_label = label;
             PyObject *exc = PyTuple_GetItem(excs, i);
-            print_exception_recursive(ctx, exc);
+
+            if (!Py_EnterRecursiveCall(" in print_exception_recursive")) {
+                print_exception_recursive(ctx, exc);
+                Py_LeaveRecursiveCall();
+            }
+            else {
+                err = -1;
+                PyErr_Clear();
+            }
             ctx->parent_label = parent_label;
             Py_XDECREF(label);
 

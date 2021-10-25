@@ -987,6 +987,35 @@ class TracebackFormatTests(unittest.TestCase):
             self.assertIn('UnhashableException: ex2', tb[4])
             self.assertIn('UnhashableException: ex1', tb[12])
 
+    def deep_eg(self):
+        e = TypeError(1)
+        for i in range(2000):
+            e = ExceptionGroup('eg', [e])
+        return e
+
+    @cpython_only
+    def test_exception_group_deep_recursion_capi(self):
+        from _testcapi import exception_print
+        LIMIT = 75
+        eg = self.deep_eg()
+        with captured_output("stderr") as stderr_f:
+            with support.infinite_recursion(max_depth=LIMIT):
+                exception_print(eg)
+        output = stderr_f.getvalue()
+        self.assertIn('ExceptionGroup', output)
+        self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
+
+    def test_exception_group_deep_recursion_traceback(self):
+        LIMIT = 75
+        eg = self.deep_eg()
+        with captured_output("stderr") as stderr_f:
+            with support.infinite_recursion(max_depth=LIMIT):
+                traceback.print_exception(type(eg), eg, eg.__traceback__)
+        output = stderr_f.getvalue()
+        self.assertIn('ExceptionGroup', output)
+        self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
+
+
 cause_message = (
     "\nThe above exception was the direct cause "
     "of the following exception:\n\n")
