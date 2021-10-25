@@ -906,12 +906,12 @@ class PyBuildExt(build_ext):
 
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
-                           depends=['_math.h', '_math.c'],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
-                           depends=['_math.h', '_math.c'],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # time libraries: librt may be needed for clock_gettime()
