@@ -612,19 +612,17 @@ class _ExceptionPrintContext:
     def indent(self):
         return 2 * self.exception_group_depth
 
-    def margin_char(self):
-        return '|' if self.exception_group_depth else None
+    def margin(self):
+        return '| ' if self.exception_group_depth else ''
 
     def get_indent(self):
         return ' ' * self.indent()
 
-    def get_fancy_indent(self):
-        margin_char = self.margin_char()
-        margin = (margin_char + ' ') if margin_char is not None else ''
-        return self.get_indent() + margin
+    def get_indented_margin(self):
+        return self.get_indent() + self.margin()
 
     def emit(self, text_gen):
-        indent_str = self.get_fancy_indent()
+        indent_str = self.get_indented_margin()
         if isinstance(text_gen, str):
             yield textwrap.indent(text_gen, indent_str, lambda line: True)
         else:

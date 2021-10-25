@@ -396,20 +396,21 @@ _Py_WriteIndent(int indent, PyObject *f) {
     return 0;
 }
 
-/* Writes indent spaces, followed by the margin if margin_char is not `\0`.
+/* Writes indent spaces, followed by the margin if it is not `\0`.
  */
 int
-_Py_WriteIndentedMargin(int indent, char margin_char, PyObject *f) {
+_Py_WriteIndentedMargin(int indent, const char *margin, PyObject *f) {
     int err = 0;
-    char margin[] = {margin_char, ' ', '\0' };
     err |= _Py_WriteIndent(indent, f);
-    err |= PyFile_WriteString(margin, f);
+    if (margin) {
+        err |= PyFile_WriteString(margin, f);
+    }
     return err;
 }
 
-int
-_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
-                      int margin_indent, char margin_char, int *truncation, PyObject **line)
+static int
+display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int indent,
+                      int margin_indent, const char *margin, int *truncation, PyObject **line)
 {
     int err = 0;
     int fd;
@@ -537,7 +538,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
         *truncation = i - indent;
     }
 
-    err |= _Py_WriteIndentedMargin(margin_indent, margin_char, f);
+    err |= _Py_WriteIndentedMargin(margin_indent, margin, f);
     /* Write some spaces before the line */
     err |= _Py_WriteIndent(indent, f);
 
@@ -548,6 +549,16 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
     if  (err == 0)
         err = PyFile_WriteString("\n", f);
     return err;
+}
+
+int
+_Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
+                      int *truncation, PyObject **line)
+{
+    return display_source_line_with_margin(
+        f, filename, lineno, indent,
+        0, NULL, /* no margin */
+        truncation, line);
 }
 
 /* AST based Traceback Specialization
@@ -718,7 +729,7 @@ print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py
 
 static int
 tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
-               PyFrameObject *frame, PyObject *name, int margin_indent, char margin_char)
+               PyFrameObject *frame, PyObject *name, int margin_indent, const char *margin)
 {
     int err;
     PyObject *line;
@@ -729,7 +740,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
                                 filename, lineno, name);
     if (line == NULL)
         return -1;
-    err = _Py_WriteIndentedMargin(margin_indent, margin_char, f);
+    err = _Py_WriteIndentedMargin(margin_indent, margin, f);
     err |= PyFile_WriteObject(line, f, Py_PRINT_RAW);
     Py_DECREF(line);
     if (err != 0)
@@ -737,9 +748,9 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
     PyObject* source_line = NULL;
-    if (_Py_DisplaySourceLine(f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
-                              margin_indent, margin_char,
-                              &truncation, &source_line) != 0 || !source_line) {
+    if (display_source_line_with_margin(
+            f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
+            margin_indent, margin, &truncation, &source_line) != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
         goto done;
@@ -824,7 +835,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         end_offset = i + 1;
     }
 
-    err = _Py_WriteIndentedMargin(margin_indent, margin_char, f);
+    err = _Py_WriteIndentedMargin(margin_indent, margin, f);
     err |= print_error_location_carets(f, truncation, start_offset, end_offset,
                                       right_start_offset, left_end_offset,
                                       primary_error_char, secondary_error_char);
@@ -855,7 +866,7 @@ tb_print_line_repeated(PyObject *f, long cnt)
 
 static int
 tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
-                 int indent, char margin_char)
+                 int indent, const char *margin)
 {
     int err = 0;
     Py_ssize_t depth = 0;
@@ -889,7 +900,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
         cnt++;
         if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
             err = tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
-                                 tb->tb_frame, code->co_name, indent, margin_char);
+                                 tb->tb_frame, code->co_name, indent, margin);
             if (err == 0) {
                 err = PyErr_CheckSignals();
             }
@@ -906,7 +917,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
 #define PyTraceBack_LIMIT 1000
 
 int
-PyTraceBack_Print_Indented(PyObject *v, int indent, char margin_char, PyObject *f)
+PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObject *f)
 {
     int err;
     PyObject *limitv;
@@ -929,17 +940,17 @@ PyTraceBack_Print_Indented(PyObject *v, int indent, char margin_char, PyObject *
             return 0;
         }
     }
-    err = _Py_WriteIndentedMargin(indent, margin_char, f);
+    err = _Py_WriteIndentedMargin(indent, margin, f);
     err |= PyFile_WriteString("Traceback (most recent call last):\n", f);
     if (!err)
-        err = tb_printinternal((PyTracebackObject *)v, f, limit, indent, margin_char);
+        err = tb_printinternal((PyTracebackObject *)v, f, limit, indent, margin);
     return err;
 }
 
 int
 PyTraceBack_Print(PyObject *v, PyObject *f)
 {
-    return PyTraceBack_Print_Indented(v, 0, '\0', f);
+    return PyTraceBack_Print_Indented(v, 0, NULL, f);
 }
 
 /* Format an integer in range [0; 0xffffffff] to decimal and write it

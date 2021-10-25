@@ -895,10 +895,10 @@ struct exception_print_context
     int need_close;            // Need a closing bottom frame
 };
 
-#define EXC_MARGIN_CHAR(ctx) ((ctx)->exception_group_depth ? '|' : '\0')
+#define EXC_MARGIN(ctx) ((ctx)->exception_group_depth ? "| " : "")
 #define EXC_INDENT(ctx) (2 * (ctx)->exception_group_depth)
 
-#define WRITE_INDENTED_MARGIN(ctx, f) _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN_CHAR(ctx), (f))
+#define WRITE_INDENTED_MARGIN(ctx, f) _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN(ctx), (f))
 
 static void
 print_exception(struct exception_print_context *ctx, PyObject *value)
@@ -924,7 +924,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     type = (PyObject *) Py_TYPE(value);
     tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None)
-        err = PyTraceBack_Print_Indented(tb, EXC_INDENT(ctx), EXC_MARGIN_CHAR(ctx), f);
+        err = PyTraceBack_Print_Indented(tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
     if (err == 0 &&
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
