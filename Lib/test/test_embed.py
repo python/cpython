@@ -1477,10 +1477,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'xoptions': [optval],
                 'use_frozen_modules': expected,
             }
-            with self.subTest(raw):
-                self.check_all_configs("test_init_use_frozen_modules",
-                                       config, api=API_PYTHON,
-                                       env={'TESTFROZEN': raw})
+            env = {'TESTFROZEN': raw[1:]} if raw else None
+            with self.subTest(repr(raw)):
+                self.check_all_configs("test_init_use_frozen_modules", config,
+                                       api=API_PYTHON, env=env)
 
 
 class SetConfigTests(unittest.TestCase):

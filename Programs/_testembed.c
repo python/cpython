@@ -1729,7 +1729,10 @@ static int test_get_argc_argv(void)
 static int check_use_frozen_modules(const char *rawval)
 {
     wchar_t optval[100];
-    if (swprintf(optval, 100, L"frozen_modules%s", rawval) < 0) {
+    if (rawval == NULL) {
+        wcscpy(optval, L"frozen_modules");
+    }
+    else if (swprintf(optval, 100, L"frozen_modules=%s", rawval) < 0) {
         error("rawval is too long");
         return -1;
     }
@@ -1757,10 +1760,6 @@ static int check_use_frozen_modules(const char *rawval)
 static int test_init_use_frozen_modules(void)
 {
     const char *envvar = getenv("TESTFROZEN");
-    if (envvar == NULL) {
-        error("missing TESTFROZEN env var");
-        return 1;
-    }
     return check_use_frozen_modules(envvar);
 }
 
