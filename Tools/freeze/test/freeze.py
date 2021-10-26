@@ -74,6 +74,9 @@ def git_copy_repo(newroot, remote=None, *, verbose=True):
         remote = SRCDIR
     if os.path.exists(newroot):
         print(f'updating copied repo {newroot}...')
+        if newroot == SRCDIR:
+            raise Exception('this probably isn\'t what you wanted')
+        _run_cmd([GIT, '-C', newroot, 'clean', '-d', '-f'], verbose=verbose)
         _run_cmd([GIT, '-C', newroot, 'reset'], verbose=verbose)
         _run_cmd([GIT, '-C', newroot, 'checkout', '.'], verbose=verbose)
         _run_cmd([GIT, '-C', newroot, 'pull', '-f', remote], verbose=verbose)
@@ -87,10 +90,15 @@ def git_copy_repo(newroot, remote=None, *, verbose=True):
         for line in text.splitlines():
             _, _, relfile = line.strip().partition(' ')
             relfile = relfile.strip()
+            isdir = relfile.endswith(os.path.sep)
+            relfile = relfile.rstrip(os.path.sep)
             srcfile = os.path.join(reporoot, relfile)
             dstfile = os.path.join(newroot, relfile)
             os.makedirs(os.path.dirname(dstfile), exist_ok=True)
-            shutil.copy2(srcfile, dstfile)
+            if isdir:
+                shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
+            else:
+                shutil.copy2(srcfile, dstfile)
 
 
 ##################################
