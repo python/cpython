@@ -22,7 +22,7 @@ class UnsupportedError(Exception):
     """The operation isn't supported."""
 
 
-def _run_cmd(cmd, cwd=None, verbose=True, showcmd=True):
+def _run_cmd(cmd, cwd=None, verbose=True, showcmd=True, showerr=True):
     if showcmd:
         print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
     proc = subprocess.run(
@@ -32,7 +32,8 @@ def _run_cmd(cmd, cwd=None, verbose=True, showcmd=True):
         text=True,
     )
     if proc.returncode != 0:
-        print(proc.stderr, file=sys.stderr)
+        if showerr:
+            print(proc.stderr, file=sys.stderr)
         proc.check_returncode()
     return proc.stdout
 
@@ -102,18 +103,19 @@ def get_config_var(build, name, *, fail=True):
     else:
         builddir = build
         python = os.path.join(builddir, 'python')
-        if not os.path.isfile(python):
-            return get_makefile_var(builddir, 'CONFIG_ARGS', fail=fail)
 
-    try:
-        text = _run_cmd(
-            [python, '-c',
-             'import sysconfig', 'print(sysconfig.get_config_var("CONFIG_ARGS"))'],
-            showcmd=False,
-        )
-        return text
-    except subprocess.CalledProcessError:
-        return get_makefile_var(builddir, 'CONFIG_ARGS', fail=fail)
+    if os.path.isfile(python):
+        try:
+            text = _run_cmd(
+                [python, '-c',
+                 f'import sysconfig; print(sysconfig.get_config_var("{name}"))'],
+                showcmd=False,
+                showerr=False,
+            )
+            return text
+        except subprocess.CalledProcessError:
+            pass
+    return get_makefile_var(builddir, name, fail=fail)
 
 
 def get_configure_args(build, *, fail=True):
