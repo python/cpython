@@ -106,7 +106,7 @@ def get_config_var(build, name, *, fail=True):
 
     text = _run_cmd(
         [python, '-c',
-         'import sysconfig', 'sysconfig.get_config_var("CONFIG_ARGS")'],
+         'import sysconfig', 'print(sysconfig.get_config_var("CONFIG_ARGS"))'],
         showcmd=False,
     )
     return text
