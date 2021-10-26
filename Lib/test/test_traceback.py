@@ -1024,7 +1024,7 @@ context_message = (
     "\nDuring handling of the above exception, "
     "another exception occurred:\n\n")
 
-nested_exception_header_re = r'[\+-]?\+[-{4} ]+[ \d\.?]+[ -{4}]+'
+nested_exception_header_re = r'[+-]?\+[-{4} ]+[ \d\.?]+[ -{4}]+'
 
 boundaries = re.compile(
     '(%s|%s|%s)' % (re.escape(cause_message),
@@ -1273,15 +1273,15 @@ class BaseExceptionReportingTests:
         blocks = boundaries.split(report)
         self.assertEqual(len(blocks), len(expected))
 
-        for i, block in enumerate(blocks):
-            for line in expected[i]:
+        for block, expected_lines in zip(blocks, expected):
+            for line in expected_lines:
                 self.assertIn(f"{line}", block)
                 # check indentation
                 self.assertNotIn(f" {line}", block)
 
         for line in report:
             # at most one margin char per line
-            self.assertLessEqual(line.count('|'), 1)
+            self.assertLessEqual(line.count('|'), 1, msg=f'{line!r}')
 
     def test_exception_group_basic(self):
         def exc():
