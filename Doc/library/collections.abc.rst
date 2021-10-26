@@ -334,8 +334,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: AsyncIterator
 
-   ABC for classes that provide ``__aiter__`` and ``__anext__``
-   methods.  See also the definition of :term:`asynchronous iterator`.
+   ABC for classes that provide the ``__anext__`` method.  An implementation
+   of ``__aiter__`` is provided for convenience. See also the definition of
+   :term:`asynchronous iterator`.
 
    .. versionadded:: 3.5
 
