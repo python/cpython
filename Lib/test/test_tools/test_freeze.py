@@ -7,7 +7,8 @@ import sys
 import textwrap
 import unittest
 
-from . import imports_under_tool
+from . import imports_under_tool, skip_if_missing
+skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
     import freeze as helper
 
