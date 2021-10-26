@@ -1379,6 +1379,40 @@ class BaseExceptionReportingTests:
         ]
         self.check_exception_group(exc, expected)
 
+    def test_exception_group_context_with_context(self):
+        def exc():
+            EG = ExceptionGroup
+            try:
+                try:
+                    raise EG("eg1", [ValueError(1), TypeError(2)])
+                except:
+                    raise EG("eg2", [ValueError(3), TypeError(4)])
+            except:
+                raise ImportError(5)
+
+        expected = [
+            ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
+             '  | ExceptionGroup: eg1',
+            ],
+            ['-+---------------- context.context.1 ----------------'],
+            ['    | ValueError: 1'],
+            ['+---------------- context.context.2 ----------------'],
+            ['    | TypeError: 2'],
+            [ context_message ],
+            ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
+             '  | ExceptionGroup: eg2',
+            ],
+            ['-+---------------- context.1 ----------------'],
+            ['    | ValueError: 3'],
+            ['+---------------- context.2 ----------------'],
+            ['    | TypeError: 4'],
+            [ context_message ],
+            ['    raise ImportError(5)',
+             'ImportError: 5',
+            ],
+        ]
+        self.check_exception_group(exc, expected)
+
     def test_exception_group_nested(self):
         def exc():
             EG = ExceptionGroup
