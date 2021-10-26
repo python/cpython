@@ -749,12 +749,13 @@ oldsharedmods: $(SHAREDMODS) pybuilddir.txt
 		fi; \
 	done
 
-
+Modules/Setup: $(srcdir)/Modules/Setup.in
+	./config.status --file=$@
 
 Makefile Modules/config.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
-				$(srcdir)/Modules/Setup \
+				Modules/Setup \
 				Modules/Setup.local
 	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
