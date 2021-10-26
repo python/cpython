@@ -898,7 +898,11 @@ struct exception_print_context
 #define EXC_MARGIN(ctx) ((ctx)->exception_group_depth ? "| " : "")
 #define EXC_INDENT(ctx) (2 * (ctx)->exception_group_depth)
 
-#define WRITE_INDENTED_MARGIN(ctx, f) _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN(ctx), (f))
+static int
+write_indented_margin(struct exception_print_context *ctx, PyObject *f)
+{
+    return _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
+}
 
 static void
 print_exception(struct exception_print_context *ctx, PyObject *value)
@@ -946,7 +950,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
                                           filename, lineno);
             Py_DECREF(filename);
             if (line != NULL) {
-                err += WRITE_INDENTED_MARGIN(ctx, f);
+                err += write_indented_margin(ctx, f);
                 PyErr_Clear();
                 PyFile_WriteObject(line, f, Py_PRINT_RAW);
                 Py_DECREF(line);
@@ -986,7 +990,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
         _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
 
-        err += WRITE_INDENTED_MARGIN(ctx, f);
+        err += write_indented_margin(ctx, f);
         modulename = _PyObject_GetAttrId(type, &PyId___module__);
         if (modulename == NULL || !PyUnicode_Check(modulename))
         {
@@ -1091,11 +1095,11 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
         print_exception_recursive(ctx, value);
         Py_LeaveRecursiveCall();
 
-        err |= WRITE_INDENTED_MARGIN(ctx, f);
+        err |= write_indented_margin(ctx, f);
         err |= PyFile_WriteString("\n", f);
-        err |= WRITE_INDENTED_MARGIN(ctx, f);
+        err |= write_indented_margin(ctx, f);
         err |= PyFile_WriteString(message, f);
-        err |= WRITE_INDENTED_MARGIN(ctx, f);
+        err |= write_indented_margin(ctx, f);
         err |= PyFile_WriteString("\n", f);
     }
     else {
