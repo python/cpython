@@ -928,8 +928,9 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     fflush(stdout);
     type = (PyObject *) Py_TYPE(value);
     tb = PyException_GetTraceback(value);
-    if (tb && tb != Py_None)
+    if (tb && tb != Py_None) {
         err = _PyTraceBack_Print_Indented(tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
+    }
     if (err == 0 &&
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
@@ -939,8 +940,9 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
         Py_DECREF(tmp);
         if (!parse_syntax_error(value, &message, &filename,
                                 &lineno, &offset,
-                                &end_lineno, &end_offset, &text))
+                                &end_lineno, &end_offset, &text)) {
             PyErr_Clear();
+        }
         else {
             PyObject *line;
 
@@ -1078,7 +1080,8 @@ print_exception_recursive(struct exception_print_context*, PyObject*);
 
 static int
 print_chained(struct exception_print_context* ctx, PyObject *value,
-              const char * message, const char *tag) {
+              const char * message, const char *tag)
+{
     PyObject *f = ctx->file;
     PyObject *parent_label = ctx->parent_label;
     PyObject *label = NULL;
@@ -1179,7 +1182,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
 
         PyObject *excs = ((PyBaseExceptionGroupObject *)value)->excs;
         assert(excs && PyTuple_Check(excs));
-        Py_ssize_t num_excs = PyTuple_Size(excs);
+        Py_ssize_t num_excs = PyTuple_GET_SIZE(excs);
         assert(num_excs > 0);
 
         PyObject *parent_label = ctx->parent_label;
@@ -1187,7 +1190,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
 
         ctx->need_close = 0;
         for (Py_ssize_t i = 0; i < num_excs; i++) {
-            int last_exc = i == num_excs - 1;
+            int last_exc = (i == num_excs - 1);
             if (last_exc) {
                 // The closing frame may be added in a recursive call
                 ctx->need_close = 1;
@@ -1200,17 +1203,27 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
             else {
                 label = PyUnicode_FromFormat("%d", i + 1);
             }
-            err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
-            PyObject *line = PyUnicode_FromFormat(
-                "%s+---------------- %U ----------------\n",
-                (i == 0) ? "+-" : "  ", label);
-            ctx->exception_group_depth += 1;
-            PyErr_Clear();
-            err |= PyFile_WriteObject(line, f, Py_PRINT_RAW);
-            Py_XDECREF(line);
+            PyObject *line = NULL;
+            if (label) {
+                line = PyUnicode_FromFormat(
+                    "%s+---------------- %U ----------------\n",
+                    (i == 0) ? "+-" : "  ", label);
+            }
+            if (line) {
+                err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
+                PyErr_Clear();
+                err |= PyFile_WriteObject(line, f, Py_PRINT_RAW);
+                Py_DECREF(line);
+            }
+            else {
+                err = -1;
+                PyErr_Clear();
+            }
 
-            ctx->parent_label = label;
-            PyObject *exc = PyTuple_GetItem(excs, i);
+            ctx->exception_group_depth += 1;
+            ctx->parent_label = label; /* transfer ref ownership */
+            label = NULL;
+            PyObject *exc = PyTuple_GET_ITEM(excs, i);
 
             if (!Py_EnterRecursiveCall(" in print_exception_recursive")) {
                 print_exception_recursive(ctx, exc);
@@ -1220,8 +1233,8 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                 err = -1;
                 PyErr_Clear();
             }
+            Py_XDECREF(ctx->parent_label);
             ctx->parent_label = parent_label;
-            Py_XDECREF(label);
 
             if (last_exc && ctx->need_close) {
                 err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
@@ -1243,8 +1256,6 @@ void
 _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *tb)
 {
     assert(file != NULL && file != Py_None);
-    struct exception_print_context ctx;
-
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -1256,6 +1267,7 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
             Py_DECREF(cur_tb);
     }
 
+    struct exception_print_context ctx;
     ctx.file = file;
     ctx.exception_group_depth = 0;
     ctx.parent_label = 0;
