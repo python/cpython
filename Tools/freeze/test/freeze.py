@@ -139,6 +139,7 @@ def get_config_var(build, name, *, fail=True):
                  f'import sysconfig; print(sysconfig.get_config_var("{name}"))'],
                 showcmd=False,
                 showerr=False,
+                verbose=False,
             )
             return text
         except subprocess.CalledProcessError:
