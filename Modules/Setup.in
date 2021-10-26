@@ -199,21 +199,21 @@ time timemodule.c
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-#_crypt _cryptmodule.c $(CRYPT_CFLAGS) $(CRYPT_LIBS)	# crypt(3); breaks many builds.
-#nis nismodule.c $(NIS_CFLAGS) $(NIS_LIBS)	# Sun yellow pages -- not everywhere
+#@HAVE_CURSES_TRUE@_crypt _cryptmodule.c $(CRYPT_CFLAGS) $(CRYPT_LIBS)	# crypt(3); breaks many builds.
+#@HAVE_NIS_TRUE@nis nismodule.c $(NIS_CFLAGS) $(NIS_LIBS)	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
 # Modules that require external libraries.
 
-#_bz2 _bz2module.c $(BZ2_CFLAGS) $(BZ2_LIBS)
-#_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c $(FFI_CFLAGS) $(FFI_LIBS) -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
-# _dbm _dbmmodule.c 	# -lndbm # dbm(3)
-#_gdbm _gdbmmodule.c -lgdbm
-#_lzma _lzmamodule.c $(LZMA_CFLAGS) $(LZMA_LIBS)
-#_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c $(SQLITE3_CFLAGS) $(SQLITE3_LIBS)
-#_uuid _uuidmodule.c $(UUID_CFLAGS) $(UUID_LIBS)
-#zlib  zlibmodule.c $(ZLIB_CFLAGS) $(ZLIB_LIBS)
+#@HAVE_BZ2_TRUE@_bz2 _bz2module.c $(BZ2_CFLAGS) $(BZ2_LIBS)
+#@HAVE_FFI_TRUE@_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c $(FFI_CFLAGS) $(FFI_LIBS) -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+#@HAVE_DBM_TRUE@_dbm _dbmmodule.c 	# -lndbm # dbm(3)
+#@HAVE_GDBM_TRUE@_gdbm _gdbmmodule.c -lgdbm
+#@HAVE_LZMA_TRUE@_lzma _lzmamodule.c $(LZMA_CFLAGS) $(LZMA_LIBS)
+#@HAVE_SQLITE3_TRUE@_sqlite3 _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c $(SQLITE3_CFLAGS) $(SQLITE3_LIBS)
+#@HAVE_UUID_TRUE@_uuid _uuidmodule.c $(UUID_CFLAGS) $(UUID_LIBS)
+#@HAVE_ZLIB_TRUE@zlib  zlibmodule.c $(ZLIB_CFLAGS) $(ZLIB_LIBS)
 
 
 # GNU readline.  Unlike previous Python incarnations, GNU readline is
@@ -228,8 +228,8 @@ time timemodule.c
 #readline readline.c $(READLINE_CFLAGS) $(READLINE_LIBS)
 
 # To dynamically link OpenSSL:
-#_ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) $(OPENSSL_LIBS)
-#_hashlib _hashopenssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) -lcrypto
+#@HAVE_OPENSSL_TRUE@_ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) $(OPENSSL_LIBS)
+#@HAVE_OPENSSL_TRUE@_hashlib _hashopenssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) -lcrypto
 
 # To statically link OpenSSL:
 # _ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) \
@@ -250,7 +250,7 @@ time timemodule.c
 # every system.
 
 # *** Always uncomment this (leave the leading underscore in!):
-#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT $(TCLTK_INCLUDES) $(TCLTK_LIBS) \
+#@HAVE_TCLTK_TRUE@_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT $(TCLTK_INCLUDES) $(TCLTK_LIBS) \
 # *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
 #	-L/usr/local/lib \
 # *** Uncomment and edit to reflect where your Tcl/Tk headers are:
@@ -283,13 +283,13 @@ time timemodule.c
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
 
-#_curses _cursesmodule.c $(NCURSESW_CFLAGS) $(NCURSESW_LIBS) $(CURSES_CFLAGS) $(CURSES_LIBS)
+#@HAVE_CURSES_TRUE@_curses _cursesmodule.c $(NCURSESW_CFLAGS) $(NCURSESW_LIBS) $(CURSES_CFLAGS) $(CURSES_LIBS)
 
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
-#_curses_panel _curses_panel.c $(CURSES_PANEL_CFLAGS) $(CURSES_PANEL_LIBS)
+#@HAVE_CURSES_PANEL_TRUE@_curses_panel _curses_panel.c $(CURSES_PANEL_CFLAGS) $(CURSES_PANEL_LIBS)
 
 # macOS specific modules
-# _scproxy _scproxy.c -framework SystemConfiguration -framework CoreFoundation
+#@HAVE_SCPROXY_TRUE@_scproxy _scproxy.c -framework SystemConfiguration -framework CoreFoundation
 
 # Examples
 
@@ -302,7 +302,7 @@ xxsubtype xxsubtype.c  # Required for the test suite to pass!
 
 #_xxsubinterpreters _xxsubinterpretersmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
-#_ctypes_test _ctypes/_ctypes_test.c
+#@HAVE_FFI_TRUE@_ctypes_test _ctypes/_ctypes_test.c
 #_testbuffer _testbuffer.c
 #_testimportmultiple _testimportmultiple.c
 #_testinternalcapi _testinternalcapi.c
