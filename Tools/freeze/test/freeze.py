@@ -4,14 +4,12 @@ import re
 import shlex
 import shutil
 import subprocess
-import sys
 
 
 TESTS_DIR = os.path.dirname(__file__)
 TOOL_ROOT = os.path.dirname(TESTS_DIR)
 SRCDIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
 
-CONFIGURE = os.path.join(SRCDIR, 'configure')
 MAKE = shutil.which('make')
 GIT = shutil.which('git')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
@@ -22,20 +20,20 @@ class UnsupportedError(Exception):
     """The operation isn't supported."""
 
 
-def _run_cmd(cmd, cwd=None, verbose=True, showcmd=True, showerr=True):
-    if showcmd:
-        print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
-    proc = subprocess.run(
+def _run_quiet(cmd, cwd=None):
+    #print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
+    return subprocess.run(
         cmd,
         cwd=cwd,
-        capture_output=not verbose,
+        capture_output=True,
         text=True,
+        check=True,
     )
-    if proc.returncode != 0:
-        if showerr:
-            print(proc.stderr, file=sys.stderr)
-        proc.check_returncode()
-    return proc.stdout
+
+
+def _run_stdout(cmd, cwd=None):
+    proc = _run_quiet(cmd, cwd)
+    return proc.stdout.strip()
 
 
 def find_opt(args, name):
@@ -67,51 +65,44 @@ def ensure_opt(args, name, value):
             args[pos] = f'{opt}={value}'
 
 
-def git_copy_repo(newroot, remote=None, *, verbose=True):
+def git_copy_repo(newroot, oldroot):
     if not GIT:
         raise UnsupportedError('git')
-    if not remote:
-        remote = SRCDIR
+
     if os.path.exists(newroot):
         print(f'updating copied repo {newroot}...')
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
-        _run_cmd([GIT, 'clean', '-d', '-f'], newroot, verbose)
-        _run_cmd([GIT, 'reset'], newroot, verbose)
-        _run_cmd([GIT, 'checkout', '.'], newroot, verbose)
-        _run_cmd([GIT, 'pull', '-f', remote], newroot, verbose)
+        _run_quiet([GIT, 'clean', '-d', '-f'], newroot)
+        _run_quiet([GIT, 'reset'], newroot)
+        _run_quiet([GIT, 'checkout', '.'], newroot)
+        _run_quiet([GIT, 'pull', '-f', oldroot], newroot)
     else:
         print(f'copying repo into {newroot}...')
-        _run_cmd([GIT, 'clone', remote, newroot], verbose=verbose)
-    if os.path.exists(remote):
-        # Copy over any uncommited files.
-        reporoot = remote
-        text = _run_cmd([GIT, 'status', '-s'], reporoot, verbose, showcmd=False)
-        for line in text.splitlines():
-            _, _, relfile = line.strip().partition(' ')
-            relfile = relfile.strip()
-            isdir = relfile.endswith(os.path.sep)
-            relfile = relfile.rstrip(os.path.sep)
-            srcfile = os.path.join(reporoot, relfile)
-            dstfile = os.path.join(newroot, relfile)
-            os.makedirs(os.path.dirname(dstfile), exist_ok=True)
-            if isdir:
-                shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
-            else:
-                shutil.copy2(srcfile, dstfile)
+        _run_quiet([GIT, 'clone', oldroot, newroot])
+
+    # Copy over any uncommited files.
+    text = _run_stdout([GIT, 'status', '-s'], oldroot)
+    for line in text.splitlines():
+        _, _, relfile = line.strip().partition(' ')
+        relfile = relfile.strip()
+        isdir = relfile.endswith(os.path.sep)
+        relfile = relfile.rstrip(os.path.sep)
+        srcfile = os.path.join(oldroot, relfile)
+        dstfile = os.path.join(newroot, relfile)
+        os.makedirs(os.path.dirname(dstfile), exist_ok=True)
+        if isdir:
+            shutil.copytree(srcfile, dstfile, dirs_exist_ok=True)
+        else:
+            shutil.copy2(srcfile, dstfile)
 
 
-##################################
-# build queries
-
-def get_makefile_var(builddir, name, *, fail=True):
+def get_makefile_var(builddir, name):
     regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
     filename = os.path.join(builddir, 'Makefile')
     try:
         infile = open(filename)
     except FileNotFoundError:
-        if fail:
-            raise  # re-raise
         return None
     with infile:
         for line in infile:
@@ -119,193 +110,80 @@ def get_makefile_var(builddir, name, *, fail=True):
             if m:
                 value, = m.groups()
                 return value or ''
-    if fail:
-        raise KeyError(f'{name!r} not in Makefile', name=name)
     return None
 
 
-def get_config_var(build, name, *, fail=True):
-    if os.path.isfile(build):
-        python = build
-        builddir = os.path.dirname(build)
-    else:
-        builddir = build
-        python = os.path.join(builddir, 'python')
-
+def get_config_var(builddir, name):
+    python = os.path.join(builddir, 'python')
     if os.path.isfile(python):
+        cmd = [python, '-c',
+               f'import sysconfig; print(sysconfig.get_config_var("{name}"))']
         try:
-            text = _run_cmd(
-                [python, '-c',
-                 f'import sysconfig; print(sysconfig.get_config_var("{name}"))'],
-                showcmd=False,
-                showerr=False,
-                verbose=False,
-            )
-            return text
+            return _run_stdout(cmd)
         except subprocess.CalledProcessError:
             pass
-    return get_makefile_var(builddir, name, fail=fail)
-
-
-def get_configure_args(build, *, fail=True):
-    text = get_config_var(build, 'CONFIG_ARGS', fail=fail)
-    if not text:
-        return None
-    return shlex.split(text)
-
-
-def get_prefix(build=None):
-    if build and os.path.isfile(build):
-        return _run_cmd(
-            [build, '-c' 'import sys; print(sys.prefix)'],
-            cwd=os.path.dirname(build),
-            showcmd=False,
-        )
-    else:
-        return get_makefile_var(build or '.', 'prefix', fail=False)
-
-
-##################################
-# building Python
-
-def configure_python(builddir=None, prefix=None, cachefile=None, args=None, *,
-                     srcdir=None,
-                     inherit=False,
-                     verbose=True,
-                     ):
-    if not builddir:
-        builddir = srcdir or SRCDIR
-    if not srcdir:
-        configure = os.path.join(builddir, 'configure')
-        if not os.path.isfile(configure):
-            srcdir = SRCDIR
-            configure = CONFIGURE
-    else:
-        configure = os.path.join(srcdir, 'configure')
-
-    cmd = [configure]
-    if inherit:
-        oldargs = get_configure_args(builddir, fail=False)
-        if oldargs:
-            cmd.extend(oldargs)
-    if cachefile:
-        if args and find_opt(args, 'cache-file') >= 0:
-            raise ValueError('unexpected --cache-file')
-        ensure_opt(cmd, 'cache-file', os.path.abspath(cachefile))
-    if prefix:
-        if args and find_opt(args, 'prefix') >= 0:
-            raise ValueError('unexpected --prefix')
-        ensure_opt(cmd, 'prefix', os.path.abspath(prefix))
-    if args:
-        cmd.extend(args)
-
-    print(f'configuring python in {builddir}...')
-    os.makedirs(builddir, exist_ok=True)
-    _run_cmd(cmd, builddir, verbose)
-    return builddir
-
-
-def build_python(builddir, *, verbose=True):
-    if not MAKE:
-        raise UnsupportedError('make')
-
-    if not builddir:
-        builddir = '.'
-
-    print('building python...')
-    srcdir = get_config_var(builddir, 'srcdir', fail=False) or SRCDIR
-    if os.path.abspath(builddir) != srcdir:
-        if os.path.exists(os.path.join(srcdir, 'Makefile')):
-            _run_cmd([MAKE, '-C', srcdir, 'clean'], verbose=False)
-    _run_cmd([MAKE, '-C', builddir, '-j8'], verbose=verbose)
-
-    return os.path.join(builddir, 'python')
-
-
-def install_python(builddir, *, verbose=True):
-    if not MAKE:
-        raise UnsupportedError('make')
-
-    if not builddir:
-        builddir = '.'
-    prefix = get_prefix(builddir)
-
-    print(f'installing python into {prefix}...')
-    _run_cmd([MAKE, '-C', builddir, '-j', 'install'], verbose=verbose)
-
-    if not prefix:
-        return None
-    return os.path.join(prefix, 'bin', 'python3')
-
-
-def ensure_python_installed(outdir, srcdir=None, *,
-                            outoftree=True,
-                            verbose=True,
-                            ):
-    cachefile = os.path.join(outdir, 'python-config.cache')
-    prefix = os.path.join(outdir, 'python-installation')
-    if outoftree:
-        builddir = os.path.join(outdir, 'python-build')
-    else:
-        builddir = srcdir or SRCDIR
-    configure_python(builddir, prefix, cachefile,
-                     srcdir=srcdir, inherit=True, verbose=verbose)
-    build_python(builddir, verbose=verbose)
-    return install_python(builddir, verbose=verbose)
+    return get_makefile_var(builddir, name)
 
 
 ##################################
 # freezing
 
-def prepare(script=None, outdir=None, *,
-            outoftree=True,
-            copy=False,
-            verbose=True,
-            ):
+def prepare(script=None, outdir=None):
     if not outdir:
         outdir = OUTDIR
     os.makedirs(outdir, exist_ok=True)
+
+    # Write the script to disk.
     if script:
-        if script.splitlines()[0] == script and os.path.isfile(script):
-            scriptfile = script
-        else:
-            scriptfile = os.path.join(outdir, 'app.py')
-            with open(scriptfile, 'w') as outfile:
-                outfile.write(script)
-    else:
-        scriptfile = None
-    if copy:
-        srcdir = os.path.join(outdir, 'cpython')
-        git_copy_repo(srcdir, SRCDIR, verbose=verbose)
-    else:
-        srcdir = SRCDIR
-    python = ensure_python_installed(outdir, srcdir,
-                                     outoftree=outoftree, verbose=verbose)
-    return outdir, scriptfile, python
+        scriptfile = os.path.join(outdir, 'app.py')
+        with open(scriptfile, 'w') as outfile:
+            outfile.write(script)
 
+    # Make a copy of the repo to avoid affecting the current build.
+    srcdir = os.path.join(outdir, 'cpython')
+    git_copy_repo(srcdir, SRCDIR)
 
-def freeze(python, scriptfile, outdir=None, *, verbose=True):
+    # We use an out-of-tree build (instead of srcdir).
+    builddir = os.path.join(outdir, 'python-build')
+    os.makedirs(builddir, exist_ok=True)
+
+    # Run configure.
+    print(f'configuring python in {builddir}...')
+    cmd = [
+        os.path.join(srcdir, 'configure'),
+        *shlex.split(get_config_var(builddir, 'CONFIG_ARGS') or ''),
+    ]
+    ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
+    prefix = os.path.join(outdir, 'python-installation')
+    ensure_opt(cmd, 'prefix', prefix)
+    _run_quiet(cmd, builddir)
+
     if not MAKE:
         raise UnsupportedError('make')
 
-    if not outdir:
-        outdir = OUTDIR
+    # Build python.
+    print('building python...')
+    if os.path.exists(os.path.join(srcdir, 'Makefile')):
+        # Out-of-tree builds require a clean srcdir.
+        _run_quiet([MAKE, '-C', srcdir, 'clean'])
+    _run_quiet([MAKE, '-C', builddir, '-j8'])
+
+    # Install the build.
+    print(f'installing python into {prefix}...')
+    _run_quiet([MAKE, '-C', builddir, '-j8', 'install'])
+    python = os.path.join(prefix, 'bin', 'python3')
+
+    return outdir, scriptfile, python
+
+
+def freeze(python, scriptfile, outdir):
+    if not MAKE:
+        raise UnsupportedError('make')
 
     print(f'freezing {scriptfile}...')
     os.makedirs(outdir, exist_ok=True)
-    subprocess.run(
-        [python, FREEZE, '-o', outdir, scriptfile],
-        cwd=outdir,
-        capture_output=not verbose,
-        check=True,
-        )
-
-    subprocess.run(
-        [MAKE],
-        cwd=os.path.dirname(scriptfile),
-        capture_output=not verbose,
-        check=True,
-        )
+    _run_quiet([python, FREEZE, '-o', outdir, scriptfile], outdir)
+    _run_quiet([MAKE, '-C', os.path.dirname(scriptfile)])
 
     name = os.path.basename(scriptfile).rpartition('.')[0]
     executable = os.path.join(outdir, name)
@@ -313,10 +191,4 @@ def freeze(python, scriptfile, outdir=None, *, verbose=True):
 
 
 def run(executable):
-    proc = subprocess.run(
-        [executable],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return proc.stdout.strip()
+    return _run_stdout([executable])
