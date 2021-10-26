@@ -98,18 +98,22 @@ def get_makefile_var(builddir, name, *, fail=True):
 def get_config_var(build, name, *, fail=True):
     if os.path.isfile(build):
         python = build
+        builddir = os.path.dirname(build)
     else:
         builddir = build
         python = os.path.join(builddir, 'python')
         if not os.path.isfile(python):
             return get_makefile_var(builddir, 'CONFIG_ARGS', fail=fail)
 
-    text = _run_cmd(
-        [python, '-c',
-         'import sysconfig', 'print(sysconfig.get_config_var("CONFIG_ARGS"))'],
-        showcmd=False,
-    )
-    return text
+    try:
+        text = _run_cmd(
+            [python, '-c',
+             'import sysconfig', 'print(sysconfig.get_config_var("CONFIG_ARGS"))'],
+            showcmd=False,
+        )
+        return text
+    except subprocess.CalledProcessError:
+        return get_makefile_var(builddir, 'CONFIG_ARGS', fail=fail)
 
 
 def get_configure_args(build, *, fail=True):
