@@ -1,7 +1,10 @@
 import os
 import os.path
+import re
+import shlex
 import shutil
 import subprocess
+import sys
 
 
 TESTS_DIR = os.path.dirname(__file__)
@@ -18,7 +21,7 @@ class UnsupportedError(Exception):
     """The operation isn't supported."""
 
 
-def _run_cmd(cmd, cwd, verbose=True):
+def _run_cmd(cmd, cwd=None, verbose=True):
     proc = subprocess.run(
         cmd,
         cwd=cwd,
@@ -31,55 +34,115 @@ def _run_cmd(cmd, cwd, verbose=True):
     return proc.stdout
 
 
+def find_opt(args, name):
+    opt = f'--{name}'
+    optstart = f'{opt}='
+    for i, arg in enumerate(args):
+        if arg == opt or arg.startswith(optstart):
+            return i
+    return -1
+
+
+##################################
+# build queries
+
+def get_makefile_var(builddir, name, *, fail=True):
+    regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
+    filename = os.path.join(builddir, 'Makefile')
+    try:
+        infile = open(filename)
+    except FileNotFoundError:
+        if fail:
+            raise  # re-raise
+        return None
+    with infile:
+        for line in infile:
+            m = regex.match(line)
+            if m:
+                value, = m.groups()
+                return value or ''
+    if fail:
+        raise KeyError(f'{name!r} not in Makefile', name=name)
+    return None
+
+
+def get_config_var(build, name, *, fail=True):
+    if os.path.isfile(build):
+        python = build
+    else:
+        builddir = build
+        python = os.path.join(builddir, 'python')
+        if not os.path.isfile(python):
+            return get_makefile_var(builddir, 'CONFIG_ARGS', fail=fail)
+
+    text = _run_cmd([python, '-c',
+                     'import sysconfig',
+                     'sysconfig.get_config_var("CONFIG_ARGS")'])
+    return text
+
+
+def get_configure_args(build, *, fail=True):
+    text = get_config_var(build, 'CONFIG_ARGS', fail=fail)
+    if not text:
+        return None
+    return shlex.split(text)
+
+
+def get_prefix(build=None):
+    if build and os.path.isfile(build):
+        return _run_cmd(
+            [build, '-c' 'import sys; print(sys.prefix)'],
+            cwd=os.path.dirname(build),
+        )
+    else:
+        return get_makefile_var(build or '.', 'prefix', fail=False)
+
+
 ##################################
 # building Python
 
-def configure_python(outdir, prefix=None, cachefile=None, *, verbose=True):
-    if not prefix:
-        prefix = os.path.join(outdir, 'python-installation')
-    builddir = os.path.join(outdir, 'python-build')
+def configure_python(builddir=None, prefix=None, cachefile=None, args=None, *,
+                     srcdir=None,
+                     inherit=False,
+                     verbose=True,
+                     ):
+    if not builddir:
+        builddir = '.'
+    if not srcdir:
+        configure = os.path.join(builddir, 'configure')
+        if not os.path.isfile(configure):
+            srcdir = SRCDIR
+            configure = CONFIGURE
+    else:
+        configure = os.path.join(srcdir, 'configure')
+    cmd = [configure]
+    if inherit:
+        oldargs = get_configure_args(builddir)
+        if oldargs:
+            cmd.extend(oldargs)
+    if cachefile:
+        if args and find_opt(args, 'cache-file') >= 0:
+            raise ValueError('unexpected --cache-file')
+        cmd.extend(['--cache-file', os.path.abspath(cachefile)])
+    if prefix:
+        if args and find_opt(args, 'prefix') >= 0:
+            raise ValueError('unexpected --prefix')
+        cmd.extend(['--prefix', os.path.abspath(prefix)])
+    if args:
+        cmd.extend(args)
     print(f'configuring python in {builddir}...')
     os.makedirs(builddir, exist_ok=True)
-    cmd = [CONFIGURE, f'--prefix={prefix}']
-    if cachefile:
-        cmd.extend(['--cache-file', cachefile])
     _run_cmd(cmd, builddir, verbose)
     return builddir
 
 
-def get_prefix(build=None):
-    if build:
-        if os.path.isfile(build):
-            return _run_cmd(
-                [build, '-c' 'import sys; print(sys.prefix)'],
-                cwd=os.path.dirname(build),
-            )
-
-        builddir = build
-    else:
-        builddir = os.path.abspath('.')
-    # We have to read it out of Makefile.
-    makefile = os.path.join(builddir, 'Makefile')
-    try:
-        infile = open(makefile)
-    except FileNotFoundError:
-        return None
-    with infile:
-        for line in infile:
-            if line.startswith('prefix='):
-                return line.partition('=')[-1].strip()
-    return None
-
-
-def build_python(builddir=None, *, verbose=True):
+def build_python(builddir, *, verbose=True):
     if not MAKE:
         raise UnsupportedError('make')
 
-    if builddir:
-        builddir = os.path.abspath(builddir)
-    else:
-        builddir = SRCDIR
-    if builddir != SRCDIR:
+    if not builddir:
+        builddir = '.'
+    if os.path.abspath(builddir) != SRCDIR:
         _run_cmd([MAKE, 'clean'], SRCDIR, verbose=False)
 
     print(f'building python in {builddir}...')
@@ -88,7 +151,7 @@ def build_python(builddir=None, *, verbose=True):
     return os.path.join(builddir, 'python')
 
 
-def install_python(builddir=None, *, verbose=True):
+def install_python(builddir, *, verbose=True):
     if not MAKE:
         raise UnsupportedError('make')
 
@@ -104,16 +167,36 @@ def install_python(builddir=None, *, verbose=True):
     return os.path.join(prefix, 'bin', 'python3')
 
 
+def ensure_python_installed(outdir, *, outoftree=True, verbose=True):
+    cachefile = os.path.join(outdir, 'python-config.cache')
+    prefix = os.path.join(outdir, 'python-installation')
+    if outoftree:
+        builddir = os.path.join(outdir, 'python-build')
+    else:
+        builddir = SRCDIR
+    configure_python(builddir, prefix, cachefile, inherit=True, verbose=verbose)
+    build_python(builddir, verbose=verbose)
+    return install_python(builddir, verbose=verbose)
+
+
 ##################################
 # freezing
 
-def pre_freeze(outdir=None, *, verbose=True):
+def prepare(script=None, outdir=None, *, outoftree=True, verbose=True):
     if not outdir:
         outdir = OUTDIR
-    cachefile = os.path.join(outdir, 'python-config.cache')
-    builddir = configure_python(outdir, cachefile=cachefile, verbose=verbose)
-    build_python(builddir, verbose=verbose)
-    return install_python(builddir, verbose=verbose)
+    os.makedirs(outdir, exist_ok=True)
+    if script:
+        if script.splitlines()[0] == script and os.path.isfile(script):
+            scriptfile = script
+        else:
+            scriptfile = os.path.join(outdir, 'app.py')
+            with open(scriptfile, 'w') as outfile:
+                outfile.write(script)
+    else:
+        scriptfile = None
+    python = ensure_python_installed(outdir, outoftree=outoftree, verbose=verbose)
+    return outdir, scriptfile, python
 
 
 def freeze(python, scriptfile, outdir=None, *, verbose=True):

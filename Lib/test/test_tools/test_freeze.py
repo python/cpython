@@ -16,16 +16,13 @@ with imports_under_tool('freeze', 'test'):
 class TestFreeze(unittest.TestCase):
 
     def test_freeze_simple_script(self):
-        os.makedirs(helper.OUTDIR, exist_ok=True)
         script = textwrap.dedent("""
             import sys
             print('running...')
             sys.exit(0)
             """)
-        scriptfile = os.path.join(helper.OUTDIR, 'app.py')
-        with open(scriptfile, 'w') as outfile:
-            outfile.write(script)
-        python = helper.pre_freeze(verbose=False)
-        executable = helper.freeze(python, scriptfile, verbose=False)
+        outdir, scriptfile, python = helper.prepare(script, outoftree=False, verbose=False)
+
+        executable = helper.freeze(python, scriptfile, outdir, verbose=False)
         text = helper.run(executable)
         self.assertEqual(text, 'running...')
