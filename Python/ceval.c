@@ -2614,18 +2614,21 @@ check_eval_breaker:
             PyObject *byte_array = SECOND();
             PyObject *value = THIRD();
             DEOPT_IF(!PyByteArray_CheckExact(byte_array), STORE_SUBSCR);
+
             DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
-            DEOPT_IF(!PyLong_CheckExact(value), STORE_SUBSCR);
-            // Ensure nonnegative, zero-or-one-digit ints.
             DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
-            DEOPT_IF(((size_t)Py_SIZE(value)) > 1, STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            Py_ssize_t byte_value = ((PyLongObject*)value)->ob_digit[0];
             DEOPT_IF(index >= PyByteArray_GET_SIZE(byte_array), STORE_SUBSCR);
-            DEOPT_IF(((size_t)byte_value) > 0xff, STORE_SUBSCR);
+
+            DEOPT_IF(!PyLong_CheckExact(value), STORE_SUBSCR);
+            DEOPT_IF(((size_t)Py_SIZE(value)) > 1, STORE_SUBSCR);
+            digit byte_value = ((PyLongObject*)value)->ob_digit[0];
+            DEOPT_IF(byte_value > 0xff, STORE_SUBSCR);
+
             STAT_INC(STORE_SUBSCR, hit);
-            unsigned char *buffer = PyByteArray_AS_STRING(byte_array);
-            buffer[index] = (unsigned char)byte_value;
+            char *buffer = ((PyByteArrayObject *)byte_array)->ob_start;
+            assert(buffer != NULL && buffer != _PyByteArray_empty_string);
+            buffer[index] = (char)byte_value;
             Py_DECREF(sub);
             Py_DECREF(byte_array);
             Py_DECREF(value);
