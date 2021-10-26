@@ -7,6 +7,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import traceback
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
@@ -1221,9 +1222,9 @@ class TestChdir(unittest.TestCase):
         try:
             with chdir(target):
                 self.assertEqual(os.getcwd(), target)
-                raise RuntimeError('boom')
+                raise RuntimeError("boom")
         except RuntimeError as re:
-            self.assertEqual(str(re), 'boom')
+            self.assertEqual(str(re), "boom")
         self.assertEqual(os.getcwd(), old_cwd)
 
     def test_with_os_chdir(self):
@@ -1257,7 +1258,7 @@ class TestChdir(unittest.TestCase):
             try:
                 os.getcwd()
             except OSError as exc:
-                if exc.errno == errno.FILENOTFOUND:
+                if exc.errno == errno.ENOENT:
                     # This will rais an exception in __enter__ when we are
                     # testing for an exception in __exit__
                     self.skipTest('Cannot retrieve cwd that is longer than '
