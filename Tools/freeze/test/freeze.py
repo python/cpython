@@ -13,6 +13,7 @@ SRCDIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
 
 CONFIGURE = os.path.join(SRCDIR, 'configure')
 MAKE = shutil.which('make')
+GIT = shutil.which('git')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
 OUTDIR = os.path.join(TESTS_DIR, 'outdir')
 
@@ -41,6 +42,29 @@ def find_opt(args, name):
         if arg == opt or arg.startswith(optstart):
             return i
     return -1
+
+
+def git_copy_repo(newroot, remote=None, *, verbose=True):
+    if not GIT:
+        raise UnsupportedError('git')
+    if not remote:
+        remote = SRCDIR
+    if os.path.exists(newroot):
+        print(f'updating repo {newroot}...')
+        _run_cmd([GIT, 'pull', remote], newroot, verbose=verbose)
+    else:
+        print(f'updating repo into {newroot}...')
+        _run_cmd([GIT, 'clone', remote, newroot], verbose=verbose)
+    if os.path.exists(remote):
+        # Copy over any uncommited files.
+        reporoot = remote
+        text = _run_cmd([GIT, 'status', '-s'], reporoot, verbose=verbose)
+        for line in text.splitlines():
+            _, _, relfile = line.strip().partition(' ')
+            srcfile = os.path.join(reporoot, relfile)
+            dstfile = os.path.join(newroot, relfile)
+            os.makedirs(os.path.dirname(dstfile), exist_ok=True)
+            shutil.copy2(srcfile, dstfile)
 
 
 ##################################
@@ -107,7 +131,7 @@ def configure_python(builddir=None, prefix=None, cachefile=None, args=None, *,
                      verbose=True,
                      ):
     if not builddir:
-        builddir = '.'
+        builddir = srcdir or SRCDIR
     if not srcdir:
         configure = os.path.join(builddir, 'configure')
         if not os.path.isfile(configure):
@@ -115,6 +139,7 @@ def configure_python(builddir=None, prefix=None, cachefile=None, args=None, *,
             configure = CONFIGURE
     else:
         configure = os.path.join(srcdir, 'configure')
+
     cmd = [configure]
     if inherit:
         oldargs = get_configure_args(builddir)
@@ -130,6 +155,7 @@ def configure_python(builddir=None, prefix=None, cachefile=None, args=None, *,
         cmd.extend(['--prefix', os.path.abspath(prefix)])
     if args:
         cmd.extend(args)
+
     print(f'configuring python in {builddir}...')
     os.makedirs(builddir, exist_ok=True)
     _run_cmd(cmd, builddir, verbose)
@@ -142,8 +168,10 @@ def build_python(builddir, *, verbose=True):
 
     if not builddir:
         builddir = '.'
-    if os.path.abspath(builddir) != SRCDIR:
-        _run_cmd([MAKE, 'clean'], SRCDIR, verbose=False)
+
+    srcdir = get_config_var(builddir, 'srcdir', fail=False) or SRCDIR
+    if os.path.abspath(builddir) != srcdir:
+        _run_cmd([MAKE, 'clean'], srcdir, verbose=False)
 
     print(f'building python in {builddir}...')
     _run_cmd([MAKE, '-j'], builddir, verbose)
@@ -167,14 +195,18 @@ def install_python(builddir, *, verbose=True):
     return os.path.join(prefix, 'bin', 'python3')
 
 
-def ensure_python_installed(outdir, *, outoftree=True, verbose=True):
+def ensure_python_installed(outdir, srcdir=None, *,
+                            outoftree=True,
+                            verbose=True,
+                            ):
     cachefile = os.path.join(outdir, 'python-config.cache')
     prefix = os.path.join(outdir, 'python-installation')
     if outoftree:
         builddir = os.path.join(outdir, 'python-build')
     else:
-        builddir = SRCDIR
-    configure_python(builddir, prefix, cachefile, inherit=True, verbose=verbose)
+        builddir = srcdir or SRCDIR
+    configure_python(builddir, prefix, cachefile,
+                     srcdir=srcdir, inherit=True, verbose=verbose)
     build_python(builddir, verbose=verbose)
     return install_python(builddir, verbose=verbose)
 
@@ -182,7 +214,11 @@ def ensure_python_installed(outdir, *, outoftree=True, verbose=True):
 ##################################
 # freezing
 
-def prepare(script=None, outdir=None, *, outoftree=True, verbose=True):
+def prepare(script=None, outdir=None, *,
+            outoftree=True,
+            copy=False,
+            verbose=True,
+            ):
     if not outdir:
         outdir = OUTDIR
     os.makedirs(outdir, exist_ok=True)
@@ -195,7 +231,13 @@ def prepare(script=None, outdir=None, *, outoftree=True, verbose=True):
                 outfile.write(script)
     else:
         scriptfile = None
-    python = ensure_python_installed(outdir, outoftree=outoftree, verbose=verbose)
+    if copy:
+        srcdir = os.path.join(outdir, 'cpython')
+        git_copy_repo(srcdir, SRCDIR, verbose=verbose)
+    else:
+        srcdir = SRCDIR
+    python = ensure_python_installed(outdir, srcdir,
+                                     outoftree=outoftree, verbose=verbose)
     return outdir, scriptfile, python
 
 

@@ -21,7 +21,12 @@ class TestFreeze(unittest.TestCase):
             print('running...')
             sys.exit(0)
             """)
-        outdir, scriptfile, python = helper.prepare(script, outoftree=False, verbose=False)
+        outdir, scriptfile, python = helper.prepare(
+            script,
+            outoftree=True,
+            copy=True,
+            verbose=False,
+        )
 
         executable = helper.freeze(python, scriptfile, outdir, verbose=False)
         text = helper.run(executable)
