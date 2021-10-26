@@ -1,1 +1,1 @@
-Implement :pep:`654` Add :class:`ExceptionGroup` and :class:`BaseExceptionGroup`. Update traceback display code.
+Implement :pep:`654`. Add :class:`ExceptionGroup` and :class:`BaseExceptionGroup`. Update traceback display code.
