@@ -1920,9 +1920,7 @@ class LWPCookieJar(FileCookieJar):
                        "comment", "commenturl")
 
         try:
-            while 1:
-                line = f.readline()
-                if line == "": break
+            while (line := f.readline()) != "":
                 if not line.startswith(header):
                     continue
                 line = line[len(header):].strip()
@@ -2022,11 +2020,8 @@ class MozillaCookieJar(FileCookieJar):
                 filename)
 
         try:
-            while 1:
-                line = f.readline()
+            while (line := f.readline()) != "":
                 rest = {}
-
-                if line == "": break
 
                 # httponly is a cookie flag as defined in rfc6265
                 # when encoded in a netscape cookie file,

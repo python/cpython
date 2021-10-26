@@ -333,10 +333,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     # compress character map
     runs = []
     q = 0
-    while True:
-        p = charmap.find(1, q)
-        if p < 0:
-            break
+    while (p := charmap.find(1, q)) >= 0:
         if len(runs) >= 2:
             runs = None
             break

@@ -341,10 +341,7 @@ class bdist_rpm(Command):
         try:
             binary_rpms = []
             source_rpm = None
-            while True:
-                line = out.readline()
-                if not line:
-                    break
+            while (line := out.readline()):
                 l = line.strip().split()
                 assert(len(l) == 2)
                 binary_rpms.append(l[1])

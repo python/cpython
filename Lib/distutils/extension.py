@@ -158,10 +158,7 @@ def read_setup_file(filename):
     try:
         extensions = []
 
-        while True:
-            line = file.readline()
-            if line is None:                # eof
-                break
+        while (line := file.readline()) is not None:  # eof
             if re.match(_variable_rx, line):    # VAR=VALUE, handled in first pass
                 continue
 

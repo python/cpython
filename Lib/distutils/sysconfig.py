@@ -88,10 +88,7 @@ def parse_makefile(fn, g=None):
     done = {}
     notdone = {}
 
-    while True:
-        line = fp.readline()
-        if line is None: # eof
-            break
+    while (line := fp.readline()) is not None:  # eof
         m = re.match(_variable_rx, line)
         if m:
             n, v = m.group(1, 2)
