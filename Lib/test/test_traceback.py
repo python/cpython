@@ -1041,6 +1041,8 @@ class BaseExceptionReportingTests:
         except Exception as e:
             return e
 
+    callable_line = get_exception.__code__.co_firstlineno + 4
+
     def zero_div(self):
         1/0 # In zero_div
 
@@ -1268,89 +1270,27 @@ class BaseExceptionReportingTests:
 
     # #### Exception Groups ####
 
-    def check_exception_group(self, exc_func, expected):
-        report = self.get_report(exc_func)
-        blocks = boundaries.split(report)
-        self.assertEqual(len(blocks), len(expected))
-
-        for block, expected_lines in zip(blocks, expected):
-            for line in expected_lines:
-                self.assertIn(f"{line}", block)
-                # check indentation
-                self.assertNotIn(f" {line}", block)
-
-        for line in report:
-            # at most one margin char per line
-            self.assertLessEqual(line.count('|'), 1, msg=f'{line!r}')
-
     def test_exception_group_basic(self):
         def exc():
             raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
 
-        expected = [
-            ['  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])',
-             '  | ExceptionGroup: eg',
-            ],
-            ['-+---------------- 1 ----------------'],
-            ['    | ValueError: 1'],
-            ['+---------------- 2 ----------------'],
-            ['    | TypeError: 2'],
-        ]
+        expected = (
+             f'  | Traceback (most recent call last):\n'
+             f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+             f'  |     exception_or_callable()\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 1}, in exc\n'
+             f'  |     raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  | ExceptionGroup: eg\n'
+             f'  +-+---------------- 1 ----------------\n'
+             f'    | ValueError: 1\n'
+             f'    +---------------- 2 ----------------\n'
+             f'    | TypeError: 2\n'
+             f'    +------------------------------------\n')
 
-        self.check_exception_group(exc, expected)
-
-    def test_exception_group_context(self):
-        def exc():
-            try:
-                raise ExceptionGroup("eg1", [ValueError(1), TypeError(2)])
-            except:
-                raise ExceptionGroup("eg2", [ValueError(3), TypeError(4)])
-
-        expected = [
-            ['  |     raise ExceptionGroup("eg1", [ValueError(1), TypeError(2)])',
-             '  | ExceptionGroup: eg1',
-            ],
-            ['-+---------------- 1 ----------------'],
-            ['    | ValueError: 1'],
-            ['+---------------- 2 ----------------'],
-            ['    | TypeError: 2'],
-            [ context_message ],
-            ['  |     raise ExceptionGroup("eg2", [ValueError(3), TypeError(4)])',
-             '  | ExceptionGroup: eg2',
-            ],
-            ['-+---------------- 1 ----------------'],
-            ['    | ValueError: 3'],
-            ['+---------------- 2 ----------------'],
-            ['    | TypeError: 4'],
-        ]
-        self.check_exception_group(exc, expected)
-
-    def test_exception_group_context(self):
-        def exc():
-            EG = ExceptionGroup
-            try:
-                raise EG("eg1", [ValueError(1), TypeError(2)])
-            except:
-                raise EG("eg2", [ValueError(3), TypeError(4)])
-
-        expected = [
-            ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
-             '  | ExceptionGroup: eg1',
-            ],
-            ['-+---------------- context.1 ----------------'],
-            ['    | ValueError: 1'],
-            ['+---------------- context.2 ----------------'],
-            ['    | TypeError: 2'],
-            [ context_message ],
-            ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
-             '  | ExceptionGroup: eg2',
-            ],
-            ['-+---------------- 1 ----------------'],
-            ['    | ValueError: 3'],
-            ['+---------------- 2 ----------------'],
-            ['    | TypeError: 4'],
-        ]
-        self.check_exception_group(exc, expected)
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
 
     def test_exception_group_cause(self):
         def exc():
@@ -1360,24 +1300,35 @@ class BaseExceptionReportingTests:
             except Exception as e:
                 raise EG("eg2", [ValueError(3), TypeError(4)]) from e
 
-        expected = [
-            ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
-             '  | ExceptionGroup: eg1',
-            ],
-            ['-+---------------- cause.1 ----------------'],
-            ['    | ValueError: 1'],
-            ['+---------------- cause.2 ----------------'],
-            ['    | TypeError: 2'],
-            [ cause_message ],
-            ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
-             '  | ExceptionGroup: eg2',
-            ],
-            ['-+---------------- 1 ----------------'],
-            ['    | ValueError: 3'],
-            ['+---------------- 2 ----------------'],
-            ['    | TypeError: 4'],
-        ]
-        self.check_exception_group(exc, expected)
+        expected = (f'  | Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: eg1\n'
+                    f'  +-+---------------- cause.1 ----------------\n'
+                    f'    | ValueError: 1\n'
+                    f'    +---------------- cause.2 ----------------\n'
+                    f'    | TypeError: 2\n'
+                    f'    +------------------------------------\n'
+                    f'\n'
+                    f'The above exception was the direct cause of the following exception:\n'
+                    f'\n'
+                    f'  | Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 5}, in exc\n'
+                    f'  |     raise EG("eg2", [ValueError(3), TypeError(4)]) from e\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: eg2\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError: 3\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | TypeError: 4\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
 
     def test_exception_group_context_with_context(self):
         def exc():
@@ -1390,28 +1341,44 @@ class BaseExceptionReportingTests:
             except:
                 raise ImportError(5)
 
-        expected = [
-            ['  |     raise EG("eg1", [ValueError(1), TypeError(2)])',
-             '  | ExceptionGroup: eg1',
-            ],
-            ['-+---------------- context.context.1 ----------------'],
-            ['    | ValueError: 1'],
-            ['+---------------- context.context.2 ----------------'],
-            ['    | TypeError: 2'],
-            [ context_message ],
-            ['  |     raise EG("eg2", [ValueError(3), TypeError(4)])',
-             '  | ExceptionGroup: eg2',
-            ],
-            ['-+---------------- context.1 ----------------'],
-            ['    | ValueError: 3'],
-            ['+---------------- context.2 ----------------'],
-            ['    | TypeError: 4'],
-            [ context_message ],
-            ['    raise ImportError(5)',
-             'ImportError: 5',
-            ],
-        ]
-        self.check_exception_group(exc, expected)
+        expected = (
+             f'  | Traceback (most recent call last):\n'
+             f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 4}, in exc\n'
+             f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  | ExceptionGroup: eg1\n'
+             f'  +-+---------------- context.context.1 ----------------\n'
+             f'    | ValueError: 1\n'
+             f'    +---------------- context.context.2 ----------------\n'
+             f'    | TypeError: 2\n'
+             f'    +------------------------------------\n'
+             f'\n'
+             f'During handling of the above exception, another exception occurred:\n'
+             f'\n'
+             f'  | Traceback (most recent call last):\n'
+             f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
+             f'  |     raise EG("eg2", [ValueError(3), TypeError(4)])\n'
+             f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  | ExceptionGroup: eg2\n'
+             f'  +-+---------------- context.1 ----------------\n'
+             f'    | ValueError: 3\n'
+             f'    +---------------- context.2 ----------------\n'
+             f'    | TypeError: 4\n'
+             f'    +------------------------------------\n'
+             f'\n'
+             f'During handling of the above exception, another exception occurred:\n'
+             f'\n'
+             f'Traceback (most recent call last):\n'
+             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+             f'    exception_or_callable()\n'
+             f'    ^^^^^^^^^^^^^^^^^^^^^^^\n'
+             f'  File "{__file__}", line {exc.__code__.co_firstlineno + 8}, in exc\n'
+             f'    raise ImportError(5)\n'
+             f'    ^^^^^^^^^^^^^^^^^^^^\n'
+             f'ImportError: 5\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
 
     def test_exception_group_nested(self):
         def exc():
@@ -1427,29 +1394,44 @@ class BaseExceptionReportingTests:
             except:
                 raise EG("top", [VE(5)])
 
-        expected = [
-            ['  |     raise EG("eg", [VE(1), exc, VE(4)])',
-             '  | ExceptionGroup: eg',
-            ],
-            ['-+---------------- context.1 ----------------'],
-            ['    | ValueError: 1'],
-            ['+---------------- context.2 ----------------'],
-            ['    | ExceptionGroup: nested',
-            ],
-            ['-+---------------- context.2.1 ----------------'],
-            ['      | TypeError: 2'],
-            ['+---------------- context.2.2 ----------------'],
-            ['      | TypeError: 3'],
-            ['+---------------- context.3 ----------------'],
-            ['    | ValueError: 4'],
-            [ context_message ],
-            ['  |     raise EG("top", [VE(5)])',
-             '  | ExceptionGroup: top'
-            ],
-            ['-+---------------- 1 ----------------'],
-            ['    | ValueError: 5']
-        ]
-        self.check_exception_group(exc, expected)
+        expected = (f'  | Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
+                    f'  |     raise EG("eg", [VE(1), exc, VE(4)])\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: eg\n'
+                    f'  +-+---------------- context.1 ----------------\n'
+                    f'    | ValueError: 1\n'
+                    f'    +---------------- context.2 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
+                    f'    |     raise EG("nested", [TE(2), TE(3)])\n'
+                    f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'    | ExceptionGroup: nested\n'
+                    f'    +-+---------------- context.2.1 ----------------\n'
+                    f'      | TypeError: 2\n'
+                    f'      +---------------- context.2.2 ----------------\n'
+                    f'      | TypeError: 3\n'
+                    f'      +------------------------------------\n'
+                    f'    +---------------- context.3 ----------------\n'
+                    f'    | ValueError: 4\n'
+                    f'    +------------------------------------\n'
+                    f'\n'
+                    f'During handling of the above exception, another exception occurred:\n'
+                    f'\n'
+                    f'  | Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 11}, in exc\n'
+                    f'  |     raise EG("top", [VE(5)])\n'
+                    f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^\n'
+                    f'  | ExceptionGroup: top\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError: 5\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
 
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
