@@ -76,17 +76,17 @@ def git_copy_repo(newroot, remote=None, *, verbose=True):
         print(f'updating copied repo {newroot}...')
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
-        _run_cmd([GIT, '-C', newroot, 'clean', '-d', '-f'], verbose=verbose)
-        _run_cmd([GIT, '-C', newroot, 'reset'], verbose=verbose)
-        _run_cmd([GIT, '-C', newroot, 'checkout', '.'], verbose=verbose)
-        _run_cmd([GIT, '-C', newroot, 'pull', '-f', remote], verbose=verbose)
+        _run_cmd([GIT, 'clean', '-d', '-f'], newroot, verbose)
+        _run_cmd([GIT, 'reset'], newroot, verbose)
+        _run_cmd([GIT, 'checkout', '.'], newroot, verbose)
+        _run_cmd([GIT, 'pull', '-f', remote], newroot, verbose)
     else:
         print(f'copying repo into {newroot}...')
         _run_cmd([GIT, 'clone', remote, newroot], verbose=verbose)
     if os.path.exists(remote):
         # Copy over any uncommited files.
         reporoot = remote
-        text = _run_cmd([GIT, '-C', reporoot, 'status', '-s'], verbose=verbose)
+        text = _run_cmd([GIT, 'status', '-s'], reporoot, verbose, showcmd=False)
         for line in text.splitlines():
             _, _, relfile = line.strip().partition(' ')
             relfile = relfile.strip()
