@@ -181,10 +181,11 @@ def build_python(builddir, *, verbose=True):
     if not builddir:
         builddir = '.'
 
+    print('building python...')
     srcdir = get_config_var(builddir, 'srcdir', fail=False) or SRCDIR
     if os.path.abspath(builddir) != srcdir:
-        _run_cmd([MAKE, '-C', srcdir, 'clean'], verbose=False)
-
+        if os.path.exists(os.path.join(srcdir, 'Makefile')):
+            _run_cmd([MAKE, '-C', srcdir, 'clean'], verbose=False)
     _run_cmd([MAKE, '-C', builddir, '-j'], verbose=verbose)
 
     return os.path.join(builddir, 'python')
