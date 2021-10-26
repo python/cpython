@@ -32,7 +32,7 @@ paramstyle = "qmark"
 def fetch_compile_options():
     try:
         cx = connect(":memory:")
-        res = cx.execute("select * from pragma_compile_options")
+        res = cx.execute("pragma compile_options")
         opts = {i[0] for i in res}
     finally:
         cx.close()
