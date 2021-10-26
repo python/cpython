@@ -155,6 +155,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
 
     success = True
     fullname = os.fspath(fullname)
+    stripdir = os.fspath(stripdir) if stripdir is not None else None
     name = os.path.basename(fullname)
 
     dfile = None
@@ -164,7 +165,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
 
     if stripdir is not None:
         fullname_parts = fullname.split(os.path.sep)
-        stripdir_parts = os.fspath(stripdir).split(os.path.sep)
+        stripdir_parts = stripdir.split(os.path.sep)
         ddir_parts = list(fullname_parts)
 
         for spart, opart in zip(stripdir_parts, fullname_parts):
