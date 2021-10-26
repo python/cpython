@@ -70,7 +70,7 @@ pysqlite_get_state(PyObject *module)
     return state;
 }
 
-struct PyModuleDef _sqlite3module;
+extern struct PyModuleDef _sqlite3module;
 static inline pysqlite_state *
 pysqlite_get_state_by_type(PyTypeObject *tp)
 {
