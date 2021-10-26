@@ -584,7 +584,7 @@ mmap_resize_method(mmap_object *self,
         that creating a new named file mapping failed and the mapping handle
         points to an existing mapping of the same name
         */
-        if ((GetLastError() != ERROR_ALREADY_EXISTS) &&
+        if ((error != ERROR_ALREADY_EXISTS) &&
             (self->file_handle == INVALID_HANDLE_VALUE)) {
             if(!UnmapViewOfFile(old_data)) {
                 error = GetLastError();
