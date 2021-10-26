@@ -181,7 +181,7 @@ def build_python(builddir, *, verbose=True):
     if os.path.abspath(builddir) != srcdir:
         _run_cmd([MAKE, '-C', srcdir, 'clean'], verbose=False)
 
-    _run_cmd([MAKE, '-C', builddir, '-j'], verbose)
+    _run_cmd([MAKE, '-C', builddir, '-j'], verbose=verbose)
 
     return os.path.join(builddir, 'python')
 
@@ -195,7 +195,7 @@ def install_python(builddir, *, verbose=True):
     prefix = get_prefix(builddir)
 
     print(f'installing python into {prefix}...')
-    _run_cmd([MAKE, '-C', builddir, '-j', 'install'], verbose)
+    _run_cmd([MAKE, '-C', builddir, '-j', 'install'], verbose=verbose)
 
     if not prefix:
         return None
