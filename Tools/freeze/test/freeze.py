@@ -217,7 +217,7 @@ def build_python(builddir, *, verbose=True):
     if os.path.abspath(builddir) != srcdir:
         if os.path.exists(os.path.join(srcdir, 'Makefile')):
             _run_cmd([MAKE, '-C', srcdir, 'clean'], verbose=False)
-    _run_cmd([MAKE, '-C', builddir, '-j'], verbose=verbose)
+    _run_cmd([MAKE, '-C', builddir, '-j8'], verbose=verbose)
 
     return os.path.join(builddir, 'python')
 
