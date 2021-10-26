@@ -64,6 +64,7 @@ def git_copy_repo(newroot, remote=None, *, verbose=True):
         text = _run_cmd([GIT, '-C', reporoot, 'status', '-s'], verbose=verbose)
         for line in text.splitlines():
             _, _, relfile = line.strip().partition(' ')
+            relfile = relfile.strip()
             srcfile = os.path.join(reporoot, relfile)
             dstfile = os.path.join(newroot, relfile)
             os.makedirs(os.path.dirname(dstfile), exist_ok=True)
