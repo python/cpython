@@ -160,7 +160,7 @@ Module functions and constants
 .. data:: threadsafety
 
    Integer constant required by the DB-API, stating the level of thread safety
-   the :mod:`sqlite3` supports. Currently hard-coded to ``1``, meaning
+   the :mod:`sqlite3` module supports. Currently hard-coded to ``1``, meaning
    *"Threads may share the module, but not connections."* However, this may not
    always be true. You can check the underlying SQLite library's compile-time
    threaded mode using the following query::
