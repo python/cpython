@@ -19,6 +19,7 @@
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
 #include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
@@ -928,7 +929,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     type = (PyObject *) Py_TYPE(value);
     tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None)
-        err = PyTraceBack_Print_Indented(tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
+        err = _PyTraceBack_Print_Indented(tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
     if (err == 0 &&
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {

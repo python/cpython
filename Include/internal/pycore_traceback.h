@@ -87,6 +87,12 @@ PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 
+/* Write the traceback tb to file f. Prefix each line with
+   indent spaces followed by the margin (if it is not NULL). */
+PyAPI_FUNC(int) _PyTraceBack_Print_Indented(PyObject *tb, int indent, const char* margin, PyObject *f);
+PyAPI_FUNC(int) _Py_WriteIndentedMargin(int, const char*, PyObject *);
+PyAPI_FUNC(int) _Py_WriteIndent(int, PyObject *);
+
 #ifdef __cplusplus
 }
 #endif

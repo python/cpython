@@ -917,7 +917,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
 #define PyTraceBack_LIMIT 1000
 
 int
-PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObject *f)
+_PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObject *f)
 {
     int err;
     PyObject *limitv;
@@ -950,7 +950,7 @@ PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObject
 int
 PyTraceBack_Print(PyObject *v, PyObject *f)
 {
-    return PyTraceBack_Print_Indented(v, 0, NULL, f);
+    return _PyTraceBack_Print_Indented(v, 0, NULL, f);
 }
 
 /* Format an integer in range [0; 0xffffffff] to decimal and write it
