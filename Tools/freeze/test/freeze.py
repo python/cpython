@@ -23,6 +23,7 @@ class UnsupportedError(Exception):
 
 
 def _run_cmd(cmd, cwd=None, verbose=True):
+    print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
     proc = subprocess.run(
         cmd,
         cwd=cwd,
@@ -51,14 +52,16 @@ def git_copy_repo(newroot, remote=None, *, verbose=True):
         remote = SRCDIR
     if os.path.exists(newroot):
         print(f'updating copied repo {newroot}...')
-        _run_cmd([GIT, 'pull', '-f', remote], newroot, verbose=verbose)
+        _run_cmd([GIT, '-C', newroot, 'reset'], verbose=verbose)
+        _run_cmd([GIT, '-C', newroot, 'checkout', '.'], verbose=verbose)
+        _run_cmd([GIT, '-C', newroot, 'pull', '-f', remote], verbose=verbose)
     else:
         print(f'copying repo into {newroot}...')
         _run_cmd([GIT, 'clone', remote, newroot], verbose=verbose)
     if os.path.exists(remote):
         # Copy over any uncommited files.
         reporoot = remote
-        text = _run_cmd([GIT, 'status', '-s'], reporoot, verbose=verbose)
+        text = _run_cmd([GIT, '-C', reporoot, 'status', '-s'], verbose=verbose)
         for line in text.splitlines():
             _, _, relfile = line.strip().partition(' ')
             srcfile = os.path.join(reporoot, relfile)
@@ -171,10 +174,9 @@ def build_python(builddir, *, verbose=True):
 
     srcdir = get_config_var(builddir, 'srcdir', fail=False) or SRCDIR
     if os.path.abspath(builddir) != srcdir:
-        _run_cmd([MAKE, 'clean'], srcdir, verbose=False)
+        _run_cmd([MAKE, '-C', srcdir, 'clean'], verbose=False)
 
-    print(f'building python in {builddir}...')
-    _run_cmd([MAKE, '-j'], builddir, verbose)
+    _run_cmd([MAKE, '-C', builddir, '-j'], verbose)
 
     return os.path.join(builddir, 'python')
 
@@ -188,7 +190,7 @@ def install_python(builddir, *, verbose=True):
     prefix = get_prefix(builddir)
 
     print(f'installing python into {prefix}...')
-    _run_cmd([MAKE, '-j', 'install'], builddir, verbose)
+    _run_cmd([MAKE, '-C', builddir, '-j', 'install'], verbose)
 
     if not prefix:
         return None
