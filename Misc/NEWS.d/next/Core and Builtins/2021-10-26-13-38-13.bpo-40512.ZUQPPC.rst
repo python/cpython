@@ -1,0 +1,2 @@
+A pointer to the interpreter state is stored in a thread local variable
+on platforms that support it.
