@@ -1,0 +1,3 @@
+:mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` dynamically, based on
+the default threaded mode the underlying SQLite library has been compiled
+with. Patch by Erlend E. Aasland.
