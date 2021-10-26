@@ -1024,12 +1024,8 @@ context_message = (
     "\nDuring handling of the above exception, "
     "another exception occurred:\n\n")
 
-nested_exception_header_re = r'[+-]?\+[-{4} ]+[ \d\.?]+[ -{4}]+'
-
 boundaries = re.compile(
-    '(%s|%s|%s)' % (re.escape(cause_message),
-                    re.escape(context_message),
-                    nested_exception_header_re))
+    '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
 class BaseExceptionReportingTests:
 
