@@ -21,6 +21,7 @@
 # === Variables set by makesetup ===
 
 MODBUILT_NAMES=    _MODBUILT_NAMES_
+MODSHARED_NAMES=   _MODSHARED_NAMES_
 MODDISABLED_NAMES= _MODDISABLED_NAMES_
 MODOBJS=           _MODOBJS_
 MODLIBS=           _MODLIBS_
@@ -2120,8 +2121,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 ##########################################################################
 # Module dependencies
 
-MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h $(srcdir)/Modules/_math.c
-MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h $(srcdir)/Modules/_math.c
+MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
+MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h
 MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-dispatch.c $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2-kat.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b-test.c $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2bp-test.c $(srcdir)/Modules/_blake2/impl/blake2bp.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s-test.c $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/impl/blake2sp-test.c $(srcdir)/Modules/_blake2/impl/blake2sp.c $(srcdir)/Modules/hashlib.h
