@@ -54,7 +54,7 @@ def _threadsafety():
 
     # Default to SQLITE_THREADSAFE=1 (serialized mode), which translates to
     # DB-API threadsafety level 3, meaning threads may share the module,
-    # connections and cursors. This is the default threaded mode of SQLite.
+    # connections and cursors. This is the default threading mode of SQLite.
     return 3
 
 threadsafety = _threadsafety()

@@ -249,7 +249,7 @@ sqlite3
   :issue:`16379`.)
 
 * :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` dynamically, based on
-  the default threaded mode the underlying SQLite library has been compiled
+  the default threading mode the underlying SQLite library has been compiled
   with.
   (Contributed by Erlend E. Aasland in :issue:`45613`.)
 
