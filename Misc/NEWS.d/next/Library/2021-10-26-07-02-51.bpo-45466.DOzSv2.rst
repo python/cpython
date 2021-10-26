@@ -1,0 +1,3 @@
+The :mod:`urllib.request` module can download files (e.g. ``python -m
+urrlib.request https://python.org/``). For more info, call ``python -m
+urrlib.request -h``. Patch by Thomas Pohl.

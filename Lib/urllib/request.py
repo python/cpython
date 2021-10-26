@@ -2781,3 +2781,30 @@ else:
     # By default use environment variables
     getproxies = getproxies_environment
     proxy_bypass = proxy_bypass_environment
+
+
+if __name__ == "__main__":
+    from argparse import ArgumentParser
+    from sys import stdout
+
+    parser = ArgumentParser(
+        description="Download the provided URL (FTP/HTTP/HTTPS supported) "
+        "and print it to stdout by default. If specified, write to OUTPUT "
+        "instead."
+    )
+    parser.add_argument("URL", help="(encoded) URL to download")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="write to OUTPUT instead of stdout"
+    )
+    args = parser.parse_args()
+    out = stdout.buffer if args.output is None else open(args.output, "wb")
+
+    with urlopen(args.URL) as response:
+        while data := response.read(1024 * 1024):
+            out.write(data)
+
+    if out is not stdout.buffer:
+        out.close()

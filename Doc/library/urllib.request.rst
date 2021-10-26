@@ -1354,6 +1354,23 @@ The following example uses no proxies at all, overriding environment settings::
    ...     f.read().decode('utf-8')
    ...
 
+.. _urllib-request-cli:
+
+:mod:`urllib.request` can also be invoked directly using the :option:`-m`
+switch of the interpreter with an ``URL`` argument::
+
+        python -m urllib.request https://python.org/
+
+By default, the downloaded data is printed to stdout.  The option ``-o/--output``
+specifies an output file where the downloaded data is stored instead of being
+printed::
+
+        python -m urllib.request https://python.org/ --output python.html
+
+If the output file already exists, its content is overwritten.
+
+.. versionadded:: 3.11
+
 
 Legacy interface
 ----------------
