@@ -7,6 +7,9 @@ import http.server
 import threading
 import unittest
 import hashlib
+import subprocess
+import sys
+import tempfile
 
 from test.support import hashlib_helper
 from test.support import threading_helper
@@ -659,6 +662,38 @@ class TestUrlopen(unittest.TestCase):
                              "    Expected length was %s, got %s" %
                              (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
+
+    def test_download_to_stdout(self):
+        content = b"My hovercraft is full of eels."
+        handler = self.start_server([(200, [], content)])
+        proc = subprocess.run(
+            [sys.executable, "-m", "urllib.request",
+            "http://localhost:%s" % handler.port],
+            capture_output=True
+        )
+        self.assertEqual(proc.stdout, content)
+        self.assertEqual(proc.stderr, b"")
+
+    def test_download_to_file(self):
+        content = b"I will not buy this record; it is scratched."
+        handler = self.start_server([(200, [], content)]*2)
+
+        with tempfile.TemporaryDirectory() as directory:
+            for option in ["--output", "-o"]:
+                filename = os.path.join(
+                    directory, "download-test%s.txt" % option
+                )
+                proc = subprocess.run(
+                    [sys.executable, "-m", "urllib.request",
+                    "http://localhost:%s" % handler.port,
+                    option, filename],
+                    capture_output=True
+                )
+                with open(filename, "rb") as f:
+                    file_content = f.read()
+                self.assertEqual(proc.stdout, b"")
+                self.assertEqual(proc.stderr, b"")
+                self.assertEqual(file_content, content)
 
 
 def setUpModule():
