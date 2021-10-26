@@ -22,8 +22,9 @@ class UnsupportedError(Exception):
     """The operation isn't supported."""
 
 
-def _run_cmd(cmd, cwd=None, verbose=True):
-    print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
+def _run_cmd(cmd, cwd=None, verbose=True, showcmd=True):
+    if showcmd:
+        print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
     proc = subprocess.run(
         cmd,
         cwd=cwd,
@@ -103,9 +104,11 @@ def get_config_var(build, name, *, fail=True):
         if not os.path.isfile(python):
             return get_makefile_var(builddir, 'CONFIG_ARGS', fail=fail)
 
-    text = _run_cmd([python, '-c',
-                     'import sysconfig',
-                     'sysconfig.get_config_var("CONFIG_ARGS")'])
+    text = _run_cmd(
+        [python, '-c',
+         'import sysconfig', 'sysconfig.get_config_var("CONFIG_ARGS")'],
+        showcmd=False,
+    )
     return text
 
 
@@ -121,6 +124,7 @@ def get_prefix(build=None):
         return _run_cmd(
             [build, '-c' 'import sys; print(sys.prefix)'],
             cwd=os.path.dirname(build),
+            showcmd=False,
         )
     else:
         return get_makefile_var(build or '.', 'prefix', fail=False)
