@@ -1130,7 +1130,6 @@ list_frozen_module_names()
         if (enabled) {
             ADD_MODULE(p->name);
         }
-        ADD_MODULE(p->name);
     }
 #undef ADD_MODULE
     // Add any custom modules.
