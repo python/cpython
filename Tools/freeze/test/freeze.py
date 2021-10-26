@@ -47,6 +47,26 @@ def find_opt(args, name):
     return -1
 
 
+def ensure_opt(args, name, value):
+    opt = f'--{name}'
+    pos = find_opt(args, name)
+    if value is None:
+        if pos < 0:
+            args.append(opt)
+        else:
+            args[pos] = opt
+    elif pos < 0:
+        args.extend([opt, value])
+    else:
+        arg = args[pos]
+        if arg == opt:
+            if pos == len(args) - 1:
+                raise NotImplementedError((args, opt))
+            args[pos + 1] = value
+        else:
+            args[pos] = f'{opt}={value}'
+
+
 def git_copy_repo(newroot, remote=None, *, verbose=True):
     if not GIT:
         raise UnsupportedError('git')
@@ -156,17 +176,17 @@ def configure_python(builddir=None, prefix=None, cachefile=None, args=None, *,
 
     cmd = [configure]
     if inherit:
-        oldargs = get_configure_args(builddir)
+        oldargs = get_configure_args(builddir, fail=False)
         if oldargs:
             cmd.extend(oldargs)
     if cachefile:
         if args and find_opt(args, 'cache-file') >= 0:
             raise ValueError('unexpected --cache-file')
-        cmd.extend(['--cache-file', os.path.abspath(cachefile)])
+        ensure_opt(cmd, 'cache-file', os.path.abspath(cachefile))
     if prefix:
         if args and find_opt(args, 'prefix') >= 0:
             raise ValueError('unexpected --prefix')
-        cmd.extend(['--prefix', os.path.abspath(prefix)])
+        ensure_opt(cmd, 'prefix', os.path.abspath(prefix))
     if args:
         cmd.extend(args)
 
