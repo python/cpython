@@ -50,10 +50,10 @@ def git_copy_repo(newroot, remote=None, *, verbose=True):
     if not remote:
         remote = SRCDIR
     if os.path.exists(newroot):
-        print(f'updating repo {newroot}...')
-        _run_cmd([GIT, 'pull', remote], newroot, verbose=verbose)
+        print(f'updating copied repo {newroot}...')
+        _run_cmd([GIT, 'pull', '-f', remote], newroot, verbose=verbose)
     else:
-        print(f'updating repo into {newroot}...')
+        print(f'copying repo into {newroot}...')
         _run_cmd([GIT, 'clone', remote, newroot], verbose=verbose)
     if os.path.exists(remote):
         # Copy over any uncommited files.
