@@ -846,6 +846,7 @@ with_dbmliborder
 enable_ipv6
 with_doc_strings
 with_pymalloc
+with_freelists
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1588,6 +1589,7 @@ Optional Packages:
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
   --with-pymalloc         enable specialized mallocs (default is yes)
+  --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -11728,6 +11730,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
 
+# Check whether objects such as float, tuple and dict are using
+# freelists to optimization memory allocation.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
+$as_echo_n "checking for --with-freelists... " >&6; }
+
+# Check whether --with-freelists was given.
+if test "${with_freelists+set}" = set; then :
+  withval=$with_freelists;
+fi
+
+
+if test -z "$with_freelists"
+then
+    with_freelists="yes"
+fi
+if test "$with_freelists" != "no"
+then
+
+$as_echo "#define WITH_FREELISTS 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
+$as_echo "$with_freelists" >&6; }
+
 # Check for --with-c-locale-coercion
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
 $as_echo_n "checking for --with-c-locale-coercion... " >&6; }
@@ -15066,7 +15092,7 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-for ac_func in acosh asinh atanh erf erfc expm1 finite gamma
+for ac_func in acosh asinh atanh erf erfc expm1 log1p log2
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -15075,21 +15101,13 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
-fi
-done
-
-for ac_func in lgamma log1p log2 tgamma
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
+else
+  as_fn_error $? "Python requires C99 compatible libm" "$LINENO" 5
 
 fi
 done
 
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -17948,6 +17966,66 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENSSL_RPATH" >&5
 $as_echo "$OPENSSL_RPATH" >&6; }
 
+
+# check if OpenSSL libraries work as expected
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required APIs... " >&6; }
+save_LIBS="$LIBS"
+save_CFLAGS="$CFLAGS"
+save_LDFLAGS="$LDFLAGS"
+LIBS="$LIBS $OPENSSL_LIBS"
+CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
+LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#error "OpenSSL >= 1.1.1 is required"
+#endif
+
+static void keylog_cb(const SSL *ssl, const char *line) {}
+
+int
+main ()
+{
+
+/* SSL APIs */
+SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+SSL_CTX_set_keylog_callback(ctx, keylog_cb);
+SSL *ssl = SSL_new(ctx);
+X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
+SSL_free(ssl);
+SSL_CTX_free(ctx);
+
+/* hashlib APIs */
+OBJ_nid2sn(NID_md5);
+OBJ_nid2sn(NID_sha1);
+OBJ_nid2sn(NID_sha3_512);
+OBJ_nid2sn(NID_blake2b512);
+EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS="$save_LIBS"
+CFLAGS="$save_CFLAGS"
+LDFLAGS="$save_LDFLAGS"
 
 # ssl module default cipher suite string
 

@@ -2,12 +2,18 @@
 
 /* much code borrowed from mathmodule.c */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_dtoa.h"
-#include "_math.h"
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
+
+/* For _Py_log1p with workarounds for buggy handling of zeros. */
+#include "_math.h"
 
 #include "clinic/cmathmodule.c.h"
 /*[clinic input]
@@ -242,7 +248,7 @@ cmath_acos_impl(PyObject *module, Py_complex z)
         s2.imag = z.imag;
         s2 = cmath_sqrt_impl(module, s2);
         r.real = 2.*atan2(s1.real, s2.real);
-        r.imag = m_asinh(s2.real*s1.imag - s2.imag*s1.real);
+        r.imag = asinh(s2.real*s1.imag - s2.imag*s1.real);
     }
     errno = 0;
     return r;
@@ -276,7 +282,7 @@ cmath_acosh_impl(PyObject *module, Py_complex z)
         s2.real = z.real + 1.;
         s2.imag = z.imag;
         s2 = cmath_sqrt_impl(module, s2);
-        r.real = m_asinh(s1.real*s2.real + s1.imag*s2.imag);
+        r.real = asinh(s1.real*s2.real + s1.imag*s2.imag);
         r.imag = 2.*atan2(s1.imag, s2.real);
     }
     errno = 0;
@@ -336,7 +342,7 @@ cmath_asinh_impl(PyObject *module, Py_complex z)
         s2.real = 1.-z.imag;
         s2.imag = z.real;
         s2 = cmath_sqrt_impl(module, s2);
-        r.real = m_asinh(s1.real*s2.imag-s2.real*s1.imag);
+        r.real = asinh(s1.real*s2.imag-s2.real*s1.imag);
         r.imag = atan2(z.imag, s1.real*s2.real-s1.imag*s2.imag);
     }
     errno = 0;

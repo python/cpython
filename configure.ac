@@ -3616,6 +3616,23 @@ then
 fi
 AC_MSG_RESULT($with_pymalloc)
 
+# Check whether objects such as float, tuple and dict are using
+# freelists to optimization memory allocation.
+AC_MSG_CHECKING(for --with-freelists)
+AC_ARG_WITH(freelists,
+            AS_HELP_STRING([--with-freelists], [enable object freelists (default is yes)]))
+
+if test -z "$with_freelists"
+then
+    with_freelists="yes"
+fi
+if test "$with_freelists" != "no"
+then
+    AC_DEFINE(WITH_FREELISTS, 1,
+     [Define if you want to compile in object freelists optimization])
+fi
+AC_MSG_RESULT($with_freelists)
+
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING(for --with-c-locale-coercion)
 AC_ARG_WITH(c-locale-coercion,
@@ -4675,8 +4692,12 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-AC_CHECK_FUNCS([acosh asinh atanh erf erfc expm1 finite gamma])
-AC_CHECK_FUNCS([lgamma log1p log2 tgamma])
+AC_CHECK_FUNCS(
+  [acosh asinh atanh erf erfc expm1 log1p log2],
+  [],
+  [AC_MSG_ERROR([Python requires C99 compatible libm])]
+)
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -5887,6 +5908,48 @@ AS_CASE($with_openssl_rpath,
 )
 AC_MSG_RESULT($OPENSSL_RPATH)
 AC_SUBST([OPENSSL_RPATH])
+
+# check if OpenSSL libraries work as expected
+AC_MSG_CHECKING(whether OpenSSL provides required APIs)
+save_LIBS="$LIBS"
+save_CFLAGS="$CFLAGS"
+save_LDFLAGS="$LDFLAGS"
+LIBS="$LIBS $OPENSSL_LIBS"
+CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
+LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#error "OpenSSL >= 1.1.1 is required"
+#endif
+
+static void keylog_cb(const SSL *ssl, const char *line) {}
+]], [[
+/* SSL APIs */
+SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+SSL_CTX_set_keylog_callback(ctx, keylog_cb);
+SSL *ssl = SSL_new(ctx);
+X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
+SSL_free(ssl);
+SSL_CTX_free(ctx);
+
+/* hashlib APIs */
+OBJ_nid2sn(NID_md5);
+OBJ_nid2sn(NID_sha1);
+OBJ_nid2sn(NID_sha3_512);
+OBJ_nid2sn(NID_blake2b512);
+EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+]])],
+  [AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)])
+LIBS="$save_LIBS"
+CFLAGS="$save_CFLAGS"
+LDFLAGS="$save_LDFLAGS"
 
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
