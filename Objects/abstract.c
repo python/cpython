@@ -1716,14 +1716,14 @@ PyNumber_ToBase(PyObject *n, int base)
 }
 
 typedef struct {
-    const char *iname;
     const char *name;
-    size_t islot;
     size_t slot;
+    const char *iname;
+    size_t islot;
 } nb_info;
 
 #define NB_INFO(name, slot) \
-    {name "=", name, NB_SLOT(nb_inplace_##slot), NB_SLOT(nb_##slot)}
+    {name,  NB_SLOT(nb_##slot), name "=", NB_SLOT(nb_inplace_##slot)}
 
 static nb_info nb_infos[] = {
     [NB_AND] = NB_INFO("&", and),
@@ -1740,15 +1740,17 @@ static nb_info nb_infos[] = {
 #undef NB_INFO
 
 PyObject *
-_PyNumber_Op(PyObject *o1, PyObject *o2, int op)
+_PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op)
 {
+    assert(op < sizeof(nb_infos) / sizeof(nb_info));
     nb_info *ni = &nb_infos[op];
     return binary_op(o1, o2, ni->slot, ni->name);
 }
 
 PyObject *
-_PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, int op)
+_PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op)
 {
+    assert(op < sizeof(nb_infos) / sizeof(nb_info));
     nb_info *ni = &nb_infos[op];
     return binary_iop(o1, o2, ni->islot, ni->slot, ni->iname);
 }
