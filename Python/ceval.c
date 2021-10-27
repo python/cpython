@@ -2588,6 +2588,23 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(STORE_SUBSCR_DICT_GENERAL) {
+            PyObject *sub = TOP();
+            PyObject *dict = SECOND();
+            PyObject *value = THIRD();
+            DEOPT_IF(Py_TYPE(sub)->tp_hash == NULL, STORE_SUBSCR);
+            DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
+            PyDictObject *mp = (PyDictObject *)dict;
+            DEOPT_IF(mp->ma_keys->dk_kind == DICT_KEYS_SPLIT, STORE_SUBSCR);
+            STACK_SHRINK(3);
+            STAT_INC(STORE_SUBSCR, hit);
+            // This steals mp, sub and value.
+            if (_PyDict_SetItem_General(mp, sub, value)) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         TARGET(STORE_SUBSCR_DICT_UNICODE) {
             PyObject *sub = TOP();
             PyObject *dict = SECOND();
@@ -2600,39 +2617,10 @@ check_eval_breaker:
             DEOPT_IF(mp->ma_keys->dk_kind != DICT_KEYS_UNICODE, STORE_SUBSCR);
             STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
-            // This steals sub and value.
-            int err = _PyDict_SetItem_StringWithKnownHash(mp, sub, value);
-            Py_DECREF(mp);
-            if (err) {
+            // This steals mp, sub and value.
+            if (_PyDict_SetItem_StringWithKnownHash(mp, sub, value)) {
                 goto error;
             }
-            DISPATCH();
-        }
-
-        TARGET(STORE_SUBSCR_BYTEARRAY_INT) {
-            PyObject *sub = TOP();
-            PyObject *byte_array = SECOND();
-            PyObject *value = THIRD();
-            DEOPT_IF(!PyByteArray_CheckExact(byte_array), STORE_SUBSCR);
-
-            DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
-            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
-            Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
-            DEOPT_IF(index >= PyByteArray_GET_SIZE(byte_array), STORE_SUBSCR);
-
-            DEOPT_IF(!PyLong_CheckExact(value), STORE_SUBSCR);
-            DEOPT_IF(((size_t)Py_SIZE(value)) > 1, STORE_SUBSCR);
-            digit byte_value = ((PyLongObject*)value)->ob_digit[0];
-            DEOPT_IF(byte_value > 0xff, STORE_SUBSCR);
-
-            STAT_INC(STORE_SUBSCR, hit);
-            char *buffer = ((PyByteArrayObject *)byte_array)->ob_start;
-            assert(buffer != NULL && buffer != _PyByteArray_empty_string);
-            buffer[index] = (char)byte_value;
-            Py_DECREF(sub);
-            Py_DECREF(byte_array);
-            Py_DECREF(value);
-            STACK_SHRINK(3);
             DISPATCH();
         }
 

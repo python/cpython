@@ -1562,31 +1562,24 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     return insertdict(mp, key, hash, value);
 }
 
-
-/* This steals arguments in all cases. */
-int
-_PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *value)
+/* Most of insertdict, but without checks for the DICT_KEYS_SPLIT case */
+/* Steals arguments. */
+static inline int
+_insert_at_index(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                 PyObject *value, Py_ssize_t ix)
 {
-    assert(PyUnicode_CheckExact(key));
-    assert(value != NULL);
-    Py_hash_t hash = ((PyASCIIObject *)key)->hash;
-    assert(hash != -1);
     PyDictKeysObject *dk = mp->ma_keys;
-    assert(dk->dk_kind == DICT_KEYS_UNICODE);
-
-    // Inline _Py_dict_lookup
-    Py_ssize_t ix = dictkeys_stringlookup(dk, key, hash);
-
-    // Inline the rest of insertdict -------------------------------
+    assert(dk->dk_kind != DICT_KEYS_SPLIT);
     if (ix != DKIX_EMPTY) {
         PyObject *old_value = DK_ENTRIES(dk)[ix].me_value;
         assert(!_PyDict_HasSplitTable(mp));
         assert(old_value != NULL);
-        DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
+        DK_ENTRIES(dk)[ix].me_value = value;
         mp->ma_version_tag = DICT_NEXT_VERSION();
         Py_DECREF(old_value);
-        ASSERT_CONSISTENT(mp);
         Py_DECREF(key);
+        ASSERT_CONSISTENT(mp);
+        Py_DECREF(mp);
         return 0;
     }
     else {
@@ -1595,9 +1588,10 @@ _PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *v
         if (dk->dk_usable <= 0) {
             /* Need to resize. */
             if (insertion_resize(mp) < 0) {
-                    Py_DECREF(value);
-                    Py_DECREF(key);
-                    return -1;
+                Py_DECREF(key);
+                Py_DECREF(value);
+                Py_DECREF(mp);
+                return -1;
             }
             dk = mp->ma_keys;
         }
@@ -1614,8 +1608,51 @@ _PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *v
         dk->dk_nentries++;
         assert(dk->dk_usable >= 0);
         ASSERT_CONSISTENT(mp);
+        Py_DECREF(mp);
         return 0;
     }
+}
+
+/* Used by specialized opcodes in ceval.c. Steals arguments. */
+int
+_PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    assert(PyDict_CheckExact(mp));
+    assert(PyUnicode_CheckExact(key));
+    assert(value != NULL);
+    Py_hash_t hash = ((PyASCIIObject *)key)->hash;
+    assert(hash != -1);
+    assert(mp->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+    Py_ssize_t ix = dictkeys_stringlookup(mp->ma_keys, key, hash);
+    return _insert_at_index(mp, key, hash, value, ix);
+}
+
+
+/* Used by specialized opcodes in ceval.c. Steals arguments. */
+int
+_PyDict_SetItem_General(PyDictObject *mp, PyObject *key, PyObject *value)
+{
+    assert(PyDict_CheckExact(mp));
+    assert(value != NULL);
+    assert(Py_TYPE(key)->tp_hash != NULL);
+    Py_hash_t hash = Py_TYPE(key)->tp_hash(key);
+    if (hash == -1) {
+        goto Fail;
+    }
+    assert(mp->ma_keys->dk_kind != DICT_KEYS_SPLIT);
+    assert(mp->ma_values == NULL);
+    PyObject *unused_old_value;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &unused_old_value);
+    if (ix == DKIX_ERROR) {
+        goto Fail;
+    }
+    MAINTAIN_TRACKING(mp, key, value);
+    return _insert_at_index(mp, key, hash, value, ix);
+Fail:
+    Py_DECREF(mp);
+    Py_DECREF(key);
+    Py_DECREF(value);
+    return -1;
 }
 
 

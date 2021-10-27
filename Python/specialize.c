@@ -1215,29 +1215,24 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         }
     }
     else if (container_type == &PyDict_Type) {
+        PyDictKeysObject *dk = ((PyDictObject *)container)->ma_keys;
         if (PyUnicode_CheckExact(sub)
-            && ((PyDictObject *)container)->ma_keys->dk_kind == DICT_KEYS_UNICODE)
+            && dk->dk_kind == DICT_KEYS_UNICODE
+            && ((PyASCIIObject *)sub)->hash != -1)
         {
-            (void)PyUnicode_Type.tp_hash(sub);
-            assert(((PyASCIIObject *)sub)->hash != -1);
             *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT_UNICODE,
+                                      initial_counter_value());
+            goto success;
+        }
+        else if (Py_TYPE(sub)->tp_hash != NULL
+                 && dk->dk_kind != DICT_KEYS_SPLIT)
+        {
+            *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT_GENERAL,
                                       initial_counter_value());
             goto success;
         }
         else {
             SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OTHER);
-            goto fail;
-        }
-    }
-    else if (container_type == &PyByteArray_Type && PyLong_CheckExact(sub)) {
-        if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
-            && ((PyLongObject *)sub)->ob_digit[0] < PyByteArray_GET_SIZE(container))
-        {
-            *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_BYTEARRAY_INT, initial_counter_value());
-            goto success;
-        }
-        else {
-            SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
     }
