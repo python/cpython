@@ -523,7 +523,9 @@ class PydocDocTest(unittest.TestCase):
                 # BaseException because accessor of attributes in pydoc and in
                 # inspect catches Exception
                 raise BaseException
+        class B(A): pass
         pydoc.render_doc(A)
+        pydoc.render_doc(B)
 
     def test_builtin_with_child(self):
         """Tests help on builtin object which have only child classes.
