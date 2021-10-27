@@ -486,6 +486,14 @@ def getmembers(object, predicate=None):
 
 Attribute = namedtuple('Attribute', 'name kind defining_class object')
 
+def _is_class_property(cls, name):
+    for base in cls.__mro__:
+        o = base.__dict__.get(name)
+        if isinstance(o, classmethod) and \
+           isinstance(o.__func__, property):
+            return True
+    return False
+
 def classify_class_attrs(cls):
     """Return list of attribute-descriptor tuples.
 
@@ -546,11 +554,8 @@ def classify_class_attrs(cls):
             try:
                 if name == '__dict__':
                     raise Exception("__dict__ is special, don't want the proxy")
-                for base in cls.__mro__:
-                    o = base.__dict__.get(name)
-                    if isinstance(o, classmethod) and \
-                       isinstance(o.__func__, property):
-                        raise Exception("class property")
+                if _is_class_property(cls, name):
+                    raise Exception("class property")
                 get_obj = getattr(cls, name)
             except Exception as exc:
                 pass
