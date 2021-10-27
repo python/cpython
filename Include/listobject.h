@@ -42,7 +42,7 @@ PyAPI_FUNC(PyObject *) PyList_AsTuple(PyObject *);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_LISTOBJECT_H
-#  include  "cpython/listobject.h"
+#  include "cpython/listobject.h"
 #  undef Py_CPYTHON_LISTOBJECT_H
 #endif
 

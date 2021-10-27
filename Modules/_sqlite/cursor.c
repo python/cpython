@@ -760,7 +760,7 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
                                 &tail);
         if (rc == SQLITE_OK) {
             do {
-                (void)sqlite3_step(stmt);
+                rc = sqlite3_step(stmt);
             } while (rc == SQLITE_ROW);
             rc = sqlite3_finalize(stmt);
         }

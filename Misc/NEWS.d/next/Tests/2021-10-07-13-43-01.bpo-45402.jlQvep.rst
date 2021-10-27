@@ -1,0 +1,3 @@
+Fix test_tools.test_sundry() when Python is built out of tree: fix how
+the freeze_modules.py tool locates the _freeze_module program.
+Patch by Victor Stinner.

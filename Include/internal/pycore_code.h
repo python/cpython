@@ -35,6 +35,12 @@ typedef struct {
     PyObject *obj;
 } _PyObjectCache;
 
+typedef struct {
+    uint32_t func_version;
+    uint16_t defaults_start;
+    uint16_t defaults_len;
+} _PyCallCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -51,6 +57,7 @@ typedef union {
     _PyAttrCache attr;
     _PyLoadGlobalCache load_global;
     _PyObjectCache obj;
+    _PyCallCache call;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -246,53 +253,6 @@ PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
 
-
-/* Cache hits and misses */
-
-static inline uint8_t
-saturating_increment(uint8_t c)
-{
-    return c<<1;
-}
-
-static inline uint8_t
-saturating_decrement(uint8_t c)
-{
-    return (c>>1) + 128;
-}
-
-static inline uint8_t
-saturating_zero(void)
-{
-    return 255;
-}
-
-/* Starting value for saturating counter.
- * Technically this should be 1, but that is likely to
- * cause a bit of thrashing when we optimize then get an immediate miss.
- * We want to give the counter a change to stabilize, so we start at 3.
- */
-static inline uint8_t
-saturating_start(void)
-{
-    return saturating_zero()<<3;
-}
-
-static inline void
-record_cache_hit(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_increment(entry->counter);
-}
-
-static inline void
-record_cache_miss(_PyAdaptiveEntry *entry) {
-    entry->counter = saturating_decrement(entry->counter);
-}
-
-static inline int
-too_many_cache_misses(_PyAdaptiveEntry *entry) {
-    return entry->counter == saturating_zero();
-}
-
 #define ADAPTIVE_CACHE_BACKOFF 64
 
 static inline void
@@ -307,7 +267,9 @@ int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
-int _Py_Specialize_BinaryAdd(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
+int _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
+int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
 
 #define PRINT_SPECIALIZATION_STATS 0
 #define PRINT_SPECIALIZATION_STATS_DETAILED 0

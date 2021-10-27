@@ -209,6 +209,10 @@ class ExceptionTests(unittest.TestCase):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
+    
+    def test_error_offset_continuation_characters(self):
+        check = self.check
+        check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
 
     def testSyntaxErrorOffset(self):
         check = self.check
@@ -223,7 +227,7 @@ class ExceptionTests(unittest.TestCase):
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 1)
-        check('[file for str(file) in []\n])', 2, 2)
+        check('[file for str(file) in []\n])', 1, 11)
         check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
@@ -1840,7 +1844,7 @@ class NameErrorTests(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertNotIn("a1", err.getvalue())
+        self.assertNotRegex(err.getvalue(), r"NameError.*a1")
 
     def test_name_error_with_custom_exceptions(self):
         def f():
@@ -2281,7 +2285,7 @@ class SyntaxErrorTests(unittest.TestCase):
                  abcdefg
              SyntaxError: bad bad
              """)),
-            # End offset pass the source lenght
+            # End offset pass the source length
             (("bad.py", 1, 2, "abcdefg", 1, 100),
              dedent(
              """

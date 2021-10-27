@@ -1,0 +1,2 @@
+Fix quadratic behaviour in the enum module: Creation of enum classes with a
+lot of entries was quadratic.

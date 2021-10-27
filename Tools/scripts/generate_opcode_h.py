@@ -72,7 +72,7 @@ def main(opcode_py, outfile='Include/opcode.h'):
                 next_op += 1
             fobj.write("#define %-23s %3s\n" % (name, next_op))
             used[next_op] = True
-
+        fobj.write("#define DO_TRACING              255\n")
         fobj.write("#ifdef NEED_OPCODE_JUMP_TABLES\n")
         write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], fobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], fobj)

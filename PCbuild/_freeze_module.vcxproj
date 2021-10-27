@@ -305,6 +305,31 @@
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\frozen_modules\__hello__.h</OutFile>
     </None>
+    <None Include="..\Lib\__phello__\__init__.py">
+      <ModName>__phello__</ModName>
+      <IntFile>$(IntDir)__phello__.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.h</OutFile>
+    </None>
+    <None Include="..\Lib\__phello__\ham\__init__.py">
+      <ModName>__phello__.ham</ModName>
+      <IntFile>$(IntDir)__phello__.ham.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.h</OutFile>
+    </None>
+    <None Include="..\Lib\__phello__\ham\eggs.py">
+      <ModName>__phello__.ham.eggs</ModName>
+      <IntFile>$(IntDir)__phello__.ham.eggs.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h</OutFile>
+    </None>
+    <None Include="..\Lib\__phello__\spam.py">
+      <ModName>__phello__.spam</ModName>
+      <IntFile>$(IntDir)__phello__.spam.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.spam.h</OutFile>
+    </None>
+    <None Include="..\Tools\freeze\flag.py">
+      <ModName>frozen_only</ModName>
+      <IntFile>$(IntDir)frozen_only.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\frozen_modules\frozen_only.h</OutFile>
+    </None>
     <!-- END frozen modules -->
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

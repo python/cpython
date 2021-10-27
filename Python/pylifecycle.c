@@ -16,6 +16,7 @@
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
 #include <locale.h>               // setlocale()
+#include <stdlib.h>               // getenv()
 
 #if defined(__APPLE__)
 #include <mach-o/loader.h>
@@ -472,7 +473,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 int
 _PyInterpreterState_SetConfig(const PyConfig *src_config)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     int res = -1;
 
     PyConfig config;
@@ -1660,6 +1661,8 @@ static void
 finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
+
+    _PyExc_ClearExceptionGroupType(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
