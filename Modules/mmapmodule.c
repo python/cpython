@@ -504,21 +504,6 @@ mmap_resize_method(mmap_object *self,
     }
 
     {
-        /*
-        To resize an mmap on Windows:
-
-        - Close the existing mapping
-        - If the mapping is backed to a named file:
-            unmap the view, clear the data, and resize the file
-            If the file can't be resized (eg because it has other mapped references
-            to it) then let the mapping be recreated at the original size and set
-            an error code so an exception will be raised.
-        - Create a new mapping of the relevant size to the same file
-        - Map a new view of the resized file
-        - If the mapping is backed by the pagefile:
-            copy any previous data into the new mapped area
-            unmap the original view which will release the memory
-        */
 #ifdef MS_WINDOWS
         DWORD error = 0, file_resize_error = 0;
         char* old_data = self->data;
