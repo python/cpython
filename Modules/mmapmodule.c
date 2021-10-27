@@ -32,7 +32,6 @@
 
 #ifdef MS_WINDOWS
 #include <windows.h>
-#include <winternl.h>
 static int
 my_getpagesize(void)
 {
