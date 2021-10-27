@@ -633,10 +633,6 @@ PyAPI_FUNC(PyObject *) PyNumber_InPlaceOr(PyObject *o1, PyObject *o2);
    If n is not an int object, it is converted with PyNumber_Index first. */
 PyAPI_FUNC(PyObject *) PyNumber_ToBase(PyObject *n, int base);
 
-PyAPI_FUNC(PyObject *) _PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op);
-
-PyAPI_FUNC(PyObject *) _PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op);
-
 
 /* === Sequence protocol ================================================ */
 
