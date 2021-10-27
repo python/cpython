@@ -32,7 +32,7 @@
 #error "SQLite 3.7.15 or higher required"
 #endif
 
-#define clinic_state() (pysqlite_get_state(NULL))
+#define clinic_state() (pysqlite_get_state(module))
 #include "clinic/module.c.h"
 #undef clinic_state
 
@@ -40,8 +40,6 @@
 module _sqlite3
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
-
-pysqlite_state pysqlite_global_state;
 
 // NOTE: This must equal sqlite3.Connection.__init__ argument spec!
 /*[clinic input]
@@ -160,7 +158,7 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 
     pysqlite_state *state = pysqlite_get_state(module);
     PyObject *protocol = (PyObject *)state->PrepareProtocolType;
-    rc = pysqlite_microprotocols_add(type, protocol, caster);
+    rc = pysqlite_microprotocols_add(state, type, protocol, caster);
     if (rc == -1) {
         return NULL;
     }
@@ -395,16 +393,11 @@ static int add_integer_constants(PyObject *module) {
     return ret;
 }
 
-static struct PyModuleDef _sqlite3module = {
-        PyModuleDef_HEAD_INIT,
-        "_sqlite3",
-        NULL,
-        -1,
-        module_methods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+struct PyModuleDef _sqlite3module = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_sqlite3",
+    .m_size = sizeof(pysqlite_state),
+    .m_methods = module_methods,
 };
 
 #define ADD_TYPE(module, type)                 \
