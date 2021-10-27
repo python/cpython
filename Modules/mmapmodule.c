@@ -551,6 +551,11 @@ mmap_resize_method(mmap_object *self,
             self->tagname);
 
         error = GetLastError();
+        /* ERROR_ALREADY_EXISTS implies that between our closing the handle above and
+        calling CreateFileMapping here, someone's created a different mapping with
+        the same name. There's nothing we can usefully do so we invalidate our
+        mapping and error out.
+        */
         if (error == ERROR_ALREADY_EXISTS) {
             CloseHandle(self->map_handle);
             self->map_handle = NULL;
