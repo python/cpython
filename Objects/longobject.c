@@ -3151,6 +3151,26 @@ _PyLong_Add(PyLongObject *a, PyLongObject *b)
     return (PyObject *)z;
 }
 
+PyObject *
+_PyAdd_Long_Float(PyLongObject *a, PyFloatObject *b)
+{
+    if (IS_MEDIUM_VALUE(a)) {
+        double l = (double)medium_value(a);
+        return PyFloat_FromDouble(l + b->ob_fval);
+    }
+    return PyFloat_Type.tp_as_number->nb_add((PyObject *)a, (PyObject *)b);
+}
+
+PyObject *
+_PyAdd_Float_Long(PyFloatObject *a, PyLongObject *b)
+{
+    if (IS_MEDIUM_VALUE(b)) {
+        double r = (double)medium_value(b);
+        return PyFloat_FromDouble(a->ob_fval + r);
+    }
+    return PyFloat_Type.tp_as_number->nb_add((PyObject *)a, (PyObject *)b);
+}
+
 static PyObject *
 long_add(PyLongObject *a, PyLongObject *b)
 {

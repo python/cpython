@@ -1183,14 +1183,32 @@ success:
     return 0;
 }
 
+PyObject *_PyAdd_Float_Long(PyFloatObject *a, PyLongObject *b);
+
+PyObject *_PyAdd_Long_Float(PyLongObject *a, PyFloatObject *b);
+
+
 int
 _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     PyTypeObject *left_type = Py_TYPE(left);
     if (left_type != Py_TYPE(right)) {
-        SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_DIFFERENT_TYPES);
-        goto fail;
+        _PyFuncPtrCache *cache1 = &cache[-1].func_ptr;
+        if (left_type == &PyLong_Type && Py_TYPE(right) == &PyFloat_Type) {
+            cache1->function = (binaryfunc)_PyAdd_Long_Float;
+        }
+        else if (left_type == &PyFloat_Type && Py_TYPE(right) == &PyLong_Type) {
+            cache1->function = (binaryfunc)_PyAdd_Float_Long;
+        }
+        else {
+            SPECIALIZATION_FAIL(BINARY_ADD, SPEC_FAIL_DIFFERENT_TYPES);
+            goto fail;
+        }
+        cache0->left_version = left_type->tp_version_tag;
+        cache0->right_version = Py_TYPE(right)->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_CACHED, _Py_OPARG(*instr));
+        goto success;
     }
     if (left_type == &PyUnicode_Type) {
         int next_opcode = _Py_OPCODE(instr[1]);
