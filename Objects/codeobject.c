@@ -1906,3 +1906,33 @@ _PyCode_ConstantKey(PyObject *op)
     }
     return key;
 }
+
+void
+_PyCode_DebugDump(PyCodeObject *code, const char *debug_tag)
+{
+#include "opcode_names.h"
+#define DUMP_FIELD(__x)                                                       \
+    fprintf(stderr, "%-16s = %d\n", #__x, (code->__x))
+
+	fprintf(stderr, "\n============= %s =============\n", debug_tag);
+	DUMP_FIELD(co_argcount);
+	DUMP_FIELD(co_kwonlyargcount);
+	DUMP_FIELD(co_nlocals);
+	DUMP_FIELD(co_stacksize);
+	DUMP_FIELD(co_firstlineno);
+	fprintf(stderr, "co_filename = %s\n", PyUnicode_AsUTF8(code->co_filename));
+	fprintf(stderr, "co_name = %s\n", PyUnicode_AsUTF8(code->co_name));
+
+	Py_ssize_t instr_count = PyBytes_GET_SIZE(code->co_code) / ((Py_ssize_t) sizeof(_Py_CODEUNIT));
+	const _Py_CODEUNIT *inst_array = code->co_firstinstr;
+	fprintf(stderr, "Dumping raw code:\n");
+	for (Py_ssize_t i = 0; i < instr_count; i++) {
+		uint8_t opcode = _Py_OPCODE(inst_array[i]);
+		uint8_t oparg = _Py_OPARG(inst_array[i]);
+		fprintf(stderr, "%-8ld%-20s%-8d\n", i * 2, OPCODE_NAMES[opcode], oparg);
+	}
+
+	fprintf(stderr, "\n============= %s end =============\n", debug_tag);
+	fflush(stderr);
+#undef DUMP_FIELD
+}

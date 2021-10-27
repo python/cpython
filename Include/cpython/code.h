@@ -229,3 +229,12 @@ void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int 
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+/** API for debug code object */
+void _PyCode_DebugDump(PyCodeObject *code, const char *debug_tag);
+
+/** Dump the specified `code` by co_name and co_filename */
+#define PyCode_DUMP_IF(code, TAG, CO_NAME, CO_FILENAME) \
+	if (((CO_NAME) == NULL || strcmp(PyUnicode_AsUTF8((code)->co_name), CO_NAME) == 0) && \
+		((CO_FILENAME) == NULL || strcmp(PyUnicode_AsUTF8((code)->co_filename), CO_FILENAME) == 0)) {\
+		_PyCode_DebugDump(code, TAG);\
+	}

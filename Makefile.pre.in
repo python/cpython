@@ -979,8 +979,10 @@ regen-opcode:
 	# using Tools/scripts/generate_opcode_h.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Include/opcode.h.new
+		$(srcdir)/Include/opcode.h.new \
+		$(srcdir)/Include/opcode_names.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_names.h $(srcdir)/Include/opcode_names.h.new
 
 .PHONY: regen-token
 regen-token:
@@ -1151,6 +1153,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
+		$(srcdir)/Include/opcode_names.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \

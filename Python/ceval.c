@@ -1587,9 +1587,15 @@ start_frame:
     if (!PyCodeObject_IsWarmedUp(co)) {
         PyCodeObject_IncrementWarmup(co);
         if (PyCodeObject_IsWarmedUp(co)) {
+#if 0 /* For debugging purposes only */
+			PyCode_DUMP_IF(co, "Quicken before", NULL, NULL);
+#endif
             if (_Py_Quicken(co)) {
                 goto exit_eval_frame;
             }
+#if 0 /* For debugging purposes only */
+			PyCode_DUMP_IF(co, "Quicken after", NULL, NULL);
+#endif
         }
     }
 
