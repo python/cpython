@@ -4,6 +4,8 @@ import sys
 import textwrap
 import unittest
 
+from test import support
+
 from . import imports_under_tool, skip_if_missing
 skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
@@ -14,6 +16,8 @@ with imports_under_tool('freeze', 'test'):
 class TestFreeze(unittest.TestCase):
 
     def test_freeze_simple_script(self):
+        if support.use_resources:
+            support.requires('cpu', 'test re-builds Python out-of-tree')
         script = textwrap.dedent("""
             import sys
             print('running...')
