@@ -1,10 +1,9 @@
 """Sanity-check tests for the "freeze" tool."""
 
+import os
 import sys
 import textwrap
 import unittest
-
-from test import support
 
 from . import imports_under_tool, skip_if_missing
 skip_if_missing('freeze')
@@ -13,11 +12,11 @@ with imports_under_tool('freeze', 'test'):
 
 
 @unittest.skipIf(sys.platform.startswith('win'), 'not supported on Windows')
+@unittest.skipIf(os.environ.get('USER') == 'buildbot',
+                 'not all buildbots have enough space')
 class TestFreeze(unittest.TestCase):
 
     def test_freeze_simple_script(self):
-        if support.use_resources:
-            support.requires('cpu', 'test re-builds Python out-of-tree')
         script = textwrap.dedent("""
             import sys
             print('running...')
