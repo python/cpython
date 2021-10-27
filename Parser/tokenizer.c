@@ -995,6 +995,7 @@ tok_underflow_file(struct tok_state *tok) {
     return tok->done == E_OK;
 }
 
+#if defined(Py_DEBUG)
 static void
 print_escape(FILE *f, const char *s, Py_ssize_t size)
 {
@@ -1021,6 +1022,7 @@ print_escape(FILE *f, const char *s, Py_ssize_t size)
     }
     putc('"', f);
 }
+#endif
 
 /* Get next char, updating state; error code goes into tok->done */
 
@@ -1043,11 +1045,13 @@ tok_nextc(struct tok_state *tok)
         else {
             rc = tok_underflow_file(tok);
         }
+#if defined(Py_DEBUG)
         if (Py_DebugFlag) {
             printf("line[%d] = ", tok->lineno);
             print_escape(stdout, tok->cur, tok->inp - tok->cur);
             printf("  tok->done = %d\n", tok->done);
         }
+#endif
         if (!rc) {
             tok->cur = tok->inp;
             return EOF;

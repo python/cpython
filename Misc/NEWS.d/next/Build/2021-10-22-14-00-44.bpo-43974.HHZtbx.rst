@@ -1,0 +1,2 @@
+``setup.py`` no longer defines ``Py_BUILD_CORE_MODULE``. Instead every
+module, that uses the internal API, defines the macro.
