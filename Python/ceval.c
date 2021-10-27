@@ -2000,42 +2000,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_MATRIX_MULTIPLY) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_MatrixMultiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_TRUE_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_TrueDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_FLOOR_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_FloorDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
         TARGET(BINARY_MODULO) {
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
@@ -2170,18 +2134,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_SUBTRACT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *diff = PyNumber_Subtract(left, right);
-            Py_DECREF(right);
-            Py_DECREF(left);
-            SET_TOP(diff);
-            if (diff == NULL)
-                goto error;
-            DISPATCH();
-        }
-
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, unquickened);
@@ -2280,66 +2232,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(BINARY_LSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Lshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_RSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Rshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_AND) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_And(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_XOR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Xor(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(BINARY_OR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_Or(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
         TARGET(LIST_APPEND) {
             PyObject *v = POP();
             PyObject *list = PEEK(oparg);
@@ -2388,42 +2280,6 @@ check_eval_breaker:
             DISPATCH();
         }
 
-        TARGET(INPLACE_MATRIX_MULTIPLY) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceMatrixMultiply(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_TRUE_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_InPlaceTrueDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_FLOOR_DIVIDE) {
-            PyObject *divisor = POP();
-            PyObject *dividend = TOP();
-            PyObject *quotient = PyNumber_InPlaceFloorDivide(dividend, divisor);
-            Py_DECREF(dividend);
-            Py_DECREF(divisor);
-            SET_TOP(quotient);
-            if (quotient == NULL)
-                goto error;
-            DISPATCH();
-        }
-
         TARGET(INPLACE_MODULO) {
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -2451,78 +2307,6 @@ check_eval_breaker:
             Py_DECREF(right);
             SET_TOP(sum);
             if (sum == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_SUBTRACT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *diff = PyNumber_InPlaceSubtract(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(diff);
-            if (diff == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_LSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceLshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_RSHIFT) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceRshift(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_AND) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceAnd(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_XOR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceXor(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            DISPATCH();
-        }
-
-        TARGET(INPLACE_OR) {
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyNumber_InPlaceOr(left, right);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            SET_TOP(res);
-            if (res == NULL)
                 goto error;
             DISPATCH();
         }
@@ -5017,6 +4801,32 @@ check_eval_breaker:
             PyObject *peek = PEEK(oparg);
             Py_INCREF(peek);
             PUSH(peek);
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP) {
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = _PyNumber_Op(left, right, oparg);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
+        TARGET(INPLACE_OP) {
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = _PyNumber_InPlaceOp(left, right, oparg);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
             DISPATCH();
         }
 

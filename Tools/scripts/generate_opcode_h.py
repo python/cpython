@@ -84,6 +84,10 @@ def main(opcode_py, outfile='Include/opcode.h'):
             fobj.write(f"\n    || ((op) == {op}) \\")
         fobj.write("\n    )\n")
 
+        fobj.write("\n")
+        for i, (op, _) in enumerate(opcode["_nb_ops"]):
+            fobj.write(f"#define {op} {i}\n")
+
         fobj.write(footer)
 
 

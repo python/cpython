@@ -309,7 +309,6 @@ static int compiler_annassign(struct compiler *, stmt_ty);
 static int compiler_subscript(struct compiler *, expr_ty);
 static int compiler_slice(struct compiler *, expr_ty);
 
-static int inplace_binop(operator_ty);
 static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 
 
@@ -1025,22 +1024,13 @@ stack_effect(int opcode, int oparg, int jump)
         /* Binary operators */
         case BINARY_POWER:
         case BINARY_MULTIPLY:
-        case BINARY_MATRIX_MULTIPLY:
         case BINARY_MODULO:
         case BINARY_ADD:
-        case BINARY_SUBTRACT:
         case BINARY_SUBSCR:
-        case BINARY_FLOOR_DIVIDE:
-        case BINARY_TRUE_DIVIDE:
-            return -1;
-        case INPLACE_FLOOR_DIVIDE:
-        case INPLACE_TRUE_DIVIDE:
             return -1;
 
         case INPLACE_ADD:
-        case INPLACE_SUBTRACT:
         case INPLACE_MULTIPLY:
-        case INPLACE_MATRIX_MULTIPLY:
         case INPLACE_MODULO:
             return -1;
         case STORE_SUBSCR:
@@ -1048,12 +1038,6 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_SUBSCR:
             return -2;
 
-        case BINARY_LSHIFT:
-        case BINARY_RSHIFT:
-        case BINARY_AND:
-        case BINARY_XOR:
-        case BINARY_OR:
-            return -1;
         case INPLACE_POWER:
             return -1;
         case GET_ITER:
@@ -1063,12 +1047,6 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case LOAD_BUILD_CLASS:
             return 1;
-        case INPLACE_LSHIFT:
-        case INPLACE_RSHIFT:
-        case INPLACE_AND:
-        case INPLACE_XOR:
-        case INPLACE_OR:
-            return -1;
 
         case RETURN_VALUE:
             return -1;
@@ -1259,6 +1237,9 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case COPY:
             return 1;
+        case BINARY_OP:
+        case INPLACE_OP:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1684,6 +1665,12 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
     if (!compiler_addcompare((C), (cmpop_ty)(CMP))) \
         return 0; \
 }
+
+#define ADDOP_BINARY(C, BINOP) \
+    RETURN_IF_FALSE(addop_binary((C), (BINOP), false))
+
+#define ADDOP_INPLACE(C, BINOP) \
+    RETURN_IF_FALSE(addop_binary((C), (BINOP), true))
 
 /* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
    the ASDL name to synthesize the name of the C type and the visit function.
@@ -3695,77 +3682,60 @@ unaryop(unaryop_ty op)
 }
 
 static int
-binop(operator_ty op)
+addop_binary(struct compiler *c, operator_ty binop, bool inplace)
 {
-    switch (op) {
-    case Add:
-        return BINARY_ADD;
-    case Sub:
-        return BINARY_SUBTRACT;
-    case Mult:
-        return BINARY_MULTIPLY;
-    case MatMult:
-        return BINARY_MATRIX_MULTIPLY;
-    case Div:
-        return BINARY_TRUE_DIVIDE;
-    case Mod:
-        return BINARY_MODULO;
-    case Pow:
-        return BINARY_POWER;
-    case LShift:
-        return BINARY_LSHIFT;
-    case RShift:
-        return BINARY_RSHIFT;
-    case BitOr:
-        return BINARY_OR;
-    case BitXor:
-        return BINARY_XOR;
-    case BitAnd:
-        return BINARY_AND;
-    case FloorDiv:
-        return BINARY_FLOOR_DIVIDE;
-    default:
-        PyErr_Format(PyExc_SystemError,
-            "binary op %d should not be possible", op);
-        return 0;
+    int oparg;
+    switch (binop) {
+        case Add:
+            // Addition interacts with sq_concat:
+            ADDOP(c, inplace ? INPLACE_ADD : BINARY_ADD);
+            return 1;
+        case Sub:
+            oparg = NB_SUBTRACT;
+            break;
+        case Mult:
+            // Multiplication interacts with sq_repeat:
+            ADDOP(c, inplace ? INPLACE_MULTIPLY : BINARY_MULTIPLY);
+            return 1;
+        case MatMult:
+            oparg = NB_MATRIX_MULTIPLY;
+            break;
+        case Div:
+            oparg = NB_TRUE_DIVIDE;
+            break;
+        case Mod:
+            // Modulation contains a fast path for strings:
+            ADDOP(c, inplace ? INPLACE_MODULO : BINARY_MODULO);
+            return 1;
+        case Pow:
+            // Exponentiation is techncally ternary:
+            ADDOP(c, inplace ? INPLACE_POWER : BINARY_POWER);
+            return 1;
+        case LShift:
+            oparg = NB_LSHIFT;
+            break;
+        case RShift:
+            oparg = NB_RSHIFT;
+            break;
+        case BitOr:
+            oparg = NB_OR;
+            break;
+        case BitXor:
+            oparg = NB_XOR;
+            break;
+        case BitAnd:
+            oparg = NB_AND;
+            break;
+        case FloorDiv:
+            oparg = NB_FLOOR_DIVIDE;
+            break;
+        default:
+            PyErr_Format(PyExc_SystemError, "%s op %d should not be possible",
+                         inplace ? "inplace" : "binary", binop);
+            return 0;
     }
-}
-
-static int
-inplace_binop(operator_ty op)
-{
-    switch (op) {
-    case Add:
-        return INPLACE_ADD;
-    case Sub:
-        return INPLACE_SUBTRACT;
-    case Mult:
-        return INPLACE_MULTIPLY;
-    case MatMult:
-        return INPLACE_MATRIX_MULTIPLY;
-    case Div:
-        return INPLACE_TRUE_DIVIDE;
-    case Mod:
-        return INPLACE_MODULO;
-    case Pow:
-        return INPLACE_POWER;
-    case LShift:
-        return INPLACE_LSHIFT;
-    case RShift:
-        return INPLACE_RSHIFT;
-    case BitOr:
-        return INPLACE_OR;
-    case BitXor:
-        return INPLACE_XOR;
-    case BitAnd:
-        return INPLACE_AND;
-    case FloorDiv:
-        return INPLACE_FLOOR_DIVIDE;
-    default:
-        PyErr_Format(PyExc_SystemError,
-            "inplace binary op %d should not be possible", op);
-        return 0;
-    }
+    ADDOP_I(c, inplace ? INPLACE_OP : BINARY_OP, oparg);
+    return 1;
 }
 
 static int
@@ -5356,7 +5326,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case BinOp_kind:
         VISIT(c, expr, e->v.BinOp.left);
         VISIT(c, expr, e->v.BinOp.right);
-        ADDOP(c, binop(e->v.BinOp.op));
+        ADDOP_BINARY(c, e->v.BinOp.op);
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
@@ -5542,7 +5512,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     c->u->u_end_col_offset = old_end_col_offset;
 
     VISIT(c, expr, s->v.AugAssign.value);
-    ADDOP(c, inplace_binop(s->v.AugAssign.op));
+    ADDOP_INPLACE(c, s->v.AugAssign.op);
 
     SET_LOC(c, e);
 
@@ -6002,7 +5972,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_pattern_seq *patterns,
             // nonnegative index:
             ADDOP(c, GET_LEN);
             ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - i));
-            ADDOP(c, BINARY_SUBTRACT);
+            ADDOP_BINARY(c, Sub);
         }
         ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));

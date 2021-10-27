@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "opcode.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
@@ -1712,6 +1713,44 @@ PyNumber_ToBase(PyObject *n, int base)
     PyObject *res = _PyLong_Format(index, base);
     Py_DECREF(index);
     return res;
+}
+
+typedef struct {
+    const char *iname;
+    const char *name;
+    size_t islot;
+    size_t slot;
+} nb_info;
+
+#define NB_INFO(name, slot) \
+    {name "=", name, NB_SLOT(nb_inplace_##slot), NB_SLOT(nb_##slot)}
+
+static nb_info nb_infos[] = {
+    [NB_AND] = NB_INFO("&", and),
+    [NB_FLOOR_DIVIDE] = NB_INFO("//", floor_divide),
+    [NB_LSHIFT] = NB_INFO("<<", lshift),
+    [NB_MATRIX_MULTIPLY] = NB_INFO("@", matrix_multiply),
+    [NB_OR] = NB_INFO("|", or),
+    [NB_RSHIFT] = NB_INFO(">>", rshift),
+    [NB_SUBTRACT] = NB_INFO("-", subtract),
+    [NB_TRUE_DIVIDE] = NB_INFO("/", true_divide),
+    [NB_XOR] = NB_INFO("^", xor),
+};
+
+#undef NB_INFO
+
+PyObject *
+_PyNumber_Op(PyObject *o1, PyObject *o2, int op)
+{
+    nb_info *ni = &nb_infos[op];
+    return binary_op(o1, o2, ni->slot, ni->name);
+}
+
+PyObject *
+_PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, int op)
+{
+    nb_info *ni = &nb_infos[op];
+    return binary_iop(o1, o2, ni->islot, ni->slot, ni->iname);
 }
 
 
