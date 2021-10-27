@@ -1369,7 +1369,8 @@ location listed above.
                 for name, kind, homecls, value in ok:
                     try:
                         o = object.__dict__.get(name)
-                        if isinstance(o, classmethod) and isinstance(o.__func__, property):
+                        if isinstance(o, classmethod) and \
+                           isinstance(o.__func__, property):
                             raise Exception("class property")
                         value = getattr(object, name)
                     except Exception:

@@ -547,7 +547,8 @@ def classify_class_attrs(cls):
                 if name == '__dict__':
                     raise Exception("__dict__ is special, don't want the proxy")
                 o = cls.__dict__.get(name)
-                if isinstance(o, classmethod) and isinstance(o.__func__, property):
+                if isinstance(o, classmethod) and \
+                   isinstance(o.__func__, property):
                     raise Exception("class property")
                 get_obj = getattr(cls, name)
             except Exception as exc:
