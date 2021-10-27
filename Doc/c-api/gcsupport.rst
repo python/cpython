@@ -33,6 +33,14 @@ Constructors for container types must conform to two rules:
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :c:func:`PyObject_GC_Track`.
 
+Similarly, the deallocator for the object must conform to a similar pair of
+rules:
+
+#. Before fields which refer to other containers are invalidated,
+   :c:func:`PyObject_GC_UnTrack` must be called.
+
+#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
+
    .. warning::
       If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
       a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
@@ -99,14 +107,6 @@ Constructors for container types must conform to two rules:
    This is analogous to the Python function :func:`gc.is_finalized`.
 
    .. versionadded:: 3.9
-
-Similarly, the deallocator for the object must conform to a similar pair of
-rules:
-
-#. Before fields which refer to other containers are invalidated,
-   :c:func:`PyObject_GC_UnTrack` must be called.
-
-#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
 
 
 .. c:function:: void PyObject_GC_Del(void *op)
