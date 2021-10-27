@@ -1,3 +1,3 @@
-The :mod:`urllib.request` module can download files (e.g. ``python -m
-urrlib.request https://python.org/``). For more info, call ``python -m
-urrlib.request -h``. Patch by Thomas Pohl.
+The :mod:`urllib.request` module can now download files (e.g.
+``python -m urllib.request https://python.org/``). For more
+info, see ``python -m urllib.request -h``. Patch by Thomas Pohl.
