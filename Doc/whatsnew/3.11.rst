@@ -308,6 +308,16 @@ CPython bytecode changes
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
 
+* Removed ``COPY_DICT_WITHOUT_KEYS``.
+
+* :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
+  boolean value indicating whether the match succeeded or failed. Instead, they
+  indicate failure with :const:`None` (where a tuple of extracted values would
+  otherwise be).
+
+* Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
+  The item is not removed from its original location.
+
 
 Deprecated
 ==========
