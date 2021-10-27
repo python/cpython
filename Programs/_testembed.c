@@ -1726,6 +1726,44 @@ static int test_get_argc_argv(void)
 }
 
 
+static int check_use_frozen_modules(const char *rawval)
+{
+    wchar_t optval[100];
+    if (rawval == NULL) {
+        wcscpy(optval, L"frozen_modules");
+    }
+    else if (swprintf(optval, 100, L"frozen_modules=%s", rawval) < 0) {
+        error("rawval is too long");
+        return -1;
+    }
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+
+    wchar_t* argv[] = {
+        L"./argv0",
+        L"-X",
+        optval,
+        L"-c",
+        L"pass",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+static int test_init_use_frozen_modules(void)
+{
+    const char *envvar = getenv("TESTFROZEN");
+    return check_use_frozen_modules(envvar);
+}
+
+
 static int test_unicode_id_init(void)
 {
     // bpo-42882: Test that _PyUnicode_FromId() works
@@ -1912,6 +1950,7 @@ static struct TestCase TestCases[] = {
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
+    {"test_init_use_frozen_modules", test_init_use_frozen_modules},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},

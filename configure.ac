@@ -4693,7 +4693,7 @@ LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
 AC_CHECK_FUNCS(
-  [acosh asinh atanh erf erfc expm1 finite gamma lgamma log1p log2 tgamma],
+  [acosh asinh atanh erf erfc expm1 log1p log2],
   [],
   [AC_MSG_ERROR([Python requires C99 compatible libm])]
 )
