@@ -59,7 +59,7 @@
 
   <Target Name="_RegenOpcodes" Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)">
     <Message Text="Regenerate @(_OpcodeOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\scripts\generate_opcode_h.py Lib\opcode.py Include\opcode.h"
+    <Exec Command="$(PythonForBuild) Tools\scripts\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\opcode_names.h"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) Python\makeopcodetargets.py Python\opcode_targets.h"
           WorkingDirectory="$(PySourcePath)" />

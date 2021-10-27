@@ -96,7 +96,7 @@ def main(opcode_py, outfile='Include/opcode.h', namefile='Include/opcode_name.h'
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /* Instruction opcodes for compiled code */
+    /* Instruction opcode names */
 """.lstrip())
         fobj.write("static const char *OPCODE_NAMES[256] = {\n")
         for i, v in enumerate(op_names):
