@@ -44,10 +44,14 @@
 
 #define MUNCH_SIZE INT_MAX
 
+#ifndef OPENSSL_NO_SCRYPT
 #define PY_OPENSSL_HAS_SCRYPT 1
+#endif
 #define PY_OPENSSL_HAS_SHA3 1
 #define PY_OPENSSL_HAS_SHAKE 1
+#ifndef OPENSSL_NO_BLAKE2
 #define PY_OPENSSL_HAS_BLAKE2 1
+#endif
 
 static PyModuleDef _hashlibmodule;
 
