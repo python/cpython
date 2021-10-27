@@ -1044,9 +1044,9 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_file(tok);
         }
         if (Py_DebugFlag) {
-            printf("line[%d] = ", tok->lineno);
+            fprintf(stderr, "line[%d] = ", tok->lineno);
             print_escape(stdout, tok->cur, tok->inp - tok->cur);
-            printf("  tok->done = %d\n", tok->done);
+            fprintf(stderr, "  tok->done = %d\n", tok->done);
         }
         if (!rc) {
             tok->cur = tok->inp;
@@ -2123,8 +2123,8 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
 void
 tok_dump(int type, char *start, char *end)
 {
-    printf("%s", _PyParser_TokenNames[type]);
+    fprintf(stderr, "%s", _PyParser_TokenNames[type]);
     if (type == NAME || type == NUMBER || type == STRING || type == OP)
-        printf("(%.*s)", (int)(end - start), start);
+        fprintf(stderr, "(%.*s)", (int)(end - start), start);
 }
 #endif  // Py_DEBUG
