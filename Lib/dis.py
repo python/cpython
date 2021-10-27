@@ -30,10 +30,10 @@ MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 LOAD_CONST = opmap['LOAD_CONST']
 
 BINARY_OP = opmap['BINARY_OP']
-BINARY_OPS = {i: name for i, (_, name) in enumerate(_nb_ops)}
+BINARY_OPS = [name for _, name in _nb_ops]
 
 INPLACE_OP = opmap['INPLACE_OP']
-INPLACE_OPS = {i: f"{name}=" for i, (_, name) in enumerate(_nb_ops)}
+INPLACE_OPS = [f"{name}=" for _, name in _nb_ops]
 
 del _nb_ops
 
