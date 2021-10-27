@@ -304,6 +304,12 @@ Optimizations
 CPython bytecode changes
 ========================
 
+* Replaced most ``BINARY_*`` instructions with a single :opcode:`BINARY_OP`
+  implementation.
+
+* Replaced most ``INPLACE_*`` instructions with a single :opcode:`INPLACE_OP`
+  implementation.
+
 * Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.

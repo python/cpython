@@ -422,23 +422,6 @@ result back on the stack.
    Implements ``TOS = TOS1 * TOS``.
 
 
-.. opcode:: BINARY_MATRIX_MULTIPLY
-
-   Implements ``TOS = TOS1 @ TOS``.
-
-   .. versionadded:: 3.5
-
-
-.. opcode:: BINARY_FLOOR_DIVIDE
-
-   Implements ``TOS = TOS1 // TOS``.
-
-
-.. opcode:: BINARY_TRUE_DIVIDE
-
-   Implements ``TOS = TOS1 / TOS``.
-
-
 .. opcode:: BINARY_MODULO
 
    Implements ``TOS = TOS1 % TOS``.
@@ -449,39 +432,16 @@ result back on the stack.
    Implements ``TOS = TOS1 + TOS``.
 
 
-.. opcode:: BINARY_SUBTRACT
+.. opcode:: BINARY_OP (op)
 
-   Implements ``TOS = TOS1 - TOS``.
+   Implements the remaining binary operators (depending on the value of *op*).
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: BINARY_SUBSCR
 
    Implements ``TOS = TOS1[TOS]``.
-
-
-.. opcode:: BINARY_LSHIFT
-
-   Implements ``TOS = TOS1 << TOS``.
-
-
-.. opcode:: BINARY_RSHIFT
-
-   Implements ``TOS = TOS1 >> TOS``.
-
-
-.. opcode:: BINARY_AND
-
-   Implements ``TOS = TOS1 & TOS``.
-
-
-.. opcode:: BINARY_XOR
-
-   Implements ``TOS = TOS1 ^ TOS``.
-
-
-.. opcode:: BINARY_OR
-
-   Implements ``TOS = TOS1 | TOS``.
 
 
 **In-place operations**
@@ -501,23 +461,6 @@ the original TOS1.
    Implements in-place ``TOS = TOS1 * TOS``.
 
 
-.. opcode:: INPLACE_MATRIX_MULTIPLY
-
-   Implements in-place ``TOS = TOS1 @ TOS``.
-
-   .. versionadded:: 3.5
-
-
-.. opcode:: INPLACE_FLOOR_DIVIDE
-
-   Implements in-place ``TOS = TOS1 // TOS``.
-
-
-.. opcode:: INPLACE_TRUE_DIVIDE
-
-   Implements in-place ``TOS = TOS1 / TOS``.
-
-
 .. opcode:: INPLACE_MODULO
 
    Implements in-place ``TOS = TOS1 % TOS``.
@@ -528,34 +471,11 @@ the original TOS1.
    Implements in-place ``TOS = TOS1 + TOS``.
 
 
-.. opcode:: INPLACE_SUBTRACT
+.. opcode:: INPLACE_OP (op)
 
-   Implements in-place ``TOS = TOS1 - TOS``.
+   Implements the remaining in-place operators (depending on the value of *op*).
 
-
-.. opcode:: INPLACE_LSHIFT
-
-   Implements in-place ``TOS = TOS1 << TOS``.
-
-
-.. opcode:: INPLACE_RSHIFT
-
-   Implements in-place ``TOS = TOS1 >> TOS``.
-
-
-.. opcode:: INPLACE_AND
-
-   Implements in-place ``TOS = TOS1 & TOS``.
-
-
-.. opcode:: INPLACE_XOR
-
-   Implements in-place ``TOS = TOS1 ^ TOS``.
-
-
-.. opcode:: INPLACE_OR
-
-   Implements in-place ``TOS = TOS1 | TOS``.
+   .. versionadded:: 3.11
 
 
 .. opcode:: STORE_SUBSCR
