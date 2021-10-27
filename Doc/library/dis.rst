@@ -755,15 +755,6 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: COPY_DICT_WITHOUT_KEYS
-
-   TOS is a tuple of mapping keys, and TOS1 is the match subject.  Replace TOS
-   with a :class:`dict` formed from the items of TOS1, but without any of the
-   keys in TOS.
-
-   .. versionadded:: 3.10
-
-
 .. opcode:: GET_LEN
 
    Push ``len(TOS)`` onto the stack.
@@ -795,10 +786,13 @@ iterations of the loop.
 
    TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
    contains all of the keys in TOS, push a :class:`tuple` containing the
-   corresponding values, followed by ``True``. Otherwise, push ``None``,
-   followed by ``False``.
+   corresponding values. Otherwise, push ``None``.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Previously, this instruction also pushed a boolean value indicating
+      success (``True``) or failure (``False``).
 
 
 All of the following opcodes use their arguments.
@@ -1277,11 +1271,15 @@ All of the following opcodes use their arguments.
    against, and TOS2 is the match subject.  *count* is the number of positional
    sub-patterns.
 
-   Pop TOS.  If TOS2 is an instance of TOS1 and has the positional and keyword
-   attributes required by *count* and TOS, set TOS to ``True`` and TOS1 to a
-   tuple of extracted attributes.  Otherwise, set TOS to ``False``.
+   Pop TOS, TOS1, and TOS2.  If TOS2 is an instance of TOS1 and has the
+   positional and keyword attributes required by *count* and TOS, push a tuple
+   of extracted attributes.  Otherwise, push ``None``.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Previously, this instruction also pushed a boolean value indicating
+      success (``True``) or failure (``False``).
 
 .. opcode:: GEN_START (kind)
 
@@ -1299,6 +1297,14 @@ All of the following opcodes use their arguments.
    position *count*.
 
    .. versionadded:: 3.10
+
+
+.. opcode:: COPY (i)
+
+   Push the *i*-th item to the top of the stack. The item is not removed from its
+   original location.
+
+   .. versionadded:: 3.11
 
 
 .. opcode:: HAVE_ARGUMENT
