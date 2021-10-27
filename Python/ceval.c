@@ -4607,8 +4607,21 @@ check_eval_breaker:
             kwnames = NULL;
             postcall_shrink = 1;
         call_function:
-            // Check if the call can be inlined or not
             function = PEEK(oparg + 1);
+            if (Py_TYPE(function) == &PyMethod_Type) {
+                PyObject *meth = ((PyMethodObject *)function)->im_func;
+                PyObject *self = ((PyMethodObject *)function)->im_self;
+                Py_INCREF(meth);
+                Py_INCREF(self);
+                PEEK(oparg + 1) = self;
+                Py_DECREF(function);
+                function = meth;
+                oparg++;
+                nargs++;
+                assert(postcall_shrink >= 1);
+                postcall_shrink--;
+            }
+            // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
