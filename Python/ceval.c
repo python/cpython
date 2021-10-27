@@ -2595,7 +2595,7 @@ check_eval_breaker:
             DEOPT_IF(Py_TYPE(sub)->tp_hash == NULL, STORE_SUBSCR);
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             PyDictObject *mp = (PyDictObject *)dict;
-            DEOPT_IF(mp->ma_keys->dk_kind == DICT_KEYS_SPLIT, STORE_SUBSCR);
+            DEOPT_IF(mp->ma_keys->dk_kind != DICT_KEYS_GENERAL, STORE_SUBSCR);
             STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
             // This steals mp, sub and value.

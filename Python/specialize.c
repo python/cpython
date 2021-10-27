@@ -1225,7 +1225,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
             goto success;
         }
         else if (Py_TYPE(sub)->tp_hash != NULL
-                 && dk->dk_kind != DICT_KEYS_SPLIT)
+                 && dk->dk_kind == DICT_KEYS_GENERAL)
         {
             *instr = _Py_MAKECODEUNIT(STORE_SUBSCR_DICT_GENERAL,
                                       initial_counter_value());

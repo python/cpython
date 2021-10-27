@@ -1639,7 +1639,7 @@ _PyDict_SetItem_General(PyDictObject *mp, PyObject *key, PyObject *value)
     if (hash == -1) {
         goto Fail;
     }
-    assert(mp->ma_keys->dk_kind != DICT_KEYS_SPLIT);
+    assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
     assert(mp->ma_values == NULL);
     PyObject *unused_old_value;
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &unused_old_value);
