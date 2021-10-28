@@ -2560,6 +2560,13 @@ class CastTests:
         cast(42, 42)
         cast('hello', 42)
 
+    def test_keyword_arguments(self):
+        with self.assertRaises(TypeError):
+            self.module.cast(type=int, val=10)
+
+        with self.assertRaises(TypeError):
+            self.module.cast(int, val=10)
+
 
 class CastPythonTests(CastTests, BaseTestCase):
     module = py_typing

@@ -1717,7 +1717,7 @@ def runtime_checkable(cls):
 try:
     from _typing import cast
 except ImportError:
-    def cast(typ, val):
+    def cast(typ, val, /):
         """Cast a value to a type.
 
         This returns the value unchanged.  To the type checker this

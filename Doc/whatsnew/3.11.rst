@@ -268,6 +268,13 @@ time
   a resolution of 1 millisecond (10\ :sup:`-3` seconds).
   (Contributed by Benjamin Szőke and Victor Stinner in :issue:`21302`.)
 
+typing
+------
+
+* :func:`typing.cast` now has C implementation. It is now around 2 times faster
+  to call it.
+  (Contributed by Yurii Karabas in :issue:`44775`.)
+
 unicodedata
 -----------
 
@@ -449,6 +456,9 @@ Changes in the Python API
 * The :mod:`pdb` module now reads the :file:`.pdbrc` configuration file with
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
+
+* :func:`typing.cast` no longer accepts keyword arguments.
+  (Contributed by Yurii Karabas in :issue:`44775`.)
 
 
 Build Changes

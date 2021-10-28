@@ -32,6 +32,7 @@ _typing.cast -> object
 
     typ: object
     val: object
+    /
 
 Cast a value to a type.
 
@@ -43,7 +44,7 @@ to be as fast as possible).
 
 static PyObject *
 _typing_cast_impl(PyObject *module, PyObject *typ, PyObject *val)
-/*[clinic end generated code: output=11224a3fa037a9a1 input=b8f6ce3bf6198a5c]*/
+/*[clinic end generated code: output=11224a3fa037a9a1 input=bde696783400a5b0]*/
 {
     Py_INCREF(val);
     return val;
