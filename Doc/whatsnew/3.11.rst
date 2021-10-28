@@ -507,6 +507,13 @@ Build Changes
   except empty tuple singleton.
   (Contributed by Christian Heimes in :issue:`45522`)
 
+* ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
+  Extension modules can now be built through ``makesetup``. All except some
+  test modules can be linked statically into main binary or library.
+  (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
+  :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
+
+
 C API Changes
 =============
 
