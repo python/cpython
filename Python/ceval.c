@@ -101,7 +101,7 @@ static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
-                        size_t argcount, PyObject *kwnames, int steal_args);
+                        size_t argcount, PyObject *kwnames);
 static int
 _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame);
 
@@ -4633,7 +4633,7 @@ check_eval_breaker:
                     InterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                         tstate, PyFunction_AS_FRAME_CONSTRUCTOR(function), locals,
                                                                 stack_pointer,
-                                                                nargs, kwnames, 1);
+                                                                nargs, kwnames);
                     STACK_SHRINK(postcall_shrink);
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
@@ -4708,11 +4708,14 @@ check_eval_breaker:
             /* PEP 523 */
             DEOPT_IF(tstate->interp->eval_frame != NULL, CALL_FUNCTION);
             STAT_INC(CALL_FUNCTION, hit);
-            InterpreterFrame *new_frame = _PyThreadState_PushFrame(
-                tstate, PyFunction_AS_FRAME_CONSTRUCTOR(func), NULL);
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+            InterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
             if (new_frame == NULL) {
                 goto error;
             }
+            _PyFrame_InitializeSpecials(new_frame, PyFunction_AS_FRAME_CONSTRUCTOR(func),
+                                        NULL, code->co_nlocalsplus);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -4722,6 +4725,9 @@ check_eval_breaker:
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, cache1->defaults_start+i);
                 Py_INCREF(def);
                 new_frame->localsplus[argcount+i] = def;
+            }
+            for (int i = argcount+deflen; i < code->co_nlocalsplus; i++) {
+                new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(1);
             Py_DECREF(func);
@@ -5595,7 +5601,7 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 static int
 initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     PyObject **localsplus, PyObject *const *args,
-    Py_ssize_t argcount, PyObject *kwnames, int steal_args)
+    Py_ssize_t argcount, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject*)con->fc_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
@@ -5629,9 +5635,6 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     }
     for (j = 0; j < n; j++) {
         PyObject *x = args[j];
-        if (!steal_args) {
-            Py_INCREF(x);
-        }
         assert(localsplus[j] == NULL);
         localsplus[j] = x;
     }
@@ -5639,11 +5642,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
         PyObject *u = NULL;
-        if (steal_args) {
-            u = _PyTuple_FromArraySteal(args + n, argcount - n);
-        } else {
-            u = _PyTuple_FromArray(args + n, argcount - n);
-        }
+        u = _PyTuple_FromArraySteal(args + n, argcount - n);
         if (u == NULL) {
             goto fail_post_positional;
         }
@@ -5652,10 +5651,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     }
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
-        if (steal_args) {
-            for (j = n; j < argcount; j++) {
-                Py_DECREF(args[j]);
-            }
+        for (j = n; j < argcount; j++) {
+            Py_DECREF(args[j]);
         }
     }
 
@@ -5717,19 +5714,15 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             if (PyDict_SetItem(kwdict, keyword, value) == -1) {
                 goto kw_fail;
             }
-            if (steal_args) {
-                Py_DECREF(value);
-            }
+            Py_DECREF(value);
             continue;
 
         kw_fail:
-            if (steal_args) {
-                for (;i < kwcount; i++) {
-                    PyObject *value = args[i+argcount];
-                    Py_DECREF(value);
-                }
+            for (;i < kwcount; i++) {
+                PyObject *value = args[i+argcount];
+                Py_DECREF(value);
             }
-            goto fail_noclean;
+            goto fail_post_args;
 
         kw_found:
             if (localsplus[j] != NULL) {
@@ -5737,9 +5730,6 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                             "%U() got multiple values for argument '%S'",
                           con->fc_qualname, keyword);
                 goto kw_fail;
-            }
-            if (!steal_args) {
-                Py_INCREF(value);
             }
             localsplus[j] = value;
         }
@@ -5749,7 +5739,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(tstate, co, argcount, con->fc_defaults, localsplus,
                             con->fc_qualname);
-        goto fail_noclean;
+        goto fail_post_args;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
@@ -5765,7 +5755,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, localsplus,
                               con->fc_qualname);
-            goto fail_noclean;
+            goto fail_post_args;
         }
         if (n > m)
             i = n - m;
@@ -5798,7 +5788,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    goto fail_noclean;
+                    goto fail_post_args;
                 }
             }
             missing++;
@@ -5806,35 +5796,31 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (missing) {
             missing_arguments(tstate, co, missing, -1, localsplus,
                               con->fc_qualname);
-            goto fail_noclean;
+            goto fail_post_args;
         }
     }
-
     /* Copy closure variables to free variables */
     for (i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
         Py_INCREF(o);
         localsplus[co->co_nlocals + co->co_nplaincellvars + i] = o;
     }
-
     return 0;
 
 fail_pre_positional:
-    if (steal_args) {
-        for (j = 0; j < argcount; j++) {
-            Py_DECREF(args[j]);
-        }
+    for (j = 0; j < argcount; j++) {
+        Py_DECREF(args[j]);
     }
     /* fall through */
 fail_post_positional:
-    if (steal_args) {
-        Py_ssize_t kwcount = kwnames != NULL ? PyTuple_GET_SIZE(kwnames) : 0;
+    if (kwnames) {
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (j = argcount; j < argcount+kwcount; j++) {
             Py_DECREF(args[j]);
         }
     }
     /* fall through */
-fail_noclean:
+fail_post_args:
     return -1;
 }
 
@@ -5850,21 +5836,34 @@ make_coro_frame(PyThreadState *tstate,
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
     InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
     if (frame == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
+        goto fail_no_memory;
     }
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        frame->localsplus[i] = NULL;
+    }
     assert(frame->frame_obj == NULL);
-    if (initialize_locals(tstate, con, frame->localsplus, args, argcount, kwnames, 0)) {
+    if (initialize_locals(tstate, con, frame->localsplus, args, argcount, kwnames)) {
         _PyFrame_Clear(frame, 1);
         return NULL;
     }
     return frame;
+fail_no_memory:
+    /* Consume the references */
+    for (Py_ssize_t i = 0; i < argcount; i++) {
+        Py_DECREF(args[i]);
+    }
+    if (kwnames) {
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+        for (Py_ssize_t i = 0; i < kwcount; i++) {
+            Py_DECREF(args[i+argcount]);
+        }
+    }
+    PyErr_NoMemory();
+    return NULL;
 }
 
+/* Consumes all the references to the args */
 static PyObject *
 make_coro(PyThreadState *tstate, PyFrameConstructor *con,
           PyObject *locals,
@@ -5880,28 +5879,44 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
     if (gen == NULL) {
         return NULL;
     }
-
     return gen;
 }
 
-// If *steal_args* is set, the function will steal the references to all the arguments.
-// In case of error, the function returns null and if *steal_args* is set, the caller
-// will still own all the arguments.
+/* Consumes all the references to the args */
 static InterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
                         PyObject *locals, PyObject* const* args,
-                        size_t argcount, PyObject *kwnames, int steal_args)
+                        size_t argcount, PyObject *kwnames)
 {
-    InterpreterFrame * frame = _PyThreadState_PushFrame(tstate, con, locals);
+    PyCodeObject * code = (PyCodeObject *)con->fc_code;
+    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    InterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
     if (frame == NULL) {
-        return NULL;
+        goto fail;
     }
-    PyObject **localsarray = _PyFrame_GetLocalsArray(frame);
-    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames, steal_args)) {
+    _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
+    PyObject **localsarray = &frame->localsplus[0];
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        localsarray[i] = NULL;
+    }
+    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
         _PyFrame_Clear(frame, 0);
         return NULL;
     }
     return frame;
+fail:
+    /* Consume the references */
+    for (size_t i = 0; i < argcount; i++) {
+        Py_DECREF(args[i]);
+    }
+    if (kwnames) {
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+        for (Py_ssize_t i = 0; i < kwcount; i++) {
+            Py_DECREF(args[i+argcount]);
+        }
+    }
+    PyErr_NoMemory();
+    return NULL;
 }
 
 static int
@@ -5925,13 +5940,25 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
                PyObject *kwnames)
 {
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    /* _PyEvalFramePushAndInit and make_coro consume
+     * all the references to their arguments
+     */
+    for (size_t i = 0; i < argcount; i++) {
+        Py_INCREF(args[i]);
+    }
+    if (kwnames) {
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+        for (Py_ssize_t i = 0; i < kwcount; i++) {
+            Py_INCREF(args[i+argcount]);
+        }
+    }
     int is_coro = code->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     if (is_coro) {
         return make_coro(tstate, con, locals, args, argcount, kwnames);
     }
     InterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, con, locals, args, argcount, kwnames, 0);
+        tstate, con, locals, args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }
