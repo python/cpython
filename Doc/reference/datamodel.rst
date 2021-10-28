@@ -1380,6 +1380,8 @@ Basic customization
 
    This is typically used for debugging, so it is important that the representation
    is information-rich and unambiguous.
+   Furthermore, this function should avoid to raise exceptions because that can
+   lead to problems in some debugging contexts.
 
    .. index::
       single: string; __str__() (object method)

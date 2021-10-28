@@ -250,7 +250,7 @@ class FrameSummary:
     - :attr:`line` The text from the linecache module for the
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
-      mapping the name to the repr() of the variable.
+      mapping the name to a string representation of the variable.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
@@ -258,7 +258,7 @@ class FrameSummary:
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            end_lineno=None, colno=None, end_colno=None, format_locals=None):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -267,6 +267,8 @@ class FrameSummary:
             object representations.
         :param line: If provided, use this instead of looking up the line in
             the linecache.
+        :param format_locals: If provided, use this instead of repr() to generate the
+            string representations.
         """
         self.filename = filename
         self.lineno = lineno
@@ -274,7 +276,12 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+
+        if locals:
+            self.locals = format_locals(filename, lineno, name, locals) if format_locals is not None else {k: repr(v) for k, v in locals.items()}
+        else:
+            self.locals = None
+
         self.end_lineno = end_lineno
         self.colno = colno
         self.end_colno = end_colno
@@ -369,7 +376,7 @@ class StackSummary(list):
 
     @classmethod
     def extract(klass, frame_gen, *, limit=None, lookup_lines=True,
-            capture_locals=False):
+            capture_locals=False, format_locals=None):
         """Create a StackSummary from a traceback or stack object.
 
         :param frame_gen: A generator that yields (frame, lineno) tuples
@@ -380,6 +387,8 @@ class StackSummary(list):
             otherwise lookup is deferred until the frame is rendered.
         :param capture_locals: If True, the local variables from each frame will
             be captured as object representations into the FrameSummary.
+        :param format_locals: If provided, the local variables from each frame will
+            be formatted using this callable.
         """
         def extended_frame_gen():
             for f, lineno in frame_gen:
@@ -387,11 +396,11 @@ class StackSummary(list):
 
         return klass._extract_from_extended_frame_gen(
             extended_frame_gen(), limit=limit, lookup_lines=lookup_lines,
-            capture_locals=capture_locals)
+            capture_locals=capture_locals, format_locals=format_locals)
 
     @classmethod
     def _extract_from_extended_frame_gen(klass, frame_gen, *, limit=None,
-            lookup_lines=True, capture_locals=False):
+            lookup_lines=True, capture_locals=False, format_locals=None):
         # Same as extract but operates on a frame generator that yields
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
         # Only lineno is required, the remaining fields can be None if the
@@ -422,7 +431,7 @@ class StackSummary(list):
                 f_locals = None
             result.append(FrameSummary(
                 filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+                end_lineno=end_lineno, colno=colno, end_colno=end_colno, format_locals=format_locals))
         for filename in fnames:
             linecache.checkcache(filename)
         # If immediate lookup was desired, trigger lookups now.
@@ -634,7 +643,7 @@ class TracebackException:
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
-            lookup_lines=True, capture_locals=False, compact=False,
+            lookup_lines=True, capture_locals=False, format_locals=None, compact=False,
             _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
@@ -645,11 +654,11 @@ class TracebackException:
             _seen = set()
         _seen.add(id(exc_value))
 
-        # TODO: locals.
+        # TODO: locals. # <- This could be removed, right?
         self.stack = StackSummary._extract_from_extended_frame_gen(
             _walk_tb_with_full_positions(exc_traceback),
             limit=limit, lookup_lines=lookup_lines,
-            capture_locals=capture_locals)
+            capture_locals=capture_locals, format_locals=format_locals)
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
@@ -685,6 +694,7 @@ class TracebackException:
                         limit=limit,
                         lookup_lines=lookup_lines,
                         capture_locals=capture_locals,
+                        format_locals=format_locals,
                         _seen=_seen)
                 else:
                     cause = None
@@ -704,6 +714,7 @@ class TracebackException:
                         limit=limit,
                         lookup_lines=lookup_lines,
                         capture_locals=capture_locals,
+                        format_locals=format_locals,
                         _seen=_seen)
                 else:
                     context = None

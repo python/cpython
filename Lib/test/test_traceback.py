@@ -1546,7 +1546,7 @@ class TestStack(unittest.TestCase):
         s = traceback.StackSummary.extract(iter([(f, 6)]))
         self.assertEqual(s[0].locals, None)
 
-    def test_format_locals(self):
+    def test_format_locals_default(self):
         def some_inner(k, v):
             a = 1
             b = 2
@@ -1560,6 +1560,26 @@ class TestStack(unittest.TestCase):
              '    b = 2\n'
              '    k = 3\n'
              '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
+            ], s.format())
+
+    def test_format_locals_callback(self):
+        def _format_locals(filename, lineno, name, locals):
+            return {k: "<"+repr(v)+">" for k,v in locals.items() if not k.startswith("_")}
+
+        def some_inner(k, v):
+            a = 1
+            b = 2
+            return traceback.StackSummary.extract(
+                traceback.walk_stack(None), capture_locals=True, format_locals=_format_locals, limit=1)
+
+        s = some_inner(3, 4)
+        self.assertEqual(
+            ['  File "%s", line %d, in some_inner\n'
+             '    return traceback.StackSummary.extract(\n'
+             '    a = <1>\n'
+             '    b = <2>\n'
+             '    k = <3>\n'
+             '    v = <4>\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
 
     def test_custom_format_frame(self):
@@ -1577,32 +1597,32 @@ class TestStack(unittest.TestCase):
             [f'{__file__}:{some_inner.__code__.co_firstlineno + 1}'])
 
     def test_dropping_frames(self):
-         def f():
-             1/0
+        def f():
+            1/0
 
-         def g():
-             try:
-                 f()
-             except:
-                 return sys.exc_info()
+        def g():
+            try:
+                f()
+            except:
+                return sys.exc_info()
 
-         exc_info = g()
+        exc_info = g()
 
-         class Skip_G(traceback.StackSummary):
-             def format_frame_summary(self, frame_summary):
-                 if frame_summary.name == 'g':
-                     return None
-                 return super().format_frame_summary(frame_summary)
+        class Skip_G(traceback.StackSummary):
+            def format_frame_summary(self, frame_summary):
+                if frame_summary.name == 'g':
+                    return None
+                return super().format_frame_summary(frame_summary)
 
-         stack = Skip_G.extract(
-             traceback.walk_tb(exc_info[2])).format()
+        stack = Skip_G.extract(
+            traceback.walk_tb(exc_info[2])).format()
 
-         self.assertEqual(len(stack), 1)
-         lno = f.__code__.co_firstlineno + 1
-         self.assertEqual(
-             stack[0],
-             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
-         )
+        self.assertEqual(len(stack), 1)
+        lno = f.__code__.co_firstlineno + 1
+        self.assertEqual(
+            stack[0],
+            f'  File "{__file__}", line {lno}, in f\n    1/0\n'
+        )
 
 
 class TestTracebackException(unittest.TestCase):
@@ -1635,6 +1655,42 @@ class TestTracebackException(unittest.TestCase):
                 capture_locals=True)
             self.exc = traceback.TracebackException.from_exception(
                 e, limit=1, lookup_lines=False, capture_locals=True)
+        expected_stack = self.expected_stack
+        exc = self.exc
+        self.assertEqual(None, exc.__cause__)
+        self.assertEqual(None, exc.__context__)
+        self.assertEqual(False, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_from_exception_format_locals(self):
+        # Check that format_locals works as expected.
+
+        def try_repr(o):
+            try:
+                return repr(o)
+            except:
+                return object.__repr__(o)
+
+        def format_locals(filename, lineno, name, locals):
+            return {k: try_repr(v) for k,v in locals.items()}
+
+        class FailingInit:
+            def __init__(self) -> None:
+                self.x = 1/0
+            def __repr__(self):
+                return self.x
+
+        try:
+            FailingInit()
+        except Exception as e:
+            exc_info = sys.exc_info()
+            self.expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]), limit=2, lookup_lines=False,
+                capture_locals=True, format_locals=format_locals)
+            self.exc = traceback.TracebackException.from_exception(
+                e, limit=2, lookup_lines=False, capture_locals=True, format_locals=format_locals)
         expected_stack = self.expected_stack
         exc = self.exc
         self.assertEqual(None, exc.__cause__)

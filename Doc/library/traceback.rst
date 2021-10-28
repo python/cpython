@@ -212,10 +212,10 @@ The module also defines the following classes:
 :class:`TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, format_locals=None, compact=False)
 
-   Capture an exception for later rendering. *limit*, *lookup_lines* and
-   *capture_locals* are as for the :class:`StackSummary` class.
+   Capture an exception for later rendering. *limit*, *lookup_lines*,
+   *capture_locals* and *format_locals* are as for the :class:`StackSummary` class.
 
    If *compact* is true, only data that is required by :class:`TracebackException`'s
    ``format`` method is saved in the class attributes. In particular, the
@@ -264,10 +264,10 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False, format_locals=None)
 
-      Capture an exception for later rendering. *limit*, *lookup_lines* and
-      *capture_locals* are as for the :class:`StackSummary` class.
+      Capture an exception for later rendering. *limit*, *lookup_lines*,
+      *capture_locals* and *format_locals* are as for the :class:`StackSummary` class.
 
       Note that when locals are captured, they are also shown in the traceback.
 
@@ -319,7 +319,7 @@ capture data for later printing in a lightweight fashion.
 
 .. class:: StackSummary
 
-   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=True, capture_locals=False, format_locals=None)
 
       Construct a :class:`StackSummary` object from a frame generator (such as
       is returned by :func:`~traceback.walk_stack` or
@@ -331,7 +331,13 @@ capture data for later printing in a lightweight fashion.
       creating the :class:`StackSummary` cheaper (which may be valuable if it
       may not actually get formatted). If *capture_locals* is ``True`` the
       local variables in each :class:`FrameSummary` are captured as object
-      representations.
+      representations. If *format_locals* is provided, it is called with four arguments
+      (filename, lineno, name, locals) to generate string representations
+      of the local variables in each frame.
+
+      ..
+         This should be reworded. I'm not sure how callable parameters are usually documented in Python.
+
 
    .. classmethod:: from_list(a_list)
 
