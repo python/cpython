@@ -4742,8 +4742,12 @@ check_eval_breaker:
             STAT_INC(CALL_FUNCTION, hit);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+                goto error;
+            }
             PyObject *arg = POP();
             PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
+            _Py_LeaveRecursiveCall(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
