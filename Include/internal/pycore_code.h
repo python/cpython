@@ -271,8 +271,8 @@ int _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *inst
 int _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *instr);
 int _Py_Specialize_CallFunction(PyObject *callable, _Py_CODEUNIT *instr, int nargs, SpecializedCacheEntry *cache, PyObject *builtins);
 
-#define PRINT_SPECIALIZATION_STATS 1
-#define PRINT_SPECIALIZATION_STATS_DETAILED 1
+#define PRINT_SPECIALIZATION_STATS 0
+#define PRINT_SPECIALIZATION_STATS_DETAILED 0
 #define PRINT_SPECIALIZATION_STATS_TO_FILE 0
 
 #ifdef Py_DEBUG
