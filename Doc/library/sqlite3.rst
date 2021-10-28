@@ -1049,17 +1049,12 @@ If a timestamp stored in SQLite has a fractional part longer than 6
 numbers, its value will be truncated to microsecond precision by the
 timestamp converter.
 
-.. warning::
+.. note::
 
-   The "timestamp" converter ignores UTC offsets in the database and always
-   returns a naive :class:`datetime.datetime` object, so if you read a timestamp
-   from the database with converters enabled and then write it back, any UTC
-   offset will be lost.
-
-   If you need to preserve UTC offsets in timestamps, then either leave
-   converters disabled, or register your own offset-aware converter with
-   :func:`register_converter` to override the default one.
-
+   The default "timestamp" converter ignores UTC offsets in the database and
+   always returns a naive :class:`datetime.datetime` object. To preserve UTC
+   offsets in timestamps, either leave converters disabled, or register an
+   offset-aware converter with :func:`register_converter`.
 
 .. _sqlite3-controlling-transactions:
 
