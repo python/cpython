@@ -636,12 +636,12 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->interp = interp;
 
-    tstate->frame = NULL;
     tstate->recursion_depth = 0;
     tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
     tstate->root_cframe.use_tracing = 0;
+    tstate->root_cframe.current_frame = NULL;
     tstate->cframe = &tstate->root_cframe;
     tstate->gilstate_counter = 0;
     tstate->async_exc = NULL;
@@ -861,7 +861,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->frame != NULL) {
+    if (verbose && tstate->cframe->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
            _PyRuntimeState_SetFinalizing() in Py_FinalizeEx(), threads must
            exit when trying to take the GIL. If a thread exit in the middle of
@@ -1134,10 +1134,10 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    if (tstate->frame == NULL) {
+    if (tstate->cframe->current_frame == NULL) {
         return NULL;
     }
-    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->frame);
+    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->cframe->current_frame);
     if (frame == NULL) {
         PyErr_Clear();
     }
@@ -1277,7 +1277,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            InterpreterFrame *frame = t->frame;
+            InterpreterFrame *frame = t->cframe->current_frame;
             if (frame == NULL) {
                 continue;
             }
