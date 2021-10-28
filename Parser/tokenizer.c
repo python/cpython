@@ -1048,7 +1048,7 @@ tok_nextc(struct tok_state *tok)
 #if defined(Py_DEBUG)
         if (Py_DebugFlag) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
-            print_escape(stdout, tok->cur, tok->inp - tok->cur);
+            print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);
         }
 #endif
