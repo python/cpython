@@ -2065,12 +2065,8 @@ push_chunk(PyThreadState *tstate, int size)
 }
 
 InterpreterFrame *
-_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+_PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 {
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
-    int nlocalsplus = code->co_nlocalsplus;
-    size_t size = nlocalsplus + code->co_stacksize +
-        FRAME_SPECIALS_SIZE;
     assert(size < INT_MAX/sizeof(PyObject *));
     PyObject **base = tstate->datastack_top;
     PyObject **top = base + size;
@@ -2083,7 +2079,21 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     else {
         tstate->datastack_top = top;
     }
-    InterpreterFrame *frame  = (InterpreterFrame *)base;
+    return (InterpreterFrame *)base;
+}
+
+
+InterpreterFrame *
+_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+{
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int nlocalsplus = code->co_nlocalsplus;
+    size_t size = nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
+    InterpreterFrame *frame  = _PyThreadState_BumpFramePointer(tstate, size);
+    if (frame == NULL) {
+        return NULL;
+    }
     _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
