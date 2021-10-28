@@ -353,7 +353,7 @@ add_integer_constants(PyObject *module) {
 #define ADD_INT(ival)                                           \
     do {                                                        \
         if (PyModule_AddIntConstant(module, #ival, ival) < 0) { \
-            goto error;                                         \
+            return -1;                                          \
         }                                                       \
     } while (0);                                                \
 
@@ -398,9 +398,6 @@ add_integer_constants(PyObject *module) {
 #endif
 #undef ADD_INT
     return 0;
-
-error:
-    return -1;
 }
 
 struct PyModuleDef _sqlite3module = {
