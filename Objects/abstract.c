@@ -1716,14 +1716,14 @@ PyNumber_ToBase(PyObject *n, int base)
 }
 
 typedef struct {
-    const char *name;
-    size_t slot;
-    const char *iname;
-    size_t islot;
+    const int slot;
+    const char name[3];
+    const int islot;
+    const char iname[4];
 } nb_info;
 
 #define NB_INFO(name, slot) \
-    {name,  NB_SLOT(nb_##slot), name "=", NB_SLOT(nb_inplace_##slot)}
+    {NB_SLOT(nb_##slot), name, NB_SLOT(nb_inplace_##slot), name "="}
 
 static nb_info nb_infos[] = {
     [NB_AND] = NB_INFO("&", and),
