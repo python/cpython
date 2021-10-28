@@ -16,15 +16,13 @@ import sys
 from pathlib import Path
 
 
-def pathtype(path):
-    class wrapped_fd:
-        'Make stdin and stdout have open() like a `pathlib.Path`'
-        def __init__(self, file_descriptor):
-            self.fd = file_descriptor
+class wrapped_fd:
+    'Make stdin and stdout have open() like a `pathlib.Path`'
+    def __init__(self, file_descriptor):
+        self.fd = file_descriptor
 
-        def open(self, *args, **kwargs):
-            return self.fd
-    return wrapped_fd(path) if path in (sys.stdin, sys.stderr) else Path(path)
+    def open(self, *args, **kwargs):
+        return self.fd
 
 
 def main():
@@ -33,13 +31,13 @@ def main():
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument('infile', nargs='?',
-                        type=pathtype,
+                        type=Path,
                         help='a JSON file to be validated or pretty-printed',
-                        default=sys.stdin)
+                        default=wrapped_fd(sys.stdin))
     parser.add_argument('outfile', nargs='?',
-                        type=pathtype,
+                        type=Path,
                         help='write the output of infile to outfile',
-                        default=sys.stdout)
+                        default=wrapped_fd(sys.stdout))
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
@@ -76,14 +74,10 @@ def main():
                 objs = (json.loads(line) for line in infile)
             else:
                 objs = (json.load(infile),)
-        except ValueError as e:
-            raise SystemExit(e)
-
-    with options.outfile.open('w', encoding='utf-8') as outfile:
-        try:
-            for obj in objs:
-                json.dump(obj, outfile, **dump_args)
-                outfile.write('\n')
+            with options.outfile.open('w', encoding='utf-8') as outfile:
+                    for obj in objs:
+                        json.dump(obj, outfile, **dump_args)
+                        outfile.write('\n')
         except ValueError as e:
             raise SystemExit(e)
 
