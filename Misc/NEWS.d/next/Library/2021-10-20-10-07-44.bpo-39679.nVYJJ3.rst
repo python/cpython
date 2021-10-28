@@ -1,0 +1,3 @@
+Fix bug in :class:`functools.singledispatchmethod` that caused it to fail
+when attempting to register a :func:`classmethod` or :func:`staticmethod`
+using type annotations. Patch contributed by Alex Waygood.
