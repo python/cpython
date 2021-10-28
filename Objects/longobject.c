@@ -5868,10 +5868,12 @@ _PyLong_Fini(PyInterpreterState *interp)
     }
 }
 
-PyObject* _PyLong_GetZero(void) {
+PyObject *_PyLong_GetZero(void)
+{
     return PY_ZERO();
 }
 
-PyObject* _PyLong_GetOne(void) {
+PyObject *_PyLong_GetOne(void)
+{
     return PY_ONE();
 }

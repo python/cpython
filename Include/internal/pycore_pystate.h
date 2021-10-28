@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_tls.h"   /* PyRuntimeState */
+#include "pycore_tls.h"   /* Thread local storage */
 #include "pycore_runtime.h"   /* PyRuntimeState */
 
 
