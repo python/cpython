@@ -192,6 +192,9 @@ void _PyObject_ClearInstanceAttributes(PyObject *self);
 void _PyObject_FreeInstanceAttributes(PyObject *self);
 int _PyObject_IsInstanceDictEmpty(PyObject *);
 
+PyObject *_PyType_FindNameInMRO(PyTypeObject *type, PyObject *name, int *error,
+    Py_ssize_t *mro_index);
+
 #ifdef __cplusplus
 }
 #endif

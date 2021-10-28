@@ -9,10 +9,6 @@
 
 #include <stdlib.h> // rand()
 
-// Forward declarations
-static int specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr,
-    PyObject *name, _PyAttrCache *cache1, _PyObjectCache *cache2, int oparg,
-    int oparg_class);
 
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
@@ -693,6 +689,77 @@ specialize_dict_access(
     }
 }
 
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int load_method_fail_kind(DesciptorClassification kind);
+#endif
+
+static int
+specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+    _PyAdaptiveEntry *cache0, _PyAttrCache *cache1, _PyObjectCache *cache2)
+{
+    PyTypeObject *tp = (PyTypeObject *)owner;
+    Py_ssize_t mro_index;
+    int error;
+    if (tp->tp_dict == NULL) {
+        if (PyType_Ready(tp) < 0) {
+            return 1;
+        }
+    }
+    PyObject *descr = NULL;
+    DesciptorClassification kind = analyze_descriptor(tp, name, &descr, 0);
+    switch (kind) {
+        case METHOD:
+        case NON_DESCRIPTOR:
+            break;
+        default:
+            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
+            return 1;
+    }
+    if (!PyType_HasFeature(tp, Py_TPFLAGS_VALID_VERSION_TAG)) {
+        return 1;
+    }
+    PyObject *res = _PyType_FindNameInMRO(tp, name, &error, &mro_index);
+    if (res == NULL || error) {
+        if (error == -1) {
+            PyErr_Clear();
+        }
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_EXPECTED_ERROR);
+        return 1;
+    }
+    if (mro_index != (uint16_t)mro_index) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+        return 1;
+    }
+    assert(tp->tp_mro != NULL);
+    assert(PyTuple_CheckExact(tp->tp_mro));
+    assert(mro_index >= 0);
+    assert(mro_index < PyTuple_GET_SIZE(tp->tp_mro));
+
+    PyObject *real_owner = PyTuple_GET_ITEM(tp->tp_mro, mro_index);
+    assert(PyType_Check(real_owner));
+    PyDictObject *real_owner_dict = (PyDictObject *)((PyTypeObject *)real_owner)->tp_dict;
+    PyObject *value = NULL;
+    Py_ssize_t hint = _PyDict_GetItemHint(real_owner_dict, name, -1, &value);
+    assert(hint != DKIX_ERROR);
+    assert(hint != DKIX_EMPTY);
+    if (hint != (uint32_t)hint) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+        return -1;
+    }
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
+        real_owner_dict->ma_keys);
+    if (keys_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    cache0->index = (uint16_t)mro_index;
+    cache1->dk_version_or_hint = (uint32_t)hint;
+    cache1->tp_version = keys_version;
+    cache2->obj = tp->tp_mro;
+    *instr = _Py_MAKECODEUNIT(LOAD_ATTR_CLASS, _Py_OPARG(*instr));
+    return 0;
+}
+
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
@@ -716,8 +783,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         }
     }
     if (PyType_Check(owner)) {
-        err = specialize_class_load_method(owner, instr, name, cache1, cache2,
-            LOAD_ATTR, LOAD_ATTR_CLASS);
+        err = specialize_class_load_attr(owner, instr, name, cache0, cache1, cache2);
         if (err) {
             goto fail;
         }
@@ -923,8 +989,7 @@ load_method_fail_kind(DesciptorClassification kind)
 
 static int
 specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
-                           _PyAttrCache *cache1, _PyObjectCache *cache2, int oparg,
-                           int oparg_class)
+                           _PyAttrCache *cache1, _PyObjectCache *cache2)
 {
 
     PyObject *descr = NULL;
@@ -935,10 +1000,10 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *nam
         case NON_DESCRIPTOR:
             cache1->tp_version = ((PyTypeObject *)owner)->tp_version_tag;
             cache2->obj = descr;
-            *instr = _Py_MAKECODEUNIT(oparg_class, _Py_OPARG(*instr));
+            *instr = _Py_MAKECODEUNIT(LOAD_METHOD_CLASS, _Py_OPARG(*instr));
             return 0;
         default:
-            SPECIALIZATION_FAIL(oparg, load_method_fail_kind(kind));
+            SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
             return -1;
     }
 }
@@ -968,8 +1033,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         }
     }
     if (PyType_Check(owner)) {
-        int err = specialize_class_load_method(owner, instr, name, cache1, cache2,
-            LOAD_METHOD, LOAD_METHOD_CLASS);
+        int err = specialize_class_load_method(owner, instr, name, cache1, cache2);
         if (err) {
             goto fail;
         }

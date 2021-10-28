@@ -3776,8 +3776,9 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 /* Internal API to look for a name through the MRO, bypassing the method cache.
    This returns a borrowed reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
-static PyObject *
-find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
+PyObject *
+_PyType_FindNameInMRO(PyTypeObject *type, PyObject *name, int *error,
+    Py_ssize_t *mro_index)
 {
     Py_ssize_t i, n;
     PyObject *mro, *res, *base, *dict;
@@ -3830,6 +3831,9 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
         }
     }
     *error = 0;
+    if (mro_index != NULL) {
+        *mro_index = i;
+    }
 done:
     Py_DECREF(mro);
     return res;
@@ -3858,7 +3862,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
 
-    res = find_name_in_mro(type, name, &error);
+    res = _PyType_FindNameInMRO(type, name, &error, NULL);
     /* Only put NULL results into cache if there was no error. */
     if (error) {
         /* It's not ideal to clear the error condition,
@@ -8330,7 +8334,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
     assert(!PyErr_Occurred());
     do {
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
-        descr = find_name_in_mro(type, p->name_strobj, &error);
+        descr = _PyType_FindNameInMRO(type, p->name_strobj, &error, NULL);
         if (descr == NULL) {
             if (error == -1) {
                 /* It is unlikely but not impossible that there has been an exception
