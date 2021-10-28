@@ -2004,6 +2004,10 @@ check_eval_breaker:
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *res;
+            // NOTE: This optimization keeps us from rolling modulation into
+            // BINARY_OP/INPLACE_OP. Once we start specializing those, we can
+            // get rid of BINARY_MODULO/INPLACE_MODULO and implement this trick
+            // as a specialized variant.
             if (PyUnicode_CheckExact(dividend) && (
                   !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
               // fast path; string formatting, but not if the RHS is a str subclass

@@ -3708,7 +3708,7 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
             ADDOP(c, inplace ? INPLACE_MODULO : BINARY_MODULO);
             return 1;
         case Pow:
-            // Exponentiation is techncally ternary:
+            // Exponentiation is technically ternary:
             ADDOP(c, inplace ? INPLACE_POWER : BINARY_POWER);
             return 1;
         case LShift:
