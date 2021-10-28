@@ -1144,8 +1144,8 @@ typedef enum {
     FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
     FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
                            (module is present but marked as unimportable, stops search). */
-    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus.
-                           (eg. does not contain executable code) */
+    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus
+                           (eg. does not contain executable code). */
 } frozen_status;
 
 static inline void
