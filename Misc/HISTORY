@@ -13756,7 +13756,7 @@ Library
   processing instruction.  Patch by Neil Muller.
 
 - Issue #6233: ElementTree failed converting unicode characters to XML entities
-  when they could't be represented in the requested output encoding.  Patch by
+  when they couldn't be represented in the requested output encoding.  Patch by
   Jerry Chen.
 
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to specify the
@@ -20085,7 +20085,7 @@ Windows
 
 - Boosted the stack reservation for python.exe and pythonw.exe from
   the default 1MB to 2MB.  Stack frames under VC 7.1 for 2.4 are enough
-  bigger than under VC 6.0 for 2.3.4 that deeply recursive progams
+  bigger than under VC 6.0 for 2.3.4 that deeply recursive programs
   within the default sys.getrecursionlimit() default value of 1000 were
   able to suffer undetected C stack overflows.  The standard test program
   test_compiler was one such program.  If a Python process on Windows
@@ -27197,7 +27197,7 @@ Wed Apr  7 20:23:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 
 	"""
 		Mostly I just re-added the SMTPRecipientsRefused exception
-	(the exeption object now has the appropriate info in it ) [Per had
+	(the exception object now has the appropriate info in it ) [Per had
 	removed this in his patch --GvR] and tweaked the behavior of the
 	sendmail method whence it throws the newly added SMTPHeloException (it
 	was closing the connection, which it shouldn't.  whatever catches the
@@ -34785,7 +34785,7 @@ the "highlights" section above.
 
 4. Changes to the demonstration programs
 
-- Added new useful scipts: byteyears, eptags, fact, from, lfact,
+- Added new useful scripts: byteyears, eptags, fact, from, lfact,
   objgraph, pdeps, pi, primes, ptags, which
 - Added a bunch of socket demos
 - Doubled the speed of ptags

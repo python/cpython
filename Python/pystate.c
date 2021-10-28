@@ -636,12 +636,12 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->interp = interp;
 
-    tstate->frame = NULL;
     tstate->recursion_depth = 0;
     tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
     tstate->root_cframe.use_tracing = 0;
+    tstate->root_cframe.current_frame = NULL;
     tstate->cframe = &tstate->root_cframe;
     tstate->gilstate_counter = 0;
     tstate->async_exc = NULL;
@@ -861,7 +861,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->frame != NULL) {
+    if (verbose && tstate->cframe->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
            _PyRuntimeState_SetFinalizing() in Py_FinalizeEx(), threads must
            exit when trying to take the GIL. If a thread exit in the middle of
@@ -1134,10 +1134,10 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    if (tstate->frame == NULL) {
+    if (tstate->cframe->current_frame == NULL) {
         return NULL;
     }
-    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->frame);
+    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->cframe->current_frame);
     if (frame == NULL) {
         PyErr_Clear();
     }
@@ -1277,7 +1277,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            InterpreterFrame *frame = t->frame;
+            InterpreterFrame *frame = t->cframe->current_frame;
             if (frame == NULL) {
                 continue;
             }
@@ -2065,12 +2065,8 @@ push_chunk(PyThreadState *tstate, int size)
 }
 
 InterpreterFrame *
-_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+_PyThreadState_BumpFramePointerSlow(PyThreadState *tstate, size_t size)
 {
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
-    int nlocalsplus = code->co_nlocalsplus;
-    size_t size = nlocalsplus + code->co_stacksize +
-        FRAME_SPECIALS_SIZE;
     assert(size < INT_MAX/sizeof(PyObject *));
     PyObject **base = tstate->datastack_top;
     PyObject **top = base + size;
@@ -2083,7 +2079,21 @@ _PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObjec
     else {
         tstate->datastack_top = top;
     }
-    InterpreterFrame *frame  = (InterpreterFrame *)base;
+    return (InterpreterFrame *)base;
+}
+
+
+InterpreterFrame *
+_PyThreadState_PushFrame(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
+{
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int nlocalsplus = code->co_nlocalsplus;
+    size_t size = nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
+    InterpreterFrame *frame  = _PyThreadState_BumpFramePointer(tstate, size);
+    if (frame == NULL) {
+        return NULL;
+    }
     _PyFrame_InitializeSpecials(frame, con, locals, nlocalsplus);
     for (int i=0; i < nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
