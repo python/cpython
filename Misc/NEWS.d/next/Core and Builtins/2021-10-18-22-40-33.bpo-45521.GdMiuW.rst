@@ -1,0 +1,3 @@
+Fix a bug in the obmalloc radix tree code.  On 64-bit machines, the bug
+causes the tree to hold 46-bits of virtual addresses, rather than the
+intended 48-bits.

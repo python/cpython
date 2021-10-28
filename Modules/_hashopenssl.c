@@ -18,6 +18,10 @@
 #endif
 #define OPENSSL_NO_DEPRECATED 1
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
