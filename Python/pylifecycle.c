@@ -659,9 +659,7 @@ pycore_init_singletons(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    if (_PyLong_Init(interp) < 0) {
-        return _PyStatus_ERR("can't init longs");
-    }
+    _PyLong_Init(interp);
 
     if (_Py_IsMainInterpreter(interp)) {
         _PyFloat_Init();
