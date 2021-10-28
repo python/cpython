@@ -4692,8 +4692,12 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-AC_CHECK_FUNCS([acosh asinh atanh erf erfc expm1 finite gamma])
-AC_CHECK_FUNCS([lgamma log1p log2 tgamma])
+AC_CHECK_FUNCS(
+  [acosh asinh atanh erf erfc expm1 log1p log2],
+  [],
+  [AC_MSG_ERROR([Python requires C99 compatible libm])]
+)
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -5632,7 +5636,23 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="\
+  Modules \
+  Modules/_blake2 \
+  Modules/_ctypes \
+  Modules/_decimal \
+  Modules/_decimal/libmpdec \
+  Modules/_io \
+  Modules/_multiprocessing \
+  Modules/_sha3 \
+  Modules/_sqlite \
+  Modules/_xxtestfuzz \
+  Modules/cjkcodecs \
+  Modules/expat \
+  Objects \
+  Parser \
+  Programs \
+  Python"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

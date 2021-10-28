@@ -59,7 +59,7 @@ error:
     return 0;
 }
 
-#define clinic_state() (pysqlite_get_state(NULL))
+#define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/connection.c.h"
 #undef clinic_state
 
@@ -416,7 +416,8 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
     }
 
     if (!self->initialized) {
-        pysqlite_state *state = pysqlite_get_state(NULL);
+        PyTypeObject *tp = Py_TYPE(self);
+        pysqlite_state *state = pysqlite_get_state_by_type(tp);
         PyErr_SetString(state->ProgrammingError,
                         "Base Connection.__init__ not called.");
         return NULL;

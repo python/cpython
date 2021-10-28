@@ -1561,8 +1561,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     tstate->cframe = &cframe;
 
     assert(frame->depth == 0);
-    /* push frame */
-    tstate->frame = frame;
+    /* Push frame */
+    frame->previous = prev_cframe->current_frame;
+    cframe.current_frame = frame;
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
@@ -1570,7 +1571,8 @@ start_frame:
         goto exit_eval_frame;
     }
 
-    assert(frame == tstate->frame);
+    assert(tstate->cframe == &cframe);
+    assert(frame == cframe.current_frame);
 
     if (cframe.use_tracing) {
         if (trace_function_entry(tstate, frame)) {
@@ -4177,25 +4179,30 @@ check_eval_breaker:
         }
 
         TARGET(MATCH_CLASS) {
-            // Pop TOS. On success, set TOS to True and TOS1 to a tuple of
-            // attributes. On failure, set TOS to False.
+            // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
+            // None on failure.
             PyObject *names = POP();
-            PyObject *type = TOP();
-            PyObject *subject = SECOND();
+            PyObject *type = POP();
+            PyObject *subject = TOP();
             assert(PyTuple_CheckExact(names));
             PyObject *attrs = match_class(tstate, subject, type, oparg, names);
             Py_DECREF(names);
+            Py_DECREF(type);
             if (attrs) {
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
-                Py_DECREF(subject);
-                SET_SECOND(attrs);
+                SET_TOP(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
+                // Error!
                 goto error;
             }
-            Py_DECREF(type);
-            SET_TOP(PyBool_FromLong(!!attrs));
+            else {
+                // Failure!
+                Py_INCREF(Py_None);
+                SET_TOP(Py_None);
+            }
+            Py_DECREF(subject);
             DISPATCH();
         }
 
@@ -4205,6 +4212,7 @@ check_eval_breaker:
             PyObject *res = match ? Py_True : Py_False;
             Py_INCREF(res);
             PUSH(res);
+            PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
@@ -4214,12 +4222,12 @@ check_eval_breaker:
             PyObject *res = match ? Py_True : Py_False;
             Py_INCREF(res);
             PUSH(res);
+            PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
 
         TARGET(MATCH_KEYS) {
-            // On successful match for all keys, PUSH(values) and PUSH(True).
-            // Otherwise, PUSH(None) and PUSH(False).
+            // On successful match, PUSH(values). Otherwise, PUSH(None).
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
             PyObject *values_or_none = match_keys(tstate, subject, keys);
@@ -4227,40 +4235,6 @@ check_eval_breaker:
                 goto error;
             }
             PUSH(values_or_none);
-            if (Py_IsNone(values_or_none)) {
-                Py_INCREF(Py_False);
-                PUSH(Py_False);
-                DISPATCH();
-            }
-            assert(PyTuple_CheckExact(values_or_none));
-            Py_INCREF(Py_True);
-            PUSH(Py_True);
-            DISPATCH();
-        }
-
-        TARGET(COPY_DICT_WITHOUT_KEYS) {
-            // rest = dict(TOS1)
-            // for key in TOS:
-            //     del rest[key]
-            // SET_TOP(rest)
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *rest = PyDict_New();
-            if (rest == NULL || PyDict_Update(rest, subject)) {
-                Py_XDECREF(rest);
-                goto error;
-            }
-            // This may seem a bit inefficient, but keys is rarely big enough to
-            // actually impact runtime.
-            assert(PyTuple_CheckExact(keys));
-            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(keys); i++) {
-                if (PyDict_DelItem(rest, PyTuple_GET_ITEM(keys, i))) {
-                    Py_DECREF(rest);
-                    goto error;
-                }
-            }
-            Py_DECREF(keys);
-            SET_TOP(rest);
             DISPATCH();
         }
 
@@ -4669,8 +4643,21 @@ check_eval_breaker:
             kwnames = NULL;
             postcall_shrink = 1;
         call_function:
-            // Check if the call can be inlined or not
             function = PEEK(oparg + 1);
+            if (Py_TYPE(function) == &PyMethod_Type) {
+                PyObject *meth = ((PyMethodObject *)function)->im_func;
+                PyObject *self = ((PyMethodObject *)function)->im_self;
+                Py_INCREF(meth);
+                Py_INCREF(self);
+                PEEK(oparg + 1) = self;
+                Py_DECREF(function);
+                function = meth;
+                oparg++;
+                nargs++;
+                assert(postcall_shrink >= 1);
+                postcall_shrink--;
+            }
+            // Check if the call can be inlined or not
             if (Py_TYPE(function) == &PyFunction_Type && tstate->interp->eval_frame == NULL) {
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(function))->co_flags;
                 int is_generator = code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
@@ -4690,8 +4677,9 @@ check_eval_breaker:
                         goto error;
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
+                    new_frame->previous = frame;
+                    cframe.current_frame = frame = new_frame;
                     new_frame->depth = frame->depth + 1;
-                    tstate->frame = frame = new_frame;
                     goto start_frame;
                 }
             }
@@ -4772,9 +4760,9 @@ check_eval_breaker:
             STACK_SHRINK(1);
             Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            new_frame->previous = tstate->frame;
+            new_frame->previous = frame;
+            frame = cframe.current_frame = new_frame;
             new_frame->depth = frame->depth + 1;
-            tstate->frame = frame = new_frame;
             goto start_frame;
         }
 
@@ -5061,6 +5049,14 @@ check_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(COPY) {
+            assert(oparg != 0);
+            PyObject *peek = PEEK(oparg);
+            Py_INCREF(peek);
+            PUSH(peek);
+            DISPATCH();
+        }
+
         TARGET(EXTENDED_ARG) {
             int oldoparg = oparg;
             NEXTOPARG();
@@ -5299,11 +5295,12 @@ exit_eval_frame:
     _Py_LeaveRecursiveCall(tstate);
 
     if (frame->depth) {
-        _PyFrame_StackPush(frame->previous, retval);
+        cframe.current_frame = frame->previous;
+        _PyFrame_StackPush(cframe.current_frame, retval);
         if (_PyEvalFrameClearAndPop(tstate, frame)) {
             retval = NULL;
         }
-        frame = tstate->frame;
+        frame = cframe.current_frame;
         if (retval == NULL) {
             assert(_PyErr_Occurred(tstate));
             throwflag = 1;
@@ -5311,11 +5308,11 @@ exit_eval_frame:
         retval = NULL;
         goto resume_frame;
     }
-    tstate->frame = frame->previous;
 
-    /* Restore previous cframe */
+    /* Restore previous cframe. */
     tstate->cframe = cframe.previous;
     tstate->cframe->use_tracing = cframe.use_tracing;
+    assert(tstate->cframe->current_frame == frame->previous);
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
@@ -5932,8 +5929,6 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
         _PyFrame_Clear(frame, 0);
         return NULL;
     }
-    frame->previous = tstate->frame;
-    tstate->frame = frame;
     return frame;
 }
 
@@ -5947,7 +5942,6 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, InterpreterFrame * frame)
         return -1;
     }
     --tstate->recursion_depth;
-    tstate->frame = frame->previous;
     _PyThreadState_PopFrame(tstate, frame);
     return 0;
 }
@@ -6559,17 +6553,17 @@ InterpreterFrame *
 _PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->frame;
+    return tstate->cframe->current_frame;
 }
 
 PyFrameObject *
 PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->frame == NULL) {
+    if (tstate->cframe->current_frame == NULL) {
         return NULL;
     }
-    PyFrameObject *f = _PyFrame_GetFrameObject(tstate->frame);
+    PyFrameObject *f = _PyFrame_GetFrameObject(tstate->cframe->current_frame);
     if (f == NULL) {
         PyErr_Clear();
     }
@@ -6579,7 +6573,7 @@ PyEval_GetFrame(void)
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    InterpreterFrame *frame = tstate->frame;
+    InterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame != NULL) {
         return frame->f_builtins;
     }
@@ -6612,7 +6606,7 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-     InterpreterFrame *current_frame = tstate->frame;
+     InterpreterFrame *current_frame = tstate->cframe->current_frame;
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
@@ -6631,7 +6625,7 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    InterpreterFrame *current_frame = tstate->frame;
+    InterpreterFrame *current_frame = tstate->cframe->current_frame;
     if (current_frame == NULL) {
         return NULL;
     }
@@ -6642,7 +6636,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    InterpreterFrame *current_frame = tstate->frame;
+    InterpreterFrame *current_frame = tstate->cframe->current_frame;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
@@ -6692,7 +6686,7 @@ PyEval_GetFuncDesc(PyObject *func)
 #define C_TRACE(x, call) \
 if (use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->frame, \
+        tstate, tstate->cframe->current_frame, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -6702,13 +6696,13 @@ if (use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, \
+                    tstate, tstate->cframe->current_frame, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, \
+                    tstate, tstate->cframe->current_frame, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
