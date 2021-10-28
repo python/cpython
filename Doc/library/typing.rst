@@ -38,7 +38,7 @@ arguments.
 Relevant PEPs
 =============
 
-Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a 
+Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
 number of PEPs have modified and enhanced Python's framework for type
 annotations. These include:
 
