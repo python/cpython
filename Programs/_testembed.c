@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -1804,30 +1805,10 @@ static int test_unicode_id_init(void)
 
 static int test_frozenmain(void)
 {
-    // Get "_frozen_importlib" and "_frozen_importlib_external"
-    // from PyImport_FrozenModules
-    const struct _frozen *importlib = NULL, *importlib_external = NULL;
-    for (const struct _frozen *mod = PyImport_FrozenModules; mod->name != NULL; mod++) {
-        if (strcmp(mod->name, "_frozen_importlib") == 0) {
-            importlib = mod;
-        }
-        else if (strcmp(mod->name, "_frozen_importlib_external") == 0) {
-            importlib_external = mod;
-        }
-    }
-    if (importlib == NULL || importlib_external == NULL) {
-        error("cannot find frozen importlib and importlib_external");
-        return 1;
-    }
-
     static struct _frozen frozen_modules[4] = {
-        {0, 0, 0},  // importlib
-        {0, 0, 0},  // importlib_external
         {"__main__", M_test_frozenmain, sizeof(M_test_frozenmain)},
         {0, 0, 0}   // sentinel
     };
-    frozen_modules[0] = *importlib;
-    frozen_modules[1] = *importlib_external;
 
     char* argv[] = {
         "./argv0",
@@ -1846,7 +1827,12 @@ static int test_frozenmain(void)
 static int list_frozen(void)
 {
     const struct _frozen *p;
-    for (p = PyImport_FrozenModules; ; p++) {
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL)
+            break;
+        printf("%s\n", p->name);
+    }
+    for (p = _PyImport_FrozenStdlib; ; p++) {
         if (p->name == NULL)
             break;
         printf("%s\n", p->name);
