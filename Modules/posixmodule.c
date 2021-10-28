@@ -6680,8 +6680,7 @@ os_fork1_impl(PyObject *module)
 /*[clinic end generated code: output=0de8e67ce2a310bc input=12db02167893926e]*/
 {
     pid_t pid;
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (_Py_IsMainInterpreter(interp)) {
+    if (PyInterpreterState_Get() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
