@@ -1624,6 +1624,11 @@ _PyDict_SetItem_StringWithKnownHash(PyDictObject *mp, PyObject *key, PyObject *v
     assert(hash != -1);
     assert(mp->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     Py_ssize_t ix = dictkeys_stringlookup(mp->ma_keys, key, hash);
+    if (!_PyObject_GC_IS_TRACKED(mp)
+        && _PyObject_GC_MAY_BE_TRACKED(value))
+    {
+        _PyObject_GC_TRACK(mp);
+    }
     return _insert_at_index(mp, key, hash, value, ix);
 }
 
