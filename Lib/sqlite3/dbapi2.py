@@ -42,9 +42,9 @@ _compile_options = fetch_compile_options()
 del fetch_compile_options
 
 def _threadsafety():
-    if "THREADSAFE=0" in _compile_options:  # SQLite single-thread mode
-        # Translates to DB-API threadsafety level 0, meaning threads may not
-        # share the module.
+    if "THREADSAFE=0" in _compile_options:
+        # SQLITE_THREADSAFE=0 (single-thread mode) translates to DB-API
+        # threadsafety level 0, meaning threads may not share the module.
         return 0
     elif "THREADSAFE=2" in _compile_options:
         # SQLITE_THREADSAFE=2 (multi-thread mode) translates to DB-API
