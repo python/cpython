@@ -707,6 +707,10 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             return -1;
         }
     }
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+            goto fail;
+    }
     PyObject *descr;
     DesciptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     switch(kind) {
@@ -795,6 +799,10 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, S
     if (PyModule_CheckExact(owner)) {
         SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
         goto fail;
+    }
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
+            SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
+            goto fail;
     }
     PyObject *descr;
     DesciptorClassification kind = analyze_descriptor(type, name, &descr, 1);
@@ -909,6 +917,10 @@ static int
 specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
                            _PyAttrCache *cache1, _PyObjectCache *cache2)
 {
+    if (!_PyType_HasFeature((PyTypeObject *)owner, Py_TPFLAGS_VALID_VERSION_TAG)) {
+        SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
 
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
@@ -964,6 +976,10 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
         goto fail;
     }
 
+    if (!_PyType_HasFeature(owner_cls, Py_TPFLAGS_VALID_VERSION_TAG)) {
+            SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OUT_OF_VERSIONS);
+            goto fail;
+    }
     PyObject *descr = NULL;
     DesciptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
