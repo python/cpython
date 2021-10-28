@@ -2778,6 +2778,7 @@ type_new_alloc(type_new_ctx *ctx)
 
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
+    et->_ht_tpname = NULL;
 
     return type;
 }
@@ -3435,25 +3436,42 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         goto fail;
     }
 
-    /* Set the type name and qualname */
-    const char *s = strrchr(spec->name, '.');
-    if (s == NULL)
-        s = spec->name;
-    else
-        s++;
-
     type = &res->ht_type;
     /* The flags must be initialized early, before the GC traverses us */
     type->tp_flags = spec->flags | Py_TPFLAGS_HEAPTYPE;
-    res->ht_name = PyUnicode_FromString(s);
-    if (!res->ht_name)
-        goto fail;
-    res->ht_qualname = res->ht_name;
-    Py_INCREF(res->ht_qualname);
-    type->tp_name = spec->name;
 
-    Py_XINCREF(module);
-    res->ht_module = module;
+    /* Set the type name and qualname */
+    const char *s = strrchr(spec->name, '.');
+    if (s == NULL) {
+        s = spec->name;
+    }
+    else {
+        s++;
+    }
+
+    res->ht_name = PyUnicode_FromString(s);
+    if (!res->ht_name) {
+        goto fail;
+    }
+    res->ht_qualname = Py_NewRef(res->ht_name);
+
+    /* Copy spec->name to a buffer we own.
+    *
+    * Unfortunately, we can't use tp_name directly (with some
+    * flag saying that it should be deallocated with the type),
+    * because tp_name is public API and may be set independently
+    * of any such flag.
+    * So, we use a separate buffer, _ht_tpname, that's always
+    * deallocated with the type (if it's non-NULL).
+    */
+    Py_ssize_t name_buf_len = strlen(spec->name) + 1;
+    res->_ht_tpname = PyMem_Malloc(name_buf_len);
+    if (res->_ht_tpname == NULL) {
+        goto fail;
+    }
+    type->tp_name = memcpy(res->_ht_tpname, spec->name, name_buf_len);
+
+    res->ht_module = Py_XNewRef(module);
 
     /* Adjust for empty tuple bases */
     if (!bases) {
@@ -4082,6 +4100,7 @@ type_dealloc(PyTypeObject *type)
         _PyDictKeys_DecRef(et->ht_cached_keys);
     }
     Py_XDECREF(et->ht_module);
+    PyMem_Free(et->_ht_tpname);
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -4273,10 +4292,12 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
     Py_VISIT(type->tp_base);
     Py_VISIT(((PyHeapTypeObject *)type)->ht_module);
 
-    /* There's no need to visit type->tp_subclasses or
-       ((PyHeapTypeObject *)type)->ht_slots, because they can't be involved
-       in cycles; tp_subclasses is a list of weak references,
-       and slots is a tuple of strings. */
+    /* There's no need to visit others because they can't be involved
+       in cycles:
+       type->tp_subclasses is a list of weak references,
+       ((PyHeapTypeObject *)type)->ht_slots is a tuple of strings,
+       ((PyHeapTypeObject *)type)->ht_*name are strings.
+       */
 
     return 0;
 }

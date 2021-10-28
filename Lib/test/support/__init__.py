@@ -372,6 +372,17 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def skip_if_buildbot(reason=None):
+    """Decorator raising SkipTest if running on a buildbot."""
+    if not reason:
+        reason = 'not suitable for buildbots'
+    if sys.platform == 'win32':
+        isbuildbot = os.environ.get('USERNAME') == 'Buildbot'
+    else:
+        isbuildbot = os.environ.get('USER') == 'buildbot'
+    return unittest.skipIf(isbuildbot, reason)
+
+
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)

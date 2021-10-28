@@ -60,11 +60,14 @@ PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 
 #define PyExceptionInstance_Class(x) ((PyObject*)Py_TYPE(x))
 
+#define _PyBaseExceptionGroup_Check(x)                   \
+    PyObject_TypeCheck(x, (PyTypeObject *)PyExc_BaseExceptionGroup)
 
 /* Predefined exceptions */
 
 PyAPI_DATA(PyObject *) PyExc_BaseException;
 PyAPI_DATA(PyObject *) PyExc_Exception;
+PyAPI_DATA(PyObject *) PyExc_BaseExceptionGroup;
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 PyAPI_DATA(PyObject *) PyExc_StopAsyncIteration;
 #endif

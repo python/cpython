@@ -193,8 +193,12 @@ Improved Modules
 fractions
 ---------
 
-Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
-string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
+* Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
+  string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
+
+* :class:`~fractions.Fraction` now implements an ``__int__`` method, so
+  that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
+  (Contributed by Mark Dickinson in :issue:`44547`.)
 
 
 math
@@ -304,13 +308,23 @@ CPython bytecode changes
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
 
+* Removed ``COPY_DICT_WITHOUT_KEYS``.
+
+* :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
+  boolean value indicating whether the match succeeded or failed. Instead, they
+  indicate failure with :const:`None` (where a tuple of extracted values would
+  otherwise be).
+
+* Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
+  The item is not removed from its original location.
+
 
 Deprecated
 ==========
 
-* The :mod:`lib2to3` package is now deprecated and may not be able to parse
-  Python 3.10 or newer. See the :pep:`617` (New PEG parser for CPython).
-  (Contributed by Victor Stinner in :issue:`40360`.)
+* The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
+  be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
+  CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
 
 * :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested and undocumented and also not used by webbrowser itself.
@@ -363,7 +377,7 @@ Removed
   ``SO_REUSEADDR`` in UDP.
   (Contributed by Hugo van Kemenade in :issue:`45129`.)
 
-* Remove :meth:`__getitem__` methods of
+* Removed :meth:`__getitem__` methods of
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
@@ -402,7 +416,7 @@ Removed
   the ``l*gettext()`` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
 
-* Remove from the :mod:`configparser` module:
+* Removed from the :mod:`configparser` module:
   the :class:`SafeConfigParser` class,
   the :attr:`filename` property of the :class:`ParsingError` class,
   the :meth:`readfp` method of the :class:`ConfigParser` class,
@@ -419,8 +433,24 @@ Removed
   generator-based coroutine objects in the debug mode.
   (Contributed by Illia Volochii in :issue:`43216`.)
 
-* Remove the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+* Removed the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
+
+* Removed from the :mod:`inspect` module:
+
+  * the ``getargspec`` function, deprecated since Python 3.0;
+    use :func:`inspect.signature` or :func:`inspect.getfullargspec` instead.
+
+  * the ``formatargspec`` function, deprecated since Python 3.5;
+    use the :func:`inspect.signature` function and :class:`Signature` object
+    directly.
+
+  * the undocumented ``Signature.from_callable`` and ``Signature.from_function``
+    functions, deprecated since Python 3.5; use the
+    :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
+    instead.
+
+  (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
 
 Porting to Python 3.11
@@ -450,6 +480,13 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
+* When sorting using tuples as keys, the order of the result may differ
+  from earlier releases if the tuple elements don't define a total
+  ordering (see :ref:`expressions-value-comparisons` for
+  information on total ordering).  It's generally true that the result
+  of sorting simply isn't well-defined in the absence of a total ordering
+  on list elements.
+
 
 Build Changes
 =============
@@ -464,6 +501,11 @@ Build Changes
   the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
   ``isinf()``, ``isnan()``, ``round()``.
   (Contributed by Victor Stinner in :issue:`45440`.)
+
+* Freelists for object structs can now be disabled. A new :program:`configure`
+  option :option:`!--without-freelists` can be used to disable all freelists
+  except empty tuple singleton.
+  (Contributed by Christian Heimes in :issue:`45522`)
 
 C API Changes
 =============
@@ -564,18 +606,10 @@ Porting to Python 3.11
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
-* The ``<Python.h>`` header file no longer includes ``<stdlib.h>``. C
-  extensions using ``<stdlib.h>`` must now include it explicitly.
-  The system ``<stdlib.h>`` header provides functions like:
-  ``malloc()``/``free()``, ``getenv()``, ``strtol()``, ``abs()``, ``strtol()``,
-  ``exit()`` and ``abort()``.
-  (Contributed by Victor Stinner in :issue:`45434`.)
-
-* The ``<Python.h>`` header file no longer includes ``<stdio.h>`` if the
-  ``Py_LIMITED_API`` macro is defined. Functions expecting ``FILE*`` are
-  excluded from the limited C API (:pep:`384`). C extensions using
-  ``<stdio.h>`` must now include it explicitly.  The system ``<stdio.h>``
-  header provides functions like ``printf()`` and ``fopen()``.
+* ``<Python.h>`` no longer includes the header files ``<stdlib.h>``,
+  ``<stdio.h>``, ``<errno.h>`` and ``<string.h>`` when the ``Py_LIMITED_API``
+  macro is set to ``0x030b0000`` (Python 3.11) or higher. C extensions should
+  explicitly include the header files after ``#include <Python.h>``.
   (Contributed by Victor Stinner in :issue:`45434`.)
 
 * The non-limited API files ``cellobject.h``, ``classobject.h``, ``context.h``,
@@ -635,12 +669,20 @@ Removed
   ``Py_IS_INFINITY()`` macro.
   (Contributed by Victor Stinner in :issue:`45440`.)
 
-* Remove two functions from the limited C API:
+* The following items are no longer available when :c:macro:`Py_LIMITED_API`
+  is defined:
 
   * :c:func:`PyMarshal_WriteLongToFile`
   * :c:func:`PyMarshal_WriteObjectToFile`
+  * :c:func:`PyMarshal_ReadObjectFromString`
+  * :c:func:`PyMarshal_WriteObjectToString`
+  * the ``Py_MARSHAL_VERSION`` macro
 
-  The :pep:`384` excludes functions expecting ``FILE*`` from the stable ABI.
+  These are not part of the :ref:`limited API <stable-abi-list>`.
 
-  Remove also the ``Py_MARSHAL_VERSION`` macro from the limited C API.
   (Contributed by Victor Stinner in :issue:`45474`.)
+
+* Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
+  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  limited C API.
+  (Contributed by Victor Stinner in :issue:`35134`.)

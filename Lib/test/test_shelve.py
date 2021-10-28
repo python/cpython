@@ -1,4 +1,5 @@
 import unittest
+import dbm
 import shelve
 import glob
 import pickle
@@ -44,12 +45,8 @@ class byteskeydict(MutableMapping):
 
 
 class TestCase(unittest.TestCase):
-
-    fn = "shelftemp.db"
-
-    def tearDown(self):
-        for f in glob.glob(self.fn+"*"):
-            os_helper.unlink(f)
+    dirname = os_helper.TESTFN
+    fn = os.path.join(os_helper.TESTFN, "shelftemp.db")
 
     def test_close(self):
         d1 = {}
@@ -67,6 +64,8 @@ class TestCase(unittest.TestCase):
             self.fail('Closed shelf should not find a key')
 
     def test_open_template(self, filename=None, protocol=None):
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
         s = shelve.open(filename=filename if filename is not None else self.fn,
                         protocol=protocol)
         try:
@@ -168,63 +167,52 @@ class TestCase(unittest.TestCase):
         with shelve.Shelf({}) as s:
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
-from test import mapping_tests
 
-class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
-    fn = "shelftemp.db"
-    counter = 0
-    def __init__(self, *args, **kw):
-        self._db = []
-        mapping_tests.BasicTestMappingProtocol.__init__(self, *args, **kw)
+class TestShelveBase:
     type2test = shelve.Shelf
+
     def _reference(self):
         return {"key1":"value1", "key2":2, "key3":(1,2,3)}
+
+
+class TestShelveInMemBase(TestShelveBase):
     def _empty_mapping(self):
-        if self._in_mem:
-            x= shelve.Shelf(byteskeydict(), **self._args)
-        else:
-            self.counter+=1
-            x= shelve.open(self.fn+str(self.counter), **self._args)
-        self._db.append(x)
+        return shelve.Shelf(byteskeydict(), **self._args)
+
+
+class TestShelveFileBase(TestShelveBase):
+    counter = 0
+
+    def _empty_mapping(self):
+        self.counter += 1
+        x = shelve.open(self.base_path + str(self.counter), **self._args)
+        self.addCleanup(x.close)
         return x
-    def tearDown(self):
-        for db in self._db:
-            db.close()
-        self._db = []
-        if not self._in_mem:
-            for f in glob.glob(self.fn+"*"):
-                os_helper.unlink(f)
 
-class TestAsciiFileShelve(TestShelveBase):
-    _args={'protocol':0}
-    _in_mem = False
-class TestBinaryFileShelve(TestShelveBase):
-    _args={'protocol':1}
-    _in_mem = False
-class TestProto2FileShelve(TestShelveBase):
-    _args={'protocol':2}
-    _in_mem = False
-class TestAsciiMemShelve(TestShelveBase):
-    _args={'protocol':0}
-    _in_mem = True
-class TestBinaryMemShelve(TestShelveBase):
-    _args={'protocol':1}
-    _in_mem = True
-class TestProto2MemShelve(TestShelveBase):
-    _args={'protocol':2}
-    _in_mem = True
+    def setUp(self):
+        dirname = os_helper.TESTFN
+        os.mkdir(dirname)
+        self.addCleanup(os_helper.rmtree, dirname)
+        self.base_path = os.path.join(dirname, "shelftemp.db")
+        self.addCleanup(setattr, dbm, '_defaultmod', dbm._defaultmod)
+        dbm._defaultmod = self.dbm_mod
 
-def test_main():
-    for module in dbm_iterator():
-        support.run_unittest(
-            TestAsciiFileShelve,
-            TestBinaryFileShelve,
-            TestProto2FileShelve,
-            TestAsciiMemShelve,
-            TestBinaryMemShelve,
-            TestProto2MemShelve,
-            TestCase
-        )
+
+from test import mapping_tests
+
+for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+    bases = (TestShelveInMemBase, mapping_tests.BasicTestMappingProtocol)
+    name = f'TestProto{proto}MemShelve'
+    globals()[name] = type(name, bases,
+                           {'_args': {'protocol': proto}})
+    bases = (TestShelveFileBase, mapping_tests.BasicTestMappingProtocol)
+    for dbm_mod in dbm_iterator():
+        assert dbm_mod.__name__.startswith('dbm.')
+        suffix = dbm_mod.__name__[4:]
+        name = f'TestProto{proto}File_{suffix}Shelve'
+        globals()[name] = type(name, bases,
+                               {'dbm_mod': dbm_mod, '_args': {'protocol': proto}})
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
