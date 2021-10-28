@@ -193,7 +193,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     Py_INCREF(result);
     _PyFrame_StackPush(frame, result);
 
-    frame->previous = tstate->frame;
+    frame->previous = tstate->cframe->current_frame;
 
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
@@ -207,7 +207,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
 
-    assert(tstate->frame == frame->previous);
+    assert(tstate->cframe->current_frame == frame->previous);
     /* Don't keep the reference to previous any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
@@ -435,9 +435,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            InterpreterFrame *prev = tstate->frame;
+            InterpreterFrame *prev = tstate->cframe->current_frame;
             frame->previous = prev;
-            tstate->frame = frame;
+            tstate->cframe->current_frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_xframe->f_state;
@@ -445,7 +445,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             gen->gi_xframe->f_state = state;
-            tstate->frame = prev;
+            tstate->cframe->current_frame = prev;
             frame->previous = NULL;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
