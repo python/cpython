@@ -5833,7 +5833,7 @@ make_coro_frame(PyThreadState *tstate,
     int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
     InterpreterFrame *frame = (InterpreterFrame *)PyMem_Malloc(sizeof(PyObject *)*size);
     if (frame == NULL) {
-        goto fail;
+        goto fail_no_memory;
     }
     _PyFrame_InitializeSpecials(frame, con, locals, code->co_nlocalsplus);
     for (int i = 0; i < code->co_nlocalsplus; i++) {
@@ -5845,7 +5845,7 @@ make_coro_frame(PyThreadState *tstate,
         return NULL;
     }
     return frame;
-fail:
+fail_no_memory:
     /* Consume the references */
     for (Py_ssize_t i = 0; i < argcount; i++) {
         Py_DECREF(args[i]);
