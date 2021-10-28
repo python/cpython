@@ -50,7 +50,7 @@ annotations. These include:
      :func:`@runtime_checkable<runtime_checkable>` decorator
 * :pep:`585`: Type Hinting Generics In Standard Collections
      *Introducing* the ability to use builtin collections and ABCs as
-     :term:`generic types <generic type>` 
+     :term:`generic types<generic type>`
 * :pep:`586`: Literal Types
      *Introducing* :data:`Literal`
 * :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
@@ -61,7 +61,7 @@ annotations. These include:
      *Introducing* :data:`Annotated`
 * :pep:`604`: Allow writing union types as ``X | Y``
      *Introducing* :data:`types.UnionType` and the ability to use
-     the binary-or operator ``|`` as syntactic sugar for the union
+     the binary-or operator ``|`` as syntactic sugar for a union of types
 * :pep:`612`: Parameter Specification Variables
      *Introducing* :class:`ParamSpec` and :data:`Concatenate`
 * :pep:`613`: Explicit Type Aliases
