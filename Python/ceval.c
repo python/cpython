@@ -1561,9 +1561,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, InterpreterFrame *frame, int thr
     tstate->cframe = &cframe;
 
     assert(frame->depth == 0);
-    /* push frame */
-    frame->previous = prev_cframe->frame;
-    cframe.frame = frame;
+    /* Push frame */
+    frame->previous = prev_cframe->current_frame;
+    cframe.current_frame = frame;
 
 start_frame:
     if (_Py_EnterRecursiveCall(tstate, "")) {
@@ -1572,7 +1572,7 @@ start_frame:
     }
 
     assert(tstate->cframe == &cframe);
-    assert(frame == cframe.frame);
+    assert(frame == cframe.current_frame);
 
     if (cframe.use_tracing) {
         if (trace_function_entry(tstate, frame)) {
@@ -4644,7 +4644,7 @@ check_eval_breaker:
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     new_frame->previous = frame;
-                    cframe.frame = frame = new_frame;
+                    cframe.current_frame = frame = new_frame;
                     new_frame->depth = frame->depth + 1;
                     goto start_frame;
                 }
@@ -4727,7 +4727,7 @@ check_eval_breaker:
             Py_DECREF(func);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
-            frame = cframe.frame = new_frame;
+            frame = cframe.current_frame = new_frame;
             new_frame->depth = frame->depth + 1;
             goto start_frame;
         }
@@ -5261,12 +5261,12 @@ exit_eval_frame:
     _Py_LeaveRecursiveCall(tstate);
 
     if (frame->depth) {
-        cframe.frame = frame->previous;
-        _PyFrame_StackPush(cframe.frame, retval);
+        cframe.current_frame = frame->previous;
+        _PyFrame_StackPush(cframe.current_frame, retval);
         if (_PyEvalFrameClearAndPop(tstate, frame)) {
             retval = NULL;
         }
-        frame = cframe.frame;
+        frame = cframe.current_frame;
         if (retval == NULL) {
             assert(_PyErr_Occurred(tstate));
             throwflag = 1;
@@ -5275,10 +5275,10 @@ exit_eval_frame:
         goto resume_frame;
     }
 
-    /* Restore previous cframe */
+    /* Restore previous cframe. */
     tstate->cframe = cframe.previous;
     tstate->cframe->use_tracing = cframe.use_tracing;
-    assert(tstate->cframe->frame == frame->previous);
+    assert(tstate->cframe->current_frame == frame->previous);
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
@@ -6519,17 +6519,17 @@ InterpreterFrame *
 _PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->cframe->frame;
+    return tstate->cframe->current_frame;
 }
 
 PyFrameObject *
 PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->cframe->frame == NULL) {
+    if (tstate->cframe->current_frame == NULL) {
         return NULL;
     }
-    PyFrameObject *f = _PyFrame_GetFrameObject(tstate->cframe->frame);
+    PyFrameObject *f = _PyFrame_GetFrameObject(tstate->cframe->current_frame);
     if (f == NULL) {
         PyErr_Clear();
     }
@@ -6539,7 +6539,7 @@ PyEval_GetFrame(void)
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    InterpreterFrame *frame = tstate->cframe->frame;
+    InterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame != NULL) {
         return frame->f_builtins;
     }
@@ -6572,7 +6572,7 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-     InterpreterFrame *current_frame = tstate->cframe->frame;
+     InterpreterFrame *current_frame = tstate->cframe->current_frame;
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
@@ -6591,7 +6591,7 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    InterpreterFrame *current_frame = tstate->cframe->frame;
+    InterpreterFrame *current_frame = tstate->cframe->current_frame;
     if (current_frame == NULL) {
         return NULL;
     }
@@ -6602,7 +6602,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    InterpreterFrame *current_frame = tstate->cframe->frame;
+    InterpreterFrame *current_frame = tstate->cframe->current_frame;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
@@ -6652,7 +6652,7 @@ PyEval_GetFuncDesc(PyObject *func)
 #define C_TRACE(x, call) \
 if (use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->cframe->frame, \
+        tstate, tstate->cframe->current_frame, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -6662,13 +6662,13 @@ if (use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->cframe->frame, \
+                    tstate, tstate->cframe->current_frame, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->cframe->frame, \
+                    tstate, tstate->cframe->current_frame, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
