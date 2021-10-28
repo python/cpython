@@ -906,9 +906,10 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        # In Python <=3 .9, classmethods and staticmethods
-        # don't have the annotations of the function they wrap
-        # So we add them manually
+        # bpo-39679: in Python <= 3.9, classmethods and staticmethods don't
+        # inherit __annotations__ of the wrapped function (fixed in 3.10+ as
+        # a side-effect of bpo-43682) but we need that for annotation-derived
+        # singledispatches. So we add that just-in-time here.
         if isinstance(cls, (staticmethod, classmethod)):
             cls.__annotations__ = getattr(cls.__func__, '__annotations__', {})
         return self.dispatcher.register(cls, func=method)
