@@ -212,7 +212,7 @@ process and user.
 
    Bytes version of :data:`environ`: a :term:`mapping` object where both keys
    and values are :class:`bytes` objects representing the process environment.
-   :data:`environ` and :data:`environb` are synchronized (modify
+   :data:`environ` and :data:`environb` are synchronized (modifying
    :data:`environb` updates :data:`environ`, and vice versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
