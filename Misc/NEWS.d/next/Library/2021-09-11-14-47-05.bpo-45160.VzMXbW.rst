@@ -1,0 +1,1 @@
+When tracing a tkinter variable used by a ttk OptionMenu, callbacks are no longer made twice.

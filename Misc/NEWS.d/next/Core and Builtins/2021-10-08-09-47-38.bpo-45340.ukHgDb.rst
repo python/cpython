@@ -1,0 +1,3 @@
+Object attributes are held in an array instead of a dictionary. An object's
+dictionary are created lazily, only when needed. Reduces the memory
+consumption of a typical Python object by about 30%. Patch by Mark Shannon.

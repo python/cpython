@@ -12,6 +12,7 @@
 #include <pycore_import.h>
 
 #include <stdio.h>
+#include <stdlib.h>               // malloc()
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef MS_WINDOWS

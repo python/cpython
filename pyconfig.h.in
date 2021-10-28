@@ -160,9 +160,6 @@
 /* Define to 1 if you have the <conio.h> header file. */
 #undef HAVE_CONIO_H
 
-/* Define to 1 if you have the `copysign' function. */
-#undef HAVE_COPYSIGN
-
 /* Define to 1 if you have the `copy_file_range' function. */
 #undef HAVE_COPY_FILE_RANGE
 
@@ -213,18 +210,6 @@
 
 /* Define if you have the 'wchgat' function. */
 #undef HAVE_CURSES_WCHGAT
-
-/* Define to 1 if you have the declaration of `isfinite', and to 0 if you
-   don't. */
-#undef HAVE_DECL_ISFINITE
-
-/* Define to 1 if you have the declaration of `isinf', and to 0 if you don't.
-   */
-#undef HAVE_DECL_ISINF
-
-/* Define to 1 if you have the declaration of `isnan', and to 0 if you don't.
-   */
-#undef HAVE_DECL_ISNAN
 
 /* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -368,9 +353,6 @@
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
 
-/* Define to 1 if you have the `finite' function. */
-#undef HAVE_FINITE
-
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
@@ -421,9 +403,6 @@
 
 /* Define to 1 if you have the `gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
-
-/* Define to 1 if you have the `gamma' function. */
-#undef HAVE_GAMMA
 
 /* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
 #undef HAVE_GCC_ASM_FOR_MC68881
@@ -550,9 +529,6 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
-/* Define to 1 if you have the `hypot' function. */
-#undef HAVE_HYPOT
-
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
@@ -603,9 +579,6 @@
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
-
-/* Define to 1 if you have the `lgamma' function. */
-#undef HAVE_LGAMMA
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
@@ -883,9 +856,6 @@
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_RESIZE_TERMINAL
-
-/* Define to 1 if you have the `round' function. */
-#undef HAVE_ROUND
 
 /* Define to 1 if you have the `rtpSpawn' function. */
 #undef HAVE_RTPSPAWN
@@ -1259,9 +1229,6 @@
 /* Define to 1 if you have the <term.h> header file. */
 #undef HAVE_TERM_H
 
-/* Define to 1 if you have the `tgamma' function. */
-#undef HAVE_TGAMMA
-
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
 
@@ -1575,6 +1542,9 @@
 
 /* Define to build the readline module against Editline. */
 #undef WITH_EDITLINE
+
+/* Define if you want to compile in object freelists optimization */
+#undef WITH_FREELISTS
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL

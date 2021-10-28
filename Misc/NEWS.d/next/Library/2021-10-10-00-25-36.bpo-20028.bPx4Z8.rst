@@ -1,0 +1,2 @@
+Empty escapechar/quotechar is not allowed when initializing
+:class:`csv.Dialect`. Patch by Vajrasky Kok and Dong-hee Na.

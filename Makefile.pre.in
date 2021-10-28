@@ -21,6 +21,7 @@
 # === Variables set by makesetup ===
 
 MODBUILT_NAMES=    _MODBUILT_NAMES_
+MODSHARED_NAMES=   _MODSHARED_NAMES_
 MODDISABLED_NAMES= _MODDISABLED_NAMES_
 MODOBJS=           _MODOBJS_
 MODLIBS=           _MODLIBS_
@@ -611,10 +612,6 @@ pybuilddir.txt: $(BUILDPYTHON)
 		exit 1 ; \
 	fi
 
-# This is shared by the math and cmath modules
-Modules/_math.o: Modules/_math.c Modules/_math.h
-	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
-
 # blake2s is auto-generated from blake2b
 $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
@@ -625,7 +622,7 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
 # Ignore macros passed by GNU make, passed after --
-sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
+sharedmods: $(BUILDPYTHON) pybuilddir.txt
 	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
@@ -1127,39 +1124,30 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/boolobject.h \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytesobject.h \
-		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
-		$(srcdir)/Include/classobject.h \
 		$(srcdir)/Include/code.h \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
-		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dynamic_annotations.h \
 		$(srcdir)/Include/enumobject.h \
 		$(srcdir)/Include/errcode.h \
-		$(srcdir)/Include/eval.h \
 		$(srcdir)/Include/fileobject.h \
 		$(srcdir)/Include/fileutils.h \
 		$(srcdir)/Include/floatobject.h \
 		$(srcdir)/Include/frameobject.h \
-		$(srcdir)/Include/funcobject.h \
-		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
-		$(srcdir)/Include/interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
-		$(srcdir)/Include/longintrepr.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
-		$(srcdir)/Include/namespaceobject.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
@@ -1179,7 +1167,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
 		$(srcdir)/Include/pystrcmp.h \
-		$(srcdir)/Include/pystrhex.h \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
@@ -1203,17 +1190,24 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/bytearrayobject.h \
 		$(srcdir)/Include/cpython/bytesobject.h \
+		$(srcdir)/Include/cpython/cellobject.h \
 		$(srcdir)/Include/cpython/ceval.h \
+		$(srcdir)/Include/cpython/classobject.h \
 		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/compile.h \
+		$(srcdir)/Include/cpython/context.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
+		$(srcdir)/Include/cpython/floatobject.h \
 		$(srcdir)/Include/cpython/frameobject.h \
+		$(srcdir)/Include/cpython/funcobject.h \
+		$(srcdir)/Include/cpython/genobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
-		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/listobject.h \
+		$(srcdir)/Include/cpython/longintrepr.h \
+		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
@@ -1232,6 +1226,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
+		$(srcdir)/Include/cpython/warnings.h \
+		$(srcdir)/Include/cpython/weakrefobject.h \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_accu.h \
@@ -1251,6 +1247,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
+		$(srcdir)/Include/internal/pycore_floatobject.h \
 		$(srcdir)/Include/internal/pycore_format.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
@@ -1259,9 +1256,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
+		$(srcdir)/Include/internal/pycore_interpreteridobject.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
+		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
@@ -1271,6 +1270,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
+		$(srcdir)/Include/internal/pycore_strhex.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
@@ -2117,6 +2117,28 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 .PHONY: clean-retain-profile profile-removal run_profile_task
 .PHONY: build_all_generate_profile build_all_merge_profile
 .PHONY: gdbhooks
+
+##########################################################################
+# Module dependencies
+
+MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
+MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
+MODULE_PYEXPAT_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h
+MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-dispatch.c $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2-kat.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b-test.c $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2bp-test.c $(srcdir)/Modules/_blake2/impl/blake2bp.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s-test.c $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/impl/blake2sp-test.c $(srcdir)/Modules/_blake2/impl/blake2sp.c $(srcdir)/Modules/hashlib.h
+MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
+MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h $(srcdir)/Modules/_decimal/libmpdec/basearith.h $(srcdir)/Modules/_decimal/libmpdec/bits.h $(srcdir)/Modules/_decimal/libmpdec/constants.h $(srcdir)/Modules/_decimal/libmpdec/convolute.h $(srcdir)/Modules/_decimal/libmpdec/crt.h $(srcdir)/Modules/_decimal/libmpdec/difradix2.h $(srcdir)/Modules/_decimal/libmpdec/fnt.h $(srcdir)/Modules/_decimal/libmpdec/fourstep.h $(srcdir)/Modules/_decimal/libmpdec/io.h $(srcdir)/Modules/_decimal/libmpdec/mpalloc.h $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.h $(srcdir)/Modules/_decimal/libmpdec/numbertheory.h $(srcdir)/Modules/_decimal/libmpdec/sixstep.h $(srcdir)/Modules/_decimal/libmpdec/transpose.h $(srcdir)/Modules/_decimal/libmpdec/typearith.h $(srcdir)/Modules/_decimal/libmpdec/umodarith.h
+MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/expat/ascii.h $(srcdir)/Modules/expat/asciitab.h $(srcdir)/Modules/expat/expat.h $(srcdir)/Modules/expat/expat_config.h $(srcdir)/Modules/expat/expat_external.h $(srcdir)/Modules/expat/internal.h $(srcdir)/Modules/expat/latin1tab.h $(srcdir)/Modules/expat/utf8tab.h $(srcdir)/Modules/expat/xmlparse.c $(srcdir)/Modules/expat/xmlrole.c $(srcdir)/Modules/expat/xmlrole.h $(srcdir)/Modules/expat/xmltok.c $(srcdir)/Modules/expat/xmltok.h $(srcdir)/Modules/expat/xmltok_impl.h $(srcdir)/Modules/pyexpat.c
+MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/kcp/KeccakHash.c $(srcdir)/Modules/_sha3/kcp/KeccakHash.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-64.macros $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP-opt32.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP-opt64.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-SnP.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-opt64-config.h $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-opt64.c $(srcdir)/Modules/_sha3/kcp/KeccakP-1600-unrolling.macros $(srcdir)/Modules/_sha3/kcp/KeccakSponge.c $(srcdir)/Modules/_sha3/kcp/KeccakSponge.h $(srcdir)/Modules/_sha3/kcp/KeccakSponge.inc $(srcdir)/Modules/_sha3/kcp/PlSnP-Fallback.inc $(srcdir)/Modules/_sha3/kcp/SnP-Relaned.h $(srcdir)/Modules/_sha3/kcp/align.h $(srcdir)/Modules/hashlib.h
+MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
+MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h
+MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
+MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/testcapi_long.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 # Local Variables:

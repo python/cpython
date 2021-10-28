@@ -3,20 +3,19 @@
 #include "Python.h"
 
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
-#include "pycore_initconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pyhash.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"
-#include "errcode.h"
-#include "marshal.h"
-#include "code.h"
-#include "importdl.h"
-#include "pydtrace.h"
-#include <stdbool.h>
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "marshal.h"              // PyMarshal_ReadObjectFromString()
+#include "importdl.h"             // _PyImport_DynLoadFiletab
+#include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
+#include <stdbool.h>              // bool
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -2050,6 +2049,8 @@ _imp.find_frozen
 
     name: unicode
     /
+    *
+    withdata: bool = False
 
 Return info about the corresponding frozen module (if there is one) or None.
 
@@ -2063,8 +2064,8 @@ The returned info (a 2-tuple):
 [clinic start generated code]*/
 
 static PyObject *
-_imp_find_frozen_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=3fd17da90d417e4e input=6aa7b9078a89280a]*/
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
+/*[clinic end generated code: output=8c1c3c7f925397a5 input=22a8847c201542fd]*/
 {
     struct frozen_info info;
     frozen_status status = find_frozen(name, &info);
@@ -2079,9 +2080,12 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         return NULL;
     }
 
-    PyObject *data = PyBytes_FromStringAndSize(info.data, info.size);
-    if (data == NULL) {
-        return NULL;
+    PyObject *data = NULL;
+    if (withdata) {
+        data = PyMemoryView_FromMemory((char *)info.data, info.size, PyBUF_READ);
+        if (data == NULL) {
+            return NULL;
+        }
     }
 
     PyObject *origname = NULL;
@@ -2093,11 +2097,11 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name)
         }
     }
 
-    PyObject *result = PyTuple_Pack(3, data,
+    PyObject *result = PyTuple_Pack(3, data ? data : Py_None,
                                     info.is_package ? Py_True : Py_False,
                                     origname ? origname : Py_None);
     Py_XDECREF(origname);
-    Py_DECREF(data);
+    Py_XDECREF(data);
     return result;
 }
 
@@ -2116,15 +2120,14 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
                             PyObject *dataobj)
 /*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
-    struct frozen_info info;
-    if (PyBytes_Check(dataobj)) {
-        info.nameobj = name;
-        info.data = PyBytes_AS_STRING(dataobj);
-        info.size = PyBytes_Size(dataobj);
-        if (info.size == 0) {
-            set_frozen_error(FROZEN_INVALID, name);
+    struct frozen_info info = {0};
+    Py_buffer buf = {0};
+    if (PyObject_CheckBuffer(dataobj)) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
             return NULL;
         }
+        info.data = (const char *)buf.buf;
+        info.size = buf.len;
     }
     else if (dataobj != Py_None) {
         _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
@@ -2137,7 +2140,20 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
             return NULL;
         }
     }
-    return unmarshal_frozen_code(&info);
+
+    if (info.nameobj == NULL) {
+        info.nameobj = name;
+    }
+    if (info.size == 0) {
+        set_frozen_error(FROZEN_INVALID, name);
+        return NULL;
+    }
+
+    PyObject *codeobj = unmarshal_frozen_code(&info);
+    if (dataobj != Py_None) {
+        PyBuffer_Release(&buf);
+    }
+    return codeobj;
 }
 
 /*[clinic input]

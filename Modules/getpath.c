@@ -6,8 +6,9 @@
 #include "pycore_pathconfig.h"
 #include "osdefs.h"               // DELIM
 
-#include <sys/types.h>
+#include <stdlib.h>               // getenv()
 #include <string.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
@@ -514,6 +515,42 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
     /* Fail */
     *found = 0;
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+calculate_set_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+{
+    // Note that, unlike calculate_set_prefix(), here we allow a negative
+    // prefix_found.  That means the source tree Lib dir gets used.
+    if (!calculate->prefix_found) {
+        return _PyStatus_OK();
+    }
+    PyStatus status;
+    wchar_t *prefix = calculate->prefix;
+    if (!_Py_isabs(prefix)) {
+        prefix = _PyMem_RawWcsdup(prefix);
+        if (prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+        status = absolutize(&prefix);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    wchar_t buf[MAXPATHLEN + 1];
+    int res = _Py_normalize_path(prefix, buf, Py_ARRAY_LENGTH(buf));
+    if (prefix != calculate->prefix) {
+        PyMem_RawFree(prefix);
+    }
+    if (res < 0) {
+        return PATHLEN_ERR();
+    }
+    pathconfig->stdlib_dir = _PyMem_RawWcsdup(buf);
+    if (pathconfig->stdlib_dir == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
     return _PyStatus_OK();
 }
 
@@ -1493,12 +1530,10 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     if (pathconfig->stdlib_dir == NULL) {
-        if (calculate->prefix_found) {
-            /* This must be done *before* calculate_set_prefix() is called. */
-            pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->prefix);
-            if (pathconfig->stdlib_dir == NULL) {
-                return _PyStatus_NO_MEMORY();
-            }
+        /* This must be done *before* calculate_set_prefix() is called. */
+        status = calculate_set_stdlib_dir(calculate, pathconfig);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
     }
 

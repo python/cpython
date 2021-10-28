@@ -3,6 +3,7 @@
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
+#include <stdlib.h>               // mbstowcs()
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
@@ -2165,6 +2166,113 @@ _Py_add_relfile(wchar_t *dirname, const wchar_t *relfile, size_t bufsize)
     assert(dirname != NULL && relfile != NULL);
     assert(bufsize > 0);
     return join_relfile(dirname, bufsize, dirname, relfile);
+}
+
+
+size_t
+_Py_find_basename(const wchar_t *filename)
+{
+    for (size_t i = wcslen(filename); i > 0; --i) {
+        if (filename[i] == SEP) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+
+/* Remove navigation elements such as "." and "..".
+
+   This is mostly a C implementation of posixpath.normpath().
+   Return 0 on success.  Return -1 if "orig" is too big for the buffer. */
+int
+_Py_normalize_path(const wchar_t *path, wchar_t *buf, const size_t buf_len)
+{
+    assert(path && *path != L'\0');
+    assert(*path == SEP);  // an absolute path
+    if (wcslen(path) + 1 >= buf_len) {
+        return -1;
+    }
+
+    int dots = -1;
+    int check_leading = 1;
+    const wchar_t *buf_start = buf;
+    wchar_t *buf_next = buf;
+    // The resulting filename will never be longer than path.
+    for (const wchar_t *remainder = path; *remainder != L'\0'; remainder++) {
+        wchar_t c = *remainder;
+        buf_next[0] = c;
+        buf_next++;
+        if (c == SEP) {
+            assert(dots <= 2);
+            if (dots == 2) {
+                // Turn "/x/y/../z" into "/x/z".
+                buf_next -= 4;  // "/../"
+                assert(*buf_next == SEP);
+                // We cap it off at the root, so "/../spam" becomes "/spam".
+                if (buf_next == buf_start) {
+                    buf_next++;
+                }
+                else {
+                    // Move to the previous SEP in the buffer.
+                    while (*(buf_next - 1) != SEP) {
+                        assert(buf_next != buf_start);
+                        buf_next--;
+                    }
+                }
+            }
+            else if (dots == 1) {
+                // Turn "/./" into "/".
+                buf_next -= 2;  // "./"
+                assert(*(buf_next - 1) == SEP);
+            }
+            else if (dots == 0) {
+                // Turn "//" into "/".
+                buf_next--;
+                assert(*(buf_next - 1) == SEP);
+                if (check_leading) {
+                    if (buf_next - 1 == buf && *(remainder + 1) != SEP) {
+                        // Leave a leading "//" alone, unless "///...".
+                        buf_next++;
+                        buf_start++;
+                    }
+                    check_leading = 0;
+                }
+            }
+            dots = 0;
+        }
+        else {
+            check_leading = 0;
+            if (dots >= 0) {
+                if (c == L'.' && dots < 2) {
+                    dots++;
+                }
+                else {
+                    dots = -1;
+                }
+            }
+        }
+    }
+    if (dots >= 0) {
+        // Strip any trailing dots and trailing slash.
+        buf_next -= dots + 1;  // "/" or "/." or "/.."
+        assert(*buf_next == SEP);
+        if (buf_next == buf_start) {
+            // Leave the leading slash for root.
+            buf_next++;
+        }
+        else {
+            if (dots == 2) {
+                // Move to the previous SEP in the buffer.
+                do {
+                    assert(buf_next != buf_start);
+                    buf_next--;
+                } while (*(buf_next) != SEP);
+            }
+        }
+    }
+    *buf_next = L'\0';
+    return 0;
 }
 
 

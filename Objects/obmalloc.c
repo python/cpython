@@ -2,6 +2,7 @@
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
 
 #include <stdbool.h>
+#include <stdlib.h>               // malloc()
 
 
 /* Defined in tracemalloc.c */
@@ -1279,21 +1280,30 @@ _Py_GetAllocatedBlocks(void)
 
 #if WITH_PYMALLOC_RADIX_TREE
 /*==========================================================================*/
-/* radix tree for tracking arena usage
+/* radix tree for tracking arena usage.  If enabled, used to implement
+   address_in_range().
 
-   bit allocation for keys
+   memory address bit allocation for keys
 
-   64-bit pointers and 2^20 arena size:
-     16 -> ignored (POINTER_BITS - ADDRESS_BITS)
-     10 -> MAP_TOP
-     10 -> MAP_MID
-      8 -> MAP_BOT
+   64-bit pointers, IGNORE_BITS=0 and 2^20 arena size:
+     15 -> MAP_TOP_BITS
+     15 -> MAP_MID_BITS
+     14 -> MAP_BOT_BITS
+     20 -> ideal aligned arena
+   ----
+     64
+
+   64-bit pointers, IGNORE_BITS=16, and 2^20 arena size:
+     16 -> IGNORE_BITS
+     10 -> MAP_TOP_BITS
+     10 -> MAP_MID_BITS
+      8 -> MAP_BOT_BITS
      20 -> ideal aligned arena
    ----
      64
 
    32-bit pointers and 2^18 arena size:
-     14 -> MAP_BOT
+     14 -> MAP_BOT_BITS
      18 -> ideal aligned arena
    ----
      32
@@ -1305,11 +1315,16 @@ _Py_GetAllocatedBlocks(void)
 /* number of bits in a pointer */
 #define POINTER_BITS 64
 
-/* Current 64-bit processors are limited to 48-bit physical addresses.  For
- * now, the top 17 bits of addresses will all be equal to bit 2**47.  If that
- * changes in the future, this must be adjusted upwards.
+/* High bits of memory addresses that will be ignored when indexing into the
+ * radix tree.  Setting this to zero is the safe default.  For most 64-bit
+ * machines, setting this to 16 would be safe.  The kernel would not give
+ * user-space virtual memory addresses that have significant information in
+ * those high bits.  The main advantage to setting IGNORE_BITS > 0 is that less
+ * virtual memory will be used for the top and middle radix tree arrays.  Those
+ * arrays are allocated in the BSS segment and so will typically consume real
+ * memory only if actually accessed.
  */
-#define ADDRESS_BITS 48
+#define IGNORE_BITS 0
 
 /* use the top and mid layers of the radix tree */
 #define USE_INTERIOR_NODES
@@ -1317,7 +1332,7 @@ _Py_GetAllocatedBlocks(void)
 #elif SIZEOF_VOID_P == 4
 
 #define POINTER_BITS 32
-#define ADDRESS_BITS 32
+#define IGNORE_BITS 0
 
 #else
 
@@ -1331,6 +1346,9 @@ _Py_GetAllocatedBlocks(void)
 #   error "arena size must be < 2^32"
 #endif
 
+/* the lower bits of the address that are not ignored */
+#define ADDRESS_BITS (POINTER_BITS - IGNORE_BITS)
+
 #ifdef USE_INTERIOR_NODES
 /* number of bits used for MAP_TOP and MAP_MID nodes */
 #define INTERIOR_BITS ((ADDRESS_BITS - ARENA_BITS + 2) / 3)
@@ -1340,7 +1358,7 @@ _Py_GetAllocatedBlocks(void)
 
 #define MAP_TOP_BITS INTERIOR_BITS
 #define MAP_TOP_LENGTH (1 << MAP_TOP_BITS)
-#define MAP_TOP_MASK (MAP_BOT_LENGTH - 1)
+#define MAP_TOP_MASK (MAP_TOP_LENGTH - 1)
 
 #define MAP_MID_BITS INTERIOR_BITS
 #define MAP_MID_LENGTH (1 << MAP_MID_BITS)
@@ -1359,11 +1377,9 @@ _Py_GetAllocatedBlocks(void)
 #define MAP_MID_INDEX(p) ((AS_UINT(p) >> MAP_MID_SHIFT) & MAP_MID_MASK)
 #define MAP_TOP_INDEX(p) ((AS_UINT(p) >> MAP_TOP_SHIFT) & MAP_TOP_MASK)
 
-#if ADDRESS_BITS > POINTER_BITS
-/* Return non-physical address bits of a pointer.  Those bits should be same
- * for all valid pointers if ADDRESS_BITS set correctly.  Linux has support for
- * 57-bit address space (Intel 5-level paging) but will not currently give
- * those addresses to user space.
+#if IGNORE_BITS > 0
+/* Return the ignored part of the pointer address.  Those bits should be same
+ * for all valid pointers if IGNORE_BITS is set correctly.
  */
 #define HIGH_BITS(p) (AS_UINT(p) >> ADDRESS_BITS)
 #else
@@ -1415,7 +1431,7 @@ static arena_map_bot_t *
 arena_map_get(block *p, int create)
 {
 #ifdef USE_INTERIOR_NODES
-    /* sanity check that ADDRESS_BITS is correct */
+    /* sanity check that IGNORE_BITS is correct */
     assert(HIGH_BITS(p) == HIGH_BITS(&arena_map_root));
     int i1 = MAP_TOP_INDEX(p);
     if (arena_map_root.ptrs[i1] == NULL) {
@@ -1475,7 +1491,7 @@ arena_map_get(block *p, int create)
 static int
 arena_map_mark_used(uintptr_t arena_base, int is_used)
 {
-    /* sanity check that ADDRESS_BITS is correct */
+    /* sanity check that IGNORE_BITS is correct */
     assert(HIGH_BITS(arena_base) == HIGH_BITS(&arena_map_root));
     arena_map_bot_t *n_hi = arena_map_get((block *)arena_base, is_used);
     if (n_hi == NULL) {

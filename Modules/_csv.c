@@ -250,16 +250,14 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
             if (len < 0) {
                 return -1;
             }
-            if (len > 1) {
+            if (len != 1) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be a 1-character string",
                     name);
                 return -1;
             }
             /* PyUnicode_READY() is called in PyUnicode_GetLength() */
-            else if (len > 0) {
-                *target = PyUnicode_READ_CHAR(src, 0);
-            }
+            *target = PyUnicode_READ_CHAR(src, 0);
         }
     }
     return 0;
@@ -272,7 +270,6 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
         *target = dflt;
     }
     else {
-        *target = NOT_SET;
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be string, not %.200s", name,
@@ -283,16 +280,14 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
         if (len < 0) {
             return -1;
         }
-        if (len > 1) {
+        if (len != 1) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be a 1-character string",
                          name);
             return -1;
         }
         /* PyUnicode_READY() is called in PyUnicode_GetLength() */
-        else if (len > 0) {
-            *target = PyUnicode_READ_CHAR(src, 0);
-        }
+        *target = PyUnicode_READ_CHAR(src, 0);
     }
     return 0;
 }
