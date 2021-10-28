@@ -17,12 +17,11 @@
 
 --------------
 
-This module provides runtime support for type hints as specified by
-:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, and :pep:`591`.
-The most fundamental support consists of the types :data:`Any`, :data:`Union`,
-:data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
-:class:`Generic`.  For full specification please see :pep:`484`.  For
-a simplified introduction to type hints see :pep:`483`.
+This module provides runtime support for type hints. The most fundamental
+support consists of the types :data:`Any`, :data:`Union`, :data:`Tuple`,
+:data:`Callable`, :class:`TypeVar`, and :class:`Generic`. For a full
+specification, please see :pep:`484`. For a simplified introduction to type
+hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -33,6 +32,33 @@ The function below takes and returns a string and is annotated as follows::
 In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
+
+.. _relevant-peps:
+
+Relevant PEPs
+=============
+
+Since the initial introduction of type hints in :pep:`484` and :pep:`483`, a
+number of PEPs have modified and enhanced Python's framework for type
+annotations. These include:
+
+* :pep:`526`: Syntax for Variable Annotations
+     *Introducing* syntax for annotating variables outside of function
+     definitions, and :data:`ClassVar`
+* :pep:`544`: Protocols: Structural subtyping (static duck typing)
+     *Introducing* :class:`Protocol` and the
+     :func:`@runtime_checkable<runtime_checkable>` decorator
+* :pep:`585`: Type Hinting Generics In Standard Collections
+     *Introducing* the ability to use builtin collections and ABCs as
+     :term:`generic types<generic type>`
+* :pep:`586`: Literal Types
+     *Introducing* :class:`Literal`
+* :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
+     *Introducing* :class:`TypedDict`
+* :pep:`591`: Adding a final qualifier to typing
+     *Introducing* :data:`Final` and the :func:`@final<final>` decorator
+* :pep:`593`: Flexible function and variable annotations
+     *Introducing* :class:`Annotated`
 
 Type aliases
 ============
