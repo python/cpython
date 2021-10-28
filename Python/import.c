@@ -1153,8 +1153,10 @@ set_frozen_error(frozen_status status, PyObject *modname)
     switch (status) {
         case FROZEN_BAD_NAME:
         case FROZEN_NOT_FOUND:
-        case FROZEN_DISABLED:
             err = "No such frozen object named %R";
+            break;
+        case FROZEN_DISABLED:
+            err = "Frozen modules are disabled and the frozen object named %R is not essential";
             break;
         case FROZEN_EXCLUDED:
             err = "Excluded frozen object named %R";
