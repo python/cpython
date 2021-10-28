@@ -52,13 +52,13 @@ annotations. These include:
      *Introducing* the ability to use builtin collections and ABCs as
      :term:`generic types<generic type>`
 * :pep:`586`: Literal Types
-     *Introducing* :data:`Literal`
+     *Introducing* :class:`Literal`
 * :pep:`589`: TypedDict: Type Hints for Dictionaries with a Fixed Set of Keys
      *Introducing* :class:`TypedDict`
 * :pep:`591`: Adding a final qualifier to typing
      *Introducing* :data:`Final` and the :func:`@final<final>` decorator
 * :pep:`593`: Flexible function and variable annotations
-     *Introducing* :data:`Annotated`
+     *Introducing* :class:`Annotated`
 
 Type aliases
 ============
