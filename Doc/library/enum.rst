@@ -1125,9 +1125,9 @@ and raise an error if the two do not match::
 _Private__names
 """""""""""""""
 
-Private names will be normal attributes in Python 3.10 instead of either an error
+:ref:`Private names <private-name-mangling>` will be normal attributes in Python 3.11 instead of either an error
 or a member (depending on if the name ends with an underscore). Using these names
-in 3.9 will issue a :exc:`DeprecationWarning`.
+in 3.9 and 3.10 will issue a :exc:`DeprecationWarning`.
 
 
 ``Enum`` member type
@@ -1149,6 +1149,10 @@ all-uppercase names for members)::
     <FieldTypes.size: 2>
     >>> FieldTypes.size.value
     2
+
+.. note::
+
+   This behavior is deprecated and will be removed in 3.12.
 
 .. versionchanged:: 3.5
 
@@ -1200,3 +1204,8 @@ all named flags and all named combinations of flags that are in the value::
     >>> Color(7)      # not named combination
     <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
 
+.. note::
+
+   In 3.11 unnamed combinations of flags will only produce the canonical flag
+   members (aka single-value flags).  So ``Color(7)`` would produce something
+   like ``<Color.BLUE|GREEN|RED: 7>``.
