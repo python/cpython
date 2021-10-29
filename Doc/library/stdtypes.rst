@@ -4921,7 +4921,8 @@ in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 Standard Generic Collections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These standard library collections support parameterized generics.
+The list of standard-library collections supporting parameterized generics
+includes the following objects:
 
 * :class:`tuple`
 * :class:`list`
@@ -4961,6 +4962,8 @@ These standard library collections support parameterized generics.
 * :class:`contextlib.AbstractAsyncContextManager`
 * :ref:`re.Pattern <re-objects>`
 * :ref:`re.Match <match-objects>`
+* :class:`shelve.Shelf`
+* :class:`types.MappingProxyType`
 
 
 Special Attributes of Generic Alias
