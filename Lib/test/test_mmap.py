@@ -7,6 +7,7 @@ import re
 import itertools
 import random
 import socket
+import string
 import sys
 import weakref
 
@@ -15,6 +16,10 @@ mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 
+tagname_prefix = f'python_{os.getpid()}_test_mmap'
+def random_tagname(length=10):
+    suffix = ''.join(random.choices(string.ascii_uppercase, k=length))
+    return f'{tagname_prefix}_{suffix}'
 
 class MmapTests(unittest.TestCase):
 
@@ -610,11 +615,13 @@ class MmapTests(unittest.TestCase):
         data1 = b"0123456789"
         data2 = b"abcdefghij"
         assert len(data1) == len(data2)
+        tagname1 = random_tagname()
+        tagname2 = random_tagname()
 
         # Test same tag
-        m1 = mmap.mmap(-1, len(data1), tagname="foo")
+        m1 = mmap.mmap(-1, len(data1), tagname=tagname1)
         m1[:] = data1
-        m2 = mmap.mmap(-1, len(data2), tagname="foo")
+        m2 = mmap.mmap(-1, len(data2), tagname=tagname1)
         m2[:] = data2
         self.assertEqual(m1[:], data2)
         self.assertEqual(m2[:], data2)
@@ -622,9 +629,9 @@ class MmapTests(unittest.TestCase):
         m1.close()
 
         # Test different tag
-        m1 = mmap.mmap(-1, len(data1), tagname="foo")
+        m1 = mmap.mmap(-1, len(data1), tagname=tagname1)
         m1[:] = data1
-        m2 = mmap.mmap(-1, len(data2), tagname="boo")
+        m2 = mmap.mmap(-1, len(data2), tagname=tagname2)
         m2[:] = data2
         self.assertEqual(m1[:], data1)
         self.assertEqual(m2[:], data2)
@@ -635,7 +642,7 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_sizeof(self):
         m1 = mmap.mmap(-1, 100)
-        tagname = "foo"
+        tagname = random_tagname()
         m2 = mmap.mmap(-1, 100, tagname=tagname)
         self.assertEqual(sys.getsizeof(m2),
                          sys.getsizeof(m1) + len(tagname) + 1)
@@ -643,9 +650,10 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_crasher_on_windows(self):
         # Should not crash (Issue 1733986)
-        m = mmap.mmap(-1, 1000, tagname="foo")
+        tagname = random_tagname()
+        m = mmap.mmap(-1, 1000, tagname=tagname)
         try:
-            mmap.mmap(-1, 5000, tagname="foo")[:] # same tagname, but larger size
+            mmap.mmap(-1, 5000, tagname=tagname)[:] # same tagname, but larger size
         except:
             pass
         m.close()
@@ -857,7 +865,7 @@ class MmapTests(unittest.TestCase):
         """
         start_size = 2 * PAGESIZE
         reduced_size = PAGESIZE
-        tagname = "TEST"
+        tagname =  random_tagname()
         data_length = 8
         data = bytes(random.getrandbits(8) for _ in range(data_length))
 
