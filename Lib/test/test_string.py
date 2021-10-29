@@ -15,6 +15,7 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(string.ascii_uppercase, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
         self.assertEqual(string.ascii_letters, string.ascii_lowercase + string.ascii_uppercase)
         self.assertEqual(string.digits, '0123456789')
+        self.assertEqual(string.ascii_alphanumerics, string.ascii_letters + string.digits)
         self.assertEqual(string.hexdigits, string.digits + 'abcdefABCDEF')
         self.assertEqual(string.octdigits, '01234567')
         self.assertEqual(string.punctuation, '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')

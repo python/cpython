@@ -21,6 +21,12 @@ String constants
 The constants defined in this module are:
 
 
+.. data:: ascii_alphanumerics
+
+   The concatenation of the :const:`ascii_letters` and :const:`digits`
+   constants described below.  This value is not locale-dependent.
+
+
 .. data:: ascii_letters
 
    The concatenation of the :const:`ascii_lowercase` and :const:`ascii_uppercase`
