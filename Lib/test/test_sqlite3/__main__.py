@@ -1,4 +1,5 @@
 from test.test_sqlite3 import load_tests
 import unittest
 
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()
