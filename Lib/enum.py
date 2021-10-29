@@ -4,6 +4,7 @@ from operator import or_ as _or_
 from functools import reduce
 from builtins import property as _bltin_property, bin as _bltin_bin
 
+
 __all__ = [
         'EnumType', 'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
