@@ -487,7 +487,8 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
-* :func:`typing.cast` no longer accepts keyword arguments.
+* :func:`typing.cast` no longer accepts keyword arguments. Note that static
+  checkers have always rejected this. Now it's also enforced at runtime.
   (Contributed by Yurii Karabas in :issue:`44775`.)
 
 * When sorting using tuples as keys, the order of the result may differ
