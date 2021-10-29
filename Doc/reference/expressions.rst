@@ -17,7 +17,17 @@ syntax rule has the form
    name: `othername`
 
 and no semantics are given, the semantics of this form of ``name`` are the same
-as for ``othername``.
+as for ``othername``. As an example, the production rule of
+:token:`~python-grammar:or_expr` below means that an
+:token:`~python-grammar:or_expr` may be a :token:`~python-grammar:xor_expr`, in
+which case it gets the :ref:`bitwise`'s semantic. This shows that the meaning of
+:token:`~python-grammar:or_expr` is not "an expression whose main operator is
+``|``" but is "an expression where the ``|`` operator is accepted
+syntactically". This also shows and that each time the ``|`` operator is
+accepted syntactically, then the ``^`` operator is also accepted
+syntactically. Hence, if you need to know exactly which part of the syntax is
+accepted in a production rule, you must not rely only on it's name and need to
+check it's actual definition.
 
 
 .. _conversions:
