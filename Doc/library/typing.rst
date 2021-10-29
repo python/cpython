@@ -61,7 +61,8 @@ annotations. These include:
      *Introducing* :data:`Annotated`
 * :pep:`604`: Allow writing union types as ``X | Y``
      *Introducing* :data:`types.UnionType` and the ability to use
-     the binary-or operator ``|`` as syntactic sugar for a union of types
+     the binary-or operator ``|`` to signify a
+     :ref:`union of types<types-union>`
 * :pep:`612`: Parameter Specification Variables
      *Introducing* :class:`ParamSpec` and :data:`Concatenate`
 * :pep:`613`: Explicit Type Aliases
