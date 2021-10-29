@@ -17,6 +17,3 @@ if test.support.verbose:
     print("test_sqlite3: testing with version",
           "{!r}, sqlite_version {!r}".format(sqlite3.version,
                                              sqlite3.sqlite_version))
-
-if __name__ == "__main__":
-    unittest.main()
