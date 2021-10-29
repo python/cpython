@@ -84,7 +84,7 @@ vulnerable to an SQL injection attacks (see the `xkcd webcomic
 
 Instead, use the DB-API's parameter substitution by putting placeholders in the
 query string. Provide the actual values as a :class:`tuple` as the second
-argument oo the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+argument to the cursor's :meth:`~Cursor.execute` method. An SQL statement may
 use one of two kinds of placeholders: question marks (qmark style) or named
 placeholders (named style). For the qmark style, ``parameters`` must be a
 :term:`sequence <sequence>`. For the named style, it can be either a
