@@ -426,12 +426,13 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-    def remove_configured_extensions(self):
+    def handle_configured_extensions(self):
         # The sysconfig variables built by makesetup that list the already
         # built modules and the disabled modules as configured by the Setup
         # files.
-        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
-        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
+        sysconf_built = set(sysconfig.get_config_var('MODBUILT_NAMES').split())
+        sysconf_shared = set(sysconfig.get_config_var('MODSHARED_NAMES').split())
+        sysconf_dis = set(sysconfig.get_config_var('MODDISABLED_NAMES').split())
 
         mods_built = []
         mods_disabled = []
@@ -449,11 +450,15 @@ class PyBuildExt(build_ext):
                                mods_configured]
             # Remove the shared libraries built by a previous build.
             for ext in mods_configured:
+                # Don't remove shared extensions which have been built
+                # by Modules/Setup
+                if ext.name in sysconf_shared:
+                    continue
                 fullpath = self.get_ext_fullpath(ext.name)
-                if os.path.exists(fullpath):
+                if os.path.lexists(fullpath):
                     os.unlink(fullpath)
 
-        return (mods_built, mods_disabled)
+        return mods_built, mods_disabled
 
     def set_compiler_executables(self):
         # When you run "make CC=altcc" or something similar, you really want
@@ -478,7 +483,7 @@ class PyBuildExt(build_ext):
             self.remove_disabled()
 
         self.update_sources_depends()
-        mods_built, mods_disabled = self.remove_configured_extensions()
+        mods_built, mods_disabled = self.handle_configured_extensions()
         self.set_compiler_executables()
 
         if LIST_MODULE_NAMES:
