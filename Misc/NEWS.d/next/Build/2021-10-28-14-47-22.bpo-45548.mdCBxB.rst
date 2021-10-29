@@ -1,0 +1,4 @@
+``Modules/Setup`` and ``Modules/makesetup`` have been improved. The
+``Setup`` file now contains working rules for all extensions. Outdated
+comments have been removed. Rules defined by ``makesetup`` track
+dependencies correctly.
