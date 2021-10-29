@@ -176,10 +176,6 @@ class TestEnum(unittest.TestCase):
             WINTER = 4
         self.Season = Season
 
-        class FloatEnum(float, Enum):
-            pass
-        self.FloatEnum = FloatEnum
-
         class Konstants(float, Enum):
             E = 2.7182818
             PI = 3.1415926
@@ -202,14 +198,16 @@ class TestEnum(unittest.TestCase):
         self.Directional = Directional
 
         from datetime import date
-        class DateEnum(date, Enum):
-            pass
-        self.DateEnum = DateEnum
-
         class Holiday(date, Enum):
             NEW_YEAR = 2013, 1, 1
             IDES_OF_MARCH = 2013, 3, 15
         self.Holiday = Holiday
+
+        class DateEnum(date, Enum): pass
+        self.DateEnum = DateEnum
+
+        class FloatEnum(float, Enum): pass
+        self.FloatEnum = FloatEnum
 
         class Wowser(Enum):
             this = 'that'
@@ -236,18 +234,15 @@ class TestEnum(unittest.TestCase):
         self.FloatWowser = FloatWowser
 
         class WowserNoMembers(Enum):
-            def wowser(self):
-                return ("Wowser! I'm %s!" % self.name)
+            def wowser(self): pass
         self.WowserNoMembers = WowserNoMembers
 
         class IntWowserNoMembers(IntEnum):
-            def wowser(self):
-                return ("Wowser! I'm %s!" % self.name)
+            def wowser(self): pass
         self.IntWowserNoMembers = IntWowserNoMembers
 
         class FloatWowserNoMembers(float, Enum):
-            def wowser(self):
-                return ("Wowser! I'm %s!" % self.name)
+            def wowser(self): pass
         self.FloatWowserNoMembers = FloatWowserNoMembers
 
         class EnumWithInit(Enum):
@@ -256,8 +251,7 @@ class TestEnum(unittest.TestCase):
                 self.farewell = farewell
             ENGLISH = 'hello', 'goodbye'
             GERMAN = 'Guten Morgen', 'Auf Wiedersehen'
-            def some_method(self):
-                pass
+            def some_method(self): pass
         self.EnumWithInit = EnumWithInit
 
         # see issue22506
@@ -4392,11 +4386,10 @@ class TestIntEnumConvert(unittest.TestCase):
         self.assertEqual(test_type.CONVERT_TEST_NAME_C, 5)
         self.assertEqual(test_type.CONVERT_TEST_NAME_D, 5)
         self.assertEqual(test_type.CONVERT_TEST_NAME_E, 5)
-        int_enum_dir = set(dir(IntEnum))
         # Ensure that test_type only picked up names matching the filter.
         self.assertEqual([name for name in dir(test_type)
                           if name[0:2] not in ('CO', '__')
-                          and name not in int_enum_dir],
+                          and name not in dir(IntEnum)],
                          [], msg='Names other than CONVERT_TEST_* found.')
 
     @unittest.skipUnless(python_version == (3, 8),
@@ -4445,11 +4438,10 @@ class TestStrEnumConvert(unittest.TestCase):
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
         self.assertEqual(test_type.CONVERT_STR_TEST_2, 'goodbye')
-        str_enum_dir = set(dir(StrEnum))
         # Ensure that test_type only picked up names matching the filter.
         self.assertEqual([name for name in dir(test_type)
                           if name[0:2] not in ('CO', '__')
-                          and name not in str_enum_dir],
+                          and name not in dir(StrEnum)],
                          [], msg='Names other than CONVERT_STR_* found.')
 
     def test_convert_repr_and_str(self):
