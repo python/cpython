@@ -16,8 +16,10 @@ mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
 
+tagname_prefix = f'python_{os.getpid()}_test_mmap'
 def random_tagname(length=10):
-     return "".join(random.choice(string.ascii_uppercase) for _ in range(length))
+    suffix = ''.join(random.choices(string.ascii_uppercase, k=length))
+    return f'{tagname_prefix}_{suffix}'
 
 class MmapTests(unittest.TestCase):
 
