@@ -28,7 +28,7 @@ import weakref
 import functools
 from test import support
 
-from test_dbapi import managed_connect
+from .test_dbapi import managed_connect
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
