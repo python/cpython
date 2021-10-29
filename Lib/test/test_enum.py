@@ -7,10 +7,9 @@ import sys
 import unittest
 import threading
 from collections import OrderedDict
-from datetime import date
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
-from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, _is_sunder, _is_dunder
+from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -202,6 +201,7 @@ class TestEnum(unittest.TestCase):
             SOUTH = 'south'
         self.Directional = Directional
 
+        from datetime import date
         class DateEnum(date, Enum):
             pass
         self.DateEnum = DateEnum
@@ -320,7 +320,7 @@ class TestEnum(unittest.TestCase):
                 # test that there are no dupes in dir
                 self.assertEqual(len(cls_dir), len(set(cls_dir)))
                 # test that there are no sunders in dir
-                self.assertFalse(any(_is_sunder(attr) for attr in cls_dir))
+                self.assertFalse(any(enum._is_sunder(attr) for attr in cls_dir))
                 self.assertNotIn('__new__', cls_dir)
 
                 for attr in ('__class__', '__doc__', '__members__', '__module__'):
@@ -368,7 +368,7 @@ class TestEnum(unittest.TestCase):
                             else:
                                 self.assertIn(attr_name, member_dir)
 
-                    self.assertFalse(any(_is_sunder(attr) for attr in member_dir))
+                    self.assertFalse(any(enum._is_sunder(attr) for attr in member_dir))
 
     def test_dir_for_enums_with_added_behaviour(self):
         enums_for_test = (
@@ -415,6 +415,8 @@ class TestEnum(unittest.TestCase):
         self.assertIn('farewell', member_dir)
 
     def test_mixin_dirs(self):
+        from datetime import date
+
         enums_for_test = (
             # generic mixins from enum.py
             (IntEnum, int),
@@ -436,7 +438,7 @@ class TestEnum(unittest.TestCase):
         enum_dir = dir(Enum)
         enum_module_names = enum.__all__
         is_from_enum_module = lambda cls: cls.__name__ in enum_module_names
-        is_enum_dunder = lambda attr: _is_dunder(attr) and attr in enum_dict
+        is_enum_dunder = lambda attr: enum._is_dunder(attr) and attr in enum_dict
 
         # General tests
         for enum_cls, mixin_cls in enums_for_test:
@@ -452,7 +454,7 @@ class TestEnum(unittest.TestCase):
 
                 for attr in mixin_dir:
                     with self.subTest(attr=attr):
-                        if _is_sunder(attr):
+                        if enum._is_sunder(attr):
                             # Unlikely, but no harm in testing
                             self.assertNotIn(attr, cls_dir)
                         elif attr in ('__class__', '__doc__', '__members__', '__module__'):
