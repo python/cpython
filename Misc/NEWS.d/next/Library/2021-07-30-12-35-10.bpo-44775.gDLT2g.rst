@@ -1,2 +1,2 @@
-Speed-up ``typing.cast`` by implementing it in C. Patch provided by Yurii
-Karabas.
+Speed-up ``typing.cast`` by implementing it in C. Also disallow passing keyword
+arguments to ``typing.cast``. Patch provided by Yurii Karabas.
