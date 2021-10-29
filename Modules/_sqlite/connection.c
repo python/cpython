@@ -165,6 +165,10 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     Py_END_ALLOW_THREADS
 
+    if (self->db == NULL && rc == SQLITE_NOMEM) {
+        PyErr_NoMemory();
+        return -1;
+    }
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(state, self->db);
         return -1;
