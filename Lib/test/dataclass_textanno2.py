@@ -19,7 +19,7 @@ class Foo:  # matching name with `dataclass_testanno.Foo`
 
 @dataclasses.dataclass
 class WithMatchinNameOverride(dataclass_textanno.Bar):
-    foo: Foo  # we override existing `foo: Foo` with
+    foo: Foo  # Existing `foo` annotation should be overridden
 
 
 @dataclasses.dataclass(init=False)
