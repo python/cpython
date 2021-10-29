@@ -11,7 +11,7 @@ import sqlite3
 
 def load_tests(loader, tests, pattern):
     if test.support.verbose:
-        print("test_sqlite: testing with version",
+        print("test_sqlite3: testing with version",
               "{!r}, sqlite_version {!r}".format(sqlite3.version,
                                                  sqlite3.sqlite_version))
     pkg_dir = os.path.dirname(__file__)
