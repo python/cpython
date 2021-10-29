@@ -117,6 +117,24 @@ Module functions and constants
 ------------------------------
 
 
+.. data:: apilevel
+
+   String constant stating the supported DB-API level. Required by the DB-API.
+   Hard-coded to ``"2.0"``.
+
+.. data:: paramstyle
+
+   String constant stating the type of parameter marker formatting expected by
+   the :mod:`sqlite3` module. Required by the DB-API. Hard-coded to
+   ``"qmark"``.
+
+   .. note::
+
+      The :mod:`sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
+      parameter styles, because that is what the underlying SQLite library
+      supports. However, the DB-API does not allow multiple values for
+      the ``paramstyle`` attribute.
+
 .. data:: version
 
    The version number of this module, as a string. This is not the version of
@@ -137,6 +155,26 @@ Module functions and constants
 .. data:: sqlite_version_info
 
    The version number of the run-time SQLite library, as a tuple of integers.
+
+
+.. data:: threadsafety
+
+   Integer constant required by the DB-API, stating the level of thread safety
+   the :mod:`sqlite3` module supports. Currently hard-coded to ``1``, meaning
+   *"Threads may share the module, but not connections."* However, this may not
+   always be true. You can check the underlying SQLite library's compile-time
+   threaded mode using the following query::
+
+     import sqlite3
+     con = sqlite3.connect(":memory:")
+     con.execute("""
+         select * from pragma_compile_options
+         where compile_options like 'THREADSAFE=%'
+     """).fetchall()
+
+   Note that the `SQLITE_THREADSAFE levels
+   <https://sqlite.org/compile.html#threadsafe>`_ do not match the DB-API 2.0
+   ``threadsafety`` levels.
 
 
 .. data:: PARSE_DECLTYPES
@@ -709,6 +747,14 @@ Cursor Objects
 
       The cursor will be unusable from this point forward; a :exc:`ProgrammingError`
       exception will be raised if any operation is attempted with the cursor.
+
+   .. method:: setinputsizes(sizes)
+
+      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
+
+   .. method:: setoutputsize(size [, column])
+
+      Required by the DB-API. Is a no-op in :mod:`sqlite3`.
 
    .. attribute:: rowcount
 

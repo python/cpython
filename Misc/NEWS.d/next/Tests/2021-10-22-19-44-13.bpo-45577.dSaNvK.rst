@@ -1,0 +1,1 @@
+Add subtests for all ``pickle`` protocols in ``test_zoneinfo``.
