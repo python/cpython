@@ -4,7 +4,6 @@ from operator import or_ as _or_
 from functools import reduce
 from builtins import property as _bltin_property, bin as _bltin_bin
 
-
 __all__ = [
         'EnumType', 'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
@@ -635,10 +634,43 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(self):
-        return (
-                ['__class__', '__doc__', '__members__', '__module__']
-                + self._member_names_
-                )
+        # Start off with the desired result for dir(Enum)
+        cls_dir = {'__class__', '__doc__', '__members__', '__module__'}
+        add_to_dir = cls_dir.add
+
+        # We want these added to __dir__
+        # if and only if they have been user-overridden
+        enum_dunders = set(filter(_is_dunder, Enum.__dict__))
+
+        mro = self.__mro__
+        this_module = globals().values()
+        is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
+        first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
+
+        # special-case __new__
+        if self.__new__ is not first_enum_base.__new__:
+            add_to_dir('__new__')
+
+        for cls in mro:
+            # Ignore any classes defined in this module
+            if cls is object or is_from_this_module(cls):
+                continue
+
+            # Avoid dir() if EnumType is the metaclass (infinite recursion otherwise)
+            # Otherwise, go according to dir()
+            cls_lookup = cls.__dict__ if isinstance(cls, EnumType) else dir(cls)
+
+            for attr_name in cls_lookup:
+                # Exclude all sunders from dir(); __new__ is special-cased
+                if attr_name == '__new__' or _is_sunder(attr_name):
+                    continue
+                elif attr_name not in enum_dunders:
+                    add_to_dir(attr_name)
+                elif getattr(self, attr_name) is not getattr(first_enum_base, attr_name, object()):
+                    add_to_dir(attr_name)
+
+        # sort the output before returning it, so that the result is deterministic.
+        return sorted(cls_dir)
 
     def __getattr__(cls, name):
         """
@@ -985,13 +1017,16 @@ class Enum(metaclass=EnumType):
         """
         Returns all members and all public methods
         """
-        added_behavior = [
-                m
-                for cls in self.__class__.mro()
-                for m in cls.__dict__
-                if m[0] != '_' and m not in self._member_map_
-                ] + [m for m in self.__dict__ if m[0] != '_']
-        return (['__class__', '__doc__', '__module__'] + added_behavior)
+        cls = type(self)
+
+        filtered_cls_dir = (
+            name for name in dir(cls)
+            if name not in {'__members__', '__init__', '__new__', *cls._member_names_}
+        )
+
+        filtered_self_dict = (name for name in self.__dict__ if not name.startswith('_'))
+
+        return sorted({'name', 'value', *filtered_cls_dir, *filtered_self_dict})
 
     def __format__(self, format_spec):
         """
