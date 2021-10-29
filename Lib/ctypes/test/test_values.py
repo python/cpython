@@ -56,35 +56,37 @@ class PythonValuesTestCase(unittest.TestCase):
                         ("size", c_int)]
         FrozenTable = POINTER(struct_frozen)
 
-        ft = FrozenTable.in_dll(pythonapi, "PyImport_FrozenModules")
-        # ft is a pointer to the struct_frozen entries:
         modules = []
-        for entry in ft:
-            # This is dangerous. We *can* iterate over a pointer, but
-            # the loop will not terminate (maybe with an access
-            # violation;-) because the pointer instance has no size.
-            if entry.name is None:
-                break
-            modname = entry.name.decode("ascii")
-            modules.append(modname)
-            with self.subTest(modname):
-                # Do a sanity check on entry.size and entry.code.
-                self.assertGreater(abs(entry.size), 10)
-                self.assertTrue([entry.code[i] for i in range(abs(entry.size))])
-                # Check the module's package-ness.
-                with import_helper.frozen_modules():
-                    spec = importlib.util.find_spec(modname)
-                if entry.size < 0:
-                    # It's a package.
-                    self.assertIsNotNone(spec.submodule_search_locations)
-                else:
-                    self.assertIsNone(spec.submodule_search_locations)
+        for group in ["Bootstrap", "Stdlib", "Test"]:
+            ft = FrozenTable.in_dll(pythonapi, f"_PyImport_Frozen{group}")
+            # ft is a pointer to the struct_frozen entries:
+            for entry in ft:
+                # This is dangerous. We *can* iterate over a pointer, but
+                # the loop will not terminate (maybe with an access
+                # violation;-) because the pointer instance has no size.
+                if entry.name is None:
+                    break
+                modname = entry.name.decode("ascii")
+                modules.append(modname)
+                with self.subTest(modname):
+                    # Do a sanity check on entry.size and entry.code.
+                    self.assertGreater(abs(entry.size), 10)
+                    self.assertTrue([entry.code[i] for i in range(abs(entry.size))])
+                    # Check the module's package-ness.
+                    with import_helper.frozen_modules():
+                        spec = importlib.util.find_spec(modname)
+                    if entry.size < 0:
+                        # It's a package.
+                        self.assertIsNotNone(spec.submodule_search_locations)
+                    else:
+                        self.assertIsNone(spec.submodule_search_locations)
 
         with import_helper.frozen_modules():
             expected = _imp._frozen_module_names()
         self.maxDiff = None
-        self.assertEqual(modules, expected, "PyImport_FrozenModules example "
-            "in Doc/library/ctypes.rst may be out of date")
+        self.assertEqual(modules, expected,
+                         "_PyImport_FrozenBootstrap example "
+                         "in Doc/library/ctypes.rst may be out of date")
 
         from ctypes import _pointer_type_cache
         del _pointer_type_cache[struct_frozen]
