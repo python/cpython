@@ -1301,9 +1301,9 @@ class BaseExceptionReportingTests:
                     f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
                     f'  | ExceptionGroup: eg1\n'
-                    f'  +-+---------------- cause.1 ----------------\n'
+                    f'  +-+---------------- 1 ----------------\n'
                     f'    | ValueError: 1\n'
-                    f'    +---------------- cause.2 ----------------\n'
+                    f'    +---------------- 2 ----------------\n'
                     f'    | TypeError: 2\n'
                     f'    +------------------------------------\n'
                     f'\n'
@@ -1343,9 +1343,9 @@ class BaseExceptionReportingTests:
              f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
              f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
              f'  | ExceptionGroup: eg1\n'
-             f'  +-+---------------- context.context.1 ----------------\n'
+             f'  +-+---------------- 1 ----------------\n'
              f'    | ValueError: 1\n'
-             f'    +---------------- context.context.2 ----------------\n'
+             f'    +---------------- 2 ----------------\n'
              f'    | TypeError: 2\n'
              f'    +------------------------------------\n'
              f'\n'
@@ -1356,9 +1356,9 @@ class BaseExceptionReportingTests:
              f'  |     raise EG("eg2", [ValueError(3), TypeError(4)])\n'
              f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
              f'  | ExceptionGroup: eg2\n'
-             f'  +-+---------------- context.1 ----------------\n'
+             f'  +-+---------------- 1 ----------------\n'
              f'    | ValueError: 3\n'
-             f'    +---------------- context.2 ----------------\n'
+             f'    +---------------- 2 ----------------\n'
              f'    | TypeError: 4\n'
              f'    +------------------------------------\n'
              f'\n'
@@ -1395,20 +1395,20 @@ class BaseExceptionReportingTests:
                     f'  |     raise EG("eg", [VE(1), exc, VE(4)])\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
                     f'  | ExceptionGroup: eg\n'
-                    f'  +-+---------------- context.1 ----------------\n'
+                    f'  +-+---------------- 1 ----------------\n'
                     f'    | ValueError: 1\n'
-                    f'    +---------------- context.2 ----------------\n'
+                    f'    +---------------- 2 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
                     f'    |     raise EG("nested", [TE(2), TE(3)])\n'
                     f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
                     f'    | ExceptionGroup: nested\n'
-                    f'    +-+---------------- context.2.1 ----------------\n'
+                    f'    +-+---------------- 1 ----------------\n'
                     f'      | TypeError: 2\n'
-                    f'      +---------------- context.2.2 ----------------\n'
+                    f'      +---------------- 2 ----------------\n'
                     f'      | TypeError: 3\n'
                     f'      +------------------------------------\n'
-                    f'    +---------------- context.3 ----------------\n'
+                    f'    +---------------- 3 ----------------\n'
                     f'    | ValueError: 4\n'
                     f'    +------------------------------------\n'
                     f'\n'
@@ -2169,53 +2169,41 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
 
         expected = [
                     f'  | Traceback (most recent call last):',
-                    f'  |   File "{__file__}", line '
-                    f'{lno_g+23}, in _get_exception_group',
+                    f'  |   File "{__file__}", line {lno_g+23}, in _get_exception_group',
                     f'  |     raise ExceptionGroup("eg2", [exc3, exc4])',
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
                     f'  | ExceptionGroup: eg2',
                     f'  +-+---------------- 1 ----------------',
                     f'    | Traceback (most recent call last):',
-                    f'    |   File "{__file__}", '
-                    f'line {lno_g+16}, in _get_exception_group',
+                    f'    |   File "{__file__}", line {lno_g+16}, in _get_exception_group',
                     f'    |     raise ExceptionGroup("eg1", [exc1, exc2])',
                     f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
                     f'    | ExceptionGroup: eg1',
-                    f'    +-+---------------- 1.1 ----------------',
+                    f'    +-+---------------- 1 ----------------',
                     f'      | Traceback (most recent call last):',
-                    f'      |   File '
-                    f'"{__file__}", line {lno_g+9}, in '
-                    f'_get_exception_group',
+                    f'      |   File "{__file__}", line {lno_g+9}, in _get_exception_group',
                     f'      |     f()',
                     f'      |     ^^^',
-                    f'      |   File '
-                    f'"{__file__}", line {lno_f+1}, in '
-                    f'f',
+                    f'      |   File "{__file__}", line {lno_f+1}, in f',
                     f'      |     1/0',
                     f'      |     ~^~',
                     f'      | ZeroDivisionError: division by zero',
-                    f'      +---------------- 1.2 ----------------',
+                    f'      +---------------- 2 ----------------',
                     f'      | Traceback (most recent call last):',
-                    f'      |   File '
-                    f'"{__file__}", line {lno_g+13}, in '
-                    f'_get_exception_group',
+                    f'      |   File "{__file__}", line {lno_g+13}, in _get_exception_group',
                     f'      |     g(42)',
                     f'      |     ^^^^^',
-                    f'      |   File '
-                    f'"{__file__}", line {lno_g+1}, in '
-                    f'g',
+                    f'      |   File "{__file__}", line {lno_g+1}, in g',
                     f'      |     raise ValueError(v)',
                     f'      |     ^^^^^^^^^^^^^^^^^^^',
                     f'      | ValueError: 42',
                     f'      +------------------------------------',
                     f'    +---------------- 2 ----------------',
                     f'    | Traceback (most recent call last):',
-                    f'    |   File "{__file__}", '
-                    f'line {lno_g+20}, in _get_exception_group',
+                    f'    |   File "{__file__}", line {lno_g+20}, in _get_exception_group',
                     f'    |     g(24)',
                     f'    |     ^^^^^',
-                    f'    |   File "{__file__}", '
-                    f'line {lno_g+1}, in g',
+                    f'    |   File "{__file__}", line {lno_g+1}, in g',
                     f'    |     raise ValueError(v)',
                     f'    |     ^^^^^^^^^^^^^^^^^^^',
                     f'    | ValueError: 24',

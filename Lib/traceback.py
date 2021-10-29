@@ -606,7 +606,6 @@ class _ExceptionPrintContext:
     def __init__(self):
         self.seen = set()
         self.exception_group_depth = 0
-        self.parent_label = None
         self.need_close = False
 
     def indent(self):
@@ -861,35 +860,26 @@ class TracebackException:
 
         output = []
         exc = self
-        label = _ctx.parent_label
         while exc:
             if chain:
                 if exc.__cause__ is not None:
                     chained_msg = _cause_message
                     chained_exc = exc.__cause__
-                    chain_tag = 'cause'
                 elif (exc.__context__  is not None and
                       not exc.__suppress_context__):
                     chained_msg = _context_message
                     chained_exc = exc.__context__
-                    chain_tag = 'context'
                 else:
                     chained_msg = None
                     chained_exc = None
-                    chain_tag = None
 
-                output.append((chained_msg, exc, label))
+                output.append((chained_msg, exc))
                 exc = chained_exc
-                if chain_tag is not None:
-                    if label is None:
-                        label = chain_tag
-                    else:
-                        label = f'{label}.{chain_tag}'
             else:
-                output.append((None, exc, label))
+                output.append((None, exc))
                 exc = None
 
-        for msg, exc, parent_label in reversed(output):
+        for msg, exc in reversed(output):
             if msg is not None:
                 yield from _ctx.emit(msg)
             if exc.exceptions is None:
@@ -911,20 +901,14 @@ class TracebackException:
                     if last_exc:
                         # The closing frame may be added by a recursive call
                         _ctx.need_close = True
-                    if parent_label is not None:
-                        label = f'{parent_label}.{i + 1}'
-                    else:
-                        label = f'{i + 1}'
                     yield (_ctx.get_indent() +
                            ('+-' if i==0 else '  ') +
-                           f'+---------------- {label} ----------------\n')
+                           f'+---------------- {i + 1} ----------------\n')
                     _ctx.exception_group_depth += 1
-                    _ctx.parent_label = label
                     try:
                         yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
                     except RecursionError:
                         pass
-                    _ctx.parent_label = parent_label
                     if last_exc and _ctx.need_close:
                         yield (_ctx.get_indent() +
                                "+------------------------------------\n")

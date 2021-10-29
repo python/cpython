@@ -892,7 +892,6 @@ struct exception_print_context
     PyObject *file;
     PyObject *seen;            // Prevent cycles in recursion
     int exception_group_depth; // nesting level of current exception group
-    PyObject *parent_label;    // Unicode label of containing exception group
     int need_close;            // Need a closing bottom frame
 };
 
@@ -1083,16 +1082,7 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
               const char * message, const char *tag)
 {
     PyObject *f = ctx->file;
-    PyObject *parent_label = ctx->parent_label;
-    PyObject *label = NULL;
     int need_close = ctx->need_close;
-    if (parent_label) {
-        label = PyUnicode_FromFormat("%U.%s", parent_label, tag);
-    }
-    else {
-        label = PyUnicode_FromString(tag);
-    }
-    ctx->parent_label = label;
 
     int err = Py_EnterRecursiveCall(" in print_chained");
     if (!err) {
@@ -1111,9 +1101,7 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
     }
 
     ctx->need_close = need_close;
-    ctx->parent_label = parent_label;
 
-    Py_XDECREF(label);
     return err;
 }
 
@@ -1185,7 +1173,6 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
         Py_ssize_t num_excs = PyTuple_GET_SIZE(excs);
         assert(num_excs > 0);
 
-        PyObject *parent_label = ctx->parent_label;
         PyObject *f = ctx->file;
 
         ctx->need_close = 0;
@@ -1195,20 +1182,10 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                 // The closing frame may be added in a recursive call
                 ctx->need_close = 1;
             }
-            PyObject *label;
-            if (parent_label) {
-                label = PyUnicode_FromFormat("%U.%d",
-                    parent_label, i + 1);
-            }
-            else {
-                label = PyUnicode_FromFormat("%d", i + 1);
-            }
-            PyObject *line = NULL;
-            if (label) {
-                line = PyUnicode_FromFormat(
-                    "%s+---------------- %U ----------------\n",
-                    (i == 0) ? "+-" : "  ", label);
-            }
+            PyObject *line = PyUnicode_FromFormat(
+                "%s+---------------- %zd ----------------\n",
+                (i == 0) ? "+-" : "  ", i + 1);
+
             if (line) {
                 err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
                 PyErr_Clear();
@@ -1221,8 +1198,6 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
             }
 
             ctx->exception_group_depth += 1;
-            ctx->parent_label = label; /* transfer ref ownership */
-            label = NULL;
             PyObject *exc = PyTuple_GET_ITEM(excs, i);
 
             if (!Py_EnterRecursiveCall(" in print_exception_recursive")) {
@@ -1233,8 +1208,6 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                 err = -1;
                 PyErr_Clear();
             }
-            Py_XDECREF(ctx->parent_label);
-            ctx->parent_label = parent_label;
 
             if (last_exc && ctx->need_close) {
                 err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
@@ -1270,7 +1243,6 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     struct exception_print_context ctx;
     ctx.file = file;
     ctx.exception_group_depth = 0;
-    ctx.parent_label = 0;
 
     /* We choose to ignore seen being possibly NULL, and report
        at least the main exception (it could be a MemoryError).
