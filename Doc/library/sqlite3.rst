@@ -83,15 +83,16 @@ vulnerable to an SQL injection attacks (see the `xkcd webcomic
    cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
 Instead, use the DB-API's parameter substitution by putting placeholders in the
-query string. Provide the values as a :class:`tuple` via the second argument of
-the cursor's :meth:`~Cursor.execute` method. An SQL statement may use one of two
-kinds of placeholders: question marks (qmark style) or named placeholders (named
-style). For the qmark style, ``parameters`` must be a :term:`sequence
-<sequence>`. For the named style, it can be either a :term:`sequence <sequence>`
-or :class:`dict` instance. The length of the :term:`sequence <sequence>` must
-match the number of placeholders, or a :exc:`ProgrammingError` is raised. If a
-:class:`dict` is given, it must contain keys for all named parameters. Any extra
-items are ignored. Here's an example of both styles:
+query string. Provide the actual values as a :class:`tuple` as the second
+argument oo the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+use one of two kinds of placeholders: question marks (qmark style) or named
+placeholders (named style). For the qmark style, ``parameters`` must be a
+:term:`sequence <sequence>`. For the named style, it can be either a
+:term:`sequence <sequence>` or :class:`dict` instance. The length of the
+:term:`sequence <sequence>` must match the number of placeholders, or a
+:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
+keys for all named parameters. Any extra items are ignored. Here's an example of
+both styles:
 
 .. literalinclude:: ../includes/sqlite3/execute_1.py
 
