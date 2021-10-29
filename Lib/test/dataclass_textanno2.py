@@ -18,7 +18,7 @@ class Foo:  # matching name with `dataclass_testanno.Foo`
 
 
 @dataclasses.dataclass
-class WithMatchinNameOverride(dataclass_textanno.Bar):
+class WithMatchingNameOverride(dataclass_textanno.Bar):
     foo: Foo  # Existing `foo` annotation should be overridden
 
 

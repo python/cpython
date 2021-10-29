@@ -3227,12 +3227,12 @@ class TestStringAnnotations(unittest.TestCase):
         from dataclasses import dataclass
 
         @dataclass
-        class Default(dataclass_textanno2.WithMatchinNameOverride):
+        class Default(dataclass_textanno2.WithMatchingNameOverride):
             pass
 
         classes = [
             Default,
-            dataclass_textanno2.WithMatchinNameOverride
+            dataclass_textanno2.WithMatchingNameOverride
         ]
         for klass in classes:
             with self.subTest(klass=klass):

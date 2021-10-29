@@ -9,7 +9,6 @@ import functools
 import abc
 import _thread
 from types import FunctionType, GenericAlias
-from typing import ForwardRef
 
 
 __all__ = ['dataclass',
@@ -453,6 +452,7 @@ def _field_init(f, frozen, globals, self_name, slots, module):
     # initialize this field.
 
     if f.init and isinstance(f.type, str):
+        from typing import ForwardRef  # `typing` is a heavy import
         # We need to resolve this string type into a real `ForwardRef` object,
         # because otherwise we might end up with unsolvable annotations.
         # For example:
