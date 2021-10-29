@@ -332,11 +332,16 @@ capture data for later printing in a lightweight fashion.
       may not actually get formatted). If *capture_locals* is ``True`` the
       local variables in each :class:`FrameSummary` are captured as object
       representations. If *format_locals* is provided, it is called with four arguments
-      (filename, lineno, name, locals) to generate string representations
+      (filename, lineno, name, locals) to generate a dict of string representations
       of the local variables in each frame.
 
       ..
          This should be reworded. I'm not sure how callable parameters are usually documented in Python.
+         The signature is (filename, lineno, name, locals: dict[str, Any]) -> dict[str, str].
+         This should be somehow clear from the text above.
+
+      .. versionchanged:: XXX
+         Added the *format_locals* parameter.
 
 
    .. classmethod:: from_list(a_list)
