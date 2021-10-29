@@ -1018,15 +1018,9 @@ class Enum(metaclass=EnumType):
         Returns all members and all public methods
         """
         cls = type(self)
-
-        filtered_cls_dir = (
-            name for name in dir(cls)
-            if name not in {'__members__', '__init__', '__new__', *cls._member_names_}
-        )
-
+        to_exclude = {'__members__', '__init__', '__new__', *cls._member_names_}
         filtered_self_dict = (name for name in self.__dict__ if not name.startswith('_'))
-
-        return sorted({'name', 'value', *filtered_cls_dir, *filtered_self_dict})
+        return sorted({'name', 'value', *dir(cls), *filtered_self_dict} - to_exclude)
 
     def __format__(self, format_spec):
         """
