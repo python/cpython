@@ -9,13 +9,14 @@ import unittest
 import os
 import sqlite3
 
-def load_tests(loader, tests, pattern):
-    if test.support.verbose:
-        print("test_sqlite3: testing with version",
-              "{!r}, sqlite_version {!r}".format(sqlite3.version,
-                                                 sqlite3.sqlite_version))
+def load_tests(*args):
     pkg_dir = os.path.dirname(__file__)
-    return load_package_tests(pkg_dir, loader, tests, pattern)
+    return load_package_tests(pkg_dir, *args)
+
+if test.support.verbose:
+    print("test_sqlite3: testing with version",
+          "{!r}, sqlite_version {!r}".format(sqlite3.version,
+                                             sqlite3.sqlite_version))
 
 if __name__ == "__main__":
     unittest.main()
