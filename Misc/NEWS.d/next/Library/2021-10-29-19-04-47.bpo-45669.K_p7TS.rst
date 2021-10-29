@@ -1,0 +1,1 @@
+* New constant :const:`ascii_alphanumerics` was added to the :mod:`string` module.
