@@ -609,19 +609,13 @@ class _ExceptionPrintContext:
         self.need_close = False
 
     def indent(self):
-        return 2 * self.exception_group_depth
-
-    def margin(self):
-        return '| ' if self.exception_group_depth else ''
-
-    def get_indent(self):
-        return ' ' * self.indent()
-
-    def get_indented_margin(self):
-        return self.get_indent() + self.margin()
+        return ' ' * (2 * self.exception_group_depth)
 
     def emit(self, text_gen):
-        indent_str = self.get_indented_margin()
+        margin_char = '|'
+        margin = f'{margin_char} ' if self.exception_group_depth else ''
+        indent_str = self.indent() + margin
+
         if isinstance(text_gen, str):
             yield textwrap.indent(text_gen, indent_str, lambda line: True)
         else:
@@ -888,11 +882,14 @@ class TracebackException:
                     yield from _ctx.emit(exc.stack.format())
                 yield from _ctx.emit(exc.format_exception_only())
             else:
-                if _ctx.exception_group_depth == 0:
+                is_toplevel = (_ctx.exception_group_depth == 0)
+                if is_toplevel:
                      _ctx.exception_group_depth += 1
+
                 if exc.stack:
                     yield from _ctx.emit('Traceback (most recent call last):\n')
                     yield from _ctx.emit(exc.stack.format())
+
                 yield from _ctx.emit(exc.format_exception_only())
                 n = len(exc.exceptions)
                 _ctx.need_close = False
@@ -901,7 +898,7 @@ class TracebackException:
                     if last_exc:
                         # The closing frame may be added by a recursive call
                         _ctx.need_close = True
-                    yield (_ctx.get_indent() +
+                    yield (_ctx.indent() +
                            ('+-' if i==0 else '  ') +
                            f'+---------------- {i + 1} ----------------\n')
                     _ctx.exception_group_depth += 1
@@ -910,12 +907,14 @@ class TracebackException:
                     except RecursionError:
                         pass
                     if last_exc and _ctx.need_close:
-                        yield (_ctx.get_indent() +
+                        yield (_ctx.indent() +
                                "+------------------------------------\n")
                         _ctx.need_close = False
                     _ctx.exception_group_depth -= 1;
-                if _ctx.exception_group_depth == 1:
-                    _ctx.exception_group_depth -= 1
+
+                if is_toplevel:
+                    assert _ctx.exception_group_depth == 1
+                    _ctx.exception_group_depth = 0
 
 
     def print(self, *, file=None, chain=True):
