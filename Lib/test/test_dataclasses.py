@@ -3221,6 +3221,37 @@ class TestStringAnnotations(unittest.TestCase):
                     },
                 )
 
+    def test_dataclass_proxy_modules_matching_name_override(self):
+        # see bpo-45524
+        from test import dataclass_textanno2
+        from dataclasses import dataclass
+
+        @dataclass
+        class Default(dataclass_textanno2.WithMatchinNameOverride):
+            pass
+
+        classes = [
+            Default,
+            dataclass_textanno2.WithMatchinNameOverride
+        ]
+        for klass in classes:
+            with self.subTest(klass=klass):
+                self.assertEqual(
+                    get_type_hints(klass),
+                    {
+                        'foo': dataclass_textanno2.Foo,
+                    },
+                )
+                self.assertEqual(get_type_hints(klass.__new__), {})
+                self.assertEqual(
+                    get_type_hints(klass.__init__),
+                    {
+                        'foo': dataclass_textanno2.Foo,
+                        'return': type(None),
+                    },
+                )
+
+
 
 class TestMakeDataclass(unittest.TestCase):
     def test_simple(self):

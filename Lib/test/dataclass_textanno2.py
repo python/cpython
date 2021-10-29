@@ -13,6 +13,15 @@ class Child(dataclass_textanno.Bar):
     custom: Custom
 
 
+class Foo:  # matching name with `dataclass_testanno.Foo`
+    pass
+
+
+@dataclasses.dataclass
+class WithMatchinNameOverride(dataclass_textanno.Bar):
+    foo: Foo  # we override existing `foo: Foo` with
+
+
 @dataclasses.dataclass(init=False)
 class WithFutureInit(Child):
     def __init__(self, foo: dataclass_textanno.Foo, custom: Custom) -> None:
