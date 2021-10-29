@@ -7,7 +7,7 @@ import unittest
 import os
 import sqlite3
 
-# Implement the unittest "load tests" protocol
+# Implement the unittest "load tests" protocol.
 def load_tests(*args):
     pkg_dir = os.path.dirname(__file__)
     return load_package_tests(pkg_dir, *args)
