@@ -1970,6 +1970,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                                          "encoding=%r" % encoding)
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_basics_capi(self):
         s = "abc123"  # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
