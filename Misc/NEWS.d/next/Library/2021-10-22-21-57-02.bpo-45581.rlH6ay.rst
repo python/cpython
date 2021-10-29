@@ -1,0 +1,2 @@
+:meth:`sqlite3.connect` now correctly raises :exc:`MemoryError` if the
+underlying SQLite API signals memory error. Patch by Erlend E. Aasland.

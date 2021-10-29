@@ -113,6 +113,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
 
     Py_DECREF(database_obj);
 
+    if (self->db == NULL && rc == SQLITE_NOMEM) {
+        PyErr_NoMemory();
+        return -1;
+    }
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db, NULL);
         return -1;
