@@ -4921,8 +4921,8 @@ in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 Standard Generic Collections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The list of standard-library collections supporting parameterized generics
-includes the following objects:
+These standard library collections support parameterized generics (this list
+is non-exhaustive):
 
 * :class:`tuple`
 * :class:`list`
