@@ -16,28 +16,19 @@ import sys
 from pathlib import Path
 
 
-class wrapped_fd:
-    'Make stdin and stdout have open() like a `pathlib.Path`'
-    def __init__(self, file_descriptor):
-        self.fd = file_descriptor
-
-    def open(self, *args, **kwargs):
-        return self.fd
-
-
 def main():
     prog = 'python -m json.tool'
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument('infile', nargs='?',
-                        type=Path,
+                        type=argparse.FileType(encoding="utf-8"),
                         help='a JSON file to be validated or pretty-printed',
-                        default=wrapped_fd(sys.stdin))
+                        default=sys.stdin)
     parser.add_argument('outfile', nargs='?',
                         type=Path,
                         help='write the output of infile to outfile',
-                        default=wrapped_fd(sys.stdout))
+                        default=None)
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
@@ -68,16 +59,21 @@ def main():
         dump_args['indent'] = None
         dump_args['separators'] = ',', ':'
 
-    with options.infile.open(encoding='utf-8') as infile:
+    with options.infile as infile:
         try:
             if options.json_lines:
                 objs = (json.loads(line) for line in infile)
             else:
                 objs = (json.load(infile),)
-            with options.outfile.open('w', encoding='utf-8') as outfile:
-                    for obj in objs:
-                        json.dump(obj, outfile, **dump_args)
-                        outfile.write('\n')
+
+            if options.outfile is None:
+                out = sys.stdout
+            else:
+                out = options.outfile.open('w', encoding='utf-8')
+            with out as outfile:
+                for obj in objs:
+                    json.dump(obj, outfile, **dump_args)
+                    outfile.write('\n')
         except ValueError as e:
             raise SystemExit(e)
 
