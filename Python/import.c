@@ -1071,27 +1071,6 @@ resolve_module_alias(const char *name, const struct _module_alias *aliases,
 /* Frozen modules */
 
 static bool
-is_essential_frozen_module(const char *name)
-{
-    /* These modules are necessary to bootstrap the import system. */
-    if (strcmp(name, "_frozen_importlib") == 0) {
-        return true;
-    }
-    if (strcmp(name, "_frozen_importlib_external") == 0) {
-        return true;
-    }
-    if (strcmp(name, "zipimport") == 0) {
-        return true;
-    }
-    /* This doesn't otherwise have anywhere to find the module.
-       See frozenmain.c. */
-    if (strcmp(name, "__main__") == 0) {
-        return true;
-    }
-    return false;
-}
-
-static bool
 use_frozen(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1115,26 +1094,76 @@ list_frozen_module_names()
         return NULL;
     }
     bool enabled = use_frozen();
-    for (const struct _frozen *p = PyImport_FrozenModules; ; p++) {
+    const struct _frozen *p;
+#define ADD_MODULE(name) \
+    do { \
+        PyObject *nameobj = PyUnicode_FromString(name); \
+        if (nameobj == NULL) { \
+            goto error; \
+        } \
+        int res = PyList_Append(names, nameobj); \
+        Py_DECREF(nameobj); \
+        if (res != 0) { \
+            goto error; \
+        } \
+    } while(0)
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
         if (p->name == NULL) {
             break;
         }
-        if (!enabled && !is_essential_frozen_module(p->name)) {
-            continue;
+        ADD_MODULE(p->name);
+    }
+    // Frozen stdlib modules may be disabled.
+    for (p = _PyImport_FrozenStdlib; ; p++) {
+        if (p->name == NULL) {
+            break;
         }
-        PyObject *name = PyUnicode_FromString(p->name);
-        if (name == NULL) {
-            Py_DECREF(names);
-            return NULL;
+        if (enabled) {
+            ADD_MODULE(p->name);
         }
-        int res = PyList_Append(names, name);
-        Py_DECREF(name);
-        if (res != 0) {
-            Py_DECREF(names);
-            return NULL;
+    }
+    for (p = _PyImport_FrozenTest; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+#undef ADD_MODULE
+    // Add any custom modules.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            PyObject *nameobj = PyUnicode_FromString(p->name);
+            if (nameobj == NULL) {
+                goto error;
+            }
+            int found = PySequence_Contains(names, nameobj);
+            if (found < 0) {
+                Py_DECREF(nameobj);
+                goto error;
+            }
+            else if (found) {
+                Py_DECREF(nameobj);
+            }
+            else {
+                int res = PyList_Append(names, nameobj);
+                Py_DECREF(nameobj);
+                if (res != 0) {
+                    goto error;
+                }
+            }
         }
     }
     return names;
+
+error:
+    Py_DECREF(names);
+    return NULL;
 }
 
 typedef enum {
@@ -1153,8 +1182,10 @@ set_frozen_error(frozen_status status, PyObject *modname)
     switch (status) {
         case FROZEN_BAD_NAME:
         case FROZEN_NOT_FOUND:
-        case FROZEN_DISABLED:
             err = "No such frozen object named %R";
+            break;
+        case FROZEN_DISABLED:
+            err = "Frozen modules are disabled and the frozen object named %R is not essential";
             break;
         case FROZEN_EXCLUDED:
             err = "Excluded frozen object named %R";
@@ -1176,6 +1207,54 @@ set_frozen_error(frozen_status status, PyObject *modname)
         PyErr_SetImportError(msg, modname, NULL);
         Py_XDECREF(msg);
     }
+}
+
+static const struct _frozen *
+look_up_frozen(const char *name)
+{
+    const struct _frozen *p;
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            // We hit the end-of-list sentinel value.
+            break;
+        }
+        if (strcmp(name, p->name) == 0) {
+            return p;
+        }
+    }
+    // Prefer custom modules, if any.  Frozen stdlib modules can be
+    // disabled here by setting "code" to NULL in the array entry.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    // Frozen stdlib modules may be disabled.
+    if (use_frozen()) {
+        for (p = _PyImport_FrozenStdlib; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+        for (p = _PyImport_FrozenTest; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    return NULL;
 }
 
 struct frozen_info {
@@ -1207,19 +1286,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         return FROZEN_BAD_NAME;
     }
 
-    if (!use_frozen() && !is_essential_frozen_module(name)) {
-        return FROZEN_DISABLED;
-    }
-
-    const struct _frozen *p;
-    for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL) {
-            // We hit the end-of-list sentinel value.
-            return FROZEN_NOT_FOUND;
-        }
-        if (strcmp(name, p->name) == 0) {
-            break;
-        }
+    const struct _frozen *p = look_up_frozen(name);
+    if (p == NULL) {
+        return FROZEN_NOT_FOUND;
     }
     if (info != NULL) {
         info->nameobj = nameobj;  // borrowed

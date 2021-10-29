@@ -205,6 +205,8 @@ struct _Py_exc_state {
     PyObject *errnomap;
     PyBaseExceptionObject *memerrors_freelist;
     int memerrors_numfree;
+    // The ExceptionGroup type
+    PyObject *PyExc_ExceptionGroup;
 };
 
 
@@ -333,7 +335,7 @@ struct _is {
        The integers that are preallocated are those in the range
        -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
     */
-    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+    PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
     struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;

@@ -3236,6 +3236,17 @@ class TestSignatureObject(unittest.TestCase):
             pass
         self.assertEqual(str(inspect.signature(foo)), '()')
 
+        def foo(a: list[str]) -> tuple[str, float]:
+            pass
+        self.assertEqual(str(inspect.signature(foo)),
+                         '(a: list[str]) -> tuple[str, float]')
+
+        from typing import Tuple
+        def foo(a: list[str]) -> Tuple[str, float]:
+            pass
+        self.assertEqual(str(inspect.signature(foo)),
+                         '(a: list[str]) -> Tuple[str, float]')
+
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
         S = inspect.Signature

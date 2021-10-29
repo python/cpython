@@ -32,6 +32,7 @@
 
 #ifdef MS_WINDOWS
 #include <windows.h>
+#include <winternl.h>
 static int
 my_getpagesize(void)
 {
@@ -376,14 +377,15 @@ is_resizeable(mmap_object *self)
 {
     if (self->exports > 0) {
         PyErr_SetString(PyExc_BufferError,
-                        "mmap can't resize with extant buffers exported.");
+            "mmap can't resize with extant buffers exported.");
         return 0;
     }
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
-                 "mmap can't resize a readonly or copy-on-write memory map.");
+        "mmap can't resize a readonly or copy-on-write memory map.");
     return 0;
+
 }
 
 
@@ -503,51 +505,110 @@ mmap_resize_method(mmap_object *self,
     }
 
     {
+        /*
+        To resize an mmap on Windows:
+
+        - Close the existing mapping
+        - If the mapping is backed to a named file:
+            unmap the view, clear the data, and resize the file
+            If the file can't be resized (eg because it has other mapped references
+            to it) then let the mapping be recreated at the original size and set
+            an error code so an exception will be raised.
+        - Create a new mapping of the relevant size to the same file
+        - Map a new view of the resized file
+        - If the mapping is backed by the pagefile:
+            copy any previous data into the new mapped area
+            unmap the original view which will release the memory
+        */
 #ifdef MS_WINDOWS
-        DWORD dwErrCode = 0;
-        DWORD off_hi, off_lo, newSizeLow, newSizeHigh;
-        /* First, unmap the file view */
-        UnmapViewOfFile(self->data);
-        self->data = NULL;
-        /* Close the mapping object */
+        DWORD error = 0, file_resize_error = 0;
+        char* old_data = self->data;
+        LARGE_INTEGER offset, max_size;
+        offset.QuadPart = self->offset;
+        max_size.QuadPart = self->offset + new_size;
+        /* close the file mapping */
         CloseHandle(self->map_handle);
-        self->map_handle = NULL;
-        /* Move to the desired EOF position */
-        newSizeHigh = (DWORD)((self->offset + new_size) >> 32);
-        newSizeLow = (DWORD)((self->offset + new_size) & 0xFFFFFFFF);
-        off_hi = (DWORD)(self->offset >> 32);
-        off_lo = (DWORD)(self->offset & 0xFFFFFFFF);
-        SetFilePointer(self->file_handle,
-                       newSizeLow, &newSizeHigh, FILE_BEGIN);
-        /* Change the size of the file */
-        SetEndOfFile(self->file_handle);
-        /* Create another mapping object and remap the file view */
+        /* if the file mapping still exists, it cannot be resized. */
+        if (self->tagname) {
+            self->map_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE,
+                                    self->tagname);
+            if (self->map_handle) {
+                PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
+                return NULL;
+            }
+        } else {
+            self->map_handle = NULL;
+        }
+
+        /* if it's not the paging file, unmap the view and resize the file */
+        if (self->file_handle != INVALID_HANDLE_VALUE) {
+            if (!UnmapViewOfFile(self->data)) {
+                return PyErr_SetFromWindowsErr(GetLastError());
+            };
+            self->data = NULL;
+            /* resize the file */
+            if (!SetFilePointerEx(self->file_handle, max_size, NULL,
+                FILE_BEGIN) ||
+                !SetEndOfFile(self->file_handle)) {
+                /* resizing failed. try to remap the file */
+                file_resize_error = GetLastError();
+                new_size = max_size.QuadPart = self->size;
+            }
+        }
+
+        /* create a new file mapping and map a new view */
+        /* FIXME: call CreateFileMappingW with wchar_t tagname */
         self->map_handle = CreateFileMapping(
             self->file_handle,
             NULL,
             PAGE_READWRITE,
-            0,
-            0,
+            max_size.HighPart,
+            max_size.LowPart,
             self->tagname);
-        if (self->map_handle != NULL) {
-            self->data = (char *) MapViewOfFile(self->map_handle,
-                                                FILE_MAP_WRITE,
-                                                off_hi,
-                                                off_lo,
-                                                new_size);
+
+        error = GetLastError();
+        if (error == ERROR_ALREADY_EXISTS) {
+            CloseHandle(self->map_handle);
+            self->map_handle = NULL;
+        }
+        else if (self->map_handle != NULL) {
+            self->data = MapViewOfFile(self->map_handle,
+                FILE_MAP_WRITE,
+                offset.HighPart,
+                offset.LowPart,
+                new_size);
             if (self->data != NULL) {
+                /* copy the old view if using the paging file */
+                if (self->file_handle == INVALID_HANDLE_VALUE) {
+                    memcpy(self->data, old_data,
+                           self->size < new_size ? self->size : new_size);
+                    if (!UnmapViewOfFile(old_data)) {
+                        error = GetLastError();
+                    }
+                }
                 self->size = new_size;
-                Py_RETURN_NONE;
-            } else {
-                dwErrCode = GetLastError();
+            }
+            else {
+                error = GetLastError();
                 CloseHandle(self->map_handle);
                 self->map_handle = NULL;
             }
-        } else {
-            dwErrCode = GetLastError();
         }
-        PyErr_SetFromWindowsErr(dwErrCode);
-        return NULL;
+
+        if (error) {
+            return PyErr_SetFromWindowsErr(error);
+            return NULL;
+        }
+        /* It's possible for a resize to fail, typically because another mapping
+        is still held against the same underlying file. Even if nothing has
+        failed -- ie we're still returning a valid file mapping -- raise the
+        error as an exception as the resize won't have happened
+        */
+        if (file_resize_error) {
+            PyErr_SetFromWindowsErr(file_resize_error);
+            return NULL;
+        }
+        Py_RETURN_NONE;
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX

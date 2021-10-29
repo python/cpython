@@ -5,6 +5,7 @@ import unittest
 import os
 import re
 import itertools
+import random
 import socket
 import sys
 import weakref
@@ -707,7 +708,6 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(mm.write(b"yz"), 2)
         self.assertEqual(mm.write(b"python"), 6)
 
-    @unittest.skipIf(os.name == 'nt', 'cannot resize anonymous mmaps on Windows')
     def test_resize_past_pos(self):
         m = mmap.mmap(-1, 8192)
         self.addCleanup(m.close)
@@ -796,6 +796,80 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_resize_up_when_mapped_to_pagefile(self):
+        """If the mmap is backed by the pagefile ensure a resize up can happen
+        and that the original data is still in place
+        """
+        start_size = PAGESIZE
+        new_size = 2 * start_size
+        data = bytes(random.getrandbits(8) for _ in range(start_size))
+
+        m = mmap.mmap(-1, start_size)
+        m[:] = data
+        m.resize(new_size)
+        self.assertEqual(len(m), new_size)
+        self.assertEqual(m[:start_size], data[:start_size])
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_resize_down_when_mapped_to_pagefile(self):
+        """If the mmap is backed by the pagefile ensure a resize down up can happen
+        and that a truncated form of the original data is still in place
+        """
+        start_size = PAGESIZE
+        new_size = start_size // 2
+        data = bytes(random.getrandbits(8) for _ in range(start_size))
+
+        m = mmap.mmap(-1, start_size)
+        m[:] = data
+        m.resize(new_size)
+        self.assertEqual(len(m), new_size)
+        self.assertEqual(m[:new_size], data[:new_size])
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_resize_fails_if_mapping_held_elsewhere(self):
+        """If more than one mapping is held against a named file on Windows, neither
+        mapping can be resized
+        """
+        start_size = 2 * PAGESIZE
+        reduced_size = PAGESIZE
+
+        f = open(TESTFN, 'wb+')
+        f.truncate(start_size)
+        try:
+            m1 = mmap.mmap(f.fileno(), start_size)
+            m2 = mmap.mmap(f.fileno(), start_size)
+            with self.assertRaises(OSError):
+                m1.resize(reduced_size)
+            with self.assertRaises(OSError):
+                m2.resize(reduced_size)
+            m2.close()
+            m1.resize(reduced_size)
+            self.assertEqual(m1.size(), reduced_size)
+            self.assertEqual(os.stat(f.fileno()).st_size, reduced_size)
+        finally:
+            f.close()
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_resize_succeeds_with_error_for_second_named_mapping(self):
+        """If a more than one mapping exists of the same name, none of them can
+        be resized: they'll raise an Exception and leave the original mapping intact
+        """
+        start_size = 2 * PAGESIZE
+        reduced_size = PAGESIZE
+        tagname = "TEST"
+        data_length = 8
+        data = bytes(random.getrandbits(8) for _ in range(data_length))
+
+        m1 = mmap.mmap(-1, start_size, tagname=tagname)
+        m2 = mmap.mmap(-1, start_size, tagname=tagname)
+        m1[:data_length] = data
+        self.assertEqual(m2[:data_length], data)
+        with self.assertRaises(OSError):
+            m1.resize(reduced_size)
+        self.assertEqual(m1.size(), start_size)
+        self.assertEqual(m1[:data_length], data)
+        self.assertEqual(m2[:data_length], data)
 
 class LargeMmapTests(unittest.TestCase):
 
