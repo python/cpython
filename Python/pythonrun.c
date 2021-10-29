@@ -8,6 +8,8 @@
 
 /* TODO: Cull includes following phase split */
 
+#include <stdbool.h>
+
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj
@@ -892,7 +894,7 @@ struct exception_print_context
     PyObject *file;
     PyObject *seen;            // Prevent cycles in recursion
     int exception_group_depth; // nesting level of current exception group
-    int need_close;            // Need a closing bottom frame
+    bool need_close;           // Need a closing bottom frame
 };
 
 #define EXC_MARGIN(ctx) ((ctx)->exception_group_depth ? "| " : "")
@@ -1082,7 +1084,7 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
               const char * message, const char *tag)
 {
     PyObject *f = ctx->file;
-    int need_close = ctx->need_close;
+    bool need_close = ctx->need_close;
 
     int err = Py_EnterRecursiveCall(" in print_chained");
     if (!err) {
@@ -1175,12 +1177,12 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
 
         PyObject *f = ctx->file;
 
-        ctx->need_close = 0;
+        ctx->need_close = false;
         for (Py_ssize_t i = 0; i < num_excs; i++) {
             int last_exc = (i == num_excs - 1);
             if (last_exc) {
                 // The closing frame may be added in a recursive call
-                ctx->need_close = 1;
+                ctx->need_close = true;
             }
             PyObject *line = PyUnicode_FromFormat(
                 "%s+---------------- %zd ----------------\n",
@@ -1213,7 +1215,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                 err |= _Py_WriteIndent(EXC_INDENT(ctx), f);
                 err |= PyFile_WriteString(
                     "+------------------------------------\n", f);
-                ctx->need_close = 0;
+                ctx->need_close = false;
             }
             ctx->exception_group_depth -= 1;
         }
