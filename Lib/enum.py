@@ -642,6 +642,8 @@ class EnumType(type):
         this_module = globals().values()
         is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
         first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
+        ignored = set()
+        add_to_ignored = ignored.add
 
         # We want these added to __dir__
         # if and only if they have been user-overridden
@@ -664,12 +666,17 @@ class EnumType(type):
                 cls_lookup = set(cls_lookup).intersection(dir(cls))
 
             for attr_name in cls_lookup:
+                # Already seen it? Carry on
+                if attr_name in cls_dir or attr_name in ignored:
+                    continue
                 # Exclude all sunders from dir(); __new__ is special-cased
-                if attr_name == '__new__' or _is_sunder(attr_name):
+                elif attr_name == '__new__' or _is_sunder(attr_name):
                     continue
                 elif attr_name not in enum_dunders:
                     add_to_dir(attr_name)
-                elif getattr(self, attr_name) is not getattr(first_enum_base, attr_name, object()):
+                elif getattr(self, attr_name) is getattr(first_enum_base, attr_name, object()):
+                    add_to_ignored(attr_name)
+                else:
                     add_to_dir(attr_name)
 
         # sort the output before returning it, so that the result is deterministic.
