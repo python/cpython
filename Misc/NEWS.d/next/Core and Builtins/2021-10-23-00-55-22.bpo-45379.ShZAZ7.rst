@@ -1,2 +1,2 @@
-Raise :exc:`ImportError` in :c:func:`PyImport_ImportFrozenModuleObject` when
-the name object is invalid.
+Previously :c:func:`PyImport_ImportFrozenModuleObject` treated a bad module name
+the same as if no frozen module were found.  Now it raises :exc:`ImportError` in that case.

@@ -1354,6 +1354,8 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         return 0;
     }
     else if (status != FROZEN_OKAY) {
+        /* FYI, FROZEN_BAD_NAME used to be treated like FROZEN_NOT_FOUND.
+            See bpo-45379. */
         if (name == NULL) {
             name = Py_None;
         }
