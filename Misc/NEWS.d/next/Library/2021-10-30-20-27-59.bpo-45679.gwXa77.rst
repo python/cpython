@@ -1,0 +1,2 @@
+Do not cache :class:`typing.Literal` when it has more than one type
+argument.

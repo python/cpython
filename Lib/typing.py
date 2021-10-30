@@ -312,10 +312,14 @@ def _tp_cache(func=None, /, *, typed=False):
 
         @functools.wraps(func)
         def inner(*args, **kwds):
-            try:
-                return cached(*args, **kwds)
-            except TypeError:
-                pass  # All real errors (not unhashable args) are raised below.
+            # We call `cached`, only if we don't care about types,
+            # or when we have just a single argument. Otherwise we can confuse
+            # `Literal[1, 'a']` with `Literal[True, 'a']`, see: bpo-45679
+            if not typed or len(args) <= 1:
+                try:
+                    return cached(*args, **kwds)
+                except TypeError:
+                    pass  # All real errors (not unhashable args) are raised below.
             return func(*args, **kwds)
         return inner
 

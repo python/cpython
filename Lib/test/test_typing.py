@@ -3298,6 +3298,24 @@ class GetTypeHintTests(BaseTestCase):
         ):
             get_type_hints(ann_module6)
 
+    def test_hints_with_literal_cache(self):
+        # https://bugs.python.org/issue45679
+        Literal[True]  # to trigger cache
+        def func(arg: Literal[1]):
+            pass
+
+        hints = get_type_hints(func)
+        # We use such complex way of comparing things, because `1 == True`
+        self.assertEqual(str(hints['arg']), "typing.Literal[1]")
+
+        # Two args case, which was causing an issue:
+        Literal[1, 'a']
+        def func(arg: Literal[True, 'a']):
+            pass
+
+        hints = get_type_hints(func)
+        self.assertEqual(str(hints['arg']), "typing.Literal[True, 'a']")
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
