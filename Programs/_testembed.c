@@ -1863,7 +1863,7 @@ static int assert_frozen_module_validation_error(PyObject *name)
 
     if (!PyObject_IsInstance(value, PyExc_ImportError)) {
         if (error_format("invalid error type, expecting ImportError but got %R", value)) {
-            error("invalid error string");
+            error("invalid error type");
         }
         return 1;
     }
