@@ -1,2 +1,2 @@
-Add tests to ensure that `functools.singledispatchmethod` correctly wraps
+Add tests to ensure that ``functools.singledispatchmethod`` correctly wraps
 the attributes of the target function.
