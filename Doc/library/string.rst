@@ -26,7 +26,7 @@ The constants defined in this module are:
    The concatenation of the :const:`ascii_letters` and :const:`digits`
    constants described below.  This value is not locale-dependent.
 
-
+     .. versionadded:: 3.11
 .. data:: ascii_letters
 
    The concatenation of the :const:`ascii_lowercase` and :const:`ascii_uppercase`
