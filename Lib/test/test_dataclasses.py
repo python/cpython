@@ -1907,7 +1907,7 @@ class TestCase(unittest.TestCase):
         # Check MRO resolution.
         self.assertEqual(Child.__mro__, (Child, Parent, Generic, object))
 
-    def test_dataclassses_pickleable(self):
+    def test_dataclasses_pickleable(self):
         global P, Q, R
         @dataclass
         class P:
@@ -2859,13 +2859,26 @@ class TestSlots(unittest.TestCase):
         foo: str
         bar: int
 
+    @dataclass(frozen=True)
+    class FrozenWithoutSlotsClass:
+        foo: str
+        bar: int
+
     def test_frozen_pickle(self):
         # bpo-43999
 
-        assert self.FrozenSlotsClass.__slots__ == ("foo", "bar")
-        p = pickle.dumps(self.FrozenSlotsClass("a", 1))
-        assert pickle.loads(p) == self.FrozenSlotsClass("a", 1)
+        self.assertEqual(self.FrozenSlotsClass.__slots__, ("foo", "bar"))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
 
+                obj = self.FrozenWithoutSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
@@ -3695,7 +3708,7 @@ class TestKeywordArgs(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             B(3, 4, 5)
 
-        # Explicitely make a field that follows KW_ONLY be non-keyword-only.
+        # Explicitly make a field that follows KW_ONLY be non-keyword-only.
         @dataclass
         class C:
             a: int

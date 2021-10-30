@@ -2,11 +2,12 @@
 /* Error handling */
 
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pystate.h"    // _PyThreadState_GET()
-#include "pycore_sysmodule.h"
-#include "pycore_traceback.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_initconfig.h"    // _PyStatus_ERR()
+#include "pycore_pyerrors.h"      // _PyErr_Format()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
@@ -14,17 +15,19 @@ extern char *strerror(int);
 #endif
 #endif
 
+#include <ctype.h>
 #ifdef MS_WINDOWS
-#include <windows.h>
-#include <winbase.h>
+#  include <windows.h>
+#  include <winbase.h>
+#  include <stdlib.h>             // _sys_nerr
 #endif
 
-#include <ctype.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(__main__);
 _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
@@ -90,7 +93,7 @@ _PyErr_CreateException(PyObject *exception_type, PyObject *value)
     PyObject *exc;
 
     if (value == NULL || value == Py_None) {
-        exc = _PyObject_CallNoArg(exception_type);
+        exc = _PyObject_CallNoArgs(exception_type);
     }
     else if (PyTuple_Check(value)) {
         exc = PyObject_Call(exception_type, value, NULL);
@@ -1297,7 +1300,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
     else {
-        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins)) {
+        if (!_PyUnicode_EqualToASCIIId(modulename, &PyId_builtins) &&
+            !_PyUnicode_EqualToASCIIId(modulename, &PyId___main__)) {
             if (PyFile_WriteObject(modulename, file, Py_PRINT_RAW) < 0) {
                 Py_DECREF(modulename);
                 return -1;

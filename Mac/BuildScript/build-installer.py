@@ -269,7 +269,7 @@ def library_recipes():
             tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
 
             tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
-            tk_patches = [ ]
+            tk_patches = ['bpo-44828-filedialog-crash-monterey.patch']
 
 
         result.extend([
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.35.5",
-              url="https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz",
-              checksum='d1d1aba394c8e0443077dc9f1a681bb8',
+              name="SQLite 3.36.0",
+              url="https://sqlite.org/2021/sqlite-autoconf-3360000.tar.gz",
+              checksum='f5752052fc5b8e1b539af86a3671eac7',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -454,7 +454,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -1602,7 +1602,7 @@ def buildDMG():
     # instead of 11.  We should not run into that situation here.)
     # Also we should use "macos" instead of "macosx" going forward.
     #
-    # To maintain compability for legacy variants, the file name for
+    # To maintain compatibility for legacy variants, the file name for
     # builds on macOS 10.15 and earlier remains:
     #   python-3.x.y-macosx10.z.{dmg->pkg}
     #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}

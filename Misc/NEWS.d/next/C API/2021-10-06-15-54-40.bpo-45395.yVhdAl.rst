@@ -1,0 +1,4 @@
+Custom frozen modules (the array set to ``PyImport_FrozenModules``) are now
+treated as additions, rather than replacing all the default frozen modules.
+Frozen stdlib modules can still be disabled by setting the "code" field of
+the custom array entry to NULL.

@@ -1248,18 +1248,17 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
-        case COPY_DICT_WITHOUT_KEYS:
-            return 0;
         case MATCH_CLASS:
-            return -1;
+            return -2;
         case GET_LEN:
         case MATCH_MAPPING:
         case MATCH_SEQUENCE:
-            return 1;
         case MATCH_KEYS:
-            return 2;
+            return 1;
         case ROT_N:
             return 0;
+        case COPY:
+            return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1638,14 +1637,14 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define ADDOP_O(C, OP, O, TYPE) { \
-    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST */ \
+    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
         return 0; \
 }
 
 /* Same as ADDOP_O, but steals a reference. */
 #define ADDOP_N(C, OP, O, TYPE) { \
-    assert((OP) != LOAD_CONST); /* use ADDOP_LOAD_CONST_NEW */ \
+    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
         Py_DECREF((O)); \
         return 0; \
@@ -6118,10 +6117,16 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_LOAD_CONST_NEW(c, attr_names);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    // TOS is now a tuple of (nargs + nattrs) attributes. Preserve it:
+    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_I(c, IS_OP, 1);
+    // TOS is now a tuple of (nargs + nattrs) attributes (or None):
     pc->on_top++;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    ADDOP_I(c, UNPACK_SEQUENCE, nargs + nattrs);
+    pc->on_top += nargs + nattrs - 1;
     for (i = 0; i < nargs + nattrs; i++) {
+        pc->on_top--;
         pattern_ty pattern;
         if (i < nargs) {
             // Positional:
@@ -6132,17 +6137,12 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
             pattern = asdl_seq_GET(kwd_patterns, i - nargs);
         }
         if (WILDCARD_CHECK(pattern)) {
+            ADDOP(c, POP_TOP);
             continue;
         }
-        // Get the i-th attribute, and match it against the i-th pattern:
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-        ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
     // Success! Pop the tuple of attributes:
-    pc->on_top--;
-    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -6183,7 +6183,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
-    // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
+    // **rest. They can either be dotted names or literals:
 
     // Maintaining a set of Constant_kind kind keys allows us to raise a
     // SyntaxError in the case of duplicates.
@@ -6235,35 +6235,45 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP(c, MATCH_KEYS);
     // There's now a tuple of keys and a tuple of values on top of the subject:
     pc->on_top += 2;
+    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_I(c, IS_OP, 1);
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
+    ADDOP_I(c, UNPACK_SEQUENCE, size);
+    pc->on_top += size - 1;
     for (Py_ssize_t i = 0; i < size; i++) {
+        pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        if (WILDCARD_CHECK(pattern)) {
-            continue;
-        }
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-        ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
-    // If we get this far, it's a match! We're done with the tuple of values,
-    // and whatever happens next should consume the tuple of keys underneath it:
+    // If we get this far, it's a match! Whatever happens next should consume
+    // the tuple of keys and the subject:
     pc->on_top -= 2;
-    ADDOP(c, POP_TOP);
     if (star_target) {
-        // If we have a starred name, bind a dict of remaining items to it:
-        ADDOP(c, COPY_DICT_WITHOUT_KEYS);
+        // If we have a starred name, bind a dict of remaining items to it (this may
+        // seem a bit inefficient, but keys is rarely big enough to actually impact
+        // runtime):
+        // rest = dict(TOS1)
+        // for key in TOS:
+        //     del rest[key]
+        ADDOP_I(c, BUILD_MAP, 0);           // [subject, keys, empty]
+        ADDOP(c, ROT_THREE);                // [empty, subject, keys]
+        ADDOP(c, ROT_TWO);                  // [empty, keys, subject]
+        ADDOP_I(c, DICT_UPDATE, 2);         // [copy, keys]
+        ADDOP_I(c, UNPACK_SEQUENCE, size);  // [copy, keys...]
+        while (size) {
+            ADDOP_I(c, COPY, 1 + size--);   // [copy, keys..., copy]
+            ADDOP(c, ROT_TWO);              // [copy, keys..., copy, key]
+            ADDOP(c, DELETE_SUBSCR);        // [copy, keys...]
+        }
         RETURN_IF_FALSE(pattern_helper_store_name(c, star_target, pc));
     }
     else {
-        // Otherwise, we don't care about this tuple of keys anymore:
-        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);  // Tuple of keys.
+        ADDOP(c, POP_TOP);  // Subject.
     }
-    // Pop the subject:
-    pc->on_top--;
-    ADDOP(c, POP_TOP);
     return 1;
 
 error:
@@ -6335,7 +6345,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // cases, though.
                     assert(istores < icontrol);
                     Py_ssize_t rotations = istores + 1;
-                    // Perfom the same rotation on pc->stores:
+                    // Perform the same rotation on pc->stores:
                     PyObject *rotated = PyList_GetSlice(pc->stores, 0,
                                                         rotations);
                     if (rotated == NULL ||
@@ -7081,7 +7091,7 @@ assemble_line_range(struct assembler* a, int current, PyObject** table,
                     int* prev, int* start, int* offset)
 {
     int ldelta, bdelta;
-    bdelta = (a->a_offset - *start) * 2;
+    bdelta = (a->a_offset - *start) * sizeof(_Py_CODEUNIT);
     if (bdelta == 0) {
         return 1;
     }
@@ -7221,6 +7231,26 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
+normalize_jumps(struct assembler *a)
+{
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+    }
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        b->b_visited = 1;
+        if (b->b_iused == 0) {
+            continue;
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (last->i_opcode == JUMP_ABSOLUTE &&
+            last->i_target->b_visited == 0
+        ) {
+            last->i_opcode = JUMP_FORWARD;
+        }
+    }
+}
+
+static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
     basicblock *b;
@@ -7306,7 +7336,7 @@ consts_dict_keys_inorder(PyObject *dict)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
-        /* The keys of the dictionary can be tuples wrapping a contant.
+        /* The keys of the dictionary can be tuples wrapping a constant.
          * (see compiler_add_o and _PyCode_ConstantKey). In that case
          * the object we want is always second. */
         if (PyTuple_CheckExact(k)) {
@@ -7897,6 +7927,9 @@ assemble(struct compiler *c, int addNone)
         clean_basic_block(b);
     }
 
+    /* Order of basic blocks must have been determined by now */
+    normalize_jumps(&a);
+
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
@@ -7951,6 +7984,24 @@ assemble(struct compiler *c, int addNone)
     return co;
 }
 
+static PyObject*
+get_const_value(int opcode, int oparg, PyObject *co_consts)
+{
+    PyObject *constant = NULL;
+    assert(HAS_CONST(opcode));
+    if (opcode == LOAD_CONST) {
+        constant = PyList_GET_ITEM(co_consts, oparg);
+    }
+
+    if (constant == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Internal error: failed to get value of a constant");
+        return NULL;
+    }
+    Py_INCREF(constant);
+    return constant;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -7968,7 +8019,7 @@ fold_tuple_on_constants(struct compiler *c,
     assert(inst[n].i_oparg == n);
 
     for (int i = 0; i < n; i++) {
-        if (inst[i].i_opcode != LOAD_CONST) {
+        if (!HAS_CONST(inst[i].i_opcode)) {
             return 0;
         }
     }
@@ -7979,9 +8030,12 @@ fold_tuple_on_constants(struct compiler *c,
         return -1;
     }
     for (int i = 0; i < n; i++) {
+        int op = inst[i].i_opcode;
         int arg = inst[i].i_oparg;
-        PyObject *constant = PyList_GET_ITEM(consts, arg);
-        Py_INCREF(constant);
+        PyObject *constant = get_const_value(op, arg, consts);
+        if (constant == NULL) {
+            return -1;
+        }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
     if (merge_const_one(c, &newconst) == 0) {
@@ -8107,8 +8161,12 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
-                        cnt = PyList_GET_ITEM(consts, oparg);
+                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
                         is_true = PyObject_IsTrue(cnt);
+                        Py_DECREF(cnt);
                         if (is_true == -1) {
                             goto error;
                         }
@@ -8124,8 +8182,12 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                         break;
                     case JUMP_IF_FALSE_OR_POP:
                     case JUMP_IF_TRUE_OR_POP:
-                        cnt = PyList_GET_ITEM(consts, oparg);
+                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        if (cnt == NULL) {
+                            goto error;
+                        }
                         is_true = PyObject_IsTrue(cnt);
+                        Py_DECREF(cnt);
                         if (is_true == -1) {
                             goto error;
                         }
@@ -8310,6 +8372,14 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                     fold_rotations(inst - oparg + 1, oparg);
                 }
                 break;
+            case COPY:
+                if (oparg == 1) {
+                    inst->i_opcode = DUP_TOP;
+                }
+                break;
+            default:
+                /* All HAS_CONST opcodes should be handled with LOAD_CONST */
+                assert (!HAS_CONST(inst->i_opcode));
         }
     }
     return 0;

@@ -6,8 +6,9 @@
 #include "pycore_pathconfig.h"
 #include "osdefs.h"               // DELIM
 
-#include <sys/types.h>
+#include <stdlib.h>               // getenv()
 #include <string.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
@@ -115,11 +116,6 @@ extern "C" {
 
 #define BUILD_LANDMARK L"Modules/Setup.local"
 
-#define DECODE_LOCALE_ERR(NAME, LEN) \
-    ((LEN) == (size_t)-2) \
-     ? _PyStatus_ERR("cannot decode " NAME) \
-     : _PyStatus_NO_MEMORY()
-
 #define PATHLEN_ERR() _PyStatus_ERR("path configuration: path too long")
 
 typedef struct {
@@ -147,23 +143,6 @@ typedef struct {
 
 static const wchar_t delimiter[2] = {DELIM, '\0'};
 static const wchar_t separator[2] = {SEP, '\0'};
-
-
-/* Get file status. Encode the path to the locale encoding. */
-static int
-_Py_wstat(const wchar_t* path, struct stat *buf)
-{
-    int err;
-    char *fname;
-    fname = _Py_EncodeLocaleRaw(path, NULL);
-    if (fname == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-    err = stat(fname, buf);
-    PyMem_RawFree(fname);
-    return err;
-}
 
 
 static void
@@ -235,28 +214,18 @@ isdir(const wchar_t *filename)
 static PyStatus
 joinpath(wchar_t *path, const wchar_t *path2, size_t path_len)
 {
-    size_t n;
-    if (!_Py_isabs(path2)) {
-        n = wcslen(path);
-        if (n >= path_len) {
+    if (_Py_isabs(path2)) {
+        if (wcslen(path2) >= path_len) {
             return PATHLEN_ERR();
         }
-
-        if (n > 0 && path[n-1] != SEP) {
-            path[n++] = SEP;
-        }
+        wcscpy(path, path2);
     }
     else {
-        n = 0;
+        if (_Py_add_relfile(path, path2, path_len) < 0) {
+            return PATHLEN_ERR();
+        }
+        return _PyStatus_OK();
     }
-
-    size_t k = wcslen(path2);
-    if (n + k >= path_len) {
-        return PATHLEN_ERR();
-    }
-    wcsncpy(path + n, path2, k);
-    path[n + k] = '\0';
-
     return _PyStatus_OK();
 }
 
@@ -283,23 +252,7 @@ joinpath2(const wchar_t *path, const wchar_t *path2)
     if (_Py_isabs(path2)) {
         return _PyMem_RawWcsdup(path2);
     }
-
-    size_t len = wcslen(path);
-    int add_sep = (len > 0 && path[len - 1] != SEP);
-    len += add_sep;
-    len += wcslen(path2);
-
-    wchar_t *new_path = PyMem_RawMalloc((len + 1) * sizeof(wchar_t));
-    if (new_path == NULL) {
-        return NULL;
-    }
-
-    wcscpy(new_path, path);
-    if (add_sep) {
-        wcscat(new_path, separator);
-    }
-    wcscat(new_path, path2);
-    return new_path;
+    return _Py_join_relfile(path, path2);
 }
 
 
@@ -562,6 +515,42 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
     /* Fail */
     *found = 0;
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+calculate_set_stdlib_dir(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+{
+    // Note that, unlike calculate_set_prefix(), here we allow a negative
+    // prefix_found.  That means the source tree Lib dir gets used.
+    if (!calculate->prefix_found) {
+        return _PyStatus_OK();
+    }
+    PyStatus status;
+    wchar_t *prefix = calculate->prefix;
+    if (!_Py_isabs(prefix)) {
+        prefix = _PyMem_RawWcsdup(prefix);
+        if (prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+        status = absolutize(&prefix);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    wchar_t buf[MAXPATHLEN + 1];
+    int res = _Py_normalize_path(prefix, buf, Py_ARRAY_LENGTH(buf));
+    if (prefix != calculate->prefix) {
+        PyMem_RawFree(prefix);
+    }
+    if (res < 0) {
+        return PATHLEN_ERR();
+    }
+    pathconfig->stdlib_dir = _PyMem_RawWcsdup(buf);
+    if (pathconfig->stdlib_dir == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
     return _PyStatus_OK();
 }
 
@@ -1505,7 +1494,7 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     }
 
     /* If a pyvenv.cfg configure file is found,
-       argv0_path is overriden with its 'home' variable. */
+       argv0_path is overridden with its 'home' variable. */
     status = calculate_read_pyenv(calculate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1535,6 +1524,14 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
     if (pathconfig->module_search_path == NULL) {
         status = calculate_module_search_path(calculate, pathconfig);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (pathconfig->stdlib_dir == NULL) {
+        /* This must be done *before* calculate_set_prefix() is called. */
+        status = calculate_set_stdlib_dir(calculate, pathconfig);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

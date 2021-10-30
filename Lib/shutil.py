@@ -253,36 +253,37 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if not follow_symlinks and _islink(src):
         os.symlink(os.readlink(src), dst)
     else:
-        try:
-            with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
-                # macOS
-                if _HAS_FCOPYFILE:
-                    try:
-                        _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
+        with open(src, 'rb') as fsrc:
+            try:
+                with open(dst, 'wb') as fdst:
+                    # macOS
+                    if _HAS_FCOPYFILE:
+                        try:
+                            _fastcopy_fcopyfile(fsrc, fdst, posix._COPYFILE_DATA)
+                            return dst
+                        except _GiveupOnFastCopy:
+                            pass
+                    # Linux
+                    elif _USE_CP_SENDFILE:
+                        try:
+                            _fastcopy_sendfile(fsrc, fdst)
+                            return dst
+                        except _GiveupOnFastCopy:
+                            pass
+                    # Windows, see:
+                    # https://github.com/python/cpython/pull/7160#discussion_r195405230
+                    elif _WINDOWS and file_size > 0:
+                        _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
                         return dst
-                    except _GiveupOnFastCopy:
-                        pass
-                # Linux
-                elif _USE_CP_SENDFILE:
-                    try:
-                        _fastcopy_sendfile(fsrc, fdst)
-                        return dst
-                    except _GiveupOnFastCopy:
-                        pass
-                # Windows, see:
-                # https://github.com/python/cpython/pull/7160#discussion_r195405230
-                elif _WINDOWS and file_size > 0:
-                    _copyfileobj_readinto(fsrc, fdst, min(file_size, COPY_BUFSIZE))
-                    return dst
 
-                copyfileobj(fsrc, fdst)
+                    copyfileobj(fsrc, fdst)
 
-        # Issue 43219, raise a less confusing exception
-        except IsADirectoryError as e:
-            if os.path.exists(dst):
-                raise
-            else:
-                raise FileNotFoundError(f'Directory does not exist: {dst}') from e
+            # Issue 43219, raise a less confusing exception
+            except IsADirectoryError as e:
+                if not os.path.exists(dst):
+                    raise FileNotFoundError(f'Directory does not exist: {dst}') from e
+                else:
+                    raise
 
     return dst
 
@@ -1371,9 +1372,9 @@ def get_terminal_size(fallback=(80, 24)):
             # os.get_terminal_size() is unsupported
             size = os.terminal_size(fallback)
         if columns <= 0:
-            columns = size.columns
+            columns = size.columns or fallback[0]
         if lines <= 0:
-            lines = size.lines
+            lines = size.lines or fallback[1]
 
     return os.terminal_size((columns, lines))
 

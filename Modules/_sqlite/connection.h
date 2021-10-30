@@ -35,6 +35,7 @@
 typedef struct _callback_context
 {
     PyObject *callable;
+    PyObject *module;
     pysqlite_state *state;
 } callback_context;
 
@@ -82,10 +83,10 @@ typedef struct
      */
     PyObject* text_factory;
 
-    /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
-    PyObject* function_pinboard_trace_callback;
-    PyObject* function_pinboard_progress_handler;
-    PyObject* function_pinboard_authorizer_cb;
+    // Remember contexts used by the trace, progress, and authoriser callbacks
+    callback_context *trace_ctx;
+    callback_context *progress_ctx;
+    callback_context *authorizer_ctx;
 
     /* Exception objects: borrowed refs. */
     PyObject* Warning;
