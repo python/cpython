@@ -285,6 +285,22 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    Passive mode is on by default.
 
 
+.. method:: FTP.set_transmissionmode(mode)
+
+   Specifies the mode in which to transmit files retrieved in BINARY transfer mode.
+   Legal values per RFC 959 are 'S' (STREAM, the default), 'B' (BLOCK) and
+   'C' (COMPRESSED).  This library supports STREAM and BLOCK modes only.
+
+   STREAM mode transmits files as one continuous stream.  The data connection closes
+   once the server has sent all data.
+
+   BLOCK mode transmits files in discrete blocks, each preceded by a three-byte
+   header describing the block's content (e.g. EOF, end-of-record, suspect data, or
+   restart marker) and its length.  The data connection is NOT closed when the file
+   transmission is completed, instead remaining open so that subsequent file requests
+   may use the existing data connection.
+
+
 .. method:: FTP.storbinary(cmd, fp, blocksize=8192, callback=None, rest=None)
 
    Store a file in binary transfer mode.  *cmd* should be an appropriate

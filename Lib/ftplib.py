@@ -34,6 +34,7 @@ python ftplib.py -d localhost -l -p -l
 # Modified by Siebren to support docstrings and PASV.
 # Modified by Phil Schwartz to add storbinary and storlines callbacks.
 # Modified by Giampaolo Rodola' to add TLS support.
+# Modified by Jonathan Bell to support block transmission mode in retrbinary.
 #
 
 import sys
@@ -105,6 +106,8 @@ class FTP:
     passiveserver = True
     # Disables https://bugs.python.org/issue43285 security if set to True.
     trust_server_pasv_ipv4_address = False
+    transmissionmode = 'S'
+    dataconn = None
 
     def __init__(self, host='', user='', passwd='', acct='',
                  timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
@@ -349,7 +352,14 @@ class FTP:
         given marker.
         """
         size = None
-        if self.passiveserver:
+        if self.dataconn is not None:
+            if rest is not None:
+                self.sendcmd("REST %s" % rest)
+            resp = self.sendcmd(cmd)
+            if resp[0] != '1':
+                raise error_reply(resp)
+            conn = self.dataconn
+        elif self.passiveserver:
             host, port = self.makepasv()
             conn = socket.create_connection((host, port), self.timeout,
                                             source_address=self.source_address)
@@ -367,6 +377,8 @@ class FTP:
                     resp = self.getresp()
                 if resp[0] != '1':
                     raise error_reply(resp)
+                if self.transmissionmode == 'B':
+                    self.dataconn = conn
             except:
                 conn.close()
                 raise
@@ -381,6 +393,8 @@ class FTP:
                 if resp[0] != '1':
                     raise error_reply(resp)
                 conn, sockaddr = sock.accept()
+                if self.transmissionmode == 'B':
+                    self.dataconn = conn
                 if self.timeout is not _GLOBAL_DEFAULT_TIMEOUT:
                     conn.settimeout(self.timeout)
         if resp[:3] == '150':
@@ -432,16 +446,95 @@ class FTP:
         Returns:
           The response code.
         """
+        import struct
+
         self.voidcmd('TYPE I')
-        with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                data = conn.recv(blocksize)
-                if not data:
-                    break
-                callback(data)
-            # shutdown ssl layer
-            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
-                conn.unwrap()
+        self.voidcmd('MODE %s' % self.transmissionmode)
+
+        if self.transmissionmode == 'S':
+            with self.transfercmd(cmd, rest) as conn:
+                while 1:
+                    data = conn.recv(blocksize)
+                    if not data:
+                        break
+                    callback(data)
+                # shutdown ssl layer
+                if _SSLSocket is not None and isinstance(conn, _SSLSocket):
+                    conn.unwrap()
+        elif self.transmissionmode == 'B':
+            with self.transfercmd(cmd, rest) as conn:
+                while 1:
+                    # Receive one byte at a time, not all 3 at once -- seriously
+                    header = bytes()
+                    for i in range(0, 3):
+                        header += conn.recv(1)
+
+                    (descriptor, blocklength) = struct.unpack('!BH', header)
+                    if self.debugging:
+                        print("*header* %d\t%d" % (descriptor, blocklength))
+
+                    if (0 <= descriptor <= 240) and descriptor % 16 == 0:
+                        pass
+                    else:
+                        # Abort the transfer. Expect 426 response code.
+                        self.abort()
+                        # Exception so close the data connection.
+                        self.close_dataconn()
+                        # Catch the 226 response code.
+                        self.voidresp()
+                        raise error_proto("Unexpected header descriptor. Data block is invalid.")
+
+                    data = bytes()
+                    dtl = []
+                    sread = 0
+                    while 1:
+                        if blocklength == 0:
+                            break
+                        try:
+                            buff = conn.recv(blocklength-sread, 0)
+                        except socket.error as se:
+                            if self.debugging:
+                                print("*got socket error: %s*" % se)
+                            raise se
+                        if not buff:
+                            if self.debugging:
+                                print("*got no data on recv* final size: %d" % sread)
+                            break
+                        if len(buff) > blocklength-sread:
+                            if self.debugging:
+                                print("*got more data than desired!* %d vs %d" % (len(buff), blocklength-sread))
+                        sread = sread + len(buff)
+                        data = data + buff
+                        dtl.append(buff)
+                        if sread >= blocklength:
+                            break
+
+                    if descriptor & 16:
+                        # Data block is a restart. Not implemented.
+                        self.abort()
+                        if self.debugging:
+                            print('*restart marker*')
+                        raise NotImplementedError("Remote server sent a restart marker. Operation unsupported.")
+                    else:
+                        callback(data)
+
+                    if descriptor & 128:
+                        # End of "record" as defined by file type.
+                        if self.debugging:
+                            print('*end-of-record*')
+                    if descriptor & 64:
+                        # End of file.
+                        if self.debugging:
+                            print('*EOF*')
+                        break
+                    if descriptor & 32:
+                        # Data is suspect (i.e. "magnetic tape read errors")
+                        if self.debugging:
+                            print('*suspect data*')
+        else:
+            self.close_dataconn()
+            raise NotImplementedError
+
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
@@ -495,6 +588,8 @@ class FTP:
           The response code.
         """
         self.voidcmd('TYPE I')
+        self.voidcmd('MODE S')
+
         with self.transfercmd(cmd, rest) as conn:
             while 1:
                 buf = fp.read(blocksize)
@@ -673,6 +768,27 @@ class FTP:
             if sock is not None:
                 sock.close()
 
+    def set_transmissionmode(self, mode):
+        """Set the transmission mode.
+
+        Args:
+            mode: Mode in which the FTP server should transmit files.
+              S indicates Stream mode, the default mode.
+              B indicates Block mode, in which data is sent as a series
+                of data blocks, each preceded by a header specifying
+                the block length and a descriptor.
+              C indicates Compressed mode. Not implemented by this library.
+
+        Currently, the mode set is applied only when a client calls retrbinary.
+        """
+        self.transmissionmode = mode
+
+    def close_dataconn(self):
+        """Close the persistent data connection."""
+        if self.dataconn:
+            self.dataconn.close()
+            self.dataconn = None
+
 try:
     import ssl
 except ImportError:
@@ -805,9 +921,9 @@ else:
                 raise error_proto(resp)
             return resp
 
+
     __all__.append('FTP_TLS')
     all_errors = (Error, OSError, EOFError, ssl.SSLError)
-
 
 _150_re = None
 

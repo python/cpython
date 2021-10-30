@@ -8,6 +8,8 @@ import socket
 import io
 import errno
 import os
+import random
+import struct
 import threading
 import time
 import unittest
@@ -56,6 +58,37 @@ MLSD_DATA = ("type=cdir;perm=el;unique==keVO1+ZF4; test\r\n"
              "type=file;perm=r;unique==SGP2; file \xAE non-ascii char\r\n")
 
 
+def data_to_blocks(source_data, block_size=2048):
+    block_data = bytes()
+    position = 0
+    descriptor_eof = 64
+    descriptor_none = 0
+
+    while 1:
+        chunk_size = block_size + random.randint(0, 32)
+        remainder = len(source_data[position:])
+
+        if remainder > chunk_size:
+            descriptor = descriptor_none
+            read_size = chunk_size
+        else:
+            descriptor = descriptor_eof
+            read_size = remainder
+
+        header = struct.pack("!BH", descriptor, read_size)
+        read_data = source_data[position:position + read_size]
+        block_data += header + bytes(read_data)
+        position += read_size
+
+        if descriptor == descriptor_eof:
+            break
+
+    return block_data
+
+
+BLOCK_RETR_DATA = data_to_blocks(bytes(RETR_DATA.encode("utf-8")))
+
+
 class DummyDTPHandler(asynchat.async_chat):
     dtp_conn_closed = False
 
@@ -84,7 +117,11 @@ class DummyDTPHandler(asynchat.async_chat):
             self.baseclass.next_data = None
         if not what:
             return self.close_when_done()
-        super(DummyDTPHandler, self).push(what.encode(self.encoding))
+
+        if type(what) != bytes:
+            super(DummyDTPHandler, self).push(what.encode(self.encoding))
+        else:
+            super(DummyDTPHandler, self).push(what)
 
     def handle_error(self):
         raise Exception
@@ -107,12 +144,14 @@ class DummyFTPHandler(asynchat.async_chat):
         self.next_data = None
         self.rest = None
         self.next_retr_data = RETR_DATA
+        self.next_block_retr_data = BLOCK_RETR_DATA
         self.push('220 welcome')
         self.encoding = encoding
         # We use this as the string IPv4 address to direct the client
         # to in response to a PASV command.  To test security behavior.
         # https://bugs.python.org/issue43285/.
         self.fake_pasv_server_ip = '252.253.254.255'
+        self.mode = "S"
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -239,7 +278,13 @@ class DummyFTPHandler(asynchat.async_chat):
             offset = int(self.rest)
         else:
             offset = 0
-        self.dtp.push(self.next_retr_data[offset:])
+
+        push_data = {
+            "S": self.next_retr_data,
+            "B": self.next_block_retr_data,
+        }.get(self.mode, self.next_retr_data)
+
+        self.dtp.push(push_data[offset:])
         self.dtp.close_when_done()
         self.rest = None
 
@@ -265,6 +310,10 @@ class DummyFTPHandler(asynchat.async_chat):
         # For testing. Next RETR will return long line.
         self.next_retr_data = 'x' * int(arg)
         self.push('125 setlongretr ok')
+
+    def cmd_mode(self, arg):
+        self.mode = arg
+        self.push("200 mode %s ok" % arg)
 
 
 class DummyFTPServer(asyncore.dispatcher, threading.Thread):
@@ -598,6 +647,15 @@ class TestFTPClass(TestCase):
             received = []
             self.client.retrbinary('retr', callback, rest=rest)
             self.check_data(''.join(received), RETR_DATA[rest:])
+
+    def test_retrbinary_block(self):
+        def callback(data):
+            received.append(data.decode(self.client.encoding))
+        received = []
+        self.client.set_transmissionmode("B")
+        self.client.retrbinary('retr', callback)
+        self.check_data(''.join(received), RETR_DATA)
+        self.client.set_transmissionmode("S")
 
     def test_retrlines(self):
         received = []
