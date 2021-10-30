@@ -1857,7 +1857,7 @@ static int assert_frozen_module_validation_error(PyObject *name)
 
     PyErr_Fetch(&type, &value, &traceback);
     if (!value) {
-        error("no error raised");
+        error("no error raised, expecting ImportError");
         return 1;
     }
 
