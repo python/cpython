@@ -4848,7 +4848,7 @@ properly defined. For example, because the :class:`list` class defines
    :meth:`__class_getitem__<object.__class_getitem__>` classmethod defined by
    the class. See :pep:`560` for more details.
 
-A ``GenericAlias`` object acts as a proxy for a :term:`generic types`,
+A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
 implementing *parameterized generics*.
 
 For a container class which implements
