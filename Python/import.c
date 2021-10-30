@@ -1282,11 +1282,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     }
     const char *name = PyUnicode_AsUTF8(nameobj);
     if (name == NULL) {
-        // Note that this function previously used
-        // _PyUnicode_EqualToASCIIString().  We clear the error here
-        // (instead of propagating it) to match the earlier behavior
-        // more closely.
-        PyErr_Clear();
         return FROZEN_BAD_NAME;
     }
 
@@ -2150,7 +2145,8 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
         Py_RETURN_NONE;
     }
     else if (status == FROZEN_BAD_NAME) {
-        Py_RETURN_NONE;
+        set_frozen_error(status, name);
+        return NULL;
     }
     else if (status != FROZEN_OKAY) {
         set_frozen_error(status, name);
