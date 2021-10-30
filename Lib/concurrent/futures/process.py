@@ -141,10 +141,11 @@ class _WorkItem(object):
         self.kwargs = kwargs
 
 class _ResultItem(object):
-    def __init__(self, work_id, exception=None, result=None):
+    def __init__(self, work_id, exception=None, result=None, pid=None):
         self.work_id = work_id
         self.exception = exception
         self.result = result
+        self.pid = pid
 
 class _CallItem(object):
     def __init__(self, work_id, fn, args, kwargs):
@@ -201,14 +202,14 @@ def _process_chunk(fn, chunk):
     return [fn(*args) for args in chunk]
 
 
-def _sendback_result(result_queue, work_id, result=None, exception=None):
+def _sendback_result(result_queue, work_id, result=None, exception=None, pid=None):
     """Safely send back the given result or exception"""
     try:
         result_queue.put(_ResultItem(work_id, result=result,
-                                     exception=exception))
+                                     exception=exception, pid=pid))
     except BaseException as e:
         exc = _ExceptionWithTraceback(e, e.__traceback__)
-        result_queue.put(_ResultItem(work_id, exception=exc))
+        result_queue.put(_ResultItem(work_id, exception=exc, pid=pid))
 
 
 def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=None):
@@ -232,31 +233,35 @@ def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=N
             # The parent will notice that the process stopped and
             # mark the pool broken
             return
-    completed_count = 0
-    while max_tasks is None or (max_tasks > completed_count):
+    num_tasks = 0
+    exit_pid = None
+    while True:
         call_item = call_queue.get(block=True)
         if call_item is None:
             # Wake up queue management thread
             result_queue.put(os.getpid())
             return
+
+        if max_tasks is not None:
+            num_tasks += 1
+            if num_tasks >= max_tasks:
+                exit_pid = os.getpid()
+
         try:
             r = call_item.fn(*call_item.args, **call_item.kwargs)
         except BaseException as e:
             exc = _ExceptionWithTraceback(e, e.__traceback__)
-            _sendback_result(result_queue, call_item.work_id, exception=exc)
+            _sendback_result(result_queue, call_item.work_id, exception=exc, pid=exit_pid)
         else:
-            _sendback_result(result_queue, call_item.work_id, result=r)
+            _sendback_result(result_queue, call_item.work_id, result=r, pid=exit_pid)
             del r
-        finally:
-            completed_count += 1
 
         # Liberate the resource as soon as possible, to avoid holding onto
         # open files or shared memory that is not needed anymore
         del call_item
 
-    # Reached the maximum number of tasks this process can work on
-    # notify the manager that this process is exiting cleanly
-    result_queue.put(os.getpid())
+        if exit_pid is not None:
+            return
 
 
 class _ExecutorManagerThread(threading.Thread):
@@ -331,15 +336,21 @@ class _ExecutorManagerThread(threading.Thread):
                 return
             if result_item is not None:
                 self.process_result_item(result_item)
+
+                process_exited = result_item.pid is not None
+                if process_exited:
+                    self.processes.pop(result_item.pid)
+
                 # Delete reference to result_item to avoid keeping references
                 # while waiting on new results.
                 del result_item
 
-                # attempt to increment idle process count
-                executor = self.executor_reference()
-                if executor is not None:
-                    executor._idle_worker_semaphore.release()
-                del executor
+                if executor := self.executor_reference():
+                    if process_exited:
+                        executor._adjust_process_count()
+                    else:
+                        executor._idle_worker_semaphore.release()
+                    del executor
 
             if self.is_shutting_down():
                 self.flag_executor_shutting_down()
@@ -411,14 +422,12 @@ class _ExecutorManagerThread(threading.Thread):
         if isinstance(result_item, int):
             # Clean shutdown of a worker using its PID
             # (avoids marking the executor broken)
+            assert self.is_shutting_down()
             p = self.processes.pop(result_item)
             p.join()
-            if self.is_shutting_down() and not self.pending_work_items:
-                if not self.processes:
-                    self.join_executor_internals()
-            else:
-                if executor := self.executor_reference():
-                    executor._add_process_to_pool()
+            if not self.processes:
+                self.join_executor_internals()
+                return
         else:
             # Received a _ResultItem so mark the future as completed.
             work_item = self.pending_work_items.pop(result_item.work_id, None)
@@ -698,18 +707,15 @@ class ProcessPoolExecutor(_base.Executor):
 
         process_count = len(self._processes)
         if process_count < self._max_workers:
-            self._add_process_to_pool()
-
-    def _add_process_to_pool(self):
-        p = self._mp_context.Process(
-            target=_process_worker,
-            args=(self._call_queue,
-                  self._result_queue,
-                  self._initializer,
-                  self._initargs,
-                  self._max_tasks_per_child))
-        p.start()
-        self._processes[p.pid] = p
+            p = self._mp_context.Process(
+                target=_process_worker,
+                args=(self._call_queue,
+                      self._result_queue,
+                      self._initializer,
+                      self._initargs,
+                      self._max_tasks_per_child))
+            p.start()
+            self._processes[p.pid] = p
 
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
