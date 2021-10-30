@@ -642,7 +642,8 @@ class EnumType(type):
         this_module = globals().values()
         is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
         first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
-        ignored = set()
+        # special-case __new__
+        ignored = {'__new__'}
         add_to_ignored = ignored.add
 
         # We want these added to __dir__
@@ -661,7 +662,7 @@ class EnumType(type):
             cls_lookup = cls.__dict__
 
             # If not an instance of EnumType,
-            # ensure all attributes excluded from that class's `dir()` are ignored.
+            # ensure all attributes excluded from that class's `dir()` are ignored here.
             if not isinstance(cls, EnumType):
                 cls_lookup = set(cls_lookup).intersection(dir(cls))
 
@@ -669,13 +670,17 @@ class EnumType(type):
                 # Already seen it? Carry on
                 if attr_name in cls_dir or attr_name in ignored:
                     continue
-                # Exclude all sunders from dir(); __new__ is special-cased
-                elif attr_name == '__new__' or _is_sunder(attr_name):
-                    continue
+                # Exclude all sunders from dir()
+                elif _is_sunder(attr_name):
+                    add_to_ignored(attr_name)
+                # Not an "enum dunder"? Add it to dir() output.
                 elif attr_name not in enum_dunders:
                     add_to_dir(attr_name)
+                # Is an "enum dunder", and is defined by a class from enum.py? Ignore it.
                 elif getattr(self, attr_name) is getattr(first_enum_base, attr_name, object()):
                     add_to_ignored(attr_name)
+                # Is an "enum dunder", and is either user-defined or defined by a mixin class?
+                # Add it to dir() output.
                 else:
                     add_to_dir(attr_name)
 
