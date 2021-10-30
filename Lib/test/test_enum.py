@@ -438,20 +438,27 @@ class TestEnum(unittest.TestCase):
         for enum_cls, mixin_cls in enums_for_test:
             with self.subTest(enum_cls=enum_cls):
                 cls_dir = dir(enum_cls)
-                mixin_dir = dir(mixin_cls)
                 cls_dict = enum_cls.__dict__
+
+                mixin_attrs = [
+                    x for x in dir(mixin_cls)
+                    if (
+                        getattr(mixin_cls, x) is not getattr(object, x, object())
+                        and x not in {'__init_subclass__', '__subclasshook__'}
+                    )
+                ]
 
                 first_enum_base = next(
                     base for base in enum_cls.__mro__
                     if is_from_enum_module(base)
                 )
 
-                for attr in mixin_dir:
+                for attr in mixin_attrs:
                     with self.subTest(attr=attr):
                         if enum._is_sunder(attr):
                             # Unlikely, but no harm in testing
                             self.assertNotIn(attr, cls_dir)
-                        elif attr in ('__class__', '__doc__', '__members__', '__module__'):
+                        elif attr in {'__class__', '__doc__', '__members__', '__module__'}:
                             self.assertIn(attr, cls_dir)
                         elif is_enum_dunder(attr):
                             if is_from_enum_module(enum_cls):

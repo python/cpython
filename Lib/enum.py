@@ -638,15 +638,14 @@ class EnumType(type):
         # Start off with the desired result for dir(Enum)
         cls_dir = {'__class__', '__doc__', '__members__', '__module__'}
         add_to_dir = cls_dir.add
-
-        # We want these added to __dir__
-        # if and only if they have been user-overridden
-        enum_dunders = set(filter(_is_dunder, Enum.__dict__))
-
         mro = self.__mro__
         this_module = globals().values()
         is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
         first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
+
+        # We want these added to __dir__
+        # if and only if they have been user-overridden
+        enum_dunders = set(filter(_is_dunder, Enum.__dict__))
 
         # special-case __new__
         if self.__new__ is not first_enum_base.__new__:
@@ -657,9 +656,12 @@ class EnumType(type):
             if cls is object or is_from_this_module(cls):
                 continue
 
-            # Avoid dir() if EnumType is the metaclass (infinite recursion otherwise)
-            # Otherwise, go according to dir()
-            cls_lookup = cls.__dict__ if isinstance(cls, EnumType) else dir(cls)
+            cls_lookup = cls.__dict__
+
+            # If not an instance of EnumType,
+            # ensure all attributes excluded from that class's `dir()` are ignored.
+            if not isinstance(cls, EnumType):
+                cls_lookup = set(cls_lookup).intersection(dir(cls))
 
             for attr_name in cls_lookup:
                 # Exclude all sunders from dir(); __new__ is special-cased
