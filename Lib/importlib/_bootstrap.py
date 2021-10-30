@@ -263,7 +263,13 @@ def _requires_builtin(fxn):
 def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
     def _requires_frozen_wrapper(self, fullname):
-        if not _imp.is_frozen(fullname):
+        if not _imp.is_frozen(fullname) or (
+            # bpo-45272: os.path is not a concrete module, but an importable
+            #            attribute of 'os'. _imp.is_frozen('os.path') returns
+            #            False but it is frozen, so we check the loader here.
+            fullname in sys.modules
+            and sys.modules[fullname].__spec__.loader is FrozenImporter
+        ):
             raise ImportError('{!r} is not a frozen module'.format(fullname),
                               name=fullname)
         return fxn(self, fullname)
