@@ -1187,7 +1187,8 @@ set_frozen_error(frozen_status status, PyObject *modname)
             err = "No such frozen object named %R";
             break;
         case FROZEN_DISABLED:
-            err = "Frozen modules are disabled and the frozen object named %R is not essential";
+            err = "Non-essential frozen stdlib modules are disabled.  " \
+                  "See the '-X frozen_stdlib' documentation.";
             break;
         case FROZEN_EXCLUDED:
             err = "Excluded frozen object named %R";
