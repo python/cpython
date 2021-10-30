@@ -69,7 +69,9 @@ A few concepts we can learn from the four commands:
 The basics
 ==========
 
-Let us start with a very simple example which does (almost) nothing::
+Let us start with a very simple example which does (almost) nothing:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -109,7 +111,9 @@ Here is what is happening:
 Introducing Positional arguments
 ================================
 
-An example::
+An example:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -154,7 +158,9 @@ Here is what's happening:
 Note however that, although the help display looks nice and all, it currently
 is not as helpful as it can be. For example we see that we got ``echo`` as a
 positional argument, but we don't know what it does, other than by guessing or
-by reading the source code. So, let's make it a bit more useful::
+by reading the source code. So, let's make it a bit more useful:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -195,7 +201,9 @@ Following is a result of running the code:
 
 That didn't go so well. That's because :mod:`argparse` treats the options we
 give it as strings, unless we tell it otherwise. So, let's tell
-:mod:`argparse` to treat that input as an integer::
+:mod:`argparse` to treat that input as an integer:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -222,7 +230,9 @@ Introducing Optional arguments
 ==============================
 
 So far we have been playing with positional arguments. Let us
-have a look on how to add optional ones::
+have a look on how to add optional ones:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -267,7 +277,9 @@ Here is what is happening:
 
 The above example accepts arbitrary integer values for ``--verbosity``, but for
 our simple program, only two values are actually useful, ``True`` or ``False``.
-Let's modify the code accordingly::
+Let's modify the code accordingly:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -313,7 +325,9 @@ Short options
 
 If you are familiar with command line usage,
 you will notice that I haven't yet touched on the topic of short
-versions of the options. It's quite simple::
+versions of the options. It's quite simple:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -342,7 +356,9 @@ Note that the new ability is also reflected in the help text.
 Combining Positional and Optional arguments
 ===========================================
 
-Our program keeps growing in complexity::
+Our program keeps growing in complexity:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -376,7 +392,9 @@ And now the output:
 * Note that the order does not matter.
 
 How about we give this program of ours back the ability to have
-multiple verbosity values, and actually get to use them::
+multiple verbosity values, and actually get to use them:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -410,7 +428,9 @@ And the output:
    16
 
 These all look good except the last one, which exposes a bug in our program.
-Let's fix it by restricting the values the ``--verbosity`` option can accept::
+Let's fix it by restricting the values the ``--verbosity`` option can accept:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -450,7 +470,9 @@ help string.
 
 Now, let's use a different approach of playing with verbosity, which is pretty
 common. It also matches the way the CPython executable handles its own
-verbosity argument (check the output of ``python --help``)::
+verbosity argument (check the output of ``python --help``):
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -517,7 +539,9 @@ to count the number of occurrences of specific options.
 * That last output exposes a bug in our program.
 
 
-Let's fix::
+Let's fix:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -556,7 +580,9 @@ And this is what it gives:
 
 * Third output not so good.
 
-Let's fix that bug::
+Let's fix that bug:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -597,7 +623,9 @@ Getting a little more advanced
 ==============================
 
 What if we wanted to expand our tiny program to perform other powers,
-not just squares::
+not just squares:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -636,7 +664,9 @@ Output:
 
 Notice that so far we've been using verbosity level to *change* the text
 that gets displayed. The following example instead uses verbosity level
-to display *more* text instead::
+to display *more* text instead:
+
+.. code:: python
 
    import argparse
    parser = argparse.ArgumentParser()
@@ -673,7 +703,9 @@ So far, we have been working with two methods of an
 conflict with each other. Let's also change the rest of the program so that
 the new functionality makes more sense:
 we'll introduce the ``--quiet`` option,
-which will be the opposite of the ``--verbose`` one::
+which will be the opposite of the ``--verbose`` one:
+
+.. code:: python
 
    import argparse
 
@@ -716,7 +748,9 @@ sort of flexibility you get, i.e. mixing long form options with short form
 ones.
 
 Before we conclude, you probably want to tell your users the main purpose of
-your program, just in case they don't know::
+your program, just in case they don't know:
+
+.. code:: python
 
    import argparse
 
