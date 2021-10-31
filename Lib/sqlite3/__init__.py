@@ -34,7 +34,7 @@ in-memory database:
 
     cx = sqlite3.connect(":memory:")  # connect to a database in RAM
 
-Once a Connection has been established, create a Cursor object and call
+Once a connection has been established, create a Cursor object and call
 its execute() method to perform SQL queries:
 
     cu = cx.cursor()
