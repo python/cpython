@@ -215,6 +215,10 @@ class TestEnum(unittest.TestCase):
             def wowser(self):
                 """Wowser docstring"""
                 return ("Wowser! I'm %s!" % self.name)
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
         self.Wowser = Wowser
 
         class IntWowser(IntEnum):
@@ -223,6 +227,10 @@ class TestEnum(unittest.TestCase):
             def wowser(self):
                 """Wowser docstring"""
                 return ("Wowser! I'm %s!" % self.name)
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
         self.IntWowser = IntWowser
 
         class FloatWowser(float, Enum):
@@ -231,18 +239,36 @@ class TestEnum(unittest.TestCase):
             def wowser(self):
                 """Wowser docstring"""
                 return ("Wowser! I'm %s!" % self.name)
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
         self.FloatWowser = FloatWowser
 
         class WowserNoMembers(Enum):
             def wowser(self): pass
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
+        class SubclassOfWowserNoMembers(WowserNoMembers): pass
         self.WowserNoMembers = WowserNoMembers
+        self.SubclassOfWowserNoMembers = SubclassOfWowserNoMembers
 
         class IntWowserNoMembers(IntEnum):
             def wowser(self): pass
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
         self.IntWowserNoMembers = IntWowserNoMembers
 
         class FloatWowserNoMembers(float, Enum):
             def wowser(self): pass
+            @classmethod
+            def classmethod_wowser(cls): pass
+            @staticmethod
+            def staticmethod_wowser(): pass
         self.FloatWowserNoMembers = FloatWowserNoMembers
 
         class EnumWithInit(Enum):
@@ -370,6 +396,7 @@ class TestEnum(unittest.TestCase):
             self.IntWowser,
             self.FloatWowser,
             self.WowserNoMembers,
+            self.SubclassOfWowserNoMembers,
             self.IntWowserNoMembers,
             self.FloatWowserNoMembers
         )
@@ -377,7 +404,12 @@ class TestEnum(unittest.TestCase):
         for cls in enums_for_test:
             with self.subTest(cls=cls):
                 self.assertIn('wowser', dir(cls))
-                self.assertTrue(all('wowser' in dir(member) for member in cls))
+                self.assertIn('classmethod_wowser', dir(cls))
+                self.assertIn('staticmethod_wowser', dir(cls))
+                self.assertTrue(all(
+                    all(attr in dir(member) for attr in ('wowser', 'classmethod_wowser', 'staticmethod_wowser'))
+                    for member in cls
+                ))
 
     def test_help_output_on_enum_members(self):
         added_behaviour_enums = (
@@ -434,6 +466,12 @@ class TestEnum(unittest.TestCase):
         is_from_enum_module = lambda cls: cls.__name__ in enum_module_names
         is_enum_dunder = lambda attr: enum._is_dunder(attr) and attr in enum_dict
 
+        def attr_is_inherited_from_object(cls, attr_name):
+            for base in cls.__mro__:
+                if attr_name in base.__dict__:
+                    return base is object
+            return False
+
         # General tests
         for enum_cls, mixin_cls in enums_for_test:
             with self.subTest(enum_cls=enum_cls):
@@ -442,10 +480,7 @@ class TestEnum(unittest.TestCase):
 
                 mixin_attrs = [
                     x for x in dir(mixin_cls)
-                    if (
-                        getattr(mixin_cls, x) is not getattr(object, x, object())
-                        and x not in {'__init_subclass__', '__subclasshook__'}
-                    )
+                    if not attr_is_inherited_from_object(cls=mixin_cls, attr_name=x)
                 ]
 
                 first_enum_base = next(
@@ -476,6 +511,8 @@ class TestEnum(unittest.TestCase):
         self.assertIn('__rfloordiv__', int_enum_dir)
         self.assertNotIn('__format__', int_enum_dir)
         self.assertNotIn('__hash__', int_enum_dir)
+        self.assertNotIn('__init_subclass__', int_enum_dir)
+        self.assertNotIn('__subclasshook__', int_enum_dir)
 
         class OverridesFormatOutsideEnumModule(Enum):
             def __format__(self, *args, **kwargs):
