@@ -714,6 +714,8 @@ class LiteralTests(BaseTestCase):
         self.assertNotEqual(Literal[True], Literal[1])
         self.assertNotEqual(Literal[1], Literal[2])
         self.assertNotEqual(Literal[1, True], Literal[1])
+        self.assertNotEqual(Literal[1, True], Literal[1, 1])
+        self.assertNotEqual(Literal[1, 2], Literal[True, 2])
         self.assertEqual(Literal[1], Literal[1])
         self.assertEqual(Literal[1, 2], Literal[2, 1])
         self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
@@ -4963,6 +4965,8 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Concatenate[Any, SpecialAttrsP]: 'Concatenate',
             typing.Final[Any]: 'Final',
             typing.Literal[Any]: 'Literal',
+            typing.Literal[1, 2]: 'Literal',
+            typing.Literal[True, 2]: 'Literal',
             typing.Optional[Any]: 'Optional',
             typing.TypeGuard[Any]: 'TypeGuard',
             typing.Union[Any]: 'Any',
