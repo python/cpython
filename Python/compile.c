@@ -3684,6 +3684,7 @@ unaryop(unaryop_ty op)
 static int
 addop_binary(struct compiler *c, operator_ty binop, bool inplace)
 {
+    assert(HAVE_SANE_NB_OFFSETS);
     int oparg;
     switch (binop) {
         case Add:
@@ -3691,17 +3692,17 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
             ADDOP(c, inplace ? INPLACE_ADD : BINARY_ADD);
             return 1;
         case Sub:
-            oparg = NB_SUBTRACT;
+            oparg = inplace ? NB_INPLACE_SUBTRACT : NB_SUBTRACT;
             break;
         case Mult:
             // Multiplication interacts with sq_repeat:
             ADDOP(c, inplace ? INPLACE_MULTIPLY : BINARY_MULTIPLY);
             return 1;
         case MatMult:
-            oparg = NB_MATRIX_MULTIPLY;
+            oparg = inplace ? NB_INPLACE_MATRIX_MULTIPLY : NB_MATRIX_MULTIPLY;
             break;
         case Div:
-            oparg = NB_TRUE_DIVIDE;
+            oparg = inplace ? NB_INPLACE_TRUE_DIVIDE : NB_TRUE_DIVIDE;
             break;
         case Mod:
             // Modulation contains a fast path for strings:
@@ -3712,22 +3713,22 @@ addop_binary(struct compiler *c, operator_ty binop, bool inplace)
             ADDOP(c, inplace ? INPLACE_POWER : BINARY_POWER);
             return 1;
         case LShift:
-            oparg = NB_LSHIFT;
+            oparg = inplace ? NB_INPLACE_LSHIFT : NB_LSHIFT;
             break;
         case RShift:
-            oparg = NB_RSHIFT;
+            oparg = inplace ? NB_INPLACE_RSHIFT : NB_RSHIFT;
             break;
         case BitOr:
-            oparg = NB_OR;
+            oparg = inplace ? NB_INPLACE_OR : NB_OR;
             break;
         case BitXor:
-            oparg = NB_XOR;
+            oparg = inplace ? NB_INPLACE_XOR : NB_XOR;
             break;
         case BitAnd:
-            oparg = NB_AND;
+            oparg = inplace ? NB_INPLACE_AND : NB_AND;
             break;
         case FloorDiv:
-            oparg = NB_FLOOR_DIVIDE;
+            oparg = inplace ? NB_INPLACE_FLOOR_DIVIDE : NB_FLOOR_DIVIDE;
             break;
         default:
             PyErr_Format(PyExc_SystemError, "%s op %d should not be possible",

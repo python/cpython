@@ -7,7 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
-from opcode import _nb_ops
+from opcode import _nb_slots
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -30,12 +30,11 @@ MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 LOAD_CONST = opmap['LOAD_CONST']
 
 BINARY_OP = opmap['BINARY_OP']
-BINARY_OPS = [name for _, name in _nb_ops]
-
 INPLACE_OP = opmap['INPLACE_OP']
-INPLACE_OPS = [f"{name}=" for _, name in _nb_ops]
 
-del _nb_ops
+NB_NAMES = {i: name for i, _, name in _nb_slots}
+
+del _nb_slots
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -455,10 +454,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             elif op == MAKE_FUNCTION:
                 argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
                                     if arg & (1<<i))
-            elif op == BINARY_OP:
-                argrepr = BINARY_OPS[arg]
-            elif op == INPLACE_OP:
-                argrepr = INPLACE_OPS[arg]
+            elif op == BINARY_OP or op == INPLACE_OP:
+                argrepr = NB_NAMES[arg]
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target, positions)

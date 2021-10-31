@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 
 /* Instruction opcodes for compiled code */
 #define POP_TOP                           1
@@ -189,15 +191,66 @@ static uint32_t _PyOpcode_Jump[8] = {
     || ((op) == 100) \
     )
 
-#define NB_AND                            0
-#define NB_FLOOR_DIVIDE                   1
-#define NB_LSHIFT                         2
-#define NB_MATRIX_MULTIPLY                3
-#define NB_OR                             4
-#define NB_RSHIFT                         5
-#define NB_SUBTRACT                       6
-#define NB_TRUE_DIVIDE                    7
-#define NB_XOR                            8
+#define NB_SUBTRACT                       1
+#define NB_LSHIFT                        11
+#define NB_RSHIFT                        12
+#define NB_AND                           13
+#define NB_XOR                           14
+#define NB_OR                            15
+#define NB_INPLACE_SUBTRACT              20
+#define NB_INPLACE_LSHIFT                24
+#define NB_INPLACE_RSHIFT                25
+#define NB_INPLACE_AND                   26
+#define NB_INPLACE_XOR                   27
+#define NB_INPLACE_OR                    28
+#define NB_FLOOR_DIVIDE                  29
+#define NB_TRUE_DIVIDE                   30
+#define NB_INPLACE_FLOOR_DIVIDE          31
+#define NB_INPLACE_TRUE_DIVIDE           32
+#define NB_MATRIX_MULTIPLY               34
+#define NB_INPLACE_MATRIX_MULTIPLY       35
+
+#define NB_SUBTRACT_NAME                "-"
+#define NB_LSHIFT_NAME                  "<<"
+#define NB_RSHIFT_NAME                  ">>"
+#define NB_AND_NAME                     "&"
+#define NB_XOR_NAME                     "^"
+#define NB_OR_NAME                      "|"
+#define NB_INPLACE_SUBTRACT_NAME        "-="
+#define NB_INPLACE_LSHIFT_NAME          "<<="
+#define NB_INPLACE_RSHIFT_NAME          ">>="
+#define NB_INPLACE_AND_NAME             "&="
+#define NB_INPLACE_XOR_NAME             "^="
+#define NB_INPLACE_OR_NAME              "|="
+#define NB_FLOOR_DIVIDE_NAME            "//"
+#define NB_TRUE_DIVIDE_NAME             "/"
+#define NB_INPLACE_FLOOR_DIVIDE_NAME    "//="
+#define NB_INPLACE_TRUE_DIVIDE_NAME     "/="
+#define NB_MATRIX_MULTIPLY_NAME         "@"
+#define NB_INPLACE_MATRIX_MULTIPLY_NAME "@="
+
+#define HAVE_SANE_NB_OFFSETS ( \
+    NB_SUBTRACT * NB_SCALE == offsetof(PyNumberMethods, nb_subtract) && \
+    NB_LSHIFT * NB_SCALE == offsetof(PyNumberMethods, nb_lshift) && \
+    NB_RSHIFT * NB_SCALE == offsetof(PyNumberMethods, nb_rshift) && \
+    NB_AND * NB_SCALE == offsetof(PyNumberMethods, nb_and) && \
+    NB_XOR * NB_SCALE == offsetof(PyNumberMethods, nb_xor) && \
+    NB_OR * NB_SCALE == offsetof(PyNumberMethods, nb_or) && \
+    NB_INPLACE_SUBTRACT * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_subtract) && \
+    NB_INPLACE_LSHIFT * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_lshift) && \
+    NB_INPLACE_RSHIFT * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_rshift) && \
+    NB_INPLACE_AND * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_and) && \
+    NB_INPLACE_XOR * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_xor) && \
+    NB_INPLACE_OR * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_or) && \
+    NB_FLOOR_DIVIDE * NB_SCALE == offsetof(PyNumberMethods, nb_floor_divide) && \
+    NB_TRUE_DIVIDE * NB_SCALE == offsetof(PyNumberMethods, nb_true_divide) && \
+    NB_INPLACE_FLOOR_DIVIDE * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_floor_divide) && \
+    NB_INPLACE_TRUE_DIVIDE * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_true_divide) && \
+    NB_MATRIX_MULTIPLY * NB_SCALE == offsetof(PyNumberMethods, nb_matrix_multiply) && \
+    NB_INPLACE_MATRIX_MULTIPLY * NB_SCALE == offsetof(PyNumberMethods, nb_inplace_matrix_multiply) && \
+    true)
+
+#define NB_SCALE offsetof(PyNumberMethods, nb_subtract)
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 

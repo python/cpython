@@ -11,11 +11,15 @@ header = """
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 
 /* Instruction opcodes for compiled code */
 """.lstrip()
 
 footer = """
+#define NB_SCALE offsetof(PyNumberMethods, nb_subtract)
+
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
 /* Reserve some bytecodes for internal use in the compiler.
@@ -86,8 +90,18 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n    )\n")
 
         fobj.write("\n")
-        for i, (op, _) in enumerate(opcode["_nb_ops"]):
-            fobj.write(DEFINE.format(op, i))
+        for i, slot, _ in opcode["_nb_slots"]:
+            fobj.write(DEFINE.format(slot.upper(), i))
+        
+        fobj.write("\n")
+        for _, slot, name in opcode["_nb_slots"]:
+            fobj.write(DEFINE.format(f"{slot.upper()}_NAME", f'"{name}"'))
+        
+        fobj.write("\n")
+        fobj.write("#define HAVE_SANE_NB_OFFSETS ( \\\n")
+        for _, slot, _ in opcode["_nb_slots"]:
+            fobj.write(f"    {slot.upper()} * NB_SCALE == offsetof(PyNumberMethods, {slot}) && \\\n")
+        fobj.write("    true)\n")
 
         fobj.write(footer)
 

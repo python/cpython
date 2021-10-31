@@ -1715,44 +1715,51 @@ PyNumber_ToBase(PyObject *n, int base)
     return res;
 }
 
-typedef struct {
-    const int slot;
-    const char name[3];
-    const int islot;
-    const char iname[4];
-} nb_info;
+#define NB_NAMES(op)                           \
+    [NB_##op] = NB_##op##_NAME,                \
+    [NB_INPLACE_##op] = NB_INPLACE_##op##_NAME
 
-#define NB_INFO(name, slot) \
-    {NB_SLOT(nb_##slot), name, NB_SLOT(nb_inplace_##slot), name "="}
-
-static nb_info nb_infos[] = {
-    [NB_AND] = NB_INFO("&", and),
-    [NB_FLOOR_DIVIDE] = NB_INFO("//", floor_divide),
-    [NB_LSHIFT] = NB_INFO("<<", lshift),
-    [NB_MATRIX_MULTIPLY] = NB_INFO("@", matrix_multiply),
-    [NB_OR] = NB_INFO("|", or),
-    [NB_RSHIFT] = NB_INFO(">>", rshift),
-    [NB_SUBTRACT] = NB_INFO("-", subtract),
-    [NB_TRUE_DIVIDE] = NB_INFO("/", true_divide),
-    [NB_XOR] = NB_INFO("^", xor),
+static const char nb_names[][4] = {
+    NB_NAMES(AND),
+    NB_NAMES(FLOOR_DIVIDE),
+    NB_NAMES(LSHIFT),
+    NB_NAMES(MATRIX_MULTIPLY),
+    NB_NAMES(OR),
+    NB_NAMES(RSHIFT),
+    NB_NAMES(SUBTRACT),
+    NB_NAMES(TRUE_DIVIDE),
+    NB_NAMES(XOR),
 };
 
-#undef NB_INFO
+#undef NB_NAMES
+
+#define NB_BINSLOT(op) [NB_INPLACE_##op] = NB_##op
+    
+static const uint8_t nb_binary_slots[] = {
+    NB_BINSLOT(AND),
+    NB_BINSLOT(FLOOR_DIVIDE),
+    NB_BINSLOT(LSHIFT),
+    NB_BINSLOT(MATRIX_MULTIPLY),
+    NB_BINSLOT(OR),
+    NB_BINSLOT(RSHIFT),
+    NB_BINSLOT(SUBTRACT),
+    NB_BINSLOT(TRUE_DIVIDE),
+    NB_BINSLOT(XOR),
+};
+
+#undef NB_BINSLOT
 
 PyObject *
 _PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op)
 {
-    assert(op < sizeof(nb_infos) / sizeof(nb_info));
-    nb_info *ni = &nb_infos[op];
-    return binary_op(o1, o2, ni->slot, ni->name);
+    return binary_op(o1, o2, op * NB_SCALE, nb_names[op]);
 }
 
 PyObject *
 _PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op)
 {
-    assert(op < sizeof(nb_infos) / sizeof(nb_info));
-    nb_info *ni = &nb_infos[op];
-    return binary_iop(o1, o2, ni->islot, ni->slot, ni->iname);
+    return binary_iop(o1, o2, op * NB_SCALE, nb_binary_slots[op] * NB_SCALE,
+                      nb_names[op]);
 }
 
 
