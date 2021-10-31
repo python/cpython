@@ -1271,7 +1271,7 @@ class BaseExceptionReportingTests:
             raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
 
         expected = (
-             f'  | Traceback (most recent call last):\n'
+             f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
              f'  |     exception_or_callable()\n'
              f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1296,7 +1296,7 @@ class BaseExceptionReportingTests:
             except Exception as e:
                 raise EG("eg2", [ValueError(3), TypeError(4)]) from e
 
-        expected = (f'  | Traceback (most recent call last):\n'
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
                     f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1309,7 +1309,7 @@ class BaseExceptionReportingTests:
                     f'\n'
                     f'The above exception was the direct cause of the following exception:\n'
                     f'\n'
-                    f'  | Traceback (most recent call last):\n'
+                    f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1338,7 +1338,7 @@ class BaseExceptionReportingTests:
                 raise ImportError(5)
 
         expected = (
-             f'  | Traceback (most recent call last):\n'
+             f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 4}, in exc\n'
              f'  |     raise EG("eg1", [ValueError(1), TypeError(2)])\n'
              f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1351,7 +1351,7 @@ class BaseExceptionReportingTests:
              f'\n'
              f'During handling of the above exception, another exception occurred:\n'
              f'\n'
-             f'  | Traceback (most recent call last):\n'
+             f'  + Exception Group Traceback (most recent call last):\n'
              f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
              f'  |     raise EG("eg2", [ValueError(3), TypeError(4)])\n'
              f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1390,7 +1390,7 @@ class BaseExceptionReportingTests:
             except:
                 raise EG("top", [VE(5)])
 
-        expected = (f'  | Traceback (most recent call last):\n'
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 9}, in exc\n'
                     f'  |     raise EG("eg", [VE(1), exc, VE(4)])\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1398,7 +1398,7 @@ class BaseExceptionReportingTests:
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | ValueError: 1\n'
                     f'    +---------------- 2 ----------------\n'
-                    f'    | Traceback (most recent call last):\n'
+                    f'    | Exception Group Traceback (most recent call last):\n'
                     f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
                     f'    |     raise EG("nested", [TE(2), TE(3)])\n'
                     f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -1414,7 +1414,7 @@ class BaseExceptionReportingTests:
                     f'\n'
                     f'During handling of the above exception, another exception occurred:\n'
                     f'\n'
-                    f'  | Traceback (most recent call last):\n'
+                    f'  + Exception Group Traceback (most recent call last):\n'
                     f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
                     f'  |     exception_or_callable()\n'
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^\n'
@@ -2168,13 +2168,13 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         lno_g = self.lno_g
 
         expected = [
-                    f'  | Traceback (most recent call last):',
+                    f'  + Exception Group Traceback (most recent call last):',
                     f'  |   File "{__file__}", line {lno_g+23}, in _get_exception_group',
                     f'  |     raise ExceptionGroup("eg2", [exc3, exc4])',
                     f'  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
                     f'  | ExceptionGroup: eg2',
                     f'  +-+---------------- 1 ----------------',
-                    f'    | Traceback (most recent call last):',
+                    f'    | Exception Group Traceback (most recent call last):',
                     f'    |   File "{__file__}", line {lno_g+16}, in _get_exception_group',
                     f'    |     raise ExceptionGroup("eg1", [exc1, exc2])',
                     f'    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',

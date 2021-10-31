@@ -928,9 +928,20 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     Py_INCREF(value);
     fflush(stdout);
     type = (PyObject *) Py_TYPE(value);
+    bool is_exception_group = PyObject_TypeCheck(
+        value, (PyTypeObject *)PyExc_BaseExceptionGroup);
     tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None) {
-        err = _PyTraceBack_Print_Indented(tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
+        const char *header = EXCEPTION_TB_HEADER;
+        const char *header_margin = EXC_MARGIN(ctx);
+        if (is_exception_group) {
+            header = EXCEPTION_GROUP_TB_HEADER;
+            if (ctx->exception_group_depth == 1) {
+                header_margin = "+ ";
+            }
+        }
+        err = _PyTraceBack_Print_Indented(
+            tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), header_margin, header, f);
     }
     if (err == 0 &&
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)

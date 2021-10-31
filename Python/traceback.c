@@ -14,6 +14,7 @@
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
@@ -922,7 +923,8 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
 #define PyTraceBack_LIMIT 1000
 
 int
-_PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObject *f)
+_PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
+                            const char *header_margin, const char *header, PyObject *f)
 {
     int err;
     PyObject *limitv;
@@ -945,8 +947,8 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObjec
             return 0;
         }
     }
-    err = _Py_WriteIndentedMargin(indent, margin, f);
-    err |= PyFile_WriteString("Traceback (most recent call last):\n", f);
+    err = _Py_WriteIndentedMargin(indent, header_margin, f);
+    err |= PyFile_WriteString(header, f);
     if (!err) {
         err = tb_printinternal((PyTracebackObject *)v, f, limit, indent, margin);
     }
@@ -956,7 +958,12 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin, PyObjec
 int
 PyTraceBack_Print(PyObject *v, PyObject *f)
 {
-    return _PyTraceBack_Print_Indented(v, 0, NULL, f);
+    int indent = 0;
+    const char *margin = NULL;
+    const char *header_margin = NULL;
+    const char *header = EXCEPTION_TB_HEADER;
+
+    return _PyTraceBack_Print_Indented(v, indent, margin, header_margin, header, f);
 }
 
 /* Format an integer in range [0; 0xffffffff] to decimal and write it

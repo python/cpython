@@ -611,10 +611,12 @@ class _ExceptionPrintContext:
     def indent(self):
         return ' ' * (2 * self.exception_group_depth)
 
-    def emit(self, text_gen):
-        margin_char = '|'
-        margin = f'{margin_char} ' if self.exception_group_depth else ''
-        indent_str = self.indent() + margin
+    def emit(self, text_gen, margin_char=None):
+        if margin_char is None:
+            margin_char = '|'
+        indent_str = self.indent()
+        if self.exception_group_depth:
+            indent_str += margin_char + ' '
 
         if isinstance(text_gen, str):
             yield textwrap.indent(text_gen, indent_str, lambda line: True)
@@ -887,7 +889,9 @@ class TracebackException:
                      _ctx.exception_group_depth += 1
 
                 if exc.stack:
-                    yield from _ctx.emit('Traceback (most recent call last):\n')
+                    yield from _ctx.emit(
+                        'Exception Group Traceback (most recent call last):\n',
+                        margin_char = '+' if is_toplevel else None)
                     yield from _ctx.emit(exc.stack.format())
 
                 yield from _ctx.emit(exc.format_exception_only())
