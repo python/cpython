@@ -75,7 +75,7 @@ This example uses the iterator form::
 
 SQL operations will usually need to use values from Python variables. It is not
 adviced to assemble queries using Python's string operations, because they are
-vulnerable to an SQL injection attacks (see the `xkcd webcomic
+vulnerable to SQL injection attacks (see the `xkcd webcomic
 <https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
 
    # Never do this -- insecure!
