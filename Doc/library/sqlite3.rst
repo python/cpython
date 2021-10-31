@@ -73,9 +73,9 @@ This example uses the iterator form::
 
 .. _sqlite3-placeholders:
 
-SQL operations will usually need to use values from Python variables. It is poor
-practice to assemble queries using Python's string operations, because they are
-vulnerable to SQL injection attacks (see the `xkcd webcomic
+SQL operations usually need to use values from Python variables. However,
+beware of using Python's string operations to assemble queries, as they
+are vulnerable to SQL injection attacks (see the `xkcd webcomic
 <https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
 
    # Never do this -- insecure!
