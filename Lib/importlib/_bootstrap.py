@@ -921,7 +921,10 @@ class FrozenImporter:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        info = _call_with_frames_removed(_imp.find_frozen, fullname)
+        try:
+            info = _call_with_frames_removed(_imp.find_frozen, fullname)
+        except ImportError:
+            return None
         if info is None:
             return None
         # We get the marshaled data in exec_module() (the loader

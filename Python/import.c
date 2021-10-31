@@ -1204,11 +1204,13 @@ set_frozen_error(frozen_status status, PyObject *modname)
             Py_UNREACHABLE();
     }
     if (err != NULL) {
+        PyObject *type, *value, *traceback;
+        PyErr_Fetch(&type, &value, &traceback);
         PyObject *msg = PyUnicode_FromFormat(err, modname);
         if (msg == NULL) {
             PyErr_Clear();
         }
-        PyErr_SetImportError(msg, modname, NULL);
+        PyErr_SetImportError(msg, modname, traceback);
         Py_XDECREF(msg);
     }
 }
