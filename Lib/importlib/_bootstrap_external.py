@@ -364,6 +364,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3459 (PEP 657: add end line numbers and column offsets for instructions)
 #     Python 3.11a1 3460 (Add co_qualname field to PyCodeObject bpo-44530)
 #     Python 3.11a1 3461 (JUMP_ABSOLUTE must jump backwards)
+#     Python 3.11a2 3462 (bpo-44511: remove COPY_DICT_WITHOUT_KEYS, change
+#                         MATCH_CLASS and MATCH_KEYS, and add COPY)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -373,7 +375,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3461).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3462).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1279,8 +1281,10 @@ class _NamespacePath:
         self._path.append(item)
 
 
-# We use this exclusively in module_from_spec() for backward-compatibility.
-class _NamespaceLoader:
+# This class is actually exposed publicly in a namespace package's __loader__
+# attribute, so it should be available through a non-private name.
+# https://bugs.python.org/issue35673
+class NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
 
@@ -1291,7 +1295,7 @@ class _NamespaceLoader:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        _warnings.warn("_NamespaceLoader.module_repr() is deprecated and "
+        _warnings.warn("NamespaceLoader.module_repr() is deprecated and "
                        "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} (namespace)>'.format(module.__name__)
 
@@ -1325,6 +1329,10 @@ class _NamespaceLoader:
     def get_resource_reader(self, module):
         from importlib.readers import NamespaceReader
         return NamespaceReader(self._path)
+
+
+# We use this exclusively in module_from_spec() for backward-compatibility.
+_NamespaceLoader = NamespaceLoader
 
 
 # Finders #####################################################################

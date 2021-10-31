@@ -1,0 +1,3 @@
+In obmalloc, set ADDRESS_BITS to not ignore any bits (ignored 16 before).  That is
+safer in the case that the kernel gives user-space virtual addresses that span
+a range greater than 48 bits.
