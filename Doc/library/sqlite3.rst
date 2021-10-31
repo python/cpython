@@ -49,7 +49,7 @@ method to perform SQL commands::
    # Just be sure any changes have been committed or they will be lost.
    con.close()
 
-The saved data is persistent and is available in subsequent sessions::
+The saved data is persistent: it can be reloaded in a subsequent session even after restarting the Python interpreter::
 
    import sqlite3
    con = sqlite3.connect('example.db')
