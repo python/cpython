@@ -29,8 +29,8 @@ To use the module, start by creating a database Connection object:
     import sqlite3
     cx = sqlite3.connect("test.db")  # test.db will be created or opened
 
-Use the special path name ":memory:" to connect to a transient in-memory
-database:
+The special path name ":memory:" can be provided to connect to a transient
+in-memory database:
 
     cx = sqlite3.connect(":memory:")  # connect to a database in RAM
 
