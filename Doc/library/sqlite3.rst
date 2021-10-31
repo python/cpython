@@ -28,7 +28,7 @@ represents the database.  Here the data will be stored in the
    import sqlite3
    con = sqlite3.connect('example.db')
 
-Use the special path name ``:memory:`` to create a temporary database in RAM.
+The special path name ``:memory:`` can be provided to create a temporary database in RAM.
 
 Once a :class:`Connection` has been established, create a :class:`Cursor` object and call its :meth:`~Cursor.execute`
 method to perform SQL commands::
