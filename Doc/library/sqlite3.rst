@@ -28,10 +28,11 @@ represents the database.  Here the data will be stored in the
    import sqlite3
    con = sqlite3.connect('example.db')
 
-The special path name ``:memory:`` can be provided to create a temporary database in RAM.
+The special path name ``:memory:`` can be provided to create a temporary
+database in RAM.
 
-Once a :class:`Connection` has been established, create a :class:`Cursor` object and call its :meth:`~Cursor.execute`
-method to perform SQL commands::
+Once a :class:`Connection` has been established, create a :class:`Cursor` object
+and call its :meth:`~Cursor.execute` method to perform SQL commands::
 
    cur = con.cursor()
 
@@ -49,7 +50,8 @@ method to perform SQL commands::
    # Just be sure any changes have been committed or they will be lost.
    con.close()
 
-The saved data is persistent: it can be reloaded in a subsequent session even after restarting the Python interpreter::
+The saved data is persistent: it can be reloaded in a subsequent session even
+after restarting the Python interpreter::
 
    import sqlite3
    con = sqlite3.connect('example.db')
@@ -82,9 +84,10 @@ are vulnerable to SQL injection attacks (see the `xkcd webcomic
    symbol = 'RHAT'
    cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
-Instead, use the DB-API's parameter substitution by putting placeholders in the
-query string. Provide the actual values as a :class:`tuple` as the second
-argument to the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+Instead, use the DB-API's parameter substitution. To insert a variable into a
+query string, use a placeholder in the string, and substitute the actual values
+into the query by providing them as a :class:`tuple` of values to the second
+argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
 use one of two kinds of placeholders: question marks (qmark style) or named
 placeholders (named style). For the qmark style, ``parameters`` must be a
 :term:`sequence <sequence>`. For the named style, it can be either a
