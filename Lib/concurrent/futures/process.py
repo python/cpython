@@ -339,7 +339,8 @@ class _ExecutorManagerThread(threading.Thread):
 
                 process_exited = result_item.pid is not None
                 if process_exited:
-                    self.processes.pop(result_item.pid)
+                    p = self.processes.pop(result_item.pid)
+                    p.join()
 
                 # Delete reference to result_item to avoid keeping references
                 # while waiting on new results.
