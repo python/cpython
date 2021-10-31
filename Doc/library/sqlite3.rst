@@ -30,7 +30,7 @@ represents the database.  Here the data will be stored in the
 
 Use the special path name ``:memory:`` to create a temporary database in RAM.
 
-Now, create a :class:`Cursor` object and call its :meth:`~Cursor.execute`
+Once a :class:`Connection` has been established, create a :class:`Cursor` object and call its :meth:`~Cursor.execute`
 method to perform SQL commands::
 
    cur = con.cursor()
