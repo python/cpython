@@ -5005,6 +5005,8 @@ list is non-exhaustive.
 * :class:`queue.SimpleQueue`
 * :ref:`re.Pattern <re-objects>`
 * :ref:`re.Match <match-objects>`
+* :class:`shelve.BsdDbShelf`
+* :class:`shelve.DbfilenameShelf`
 * :class:`shelve.Shelf`
 * :class:`types.MappingProxyType`
 * :class:`weakref.WeakKeyDictionary`
