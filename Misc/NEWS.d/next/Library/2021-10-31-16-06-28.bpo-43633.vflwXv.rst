@@ -1,0 +1,2 @@
+Improve the textual representation of IPv4-mapped IPv6 addresses to :mod:`ipaddress`. Patch by Oleksandr 
+Pavliuk.
