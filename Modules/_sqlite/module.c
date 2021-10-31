@@ -348,49 +348,56 @@ pysqlite_error_name(int rc)
     return NULL;
 }
 
-static int add_integer_constants(PyObject *module) {
-    int ret = 0;
+static int
+add_integer_constants(PyObject *module) {
+#define ADD_INT(ival)                                           \
+    do {                                                        \
+        if (PyModule_AddIntConstant(module, #ival, ival) < 0) { \
+            return -1;                                          \
+        }                                                       \
+    } while (0);                                                \
 
-    ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
-    ret += PyModule_AddIntMacro(module, PARSE_COLNAMES);
-    ret += PyModule_AddIntMacro(module, SQLITE_DENY);
-    ret += PyModule_AddIntMacro(module, SQLITE_IGNORE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_DELETE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_INSERT);
-    ret += PyModule_AddIntMacro(module, SQLITE_PRAGMA);
-    ret += PyModule_AddIntMacro(module, SQLITE_READ);
-    ret += PyModule_AddIntMacro(module, SQLITE_SELECT);
-    ret += PyModule_AddIntMacro(module, SQLITE_TRANSACTION);
-    ret += PyModule_AddIntMacro(module, SQLITE_UPDATE);
-    ret += PyModule_AddIntMacro(module, SQLITE_ATTACH);
-    ret += PyModule_AddIntMacro(module, SQLITE_DETACH);
-    ret += PyModule_AddIntMacro(module, SQLITE_ALTER_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_REINDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_ANALYZE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_VTABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_VTABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_FUNCTION);
-    ret += PyModule_AddIntMacro(module, SQLITE_SAVEPOINT);
+    ADD_INT(PARSE_DECLTYPES);
+    ADD_INT(PARSE_COLNAMES);
+    ADD_INT(SQLITE_DENY);
+    ADD_INT(SQLITE_IGNORE);
+    ADD_INT(SQLITE_CREATE_INDEX);
+    ADD_INT(SQLITE_CREATE_TABLE);
+    ADD_INT(SQLITE_CREATE_TEMP_INDEX);
+    ADD_INT(SQLITE_CREATE_TEMP_TABLE);
+    ADD_INT(SQLITE_CREATE_TEMP_TRIGGER);
+    ADD_INT(SQLITE_CREATE_TEMP_VIEW);
+    ADD_INT(SQLITE_CREATE_TRIGGER);
+    ADD_INT(SQLITE_CREATE_VIEW);
+    ADD_INT(SQLITE_DELETE);
+    ADD_INT(SQLITE_DROP_INDEX);
+    ADD_INT(SQLITE_DROP_TABLE);
+    ADD_INT(SQLITE_DROP_TEMP_INDEX);
+    ADD_INT(SQLITE_DROP_TEMP_TABLE);
+    ADD_INT(SQLITE_DROP_TEMP_TRIGGER);
+    ADD_INT(SQLITE_DROP_TEMP_VIEW);
+    ADD_INT(SQLITE_DROP_TRIGGER);
+    ADD_INT(SQLITE_DROP_VIEW);
+    ADD_INT(SQLITE_INSERT);
+    ADD_INT(SQLITE_PRAGMA);
+    ADD_INT(SQLITE_READ);
+    ADD_INT(SQLITE_SELECT);
+    ADD_INT(SQLITE_TRANSACTION);
+    ADD_INT(SQLITE_UPDATE);
+    ADD_INT(SQLITE_ATTACH);
+    ADD_INT(SQLITE_DETACH);
+    ADD_INT(SQLITE_ALTER_TABLE);
+    ADD_INT(SQLITE_REINDEX);
+    ADD_INT(SQLITE_ANALYZE);
+    ADD_INT(SQLITE_CREATE_VTABLE);
+    ADD_INT(SQLITE_DROP_VTABLE);
+    ADD_INT(SQLITE_FUNCTION);
+    ADD_INT(SQLITE_SAVEPOINT);
 #if SQLITE_VERSION_NUMBER >= 3008003
-    ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
+    ADD_INT(SQLITE_RECURSIVE);
 #endif
-    return ret;
+#undef ADD_INT
+    return 0;
 }
 
 struct PyModuleDef _sqlite3module = {
