@@ -1727,13 +1727,13 @@ static int test_get_argc_argv(void)
 }
 
 
-static int check_use_frozen_modules(wchar_t *rawval)
+static int check_use_frozen_modules(const char *rawval)
 {
     wchar_t optval[100];
     if (rawval == NULL) {
         wcscpy(optval, L"frozen_modules");
     }
-    else if (swprintf(optval, 100, L"frozen_modules=%s", rawval) < 0) {
+    else if (swprintf(optval, 100, L"frozen_modules=%ls", rawval) < 0) {
         error("rawval is too long");
         return -1;
     }
@@ -1760,10 +1760,8 @@ static int check_use_frozen_modules(wchar_t *rawval)
 
 static int test_init_use_frozen_modules(void)
 {
-    // bpo-45020: Test that -X "frozen_modules" works.
     const char *envvar = getenv("TESTFROZEN");
-    wchar_t *frozen = Py_DecodeLocale(envvar, NULL);
-    return check_use_frozen_modules(frozen);
+    return check_use_frozen_modules(envvar);
 }
 
 
