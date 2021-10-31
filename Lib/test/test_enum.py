@@ -411,6 +411,11 @@ class TestEnum(unittest.TestCase):
                     for member in cls
                 ))
 
+        self.assertEqual(dir(self.WowserNoMembers), dir(self.SubclassOfWowserNoMembers))
+        # Check classmethods are present
+        self.assertIn('from_bytes', dir(self.IntWowser))
+        self.assertIn('from_bytes', dir(self.IntWowserNoMembers))
+
     def test_help_output_on_enum_members(self):
         added_behaviour_enums = (
             self.Wowser,
