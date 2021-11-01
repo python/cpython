@@ -408,8 +408,8 @@ int
 _Py_WriteIndentedMargin(int indent, const char *margin, PyObject *f)
 {
     int err = _Py_WriteIndent(indent, f);
-    if (margin) {
-        err |= PyFile_WriteString(margin, f);
+    if (err == 0 && margin) {
+        err = PyFile_WriteString(margin, f);
     }
     return err;
 }
@@ -545,16 +545,22 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         *truncation = i - indent;
     }
 
-    err |= _Py_WriteIndentedMargin(margin_indent, margin, f);
+    if (err == 0) {
+        err = _Py_WriteIndentedMargin(margin_indent, margin, f);
+    }
     /* Write some spaces before the line */
-    err |= _Py_WriteIndent(indent, f);
+    if (err == 0) {
+        err = _Py_WriteIndent(indent, f);
+    }
 
     /* finally display the line */
-    if (err == 0)
+    if (err == 0) {
         err = PyFile_WriteObject(lineobj, f, Py_PRINT_RAW);
+    }
     Py_DECREF(lineobj);
-    if  (err == 0)
+    if  (err == 0) {
         err = PyFile_WriteString("\n", f);
+    }
     return err;
 }
 
@@ -746,7 +752,9 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     if (line == NULL)
         return -1;
     err = _Py_WriteIndentedMargin(margin_indent, margin, f);
-    err |= PyFile_WriteObject(line, f, Py_PRINT_RAW);
+    if (err == 0) {
+        err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+    }
     Py_DECREF(line);
     if (err != 0)
         return err;
@@ -842,9 +850,11 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     err = _Py_WriteIndentedMargin(margin_indent, margin, f);
-    err |= print_error_location_carets(f, truncation, start_offset, end_offset,
-                                      right_start_offset, left_end_offset,
-                                      primary_error_char, secondary_error_char);
+    if (err == 0) {
+        err = print_error_location_carets(f, truncation, start_offset, end_offset,
+                                          right_start_offset, left_end_offset,
+                                          primary_error_char, secondary_error_char);
+    }
 
 done:
     Py_XDECREF(source_line);
@@ -948,8 +958,10 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
         }
     }
     err = _Py_WriteIndentedMargin(indent, header_margin, f);
-    err |= PyFile_WriteString(header, f);
-    if (!err) {
+    if (err == 0) {
+        err = PyFile_WriteString(header, f);
+    }
+    if (err == 0) {
         err = tb_printinternal((PyTracebackObject *)v, f, limit, indent, margin);
     }
     return err;
