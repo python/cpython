@@ -2735,7 +2735,7 @@ class Canvas(Widget, XView, YView):
         """Add tag NEWTAG to item which is closest to pixel at X, Y.
         If several match take the top-most.
         All items closer than HALO are considered overlapping (all are
-        closests). If START is specified the next below this tag is taken."""
+        closest). If START is specified the next below this tag is taken."""
         self.addtag(newtag, 'closest', x, y, halo, start)
 
     def addtag_enclosed(self, newtag, x1, y1, x2, y2):
@@ -3330,7 +3330,7 @@ class Menu(Widget):
         self.add('command', cnf or kw)
 
     def add_radiobutton(self, cnf={}, **kw):
-        """Addd radio menu item."""
+        """Add radio menu item."""
         self.add('radiobutton', cnf or kw)
 
     def add_separator(self, cnf={}, **kw):
@@ -3355,7 +3355,7 @@ class Menu(Widget):
         self.insert(index, 'command', cnf or kw)
 
     def insert_radiobutton(self, index, cnf={}, **kw):
-        """Addd radio menu item at INDEX."""
+        """Add radio menu item at INDEX."""
         self.insert(index, 'radiobutton', cnf or kw)
 
     def insert_separator(self, index, cnf={}, **kw):

@@ -567,15 +567,17 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
+    usage = """usage: %s [-h|-d|-e|-u|-t] [file|-]
+        -h: print this help message and exit
+        -d, -u: decode
+        -e: encode (default)
+        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'deut')
+        opts, args = getopt.getopt(sys.argv[1:], 'hdeut')
     except getopt.error as msg:
         sys.stdout = sys.stderr
         print(msg)
-        print("""usage: %s [-d|-e|-u|-t] [file|-]
-        -d, -u: decode
-        -e: encode (default)
-        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0])
+        print(usage)
         sys.exit(2)
     func = encode
     for o, a in opts:
@@ -583,6 +585,7 @@ def main():
         if o == '-d': func = decode
         if o == '-u': func = decode
         if o == '-t': test(); return
+        if o == '-h': print(usage); return
     if args and args[0] != '-':
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)

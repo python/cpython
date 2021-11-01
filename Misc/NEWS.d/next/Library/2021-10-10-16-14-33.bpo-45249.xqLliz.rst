@@ -1,0 +1,2 @@
+Fix the behaviour of :func:`traceback.print_exc` when displaying the caret
+when the ``end_offset`` in the exception is set to 0. Patch by Pablo Galindo

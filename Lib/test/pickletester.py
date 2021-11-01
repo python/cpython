@@ -2383,7 +2383,8 @@ class AbstractPickleTests:
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
         for proto in protocols:
-            self.assertRaises(RuntimeError, self.dumps, x, proto)
+            with support.infinite_recursion():
+                self.assertRaises(RuntimeError, self.dumps, x, proto)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -3723,7 +3724,7 @@ class AbstractHookTests:
 
                 self.assertEqual(new_f, 5)
                 self.assertEqual(some_str, 'some str')
-                # math.log does not have its usual reducer overriden, so the
+                # math.log does not have its usual reducer overridden, so the
                 # custom reduction callback should silently direct the pickler
                 # to the default pickling by attribute, by returning
                 # NotImplemented
@@ -3740,7 +3741,7 @@ class AbstractHookTests:
     def test_reducer_override_no_reference_cycle(self):
         # bpo-39492: reducer_override used to induce a spurious reference cycle
         # inside the Pickler object, that could prevent all serialized objects
-        # from being garbage-collected without explicity invoking gc.collect.
+        # from being garbage-collected without explicitly invoking gc.collect.
 
         for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):

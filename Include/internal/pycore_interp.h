@@ -85,12 +85,31 @@ struct _Py_unicode_state {
     struct _Py_unicode_ids ids;
 };
 
+#ifndef WITH_FREELISTS
+// without freelists
+#  define PyFloat_MAXFREELIST 0
+// for tuples only store empty tuple singleton
+#  define PyTuple_MAXSAVESIZE 1
+#  define PyTuple_MAXFREELIST 1
+#  define PyList_MAXFREELIST 0
+#  define PyDict_MAXFREELIST 0
+#  define PyFrame_MAXFREELIST 0
+#  define _PyAsyncGen_MAXFREELIST 0
+#  define PyContext_MAXFREELIST 0
+#endif
+
+#ifndef PyFloat_MAXFREELIST
+#  define PyFloat_MAXFREELIST   100
+#endif
+
 struct _Py_float_state {
+#if PyFloat_MAXFREELIST > 0
     /* Special free list
        free_list is a singly-linked list of available PyFloatObjects,
        linked via abuse of their ob_type members. */
     int numfree;
     PyFloatObject *free_list;
+#endif
 };
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
@@ -119,8 +138,10 @@ struct _Py_tuple_state {
 #endif
 
 struct _Py_list_state {
+#if PyList_MAXFREELIST > 0
     PyListObject *free_list[PyList_MAXFREELIST];
     int numfree;
+#endif
 };
 
 #ifndef PyDict_MAXFREELIST
@@ -128,17 +149,25 @@ struct _Py_list_state {
 #endif
 
 struct _Py_dict_state {
+#if PyDict_MAXFREELIST > 0
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
     int numfree;
     PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
     int keys_numfree;
+#endif
 };
 
+#ifndef PyFrame_MAXFREELIST
+#  define PyFrame_MAXFREELIST 200
+#endif
+
 struct _Py_frame_state {
+#if PyFrame_MAXFREELIST > 0
     PyFrameObject *free_list;
     /* number of frames currently in free_list */
     int numfree;
+#endif
 };
 
 #ifndef _PyAsyncGen_MAXFREELIST
@@ -146,6 +175,7 @@ struct _Py_frame_state {
 #endif
 
 struct _Py_async_gen_state {
+#if _PyAsyncGen_MAXFREELIST > 0
     /* Freelists boost performance 6-10%; they also reduce memory
        fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
        are short-living objects that are instantiated for every
@@ -155,12 +185,19 @@ struct _Py_async_gen_state {
 
     struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
     int asend_numfree;
+#endif
 };
 
+#ifndef PyContext_MAXFREELIST
+#  define PyContext_MAXFREELIST 255
+#endif
+
 struct _Py_context_state {
+#if PyContext_MAXFREELIST > 0
     // List of free PyContext objects
     PyContext *freelist;
     int numfree;
+#endif
 };
 
 struct _Py_exc_state {
@@ -168,6 +205,8 @@ struct _Py_exc_state {
     PyObject *errnomap;
     PyBaseExceptionObject *memerrors_freelist;
     int memerrors_numfree;
+    // The ExceptionGroup type
+    PyObject *PyExc_ExceptionGroup;
 };
 
 
@@ -296,7 +335,7 @@ struct _is {
        The integers that are preallocated are those in the range
        -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
     */
-    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+    PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
     struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;

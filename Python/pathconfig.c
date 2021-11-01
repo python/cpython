@@ -411,7 +411,7 @@ config_init_pathconfig(PyConfig *config, int compute_path_config)
 #undef COPY_ATTR
 
 #ifdef MS_WINDOWS
-    /* If a ._pth file is found: isolated and site_import are overriden */
+    /* If a ._pth file is found: isolated and site_import are overridden */
     if (pathconfig.isolated != -1) {
         config->isolated = pathconfig.isolated;
     }
@@ -530,13 +530,10 @@ Py_SetPythonHome(const wchar_t *home)
 
     PyMem_RawFree(_Py_path_config.home);
     _Py_path_config.home = _PyMem_RawWcsdup(home);
-    if (_Py_path_config.home != NULL) {
-        _Py_path_config.stdlib_dir = _PyMem_RawWcsdup(home);
-    }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (_Py_path_config.home == NULL || _Py_path_config.stdlib_dir == NULL) {
+    if (_Py_path_config.home == NULL) {
         path_out_of_memory(__func__);
     }
 }

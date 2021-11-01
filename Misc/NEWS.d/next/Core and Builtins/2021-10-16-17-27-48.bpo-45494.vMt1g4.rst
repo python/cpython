@@ -1,0 +1,2 @@
+Fix parser crash when reporting errors involving invalid continuation
+characters. Patch by Pablo Galindo.
