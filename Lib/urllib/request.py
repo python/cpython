@@ -2784,10 +2784,9 @@ else:
 
 
 def _download():
-    from argparse import ArgumentParser
-    from sys import stdout
+    import argparse
 
-    parser = ArgumentParser(
+    parser = argparse.ArgumentParser(
         description="Download the provided URL (FTP/HTTP/HTTPS supported) "
         "and print it to stdout by default. If specified, write to OUTPUT "
         "instead."
@@ -2796,18 +2795,21 @@ def _download():
     parser.add_argument(
         "-o",
         "--output",
-        type=str,
+        type=argparse.FileType('wb'), default=sys.stdout.buffer,
         help="write to OUTPUT instead of stdout"
     )
     args = parser.parse_args()
-    out = stdout.buffer if args.output is None else open(args.output, "wb")
 
-    with urlopen(args.URL) as response:
-        while data := response.read(1024 * 1024):
-            out.write(data)
+    buffer = memoryview(bytearray(32768))
+    try:
+        with urlopen(args.URL) as response:
+            while n_bytes_read := response.readinto(buffer):
+                args.output.write(buffer[:n_bytes_read])
+    except URLError as exc:
+        print(f"Error while downloading '{args.URL}': {exc.reason}")
 
-    if out is not stdout.buffer:
-        out.close()
+    if args.output is not sys.stdout.buffer:
+        args.output.close()
 
 
 if __name__ == "__main__":
