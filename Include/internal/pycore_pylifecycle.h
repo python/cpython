@@ -53,7 +53,7 @@ extern PyStatus _PyUnicode_Init(PyInterpreterState *interp);
 extern PyStatus _PyUnicode_InitTypes(void);
 extern PyStatus _PyBytes_Init(PyInterpreterState *interp);
 extern int _PyStructSequence_Init(void);
-extern int _PyLong_Init(PyInterpreterState *interp);
+extern void _PyLong_Init(PyInterpreterState *interp);
 extern int _PyLong_InitTypes(void);
 extern PyStatus _PyTuple_Init(PyInterpreterState *interp);
 extern PyStatus _PyFaulthandler_Init(int enable);

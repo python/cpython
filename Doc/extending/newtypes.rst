@@ -73,7 +73,19 @@ function::
    newdatatype_dealloc(newdatatypeobject *obj)
    {
        free(obj->obj_UnderlyingDatatypePtr);
-       Py_TYPE(obj)->tp_free(obj);
+       Py_TYPE(obj)->tp_free((PyObject *)obj);
+   }
+
+If your type supports garbage collection, the destructor should call
+:c:func:`PyObject_GC_UnTrack` before clearing any member fields::
+
+   static void
+   newdatatype_dealloc(newdatatypeobject *obj)
+   {
+       PyObject_GC_UnTrack(obj);
+       Py_CLEAR(obj->other_obj);
+       ...
+       Py_TYPE(obj)->tp_free((PyObject *)obj);
    }
 
 .. index::
