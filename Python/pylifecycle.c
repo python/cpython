@@ -659,9 +659,7 @@ pycore_init_singletons(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    if (_PyLong_Init(interp) < 0) {
-        return _PyStatus_ERR("can't init longs");
-    }
+    _PyLong_Init(interp);
 
     if (_Py_IsMainInterpreter(interp)) {
         _PyFloat_Init();
@@ -1662,6 +1660,8 @@ finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
+    _PyExc_ClearExceptionGroupType(tstate->interp);
+
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
 
@@ -2029,7 +2029,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->frame != NULL) {
+    if (tstate->cframe->current_frame != NULL) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;

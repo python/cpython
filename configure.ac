@@ -3617,6 +3617,23 @@ then
 fi
 AC_MSG_RESULT($with_pymalloc)
 
+# Check whether objects such as float, tuple and dict are using
+# freelists to optimization memory allocation.
+AC_MSG_CHECKING(for --with-freelists)
+AC_ARG_WITH(freelists,
+            AS_HELP_STRING([--with-freelists], [enable object freelists (default is yes)]))
+
+if test -z "$with_freelists"
+then
+    with_freelists="yes"
+fi
+if test "$with_freelists" != "no"
+then
+    AC_DEFINE(WITH_FREELISTS, 1,
+     [Define if you want to compile in object freelists optimization])
+fi
+AC_MSG_RESULT($with_freelists)
+
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING(for --with-c-locale-coercion)
 AC_ARG_WITH(c-locale-coercion,
@@ -4676,8 +4693,12 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-AC_CHECK_FUNCS([acosh asinh atanh erf erfc expm1 finite gamma])
-AC_CHECK_FUNCS([lgamma log1p log2 tgamma])
+AC_CHECK_FUNCS(
+  [acosh asinh atanh erf erfc expm1 log1p log2],
+  [],
+  [AC_MSG_ERROR([Python requires C99 compatible libm])]
+)
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -5616,7 +5637,23 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="\
+  Modules \
+  Modules/_blake2 \
+  Modules/_ctypes \
+  Modules/_decimal \
+  Modules/_decimal/libmpdec \
+  Modules/_io \
+  Modules/_multiprocessing \
+  Modules/_sha3 \
+  Modules/_sqlite \
+  Modules/_xxtestfuzz \
+  Modules/cjkcodecs \
+  Modules/expat \
+  Objects \
+  Parser \
+  Programs \
+  Python"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

@@ -99,12 +99,13 @@ extern PyObject *_Py_get_frozen_only_toplevel(void);
 
 /* Note that a negative size indicates a package. */
 
-static const struct _frozen _PyImport_FrozenModules[] = {
-    /* import system */
+static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), _Py_get_importlib__bootstrap_toplevel},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), _Py_get_importlib__bootstrap_external_toplevel},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), _Py_get_zipimport_toplevel},
-
+    {0, 0, 0} /* bootstrap sentinel */
+};
+static const struct _frozen stdlib_modules[] = {
     /* stdlib - startup, without site (python -S) */
     {"abc", _Py_M__abc, (int)sizeof(_Py_M__abc), _Py_get_abc_toplevel},
     {"codecs", _Py_M__codecs, (int)sizeof(_Py_M__codecs), _Py_get_codecs_toplevel},
@@ -120,8 +121,9 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"os", _Py_M__os, (int)sizeof(_Py_M__os), _Py_get_os_toplevel},
     {"site", _Py_M__site, (int)sizeof(_Py_M__site), _Py_get_site_toplevel},
     {"stat", _Py_M__stat, (int)sizeof(_Py_M__stat), _Py_get_stat_toplevel},
-
-    /* Test module */
+    {0, 0, 0} /* stdlib sentinel */
+};
+static const struct _frozen test_modules[] = {
     {"__hello__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
     {"__hello_alias__", _Py_M____hello__, (int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
     {"__phello_alias__", _Py_M____hello__, -(int)sizeof(_Py_M____hello__), _Py_get___hello___toplevel},
@@ -133,8 +135,11 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"__phello__.ham.eggs", _Py_M____phello___ham_eggs, (int)sizeof(_Py_M____phello___ham_eggs), _Py_get___phello___ham_eggs_toplevel},
     {"__phello__.spam", _Py_M____phello___spam, (int)sizeof(_Py_M____phello___spam), _Py_get___phello___spam_toplevel},
     {"__hello_only__", _Py_M__frozen_only, (int)sizeof(_Py_M__frozen_only), _Py_get_frozen_only_toplevel},
-    {0, 0, 0} /* modules sentinel */
+    {0, 0, 0} /* test sentinel */
 };
+const struct _frozen *_PyImport_FrozenBootstrap = bootstrap_modules;
+const struct _frozen *_PyImport_FrozenStdlib = stdlib_modules;
+const struct _frozen *_PyImport_FrozenTest = test_modules;
 
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
@@ -154,4 +159,4 @@ const struct _module_alias *_PyImport_FrozenAliases = aliases;
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
 
-const struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
+const struct _frozen *PyImport_FrozenModules = NULL;

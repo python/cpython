@@ -7,20 +7,29 @@
 #include "Python.h"
 #include "pycore_import.h"
 
+/* Includes for frozen modules: */
 #include "frozen_modules/importlib._bootstrap.h"
 #include "frozen_modules/importlib._bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
+/* End includes */
 
-static const struct _frozen _PyImport_FrozenModules[] = {
-    /* import system */
-    {"_frozen_importlib", _Py_M__importlib__bootstrap,
-        (int)sizeof(_Py_M__importlib__bootstrap)},
-    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
-        (int)sizeof(_Py_M__importlib__bootstrap_external)},
+/* Note that a negative size indicates a package. */
+
+static const struct _frozen bootstrap_modules[] = {
+    {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap)},
+    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
-
-    {0, 0, 0} /* sentinel */
+    {0, 0, 0} /* bootstrap sentinel */
 };
+static const struct _frozen stdlib_modules[] = {
+    {0, 0, 0} /* stdlib sentinel */
+};
+static const struct _frozen test_modules[] = {
+    {0, 0, 0} /* test sentinel */
+};
+const struct _frozen *_PyImport_FrozenBootstrap = bootstrap_modules;
+const struct _frozen *_PyImport_FrozenStdlib = stdlib_modules;
+const struct _frozen *_PyImport_FrozenTest = test_modules;
 
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
@@ -29,4 +38,8 @@ static const struct _module_alias aliases[] = {
 };
 const struct _module_alias *_PyImport_FrozenAliases = aliases;
 
-const struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
+
+/* Embedding apps may change this pointer to point to their favorite
+   collection of frozen modules: */
+
+const struct _frozen *PyImport_FrozenModules = NULL;

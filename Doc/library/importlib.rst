@@ -815,9 +815,9 @@ ABC hierarchy::
 
     .. versionadded:: 3.9
 
-    .. abstractmethod:: name()
+    .. attribute:: name
 
-       The base name of this object without any parent references.
+       Abstract. The base name of this object without any parent references.
 
     .. abstractmethod:: iterdir()
 
@@ -869,6 +869,11 @@ ABC hierarchy::
     implement this interface.
 
     .. versionadded:: 3.9
+
+    .. abstractmethod:: files()
+
+       Returns a :class:`importlib.abc.Traversable` object for the loaded
+       package.
 
 
 :mod:`importlib.resources` -- Resources

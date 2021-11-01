@@ -1,0 +1,1 @@
+PGO tests now pass when Python is built without test extension modules.
