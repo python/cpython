@@ -768,8 +768,12 @@ Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 # "Bootstrap Python" used to run deepfreeze.py
 
 BOOTSTRAP = Programs/_bootstrap_python
+BOOTSTRAP_HEADERS = \
+	Python/frozen_modules/importlib._bootstrap.h \
+	Python/frozen_modules/importlib._bootstrap_external.h \
+	Python/frozen_modules/zipimport.h
 
-Python/bootstrap_frozen.o: Python/bootstrap_frozen.c Include/cpython/import.h
+Python/bootstrap_frozen.o: Python/bootstrap_frozen.c Include/cpython/import.h $(BOOTSTRAP_HEADERS)
 
 $(BOOTSTRAP): $(LIBRARY_OBJS_OMIT_FROZEN) \
 		Python/bootstrap_frozen.o Programs/python.o
