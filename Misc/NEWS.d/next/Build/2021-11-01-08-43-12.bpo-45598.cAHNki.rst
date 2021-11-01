@@ -1,0 +1,3 @@
+ctypes now assumes that libffi provides ffi_prep_ciff, ffi_prep_closure_loc,
+and ffi_closure_alloc functions, except when compiling with older macOS
+libffi.

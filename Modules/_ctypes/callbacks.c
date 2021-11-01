@@ -417,7 +417,6 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
-#if HAVE_FFI_PREP_CLOSURE_LOC
 #   if USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   else
@@ -427,9 +426,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
                                     p,
                                     p->pcl_exec);
-    } else
-#endif
-    {
+    } else {
 #if USING_APPLE_OS_LIBFFI && defined(__arm64__)
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;

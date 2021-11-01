@@ -238,14 +238,6 @@ def is_macosx_sdk_path(path):
                 or path.startswith('/System/iOSSupport') )
 
 
-def grep_headers_for(function, headers):
-    for header in headers:
-        with open(header, 'r', errors='surrogateescape') as f:
-            if function in f.read():
-                return True
-    return False
-
-
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
@@ -2280,14 +2272,6 @@ class PyBuildExt(build_ext):
                     break
 
         if ffi_inc and ffi_lib:
-            ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
-            if grep_headers_for('ffi_prep_cif_var', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CIF_VAR=1")
-            if grep_headers_for('ffi_prep_closure_loc', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CLOSURE_LOC=1")
-            if grep_headers_for('ffi_closure_alloc', ffi_headers):
-                ext.extra_compile_args.append("-DHAVE_FFI_CLOSURE_ALLOC=1")
-
             ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True

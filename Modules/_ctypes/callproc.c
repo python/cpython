@@ -828,10 +828,8 @@ static int _call_function_pointer(int flags,
 
 #   if USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
-#   elif HAVE_FFI_PREP_CIF_VAR
-#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   else
-#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   endif
 
     /* Even on Apple-arm64 the calling convention for variadic functions coincides
@@ -843,16 +841,12 @@ static int _call_function_pointer(int flags,
     (void) is_variadic;
 
 #if defined(__APPLE__) && defined(__arm64__)
-    if (is_variadic) {
-        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
-        } else {
-            PyErr_SetString(PyExc_NotImplementedError, "ffi_prep_cif_var() is missing");
-            return -1;
-        }
+    if (is_variadic && !HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+        PyErr_SetString(PyExc_NotImplementedError, "ffi_prep_cif_var() is missing");
+        return -1;
     }
 #endif
 
-#if HAVE_FFI_PREP_CIF_VAR
     if (is_variadic) {
         if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
             if (FFI_OK != ffi_prep_cif_var(&cif,
@@ -876,10 +870,7 @@ static int _call_function_pointer(int flags,
                 return -1;
             }
         }
-    } else
-#endif
-
-    {
+    } else {
         if (FFI_OK != ffi_prep_cif(&cif,
                                    cc,
                                    argcount,
