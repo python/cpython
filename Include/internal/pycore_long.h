@@ -32,8 +32,8 @@ PyAPI_FUNC(PyObject*) _PyLong_GetZero(void);
 // The function cannot return NULL.
 PyAPI_FUNC(PyObject*) _PyLong_GetOne(void);
 
-#define PY_ZERO() ((PyObject *)_PyInterpreterState_GET()->small_ints[_PY_NSMALLNEGINTS])
-#define PY_ONE() ((PyObject *)_PyInterpreterState_GET()->small_ints[_PY_NSMALLNEGINTS+1])
+#define PY_ZERO() ((PyObject *)&_PyInterpreterState_GET()->small_ints[_PY_NSMALLNEGINTS])
+#define PY_ONE() ((PyObject *)&_PyInterpreterState_GET()->small_ints[_PY_NSMALLNEGINTS+1])
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
