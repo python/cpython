@@ -1,0 +1,1 @@
+Build SQLite ``SQLITE_OMIT_AUTOINIT`` on Windows. Patch by Erlend E. Aasland.

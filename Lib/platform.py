@@ -1261,7 +1261,7 @@ _os_release_cache = None
 
 def _parse_os_release(lines):
     # These fields are mandatory fields with well-known defaults
-    # in pratice all Linux distributions override NAME, ID, and PRETTY_NAME.
+    # in practice all Linux distributions override NAME, ID, and PRETTY_NAME.
     info = {
         "NAME": "Linux",
         "ID": "linux",

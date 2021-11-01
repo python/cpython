@@ -1643,7 +1643,10 @@ class OptionMenu(Menubutton):
         menu.delete(0, 'end')
         for val in values:
             menu.add_radiobutton(label=val,
-                command=tkinter._setit(self._variable, val, self._callback),
+                command=(
+                    None if self._callback is None
+                    else lambda val=val: self._callback(val)
+                ),
                 variable=self._variable)
 
         if default:

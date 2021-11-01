@@ -427,7 +427,7 @@ class UnparseTestCase(ASTTestCase):
 
 
 class CosmeticTestCase(ASTTestCase):
-    """Test if there are cosmetic issues caused by unnecesary additions"""
+    """Test if there are cosmetic issues caused by unnecessary additions"""
 
     def test_simple_expressions_parens(self):
         self.check_src_roundtrip("(a := b)")

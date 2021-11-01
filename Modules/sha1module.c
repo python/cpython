@@ -15,10 +15,13 @@
 */
 
 /* SHA1 objects */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 
 /*[clinic input]
 module _sha1
@@ -269,7 +272,7 @@ sha1_done(struct sha1_state *sha1, unsigned char *out)
         sha1->curlen = 0;
     }
 
-    /* pad upto 56 bytes of zeroes */
+    /* pad up to 56 bytes of zeroes */
     while (sha1->curlen < 56) {
         sha1->buf[sha1->curlen++] = (unsigned char)0;
     }

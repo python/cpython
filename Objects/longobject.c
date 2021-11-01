@@ -8,11 +8,11 @@
 #include "pycore_long.h"          // __PyLong_GetSmallInt_internal()
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
-#include "longintrepr.h"
 
-#include <float.h>
 #include <ctype.h>
+#include <float.h>
 #include <stddef.h>
+#include <stdlib.h>               // abs()
 
 #include "clinic/longobject.c.h"
 /*[clinic input]
@@ -3593,12 +3593,10 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
     return NULL;
 }
 
-static PyObject *
-long_mul(PyLongObject *a, PyLongObject *b)
+PyObject *
+_PyLong_Multiply(PyLongObject *a, PyLongObject *b)
 {
     PyLongObject *z;
-
-    CHECK_BINOP(a, b);
 
     /* fast path for single-digit multiplication */
     if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
@@ -3614,6 +3612,13 @@ long_mul(PyLongObject *a, PyLongObject *b)
             return NULL;
     }
     return (PyObject *)z;
+}
+
+static PyObject *
+long_mul(PyLongObject *a, PyLongObject *b)
+{
+    CHECK_BINOP(a, b);
+    return _PyLong_Multiply(a, b);
 }
 
 /* Fast modulo division for single-digit longs. */
@@ -5822,24 +5827,17 @@ PyLong_GetInfo(void)
     return int_info;
 }
 
-int
+void
 _PyLong_Init(PyInterpreterState *interp)
 {
     for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         sdigit ival = (sdigit)i - NSMALLNEGINTS;
         int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-
-        PyLongObject *v = _PyLong_New(1);
-        if (!v) {
-            return -1;
-        }
-
-        Py_SET_SIZE(v, size);
-        v->ob_digit[0] = (digit)abs(ival);
-
-        interp->small_ints[i] = v;
+        interp->small_ints[i].ob_base.ob_base.ob_refcnt = 1;
+        interp->small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
+        interp->small_ints[i].ob_base.ob_size = size;
+        interp->small_ints[i].ob_digit[0] = (digit)abs(ival);
     }
-    return 0;
 }
 
 
@@ -5858,7 +5856,5 @@ _PyLong_InitTypes(void)
 void
 _PyLong_Fini(PyInterpreterState *interp)
 {
-    for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        Py_CLEAR(interp->small_ints[i]);
-    }
+    (void)interp;
 }

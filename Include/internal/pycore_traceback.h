@@ -51,7 +51,7 @@ PyAPI_FUNC(void) _Py_DumpTraceback(
    _PyGILState_GetInterpreterStateUnsafe() in last resort.
 
    It is better to pass NULL to interp and current_tstate, the function tries
-   different options to retrieve these informations.
+   different options to retrieve this information.
 
    This function is signal safe. */
 

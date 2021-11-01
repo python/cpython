@@ -56,7 +56,7 @@ class FirstSetCalculator(GrammarVisitor):
                 result -= to_remove
 
             # If the set of new terminals can start with the empty string,
-            # it means that the item is completelly nullable and we should
+            # it means that the item is completely nullable and we should
             # also considering at least the next item in case the current
             # one fails to parse.
 
