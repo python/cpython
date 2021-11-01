@@ -193,7 +193,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     Py_INCREF(result);
     _PyFrame_StackPush(frame, result);
 
-    frame->previous = tstate->frame;
+    frame->previous = tstate->cframe->current_frame;
 
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
@@ -207,7 +207,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
 
-    assert(tstate->frame == frame->previous);
+    assert(tstate->cframe->current_frame == frame->previous);
     /* Don't keep the reference to previous any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
@@ -435,9 +435,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            InterpreterFrame *prev = tstate->frame;
+            InterpreterFrame *prev = tstate->cframe->current_frame;
             frame->previous = prev;
-            tstate->frame = frame;
+            tstate->cframe->current_frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_xframe->f_state;
@@ -445,7 +445,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             gen->gi_xframe->f_state = state;
-            tstate->frame = prev;
+            tstate->cframe->current_frame = prev;
             frame->previous = NULL;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
@@ -1567,12 +1567,14 @@ PyTypeObject PyAsyncGen_Type = {
 };
 
 
+#if _PyAsyncGen_MAXFREELIST > 0
 static struct _Py_async_gen_state *
 get_async_gen_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->async_gen;
 }
+#endif
 
 
 PyObject *
@@ -1595,6 +1597,7 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 void
 _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)
 {
+#if _PyAsyncGen_MAXFREELIST > 0
     struct _Py_async_gen_state *state = &interp->async_gen;
 
     while (state->value_numfree) {
@@ -1610,13 +1613,14 @@ _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)
         assert(Py_IS_TYPE(o, &_PyAsyncGenASend_Type));
         PyObject_GC_Del(o);
     }
+#endif
 }
 
 void
 _PyAsyncGen_Fini(PyInterpreterState *interp)
 {
     _PyAsyncGen_ClearFreeLists(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && _PyAsyncGen_MAXFREELIST > 0
     struct _Py_async_gen_state *state = &interp->async_gen;
     state->value_numfree = -1;
     state->asend_numfree = -1;
@@ -1663,6 +1667,7 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
+#if _PyAsyncGen_MAXFREELIST > 0
     struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_asend_dealloc() must not be called after _PyAsyncGen_Fini()
@@ -1672,7 +1677,9 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
         assert(PyAsyncGenASend_CheckExact(o));
         state->asend_freelist[state->asend_numfree++] = o;
     }
-    else {
+    else
+#endif
+    {
         PyObject_GC_Del(o);
     }
 }
@@ -1825,6 +1832,7 @@ static PyObject *
 async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 {
     PyAsyncGenASend *o;
+#if _PyAsyncGen_MAXFREELIST > 0
     struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_asend_new() must not be called after _PyAsyncGen_Fini()
@@ -1835,7 +1843,9 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
         o = state->asend_freelist[state->asend_numfree];
         _Py_NewReference((PyObject *)o);
     }
-    else {
+    else
+#endif
+    {
         o = PyObject_GC_New(PyAsyncGenASend, &_PyAsyncGenASend_Type);
         if (o == NULL) {
             return NULL;
@@ -1863,6 +1873,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 {
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
+#if _PyAsyncGen_MAXFREELIST > 0
     struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_wrapped_val_dealloc() must not be called after _PyAsyncGen_Fini()
@@ -1872,7 +1883,9 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         state->value_freelist[state->value_numfree++] = o;
     }
-    else {
+    else
+#endif
+    {
         PyObject_GC_Del(o);
     }
 }
@@ -1936,6 +1949,7 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
+#if _PyAsyncGen_MAXFREELIST > 0
     struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // _PyAsyncGenValueWrapperNew() must not be called after _PyAsyncGen_Fini()
@@ -1947,7 +1961,9 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
     }
-    else {
+    else
+#endif
+    {
         o = PyObject_GC_New(_PyAsyncGenWrappedValue,
                             &_PyAsyncGenWrappedValue_Type);
         if (o == NULL) {

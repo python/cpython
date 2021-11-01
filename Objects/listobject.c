@@ -19,13 +19,14 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
-
+#if PyList_MAXFREELIST > 0
 static struct _Py_list_state *
 get_list_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->list;
 }
+#endif
 
 
 /* Ensure ob_item has room for at least newsize elements, and set
@@ -108,19 +109,21 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_ClearFreeList(PyInterpreterState *interp)
 {
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = &interp->list;
     while (state->numfree) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
+#endif
 }
 
 void
 _PyList_Fini(PyInterpreterState *interp)
 {
     _PyList_ClearFreeList(interp);
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && PyList_MAXFREELIST > 0
     struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
@@ -130,32 +133,38 @@ _PyList_Fini(PyInterpreterState *interp)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                            state->numfree, sizeof(PyListObject));
+#endif
 }
 
 PyObject *
 PyList_New(Py_ssize_t size)
 {
+    PyListObject *op;
+
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
-    PyListObject *op;
 #ifdef Py_DEBUG
     // PyList_New() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree) {
+    if (PyList_MAXFREELIST && state->numfree) {
         state->numfree--;
         op = state->free_list[state->numfree];
         _Py_NewReference((PyObject *)op);
     }
-    else {
+    else
+#endif
+    {
         op = PyObject_GC_New(PyListObject, &PyList_Type);
         if (op == NULL) {
             return NULL;
@@ -344,6 +353,7 @@ list_dealloc(PyListObject *op)
         }
         PyMem_Free(op->ob_item);
     }
+#if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
 #ifdef Py_DEBUG
     // list_dealloc() must not be called after _PyList_Fini()
@@ -352,7 +362,9 @@ list_dealloc(PyListObject *op)
     if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
         state->free_list[state->numfree++] = op;
     }
-    else {
+    else
+#endif
+    {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
     Py_TRASHCAN_END
@@ -1208,6 +1220,13 @@ struct s_MergeState {
      * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
      * we can assume more, and use one of the special-case compares. */
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
+
+    /* Used by unsafe_tuple_compare to record whether the very first tuple
+     * elements resolved the last comparison attempt. If so, next time a
+     * method that may avoid PyObject_RichCompareBool() entirely is tried.
+     * 0 for false, 1 for true.
+     */
+    int first_tuple_items_resolved_it;
 };
 
 /* binarysort is the best method for sorting small arrays: it does
@@ -2178,7 +2197,24 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
  * using the same pre-sort check as we use for ms->key_compare,
  * but run on the list [x[0] for x in L]. This allows us to optimize compares
  * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is
- * that most tuple compares don't involve x[1:]. */
+ * that most tuple compares don't involve x[1:].
+ * However, that may not be right. When it is right, we can win by calling the
+ * relatively cheap ms->tuple_elem_compare on the first pair of elements, to
+ * see whether v[0] < w[0] or w[0] < v[0]. If either are so, we're done.
+ * Else we proceed as in the tuple compare, comparing the remaining pairs via
+ * the probably more expensive PyObject_RichCompareBool(..., Py_EQ) until (if
+ * ever) that says "no, not equal!". Then, if we're still on the first pair,
+ * ms->tuple_elem_compare can resolve it, else PyObject_RichCompareBool(...,
+ * Py_LT) finishes the job.
+ * In any case, ms->first_tuple_items_resolved_it keeps track of whether the
+ * most recent tuple comparison was resolved by the first pair. If so, the
+ * next attempt starts by trying the cheap tests on the first pair again, else
+ * PyObject_RichCompareBool(..., Py_EQ) is used from the start.
+ * There are cases where PyObject_RichCompareBool(..., Py_EQ) is much cheaper!
+ * For example, that can return "almost immediately" if passed the same
+ * object twice (it special-cases object identity for Py_EQ), which can,
+ * potentially, be unboundedly faster than ms->tuple_elem_compare.
+ */
 static int
 unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
@@ -2194,26 +2230,52 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
+    i = 0;
+    if (ms->first_tuple_items_resolved_it) {
+        /* See whether fast compares of the first elements settle it. */
+        k = ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0], ms);
+        if (k) /* error, or v < w */
+            return k;
+        k = ms->tuple_elem_compare(wt->ob_item[0], vt->ob_item[0], ms);
+        if (k > 0) /* w < v */
+            return 0;
+        if (k < 0) /* error */
+            return -1;
+        /* We have
+         *     not (v[0] < w[0]) and not (w[0] < v[0])
+         * which implies, for a total order, that the first elements are
+         * equal. So skip them in the loop.
+         */
+        i = 1;
+        ms->first_tuple_items_resolved_it = 0;
+    }
+    /* Now first_tuple_items_resolved_it was 0 on entry, or was forced to 0
+     * at the end of the `if` block just above.
+     */
+    assert(! ms->first_tuple_items_resolved_it);
 
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
-
-    for (i = 0; i < vlen && i < wlen; i++) {
+    for (; i < vlen && i < wlen; i++) {
         k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
+        if (!k) { /* not equal */
+            if (i) {
+                return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i],
+                                                Py_LT);
+            }
+            else {
+                ms->first_tuple_items_resolved_it = 1;
+                return ms->tuple_elem_compare(vt->ob_item[0], wt->ob_item[0],
+                                              ms);
+            }
+        }
         if (k < 0)
             return -1;
-        if (!k)
-            break;
     }
+    /* all equal until we fell off the end */
+    return vlen < wlen;
 
-    if (i >= vlen || i >= wlen)
-        return vlen < wlen;
-
-    if (i == 0)
-        return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
-    else
-        return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
-}
+ }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
  * Returns Py_None on success, NULL on error.  Even in case of error, the
@@ -2396,6 +2458,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             }
 
             ms.key_compare = unsafe_tuple_compare;
+            ms.first_tuple_items_resolved_it = 1; /* be optimistic */
         }
     }
     /* End of pre-sort check: ms is now set properly! */

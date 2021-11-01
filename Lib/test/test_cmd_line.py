@@ -123,6 +123,21 @@ class CmdLineTest(unittest.TestCase):
         else:
             self.assertEqual(err, b'')
 
+    def test_xoption_frozen_modules(self):
+        tests = {
+            ('=on', 'FrozenImporter'),
+            ('=off', 'SourceFileLoader'),
+            ('=', 'FrozenImporter'),
+            ('', 'FrozenImporter'),
+        }
+        for raw, expected in tests:
+            cmd = ['-X', f'frozen_modules{raw}',
+                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
+                   '-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd)
+                self.assertRegex(res.out.decode('utf-8'), expected)
+
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument

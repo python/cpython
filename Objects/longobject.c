@@ -5827,24 +5827,17 @@ PyLong_GetInfo(void)
     return int_info;
 }
 
-int
+void
 _PyLong_Init(PyInterpreterState *interp)
 {
     for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         sdigit ival = (sdigit)i - NSMALLNEGINTS;
         int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-
-        PyLongObject *v = _PyLong_New(1);
-        if (!v) {
-            return -1;
-        }
-
-        Py_SET_SIZE(v, size);
-        v->ob_digit[0] = (digit)abs(ival);
-
-        interp->small_ints[i] = v;
+        interp->small_ints[i].ob_base.ob_base.ob_refcnt = 1;
+        interp->small_ints[i].ob_base.ob_base.ob_type = &PyLong_Type;
+        interp->small_ints[i].ob_base.ob_size = size;
+        interp->small_ints[i].ob_digit[0] = (digit)abs(ival);
     }
-    return 0;
 }
 
 
@@ -5863,7 +5856,5 @@ _PyLong_InitTypes(void)
 void
 _PyLong_Fini(PyInterpreterState *interp)
 {
-    for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        Py_CLEAR(interp->small_ints[i]);
-    }
+    (void)interp;
 }
