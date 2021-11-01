@@ -4824,7 +4824,7 @@ Generic Alias Type
 
 ``GenericAlias`` objects are generally created by
 :ref:`subscripting<subscriptions>` a class. They are most often used with
-container classes (e.g. :class:`list` or :class:`dict`). They are intended
+container classes, such as :class:`list` or :class:`dict`. They are intended
 primarily for use with :term:`type annotations <annotation>`. For example,
 ``list[int]`` is a ``GenericAlias`` object created by subscripting the
 :class:`list` class with the argument :class:`int`.
