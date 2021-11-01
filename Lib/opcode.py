@@ -85,7 +85,7 @@ def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
 def_op('MATCH_SEQUENCE', 32)
 def_op('MATCH_KEYS', 33)
-def_op('COPY_DICT_WITHOUT_KEYS', 34)
+
 def_op('PUSH_EXC_INFO', 35)
 
 def_op('POP_EXCEPT_AND_RERAISE', 37)
@@ -165,7 +165,7 @@ name_op('LOAD_GLOBAL', 116)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
-
+def_op('COPY', 120)
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 
 def_op('LOAD_FAST', 124)        # Local variable number
@@ -232,6 +232,12 @@ _specialized_instructions = [
     "BINARY_SUBSCR_LIST_INT",
     "BINARY_SUBSCR_TUPLE_INT",
     "BINARY_SUBSCR_DICT",
+    "CALL_FUNCTION_ADAPTIVE",
+    "CALL_FUNCTION_BUILTIN_O",
+    "CALL_FUNCTION_BUILTIN_FAST",
+    "CALL_FUNCTION_LEN",
+    "CALL_FUNCTION_ISINSTANCE",
+    "CALL_FUNCTION_PY_SIMPLE",
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_INSTANCE_VALUE",

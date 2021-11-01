@@ -1017,8 +1017,10 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_host_resolution_bad_address(self):
         # These are all malformed IP addresses and expected not to resolve to
-        # any result.  But some ISPs, e.g. AWS, may successfully resolve these
-        # IPs.
+        # any result.  But some ISPs, e.g. AWS and AT&T, may successfully
+        # resolve these IPs. In particular, AT&T's DNS Error Assist service
+        # will break this test.  See https://bugs.python.org/issue42092 for a
+        # workaround.
         explanation = (
             "resolving an invalid IP address did not raise OSError; "
             "can be caused by a broken DNS server"

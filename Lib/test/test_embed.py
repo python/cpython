@@ -61,7 +61,7 @@ class EmbeddingTestsMixin:
         else:
             exepath = os.path.join(builddir, 'Programs')
         self.test_exe = exe = os.path.join(exepath, exename)
-        if not os.path.exists(exe):
+        if exepath != support.REPO_ROOT or not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
@@ -1465,6 +1465,30 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output
+
+    def test_init_use_frozen_modules(self):
+        tests = {
+            ('=on', 1),
+            ('=off', 0),
+            ('=', 1),
+            ('', 1),
+        }
+        for raw, expected in tests:
+            optval = f'frozen_modules{raw}'
+            config = {
+                'parse_argv': 2,
+                'argv': ['-c'],
+                'orig_argv': ['./argv0', '-X', optval, '-c', 'pass'],
+                'program_name': './argv0',
+                'run_command': 'pass\n',
+                'use_environment': 1,
+                'xoptions': [optval],
+                'use_frozen_modules': expected,
+            }
+            env = {'TESTFROZEN': raw[1:]} if raw else None
+            with self.subTest(repr(raw)):
+                self.check_all_configs("test_init_use_frozen_modules", config,
+                                       api=API_PYTHON, env=env)
 
 
 class SetConfigTests(unittest.TestCase):
