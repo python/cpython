@@ -668,7 +668,7 @@ class TestUrlopen(unittest.TestCase):
         handler = self.start_server([(200, [], content)])
         proc = subprocess.run(
             [sys.executable, "-m", "urllib.request",
-            "http://localhost:%s" % handler.port],
+            f"http://localhost:{handler.port}"],
             capture_output=True
         )
         self.assertEqual(proc.stdout, content)
@@ -681,11 +681,11 @@ class TestUrlopen(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             for option in ["--output", "-o"]:
                 filename = os.path.join(
-                    directory, "download-test%s.txt" % option
+                    directory, f"download-test{option}.txt"
                 )
                 proc = subprocess.run(
                     [sys.executable, "-m", "urllib.request",
-                    "http://localhost:%s" % handler.port,
+                    f"http://localhost:{handler.port}",
                     option, filename],
                     capture_output=True
                 )
