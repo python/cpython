@@ -630,7 +630,6 @@ OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
-PKG_CONFIG
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
@@ -662,6 +661,9 @@ DTRACE
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
+PKG_CONFIG
 TZPATH
 SHLIBS
 CFLAGSFORSHARED
@@ -844,6 +846,7 @@ with_dbmliborder
 enable_ipv6
 with_doc_strings
 with_pymalloc
+with_freelists
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -873,7 +876,10 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
-PROFILE_TASK'
+PROFILE_TASK
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR'
 
 
 # Initialize some variables set by options.
@@ -1556,9 +1562,9 @@ Optional Packages:
   --with-undefined-behavior-sanitizer
                           enable UndefinedBehaviorSanitizer undefined
                           behaviour detector, 'ubsan' (default is no)
-  --with-hash-algorithm=[fnv|siphash24]
+  --with-hash-algorithm=[fnv|siphash13|siphash24]
                           select hash algorithm for use in Python/pyhash.c
-                          (default is SipHash24)
+                          (default is SipHash13)
   --with-tzpath=<list of absolute paths separated by pathsep>
                            Select the default time zone search path for zoneinfo.TZPATH
 
@@ -1583,6 +1589,7 @@ Optional Packages:
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
   --with-pymalloc         enable specialized mallocs (default is yes)
+  --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -1638,6 +1645,11 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -5217,9 +5229,6 @@ $as_echo "$as_me:
 fi
 
 
-MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 $as_echo_n "checking for the platform triplet based on compiler characteristics... " >&6; }
 cat >> conftest.c <<EOF
@@ -5377,6 +5386,11 @@ else
 $as_echo "none" >&6; }
 fi
 rm -f conftest.c conftest.out
+
+if test x$PLATFORM_TRIPLET != xdarwin; then
+  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+fi
+
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
@@ -9764,7 +9778,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*|VxWorks*)
+	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -9835,6 +9849,7 @@ then
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
+	Haiku*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -10420,6 +10435,10 @@ if test "${with_hash_algorithm+set}" = set; then :
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
 case "$withval" in
+    siphash13)
+        $as_echo "#define Py_HASH_ALGORITHM 3" >>confdefs.h
+
+        ;;
     siphash24)
         $as_echo "#define Py_HASH_ALGORITHM 1" >>confdefs.h
 
@@ -10562,6 +10581,51 @@ if test "x$ac_cv_lib_socket_socket" = xyes; then :
 fi
  # SVR4 sockets
 
+case $ac_sys_system/$ac_sys_release in
+    Haiku*)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket in -lnetwork" >&5
+$as_echo_n "checking for socket in -lnetwork... " >&6; }
+if ${ac_cv_lib_network_socket+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lnetwork $LIBS $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char socket ();
+int
+main ()
+{
+return socket ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_network_socket=yes
+else
+  ac_cv_lib_network_socket=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_network_socket" >&5
+$as_echo "$ac_cv_lib_network_socket" >&6; }
+if test "x$ac_cv_lib_network_socket" = xyes; then :
+  LIBS="-lnetwork $LIBS"
+fi
+
+    ;;
+esac
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-libs" >&5
 $as_echo_n "checking for --with-libs... " >&6; }
 
@@ -10578,7 +10642,126 @@ $as_echo "no" >&6; }
 fi
 
 
-PKG_PROG_PKG_CONFIG
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
 
 # Check for use of the system expat library
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-system-expat" >&5
@@ -11547,6 +11730,30 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
 
+# Check whether objects such as float, tuple and dict are using
+# freelists to optimization memory allocation.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
+$as_echo_n "checking for --with-freelists... " >&6; }
+
+# Check whether --with-freelists was given.
+if test "${with_freelists+set}" = set; then :
+  withval=$with_freelists;
+fi
+
+
+if test -z "$with_freelists"
+then
+    with_freelists="yes"
+fi
+if test "$with_freelists" != "no"
+then
+
+$as_echo "#define WITH_FREELISTS 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
+$as_echo "$with_freelists" >&6; }
+
 # Check for --with-c-locale-coercion
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
 $as_echo_n "checking for --with-c-locale-coercion... " >&6; }
@@ -11774,7 +11981,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_clockwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -13048,6 +13255,8 @@ done
 
 # We search for both crypt and crypt_r as one or the other may be defined
 # This gets us our -lcrypt in LIBS when required on the target platform.
+# Save/restore LIBS to avoid linking libpython with libcrypt.
+LIBS_SAVE=$LIBS
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt" >&5
 $as_echo_n "checking for library containing crypt... " >&6; }
 if ${ac_cv_search_crypt+:} false; then :
@@ -13189,6 +13398,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
 
+LIBS=$LIBS_SAVE
 
 for ac_func in clock_gettime
 do :
@@ -13243,64 +13453,6 @@ if test "x$ac_cv_lib_rt_clock_gettime" = xyes; then :
 
 
 $as_echo "#define TIMEMODULE_LIB rt" >>confdefs.h
-
-
-fi
-
-
-fi
-done
-
-
-for ac_func in clock_nanosleep
-do :
-  ac_fn_c_check_func "$LINENO" "clock_nanosleep" "ac_cv_func_clock_nanosleep"
-if test "x$ac_cv_func_clock_nanosleep" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_CLOCK_NANOSLEEP 1
-_ACEOF
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_nanosleep in -lrt" >&5
-$as_echo_n "checking for clock_nanosleep in -lrt... " >&6; }
-if ${ac_cv_lib_rt_clock_nanosleep+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lrt  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char clock_nanosleep ();
-int
-main ()
-{
-return clock_nanosleep ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_rt_clock_nanosleep=yes
-else
-  ac_cv_lib_rt_clock_nanosleep=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rt_clock_nanosleep" >&5
-$as_echo "$ac_cv_lib_rt_clock_nanosleep" >&6; }
-if test "x$ac_cv_lib_rt_clock_nanosleep" = xyes; then :
-
-        $as_echo "#define HAVE_CLOCK_NANOSLEEP 1" >>confdefs.h
 
 
 fi
@@ -13417,6 +13569,122 @@ $as_echo "$ac_cv_lib_rt_clock_settime" >&6; }
 if test "x$ac_cv_lib_rt_clock_settime" = xyes; then :
 
         $as_echo "#define HAVE_CLOCK_SETTIME 1" >>confdefs.h
+
+
+fi
+
+
+fi
+done
+
+
+for ac_func in clock_nanosleep
+do :
+  ac_fn_c_check_func "$LINENO" "clock_nanosleep" "ac_cv_func_clock_nanosleep"
+if test "x$ac_cv_func_clock_nanosleep" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_CLOCK_NANOSLEEP 1
+_ACEOF
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_nanosleep in -lrt" >&5
+$as_echo_n "checking for clock_nanosleep in -lrt... " >&6; }
+if ${ac_cv_lib_rt_clock_nanosleep+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrt  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char clock_nanosleep ();
+int
+main ()
+{
+return clock_nanosleep ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_rt_clock_nanosleep=yes
+else
+  ac_cv_lib_rt_clock_nanosleep=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rt_clock_nanosleep" >&5
+$as_echo "$ac_cv_lib_rt_clock_nanosleep" >&6; }
+if test "x$ac_cv_lib_rt_clock_nanosleep" = xyes; then :
+
+        $as_echo "#define HAVE_CLOCK_NANOSLEEP 1" >>confdefs.h
+
+
+fi
+
+
+fi
+done
+
+
+for ac_func in nanosleep
+do :
+  ac_fn_c_check_func "$LINENO" "nanosleep" "ac_cv_func_nanosleep"
+if test "x$ac_cv_func_nanosleep" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NANOSLEEP 1
+_ACEOF
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nanosleep in -lrt" >&5
+$as_echo_n "checking for nanosleep in -lrt... " >&6; }
+if ${ac_cv_lib_rt_nanosleep+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrt  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char nanosleep ();
+int
+main ()
+{
+return nanosleep ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_rt_nanosleep=yes
+else
+  ac_cv_lib_rt_nanosleep=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rt_nanosleep" >&5
+$as_echo "$ac_cv_lib_rt_nanosleep" >&6; }
+if test "x$ac_cv_lib_rt_nanosleep" = xyes; then :
+
+        $as_echo "#define HAVE_NANOSLEEP 1" >>confdefs.h
 
 
 fi
@@ -14824,7 +15092,7 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-for ac_func in acosh asinh atanh copysign erf erfc expm1 finite gamma
+for ac_func in acosh asinh atanh erf erfc expm1 log1p log2
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -14833,55 +15101,13 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
-fi
-done
-
-for ac_func in hypot lgamma log1p log2 round tgamma
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
+else
+  as_fn_error $? "Python requires C99 compatible libm" "$LINENO" 5
 
 fi
 done
 
-ac_fn_c_check_decl "$LINENO" "isinf" "ac_cv_have_decl_isinf" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isinf" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISINF $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "isnan" "ac_cv_have_decl_isnan" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isnan" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISNAN $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "isfinite" "ac_cv_have_decl_isfinite" "#include <math.h>
-"
-if test "x$ac_cv_have_decl_isfinite" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_ISFINITE $ac_have_decl
-_ACEOF
-
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -17062,7 +17288,23 @@ do
 done
 
 
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="\
+  Modules \
+  Modules/_blake2 \
+  Modules/_ctypes \
+  Modules/_decimal \
+  Modules/_decimal/libmpdec \
+  Modules/_io \
+  Modules/_multiprocessing \
+  Modules/_sha3 \
+  Modules/_sqlite \
+  Modules/_xxtestfuzz \
+  Modules/cjkcodecs \
+  Modules/expat \
+  Objects \
+  Parser \
+  Programs \
+  Python"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do
@@ -17740,6 +17982,66 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENSSL_RPATH" >&5
 $as_echo "$OPENSSL_RPATH" >&6; }
 
+
+# check if OpenSSL libraries work as expected
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL provides required APIs" >&5
+$as_echo_n "checking whether OpenSSL provides required APIs... " >&6; }
+save_LIBS="$LIBS"
+save_CFLAGS="$CFLAGS"
+save_LDFLAGS="$LDFLAGS"
+LIBS="$LIBS $OPENSSL_LIBS"
+CFLAGS="$CFLAGS_NODIST $OPENSSL_INCLUDES"
+LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <openssl/opensslv.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#error "OpenSSL >= 1.1.1 is required"
+#endif
+
+static void keylog_cb(const SSL *ssl, const char *line) {}
+
+int
+main ()
+{
+
+/* SSL APIs */
+SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
+SSL_CTX_set_keylog_callback(ctx, keylog_cb);
+SSL *ssl = SSL_new(ctx);
+X509_VERIFY_PARAM *param = SSL_get0_param(ssl);
+X509_VERIFY_PARAM_set1_host(param, "python.org", 0);
+SSL_free(ssl);
+SSL_CTX_free(ctx);
+
+/* hashlib APIs */
+OBJ_nid2sn(NID_md5);
+OBJ_nid2sn(NID_sha1);
+OBJ_nid2sn(NID_sha3_512);
+OBJ_nid2sn(NID_blake2b512);
+EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS="$save_LIBS"
+CFLAGS="$save_CFLAGS"
+LDFLAGS="$save_LDFLAGS"
 
 # ssl module default cipher suite string
 

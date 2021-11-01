@@ -46,6 +46,8 @@ typedef struct _cframe {
      * accessed outside of their lifetime.
      */
     int use_tracing;
+    /* Pointer to the currently executing frame (it can be NULL) */
+    struct _interpreter_frame *current_frame;
     struct _cframe *previous;
 } CFrame;
 
@@ -77,8 +79,6 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    /* Borrowed reference to the current frame (it can be NULL) */
-    struct _interpreter_frame *frame;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
     int stackcheck_counter;
@@ -185,6 +185,13 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
 PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
 
+// Disable tracing and profiling.
+PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
+
+// Reset tracing and profiling: enable them if a trace function or a profile
+// function is set, otherwise disable them.
+PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
@@ -263,7 +270,7 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 
-// Get the configuration of the currrent interpreter.
+// Get the configuration of the current interpreter.
 // The caller must hold the GIL.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 

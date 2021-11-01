@@ -1204,10 +1204,10 @@ static void
 xmlparse_dealloc(xmlparseobject *self)
 {
     PyObject_GC_UnTrack(self);
+    (void)xmlparse_clear(self);
     if (self->itself != NULL)
         XML_ParserFree(self->itself);
     self->itself = NULL;
-    (void)xmlparse_clear(self);
 
     if (self->handlers != NULL) {
         PyMem_Free(self->handlers);

@@ -1,3 +1,0 @@
-In importlib.metadata.entry_points, de-duplication of distributions no
-longer requires loading the full metadata for PathDistribution objects,
-improving entry point loading performance by ~10x.

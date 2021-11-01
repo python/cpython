@@ -363,7 +363,7 @@ static PyMemberDef weakref_members[] = {
 };
 
 static PyMethodDef weakref_methods[] = {
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL} /* Sentinel */
 };

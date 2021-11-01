@@ -1,0 +1,1 @@
+:mod:`pyexpat` and :mod:`_elementtree` no longer define obsolete macros ``HAVE_EXPAT_CONFIG_H`` and ``USE_PYEXPAT_CAPI``. ``XML_POOR_ENTROPY`` is now defined in ``expat_config.h``.

@@ -1211,7 +1211,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        t1 = _PyTime_GetMonotonicClock();
+        t1 = _PyTime_GetPerfCounter();
     }
 
     if (PyDTrace_GC_START_ENABLED())
@@ -1307,7 +1307,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (gcstate->debug & DEBUG_STATS) {
-        double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
+        double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);

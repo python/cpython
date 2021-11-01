@@ -936,7 +936,8 @@ and raise an error if the two do not match::
 _Private__names
 """""""""""""""
 
-Private names are not converted to enum members, but remain normal attributes.
+:ref:`Private names <private-name-mangling>` are not converted to enum members,
+but remain normal attributes.
 
 .. versionchanged:: 3.10
 
