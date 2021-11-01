@@ -1,0 +1,2 @@
+Update Sphinx version used to build the documentation to 4.2.0.
+Patch by Maciej Olko.
