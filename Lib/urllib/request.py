@@ -2783,7 +2783,7 @@ else:
     proxy_bypass = proxy_bypass_environment
 
 
-if __name__ == "__main__":
+def _download():
     from argparse import ArgumentParser
     from sys import stdout
 
@@ -2808,3 +2808,7 @@ if __name__ == "__main__":
 
     if out is not stdout.buffer:
         out.close()
+
+
+if __name__ == "__main__":
+    _download()
