@@ -6,9 +6,7 @@
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_pystate.h"       // _Py_GetMainConfig()
 #include <wchar.h>
-#include <stdbool.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #endif
@@ -589,19 +587,14 @@ Py_GetPath(void)
 }
 
 
-const wchar_t *
-_Py_GetStdlibDir(const PyConfig *fallback)
+wchar_t *
+_Py_GetStdlibDir(void)
 {
-    if (_Py_path_config.stdlib_dir != NULL) {
-        return _Py_path_config.stdlib_dir;
+    wchar_t *stdlib_dir = _Py_path_config.stdlib_dir;
+    if (stdlib_dir != NULL && stdlib_dir[0] != L'\0') {
+        return stdlib_dir;
     }
-    if (fallback == NULL) {
-        fallback = _Py_GetMainConfig();
-        if (fallback == NULL) {
-            return NULL;
-        }
-    }
-    return fallback->stdlib_dir;
+    return NULL;
 }
 
 
@@ -638,48 +631,6 @@ Py_GetProgramName(void)
 {
     return _Py_path_config.program_name;
 }
-
-
-static const wchar_t *
-get_executable(const PyConfig *fallback)
-{
-    const wchar_t *executable = Py_GetProgramFullPath();
-    if (executable != NULL) {
-        return executable;
-    }
-    if (fallback == NULL) {
-        fallback = _Py_GetMainConfig();
-        if (fallback == NULL) {
-            return NULL;
-        }
-    }
-    return fallback->executable;
-}
-
-bool
-_Py_IsInstalled(const PyConfig *fallback)
-{
-    /* If the stdlib dir is *not* in the same dir as the executable
-       then we consider it an installed Python. */
-    const wchar_t *stdlib = _Py_GetStdlibDir(fallback);
-    if (stdlib != NULL) {
-        size_t i = wcslen(stdlib);
-        while (i > 0 && stdlib[i] != SEP) {
-            --i;
-        }
-        const wchar_t *executable = get_executable(fallback);
-        if (executable != NULL) {
-            if (wcslen(executable) > i) {
-                /* If they share a parent dir then it is a local (dev)
-                   build and therefore not installed. */
-                return wcsncmp(stdlib, executable, i + 1) != 0;
-            }
-        }
-    }
-    /* We fall back to assuming this is an installed Python. */
-    return true;
-}
-
 
 /* Compute module search path from argv[0] or the current working
    directory ("-m module" case) which will be prepended to sys.argv:

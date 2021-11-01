@@ -12,7 +12,6 @@ extern "C" {
 #include <signal.h>
 #endif
 
-#include <stdbool.h>
 #include "pycore_runtime.h"       // _PyRuntimeState
 
 #ifndef NSIG

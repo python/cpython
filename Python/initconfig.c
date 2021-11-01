@@ -944,19 +944,14 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(user_site_directory);
     COPY_ATTR(configure_c_stdio);
     COPY_ATTR(buffered_stdio);
-#ifdef MS_WINDOWS
-    COPY_ATTR(legacy_windows_stdio);
-#endif
-    COPY_ATTR(skip_source_first_line);
-    COPY_ATTR(pathconfig_warnings);
-    COPY_ATTR(_init_main);
-    COPY_ATTR(_isolated_interpreter);
-    COPY_ATTR(use_frozen_modules);
-
     COPY_WSTR_ATTR(filesystem_encoding);
     COPY_WSTR_ATTR(filesystem_errors);
     COPY_WSTR_ATTR(stdio_encoding);
     COPY_WSTR_ATTR(stdio_errors);
+#ifdef MS_WINDOWS
+    COPY_ATTR(legacy_windows_stdio);
+#endif
+    COPY_ATTR(skip_source_first_line);
     COPY_WSTR_ATTR(run_command);
     COPY_WSTR_ATTR(run_module);
     COPY_WSTR_ATTR(run_filename);

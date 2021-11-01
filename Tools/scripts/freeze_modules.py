@@ -551,13 +551,14 @@ def regen_frozen(modules):
         # Also add a extern declaration for the corresponding
         # deepfreeze-generated function.
         orig_name = mod.source.id
-        get_code_name = "_Py_get_%s_toplevel" % orig_name.replace(".", "_")
+        code_name = orig_name.replace(".", "_")
+        get_code_name = "_Py_get_%s_toplevel" % code_name
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
         symbol = mod.symbol
         pkg = '-' if mod.ispkg else ''
-        line = ('{"%s", %s, %s(int)sizeof(%s), %s},'
-                ) % (mod.name, symbol, pkg, symbol, get_code_name)
+        line = ('{"%s", %s, %s(int)sizeof(%s), GET_CODE(%s)},'
+                ) % (mod.name, symbol, pkg, symbol, code_name)
         lines.append(line)
 
         if mod.isalias:
