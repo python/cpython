@@ -1,0 +1,4 @@
+Change the type of :c:member:`~PyNumberMethods.nb_reserved` from
+:c:type:`void *` back to :c:type:`unaryfunc`, so that all members of
+:c:type:`PyNumberMethods` are proper function pointers (and are aligned as
+such).
