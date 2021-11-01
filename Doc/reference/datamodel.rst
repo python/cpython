@@ -2376,10 +2376,6 @@ through the object's keys; for sequences, it should iterate through the values.
    objects in the container.  For mappings, it should iterate over the keys of
    the container.
 
-   Iterator objects also need to implement this method; they are required to
-   return themselves.  For more information on iterator objects, see
-   :ref:`typeiter`.
-
 
 .. method:: object.__reversed__(self)
 
