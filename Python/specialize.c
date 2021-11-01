@@ -128,6 +128,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_MULTIPLY, "binary_multiply");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
+    err += add_stat_dict(stats, CALL_FUNCTION, "call_function");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -185,6 +186,7 @@ _Py_PrintSpecializationStats(void)
     print_stats(out, &_specialization_stats[BINARY_MULTIPLY], "binary_multiply");
     print_stats(out, &_specialization_stats[BINARY_SUBSCR], "binary_subscr");
     print_stats(out, &_specialization_stats[STORE_ATTR], "store_attr");
+    print_stats(out, &_specialization_stats[CALL_FUNCTION], "call_function");
     if (out != stderr) {
         fclose(out);
     }
@@ -235,6 +237,7 @@ static uint8_t adaptive_opcodes[256] = {
     [BINARY_ADD] = BINARY_ADD_ADAPTIVE,
     [BINARY_MULTIPLY] = BINARY_MULTIPLY_ADAPTIVE,
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
+    [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
 };
 
@@ -246,6 +249,7 @@ static uint8_t cache_requirements[256] = {
     [BINARY_ADD] = 0,
     [BINARY_MULTIPLY] = 0,
     [BINARY_SUBSCR] = 0,
+    [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyObjectCache/_PyCallCache */
     [STORE_ATTR] = 2, /* _PyAdaptiveEntry and _PyAttrCache */
 };
 
@@ -408,6 +412,18 @@ _Py_Quicken(PyCodeObject *code) {
     return 0;
 }
 
+static inline int
+initial_counter_value(void) {
+    /* Starting value for the counter.
+     * This value needs to be not too low, otherwise
+     * it would cause excessive de-optimization.
+     * Neither should it be too high, or that would delay
+     * de-optimization excessively when it is needed.
+     * A value around 50 seems to work, and we choose a
+     * prime number to avoid artifacts.
+     */
+    return 53;
+}
 
 /* Common */
 
@@ -456,6 +472,20 @@ _Py_Quicken(PyCodeObject *code) {
 
 #define SPEC_FAIL_NON_FUNCTION_SCOPE 11
 #define SPEC_FAIL_DIFFERENT_TYPES 12
+
+/* Calls */
+#define SPEC_FAIL_GENERATOR 7
+#define SPEC_FAIL_COMPLEX_PARAMETERS 8
+#define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 9
+#define SPEC_FAIL_CO_NOT_OPTIMIZED 10
+/* SPEC_FAIL_METHOD  defined as 11 above */
+#define SPEC_FAIL_FREE_VARS 12
+#define SPEC_FAIL_PYCFUNCTION 13
+#define SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS 14
+#define SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS 15
+#define SPEC_FAIL_PYCFUNCTION_NOARGS 16
+#define SPEC_FAIL_BAD_CALL_FLAGS 17
+#define SPEC_FAIL_CLASS 18
 
 
 static int
@@ -752,7 +782,7 @@ fail:
 success:
     STAT_INC(LOAD_ATTR, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 }
 
@@ -834,7 +864,7 @@ fail:
 success:
     STAT_INC(STORE_ATTR, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 }
 
@@ -992,7 +1022,7 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, 
 success:
     STAT_INC(LOAD_METHOD, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 fail:
     STAT_INC(LOAD_METHOD, specialization_failure);
@@ -1068,7 +1098,7 @@ fail:
 success:
     STAT_INC(LOAD_GLOBAL, specialization_success);
     assert(!PyErr_Occurred());
-    cache0->counter = saturating_start();
+    cache0->counter = initial_counter_value();
     return 0;
 }
 
@@ -1119,7 +1149,7 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_LIST_INT, initial_counter_value());
             goto success;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
@@ -1128,7 +1158,7 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
-            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_TUPLE_INT, initial_counter_value());
             goto success;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
@@ -1136,7 +1166,7 @@ _Py_Specialize_BinarySubscr(
         goto fail;
     }
     if (container_type == &PyDict_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBSCR_DICT, initial_counter_value());
         goto success;
     }
     SPECIALIZATION_FAIL(BINARY_SUBSCR,
@@ -1164,19 +1194,19 @@ _Py_Specialize_BinaryAdd(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
     if (left_type == &PyUnicode_Type) {
         int next_opcode = _Py_OPCODE(instr[1]);
         if (next_opcode == STORE_FAST) {
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE_INPLACE_FAST, initial_counter_value());
         }
         else {
-            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, saturating_start());
+            *instr = _Py_MAKECODEUNIT(BINARY_ADD_UNICODE, initial_counter_value());
         }
         goto success;
     }
     else if (left_type == &PyLong_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_INT, initial_counter_value());
         goto success;
     }
     else if (left_type == &PyFloat_Type) {
-        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_ADD_FLOAT, initial_counter_value());
         goto success;
 
     }
@@ -1202,11 +1232,11 @@ _Py_Specialize_BinaryMultiply(PyObject *left, PyObject *right, _Py_CODEUNIT *ins
         goto fail;
     }
     if (PyLong_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_INT, initial_counter_value());
         goto success;
     }
     else if (PyFloat_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, saturating_start());
+        *instr = _Py_MAKECODEUNIT(BINARY_MULTIPLY_FLOAT, initial_counter_value());
         goto success;
     }
     else {
@@ -1220,5 +1250,201 @@ fail:
 success:
     STAT_INC(BINARY_MULTIPLY, specialization_success);
     assert(!PyErr_Occurred());
+    return 0;
+}
+
+static int
+specialize_class_call(
+    PyObject *callable, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache)
+{
+    SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CLASS);
+    return -1;
+}
+
+static int
+specialize_py_call(
+    PyFunctionObject *func, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache)
+{
+    _PyCallCache *cache1 = &cache[-1].call;
+    /* Exclude generator or coroutines for now */
+    PyCodeObject *code = (PyCodeObject *)func->func_code;
+    int flags = code->co_flags;
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_GENERATOR);
+        return -1;
+    }
+    if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_COMPLEX_PARAMETERS);
+        return -1;
+    }
+    if ((flags & CO_OPTIMIZED) == 0) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_CO_NOT_OPTIMIZED);
+        return -1;
+    }
+    if (code->co_nfreevars) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_FREE_VARS);
+        return -1;
+    }
+    int argcount = code->co_argcount;
+    int defcount = func->func_defaults == NULL ? 0 : (int)PyTuple_GET_SIZE(func->func_defaults);
+    assert(defcount <= argcount);
+    int min_args = argcount-defcount;
+    if (nargs > argcount || nargs < min_args) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+        return -1;
+    }
+    assert(nargs <= argcount && nargs >= min_args);
+    int defstart = nargs - min_args;
+    int deflen = argcount - nargs;
+    assert(defstart >= 0 && deflen >= 0);
+    assert(deflen == 0 || func->func_defaults != NULL);
+    if (defstart > 0xffff || deflen > 0xffff) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_RANGE);
+        return -1;
+    }
+    int version = _PyFunction_GetVersionForCurrentState(func);
+    if (version == 0) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    cache1->func_version = version;
+    cache1->defaults_start = defstart;
+    cache1->defaults_len = deflen;
+    *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_PY_SIMPLE, _Py_OPARG(*instr));
+    return 0;
+}
+
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+builtin_call_fail_kind(int ml_flags)
+{
+    switch (ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+        METH_KEYWORDS | METH_METHOD)) {
+        case METH_VARARGS:
+            return SPEC_FAIL_PYCFUNCTION;
+        case METH_VARARGS | METH_KEYWORDS:
+            return SPEC_FAIL_PYCFUNCTION_WITH_KEYWORDS;
+        case METH_FASTCALL | METH_KEYWORDS:
+            return SPEC_FAIL_PYCFUNCTION_FAST_WITH_KEYWORDS;
+        case METH_NOARGS:
+            return SPEC_FAIL_PYCFUNCTION_NOARGS;
+        /* This case should never happen with PyCFunctionObject -- only
+            PyMethodObject. See zlib.compressobj()'s methods for an example.
+        */
+        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+        default:
+            return SPEC_FAIL_BAD_CALL_FLAGS;
+    }
+}
+#endif
+
+static int
+specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
+    SpecializedCacheEntry *cache, PyObject *builtins)
+{
+    _PyObjectCache *cache1 = &cache[-1].obj;
+    if (PyCFunction_GET_FUNCTION(callable) == NULL) {
+        return 1;
+    }
+    switch (PyCFunction_GET_FLAGS(callable) &
+        (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
+        METH_KEYWORDS | METH_METHOD)) {
+        case METH_O: {
+            if (nargs != 1) {
+                SPECIALIZATION_FAIL(CALL_FUNCTION, SPEC_FAIL_OUT_OF_RANGE);
+                return 1;
+            }
+            /* len(o) */
+            PyObject *builtin_len = PyDict_GetItemString(builtins, "len");
+            if (callable == builtin_len) {
+                cache1->obj = builtin_len;  // borrowed
+                *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_LEN,
+                    _Py_OPARG(*instr));
+                return 0;
+            }
+            *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_O,
+                _Py_OPARG(*instr));
+            return 0;
+        }
+        case METH_FASTCALL: {
+            if (nargs == 2) {
+                /* isinstance(o1, o2) */
+                PyObject *builtin_isinstance = PyDict_GetItemString(
+                    builtins, "isinstance");
+                if (callable == builtin_isinstance) {
+                    cache1->obj = builtin_isinstance;  // borrowed
+                    *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_ISINSTANCE,
+                        _Py_OPARG(*instr));
+                    return 0;
+                }
+            }
+            *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN_FAST,
+                _Py_OPARG(*instr));
+            return 0;
+        }
+        default:
+            SPECIALIZATION_FAIL(CALL_FUNCTION,
+                builtin_call_fail_kind(PyCFunction_GET_FLAGS(callable)));
+            return 1;
+    }
+}
+
+#if COLLECT_SPECIALIZATION_STATS_DETAILED
+static int
+call_fail_kind(PyObject *callable)
+{
+    if (PyInstanceMethod_Check(callable)) {
+        return SPEC_FAIL_METHOD;
+    }
+    else if (PyMethod_Check(callable)) {
+        return SPEC_FAIL_METHOD;
+    }
+    // builtin method
+    else if (PyCMethod_Check(callable)) {
+        return SPEC_FAIL_METHOD;
+    }
+    else if (PyType_Check(callable)) {
+        return  SPEC_FAIL_CLASS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif
+
+/* TODO:
+    - Specialize calling classes.
+*/
+int
+_Py_Specialize_CallFunction(
+    PyObject *callable, _Py_CODEUNIT *instr,
+    int nargs, SpecializedCacheEntry *cache,
+    PyObject *builtins)
+{
+    int fail;
+    if (PyCFunction_CheckExact(callable)) {
+        fail = specialize_c_call(callable, instr, nargs, cache, builtins);
+    }
+    else if (PyFunction_Check(callable)) {
+        fail = specialize_py_call((PyFunctionObject *)callable, instr, nargs, cache);
+    }
+    else if (PyType_Check(callable)) {
+        fail = specialize_class_call(callable, instr, nargs, cache);
+    }
+    else {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, call_fail_kind(callable));
+        fail = -1;
+    }
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    if (fail) {
+        STAT_INC(CALL_FUNCTION, specialization_failure);
+        assert(!PyErr_Occurred());
+        cache_backoff(cache0);
+    }
+    else {
+        STAT_INC(CALL_FUNCTION, specialization_success);
+        assert(!PyErr_Occurred());
+        cache0->counter = initial_counter_value();
+    }
     return 0;
 }

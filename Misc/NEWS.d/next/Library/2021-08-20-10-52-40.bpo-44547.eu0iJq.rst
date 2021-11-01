@@ -1,0 +1,2 @@
+Implement ``Fraction.__int__``, so that a :class:`fractions.Fraction`
+instance ``f`` passes an ``isinstance(f, typing.SupportsInt)`` check.
