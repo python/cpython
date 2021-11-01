@@ -90,16 +90,16 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write("\n    )\n")
 
         fobj.write("\n")
-        for i, slot, _ in opcode["_nb_slots"]:
+        for i, slot, _ in opcode["_nb_binop_slots"]:
             fobj.write(DEFINE.format(slot.upper(), i))
         
         fobj.write("\n")
-        for _, slot, name in opcode["_nb_slots"]:
+        for _, slot, name in opcode["_nb_binop_slots"]:
             fobj.write(DEFINE.format(f"{slot.upper()}_NAME", f'"{name}"'))
         
         fobj.write("\n")
         fobj.write("#define HAVE_SANE_NB_OFFSETS ( \\\n")
-        for _, slot, _ in opcode["_nb_slots"]:
+        for _, slot, _ in opcode["_nb_binop_slots"]:
             fobj.write(f"    {slot.upper()} * NB_SCALE == offsetof(PyNumberMethods, {slot}) && \\\n")
         fobj.write("    true)\n")
 

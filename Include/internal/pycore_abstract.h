@@ -16,8 +16,10 @@ _PyIndex_Check(PyObject *obj)
     return (tp_as_number != NULL && tp_as_number->nb_index != NULL);
 }
 
-PyObject *_PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op);
-PyObject *_PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op);
+PyObject *_PyNumber_BinaryOp(PyObject *v, PyObject *w, const int op_slot,
+                             const char *op_name);
+PyObject *_PyNumber_InPlaceOp(PyObject *v, PyObject *w, const int iop_slot,
+                              const int op_slot, const char *op_name);
 
 #ifdef __cplusplus
 }

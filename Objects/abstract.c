@@ -925,8 +925,9 @@ binop_type_error(PyObject *v, PyObject *w, const char *op_name)
     return NULL;
 }
 
-static PyObject *
-binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
+PyObject *
+_PyNumber_BinaryOp(PyObject *v, PyObject *w, const int op_slot,
+                   const char *op_name)
 {
     PyObject *result = BINARY_OP1(v, w, op_slot, op_name);
     if (result == Py_NotImplemented) {
@@ -1055,7 +1056,7 @@ ternary_op(PyObject *v,
 #define BINARY_FUNC(func, op, op_name) \
     PyObject * \
     func(PyObject *v, PyObject *w) { \
-        return binary_op(v, w, NB_SLOT(op), op_name); \
+        return _PyNumber_BinaryOp(v, w, NB_SLOT(op), op_name); \
     }
 
 BINARY_FUNC(PyNumber_Or, nb_or, "|")
@@ -1126,25 +1127,25 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_MatrixMultiply(PyObject *v, PyObject *w)
 {
-    return binary_op(v, w, NB_SLOT(nb_matrix_multiply), "@");
+    return _PyNumber_BinaryOp(v, w, NB_SLOT(nb_matrix_multiply), "@");
 }
 
 PyObject *
 PyNumber_FloorDivide(PyObject *v, PyObject *w)
 {
-    return binary_op(v, w, NB_SLOT(nb_floor_divide), "//");
+    return _PyNumber_BinaryOp(v, w, NB_SLOT(nb_floor_divide), "//");
 }
 
 PyObject *
 PyNumber_TrueDivide(PyObject *v, PyObject *w)
 {
-    return binary_op(v, w, NB_SLOT(nb_true_divide), "/");
+    return _PyNumber_BinaryOp(v, w, NB_SLOT(nb_true_divide), "/");
 }
 
 PyObject *
 PyNumber_Remainder(PyObject *v, PyObject *w)
 {
-    return binary_op(v, w, NB_SLOT(nb_remainder), "%");
+    return _PyNumber_BinaryOp(v, w, NB_SLOT(nb_remainder), "%");
 }
 
 PyObject *
@@ -1201,9 +1202,9 @@ binary_iop1(PyObject *v, PyObject *w, const int iop_slot, const int op_slot
 #  define BINARY_IOP1(v, w, iop_slot, op_slot, op_name) binary_iop1(v, w, iop_slot, op_slot, op_name)
 #endif
 
-static PyObject *
-binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
-                const char *op_name)
+PyObject *
+_PyNumber_InPlaceOp(PyObject *v, PyObject *w, const int iop_slot,
+                    const int op_slot, const char *op_name)
 {
     PyObject *result = BINARY_IOP1(v, w, iop_slot, op_slot, op_name);
     if (result == Py_NotImplemented) {
@@ -1234,7 +1235,7 @@ ternary_iop(PyObject *v, PyObject *w, PyObject *z, const int iop_slot, const int
 #define INPLACE_BINOP(func, iop, op, op_name) \
     PyObject * \
     func(PyObject *v, PyObject *w) { \
-        return binary_iop(v, w, NB_SLOT(iop), NB_SLOT(op), op_name); \
+        return _PyNumber_InPlaceOp(v, w, NB_SLOT(iop), NB_SLOT(op), op_name); \
     }
 
 INPLACE_BINOP(PyNumber_InPlaceOr, nb_inplace_or, nb_or, "|=")
@@ -1248,15 +1249,15 @@ INPLACE_BINOP(PyNumber_InMatrixMultiply, nb_inplace_matrix_multiply, nb_matrix_m
 PyObject *
 PyNumber_InPlaceFloorDivide(PyObject *v, PyObject *w)
 {
-    return binary_iop(v, w, NB_SLOT(nb_inplace_floor_divide),
-                      NB_SLOT(nb_floor_divide), "//=");
+    return _PyNumber_InPlaceOp(v, w, NB_SLOT(nb_inplace_floor_divide),
+                               NB_SLOT(nb_floor_divide), "//=");
 }
 
 PyObject *
 PyNumber_InPlaceTrueDivide(PyObject *v, PyObject *w)
 {
-    return binary_iop(v, w, NB_SLOT(nb_inplace_true_divide),
-                      NB_SLOT(nb_true_divide), "/=");
+    return _PyNumber_InPlaceOp(v, w, NB_SLOT(nb_inplace_true_divide),
+                               NB_SLOT(nb_true_divide), "/=");
 }
 
 PyObject *
@@ -1314,15 +1315,15 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlaceMatrixMultiply(PyObject *v, PyObject *w)
 {
-    return binary_iop(v, w, NB_SLOT(nb_inplace_matrix_multiply),
-                      NB_SLOT(nb_matrix_multiply), "@=");
+    return _PyNumber_InPlaceOp(v, w, NB_SLOT(nb_inplace_matrix_multiply),
+                               NB_SLOT(nb_matrix_multiply), "@=");
 }
 
 PyObject *
 PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 {
-    return binary_iop(v, w, NB_SLOT(nb_inplace_remainder),
-                            NB_SLOT(nb_remainder), "%=");
+    return _PyNumber_InPlaceOp(v, w, NB_SLOT(nb_inplace_remainder),
+                               NB_SLOT(nb_remainder), "%=");
 }
 
 PyObject *
@@ -1713,53 +1714,6 @@ PyNumber_ToBase(PyObject *n, int base)
     PyObject *res = _PyLong_Format(index, base);
     Py_DECREF(index);
     return res;
-}
-
-#define NB_NAMES(op)                           \
-    [NB_##op] = NB_##op##_NAME,                \
-    [NB_INPLACE_##op] = NB_INPLACE_##op##_NAME
-
-static const char nb_names[][4] = {
-    NB_NAMES(AND),
-    NB_NAMES(FLOOR_DIVIDE),
-    NB_NAMES(LSHIFT),
-    NB_NAMES(MATRIX_MULTIPLY),
-    NB_NAMES(OR),
-    NB_NAMES(RSHIFT),
-    NB_NAMES(SUBTRACT),
-    NB_NAMES(TRUE_DIVIDE),
-    NB_NAMES(XOR),
-};
-
-#undef NB_NAMES
-
-#define NB_BINSLOT(op) [NB_INPLACE_##op] = NB_##op
-    
-static const uint8_t nb_binary_slots[] = {
-    NB_BINSLOT(AND),
-    NB_BINSLOT(FLOOR_DIVIDE),
-    NB_BINSLOT(LSHIFT),
-    NB_BINSLOT(MATRIX_MULTIPLY),
-    NB_BINSLOT(OR),
-    NB_BINSLOT(RSHIFT),
-    NB_BINSLOT(SUBTRACT),
-    NB_BINSLOT(TRUE_DIVIDE),
-    NB_BINSLOT(XOR),
-};
-
-#undef NB_BINSLOT
-
-PyObject *
-_PyNumber_Op(PyObject *o1, PyObject *o2, unsigned op)
-{
-    return binary_op(o1, o2, op * NB_SCALE, nb_names[op]);
-}
-
-PyObject *
-_PyNumber_InPlaceOp(PyObject *o1, PyObject *o2, unsigned op)
-{
-    return binary_iop(o1, o2, op * NB_SCALE, nb_binary_slots[op] * NB_SCALE,
-                      nb_names[op]);
 }
 
 

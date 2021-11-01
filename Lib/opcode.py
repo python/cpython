@@ -205,31 +205,15 @@ def_op('CALL_METHOD_KW', 166)
 
 del def_op, name_op, jrel_op, jabs_op
 
-_nb_slots = [
-    # nb_add
+_nb_binop_slots = [
+    # (index, slot, operator)
     (1, "nb_subtract", "-"),
-    # nb_multiply
-    # nb_remainder
-    # nb_divmod
-    # nb_power
-    # nb_negative
-    # nb_positive
-    # nb_absolute
-    # nb_bool
-    # nb_invert
     (11, "nb_lshift", "<<"),
     (12, "nb_rshift", ">>"),
     (13, "nb_and", "&"),
     (14, "nb_xor", "^"),
     (15, "nb_or", "|"),
-    # nb_int
-    # nb_reserved
-    # nb_float
-    # nb_inplace_add
     (20, "nb_inplace_subtract", "-="),
-    # nb_inplace_multiply
-    # nb_inplace_remainder
-    # nb_inplace_power
     (24, "nb_inplace_lshift", "<<="),
     (25, "nb_inplace_rshift", ">>="),
     (26, "nb_inplace_and", "&="),
@@ -239,7 +223,6 @@ _nb_slots = [
     (30, "nb_true_divide", "/"),
     (31, "nb_inplace_floor_divide", "//="),
     (32, "nb_inplace_true_divide", "/="),
-    # nb_index
     (34, "nb_matrix_multiply", "@"),
     (35, "nb_inplace_matrix_multiply", "@="),
 ]

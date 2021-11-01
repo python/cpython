@@ -7,7 +7,7 @@ import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
-from opcode import _nb_slots
+from opcode import _nb_binop_slots
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
@@ -32,9 +32,9 @@ LOAD_CONST = opmap['LOAD_CONST']
 BINARY_OP = opmap['BINARY_OP']
 INPLACE_OP = opmap['INPLACE_OP']
 
-NB_NAMES = {i: name for i, _, name in _nb_slots}
+NB_NAMES = {i: name for i, _, name in _nb_binop_slots}
 
-del _nb_slots
+del _nb_binop_slots
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and

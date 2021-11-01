@@ -1057,6 +1057,41 @@ fail:
 }
 
 
+#define NB_NAMES(op)                           \
+    [NB_##op] = NB_##op##_NAME,                \
+    [NB_INPLACE_##op] = NB_INPLACE_##op##_NAME
+
+static const char nb_names[][4] = {
+    NB_NAMES(AND),
+    NB_NAMES(FLOOR_DIVIDE),
+    NB_NAMES(LSHIFT),
+    NB_NAMES(MATRIX_MULTIPLY),
+    NB_NAMES(OR),
+    NB_NAMES(RSHIFT),
+    NB_NAMES(SUBTRACT),
+    NB_NAMES(TRUE_DIVIDE),
+    NB_NAMES(XOR),
+};
+
+#undef NB_NAMES
+
+#define NB_BINARY_SLOT(op) [NB_INPLACE_##op] = NB_##op
+    
+static const uint8_t nb_binary_slots[] = {
+    NB_BINARY_SLOT(AND),
+    NB_BINARY_SLOT(FLOOR_DIVIDE),
+    NB_BINARY_SLOT(LSHIFT),
+    NB_BINARY_SLOT(MATRIX_MULTIPLY),
+    NB_BINARY_SLOT(OR),
+    NB_BINARY_SLOT(RSHIFT),
+    NB_BINARY_SLOT(SUBTRACT),
+    NB_BINARY_SLOT(TRUE_DIVIDE),
+    NB_BINARY_SLOT(XOR),
+};
+
+#undef NB_BINARY_SLOT
+
+
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
@@ -4811,7 +4846,8 @@ check_eval_breaker:
         TARGET(BINARY_OP) {
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *res = _PyNumber_Op(left, right, oparg);
+            PyObject *res = _PyNumber_BinaryOp(left, right, oparg * NB_SCALE, 
+                                               nb_names[oparg]);
             Py_DECREF(left);
             Py_DECREF(right);
             SET_TOP(res);
@@ -4824,7 +4860,9 @@ check_eval_breaker:
         TARGET(INPLACE_OP) {
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *res = _PyNumber_InPlaceOp(left, right, oparg);
+            PyObject *res = _PyNumber_InPlaceOp(left, right, oparg * NB_SCALE,
+                                                nb_binary_slots[oparg] * NB_SCALE,
+                                                nb_names[oparg]);
             Py_DECREF(left);
             Py_DECREF(right);
             SET_TOP(res);
