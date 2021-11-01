@@ -248,6 +248,12 @@ sqlite3
   (Contributed by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland in
   :issue:`16379`.)
 
+* Add :meth:`~sqlite3.Connection.setlimit` and
+  :meth:`~sqlite3.Connection.getlimit` to :class:`sqlite3.Connection` for
+  setting and getting SQLite limits by connection basis.
+  (Contributed by Erlend E. Aasland in :issue:`45243`.)
+
+
 threading
 ---------
 

@@ -167,11 +167,25 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_TOOBIG",
             "SQLITE_TRANSACTION",
             "SQLITE_UPDATE",
+            # Run-time limit categories
+            "SQLITE_LIMIT_LENGTH",
+            "SQLITE_LIMIT_SQL_LENGTH",
+            "SQLITE_LIMIT_COLUMN",
+            "SQLITE_LIMIT_EXPR_DEPTH",
+            "SQLITE_LIMIT_COMPOUND_SELECT",
+            "SQLITE_LIMIT_VDBE_OP",
+            "SQLITE_LIMIT_FUNCTION_ARG",
+            "SQLITE_LIMIT_ATTACHED",
+            "SQLITE_LIMIT_LIKE_PATTERN_LENGTH",
+            "SQLITE_LIMIT_VARIABLE_NUMBER",
+            "SQLITE_LIMIT_TRIGGER_DEPTH",
         ]
         if sqlite.sqlite_version_info >= (3, 7, 17):
             consts += ["SQLITE_NOTICE", "SQLITE_WARNING"]
         if sqlite.sqlite_version_info >= (3, 8, 3):
             consts.append("SQLITE_RECURSIVE")
+        if sqlite.sqlite_version_info >= (3, 8, 7):
+            consts.append("SQLITE_LIMIT_WORKER_THREADS")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
         for const in consts:
             with self.subTest(const=const):
@@ -331,6 +345,28 @@ class ConnectionTests(unittest.TestCase):
         for n in range(500):
             cu = self.cx.execute(f"select {n}")
             self.assertEqual(cu.fetchone()[0], n)
+
+    def test_connection_limits(self):
+        category = sqlite.SQLITE_LIMIT_SQL_LENGTH
+        saved_limit = self.cx.getlimit(category)
+        try:
+            new_limit = 10
+            prev_limit = self.cx.setlimit(category, new_limit)
+            self.assertEqual(saved_limit, prev_limit)
+            self.assertEqual(self.cx.getlimit(category), new_limit)
+            msg = "string or blob too big"
+            self.assertRaisesRegex(sqlite.DataError, msg,
+                                   self.cx.execute, "select 1 as '16'")
+        finally:  # restore saved limit
+            self.cx.setlimit(category, saved_limit)
+
+    def test_connection_bad_limit_category(self):
+        msg = "'category' is out of bounds"
+        cat = 1111
+        self.assertRaisesRegex(sqlite.ProgrammingError, msg,
+                               self.cx.getlimit, cat)
+        self.assertRaisesRegex(sqlite.ProgrammingError, msg,
+                               self.cx.setlimit, cat, 0)
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
@@ -767,6 +803,8 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.set_trace_callback(None),
             lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
+            lambda: self.con.setlimit(sqlite.SQLITE_LIMIT_LENGTH, -1),
+            lambda: self.con.getlimit(sqlite.SQLITE_LIMIT_LENGTH),
         ]
         for fn in fns:
             with self.subTest(fn=fn):
