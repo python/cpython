@@ -1,0 +1,8 @@
+Cases of sorting using tuples as keys may now be significantly faster
+in some cases. Patch by Tim Peters.
+
+The order of the result may differ from earlier releases if the tuple
+elements don't define a total ordering (see
+:ref:`expressions-value-comparisons` for information on
+total ordering).  It's generally true that the result of sorting simply
+isn't well-defined in the absence of a total ordering on list elements.

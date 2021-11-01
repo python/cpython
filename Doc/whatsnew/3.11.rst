@@ -308,6 +308,16 @@ CPython bytecode changes
   fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
   in tandem with :opcode:`LOAD_METHOD`.
 
+* Removed ``COPY_DICT_WITHOUT_KEYS``.
+
+* :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
+  boolean value indicating whether the match succeeded or failed. Instead, they
+  indicate failure with :const:`None` (where a tuple of extracted values would
+  otherwise be).
+
+* Added :opcode:`COPY`, which pushes the *i*-th item to the top of the stack.
+  The item is not removed from its original location.
+
 
 Deprecated
 ==========
@@ -470,6 +480,13 @@ Changes in the Python API
   the ``'utf-8'`` encoding.
   (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
+* When sorting using tuples as keys, the order of the result may differ
+  from earlier releases if the tuple elements don't define a total
+  ordering (see :ref:`expressions-value-comparisons` for
+  information on total ordering).  It's generally true that the result
+  of sorting simply isn't well-defined in the absence of a total ordering
+  on list elements.
+
 
 Build Changes
 =============
@@ -489,6 +506,13 @@ Build Changes
   option :option:`!--without-freelists` can be used to disable all freelists
   except empty tuple singleton.
   (Contributed by Christian Heimes in :issue:`45522`)
+
+* ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
+  Extension modules can now be built through ``makesetup``. All except some
+  test modules can be linked statically into main binary or library.
+  (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
+  :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
+
 
 C API Changes
 =============

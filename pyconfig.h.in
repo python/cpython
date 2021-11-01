@@ -353,9 +353,6 @@
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
 
-/* Define to 1 if you have the `finite' function. */
-#undef HAVE_FINITE
-
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
@@ -406,9 +403,6 @@
 
 /* Define to 1 if you have the `gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
-
-/* Define to 1 if you have the `gamma' function. */
-#undef HAVE_GAMMA
 
 /* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
 #undef HAVE_GCC_ASM_FOR_MC68881
@@ -585,9 +579,6 @@
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
-
-/* Define to 1 if you have the `lgamma' function. */
-#undef HAVE_LGAMMA
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
@@ -1237,9 +1228,6 @@
 
 /* Define to 1 if you have the <term.h> header file. */
 #undef HAVE_TERM_H
-
-/* Define to 1 if you have the `tgamma' function. */
-#undef HAVE_TGAMMA
 
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
