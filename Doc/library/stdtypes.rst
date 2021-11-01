@@ -4824,10 +4824,11 @@ Generic Alias Type
 
 ``GenericAlias`` objects are generally created by
 :ref:`subscripting<subscriptions>` a class. They are most often used with
-container classes, such as :class:`list` or :class:`dict`. They are intended
-primarily for use with :term:`type annotations <annotation>`. For example,
-``list[int]`` is a ``GenericAlias`` object created by subscripting the
-:class:`list` class with the argument :class:`int`.
+:ref:`container classes<sequence-types>`, such as :class:`list` or
+:class:`dict`. For example, ``list[int]`` is a ``GenericAlias`` object created
+by subscripting the :class:`list` class with the argument :class:`int`.
+``GenericAlias`` objects are intended primarily for use with
+:term:`type annotations <annotation>`.
 
 Usually, the :ref:`subscription <subscriptions>` of an object in Python will
 call the :meth:`__getitem__<object.__getitem__>` instance method defined on the
