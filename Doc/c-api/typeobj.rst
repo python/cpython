@@ -268,7 +268,7 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+---------------+
    | :c:member:`~PyNumberMethods.nb_int`                     | :c:type:`unaryfunc`               | __int__       |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyNumberMethods.nb_reserved`                | void *                            |               |
+   | :c:member:`~PyNumberMethods.nb_reserved`                | :c:type:`unaryfunc`               |               |
    +---------------------------------------------------------+-----------------------------------+---------------+
    | :c:member:`~PyNumberMethods.nb_float`                   | :c:type:`unaryfunc`               | __float__     |
    +---------------------------------------------------------+-----------------------------------+---------------+
@@ -2098,7 +2098,7 @@ Number Object Structures
             binaryfunc nb_xor;
             binaryfunc nb_or;
             unaryfunc nb_int;
-            void *nb_reserved;
+            unaryfunc nb_reserved;
             unaryfunc nb_float;
 
             binaryfunc nb_inplace_add;
@@ -2155,7 +2155,7 @@ Number Object Structures
 .. c:member:: binaryfunc PyNumberMethods.nb_xor
 .. c:member:: binaryfunc PyNumberMethods.nb_or
 .. c:member:: unaryfunc PyNumberMethods.nb_int
-.. c:member:: void *PyNumberMethods.nb_reserved
+.. c:member:: unaryfunc PyNumberMethods.nb_reserved
 .. c:member:: unaryfunc PyNumberMethods.nb_float
 .. c:member:: binaryfunc PyNumberMethods.nb_inplace_add
 .. c:member:: binaryfunc PyNumberMethods.nb_inplace_subtract
