@@ -502,6 +502,14 @@ time
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
+tkinter
+-------
+
+* Added method ``info_patchlevel()`` which returns the exact version of
+  the Tcl library as a named tuple similar to :data:`sys.version_info`.
+  (Contributed by Serhiy Storchaka in :issue:`91827`.)
+
+
 unicodedata
 -----------
 
