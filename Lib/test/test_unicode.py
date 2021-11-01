@@ -20,6 +20,11 @@ from test.support import warnings_helper
 from test import support, string_tests
 from test.support.script_helper import assert_python_failure
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 # Error handling (bad decoder return)
 def search_function(encoding):
     def decode1(input, errors="strict"):
@@ -749,8 +754,8 @@ class UnicodeTest(string_tests.CommonTest,
 
     @support.cpython_only
     @support.requires_legacy_unicode_capi
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_isidentifier_legacy(self):
-        import _testcapi
         u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
         self.assertTrue(u.isidentifier())
         with warnings_helper.check_warnings():
@@ -1529,9 +1534,9 @@ class UnicodeTest(string_tests.CommonTest,
                          "Success, self.__rmod__('lhs %% %r') was called")
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_formatting_huge_precision_c_limits(self):
-        from _testcapi import INT_MAX
-        format_string = "%.{}f".format(INT_MAX + 1)
+        format_string = "%.{}f".format(_testcapi.INT_MAX + 1)
         with self.assertRaises(ValueError):
             result = format_string % 2.34
 
@@ -2387,21 +2392,21 @@ class UnicodeTest(string_tests.CommonTest,
 
     @support.cpython_only
     @support.requires_legacy_unicode_capi
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_resize(self):
-        from _testcapi import getargs_u
         for length in range(1, 100, 7):
             # generate a fresh string (refcount=1)
             text = 'a' * length + 'b'
 
             # fill wstr internal field
             with self.assertWarns(DeprecationWarning):
-                abc = getargs_u(text)
+                abc = _testcapi.getargs_u(text)
             self.assertEqual(abc, text)
 
             # resize text: wstr field must be cleared and then recomputed
             text += 'c'
             with self.assertWarns(DeprecationWarning):
-                abcdef = getargs_u(text)
+                abcdef = _testcapi.getargs_u(text)
             self.assertNotEqual(abc, abcdef)
             self.assertEqual(abcdef, text)
 
@@ -2789,6 +2794,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_AsWideChar()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_aswidechar(self):
         from _testcapi import unicode_aswidechar
         import_helper.import_module('ctypes')
@@ -2827,6 +2833,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_AsWideCharString()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_aswidecharstring(self):
         from _testcapi import unicode_aswidecharstring
         import_helper.import_module('ctypes')
@@ -2851,6 +2858,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_AsUCS4()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4(self):
         from _testcapi import unicode_asucs4
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
@@ -2868,6 +2876,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_AsUTF8()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8(self):
         from _testcapi import unicode_asutf8
 
@@ -2882,6 +2891,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_AsUTF8AndSize()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8andsize(self):
         from _testcapi import unicode_asutf8andsize
 
@@ -2896,6 +2906,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_FindChar()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_findchar(self):
         from _testcapi import unicode_findchar
 
@@ -2919,6 +2930,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_CopyCharacters()
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_copycharacters(self):
         from _testcapi import unicode_copycharacters
 
@@ -2961,6 +2973,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_pep393_utf8_caching_bug(self):
         # Issue #25709: Problem with string concatenation and utf-8 cache
         from _testcapi import getargs_s_hash
