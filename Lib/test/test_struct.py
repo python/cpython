@@ -691,7 +691,7 @@ class StructTest(unittest.TestCase):
     @support.cpython_only
     def test_issue45034_signed(self):
         _testcapi = import_helper.import_module('_testcapi')
-        error_msg = f'short format requires {SHRT_MIN} <= number <= {SHRT_MAX}'
+        error_msg = f'short format requires {_testcapi.SHRT_MIN} <= number <= {_testcapi.SHRT_MAX}'
         with self.assertRaisesRegex(struct.error, error_msg):
             struct.pack('h', 70000)  # too large
         with self.assertRaisesRegex(struct.error, error_msg):

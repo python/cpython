@@ -1337,7 +1337,7 @@ class MixinStrUnicodeUserStringTest:
                          (_testcapi.INT_MAX + 1, 1. / 7))
         # Issue 15989
         self.checkraises(OverflowError, '%*s', '__mod__',
-                         (_testcapi.SIZE_MAX + 1, ''))
+                         (SIZE_MAX + 1, ''))
         self.checkraises(OverflowError, '%.*f', '__mod__',
                          (_testcapi.UINT_MAX + 1, 1. / 7))
 
