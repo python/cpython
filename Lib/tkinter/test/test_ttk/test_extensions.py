@@ -2,7 +2,7 @@ import sys
 import unittest
 import tkinter
 from tkinter import ttk
-from test.support import requires, run_unittest, gc_collect
+from test.support import requires, gc_collect
 from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
@@ -301,6 +301,19 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         optmenu.destroy()
         optmenu2.destroy()
 
+    def test_trace_variable(self):
+        # prior to bpo45160, tracing a variable would cause the callback to be made twice
+        success = []
+        items = ('a', 'b', 'c')
+        textvar = tkinter.StringVar(self.root)
+        def cb_test(*args):
+            self.assertEqual(textvar.get(), items[1])
+            success.append(True)
+        optmenu = ttk.OptionMenu(self.root, textvar, "a", *items)
+        textvar.trace("w", cb_test)
+        optmenu['menu'].invoke(1)
+        self.assertEqual(success, [True])
+
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
@@ -308,7 +321,5 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self._test_widget(ttk.LabeledScale)
 
 
-tests_gui = (LabeledScaleTest, OptionMenuTest, DefaultRootTest)
-
 if __name__ == "__main__":
-    run_unittest(*tests_gui)
+    unittest.main()

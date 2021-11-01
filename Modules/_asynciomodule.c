@@ -1,5 +1,10 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <stddef.h>               // offsetof()
 
 
@@ -225,7 +230,7 @@ get_running_loop(PyObject **loop)
 {
     PyObject *rl;
 
-    PyThreadState *ts = PyThreadState_Get();
+    PyThreadState *ts = _PyThreadState_GET();
     uint64_t ts_id = PyThreadState_GetID(ts);
     if (ts_id == cached_running_holder_tsid && cached_running_holder != NULL) {
         // Fast path, check the cache.
@@ -287,7 +292,7 @@ set_running_loop(PyObject *loop)
 {
     PyObject *ts_dict = NULL;
 
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate != NULL) {
         ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
     }
@@ -3239,6 +3244,9 @@ new_running_loop_holder(PyObject *loop)
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
+    if (cached_running_holder == (PyObject *)rl) {
+        cached_running_holder = NULL;
+    }
     Py_CLEAR(rl->rl_loop);
     PyObject_Free(rl);
 }

@@ -18,7 +18,7 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 class AuditTest(unittest.TestCase):
     def do_test(self, *args):
         with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -32,7 +32,7 @@ class AuditTest(unittest.TestCase):
     def run_python(self, *args):
         events = []
         with subprocess.Popen(
-            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

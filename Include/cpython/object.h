@@ -270,6 +270,7 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+    Py_ssize_t tp_inline_values_offset;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -289,6 +290,7 @@ typedef struct _heaptypeobject {
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
+    char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 

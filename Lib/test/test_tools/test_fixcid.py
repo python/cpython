@@ -61,9 +61,10 @@ class Test(unittest.TestCase):
         os.mkdir(os_helper.TESTFN)
         self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
         c_filename = os.path.join(os_helper.TESTFN, "file.c")
-        with open(c_filename, "w") as file:
+        with open(c_filename, "w", encoding="utf-8") as file:
             file.write("int xx;\n")
-        with open(os.path.join(os_helper.TESTFN, "file.py"), "w") as file:
+        with open(os.path.join(os_helper.TESTFN, "file.py"), "w",
+                  encoding="utf-8") as file:
             file.write("xx = 'unaltered'\n")
         script = os.path.join(scriptsdir, "fixcid.py")
         output = self.run_script(args=(os_helper.TESTFN,))
@@ -76,7 +77,7 @@ class Test(unittest.TestCase):
 
     def run_script(self, input="", *, args=("-",), substfile="xx yy\n"):
         substfilename = os_helper.TESTFN + ".subst"
-        with open(substfilename, "w") as file:
+        with open(substfilename, "w", encoding="utf-8") as file:
             file.write(substfile)
         self.addCleanup(os_helper.unlink, substfilename)
 

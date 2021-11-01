@@ -398,10 +398,6 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
-    def __iter__(self):
-        self._check_not_closed()
-        return self._buffer.__iter__()
-
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`

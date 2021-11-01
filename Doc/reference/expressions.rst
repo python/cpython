@@ -1424,6 +1424,8 @@ Note that ``a op1 b op2 c`` doesn't imply any kind of comparison between *a* and
 *c*, so that, e.g., ``x < y > z`` is perfectly legal (though perhaps not
 pretty).
 
+.. _expressions-value-comparisons:
+
 Value comparisons
 -----------------
 

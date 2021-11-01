@@ -235,11 +235,18 @@ class _proto_member:
         enum_member._sort_order_ = len(enum_class._member_names_)
         # If another member with the same value was already defined, the
         # new member becomes an alias to the existing one.
-        for name, canonical_member in enum_class._member_map_.items():
-            if canonical_member._value_ == enum_member._value_:
-                enum_member = canonical_member
-                break
-        else:
+        try:
+            try:
+                # try to do a fast lookup to avoid the quadratic loop
+                enum_member = enum_class._value2member_map_[value]
+            except TypeError:
+                for name, canonical_member in enum_class._member_map_.items():
+                    if canonical_member._value_ == value:
+                        enum_member = canonical_member
+                        break
+                else:
+                    raise KeyError
+        except KeyError:
             # this could still be an alias if the value is multi-bit and the
             # class is a flag class
             if (
@@ -301,7 +308,7 @@ class _EnumDict(dict):
     """
     def __init__(self):
         super().__init__()
-        self._member_names = []
+        self._member_names = {} # use a dict to keep insertion order
         self._last_values = []
         self._ignore = []
         self._auto_called = False
@@ -365,7 +372,7 @@ class _EnumDict(dict):
                             )
                     self._auto_called = True
                 value = value.value
-            self._member_names.append(key)
+            self._member_names[key] = None
             self._last_values.append(value)
         super().__setitem__(key, value)
 
