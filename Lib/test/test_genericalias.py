@@ -12,7 +12,9 @@ from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from contextvars import ContextVar, Token
 from dataclasses import Field
-from functools import partial, partialmethod, cached_property
+from functools import (
+    partial, partialmethod, cached_property, singledispatchmethod
+)
 from mailbox import Mailbox, _PartialFile
 try:
     import ctypes
@@ -55,7 +57,8 @@ class BaseTest(unittest.TestCase):
                      FileInput,
                      OrderedDict, Counter, UserDict, UserList,
                      Pattern, Match,
-                     partial, partialmethod, cached_property,
+                     partial, partialmethod,
+                     cached_property, singledispatchmethod,
                      AbstractContextManager, AbstractAsyncContextManager,
                      Awaitable, Coroutine,
                      AsyncIterable, AsyncIterator,

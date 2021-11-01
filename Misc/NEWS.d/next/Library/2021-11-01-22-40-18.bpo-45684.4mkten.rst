@@ -1,0 +1,1 @@
+Add ``__class_getitem__`` method to ``functools.singledispatchmethod``.

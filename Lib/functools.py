@@ -923,6 +923,8 @@ class singledispatchmethod:
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 ################################################################################
 ### cached_property() - computed once per instance, cached as attribute
