@@ -409,7 +409,7 @@ def main() -> None:
     output = args.output or modname + ".c"
     with open(output, "w") as file:
         with report_time("generate"):
-            generate(source, args.file, modname, file)
+            generate(source, f"<frozen {modname}>", modname, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 
