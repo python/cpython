@@ -1133,9 +1133,6 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
             err = PyFile_WriteString("\n", f);
         }
     }
-    else {
-        PyErr_Clear();
-    }
 
     ctx->need_close = need_close;
 
