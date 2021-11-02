@@ -1494,6 +1494,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 class SetConfigTests(unittest.TestCase):
     def test_set_config(self):
         # bpo-42260: Test _PyInterpreterState_SetConfig()
+        import_helper.import_module('_testcapi')
         cmd = [sys.executable, '-I', '-m', 'test._test_embed_set_config']
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
