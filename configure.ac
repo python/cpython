@@ -2945,8 +2945,13 @@ void *x = uuid_generate_time_safe
   [AC_MSG_RESULT(no)]
 )
 
+# check for libuuid from util-linux
+save_LIBS=$LIBS
+AC_CHECK_LIB([uuid], [uuid_generate_time])
+LIBS=$save_LIBS
+
 # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
+# FreeBSD and OpenBSD provides support in libc as well.
 AC_MSG_CHECKING(for uuid_create)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
 #ifndef uuid_create
@@ -4692,8 +4697,12 @@ fi
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 
-AC_CHECK_FUNCS([acosh asinh atanh erf erfc expm1 finite gamma])
-AC_CHECK_FUNCS([lgamma log1p log2 tgamma])
+AC_CHECK_FUNCS(
+  [acosh asinh atanh erf erfc expm1 log1p log2],
+  [],
+  [AC_MSG_ERROR([Python requires C99 compatible libm])]
+)
+LIBS=$LIBS_SAVE
 
 # For multiprocessing module, check that sem_open
 # actually works.  For FreeBSD versions <= 7.2,
@@ -5632,7 +5641,23 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="\
+  Modules \
+  Modules/_blake2 \
+  Modules/_ctypes \
+  Modules/_decimal \
+  Modules/_decimal/libmpdec \
+  Modules/_io \
+  Modules/_multiprocessing \
+  Modules/_sha3 \
+  Modules/_sqlite \
+  Modules/_xxtestfuzz \
+  Modules/cjkcodecs \
+  Modules/expat \
+  Objects \
+  Parser \
+  Programs \
+  Python"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

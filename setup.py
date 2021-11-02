@@ -409,8 +409,11 @@ class PyBuildExt(build_ext):
                                      for filename in self.distribution.scripts]
 
         # Python header files
+        include_dir = escape(sysconfig.get_path('include'))
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
+        headers.extend(glob(os.path.join(include_dir, "*.h")))
+        headers.extend(glob(os.path.join(include_dir, "cpython", "*.h")))
+        headers.extend(glob(os.path.join(include_dir, "internal", "*.h")))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -423,12 +426,13 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
-    def remove_configured_extensions(self):
+    def handle_configured_extensions(self):
         # The sysconfig variables built by makesetup that list the already
         # built modules and the disabled modules as configured by the Setup
         # files.
-        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
-        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
+        sysconf_built = set(sysconfig.get_config_var('MODBUILT_NAMES').split())
+        sysconf_shared = set(sysconfig.get_config_var('MODSHARED_NAMES').split())
+        sysconf_dis = set(sysconfig.get_config_var('MODDISABLED_NAMES').split())
 
         mods_built = []
         mods_disabled = []
@@ -446,11 +450,15 @@ class PyBuildExt(build_ext):
                                mods_configured]
             # Remove the shared libraries built by a previous build.
             for ext in mods_configured:
+                # Don't remove shared extensions which have been built
+                # by Modules/Setup
+                if ext.name in sysconf_shared:
+                    continue
                 fullpath = self.get_ext_fullpath(ext.name)
-                if os.path.exists(fullpath):
+                if os.path.lexists(fullpath):
                     os.unlink(fullpath)
 
-        return (mods_built, mods_disabled)
+        return mods_built, mods_disabled
 
     def set_compiler_executables(self):
         # When you run "make CC=altcc" or something similar, you really want
@@ -475,7 +483,7 @@ class PyBuildExt(build_ext):
             self.remove_disabled()
 
         self.update_sources_depends()
-        mods_built, mods_disabled = self.remove_configured_extensions()
+        mods_built, mods_disabled = self.handle_configured_extensions()
         self.set_compiler_executables()
 
         if LIST_MODULE_NAMES:
@@ -904,18 +912,14 @@ class PyBuildExt(build_ext):
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
 
-        shared_math = 'Modules/_math.o'
-
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
-                           extra_objects=[shared_math],
-                           depends=['_math.h', shared_math],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
-                           extra_objects=[shared_math],
-                           depends=['_math.h', shared_math],
+                           depends=['_math.h'],
                            libraries=['m']))
 
         # time libraries: librt may be needed for clock_gettime()
@@ -1838,15 +1842,15 @@ class PyBuildExt(build_ext):
 
     def detect_uuid(self):
         # Build the _uuid module if possible
-        uuid_incs = find_file("uuid.h", self.inc_dirs, ["/usr/include/uuid"])
-        if uuid_incs is not None:
-            if self.compiler.find_library_file(self.lib_dirs, 'uuid'):
-                uuid_libs = ['uuid']
+        uuid_h = sysconfig.get_config_var("HAVE_UUID_H")
+        uuid_uuid_h = sysconfig.get_config_var("HAVE_UUID_UUID_H")
+        if uuid_h or uuid_uuid_h:
+            if sysconfig.get_config_var("HAVE_LIBUUID"):
+                uuid_libs = ["uuid"]
             else:
                 uuid_libs = []
             self.add(Extension('_uuid', ['_uuidmodule.c'],
-                               libraries=uuid_libs,
-                               include_dirs=uuid_incs))
+                               libraries=uuid_libs))
         else:
             self.missing.append('_uuid')
 
@@ -2477,6 +2481,9 @@ class PyBuildExt(build_ext):
                 depends=[
                     'socketmodule.h',
                     '_ssl.h',
+                    '_ssl_data_111.h',
+                    '_ssl_data_300.h',
+                    '_ssl_data.h',
                     '_ssl/debughelpers.c',
                     '_ssl/misc.c',
                     '_ssl/cert.c',

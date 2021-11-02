@@ -332,7 +332,6 @@
     <ClCompile Include="..\Modules\_json.c" />
     <ClCompile Include="..\Modules\_localemodule.c" />
     <ClCompile Include="..\Modules\_lsprof.c" />
-    <ClCompile Include="..\Modules\_math.c" />
     <ClCompile Include="..\Modules\_pickle.c" />
     <ClCompile Include="..\Modules\_randommodule.c" />
     <ClCompile Include="..\Modules\_sha3\sha3module.c" />
