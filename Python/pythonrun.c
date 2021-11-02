@@ -939,13 +939,11 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     Py_INCREF(value);
     fflush(stdout);
     type = (PyObject *) Py_TYPE(value);
-    bool is_exception_group = PyObject_TypeCheck(
-        value, (PyTypeObject *)PyExc_BaseExceptionGroup);
     tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None) {
         const char *header = EXCEPTION_TB_HEADER;
         const char *header_margin = EXC_MARGIN(ctx);
-        if (is_exception_group) {
+        if (_PyBaseExceptionGroup_Check(value)) {
             header = EXCEPTION_GROUP_TB_HEADER;
             if (ctx->exception_group_depth == 1) {
                 header_margin = "+ ";
@@ -1197,7 +1195,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
     if (err) {
         /* don't do anything else */
     }
-    else if (!PyObject_TypeCheck(value, (PyTypeObject *)PyExc_BaseExceptionGroup)) {
+    else if (!_PyBaseExceptionGroup_Check(value)) {
         print_exception(ctx, value);
     }
     else if (ctx->exception_group_depth > ctx->max_group_depth) {
