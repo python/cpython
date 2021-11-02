@@ -869,8 +869,8 @@ class TracebackException:
 
         output = []
         exc = self
-        while exc:
-            if chain:
+        if chain:
+            while exc:
                 if exc.__cause__ is not None:
                     chained_msg = _cause_message
                     chained_exc = exc.__cause__
@@ -884,9 +884,8 @@ class TracebackException:
 
                 output.append((chained_msg, exc))
                 exc = chained_exc
-            else:
-                output.append((None, exc))
-                exc = None
+        else:
+            output.append((None, exc))
 
         for msg, exc in reversed(output):
             if msg is not None:
