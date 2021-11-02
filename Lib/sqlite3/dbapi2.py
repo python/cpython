@@ -28,38 +28,6 @@ from _sqlite3 import *
 
 paramstyle = "qmark"
 
-
-def fetch_compile_options():
-    try:
-        cx = connect(":memory:")
-        res = cx.execute("pragma compile_options")
-        opts = {i[0] for i in res}
-    finally:
-        cx.close()
-    return opts
-
-_compile_options = fetch_compile_options()
-del fetch_compile_options
-
-def _threadsafety():
-    if "THREADSAFE=0" in _compile_options:
-        # SQLITE_THREADSAFE=0 (single-thread mode) translates to DB-API
-        # threadsafety level 0, meaning threads may not share the module.
-        return 0
-    elif "THREADSAFE=2" in _compile_options:
-        # SQLITE_THREADSAFE=2 (multi-thread mode) translates to DB-API
-        # threadsafety level 1, meaning threads may share the module, but not
-        # connections.
-        return 1
-
-    # Default to SQLITE_THREADSAFE=1 (serialized mode), which translates to
-    # DB-API threadsafety level 3, meaning threads may share the module,
-    # connections and cursors. This is the default threading mode of SQLite.
-    return 3
-
-threadsafety = _threadsafety()
-del _threadsafety
-
 apilevel = "2.0"
 
 Date = datetime.date

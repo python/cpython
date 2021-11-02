@@ -415,6 +415,28 @@ add_integer_constants(PyObject *module) {
     return 0;
 }
 
+/* Convert SQLite default threading mode (as set by the compile-time constant
+ * SQLITE_THREADSAFE) to the corresponding DB-API 2.0 (PEP 249) threadsafety
+ * level. */
+static int
+get_threadsafety(pysqlite_state *state)
+{
+    int mode = sqlite3_threadsafe();
+    switch (mode) {
+    case 0:        // SQLite single-thread mode; threads may not share the
+        return 0;  // module.
+    case 1:        // SQLite serialized mode; threads may share the module,
+        return 3;  // connections and cursors.
+    case 2:        // SQLite multi-thread mode; threads may share the module,
+        return 1;  // but not connections.
+    default:
+        PyErr_Format(state->InterfaceError,
+                     "Unable to interpret SQLite threadsafety mode. Got %d, "
+                     "expected 0, 1, or 2", mode);
+        return -1;
+    }
+}
+
 static int
 module_traverse(PyObject *module, visitproc visit, void *arg)
 {
@@ -561,6 +583,11 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+        goto error;
+    }
+
+    int threadsafety = get_threadsafety(state);
+    if (PyModule_AddIntConstant(module, "threadsafety", threadsafety) < 0) {
         goto error;
     }
 

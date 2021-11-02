@@ -54,17 +54,9 @@ class ModuleTests(unittest.TestCase):
                          "apilevel is %s, should be 2.0" % sqlite.apilevel)
 
     def test_thread_safety(self):
-        from sqlite3.dbapi2 import _compile_options
-        msg = "threadsafety is %d, should be %d in %s mode"
-        if "THREADSAFE=0" in _compile_options:
-            self.assertEqual(sqlite.threadsafety, 0,
-                             msg % (sqlite.threadsafety, 0, "single-thread"))
-        elif "THREADSAFE=2" in _compile_options:
-            self.assertEqual(sqlite.threadsafety, 1,
-                             msg % (sqlite.threadsafety, 1, "multi-thread"))
-        else:  # THREADSAFE=1 (default)
-            self.assertEqual(sqlite.threadsafety, 3,
-                             msg % (sqlite.threadsafety, 3, "serialized"))
+        self.assertIn(sqlite.threadsafety, {0, 1, 3},
+                      "threadsafety is %d, should be 0, 1 or 3" %
+                      sqlite.threadsafety)
 
     def test_param_style(self):
         self.assertEqual(sqlite.paramstyle, "qmark",
