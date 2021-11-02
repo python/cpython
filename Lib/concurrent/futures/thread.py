@@ -80,6 +80,9 @@ def _worker(executor_reference, work_queue, initializer, initargs):
         while True:
             work_item = work_queue.get(block=True)
             if work_item is not None:
+                work_item, name = work_item
+                if name:
+                    threading.current_thread().name = name
                 work_item.run()
                 # Delete references to object. See issue16284
                 del work_item
@@ -158,7 +161,7 @@ class ThreadPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-    def submit(self, fn, /, *args, **kwargs):
+    def submit(self, fn, name='', /, *args, **kwargs):
         with self._shutdown_lock, _global_shutdown_lock:
             if self._broken:
                 raise BrokenThreadPool(self._broken)
@@ -172,7 +175,7 @@ class ThreadPoolExecutor(_base.Executor):
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
 
-            self._work_queue.put(w)
+            self._work_queue.put((w, name))
             self._adjust_thread_count()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
