@@ -330,11 +330,6 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    /* Small integers are preallocated in this array so that they
-       can be shared.
-       The integers that are preallocated are those in the range
-       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
-    */
     PyLongObject small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
     struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
