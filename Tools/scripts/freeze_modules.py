@@ -648,13 +648,11 @@ def regen_makefile(modules):
         deepfreezefiles.append(f"\t\t{ofile} \\")
 
         # Also add a deepfreeze rule.
-        deepfreezerules.append(f'{cfile}: {_pyfile} Tools/scripts/deepfreeze.py $(BOOTSTRAP)')
-        deepfreezerules.append(f'\t@echo "Deepfreezing {cfile} from {_pyfile}"')
+        deepfreezerules.append(f'{cfile}: $(srcdir)/{_pyfile} $(srcdir)/Tools/scripts/deepfreeze.py $(BOOTSTRAP)')
+        deepfreezerules.append(f'\t@echo "Deepfreezing $@ from $<"')
         deepfreezerules.append(f"\t@$(BOOTSTRAP) \\")
         deepfreezerules.append(f"\t\t$(srcdir)/Tools/scripts/deepfreeze.py \\")
-        deepfreezerules.append(f"\t\t$(srcdir)/{_pyfile} \\")
-        deepfreezerules.append(f"\t\t-m {src.frozenid} \\")
-        deepfreezerules.append(f"\t\t-o $(srcdir)/{cfile}")
+        deepfreezerules.append(f"\t\t$< -m {src.frozenid} -o $@")
         deepfreezerules.append('')
 
     for src in _iter_sources(modules):
