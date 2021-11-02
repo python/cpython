@@ -415,6 +415,7 @@ OBJECT_OBJS=	\
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/codeobject.o \
+		Objects/core_objects.o \
 		Objects/complexobject.o \
 		Objects/descrobject.o \
 		Objects/enumobject.o \

@@ -7,6 +7,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "bytesobject.h"
+#include "core_objects.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
@@ -2111,10 +2112,9 @@ static PyObject *
 _common_reduce(PyByteArrayObject *self, int proto)
 {
     PyObject *dict;
-    _Py_IDENTIFIER(__dict__);
     char *buf;
 
-    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+    if (_PyObject_LookupAttr((PyObject *)self, (PyObject *)&_Py_id_strings.id___dict__, &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {

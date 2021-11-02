@@ -54,6 +54,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "stringlib/eq.h"         // unicode_eq()
+#include "core_objects.h"
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -15514,6 +15515,7 @@ _PyUnicode_Init(PyInterpreterState *interp)
             PyUnicode_2BYTE_KIND, linebreak,
             Py_ARRAY_LENGTH(linebreak));
     }
+    _Py_intern_identifiers();
 
     return _PyStatus_OK();
 }
