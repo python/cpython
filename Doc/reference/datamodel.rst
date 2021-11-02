@@ -2228,7 +2228,9 @@ For example, the annotation ``list[int]`` might be used to signify a
    :ref:`Generic Alias Types<types-genericalias>`
       Documentation for objects representing parameterized generic classes
 
-   Documentation for the :mod:`typing` module
+   :class:`typing.Generic`
+      Inherit from :class:`typing.Generic` to implement generic classes that
+      can be parameterized at runtime and understood by static type-checkers.
 
 A class can generally only be parameterized if it defines the special
 classmethod ``__class_getitem__()``.
@@ -2238,7 +2240,7 @@ classmethod ``__class_getitem__()``.
    Return an object representing the specialization of a generic class
    by type arguments found in *key*.
 
-.. note::
+``__getitem__`` *versus* ``__class_getitem__``
 
    Usually, the :ref:`subscription <subscriptions>` of an object in Python
    using the square-brackets notation will call the :meth:`~object.__getitem__`
@@ -2273,9 +2275,20 @@ classmethod ``__class_getitem__()``.
    defined by the class. See :pep:`560` for more details.
 
 .. note::
-   ``__class_getitem__()`` is designed for use with static type hints. Other
-   usage of this special method is discouraged.
+   ``__class_getitem__()`` was introduced to implement runtime parameterization
+   of standard-library generic classes in order to more easily apply
+   :term:`type-hints<type hint>` to these classes.
 
+   To implement custom generic classes that can be parameterized at runtime and
+   understood by static type-checkers, users should either inherit from a
+   standard library class that already implements ``__class_getitem__()``, or
+   inherit from :class:`typing.Generic`, which has its own implementation of
+   ``__class_getitem__()``.
+
+   Custom implementations of ``__class_getitem__()`` on classes defined outside
+   of the standard library may not be understood by third-party type-checkers
+   such as mypy. Using ``__class_getitem__()`` on any class for purposes other
+   than type-hinting is discouraged.
 
 .. _callable-types:
 
@@ -2387,6 +2400,12 @@ through the object's keys; for sequences, it should iterate through the values.
 
       :keyword:`for` loops expect that an :exc:`IndexError` will be raised for illegal
       indexes to allow proper detection of the end of the sequence.
+
+   .. note::
+
+      When :ref:`subscripting<subscriptions>` a *class*, the special
+      classmethod :meth:`~object.__class_getitem__` may be called instead of
+      ``__getitem__()``.
 
 
 .. method:: object.__setitem__(self, key, value)
