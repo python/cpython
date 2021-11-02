@@ -157,6 +157,7 @@ class ModuleTests(unittest.TestCase):
             "SQLITE_PERM",
             "SQLITE_PRAGMA",
             "SQLITE_PROTOCOL",
+            "SQLITE_RANGE",
             "SQLITE_READ",
             "SQLITE_READONLY",
             "SQLITE_REINDEX",
@@ -187,18 +188,142 @@ class ModuleTests(unittest.TestCase):
         if sqlite.sqlite_version_info >= (3, 8, 7):
             consts.append("SQLITE_LIMIT_WORKER_THREADS")
         consts += ["PARSE_DECLTYPES", "PARSE_COLNAMES"]
+        # Extended result codes
+        consts += [
+            "SQLITE_ABORT_ROLLBACK",
+            "SQLITE_BUSY_RECOVERY",
+            "SQLITE_CANTOPEN_FULLPATH",
+            "SQLITE_CANTOPEN_ISDIR",
+            "SQLITE_CANTOPEN_NOTEMPDIR",
+            "SQLITE_CORRUPT_VTAB",
+            "SQLITE_IOERR_ACCESS",
+            "SQLITE_IOERR_BLOCKED",
+            "SQLITE_IOERR_CHECKRESERVEDLOCK",
+            "SQLITE_IOERR_CLOSE",
+            "SQLITE_IOERR_DELETE",
+            "SQLITE_IOERR_DELETE_NOENT",
+            "SQLITE_IOERR_DIR_CLOSE",
+            "SQLITE_IOERR_DIR_FSYNC",
+            "SQLITE_IOERR_FSTAT",
+            "SQLITE_IOERR_FSYNC",
+            "SQLITE_IOERR_LOCK",
+            "SQLITE_IOERR_NOMEM",
+            "SQLITE_IOERR_RDLOCK",
+            "SQLITE_IOERR_READ",
+            "SQLITE_IOERR_SEEK",
+            "SQLITE_IOERR_SHMLOCK",
+            "SQLITE_IOERR_SHMMAP",
+            "SQLITE_IOERR_SHMOPEN",
+            "SQLITE_IOERR_SHMSIZE",
+            "SQLITE_IOERR_SHORT_READ",
+            "SQLITE_IOERR_TRUNCATE",
+            "SQLITE_IOERR_UNLOCK",
+            "SQLITE_IOERR_WRITE",
+            "SQLITE_LOCKED_SHAREDCACHE",
+            "SQLITE_READONLY_CANTLOCK",
+            "SQLITE_READONLY_RECOVERY",
+        ]
+        if sqlite.version_info >= (3, 7, 16):
+            consts += [
+                "SQLITE_CONSTRAINT_CHECK",
+                "SQLITE_CONSTRAINT_COMMITHOOK",
+                "SQLITE_CONSTRAINT_FOREIGNKEY",
+                "SQLITE_CONSTRAINT_FUNCTION",
+                "SQLITE_CONSTRAINT_NOTNULL",
+                "SQLITE_CONSTRAINT_PRIMARYKEY",
+                "SQLITE_CONSTRAINT_TRIGGER",
+                "SQLITE_CONSTRAINT_UNIQUE",
+                "SQLITE_CONSTRAINT_VTAB",
+                "SQLITE_READONLY_ROLLBACK",
+            ]
+        if sqlite.version_info >= (3, 7, 17):
+            consts += [
+                "SQLITE_IOERR_MMAP",
+                "SQLITE_NOTICE_RECOVER_ROLLBACK",
+                "SQLITE_NOTICE_RECOVER_WAL",
+            ]
+        if sqlite.version_info >= (3, 8, 0):
+            consts += [
+                "SQLITE_BUSY_SNAPSHOT",
+                "SQLITE_IOERR_GETTEMPPATH",
+                "SQLITE_WARNING_AUTOINDEX",
+            ]
+        if sqlite.version_info >= (3, 8, 1):
+            consts += ["SQLITE_CANTOPEN_CONVPATH", "SQLITE_IOERR_CONVPATH"]
+        if sqlite.version_info >= (3, 8, 2):
+            consts.append("SQLITE_CONSTRAINT_ROWID")
+        if sqlite.version_info >= (3, 8, 3):
+            consts.append("SQLITE_READONLY_DBMOVED")
+        if sqlite.version_info >= (3, 8, 7):
+            consts.append("SQLITE_AUTH_USER")
+        if sqlite.version_info >= (3, 9, 0):
+            consts.append("SQLITE_IOERR_VNODE")
+        if sqlite.version_info >= (3, 10, 0):
+            consts.append("SQLITE_IOERR_AUTH")
+        if sqlite.version_info >= (3, 14, 1):
+            consts.append("SQLITE_OK_LOAD_PERMANENTLY")
+        if sqlite.version_info >= (3, 21, 0):
+            consts += [
+                "SQLITE_IOERR_BEGIN_ATOMIC",
+                "SQLITE_IOERR_COMMIT_ATOMIC",
+                "SQLITE_IOERR_ROLLBACK_ATOMIC",
+            ]
+        if sqlite.version_info >= (3, 22, 0):
+            consts += [
+                "SQLITE_ERROR_MISSING_COLLSEQ",
+                "SQLITE_ERROR_RETRY",
+                "SQLITE_READONLY_CANTINIT",
+                "SQLITE_READONLY_DIRECTORY",
+            ]
+        if sqlite.version_info >= (3, 24, 0):
+            consts += ["SQLITE_CORRUPT_SEQUENCE", "SQLITE_LOCKED_VTAB"]
+        if sqlite.version_info >= (3, 25, 0):
+            consts += ["SQLITE_CANTOPEN_DIRTYWAL", "SQLITE_ERROR_SNAPSHOT"]
+        if sqlite.version_info >= (3, 31, 0):
+            consts += [
+                "SQLITE_CANTOPEN_SYMLINK",
+                "SQLITE_CONSTRAINT_PINNED",
+                "SQLITE_OK_SYMLINK",
+            ]
+        if sqlite.version_info >= (3, 32, 0):
+            consts += [
+                "SQLITE_BUSY_TIMEOUT",
+                "SQLITE_CORRUPT_INDEX",
+                "SQLITE_IOERR_DATA",
+            ]
+        if sqlite.version_info >= (3, 34, 0):
+            const.append("SQLITE_IOERR_CORRUPTFS")
         for const in consts:
             with self.subTest(const=const):
                 self.assertTrue(hasattr(sqlite, const))
 
     def test_error_code_on_exception(self):
         err_msg = "unable to open database file"
+        if sys.platform.startswith("win"):
+            err_code = sqlite.SQLITE_CANTOPEN_ISDIR
+        else:
+            err_code = sqlite.SQLITE_CANTOPEN
+
         with temp_dir() as db:
             with self.assertRaisesRegex(sqlite.Error, err_msg) as cm:
                 sqlite.connect(db)
             e = cm.exception
-            self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
-            self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
+            self.assertEqual(e.sqlite_errorcode, err_code)
+            self.assertTrue(e.sqlite_errorname.startswith("SQLITE_CANTOPEN"))
+
+    @unittest.skipIf(sqlite.sqlite_version_info <= (3, 7, 16),
+                     "Requires SQLite 3.7.16 or newer")
+    def test_extended_error_code_on_exception(self):
+        with managed_connect(":memory:", in_mem=True) as con:
+            with con:
+                con.execute("create table t(t integer check(t > 0))")
+            errmsg = "CHECK constraint failed"
+            with self.assertRaisesRegex(sqlite.IntegrityError, errmsg) as cm:
+                con.execute("insert into t values(-1)")
+            exc = cm.exception
+            self.assertEqual(exc.sqlite_errorcode,
+                             sqlite.SQLITE_CONSTRAINT_CHECK)
+            self.assertEqual(exc.sqlite_errorname, "SQLITE_CONSTRAINT_CHECK")
 
     # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
     # OperationalError on some buildbots.
