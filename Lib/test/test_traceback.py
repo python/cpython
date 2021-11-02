@@ -1429,6 +1429,132 @@ class BaseExceptionReportingTests:
         report = self.get_report(exc)
         self.assertEqual(report, expected)
 
+    def test_exception_group_width_limit(self):
+        excs = []
+        for i in range(1000):
+            excs.append(ValueError(i))
+        eg = ExceptionGroup('eg', excs)
+
+        expected = ('  | ExceptionGroup: eg\n'
+                    '  +-+---------------- 1 ----------------\n'
+                    '    | ValueError: 0\n'
+                    '    +---------------- 2 ----------------\n'
+                    '    | ValueError: 1\n'
+                    '    +---------------- 3 ----------------\n'
+                    '    | ValueError: 2\n'
+                    '    +---------------- 4 ----------------\n'
+                    '    | ValueError: 3\n'
+                    '    +---------------- 5 ----------------\n'
+                    '    | ValueError: 4\n'
+                    '    +---------------- 6 ----------------\n'
+                    '    | ValueError: 5\n'
+                    '    +---------------- 7 ----------------\n'
+                    '    | ValueError: 6\n'
+                    '    +---------------- 8 ----------------\n'
+                    '    | ValueError: 7\n'
+                    '    +---------------- 9 ----------------\n'
+                    '    | ValueError: 8\n'
+                    '    +---------------- 10 ----------------\n'
+                    '    | ValueError: 9\n'
+                    '    +---------------- 11 ----------------\n'
+                    '    | ValueError: 10\n'
+                    '    +---------------- 12 ----------------\n'
+                    '    | ValueError: 11\n'
+                    '    +---------------- 13 ----------------\n'
+                    '    | ValueError: 12\n'
+                    '    +---------------- 14 ----------------\n'
+                    '    | ValueError: 13\n'
+                    '    +---------------- 15 ----------------\n'
+                    '    | ValueError: 14\n'
+                    '    +---------------- ... ----------------\n'
+                    '    |   and 985 more exceptions\n'
+                    '    +------------------------------------\n')
+
+        report = self.get_report(eg)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_depth_limit(self):
+        exc = TypeError('bad type')
+        for i in range(1000):
+            exc = ExceptionGroup(
+                f'eg{i}',
+                [ValueError(i), exc, ValueError(-i)])
+
+        expected = ('  | ExceptionGroup: eg999\n'
+                    '  +-+---------------- 1 ----------------\n'
+                    '    | ValueError: 999\n'
+                    '    +---------------- 2 ----------------\n'
+                    '    | ExceptionGroup: eg998\n'
+                    '    +-+---------------- 1 ----------------\n'
+                    '      | ValueError: 998\n'
+                    '      +---------------- 2 ----------------\n'
+                    '      | ExceptionGroup: eg997\n'
+                    '      +-+---------------- 1 ----------------\n'
+                    '        | ValueError: 997\n'
+                    '        +---------------- 2 ----------------\n'
+                    '        | ExceptionGroup: eg996\n'
+                    '        +-+---------------- 1 ----------------\n'
+                    '          | ValueError: 996\n'
+                    '          +---------------- 2 ----------------\n'
+                    '          | ExceptionGroup: eg995\n'
+                    '          +-+---------------- 1 ----------------\n'
+                    '            | ValueError: 995\n'
+                    '            +---------------- 2 ----------------\n'
+                    '            | ExceptionGroup: eg994\n'
+                    '            +-+---------------- 1 ----------------\n'
+                    '              | ValueError: 994\n'
+                    '              +---------------- 2 ----------------\n'
+                    '              | ExceptionGroup: eg993\n'
+                    '              +-+---------------- 1 ----------------\n'
+                    '                | ValueError: 993\n'
+                    '                +---------------- 2 ----------------\n'
+                    '                | ExceptionGroup: eg992\n'
+                    '                +-+---------------- 1 ----------------\n'
+                    '                  | ValueError: 992\n'
+                    '                  +---------------- 2 ----------------\n'
+                    '                  | ExceptionGroup: eg991\n'
+                    '                  +-+---------------- 1 ----------------\n'
+                    '                    | ValueError: 991\n'
+                    '                    +---------------- 2 ----------------\n'
+                    '                    | ExceptionGroup: eg990\n'
+                    '                    +-+---------------- 1 ----------------\n'
+                    '                      | ValueError: 990\n'
+                    '                      +---------------- 2 ----------------\n'
+                    '                      |  ... (max_group_depth is 10)\n'
+                    '                      +---------------- 3 ----------------\n'
+                    '                      | ValueError: -990\n'
+                    '                      +------------------------------------\n'
+                    '                    +---------------- 3 ----------------\n'
+                    '                    | ValueError: -991\n'
+                    '                    +------------------------------------\n'
+                    '                  +---------------- 3 ----------------\n'
+                    '                  | ValueError: -992\n'
+                    '                  +------------------------------------\n'
+                    '                +---------------- 3 ----------------\n'
+                    '                | ValueError: -993\n'
+                    '                +------------------------------------\n'
+                    '              +---------------- 3 ----------------\n'
+                    '              | ValueError: -994\n'
+                    '              +------------------------------------\n'
+                    '            +---------------- 3 ----------------\n'
+                    '            | ValueError: -995\n'
+                    '            +------------------------------------\n'
+                    '          +---------------- 3 ----------------\n'
+                    '          | ValueError: -996\n'
+                    '          +------------------------------------\n'
+                    '        +---------------- 3 ----------------\n'
+                    '        | ValueError: -997\n'
+                    '        +------------------------------------\n'
+                    '      +---------------- 3 ----------------\n'
+                    '      | ValueError: -998\n'
+                    '      +------------------------------------\n'
+                    '    +---------------- 3 ----------------\n'
+                    '    | ValueError: -999\n'
+                    '    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
@@ -2207,6 +2333,72 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'    |     raise ValueError(v)',
                     f'    |     ^^^^^^^^^^^^^^^^^^^',
                     f'    | ValueError: 24',
+                    f'    +------------------------------------',
+                    f'']
+
+        self.assertEqual(formatted, expected)
+
+    def test_max_group_width(self):
+        excs1 = []
+        excs2 = []
+        for i in range(3):
+            excs1.append(ValueError(i))
+        for i in range(10):
+            excs2.append(TypeError(i))
+
+        EG = ExceptionGroup
+        eg = EG('eg', [EG('eg1', excs1), EG('eg2', excs2)])
+
+        teg = traceback.TracebackException.from_exception(eg, max_group_width=2)
+        formatted = ''.join(teg.format()).split('\n')
+
+        expected = [
+                    f'  | ExceptionGroup: eg',
+                    f'  +-+---------------- 1 ----------------',
+                    f'    | ExceptionGroup: eg1',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | ValueError: 0',
+                    f'      +---------------- 2 ----------------',
+                    f'      | ValueError: 1',
+                    f'      +---------------- ... ----------------',
+                    f'      |   and 1 more exception',
+                    f'      +------------------------------------',
+                    f'    +---------------- 2 ----------------',
+                    f'    | ExceptionGroup: eg2',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | TypeError: 0',
+                    f'      +---------------- 2 ----------------',
+                    f'      | TypeError: 1',
+                    f'      +---------------- ... ----------------',
+                    f'      |   and 8 more exceptions',
+                    f'      +------------------------------------',
+                    f'']
+
+        self.assertEqual(formatted, expected)
+
+    def test_max_group_depth(self):
+        exc = TypeError('bad type')
+        for i in range(3):
+            exc = ExceptionGroup('exc', [ValueError(-i), exc, ValueError(i)])
+
+        teg = traceback.TracebackException.from_exception(exc, max_group_depth=2)
+        formatted = ''.join(teg.format()).split('\n')
+
+        expected = [
+                    f'  | ExceptionGroup: exc',
+                    f'  +-+---------------- 1 ----------------',
+                    f'    | ValueError: -2',
+                    f'    +---------------- 2 ----------------',
+                    f'    | ExceptionGroup: exc',
+                    f'    +-+---------------- 1 ----------------',
+                    f'      | ValueError: -1',
+                    f'      +---------------- 2 ----------------',
+                    f'      |  ... (max_group_depth is 2)',
+                    f'      +---------------- 3 ----------------',
+                    f'      | ValueError: 1',
+                    f'      +------------------------------------',
+                    f'    +---------------- 3 ----------------',
+                    f'    | ValueError: 2',
                     f'    +------------------------------------',
                     f'']
 

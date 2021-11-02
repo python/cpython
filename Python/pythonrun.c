@@ -895,6 +895,8 @@ struct exception_print_context
     PyObject *seen;            // Prevent cycles in recursion
     int exception_group_depth; // nesting level of current exception group
     bool need_close;           // Need a closing bottom frame
+    int max_group_width;       // Maximum number of children of each EG
+    int max_group_depth;       // Maximum nesting level of EGs
 };
 
 #define EXC_MARGIN(ctx) ((ctx)->exception_group_depth ? "| " : "")
@@ -1198,10 +1200,28 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
     else if (!PyObject_TypeCheck(value, (PyTypeObject *)PyExc_BaseExceptionGroup)) {
         print_exception(ctx, value);
     }
-    else {
-        /* ExceptionGroup */
+    else if (ctx->exception_group_depth > ctx->max_group_depth) {
+        /* exception group but depth exceeds limit */
 
-        /* TODO: add arg to limit number of exceptions printed? */
+        PyObject *line = PyUnicode_FromFormat(
+            " ... (max_group_depth is %d)\n", ctx->max_group_depth);
+
+        if (line) {
+            PyObject *f = ctx->file;
+            if (err == 0) {
+                err = write_indented_margin(ctx, f);
+            }
+            if (err == 0) {
+                err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+            }
+            Py_DECREF(line);
+        }
+        else {
+            err = -1;
+        }
+    }
+    else {
+        /* format exception group */
 
         if (ctx->exception_group_depth == 0) {
             ctx->exception_group_depth += 1;
@@ -1212,22 +1232,40 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
         assert(excs && PyTuple_Check(excs));
         Py_ssize_t num_excs = PyTuple_GET_SIZE(excs);
         assert(num_excs > 0);
+        Py_ssize_t n;
+        if (num_excs <= ctx->max_group_width) {
+            n = num_excs;
+        }
+        else {
+            n = ctx->max_group_width + 1;
+        }
 
         PyObject *f = ctx->file;
 
         ctx->need_close = false;
-        for (Py_ssize_t i = 0; i < num_excs; i++) {
-            int last_exc = (i == num_excs - 1);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            int last_exc = (i == n - 1);
             if (last_exc) {
                 // The closing frame may be added in a recursive call
                 ctx->need_close = true;
             }
-            PyObject *line = PyUnicode_FromFormat(
-                "%s+---------------- %zd ----------------\n",
-                (i == 0) ? "+-" : "  ", i + 1);
+            PyObject *line;
+            bool truncated = (i >= ctx->max_group_width);
+            if (!truncated) {
+                line = PyUnicode_FromFormat(
+                    "%s+---------------- %zd ----------------\n",
+                    (i == 0) ? "+-" : "  ", i + 1);
+            }
+            else {
+                line = PyUnicode_FromFormat(
+                    "%s+---------------- ... ----------------\n",
+                    (i == 0) ? "+-" : "  ");
+            }
 
             if (line) {
-                err = _Py_WriteIndent(EXC_INDENT(ctx), f);
+                if (err == 0) {
+                    err = _Py_WriteIndent(EXC_INDENT(ctx), f);
+                }
                 if (err == 0) {
                     err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
                 }
@@ -1235,19 +1273,39 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
             }
             else {
                 err = -1;
-                PyErr_Clear();
             }
 
             if (err == 0) {
                 ctx->exception_group_depth += 1;
                 PyObject *exc = PyTuple_GET_ITEM(excs, i);
 
-                if (!Py_EnterRecursiveCall(" in print_exception_recursive")) {
-                    print_exception_recursive(ctx, exc);
-                    Py_LeaveRecursiveCall();
+                if (!truncated) {
+                    if (!Py_EnterRecursiveCall(" in print_exception_recursive")) {
+                        print_exception_recursive(ctx, exc);
+                        Py_LeaveRecursiveCall();
+                    }
+                    else {
+                        err = -1;
+                    }
                 }
                 else {
-                    err = -1;
+                    Py_ssize_t excs_remaining = num_excs - ctx->max_group_width;
+                    PyObject *line = PyUnicode_FromFormat(
+                        "  and %zd more exception%s\n",
+                        excs_remaining, excs_remaining > 1 ? "s" : "");
+
+                    if (line) {
+                        if (err == 0) {
+                            err = write_indented_margin(ctx, f);
+                        }
+                        if (err == 0) {
+                            err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
+                        }
+                        Py_DECREF(line);
+                    }
+                    else {
+                        err = -1;
+                    }
                 }
 
                 if (err == 0 && last_exc && ctx->need_close) {
@@ -1269,6 +1327,9 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
         PyErr_Clear();
 }
 
+#define PyErr_MAX_GROUP_WIDTH 15
+#define PyErr_MAX_GROUP_DEPTH 10
+
 void
 _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *tb)
 {
@@ -1287,6 +1348,8 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     struct exception_print_context ctx;
     ctx.file = file;
     ctx.exception_group_depth = 0;
+    ctx.max_group_width = PyErr_MAX_GROUP_WIDTH;
+    ctx.max_group_depth = PyErr_MAX_GROUP_DEPTH;
 
     /* We choose to ignore seen being possibly NULL, and report
        at least the main exception (it could be a MemoryError).

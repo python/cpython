@@ -632,6 +632,11 @@ class TracebackException:
     to this intermediary form to ensure that no references are held, while
     still being able to fully print or format it.
 
+    max_group_width and max_group_depth control the formatting of exception
+    groups. The depth refers to the nesting level of the group, and the width
+    refers to the size of a single exception group's exceptions array. The
+    formatted output is truncated when either limit is exceeded.
+
     Use `from_exception` to create TracebackException instances from exception
     objects, or the constructor to create TracebackException instances from
     individual components.
@@ -659,7 +664,7 @@ class TracebackException:
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
-            _seen=None):
+            max_group_width=15, max_group_depth=10, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -669,7 +674,9 @@ class TracebackException:
             _seen = set()
         _seen.add(id(exc_value))
 
-        # TODO: locals.
+        self.max_group_width = max_group_width
+        self.max_group_depth = max_group_depth
+
         self.stack = StackSummary._extract_from_extended_frame_gen(
             _walk_tb_with_full_positions(exc_traceback),
             limit=limit, lookup_lines=lookup_lines,
@@ -709,6 +716,8 @@ class TracebackException:
                         limit=limit,
                         lookup_lines=lookup_lines,
                         capture_locals=capture_locals,
+                        max_group_width=max_group_width,
+                        max_group_depth=max_group_depth,
                         _seen=_seen)
                 else:
                     cause = None
@@ -728,6 +737,8 @@ class TracebackException:
                         limit=limit,
                         lookup_lines=lookup_lines,
                         capture_locals=capture_locals,
+                        max_group_width=max_group_width,
+                        max_group_depth=max_group_depth,
                         _seen=_seen)
                 else:
                     context = None
@@ -742,6 +753,8 @@ class TracebackException:
                             limit=limit,
                             lookup_lines=lookup_lines,
                             capture_locals=capture_locals,
+                            max_group_width=max_group_width,
+                            max_group_depth=max_group_depth,
                             _seen=_seen)
                         exceptions.append(texc)
                 else:
@@ -883,7 +896,12 @@ class TracebackException:
                     yield from _ctx.emit('Traceback (most recent call last):\n')
                     yield from _ctx.emit(exc.stack.format())
                 yield from _ctx.emit(exc.format_exception_only())
+            elif _ctx.exception_group_depth > self.max_group_depth:
+                # exception group, but depth exceeds limit
+                yield from _ctx.emit(
+                    f" ... (max_group_depth is {self.max_group_depth})\n")
             else:
+                # format exception group
                 is_toplevel = (_ctx.exception_group_depth == 0)
                 if is_toplevel:
                      _ctx.exception_group_depth += 1
@@ -895,26 +913,40 @@ class TracebackException:
                     yield from _ctx.emit(exc.stack.format())
 
                 yield from _ctx.emit(exc.format_exception_only())
-                n = len(exc.exceptions)
+                num_excs = len(exc.exceptions)
+                if num_excs <= self.max_group_width:
+                    n = num_excs
+                else:
+                    n = self.max_group_width + 1
                 _ctx.need_close = False
                 for i in range(n):
                     last_exc = (i == n-1)
                     if last_exc:
                         # The closing frame may be added by a recursive call
                         _ctx.need_close = True
+
+                    if self.max_group_width is not None:
+                        truncated = (i >= self.max_group_width)
+                    else:
+                        truncated = False
+                    title = f'{i+1}' if not truncated else '...'
                     yield (_ctx.indent() +
                            ('+-' if i==0 else '  ') +
-                           f'+---------------- {i + 1} ----------------\n')
+                           f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
-                    try:
+                    if not truncated:
                         yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
-                    except RecursionError:
-                        pass
+                    else:
+                        remaining = num_excs - self.max_group_width
+                        plural = 's' if remaining > 1 else ''
+                        yield from _ctx.emit(
+                            f"  and {remaining} more exception{plural}\n")
+
                     if last_exc and _ctx.need_close:
                         yield (_ctx.indent() +
                                "+------------------------------------\n")
                         _ctx.need_close = False
-                    _ctx.exception_group_depth -= 1;
+                    _ctx.exception_group_depth -= 1
 
                 if is_toplevel:
                     assert _ctx.exception_group_depth == 1
