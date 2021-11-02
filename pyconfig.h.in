@@ -604,6 +604,9 @@
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
+/* Define you have libuuid. */
+#undef HAVE_LIBUUID
+
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
 
