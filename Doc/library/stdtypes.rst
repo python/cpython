@@ -4810,7 +4810,7 @@ Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union
    single: annotation; type annotation; type hint
 
 The core built-in types for :term:`type annotations <annotation>` are
-:ref:`types-genericalias` and :ref:`types-union`.
+:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
 
 
 .. _types-genericalias:
