@@ -53,8 +53,7 @@ def memory_database():
     return contextlib.closing(cx)
 
 
-# Temporarily limits the maximum size of any string or BLOB or table row, in
-# bytes.
+# Temporarily limit a database connection parameter
 @contextlib.contextmanager
 def cx_limit(cx, category=sqlite.SQLITE_LIMIT_LENGTH, limit=128):
     try:
