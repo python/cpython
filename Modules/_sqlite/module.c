@@ -587,6 +587,9 @@ module_exec(PyObject *module)
     }
 
     int threadsafety = get_threadsafety(state);
+    if (threadsafety < 0) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(module, "threadsafety", threadsafety) < 0) {
         goto error;
     }
