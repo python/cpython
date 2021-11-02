@@ -540,6 +540,13 @@ class CursorTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             self.cu.execute("select name from test where name=?", L())
 
+    def test_execute_too_many_params(self):
+        category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
+        msg = "too many SQL variables"
+        with cx_limit(self.cx, category=category, limit=1):
+            with self.assertRaisesRegex(sqlite.OperationalError, msg):
+                self.cu.execute("insert into test values(?, ?)", (1, 2))
+
     def test_execute_dict_mapping(self):
         self.cu.execute("insert into test(name) values ('foo')")
         self.cu.execute("select name from test where name=:name", {"name": "foo"})
