@@ -642,13 +642,14 @@ class EnumType(type):
         this_module = globals().values()
         is_from_this_module = lambda cls: any(cls is thing for thing in this_module)
         first_enum_base = next(cls for cls in mro if is_from_this_module(cls))
+        enum_dict = Enum.__dict__
         # special-case __new__
-        ignored = {'__new__'}
+        ignored = {'__new__', *filter(_is_sunder, enum_dict)}
         add_to_ignored = ignored.add
 
         # We want these added to __dir__
         # if and only if they have been user-overridden
-        enum_dunders = set(filter(_is_dunder, Enum.__dict__))
+        enum_dunders = set(filter(_is_dunder, enum_dict))
 
         # special-case __new__
         if self.__new__ is not first_enum_base.__new__:
@@ -670,7 +671,8 @@ class EnumType(type):
                 # Already seen it? Carry on
                 if attr_name in cls_dir or attr_name in ignored:
                     continue
-                # Exclude all sunders from dir()
+                # Sunders defined in Enum.__dict__ are already in `ignored`,
+                # But sunders defined in a subclass won't be (we want all sunders excluded).
                 elif _is_sunder(attr_name):
                     add_to_ignored(attr_name)
                 # Not an "enum dunder"? Add it to dir() output.
