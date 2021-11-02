@@ -298,11 +298,10 @@ Number-theoretic and representation functions
 
 .. function:: trunc(x)
 
-   Return the :class:`~numbers.Real` value *x* truncated to an
-   :class:`~numbers.Integral` (usually an integer). Truncating *x* means
-   removing the digits after the decimal separator, hence rounding toward 0. It
-   is equivalent to floor and ceil for positive and negative numbers
-   respectively.  Delegates to :meth:`x.__trunc__() <object.__trunc__>`.
+   Return *x* with the fractional part removed, leaving the integer part.  This
+   rounds toward 0 and is equivalent to floor and ceil for positive and negative
+   *x* respectively.  If *x* is not a float, delegates to :meth:`x.__trunc__()
+   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
