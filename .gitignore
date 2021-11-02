@@ -59,6 +59,7 @@ Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
 Lib/test/data/*
 !Lib/test/data/README
+/_bootstrap_python
 /Makefile
 /Makefile.pre
 Misc/python.pc
@@ -69,7 +70,6 @@ Modules/Setup.local
 Modules/config.c
 Modules/ld_so_aix
 Programs/_freeze_module
-Programs/_bootstrap_python
 Programs/_testembed
 PC/python_nt*.h
 PC/pythonnt_rc*.h
