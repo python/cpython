@@ -4810,7 +4810,7 @@ Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union
    single: annotation; type annotation; type hint
 
 The core built-in types for :term:`type annotations <annotation>` are
-:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
+:ref:`types-genericalias` and :ref:`types-union`.
 
 
 .. _types-genericalias:
@@ -4830,22 +4830,10 @@ by subscripting the :class:`list` class with the argument :class:`int`.
 ``GenericAlias`` objects are intended primarily for use with
 :term:`type annotations <annotation>`.
 
-Usually, the :ref:`subscription <subscriptions>` of an object in Python will
-call the :meth:`~object.__getitem__` instance method defined on the object's
-class. For example, if we have a list ``food = ['spam', 'eggs', 'bacon']``,
-calling ``food[0]`` will return the same value as calling
-``type(food).__getitem__(food, 0)``. However, if a class defines the
-classmethod :meth:`~object.__class_getitem__`, then the subscription of that
-class may instead call the class's implementation of ``__class_getitem__``.
-This should return a ``GenericAlias`` object if it is properly defined. For
-example, because the :class:`list` class defines ``__class_getitem__``, calling
-``list[str]`` is equivalent to calling ``list.__class_getitem__(str)``, rather
-than ``type(list).__getitem__(list, str)``.
-
 .. note::
-   If :meth:`~object.__getitem__` is defined by a class's :term:`metaclass`, it
-   will take precedence over a :meth:`~object.__class_getitem__` classmethod
-   defined by the class. See :pep:`560` for more details.
+
+   It is generally only possible to subscript a class if the class implements
+   the special method :meth:`~object.__class_getitem__`
 
 A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
 implementing *parameterized generics*.
@@ -4853,17 +4841,17 @@ implementing *parameterized generics*.
 For a container class which implements :meth:`~object.__class_getitem__`, the
 argument(s) supplied to a :ref:`subscription<subscriptions>` of the class may
 indicate the type(s) of the elements an object contains. For example,
-``list[int]`` can be used in type annotations to signify a :class:`list` in
-which all the elements are of type :class:`int`.
+``set[bytes]`` can be used in type annotations to signify a :class:`set` in
+which all the elements are of type :class:`bytes`.
 
 For a class which defines :meth:`~object.__class_getitem__` but is not a
 container, the argument(s) supplied to a subscription of the class will often
-indicate the return type(s) of one or more methods defined on an object. For example,
-:mod:`regular expressions<re>` can be used on the :class:`str` data type and
-the :class:`bytes` data type. If ``x = re.search('foo', 'foo')``, ``x`` will be
-a :ref:`re.Match <match-objects>` object where the return values of
-``x.group(0)`` and ``x[0]`` will both be of type :class:`str`. We can represent
-this kind of object in type annotations with the ``GenericAlias``
+indicate the return type(s) of one or more methods defined on an object. For
+example, :mod:`regular expressions<re>` can be used on the :class:`str` data
+type and the :class:`bytes` data type. If ``x = re.search('foo', 'foo')``,
+``x`` will be a :ref:`re.Match <match-objects>` object where the return values
+of ``x.group(0)`` and ``x[0]`` will both be of type :class:`str`. We can
+represent this kind of object in type annotations with the ``GenericAlias``
 ``re.Match[str]``. If ``y = re.search(b'bar', b'bar')``, however, ``y`` will
 also be an instance of ``re.Match``, but the return values of ``y.group(0)``
 and ``y[0]`` will both be of type :class:`bytes`. In type annotations, we would

@@ -2215,22 +2215,66 @@ case the instance is itself a class.
 Emulating generic types
 -----------------------
 
-One can implement the generic class syntax as specified by :pep:`484`
-(for example ``List[int]``) by defining a special method:
+When using :term:`type annotations<annotation>`, it is often useful to
+*parameterize* a generic type using Python's square-brackets notation.
+For example, the annotation ``list[int]`` might be used to signify a
+:class:`list` in which all the elements are of type :class:`int`.
+
+.. seealso::
+
+   :pep:`484` - Type Hints
+      Introducing Python's framework for type annotations
+
+   :ref:`Generic Alias Types<types-genericalias>`
+      Documentation for objects representing parameterized generic classes
+
+   Documentation for the :mod:`typing` module
+
+A class can generally only be parameterized if it defines the special
+classmethod ``__class_getitem__()``.
 
 .. classmethod:: object.__class_getitem__(cls, key)
 
    Return an object representing the specialization of a generic class
    by type arguments found in *key*.
 
-This method is looked up on the class object itself, and when defined in
-the class body, this method is implicitly a class method.  Note, this
-mechanism is primarily reserved for use with static type hints, other usage
-is discouraged.
+.. note::
 
-.. seealso::
+   Usually, the :ref:`subscription <subscriptions>` of an object in Python
+   using the square-brackets notation will call the :meth:`~object.__getitem__`
+   instance method defined on the object's class.
 
-   :pep:`560` - Core support for typing module and generic types
+   For example, if we have a list ``food`` as follows::
+
+      food = ['spam', 'eggs', 'bacon']
+
+   Calling ``food[0]`` will return the same value as calling::
+
+      type(food).__getitem__(food, 0)
+
+   However, if a class defines the classmethod ``__class_getitem__()``, then
+   the subscription of that class may call the class's implementation of
+   ``__class_getitem__()`` rather than :meth:`~object.__getitem__`.
+   ``__class_getitem__()`` should return a
+   :ref:`GenericAlias<types-genericalias>` object if it is properly defined.
+
+   For example, because the :class:`list` class defines
+   ``__class_getitem__()``, calling ``list[str]`` is equivalent to calling::
+
+      list.__class_getitem__(str)
+
+   rather than::
+
+      type(list).__getitem__(list, str)
+
+.. note::
+   If :meth:`~object.__getitem__` is defined by a class's :term:`metaclass`, it
+   will take precedence over a ``__class_getitem__()`` classmethod
+   defined by the class. See :pep:`560` for more details.
+
+.. note::
+   ``__class_getitem__()`` is designed for use with static type hints. Other
+   usage of this special method is discouraged.
 
 
 .. _callable-types:
