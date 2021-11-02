@@ -4889,9 +4889,9 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
 
 The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
-an object from a ``GenericAlias``, container elements are not checked
-against their type. For example, the following code is discouraged, but will
-run without errors::
+a container object from a ``GenericAlias``, the elements in the container are
+not checked against their type. For example, the following code is discouraged,
+but will run without errors::
 
    >>> t = list[str]
    >>> t([1, 2, 3])
@@ -5018,7 +5018,7 @@ All parameterized generics implement special read-only attributes.
 
    This attribute is a :class:`tuple` (possibly of length 1) of generic
    types passed to the original :meth:`~object.__class_getitem__` of the
-   generic container::
+   generic class::
 
       >>> dict[str, list[int]].__args__
       (<class 'str'>, list[int])
