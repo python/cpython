@@ -291,7 +291,7 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class defines :meth:`__class_getitem__` so that
+The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so that
 ``LoggedVar[t]`` is valid as a type::
 
    from collections.abc import Iterable
