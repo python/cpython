@@ -229,8 +229,8 @@ class FunctionTests(unittest.TestCase):
         msg = "too many arguments on function"
         with cx_limit(self.con, category=category, limit=1):
             with self.assertRaisesRegex(sqlite.OperationalError, msg):
-                self.con.create_function("toomany", 2, lambda: "")
-                self.con.execute("select toomany(1, 2)");
+                self.con.create_function("addint", 2, lambda x, y: x+y)
+                self.con.execute("select addint(1, 2)");
 
     def test_func_ref_count(self):
         def getfunc():
