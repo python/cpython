@@ -29,7 +29,6 @@ import unittest
 
 from test.support import (
     SHORT_TIMEOUT,
-    bigmemtest,
     check_disallow_instantiation,
     threading_helper,
 )
@@ -46,6 +45,23 @@ def managed_connect(*args, in_mem=False, **kwargs):
         cx.close()
         if not in_mem:
             unlink(TESTFN)
+
+
+# Helper for temporary memory databases
+def memory_database():
+    cx = sqlite.connect(":memory:")
+    return contextlib.closing(cx)
+
+
+# Temporarily limits the maximum size of any string or BLOB or table row, in
+# bytes.
+@contextlib.contextmanager
+def cx_limit(cx, category=sqlite.SQLITE_LIMIT_LENGTH, limit=128):
+    try:
+        _prev = cx.setlimit(category, limit)
+        yield limit
+    finally:
+        cx.setlimit(category, _prev)
 
 
 class ModuleTests(unittest.TestCase):
@@ -910,14 +926,15 @@ class ExtensionTests(unittest.TestCase):
                 insert into a(s) values ('\ud8ff');
                 """)
 
-    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
-    @bigmemtest(size=2**31, memuse=3, dry_run=False)
-    def test_cursor_executescript_too_large_script(self, maxsize):
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
-        for size in 2**31-1, 2**31:
-            with self.assertRaises(sqlite.DataError):
-                cur.executescript("create table a(s);".ljust(size))
+    def test_cursor_executescript_too_large_script(self):
+        msg = "query string is too large"
+        with memory_database() as cx, cx_limit(cx) as lim:
+            for sz in lim, lim+1:
+                with self.subTest(sz=sz):
+                    self.assertRaisesRegex(
+                        sqlite.DataError, msg, cx.executescript,
+                        "create table a(s);".ljust(sz)
+                    )
 
     def test_cursor_executescript_tx_control(self):
         con = sqlite.connect(":memory:")
