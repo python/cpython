@@ -1,0 +1,2 @@
+Add support for SQLite extended result codes in :exc:`sqlite3.Error`. Patch
+by Erlend E. Aasland.
