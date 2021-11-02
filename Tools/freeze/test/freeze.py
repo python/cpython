@@ -22,13 +22,23 @@ class UnsupportedError(Exception):
 
 def _run_quiet(cmd, cwd=None):
     #print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
-    return subprocess.run(
-        cmd,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    try:
+        return subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as err:
+        # Don't be quiet if things fail
+        print(f"{err.__class__.__name__}: {err}")
+        print("--- STDOUT ---")
+        print(err.stdout)
+        print("--- STDERR ---")
+        print(err.stderr)
+        print("---- END ----")
+        raise
 
 
 def _run_stdout(cmd, cwd=None):
