@@ -348,57 +348,142 @@ pysqlite_error_name(int rc)
     return NULL;
 }
 
-static int add_integer_constants(PyObject *module) {
-    int ret = 0;
+static int
+add_integer_constants(PyObject *module) {
+#define ADD_INT(ival)                                           \
+    do {                                                        \
+        if (PyModule_AddIntConstant(module, #ival, ival) < 0) { \
+            return -1;                                          \
+        }                                                       \
+    } while (0);                                                \
 
-    ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
-    ret += PyModule_AddIntMacro(module, PARSE_COLNAMES);
-    ret += PyModule_AddIntMacro(module, SQLITE_DENY);
-    ret += PyModule_AddIntMacro(module, SQLITE_IGNORE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_DELETE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_INDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TRIGGER);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_VIEW);
-    ret += PyModule_AddIntMacro(module, SQLITE_INSERT);
-    ret += PyModule_AddIntMacro(module, SQLITE_PRAGMA);
-    ret += PyModule_AddIntMacro(module, SQLITE_READ);
-    ret += PyModule_AddIntMacro(module, SQLITE_SELECT);
-    ret += PyModule_AddIntMacro(module, SQLITE_TRANSACTION);
-    ret += PyModule_AddIntMacro(module, SQLITE_UPDATE);
-    ret += PyModule_AddIntMacro(module, SQLITE_ATTACH);
-    ret += PyModule_AddIntMacro(module, SQLITE_DETACH);
-    ret += PyModule_AddIntMacro(module, SQLITE_ALTER_TABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_REINDEX);
-    ret += PyModule_AddIntMacro(module, SQLITE_ANALYZE);
-    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_VTABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_DROP_VTABLE);
-    ret += PyModule_AddIntMacro(module, SQLITE_FUNCTION);
-    ret += PyModule_AddIntMacro(module, SQLITE_SAVEPOINT);
+    ADD_INT(PARSE_DECLTYPES);
+    ADD_INT(PARSE_COLNAMES);
+    ADD_INT(SQLITE_DENY);
+    ADD_INT(SQLITE_IGNORE);
+    ADD_INT(SQLITE_CREATE_INDEX);
+    ADD_INT(SQLITE_CREATE_TABLE);
+    ADD_INT(SQLITE_CREATE_TEMP_INDEX);
+    ADD_INT(SQLITE_CREATE_TEMP_TABLE);
+    ADD_INT(SQLITE_CREATE_TEMP_TRIGGER);
+    ADD_INT(SQLITE_CREATE_TEMP_VIEW);
+    ADD_INT(SQLITE_CREATE_TRIGGER);
+    ADD_INT(SQLITE_CREATE_VIEW);
+    ADD_INT(SQLITE_DELETE);
+    ADD_INT(SQLITE_DROP_INDEX);
+    ADD_INT(SQLITE_DROP_TABLE);
+    ADD_INT(SQLITE_DROP_TEMP_INDEX);
+    ADD_INT(SQLITE_DROP_TEMP_TABLE);
+    ADD_INT(SQLITE_DROP_TEMP_TRIGGER);
+    ADD_INT(SQLITE_DROP_TEMP_VIEW);
+    ADD_INT(SQLITE_DROP_TRIGGER);
+    ADD_INT(SQLITE_DROP_VIEW);
+    ADD_INT(SQLITE_INSERT);
+    ADD_INT(SQLITE_PRAGMA);
+    ADD_INT(SQLITE_READ);
+    ADD_INT(SQLITE_SELECT);
+    ADD_INT(SQLITE_TRANSACTION);
+    ADD_INT(SQLITE_UPDATE);
+    ADD_INT(SQLITE_ATTACH);
+    ADD_INT(SQLITE_DETACH);
+    ADD_INT(SQLITE_ALTER_TABLE);
+    ADD_INT(SQLITE_REINDEX);
+    ADD_INT(SQLITE_ANALYZE);
+    ADD_INT(SQLITE_CREATE_VTABLE);
+    ADD_INT(SQLITE_DROP_VTABLE);
+    ADD_INT(SQLITE_FUNCTION);
+    ADD_INT(SQLITE_SAVEPOINT);
 #if SQLITE_VERSION_NUMBER >= 3008003
-    ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
+    ADD_INT(SQLITE_RECURSIVE);
 #endif
-    return ret;
+    // Run-time limit categories
+    ADD_INT(SQLITE_LIMIT_LENGTH);
+    ADD_INT(SQLITE_LIMIT_SQL_LENGTH);
+    ADD_INT(SQLITE_LIMIT_COLUMN);
+    ADD_INT(SQLITE_LIMIT_EXPR_DEPTH);
+    ADD_INT(SQLITE_LIMIT_COMPOUND_SELECT);
+    ADD_INT(SQLITE_LIMIT_VDBE_OP);
+    ADD_INT(SQLITE_LIMIT_FUNCTION_ARG);
+    ADD_INT(SQLITE_LIMIT_ATTACHED);
+    ADD_INT(SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
+    ADD_INT(SQLITE_LIMIT_VARIABLE_NUMBER);
+    ADD_INT(SQLITE_LIMIT_TRIGGER_DEPTH);
+#if SQLITE_VERSION_NUMBER >= 3008007
+    ADD_INT(SQLITE_LIMIT_WORKER_THREADS);
+#endif
+#undef ADD_INT
+    return 0;
 }
 
-struct PyModuleDef _sqlite3module = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_sqlite3",
-    .m_size = sizeof(pysqlite_state),
-    .m_methods = module_methods,
-};
+static int
+module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    pysqlite_state *state = pysqlite_get_state(module);
+
+    // Exceptions
+    Py_VISIT(state->DataError);
+    Py_VISIT(state->DatabaseError);
+    Py_VISIT(state->Error);
+    Py_VISIT(state->IntegrityError);
+    Py_VISIT(state->InterfaceError);
+    Py_VISIT(state->InternalError);
+    Py_VISIT(state->NotSupportedError);
+    Py_VISIT(state->OperationalError);
+    Py_VISIT(state->ProgrammingError);
+    Py_VISIT(state->Warning);
+
+    // Types
+    Py_VISIT(state->ConnectionType);
+    Py_VISIT(state->CursorType);
+    Py_VISIT(state->PrepareProtocolType);
+    Py_VISIT(state->RowType);
+    Py_VISIT(state->StatementType);
+
+    // Misc
+    Py_VISIT(state->converters);
+    Py_VISIT(state->lru_cache);
+    Py_VISIT(state->psyco_adapters);
+
+    return 0;
+}
+
+static int
+module_clear(PyObject *module)
+{
+    pysqlite_state *state = pysqlite_get_state(module);
+
+    // Exceptions
+    Py_CLEAR(state->DataError);
+    Py_CLEAR(state->DatabaseError);
+    Py_CLEAR(state->Error);
+    Py_CLEAR(state->IntegrityError);
+    Py_CLEAR(state->InterfaceError);
+    Py_CLEAR(state->InternalError);
+    Py_CLEAR(state->NotSupportedError);
+    Py_CLEAR(state->OperationalError);
+    Py_CLEAR(state->ProgrammingError);
+    Py_CLEAR(state->Warning);
+
+    // Types
+    Py_CLEAR(state->ConnectionType);
+    Py_CLEAR(state->CursorType);
+    Py_CLEAR(state->PrepareProtocolType);
+    Py_CLEAR(state->RowType);
+    Py_CLEAR(state->StatementType);
+
+    // Misc
+    Py_CLEAR(state->converters);
+    Py_CLEAR(state->lru_cache);
+    Py_CLEAR(state->psyco_adapters);
+
+    return 0;
+}
+
+static void
+module_free(void *module)
+{
+    module_clear((PyObject *)module);
+}
 
 #define ADD_TYPE(module, type)                 \
 do {                                           \
@@ -416,26 +501,21 @@ do {                                                                   \
     ADD_TYPE(module, (PyTypeObject *)state->exc);                      \
 } while (0)
 
-PyMODINIT_FUNC PyInit__sqlite3(void)
+static int
+module_exec(PyObject *module)
 {
-    PyObject *module;
-
     if (sqlite3_libversion_number() < 3007015) {
         PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.15 or higher required");
-        return NULL;
+        return -1;
     }
 
     int rc = sqlite3_initialize();
     if (rc != SQLITE_OK) {
         PyErr_SetString(PyExc_ImportError, sqlite3_errstr(rc));
-        return NULL;
+        return -1;
     }
 
-    module = PyModule_Create(&_sqlite3module);
-    pysqlite_state *state = pysqlite_get_state(module);
-
-    if (!module ||
-        (pysqlite_row_setup_types(module) < 0) ||
+    if ((pysqlite_row_setup_types(module) < 0) ||
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
@@ -444,6 +524,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         goto error;
     }
 
+    pysqlite_state *state = pysqlite_get_state(module);
     ADD_TYPE(module, state->ConnectionType);
     ADD_TYPE(module, state->CursorType);
     ADD_TYPE(module, state->PrepareProtocolType);
@@ -497,11 +578,31 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         goto error;
     }
 
-    return module;
+    return 0;
 
 error:
     sqlite3_shutdown();
-    PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
-    Py_XDECREF(module);
-    return NULL;
+    return -1;
+}
+
+static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
+struct PyModuleDef _sqlite3module = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_sqlite3",
+    .m_size = sizeof(pysqlite_state),
+    .m_methods = module_methods,
+    .m_slots = module_slots,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = module_free,
+};
+
+PyMODINIT_FUNC
+PyInit__sqlite3(void)
+{
+    return PyModuleDef_Init(&_sqlite3module);
 }

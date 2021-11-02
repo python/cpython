@@ -1,0 +1,2 @@
+Convert :mod:`sqlite3` to multi-phase initialisation (PEP 489). Patches by
+Erlend E. Aasland.
