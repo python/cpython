@@ -4831,38 +4831,34 @@ by subscripting the :class:`list` class with the argument :class:`int`.
 :term:`type annotations <annotation>`.
 
 Usually, the :ref:`subscription <subscriptions>` of an object in Python will
-call the :meth:`__getitem__<object.__getitem__>` instance method defined on the
-object's class. For example, if we have a list
-``food = ['spam', 'eggs', 'bacon']``, calling ``food[0]`` will return the same
-value as calling ``type(food).__getitem__(food, 0)``. However, if a class
-defines the classmethod :meth:`__class_getitem__<object.__class_getitem__>`,
-then the subscription of that class may instead call the class's implementation
-of ``__class_getitem__``. This should return a ``GenericAlias`` object if it is
-properly defined. For example, because the :class:`list` class defines
-``__class_getitem__``, calling ``list[str]`` is equivalent to calling
-``list.__class_getitem__(str)``, rather than
-``type(list).__getitem__(list, str)``.
+call the :meth:`~object.__getitem__` instance method defined on the object's
+class. For example, if we have a list ``food = ['spam', 'eggs', 'bacon']``,
+calling ``food[0]`` will return the same value as calling
+``type(food).__getitem__(food, 0)``. However, if a class defines the
+classmethod :meth:`~object.__class_getitem__`, then the subscription of that
+class may instead call the class's implementation of ``__class_getitem__``.
+This should return a ``GenericAlias`` object if it is properly defined. For
+example, because the :class:`list` class defines ``__class_getitem__``, calling
+``list[str]`` is equivalent to calling ``list.__class_getitem__(str)``, rather
+than ``type(list).__getitem__(list, str)``.
 
 .. note::
-   If :meth:`__getitem__<object.__getitem__>` is defined by a class's
-   :term:`metaclass`, it will take precedence over a
-   :meth:`__class_getitem__<object.__class_getitem__>` classmethod defined by
-   the class. See :pep:`560` for more details.
+   If :meth:`~object.__getitem__` is defined by a class's :term:`metaclass`, it
+   will take precedence over a :meth:`~object.__class_getitem__` classmethod
+   defined by the class. See :pep:`560` for more details.
 
 A ``GenericAlias`` object acts as a proxy for a :term:`generic type`,
 implementing *parameterized generics*.
 
-For a container class which implements
-:meth:`__class_getitem__<object.__class_getitem__>`, the argument(s) supplied
-to a :ref:`subscription<subscriptions>` of the class may indicate the type(s)
-of the elements an object contains. For example, ``list[int]`` can be used in
-type annotations to signify a :class:`list` in which all the elements are of
-type :class:`int`.
+For a container class which implements :meth:`~object.__class_getitem__`, the
+argument(s) supplied to a :ref:`subscription<subscriptions>` of the class may
+indicate the type(s) of the elements an object contains. For example,
+``list[int]`` can be used in type annotations to signify a :class:`list` in
+which all the elements are of type :class:`int`.
 
-For a class which defines :meth:`__class_getitem__<object.__class_getitem__>`
-but is not a container, the
-argument(s) supplied to a subscription of the class will often indicate the
-return type(s) of one or more methods defined on an object. For example,
+For a class which defines :meth:`~object.__class_getitem__` but is not a
+container, the argument(s) supplied to a subscription of the class will often
+indicate the return type(s) of one or more methods defined on an object. For example,
 :mod:`regular expressions<re>` can be used on the :class:`str` data type and
 the :class:`bytes` data type. If ``x = re.search('foo', 'foo')``, ``x`` will be
 a :ref:`re.Match <match-objects>` object where the return values of
@@ -4932,8 +4928,8 @@ Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
    >>> str(list[int])
    'list[int]'
 
-The :meth:`__getitem__<object.__getitem__>` method of generics will raise an
-exception to disallow mistakes like ``dict[str][str]``::
+The :meth:`~object.__getitem__` method of generics will raise an exception to
+disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
@@ -4942,7 +4938,7 @@ exception to disallow mistakes like ``dict[str][str]``::
 
 However, such expressions are valid when :ref:`type variables <generics>` are
 used.  The index must have as many elements as there are type variable items
-in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
+in the ``GenericAlias`` object's :attr:`~genericalias.__args__`. ::
 
    >>> from typing import TypeVar
    >>> Y = TypeVar('Y')
@@ -5033,9 +5029,8 @@ All parameterized generics implement special read-only attributes.
 .. attribute:: genericalias.__args__
 
    This attribute is a :class:`tuple` (possibly of length 1) of generic
-   types passed to the original
-   :meth:`__class_getitem__<object.__class_getitem__>` of the generic
-   container::
+   types passed to the original :meth:`~object.__class_getitem__` of the
+   generic container::
 
       >>> dict[str, list[int]].__args__
       (<class 'str'>, list[int])
@@ -5054,15 +5049,15 @@ All parameterized generics implement special read-only attributes.
 
 
    .. note::
-      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
-      have correct ``__parameters__`` after substitution because
+      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may
+      not have correct ``__parameters__`` after substitution because
       :class:`typing.ParamSpec` is intended primarily for static type checking.
 
 .. seealso::
 
    * :pep:`585` -- "Type Hinting Generics In Standard Collections"
-   * :meth:`__class_getitem__<object.__class_getitem__>` -- Used to implement
-     parameterized generics.
+   * :meth:`~object.__class_getitem__` -- Used to implement parameterized
+     generics.
    * :ref:`generics` -- Generics in the :mod:`typing` module.
 
 .. versionadded:: 3.9
