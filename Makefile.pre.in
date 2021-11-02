@@ -792,7 +792,7 @@ regen-deepfreeze: $(DEEPFREEZE_OBJS)
 
 Python/deepfreeze/importlib._bootstrap.c: Lib/importlib/_bootstrap.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/importlib._bootstrap.c from Lib/importlib/_bootstrap.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/importlib/_bootstrap.py \
 		-m importlib._bootstrap \
@@ -800,7 +800,7 @@ Python/deepfreeze/importlib._bootstrap.c: Lib/importlib/_bootstrap.py Tools/scri
 
 Python/deepfreeze/importlib._bootstrap_external.c: Lib/importlib/_bootstrap_external.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/importlib._bootstrap_external.c from Lib/importlib/_bootstrap_external.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/importlib/_bootstrap_external.py \
 		-m importlib._bootstrap_external \
@@ -808,7 +808,7 @@ Python/deepfreeze/importlib._bootstrap_external.c: Lib/importlib/_bootstrap_exte
 
 Python/deepfreeze/zipimport.c: Lib/zipimport.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/zipimport.c from Lib/zipimport.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/zipimport.py \
 		-m zipimport \
@@ -816,7 +816,7 @@ Python/deepfreeze/zipimport.c: Lib/zipimport.py Tools/scripts/deepfreeze.py $(BO
 
 Python/deepfreeze/abc.c: Lib/abc.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/abc.c from Lib/abc.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/abc.py \
 		-m abc \
@@ -824,7 +824,7 @@ Python/deepfreeze/abc.c: Lib/abc.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 
 Python/deepfreeze/codecs.c: Lib/codecs.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/codecs.c from Lib/codecs.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/codecs.py \
 		-m codecs \
@@ -832,7 +832,7 @@ Python/deepfreeze/codecs.c: Lib/codecs.py Tools/scripts/deepfreeze.py $(BOOTSTRA
 
 Python/deepfreeze/io.c: Lib/io.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/io.c from Lib/io.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/io.py \
 		-m io \
@@ -840,7 +840,7 @@ Python/deepfreeze/io.c: Lib/io.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 
 Python/deepfreeze/_collections_abc.c: Lib/_collections_abc.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/_collections_abc.c from Lib/_collections_abc.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/_collections_abc.py \
 		-m _collections_abc \
@@ -848,7 +848,7 @@ Python/deepfreeze/_collections_abc.c: Lib/_collections_abc.py Tools/scripts/deep
 
 Python/deepfreeze/_sitebuiltins.c: Lib/_sitebuiltins.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/_sitebuiltins.c from Lib/_sitebuiltins.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/_sitebuiltins.py \
 		-m _sitebuiltins \
@@ -856,7 +856,7 @@ Python/deepfreeze/_sitebuiltins.c: Lib/_sitebuiltins.py Tools/scripts/deepfreeze
 
 Python/deepfreeze/genericpath.c: Lib/genericpath.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/genericpath.c from Lib/genericpath.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/genericpath.py \
 		-m genericpath \
@@ -864,7 +864,7 @@ Python/deepfreeze/genericpath.c: Lib/genericpath.py Tools/scripts/deepfreeze.py 
 
 Python/deepfreeze/ntpath.c: Lib/ntpath.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/ntpath.c from Lib/ntpath.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/ntpath.py \
 		-m ntpath \
@@ -872,7 +872,7 @@ Python/deepfreeze/ntpath.c: Lib/ntpath.py Tools/scripts/deepfreeze.py $(BOOTSTRA
 
 Python/deepfreeze/posixpath.c: Lib/posixpath.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/posixpath.c from Lib/posixpath.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/posixpath.py \
 		-m posixpath \
@@ -880,7 +880,7 @@ Python/deepfreeze/posixpath.c: Lib/posixpath.py Tools/scripts/deepfreeze.py $(BO
 
 Python/deepfreeze/os.c: Lib/os.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/os.c from Lib/os.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/os.py \
 		-m os \
@@ -888,7 +888,7 @@ Python/deepfreeze/os.c: Lib/os.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 
 Python/deepfreeze/site.c: Lib/site.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/site.c from Lib/site.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/site.py \
 		-m site \
@@ -896,7 +896,7 @@ Python/deepfreeze/site.c: Lib/site.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 
 Python/deepfreeze/stat.c: Lib/stat.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/stat.c from Lib/stat.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/stat.py \
 		-m stat \
@@ -904,7 +904,7 @@ Python/deepfreeze/stat.c: Lib/stat.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 
 Python/deepfreeze/__hello__.c: Lib/__hello__.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/__hello__.c from Lib/__hello__.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/__hello__.py \
 		-m __hello__ \
@@ -912,7 +912,7 @@ Python/deepfreeze/__hello__.c: Lib/__hello__.py Tools/scripts/deepfreeze.py $(BO
 
 Python/deepfreeze/__phello__.c: Lib/__phello__/__init__.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/__phello__.c from Lib/__phello__/__init__.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/__phello__/__init__.py \
 		-m __phello__ \
@@ -920,7 +920,7 @@ Python/deepfreeze/__phello__.c: Lib/__phello__/__init__.py Tools/scripts/deepfre
 
 Python/deepfreeze/__phello__.ham.c: Lib/__phello__/ham/__init__.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/__phello__.ham.c from Lib/__phello__/ham/__init__.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/__phello__/ham/__init__.py \
 		-m __phello__.ham \
@@ -928,7 +928,7 @@ Python/deepfreeze/__phello__.ham.c: Lib/__phello__/ham/__init__.py Tools/scripts
 
 Python/deepfreeze/__phello__.ham.eggs.c: Lib/__phello__/ham/eggs.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/__phello__.ham.eggs.c from Lib/__phello__/ham/eggs.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/__phello__/ham/eggs.py \
 		-m __phello__.ham.eggs \
@@ -936,7 +936,7 @@ Python/deepfreeze/__phello__.ham.eggs.c: Lib/__phello__/ham/eggs.py Tools/script
 
 Python/deepfreeze/__phello__.spam.c: Lib/__phello__/spam.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/__phello__.spam.c from Lib/__phello__/spam.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Lib/__phello__/spam.py \
 		-m __phello__.spam \
@@ -944,7 +944,7 @@ Python/deepfreeze/__phello__.spam.c: Lib/__phello__/spam.py Tools/scripts/deepfr
 
 Python/deepfreeze/frozen_only.c: Tools/freeze/flag.py Tools/scripts/deepfreeze.py $(BOOTSTRAP)
 	@echo "Deepfreezing Python/deepfreeze/frozen_only.c from Tools/freeze/flag.py"
-	$(BOOTSTRAP) \
+	@$(BOOTSTRAP) \
 		$(srcdir)/Tools/scripts/deepfreeze.py \
 		$(srcdir)/Tools/freeze/flag.py \
 		-m frozen_only \
