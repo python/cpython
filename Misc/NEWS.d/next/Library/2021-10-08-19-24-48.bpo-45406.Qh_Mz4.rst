@@ -1,0 +1,1 @@
+Make :func:`inspect.getmodule` catch ``FileNotFoundError`` raised by  :'func:`inspect.getabsfile`, and return ``None`` to indicate that the module could not be determined.
