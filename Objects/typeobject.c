@@ -1547,6 +1547,10 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
     PyObject *mro;
 
+    if (a == b) {
+        return 1;
+    }
+
     mro = a->tp_mro;
     if (mro != NULL) {
         /* Deal with multiple inheritance without recursion
