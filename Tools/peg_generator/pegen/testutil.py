@@ -30,7 +30,7 @@ def generate_parser(grammar: Grammar) -> Type[Parser]:
     genr.generate("<string>")
 
     # Load the generated parser class.
-    ns: Dict[str, Any] = {"Any": Any}
+    ns: Dict[str, Any] = {}
     exec(out.getvalue(), ns)
     return ns["GeneratedParser"]
 
