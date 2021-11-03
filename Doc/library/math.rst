@@ -301,9 +301,9 @@ Number-theoretic and representation functions
    Given a :class:`~numbers.Real` value *x*, return *x* with the fractional part
    removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
    equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil` for
-   negative *x*. If *x* is not a float, ``trunc()`` delegates to
+   negative *x*. If *x* is not a float, delegates to
    :meth:`x.__trunc__ <object.__trunc__>`, which should return an
-   :class:`~numbers.Integral` value if properly defined.
+   :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
