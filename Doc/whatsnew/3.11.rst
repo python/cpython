@@ -254,6 +254,10 @@ sqlite3
   setting and getting SQLite limits by connection basis.
   (Contributed by Erlend E. Aasland in :issue:`45243`.)
 
+* :mod:`sqlite3` now sets :attr:`sqlite3.threadsafety` based on the default
+  threading mode the underlying SQLite library has been compiled with.
+  (Contributed by Erlend E. Aasland in :issue:`45613`.)
+
 
 threading
 ---------
