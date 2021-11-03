@@ -828,6 +828,8 @@ static int _call_function_pointer(int flags,
 
 #   if USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#   elif defined(MS_WIN32)
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
 #   else
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   endif
