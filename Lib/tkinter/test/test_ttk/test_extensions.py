@@ -310,9 +310,12 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
             self.assertEqual(textvar.get(), items[1])
             success.append(True)
         optmenu = ttk.OptionMenu(self.root, textvar, "a", *items)
-        textvar.trace("w", cb_test)
+        optmenu.pack()
+        cb_name = textvar.trace("w", cb_test)
         optmenu['menu'].invoke(1)
         self.assertEqual(success, [True])
+        textvar.trace_vdelete("w", cb_name)
+        optmenu.destroy()
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
