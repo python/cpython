@@ -2411,7 +2411,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t(0.0).arg, "base")
 
     def test_abstractmethod_register(self):
-        class Abstract(abc.ABCMeta):
+        class Abstract(metaclass=abc.ABCMeta):
 
             @functools.singledispatchmethod
             @abc.abstractmethod
@@ -2419,6 +2419,10 @@ class TestSingleDispatch(unittest.TestCase):
                 pass
 
         self.assertTrue(Abstract.add.__isabstractmethod__)
+        self.assertTrue(Abstract.__dict__['add'].__isabstractmethod__)
+
+        with self.assertRaises(TypeError):
+            Abstract()
 
     def test_type_ann_register(self):
         class A:
@@ -2478,6 +2482,42 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t(0).arg, "int")
         self.assertEqual(A.t('').arg, "str")
         self.assertEqual(A.t(0.0).arg, "base")
+
+    def test_method_wrapping_attributes(self):
+        class A:
+            @functools.singledispatchmethod
+            def func(self, arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+            @functools.singledispatchmethod
+            @classmethod
+            def cls_func(cls, arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_func(arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+
+        for meth in (
+            A.func,
+            A().func,
+            A.cls_func,
+            A().cls_func,
+            A.static_func,
+            A().static_func
+        ):
+            with self.subTest(meth=meth):
+                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__annotations__['arg'], int)
+
+        self.assertEqual(A.func.__name__, 'func')
+        self.assertEqual(A().func.__name__, 'func')
+        self.assertEqual(A.cls_func.__name__, 'cls_func')
+        self.assertEqual(A().cls_func.__name__, 'cls_func')
+        self.assertEqual(A.static_func.__name__, 'static_func')
+        self.assertEqual(A().static_func.__name__, 'static_func')
 
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "

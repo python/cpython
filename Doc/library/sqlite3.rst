@@ -159,23 +159,41 @@ Module functions and constants
 
 .. data:: threadsafety
 
-   Integer constant required by the DB-API, stating the level of thread safety
-   the :mod:`sqlite3` module supports. Currently hard-coded to ``1``, meaning
-   *"Threads may share the module, but not connections."* However, this may not
-   always be true. You can check the underlying SQLite library's compile-time
-   threaded mode using the following query::
+   Integer constant required by the DB-API 2.0, stating the level of thread
+   safety the :mod:`sqlite3` module supports. This attribute is set based on
+   the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
+   underlying SQLite library is compiled with. The SQLite threading modes are:
 
-     import sqlite3
-     con = sqlite3.connect(":memory:")
-     con.execute("""
-         select * from pragma_compile_options
-         where compile_options like 'THREADSAFE=%'
-     """).fetchall()
+     1. **Single-thread**: In this mode, all mutexes are disabled and SQLite is
+        unsafe to use in more than a single thread at once.
+     2. **Multi-thread**: In this mode, SQLite can be safely used by multiple
+        threads provided that no single database connection is used
+        simultaneously in two or more threads.
+     3. **Serialized**: In serialized mode, SQLite can be safely used by
+        multiple threads with no restriction.
 
-   Note that the `SQLITE_THREADSAFE levels
-   <https://sqlite.org/compile.html#threadsafe>`_ do not match the DB-API 2.0
-   ``threadsafety`` levels.
+   The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
+   are as follows:
 
+   +------------------+-----------------+----------------------+-------------------------------+
+   | SQLite threading | `threadsafety`_ | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
+   | mode             |                 |                      |                               |
+   +==================+=================+======================+===============================+
+   | single-thread    | 0               | 0                    | Threads may not share the     |
+   |                  |                 |                      | module                        |
+   +------------------+-----------------+----------------------+-------------------------------+
+   | multi-thread     | 1               | 2                    | Threads may share the module, |
+   |                  |                 |                      | but not connections           |
+   +------------------+-----------------+----------------------+-------------------------------+
+   | serialized       | 3               | 1                    | Threads may share the module, |
+   |                  |                 |                      | connections and cursors       |
+   +------------------+-----------------+----------------------+-------------------------------+
+
+   .. _threadsafety: https://www.python.org/dev/peps/pep-0249/#threadsafety
+   .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
+
+   .. versionchanged:: 3.11
+      Set *threadsafety* dynamically instead of hard-coding it to ``1``.
 
 .. data:: PARSE_DECLTYPES
 

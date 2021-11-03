@@ -280,7 +280,22 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-/* SQLite API error codes */
+/* SQLite C API result codes. See also:
+ * - https://www.sqlite.org/c3ref/c_abort_rollback.html
+ * - https://sqlite.org/changes.html#version_3_3_8
+ * - https://sqlite.org/changes.html#version_3_7_16
+ * - https://sqlite.org/changes.html#version_3_7_17
+ * - https://sqlite.org/changes.html#version_3_8_0
+ * - https://sqlite.org/changes.html#version_3_8_3
+ * - https://sqlite.org/changes.html#version_3_14
+ *
+ * Note: the SQLite changelogs rarely mention new result codes, so in order to
+ * keep the 'error_codes' table in sync with SQLite, we must manually inspect
+ * sqlite3.h for every release.
+ *
+ * We keep the SQLITE_VERSION_NUMBER checks in order to easily declutter the
+ * code when we adjust the SQLite version requirement.
+ */
 static const struct {
     const char *name;
     long value;
@@ -311,6 +326,7 @@ static const struct {
     DECLARE_ERROR_CODE(SQLITE_OK),
     DECLARE_ERROR_CODE(SQLITE_PERM),
     DECLARE_ERROR_CODE(SQLITE_PROTOCOL),
+    DECLARE_ERROR_CODE(SQLITE_RANGE),
     DECLARE_ERROR_CODE(SQLITE_READONLY),
     DECLARE_ERROR_CODE(SQLITE_ROW),
     DECLARE_ERROR_CODE(SQLITE_SCHEMA),
@@ -318,6 +334,115 @@ static const struct {
 #if SQLITE_VERSION_NUMBER >= 3007017
     DECLARE_ERROR_CODE(SQLITE_NOTICE),
     DECLARE_ERROR_CODE(SQLITE_WARNING),
+#endif
+    // Extended result code list
+    DECLARE_ERROR_CODE(SQLITE_ABORT_ROLLBACK),
+    DECLARE_ERROR_CODE(SQLITE_BUSY_RECOVERY),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_FULLPATH),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_ISDIR),
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_NOTEMPDIR),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT_VTAB),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_ACCESS),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_BLOCKED),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CHECKRESERVEDLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CLOSE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DELETE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DELETE_NOENT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DIR_CLOSE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DIR_FSYNC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_FSTAT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_FSYNC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_LOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_NOMEM),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_RDLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_READ),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SEEK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMMAP),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMOPEN),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHMSIZE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_SHORT_READ),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_TRUNCATE),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_UNLOCK),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_WRITE),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED_SHAREDCACHE),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_CANTLOCK),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_RECOVERY),
+#if SQLITE_VERSION_NUMBER >= 3007016
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_CHECK),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_COMMITHOOK),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_FOREIGNKEY),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_FUNCTION),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_NOTNULL),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_PRIMARYKEY),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_TRIGGER),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_UNIQUE),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_VTAB),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_ROLLBACK),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3007017
+    DECLARE_ERROR_CODE(SQLITE_IOERR_MMAP),
+    DECLARE_ERROR_CODE(SQLITE_NOTICE_RECOVER_ROLLBACK),
+    DECLARE_ERROR_CODE(SQLITE_NOTICE_RECOVER_WAL),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3008000
+    DECLARE_ERROR_CODE(SQLITE_BUSY_SNAPSHOT),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_GETTEMPPATH),
+    DECLARE_ERROR_CODE(SQLITE_WARNING_AUTOINDEX),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3008001
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_CONVPATH),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CONVPATH),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3008002
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_ROWID),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3008003
+    DECLARE_ERROR_CODE(SQLITE_READONLY_DBMOVED),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3008007
+    DECLARE_ERROR_CODE(SQLITE_AUTH_USER),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3009000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_VNODE),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3010000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_AUTH),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3014001
+    DECLARE_ERROR_CODE(SQLITE_OK_LOAD_PERMANENTLY),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3021000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_BEGIN_ATOMIC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_COMMIT_ATOMIC),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_ROLLBACK_ATOMIC),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3022000
+    DECLARE_ERROR_CODE(SQLITE_ERROR_MISSING_COLLSEQ),
+    DECLARE_ERROR_CODE(SQLITE_ERROR_RETRY),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_CANTINIT),
+    DECLARE_ERROR_CODE(SQLITE_READONLY_DIRECTORY),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3024000
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT_SEQUENCE),
+    DECLARE_ERROR_CODE(SQLITE_LOCKED_VTAB),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3025000
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_DIRTYWAL),
+    DECLARE_ERROR_CODE(SQLITE_ERROR_SNAPSHOT),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3031000
+    DECLARE_ERROR_CODE(SQLITE_CANTOPEN_SYMLINK),
+    DECLARE_ERROR_CODE(SQLITE_CONSTRAINT_PINNED),
+    DECLARE_ERROR_CODE(SQLITE_OK_SYMLINK),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3032000
+    DECLARE_ERROR_CODE(SQLITE_BUSY_TIMEOUT),
+    DECLARE_ERROR_CODE(SQLITE_CORRUPT_INDEX),
+    DECLARE_ERROR_CODE(SQLITE_IOERR_DATA),
+#endif
+#if SQLITE_VERSION_NUMBER >= 3034000
+    DECLARE_ERROR_CODE(SQLITE_IOERR_CORRUPTFS),
 #endif
 #undef DECLARE_ERROR_CODE
     {NULL, 0},
@@ -413,6 +538,28 @@ add_integer_constants(PyObject *module) {
 #endif
 #undef ADD_INT
     return 0;
+}
+
+/* Convert SQLite default threading mode (as set by the compile-time constant
+ * SQLITE_THREADSAFE) to the corresponding DB-API 2.0 (PEP 249) threadsafety
+ * level. */
+static int
+get_threadsafety(pysqlite_state *state)
+{
+    int mode = sqlite3_threadsafe();
+    switch (mode) {
+    case 0:        // Single-thread mode; threads may not share the module.
+        return 0;
+    case 1:        // Serialized mode; threads may share the module,
+        return 3;  // connections, and cursors.
+    case 2:        // Multi-thread mode; threads may share the module, but not
+        return 1;  // connections.
+    default:
+        PyErr_Format(state->InterfaceError,
+                     "Unable to interpret SQLite threadsafety mode. Got %d, "
+                     "expected 0, 1, or 2", mode);
+        return -1;
+    }
 }
 
 static int
@@ -561,6 +708,14 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+        goto error;
+    }
+
+    int threadsafety = get_threadsafety(state);
+    if (threadsafety < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntConstant(module, "threadsafety", threadsafety) < 0) {
         goto error;
     }
 
