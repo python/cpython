@@ -1,1 +1,0 @@
-Improve glossary entry for "generic types".
