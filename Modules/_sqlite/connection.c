@@ -1377,15 +1377,16 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         const char *stmt = get_begin_statement(cstr_level, sz);
         if (stmt == NULL) {
             PyErr_SetString(PyExc_ValueError,
-                            "invalid value for isolation_level");
+                            "isolation_level string must be \"\", "
+                            "\"DEFERRED\", \"IMMEDIATE\", or "
+                            "\"EXCLUSIVE\"");
             return -1;
         }
         self->begin_statement = stmt;
     }
     else {
-        PyErr_Format(PyExc_TypeError,
-                     "isolation_level must be str or None, not %s",
-                     PyType_GetName(Py_TYPE(isolation_level)));
+        PyErr_SetString(PyExc_TypeError,
+                        "isolation_level must be str or None");
         return -1;
     }
     return 0;
