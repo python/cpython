@@ -898,7 +898,7 @@ class TracebackException:
             elif _ctx.exception_group_depth > self.max_group_depth:
                 # exception group, but depth exceeds limit
                 yield from _ctx.emit(
-                    f" ... (max_group_depth is {self.max_group_depth})\n")
+                    f"... (max_group_depth is {self.max_group_depth})\n")
             else:
                 # format exception group
                 is_toplevel = (_ctx.exception_group_depth == 0)
@@ -939,7 +939,7 @@ class TracebackException:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''
                         yield from _ctx.emit(
-                            f"  and {remaining} more exception{plural}\n")
+                            f"and {remaining} more exception{plural}\n")
 
                     if last_exc and _ctx.need_close:
                         yield (_ctx.indent() +

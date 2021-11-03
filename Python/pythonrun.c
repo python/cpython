@@ -1199,7 +1199,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
         /* exception group but depth exceeds limit */
 
         PyObject *line = PyUnicode_FromFormat(
-            " ... (max_group_depth is %d)\n", ctx->max_group_depth);
+            "... (max_group_depth is %d)\n", ctx->max_group_depth);
 
         if (line) {
             PyObject *f = ctx->file;
@@ -1286,7 +1286,7 @@ print_exception_recursive(struct exception_print_context* ctx, PyObject *value)
                 else {
                     Py_ssize_t excs_remaining = num_excs - ctx->max_group_width;
                     PyObject *line = PyUnicode_FromFormat(
-                        "  and %zd more exception%s\n",
+                        "and %zd more exception%s\n",
                         excs_remaining, excs_remaining > 1 ? "s" : "");
 
                     if (line) {

@@ -1467,7 +1467,7 @@ class BaseExceptionReportingTests:
                     '    +---------------- 15 ----------------\n'
                     '    | ValueError: 14\n'
                     '    +---------------- ... ----------------\n'
-                    '    |   and 985 more exceptions\n'
+                    '    | and 985 more exceptions\n'
                     '    +------------------------------------\n')
 
         report = self.get_report(eg)
@@ -1520,7 +1520,7 @@ class BaseExceptionReportingTests:
                     '                    +-+---------------- 1 ----------------\n'
                     '                      | ValueError: 990\n'
                     '                      +---------------- 2 ----------------\n'
-                    '                      |  ... (max_group_depth is 10)\n'
+                    '                      | ... (max_group_depth is 10)\n'
                     '                      +---------------- 3 ----------------\n'
                     '                      | ValueError: -990\n'
                     '                      +------------------------------------\n'
@@ -2361,7 +2361,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'      +---------------- 2 ----------------',
                     f'      | ValueError: 1',
                     f'      +---------------- ... ----------------',
-                    f'      |   and 1 more exception',
+                    f'      | and 1 more exception',
                     f'      +------------------------------------',
                     f'    +---------------- 2 ----------------',
                     f'    | ExceptionGroup: eg2',
@@ -2370,7 +2370,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'      +---------------- 2 ----------------',
                     f'      | TypeError: 1',
                     f'      +---------------- ... ----------------',
-                    f'      |   and 8 more exceptions',
+                    f'      | and 8 more exceptions',
                     f'      +------------------------------------',
                     f'']
 
@@ -2393,7 +2393,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
                     f'    +-+---------------- 1 ----------------',
                     f'      | ValueError: -1',
                     f'      +---------------- 2 ----------------',
-                    f'      |  ... (max_group_depth is 2)',
+                    f'      | ... (max_group_depth is 2)',
                     f'      +---------------- 3 ----------------',
                     f'      | ValueError: 1',
                     f'      +------------------------------------',
