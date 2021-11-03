@@ -881,7 +881,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot
 
     if (slotv) {
         PyObject *x;
-        if (slotw && PyType_IsSubtype(Py_TYPE(w), Py_TYPE(v))) {
+        if (slotw && PyObject_TypeCheck(w, Py_TYPE(v))) {
             x = slotw(v, w);
             if (x != Py_NotImplemented)
                 return x;
