@@ -192,6 +192,8 @@ Module functions and constants
    .. _threadsafety: https://www.python.org/dev/peps/pep-0249/#threadsafety
    .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
 
+   .. versionchanged:: 3.11
+      Set *threadsafety* dynamically instead of hard-coding it to ``1``.
 
 .. data:: PARSE_DECLTYPES
 
