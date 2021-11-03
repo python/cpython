@@ -1,2 +1,2 @@
-Disambiguate the differences between ``__getitem__`` and __class_getitem__``
+Disambiguate the differences between ``__getitem__`` and ``__class_getitem__``
 in the documentation for the data model. Patch by Alex Waygood.
