@@ -317,7 +317,7 @@ class ModuleTests(unittest.TestCase):
         with managed_connect(":memory:", in_mem=True) as con:
             with con:
                 con.execute("create table t(t integer check(t > 0))")
-            errmsg = "CHECK constraint failed"
+            errmsg = "constraint failed"
             with self.assertRaisesRegex(sqlite.IntegrityError, errmsg) as cm:
                 con.execute("insert into t values(-1)")
             exc = cm.exception
