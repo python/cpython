@@ -48,6 +48,20 @@ def managed_connect(*args, in_mem=False, **kwargs):
             unlink(TESTFN)
 
 
+def memory_database():
+    cx = sqlite.connect(":memory:")
+    return contextlib.closing(cx)
+
+
+@contextlib.contextmanager
+def cx_limit(cx, category=sqlite.SQLITE_LIMIT_LENGTH, limit=128):
+    try:
+        _prev = cx.setlimit(category, limit)
+        yield limit
+    finally:
+        cx.setlimit(category, _prev)
+
+
 class ModuleTests(unittest.TestCase):
     def test_api_level(self):
         self.assertEqual(sqlite.apilevel, "2.0",

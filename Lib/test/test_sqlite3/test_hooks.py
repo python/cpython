@@ -20,11 +20,24 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import contextlib
 import sqlite3 as sqlite
 import unittest
 
 from test.support.os_helper import TESTFN, unlink
+from .test_dbapi import memory_database, cx_limit
 from .test_userfunctions import with_tracebacks
+
+
+@contextlib.contextmanager
+def check_trace(self, cx, expected):
+    try:
+        traced = []
+        cx.set_trace_callback(lambda stmt: traced.append(stmt))
+        yield
+    finally:
+        self.assertEqual(traced, expected)
+
 
 class CollationTests(unittest.TestCase):
     def test_create_collation_not_string(self):
@@ -292,12 +305,6 @@ class TraceCallbackTests(unittest.TestCase):
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 14, 0),
                      "Requires SQLite 3.14.0 or newer")
     def test_trace_expanded_sql(self):
-        cx = sqlite.connect(":memory:")
-        traced = []
-        cx.set_trace_callback(lambda stmt: traced.append(stmt))
-        with cx:
-            cx.execute("create table t(t)")
-            cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
         expected = [
             "create table t(t)",
             "BEGIN ",
@@ -306,13 +313,26 @@ class TraceCallbackTests(unittest.TestCase):
             "insert into t values(2)",
             "COMMIT",
         ]
-        self.assertEqual(traced, expected)
+        with memory_database() as cx, check_trace(self, cx, expected):
+            with cx:
+                cx.execute("create table t(t)")
+                cx.executemany("insert into t values(?)", ((v,) for v in range(3)))
+
+    @with_tracebacks([
+        "DataError",
+        "Expanded SQL string exceeds the maximum string length"
+    ], traceback=False)
+    def test_trace_too_much_expanded_sql(self):
+        query = "select * from sqlite_schema where type=?"
+        with memory_database() as cx, cx_limit(cx) as lim:
+            with check_trace(self, cx, [query]):
+                cx.execute(query, ("a"*lim,))
 
     @with_tracebacks(["ZeroDivisionError", "5/0"])
     def test_trace_bad_handler(self):
-        cx = sqlite.connect(":memory:")
-        cx.set_trace_callback(lambda stmt: 5/0)
-        cx.execute("select 1")
+        with memory_database() as cx:
+            cx.set_trace_callback(lambda stmt: 5/0)
+            cx.execute("select 1")
 
 
 if __name__ == "__main__":
