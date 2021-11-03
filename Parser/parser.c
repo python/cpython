@@ -172,7 +172,7 @@ static char *soft_keywords[] = {
 #define star_expression_type 1098
 #define star_named_expressions_type 1099
 #define star_named_expression_type 1100
-#define assigment_expression_type 1101
+#define assignment_expression_type 1101
 #define named_expression_type 1102
 #define disjunction_type 1103
 #define conjunction_type 1104
@@ -599,7 +599,7 @@ static expr_ty star_expressions_rule(Parser *p);
 static expr_ty star_expression_rule(Parser *p);
 static asdl_expr_seq* star_named_expressions_rule(Parser *p);
 static expr_ty star_named_expression_rule(Parser *p);
-static expr_ty assigment_expression_rule(Parser *p);
+static expr_ty assignment_expression_rule(Parser *p);
 static expr_ty named_expression_rule(Parser *p);
 static expr_ty disjunction_rule(Parser *p);
 static expr_ty conjunction_rule(Parser *p);
@@ -10289,9 +10289,9 @@ star_named_expression_rule(Parser *p)
     return _res;
 }
 
-// assigment_expression: NAME ':=' ~ expression
+// assignment_expression: NAME ':=' ~ expression
 static expr_ty
-assigment_expression_rule(Parser *p)
+assignment_expression_rule(Parser *p)
 {
     D(p->level++);
     if (p->error_indicator) {
@@ -10314,7 +10314,7 @@ assigment_expression_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> assigment_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ':=' ~ expression"));
+        D(fprintf(stderr, "%*c> assignment_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ':=' ~ expression"));
         int _cut_var = 0;
         Token * _literal;
         expr_ty a;
@@ -10329,7 +10329,7 @@ assigment_expression_rule(Parser *p)
             (b = expression_rule(p))  // expression
         )
         {
-            D(fprintf(stderr, "%*c+ assigment_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME ':=' ~ expression"));
+            D(fprintf(stderr, "%*c+ assignment_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME ':=' ~ expression"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -10348,7 +10348,7 @@ assigment_expression_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s assigment_expression[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s assignment_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME ':=' ~ expression"));
         if (_cut_var) {
             D(p->level--);
@@ -10361,7 +10361,7 @@ assigment_expression_rule(Parser *p)
     return _res;
 }
 
-// named_expression: assigment_expression | invalid_named_expression | expression !':='
+// named_expression: assignment_expression | invalid_named_expression | expression !':='
 static expr_ty
 named_expression_rule(Parser *p)
 {
@@ -10372,24 +10372,24 @@ named_expression_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    { // assigment_expression
+    { // assignment_expression
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assigment_expression"));
-        expr_ty assigment_expression_var;
+        D(fprintf(stderr, "%*c> named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
+        expr_ty assignment_expression_var;
         if (
-            (assigment_expression_var = assigment_expression_rule(p))  // assigment_expression
+            (assignment_expression_var = assignment_expression_rule(p))  // assignment_expression
         )
         {
-            D(fprintf(stderr, "%*c+ named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assigment_expression"));
-            _res = assigment_expression_var;
+            D(fprintf(stderr, "%*c+ named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
+            _res = assignment_expression_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s named_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assigment_expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment_expression"));
     }
     if (p->call_invalid_rules) { // invalid_named_expression
         if (p->error_indicator) {
@@ -15231,7 +15231,7 @@ setcomp_rule(Parser *p)
 }
 
 // genexp:
-//     | '(' (assigment_expression | expression !':=') for_if_clauses ')'
+//     | '(' (assignment_expression | expression !':=') for_if_clauses ')'
 //     | invalid_comprehension
 static expr_ty
 genexp_rule(Parser *p)
@@ -15252,12 +15252,12 @@ genexp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '(' (assigment_expression | expression !':=') for_if_clauses ')'
+    { // '(' (assignment_expression | expression !':=') for_if_clauses ')'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> genexp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' (assigment_expression | expression !':=') for_if_clauses ')'"));
+        D(fprintf(stderr, "%*c> genexp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' (assignment_expression | expression !':=') for_if_clauses ')'"));
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -15265,14 +15265,14 @@ genexp_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (a = _tmp_113_rule(p))  // assigment_expression | expression !':='
+            (a = _tmp_113_rule(p))  // assignment_expression | expression !':='
             &&
             (b = for_if_clauses_rule(p))  // for_if_clauses
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
         )
         {
-            D(fprintf(stderr, "%*c+ genexp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' (assigment_expression | expression !':=') for_if_clauses ')'"));
+            D(fprintf(stderr, "%*c+ genexp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' (assignment_expression | expression !':=') for_if_clauses ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -15292,7 +15292,7 @@ genexp_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s genexp[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' (assigment_expression | expression !':=') for_if_clauses ')'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' (assignment_expression | expression !':=') for_if_clauses ')'"));
     }
     if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
@@ -15478,7 +15478,7 @@ arguments_rule(Parser *p)
 }
 
 // args:
-//     | ','.(starred_expression | (assigment_expression | expression !':=') !'=')+ [',' kwargs]
+//     | ','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]
 //     | kwargs
 static expr_ty
 args_rule(Parser *p)
@@ -15499,21 +15499,21 @@ args_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // ','.(starred_expression | (assigment_expression | expression !':=') !'=')+ [',' kwargs]
+    { // ','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> args[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.(starred_expression | (assigment_expression | expression !':=') !'=')+ [',' kwargs]"));
+        D(fprintf(stderr, "%*c> args[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]"));
         asdl_expr_seq* a;
         void *b;
         if (
-            (a = (asdl_expr_seq*)_gather_114_rule(p))  // ','.(starred_expression | (assigment_expression | expression !':=') !'=')+
+            (a = (asdl_expr_seq*)_gather_114_rule(p))  // ','.(starred_expression | (assignment_expression | expression !':=') !'=')+
             &&
             (b = _tmp_116_rule(p), !p->error_indicator)  // [',' kwargs]
         )
         {
-            D(fprintf(stderr, "%*c+ args[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.(starred_expression | (assigment_expression | expression !':=') !'=')+ [',' kwargs]"));
+            D(fprintf(stderr, "%*c+ args[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -15533,7 +15533,7 @@ args_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s args[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.(starred_expression | (assigment_expression | expression !':=') !'=')+ [',' kwargs]"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.(starred_expression | (assignment_expression | expression !':=') !'=')+ [',' kwargs]"));
     }
     { // kwargs
         if (p->error_indicator) {
@@ -28047,7 +28047,7 @@ _loop0_112_rule(Parser *p)
     return _seq;
 }
 
-// _tmp_113: assigment_expression | expression !':='
+// _tmp_113: assignment_expression | expression !':='
 static void *
 _tmp_113_rule(Parser *p)
 {
@@ -28058,24 +28058,24 @@ _tmp_113_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // assigment_expression
+    { // assignment_expression
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_113[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assigment_expression"));
-        expr_ty assigment_expression_var;
+        D(fprintf(stderr, "%*c> _tmp_113[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
+        expr_ty assignment_expression_var;
         if (
-            (assigment_expression_var = assigment_expression_rule(p))  // assigment_expression
+            (assignment_expression_var = assignment_expression_rule(p))  // assignment_expression
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_113[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assigment_expression"));
-            _res = assigment_expression_var;
+            D(fprintf(stderr, "%*c+ _tmp_113[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
+            _res = assignment_expression_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_113[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assigment_expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment_expression"));
     }
     { // expression !':='
         if (p->error_indicator) {
@@ -28104,7 +28104,7 @@ _tmp_113_rule(Parser *p)
     return _res;
 }
 
-// _loop0_115: ',' (starred_expression | (assigment_expression | expression !':=') !'=')
+// _loop0_115: ',' (starred_expression | (assignment_expression | expression !':=') !'=')
 static asdl_seq *
 _loop0_115_rule(Parser *p)
 {
@@ -28125,18 +28125,18 @@ _loop0_115_rule(Parser *p)
     }
     Py_ssize_t _children_capacity = 1;
     Py_ssize_t _n = 0;
-    { // ',' (starred_expression | (assigment_expression | expression !':=') !'=')
+    { // ',' (starred_expression | (assignment_expression | expression !':=') !'=')
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop0_115[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (starred_expression | (assigment_expression | expression !':=') !'=')"));
+        D(fprintf(stderr, "%*c> _loop0_115[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (starred_expression | (assignment_expression | expression !':=') !'=')"));
         Token * _literal;
         void *elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (elem = _tmp_190_rule(p))  // starred_expression | (assigment_expression | expression !':=') !'='
+            (elem = _tmp_190_rule(p))  // starred_expression | (assignment_expression | expression !':=') !'='
         )
         {
             _res = elem;
@@ -28162,7 +28162,7 @@ _loop0_115_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_115[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (starred_expression | (assigment_expression | expression !':=') !'=')"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (starred_expression | (assignment_expression | expression !':=') !'=')"));
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -28180,7 +28180,7 @@ _loop0_115_rule(Parser *p)
 }
 
 // _gather_114:
-//     | (starred_expression | (assigment_expression | expression !':=') !'=') _loop0_115
+//     | (starred_expression | (assignment_expression | expression !':=') !'=') _loop0_115
 static asdl_seq *
 _gather_114_rule(Parser *p)
 {
@@ -28191,27 +28191,27 @@ _gather_114_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // (starred_expression | (assigment_expression | expression !':=') !'=') _loop0_115
+    { // (starred_expression | (assignment_expression | expression !':=') !'=') _loop0_115
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _gather_114[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(starred_expression | (assigment_expression | expression !':=') !'=') _loop0_115"));
+        D(fprintf(stderr, "%*c> _gather_114[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(starred_expression | (assignment_expression | expression !':=') !'=') _loop0_115"));
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = _tmp_190_rule(p))  // starred_expression | (assigment_expression | expression !':=') !'='
+            (elem = _tmp_190_rule(p))  // starred_expression | (assignment_expression | expression !':=') !'='
             &&
             (seq = _loop0_115_rule(p))  // _loop0_115
         )
         {
-            D(fprintf(stderr, "%*c+ _gather_114[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(starred_expression | (assigment_expression | expression !':=') !'=') _loop0_115"));
+            D(fprintf(stderr, "%*c+ _gather_114[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(starred_expression | (assignment_expression | expression !':=') !'=') _loop0_115"));
             _res = _PyPegen_seq_insert_in_front(p, elem, seq);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _gather_114[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(starred_expression | (assigment_expression | expression !':=') !'=') _loop0_115"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(starred_expression | (assignment_expression | expression !':=') !'=') _loop0_115"));
     }
     _res = NULL;
   done:
@@ -32352,7 +32352,7 @@ _tmp_189_rule(Parser *p)
     return _res;
 }
 
-// _tmp_190: starred_expression | (assigment_expression | expression !':=') !'='
+// _tmp_190: starred_expression | (assignment_expression | expression !':=') !'='
 static void *
 _tmp_190_rule(Parser *p)
 {
@@ -32382,26 +32382,26 @@ _tmp_190_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_190[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "starred_expression"));
     }
-    { // (assigment_expression | expression !':=') !'='
+    { // (assignment_expression | expression !':=') !'='
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_190[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(assigment_expression | expression !':=') !'='"));
+        D(fprintf(stderr, "%*c> _tmp_190[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(assignment_expression | expression !':=') !'='"));
         void *_tmp_201_var;
         if (
-            (_tmp_201_var = _tmp_201_rule(p))  // assigment_expression | expression !':='
+            (_tmp_201_var = _tmp_201_rule(p))  // assignment_expression | expression !':='
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 22)  // token='='
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_190[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(assigment_expression | expression !':=') !'='"));
+            D(fprintf(stderr, "%*c+ _tmp_190[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(assignment_expression | expression !':=') !'='"));
             _res = _tmp_201_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_190[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(assigment_expression | expression !':=') !'='"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(assignment_expression | expression !':=') !'='"));
     }
     _res = NULL;
   done:
@@ -32845,7 +32845,7 @@ _tmp_200_rule(Parser *p)
     return _res;
 }
 
-// _tmp_201: assigment_expression | expression !':='
+// _tmp_201: assignment_expression | expression !':='
 static void *
 _tmp_201_rule(Parser *p)
 {
@@ -32856,24 +32856,24 @@ _tmp_201_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // assigment_expression
+    { // assignment_expression
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_201[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assigment_expression"));
-        expr_ty assigment_expression_var;
+        D(fprintf(stderr, "%*c> _tmp_201[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
+        expr_ty assignment_expression_var;
         if (
-            (assigment_expression_var = assigment_expression_rule(p))  // assigment_expression
+            (assignment_expression_var = assignment_expression_rule(p))  // assignment_expression
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_201[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assigment_expression"));
-            _res = assigment_expression_var;
+            D(fprintf(stderr, "%*c+ _tmp_201[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assignment_expression"));
+            _res = assignment_expression_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_201[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assigment_expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment_expression"));
     }
     { // expression !':='
         if (p->error_indicator) {
