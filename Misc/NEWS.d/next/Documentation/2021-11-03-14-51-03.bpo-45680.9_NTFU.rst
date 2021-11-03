@@ -1,0 +1,2 @@
+Improve links to ``__class_getitem__`` and ``GenericAlias`` docs in the
+`typing` module's documentation.
