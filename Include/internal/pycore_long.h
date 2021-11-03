@@ -11,22 +11,15 @@ extern "C" {
 #include "pycore_interp.h"        // PyInterpreterState.small_ints
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
-/* Small integers are preallocated in this array so that they
-    can be shared.
-    The integers that are preallocated are those in the range
-    -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
-*/
-PyAPI_DATA(PyLongObject) _Py_SmallInts[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
-
 // Return a borrowed reference to the zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
-{ return (PyObject *)&_Py_SmallInts[_PY_NSMALLNEGINTS]; }
+{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS]; }
 
 // Return a borrowed reference to the one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
-{ return (PyObject *)&_Py_SmallInts[_PY_NSMALLNEGINTS+1]; }
+{ return (PyObject *)&_PyRuntime.small_ints[_PY_NSMALLNEGINTS+1]; }
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
