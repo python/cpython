@@ -23,8 +23,6 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 #include "clinic/bytesobject.c.h"
 
-_Py_IDENTIFIER(__bytes__);
-
 /* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
    for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
 

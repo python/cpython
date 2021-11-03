@@ -15,7 +15,6 @@
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__prepare__);
-_Py_IDENTIFIER(__round__);
 _Py_IDENTIFIER(__mro_entries__);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(errors);

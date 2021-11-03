@@ -27,6 +27,7 @@
 #include <fcntl.h>
 
 #include "_iomodule.h"
+#include "core_objects.h"
 
 /* BUFSIZ determines how many characters can be typed at the console
    before it starts blocking. */
@@ -156,7 +157,6 @@ typedef struct {
 
 PyTypeObject PyWindowsConsoleIO_Type;
 
-_Py_IDENTIFIER(name);
 
 int
 _PyWindowsConsoleIO_closed(PyObject *self)
@@ -196,9 +196,8 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
-                                       &PyId_close, (PyObject*)self);
+    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+                                       _Py_ID(close), (PyObject*)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
@@ -394,7 +393,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     self->blksize = DEFAULT_BUFFER_SIZE;
     memset(self->buf, 0, 4);
 
-    if (_PyObject_SetAttrId((PyObject *)self, &PyId_name, nameobj) < 0)
+    if (PyObject_SetAttr((PyObject *)self, _Py_ID(name), nameobj) < 0)
         goto error;
 
     goto done;

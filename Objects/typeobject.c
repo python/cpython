@@ -72,7 +72,6 @@ _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
 _Py_IDENTIFIER(__qualname__);
-_Py_IDENTIFIER(__set_name__);
 _Py_IDENTIFIER(__setitem__);
 _Py_IDENTIFIER(__weakref__);
 _Py_IDENTIFIER(builtins);
@@ -5088,8 +5087,6 @@ static int
 _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 {
     PyObject *getnewargs, *getnewargs_ex;
-    _Py_IDENTIFIER(__getnewargs_ex__);
-    _Py_IDENTIFIER(__getnewargs__);
 
     if (args == NULL || kwargs == NULL) {
         PyErr_BadInternalCall();

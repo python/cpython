@@ -32,8 +32,6 @@ extern "C" {
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
 _Py_IDENTIFIER(Py_Repr);
-_Py_IDENTIFIER(__bytes__);
-_Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(__isabstractmethod__);
 
 

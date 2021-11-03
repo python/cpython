@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "_iomodule.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "core_objects.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -91,7 +92,7 @@ PyDoc_STRVAR(module_doc,
 "   I/O classes. open() uses the file's blksize (as obtained by os.stat) if\n"
 "   possible.\n"
     );
-
+
 
 /*
  * The main open() function
@@ -241,11 +242,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
-    _Py_IDENTIFIER(_blksize);
-    _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(mode);
-    _Py_IDENTIFIER(close);
-
     is_number = PyNumber_Check(file);
 
     if (is_number) {
@@ -381,7 +377,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
-        PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
+        PyObject *res = _PyObject_CallMethodNoArgs(raw, _Py_ID(isatty));
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -399,7 +395,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     if (buffering < 0) {
         PyObject *blksize_obj;
-        blksize_obj = _PyObject_GetAttrId(raw, &PyId__blksize);
+        blksize_obj = PyObject_GetAttr(raw, _Py_ID(_blksize));
         if (blksize_obj == NULL)
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
@@ -466,7 +462,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     result = wrapper;
     Py_DECREF(buffer);
 
-    if (_PyObject_SetAttrId(wrapper, &PyId_mode, modeobj) < 0)
+    if (PyObject_SetAttr(wrapper, _Py_ID(mode), modeobj) < 0)
         goto error;
     Py_DECREF(modeobj);
     return result;
@@ -475,7 +471,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
+        close_result = _PyObject_CallMethodNoArgs(result, _Py_ID(close));
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);
@@ -542,7 +538,7 @@ _io_open_code_impl(PyObject *module, PyObject *path)
 {
     return PyFile_OpenCodeObject(path);
 }
-
+
 /*
  * Private helpers for the io module.
  */

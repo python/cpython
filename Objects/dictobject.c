@@ -2131,7 +2131,6 @@ dict_subscript(PyDictObject *mp, PyObject *key)
         if (!PyDict_CheckExact(mp)) {
             /* Look up __missing__ method if we're a subclass. */
             PyObject *missing, *res;
-            _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, _Py_ID(__missing__));
             if (missing != NULL) {
                 res = PyObject_CallOneArg(missing, key);
