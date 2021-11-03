@@ -1,0 +1,2 @@
+Fix bug in Python 3.9 that meant ``functools.singledispatchmethod`` failed
+to properly wrap the attributes of the target method. Patch by Alex Waygood.

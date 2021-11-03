@@ -2401,7 +2401,7 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t(0.0).arg, "base")
 
     def test_abstractmethod_register(self):
-        class Abstract(abc.ABCMeta):
+        class Abstract(metaclass=abc.ABCMeta):
 
             @functools.singledispatchmethod
             @abc.abstractmethod
@@ -2409,6 +2409,10 @@ class TestSingleDispatch(unittest.TestCase):
                 pass
 
         self.assertTrue(Abstract.add.__isabstractmethod__)
+        self.assertTrue(Abstract.__dict__['add'].__isabstractmethod__)
+
+        with self.assertRaises(TypeError):
+            Abstract()
 
     def test_type_ann_register(self):
         class A:
@@ -2468,6 +2472,137 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.t(0).arg, "int")
         self.assertEqual(A.t('').arg, "str")
         self.assertEqual(A.t(0.0).arg, "base")
+
+    def test_method_wrapping_attributes(self):
+        class A:
+            @functools.singledispatchmethod
+            def func(self, arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+            @functools.singledispatchmethod
+            @classmethod
+            def cls_func(cls, arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_func(arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+
+        for meth in (
+            A.func,
+            A().func,
+            A.cls_func,
+            A().cls_func,
+            A.static_func,
+            A().static_func
+        ):
+            with self.subTest(meth=meth):
+                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__annotations__['arg'], int)
+
+        self.assertEqual(A.func.__name__, 'func')
+        self.assertEqual(A().func.__name__, 'func')
+        self.assertEqual(A.cls_func.__name__, 'cls_func')
+        self.assertEqual(A().cls_func.__name__, 'cls_func')
+        self.assertEqual(A.static_func.__name__, 'static_func')
+        self.assertEqual(A().static_func.__name__, 'static_func')
+
+    def test_double_wrapped_methods(self):
+        def classmethod_friendly_decorator(func):
+            wrapped = func.__func__
+            @classmethod
+            @functools.wraps(wrapped)
+            def wrapper(*args, **kwargs):
+                return wrapped(*args, **kwargs)
+            return wrapper
+
+        class WithoutSingleDispatch:
+            @classmethod
+            @contextlib.contextmanager
+            def cls_context_manager(cls, arg: int) -> str:
+                try:
+                    yield str(arg)
+                finally:
+                    return 'Done'
+
+            @classmethod_friendly_decorator
+            @classmethod
+            def decorated_classmethod(cls, arg: int) -> str:
+                return str(arg)
+
+        try:
+            with WithoutSingleDispatch.cls_context_manager(3) as foo:
+                assert foo == '3', (
+                       "Classmethod contextmanager called from class not working"
+                    )
+            with WithoutSingleDispatch().cls_context_manager(3) as bar:
+                assert bar == '3', (
+                       "Classmethod contextmanager called from instance not working"
+                    )
+            assert WithoutSingleDispatch.decorated_classmethod(666) == '666', (
+                   "Wrapped classmethod called from class not working"
+                )
+            assert WithoutSingleDispatch().decorated_classmethod(666) == '666', (
+                   "Wrapped classmethod called from instance not working"
+                )
+        except AssertionError as e:
+            self.fail(f"There's a bug in this test: '{e}'")
+
+        class A:
+            @functools.singledispatchmethod
+            @classmethod
+            @contextlib.contextmanager
+            def cls_context_manager(cls, arg: int) -> str:
+                """My function docstring"""
+                try:
+                    yield str(arg)
+                finally:
+                    return 'Done'
+
+            @functools.singledispatchmethod
+            @classmethod_friendly_decorator
+            @classmethod
+            def decorated_classmethod(cls, arg: int) -> str:
+                """My function docstring"""
+                return str(arg)
+
+        with WithoutSingleDispatch.cls_context_manager(5) as foo:
+            without_single_dispatch_foo = foo
+
+        with A.cls_context_manager(5) as foo:
+            single_dispatch_foo = foo
+
+        self.assertEqual(without_single_dispatch_foo, single_dispatch_foo)
+        self.assertEqual(single_dispatch_foo, '5')
+
+        for method_name in ('cls_context_manager', 'decorated_classmethod'):
+            with self.subTest(method=method_name):
+                self.assertEqual(
+                    getattr(A, method_name).__name__,
+                    getattr(WithoutSingleDispatch, method_name).__name__
+                )
+
+                self.assertEqual(
+                    getattr(A(), method_name).__name__,
+                    getattr(WithoutSingleDispatch(), method_name).__name__
+                )
+
+        for meth in (
+            A.cls_context_manager,
+            A().cls_context_manager,
+            A.decorated_classmethod,
+            A().decorated_classmethod
+        ):
+            with self.subTest(meth=meth):
+                self.assertEqual(meth.__doc__, 'My function docstring')
+                self.assertEqual(meth.__annotations__['arg'], int)
+
+        self.assertEqual(A.cls_context_manager.__name__, 'cls_context_manager')
+        self.assertEqual(A().cls_context_manager.__name__, 'cls_context_manager')
+        self.assertEqual(A.decorated_classmethod.__name__, 'decorated_classmethod')
+        self.assertEqual(A().decorated_classmethod.__name__, 'decorated_classmethod')
 
     def test_invalid_registrations(self):
         msg_prefix = "Invalid first argument to `register()`: "
